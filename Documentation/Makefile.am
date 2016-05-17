@@ -23,4 +23,7 @@ doc-edit:
 doc-show: hkl.html
 	sensible-browser $(builddir)/hkl.html
 
-.PHONY: doc-edit doc-show
+publish: hkl.html
+	rsync -avz hkl.html picca@people.debian.org:public_html/hkl
+
+.PHONY: doc-edit doc-show publish
