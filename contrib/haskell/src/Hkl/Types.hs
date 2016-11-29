@@ -48,13 +48,14 @@ data Engine
 
 -- | Factory
 
-data Factory = K6c | Uhv | MedH | MedV
+data Factory = K6c | Uhv | MedH | MedV | SoleilSiriusKappa
 
 instance Show Factory where
   show K6c = "K6C"
   show Uhv = "ZAXIS"
   show MedH = "todo"
   show MedV = "todo"
+  show SoleilSiriusKappa = "SOLEIL SIRIUS KAPPA"
 
 factoryFromString :: String -> Factory
 factoryFromString s
@@ -62,6 +63,7 @@ factoryFromString s
   | s == "ZAXIS" = Uhv
   | s == "todo" = MedH
   | s == "todo" = MedV
+  | s == "SOLEIL SIRIUS KAPPA" = SoleilSiriusKappa
   | otherwise   = error $ "unknown diffractometer type:" ++ s
 
 -- | Geometry
