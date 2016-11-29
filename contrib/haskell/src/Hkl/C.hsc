@@ -4,6 +4,7 @@
 
 module Hkl.C
        ( compute
+       , computePipe
        , geometryDetectorRotationGet
        , solve
        , solveTraj
@@ -138,6 +139,12 @@ newDiffractometer g@(Geometry f _ _ _) d s = do
                               , difDetector = f_detector
                               , difSample = f_sample
                               }
+
+computePipe :: Detector a -> Sample -> Pipe Geometry [Engine] IO ()
+computePipe d s = forever $ do
+  g <- await
+  e <- lift $ compute g d s
+  yield e
 
 solveTrajPipe :: Geometry -> Detector a -> Sample -> Pipe Engine Geometry IO ()
 solveTrajPipe g d s = do
