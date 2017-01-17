@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE BangPatterns #-}
 
 module Hkl.XRD
        ( XRDRef(..)
@@ -32,19 +31,21 @@ module Hkl.XRD
 import Control.Applicative ((<$>), (<*>))
 #endif
 import Control.Concurrent.Async (mapConcurrently)
-import Control.Monad (forM_, forever, zipWithM_)
+-- import Control.Error (EitherT, runEitherT, left, throwT)
+import Control.Monad (forM_, forever, when, zipWithM_)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Morph (hoist)
+import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
 import Data.Array.Repa (Shape, DIM1, size)
 import Data.Attoparsec.Text (parseOnly)
 import qualified Data.ByteString.Char8 as Char8 (pack)
 import qualified Data.List as List (intercalate, lookup)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Text (Text)
 import qualified Data.Text as Text (unlines, pack, intercalate)
 import Data.Text.IO (readFile)
-import Data.Vector.Storable (concat, head)
+import Data.Vector.Storable (any, concat, head)
 import Numeric.LinearAlgebra (fromList)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
@@ -53,7 +54,8 @@ import System.Process ( system )
 import Text.Printf ( printf )
 
 import Prelude hiding
-    ( concat
+    ( any
+    , concat
     , head
     , lookup
     , readFile
@@ -120,7 +122,7 @@ data DifTomoFrame sh =
 
 class Frame t where
   len :: t -> IO (Maybe Int)
-  row :: t -> Int -> IO (DifTomoFrame DIM1)
+  row :: t -> Int -> MaybeT IO (DifTomoFrame DIM1)
 
 data DataFrameH5Path =
   DataFrameH5Path { h5pImage :: DataItem
@@ -141,43 +143,52 @@ instance Frame DataFrameH5 where
   len d =  lenH5Dataspace (h5delta d)
 
   row d idx = do
-    (Just n) <- len d
-    let eof = n - 1 == idx
+    n <- lift $ len d
+    let eof = fromJust n - 1 == idx
     let nxs' = h5nxs d
     let mu = 0.0
     let komega = 0.0
     let kappa = 0.0
     let kphi = 0.0
-    gamma <- get_position (h5gamma d) 0
-    delta <- get_position (h5delta d) idx
-    wavelength <- get_position (h5wavelength d) 0
-    let source = Source (head wavelength *~ nano meter)
-    let positions = concat [mu, komega, kappa, kphi, gamma, delta]
+    gamma <- get_position' (h5gamma d) 0
+    delta <- get_position' (h5delta d) idx
+    wavelength <- get_position' (h5wavelength d) 0
+    let source = Source (head (fromJust wavelength) *~ nano meter)
+    let positions = concat [mu, komega, kappa, kphi, fromJust gamma, fromJust delta]
+    -- print positions
     let geometry =  Geometry K6c source positions Nothing
     let detector = ZeroD
-    m <- geometryDetectorRotationGet geometry detector
-    poniext <- ponigen d (MyMatrix HklB m) idx
-    return DifTomoFrame { difTomoFrameNxs = nxs'
-                        , difTomoFrameIdx = idx
-                        , difTomoFrameEOF = eof
-                        , difTomoFrameGeometry = geometry
-                        , difTomoFramePoniExt = poniext
-                        }
+    m <- lift $ geometryDetectorRotationGet geometry detector
+    poniext <- lift $ ponigen d (MyMatrix HklB m) idx
+    return $ DifTomoFrame { difTomoFrameNxs = nxs'
+                          , difTomoFrameIdx = idx
+                          , difTomoFrameEOF = eof
+                          , difTomoFrameGeometry = geometry
+                          , difTomoFramePoniExt = poniext
+                          }
+    where
+      get_position' a b = lift $ do
+        v <- get_position a b
+        return $ if any isNaN v
+                 then Nothing
+                 else Just v
+
+-- type PipeE e a b m r = EitherT e (Pipe a b m) r
 
 frames :: (Frame a) => Pipe a (DifTomoFrame DIM1) IO ()
 frames = do
   d <- await
   (Just n) <- lift $ len d
   forM_ [0..n-1] (\i' -> do
-                     f <- lift $ row d i'
-                     yield f)
+                     f <- lift $ runMaybeT $ row d i'
+                     when (isJust f) (yield (fromJust f)))
 
 frames' :: (Frame a) => [Int] -> Pipe a (DifTomoFrame DIM1) IO ()
 frames' is = do
   d <- await
   forM_ is (\i' -> do
-              f <- lift $ row d i'
-              yield f)
+              f <- lift $ runMaybeT $ row d i'
+              when (isJust f) (yield (fromJust f)))
 
 -- {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -222,7 +233,7 @@ getPoniExtRef :: XRDRef -> IO PoniExt
 getPoniExtRef (XRDRef _ output (XrdRefNxs nxs'@(Nxs f _ _) idx)) = do
   poniExtRefs <- withH5File f $ \h5file ->
     runSafeT $ toListM ( withDataFrameH5 h5file nxs' (gen output f) yield
-                         >-> hoist lift (frames' [idx]))
+                         >-> hoist lift ( frames' [idx]))
   return $ difTomoFramePoniExt (Prelude.last poniExtRefs)
   where
     gen :: FilePath -> FilePath -> MyMatrix Double -> Int -> IO PoniExt
@@ -259,6 +270,7 @@ integrate' ref output (XrdNxs b _ t (XrdSourceNxs nxs'@(Nxs f _ _))) = do
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
+integrate' _ _ (XrdNxs _ _ _ (XrdSourceEdf _)) = error "integrate' not yet implemented"
 
 createPy :: (Shape sh) => DIM1 -> Threshold -> (DifTomoFrame' sh) -> (Text, FilePath)
 createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)

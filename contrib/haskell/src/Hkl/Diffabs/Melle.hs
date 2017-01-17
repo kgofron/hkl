@@ -4,22 +4,22 @@
 module Hkl.Diffabs.Melle
        ( melle ) where
 
-import Control.Concurrent (setNumCapabilities)
-import Control.Concurrent.Async (mapConcurrently)
-import Data.Array.Repa (DIM1, ix1)
-import Data.Char (toUpper)
-import Numeric.LinearAlgebra (ident)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+-- import Control.Concurrent (setNumCapabilities)
+-- import Control.Concurrent.Async (mapConcurrently)
+-- import Data.Array.Repa (DIM1, ix1)
+-- import Data.Char (toUpper)
+-- import Numeric.LinearAlgebra (ident)
+-- import System.FilePath ((</>))
+-- import Text.Printf (printf)
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+-- import Prelude hiding (concat, lookup, readFile, writeFile)
 
-import Hkl.MyMatrix
-import Hkl.PyFAI.PoniExt
-import Hkl.Types
-import Hkl.XRD
-import Hkl.XRD.Calibration
-import Hkl.Detector
+-- import Hkl.MyMatrix
+-- import Hkl.PyFAI.PoniExt
+-- import Hkl.Types
+-- import Hkl.XRD
+-- import Hkl.XRD.Calibration
+-- import Hkl.Detector
 
 -- | Samples
 

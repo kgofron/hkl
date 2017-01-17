@@ -25,10 +25,8 @@ import Hkl.Detector
 
 -- | Samples
 
--- project = "/home/experiences/instrumentation/picca/data/99160066"
 project :: FilePath
 project = "/nfs/ruche-diffabs/diffabs-users/99160066/"
--- project = "/home/picca/data/99160066"
 
 published :: FilePath
 published = project </> "published-data"
@@ -285,10 +283,7 @@ martinetto = do
 
 martinetto' :: IO ()
 martinetto' = do
-  let samples = [ceo2, a2, a3, a26, d2, d3, d16, k9a2, n27t2, r11, r18, r23, r34n1, r35n1]
-  -- # need to run f30 by itself because of a segfault in the hkl library
-  -- let samples = [f30]
-  -- let samples = [ceo2]
+  let samples = [ceo2, a2, a3, a26, d2, d3, d16, f30, k9a2, n27t2, r11, r18, r23, r34n1, r35n1]
 
   p <- getPoniExtRef sampleRef
 
