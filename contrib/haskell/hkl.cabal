@@ -95,9 +95,10 @@ library
                     , Hkl.D2AM.XRD
                     , Hkl.Detector
                     , Hkl.Diffabs
+                    , Hkl.Diffabs.Charlier
                     , Hkl.Diffabs.IRDRx
                     , Hkl.Diffabs.Martinetto
-                    , Hkl.Diffabs.Melle
+                    -- , Hkl.Diffabs.Melle
                     , Hkl.Edf
                     , Hkl.Engine
                     , Hkl.H5

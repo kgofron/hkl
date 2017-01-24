@@ -4,6 +4,7 @@ module Hkl.H5
     , check_ndims
     , closeDataset
     , get_position
+    , get_position_new
     , get_ub
     , lenH5Dataspace
     , openDataset
@@ -35,6 +36,7 @@ import Bindings.HDF5.Dataspace ( Dataspace
                                )
 
 import Control.Exception (bracket)
+import Data.Array.Repa (Shape, listOfShape)
 import Data.ByteString.Char8 (pack)
 import Data.Vector.Storable (Vector, freeze)
 import Data.Vector.Storable.Mutable (replicate)
@@ -49,6 +51,18 @@ check_ndims d expected = do
   space_id <- getDatasetSpace d
   (CInt ndims) <- getSimpleDataspaceExtentNDims space_id
   return $ expected == fromEnum ndims
+
+toHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
+toHyperslab s = [(HSize (fromIntegral n), Just (HSize 1), HSize 1, Just (HSize 1)) | n <- listOfShape s]
+
+get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
+get_position_new dataset s =
+    withDataspace dataset $ \dataspace -> do
+      selectHyperslab dataspace Set (toHyperslab s)
+      withDataspace' $ \memspace -> do
+        data_out <- replicate 1 (0.0 :: Double)
+        readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
+        freeze data_out
 
 get_position :: Dataset -> Int -> IO (Vector Double)
 get_position dataset n =

@@ -1,5 +1,8 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Hkl.XRD
        ( XRDRef(..)
@@ -11,6 +14,7 @@ module Hkl.XRD
        , Nxs(..)
        , Threshold(..)
        , XrdNxs(..)
+       , mkNxs
        , XrdSource(..)
        , PoniExt(..)
          -- reference
@@ -20,11 +24,15 @@ module Hkl.XRD
        , integrate
        , integrateMulti
        -- Mesh
-       -- , DataFrameMeshH5Path(..)
-       -- , Nxs'(..)
+       , XrdMeshSample(..)
+       , XrdMesh(..)
+       , XrdMeshSource(..)
+       , XrdMeshH5Path(..)
+       , Nxs'(..)
        -- , XrdNxs'(..)
        -- , XRDSample'(..)
-       -- , integrateMesh
+       , integrateMesh
+       , mkXrdMeshSourceNxs
        ) where
 
 #if __GLASGOW_HASKELL__ < 710
@@ -37,7 +45,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
-import Data.Array.Repa (Shape, DIM1, size)
+import Data.Array.Repa (Shape, DIM1, DIM2, fromIndex, listOfShape, size, shapeOfList)
 import Data.Attoparsec.Text (parseOnly)
 import qualified Data.ByteString.Char8 as Char8 (pack)
 import qualified Data.List as List (intercalate, lookup)
@@ -45,7 +53,7 @@ import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Text (Text)
 import qualified Data.Text as Text (unlines, pack, intercalate)
 import Data.Text.IO (readFile)
-import Data.Vector.Storable (any, concat, head)
+import Data.Vector.Storable (Vector, any, concat, head)
 import Numeric.LinearAlgebra (fromList)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
@@ -71,7 +79,7 @@ import Pipes
     , yield
     )
 import Pipes.Lift
-import Pipes.Prelude (toListM)
+import Pipes.Prelude (toListM, drain)
 import Pipes.Safe ( MonadSafe(..), runSafeT, bracket )
 
 import Hkl.C
@@ -111,6 +119,9 @@ data XrdSource = XrdSourceNxs Nxs
 data XrdNxs = XrdNxs DIM1 DIM1 Threshold XrdSource deriving (Show)
 
 data Nxs = Nxs FilePath NxEntry DataFrameH5Path deriving (Show)
+
+mkNxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
+mkNxs f e h = Nxs f e (h e)
 
 data DifTomoFrame sh =
   DifTomoFrame { difTomoFrameNxs :: Nxs -- ^ nexus of the current frame
@@ -167,6 +178,7 @@ instance Frame DataFrameH5 where
                           , difTomoFramePoniExt = poniext
                           }
     where
+      get_position' :: Dataset -> Int -> MaybeT IO (Maybe (Vector Double))
       get_position' a b = lift $ do
         v <- get_position a b
         return $ if any isNaN v
@@ -272,7 +284,7 @@ integrate' ref output (XrdNxs b _ t (XrdSourceNxs nxs'@(Nxs f _ _))) = do
         scandir = (dropExtension . takeFileName) nxs''
 integrate' _ _ (XrdNxs _ _ _ (XrdSourceEdf _)) = error "integrate' not yet implemented"
 
-createPy :: (Shape sh) => DIM1 -> Threshold -> (DifTomoFrame' sh) -> (Text, FilePath)
+createPy :: (Shape sh) => DIM1 -> Threshold -> DifTomoFrame' sh -> (Text, FilePath)
 createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
     where
       script = Text.unlines $
@@ -422,7 +434,7 @@ integrateMulti' ref output (XrdNxs b _ t (XrdSourceEdf fs)) = do
   let script = createMultiPyEdf b t fs ponies (output </> "multi.dat")
   saveScript script (output </> "multi.py")
     where
-      ponies = [(output </> (dropExtension . takeFileName) f ++ ".poni") | f <- fs]
+      ponies = [output </> (dropExtension . takeFileName) f ++ ".poni" | f <- fs]
 
       go :: FilePath -> FilePath -> IO ()
       go f o = do
@@ -430,7 +442,7 @@ integrateMulti' ref output (XrdNxs b _ t (XrdSourceEdf fs)) = do
         let (PoniExt p _) = setPose ref m
         saveScript (poniToText p) o
 
-createMultiPy :: (Shape sh) => DIM1 -> Threshold -> (DifTomoFrame' sh) -> [FilePath] -> (Text, FilePath)
+createMultiPy :: (Shape sh) => DIM1 -> Threshold -> DifTomoFrame' sh -> [FilePath] -> (Text, FilePath)
 createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
     where
       script = Text.unlines $
@@ -448,7 +460,7 @@ createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
                              , "THRESHOLD = " ++ show t
                              , ""
                              , "# Load all images"
-                             , "PONIES = [" ++ (List.intercalate ",\n" (map show ponies)) ++ "]"
+                             , "PONIES = [" ++ List.intercalate ",\n" (map show ponies) ++ "]"
                              , ""
                              , "# Read all the images"
                              , "with File(NEXUSFILE, mode='r') as f:"
@@ -482,8 +494,8 @@ createMultiPyEdf b (Threshold t) edfs ponies output = script
                              , "from fabio import open"
                              , "from pyFAI.multi_geometry import MultiGeometry"
                              , ""
-                             , "EDFS = [" ++ (List.intercalate ",\n" (map show edfs)) ++ "]"
-                             , "PONIES = [" ++ (List.intercalate ",\n" (map show ponies)) ++ "]"
+                             , "EDFS = [" ++ List.intercalate ",\n" (map show edfs) ++ "]"
+                             , "PONIES = [" ++ List.intercalate ",\n" (map show ponies) ++ "]"
                              , "BINS = " ++ show (size b)
                              , "OUTPUT = " ++ show output
                              , "THRESHOLD = " ++ show t
@@ -527,98 +539,149 @@ saveMultiGeometry b t = evalStateP [] (saveMulti' b t)
 
 -- | XRD Mesh
 
--- data DataFrameMeshH5Path =
---     DataFrameMeshH5Path { dataFrameMeshH5Path'Image :: DataItem
---                         , dataFrameMeshH5Path'MeshX :: DataItem
---                         , dataFrameMeshH5Path'MeshY :: DataItem
---                         , dataFrameMeshH5Path'Gamma :: DataItem
---                         , dataFrameMeshH5Path'Delta :: DataItem
---                         , dataFrameMeshH5Path'Wavelength :: DataItem
---                         } deriving (Show)
+type PoniGenerator' = Pose -> DIM2 -> IO PoniExt
 
--- data DataFrameH5' a =
---     DataFrameH5' { dataFrameH5'Nxs' :: Nxs' a
---                  , dataFrameH5'MeshX :: Dataset
---                  , dataFrameH5'MeshY :: Dataset
---                  , dataFrameH5'Gamma :: Dataset
---                  , dataFrameH5'Delta :: Dataset
---                  , dataFrameH5'Wavelength :: Dataset
---                  , dataFrameH5'Ponigen :: PoniGenerator
---                  }
+data XrdMeshH5Path = XrdMeshH5Path
+                     DataItem -- ^ Image
+                     DataItem -- ^ meshx
+                     DataItem -- ^ meshy
+                     DataItem -- ^ gamma
+                     DataItem -- ^ delta
+                     DataItem -- ^ wavelength
+                   deriving (Show)
 
--- data XRDSample' a = XRDSample' SampleName OutputBaseDir [XrdNxs' a] -- ^ nxss
+data XrdMeshH5 = XrdMeshH5
+                 XrdMeshSource -- ^ Nxs
+                 Dataset -- ^ MeshX
+                 Dataset -- ^ MeshY
+                 Dataset -- ^ Gamma
+                 Dataset -- ^ Delta
+                 Dataset -- ^ Wavelength
+                 PoniGenerator' -- ^ PoniGenerator'
 
--- data XrdNxs' a = XrdNxs' DIM1 DIM1 Threshold (Nxs' a) deriving (Show)
+data XrdMeshSample = XrdMeshSample SampleName OutputBaseDir [XrdMesh] -- ^ nxss
 
--- data Nxs' a = Nxs' FilePath NxEntry a deriving (Show)
+data XrdMesh = XrdMesh DIM1 DIM1 Threshold XrdMeshSource deriving (Show)
 
--- class DataSource t where
---     withDataSource :: (MonadSafe m) => File -> Nxs' t -> PoniGenerator -> (DataFrameH5' t -> m r) -> m r
+data XrdMeshSource = XrdMeshSourceNxs Nxs'
+                   deriving (Show)
 
--- data DifTomoFrameND sh =
---     DifTomoFrame2D { difTomoFrameND'Nxs :: Nxs -- ^ nexus of the current frame
---                    , difTomoFrameND'Idxs :: sh -- ^ current index in the array
---                    , difTomoFrameND'EOF :: Bool -- ^ is it the eof of the stream
---                    , difTomoFrameND'Geometry :: Geometry -- ^ diffractometer geometry
---                    , difTomoFrameND'PoniExt :: PoniExt -- ^ the ref poniext
---                    } deriving (Show)
+data Nxs' = Nxs' FilePath NxEntry XrdMeshH5Path
+             deriving (Show)
 
--- class FrameND t where
---   lenND :: t -> IO (Maybe Int)
---   rowND :: Shape sh => t -> sh -> IO (DifTomoFrameND sh)
+mkXrdMeshSourceNxs :: FilePath -> NxEntry -> (NxEntry -> XrdMeshH5Path) -> XrdMeshSource
+mkXrdMeshSourceNxs f e h = XrdMeshSourceNxs (Nxs' f e (h e))
 
--- framesND :: (Frame a, Shape sh) => Pipe a (DifTomoFrameND sh) IO ()
--- framesND = do
---   d <- await
---   (Just n) <- lift $ lenND d
---   forM_ [0..n-1] (\i' -> do
---                      f <- lift $ rowND d idx
---                      yield f)
+data XrdMeshFrame = XrdMeshFrame
+                    XrdMeshSource -- ^ source of the current frame
+                    DIM2 -- ^ current index in the array
+                    Bool -- ^ is it the eof of the stream
+                    Geometry -- ^ diffractometer geometry
+                    PoniExt -- ^ the ref poniext
+                  deriving (Show)
 
--- instance DataSource DataFrameMeshH5Path where
---     withDataSource h nxs'@(Nxs' _ _ d) gen = bracket (liftIO before) (liftIO . after)
---         where
---           -- before :: File -> DataFrameH5Path -> m DataFrameH5
---           before :: IO (DataFrameH5' DataFrameMeshH5Path)
---           before =  DataFrameH5'
---                     <$> return nxs'
---                     <*> openDataset' h (dataFrameMeshH5Path'MeshX d)
---                     <*> openDataset' h (dataFrameMeshH5Path'MeshY d)
---                     <*> openDataset' h (dataFrameMeshH5Path'Gamma d)
---                     <*> openDataset' h (dataFrameMeshH5Path'Delta d)
---                     <*> openDataset' h (dataFrameMeshH5Path'Wavelength d)
---                     <*> return gen
+class FrameND t where
+  shapeND :: t -> MaybeT IO DIM2
+  rowND :: t -> DIM2 -> MaybeT IO XrdMeshFrame
 
---           after :: DataFrameH5' DataFrameMeshH5Path -> IO ()
---           after d' = do
---             closeDataset (dataFrameH5'MeshX d')
---             closeDataset (dataFrameH5'MeshY d')
---             closeDataset (dataFrameH5'Gamma d')
---             closeDataset (dataFrameH5'Delta d')
---             closeDataset (dataFrameH5'Wavelength d')
+instance FrameND XrdMeshH5 where
+  shapeND (XrdMeshH5 _ x y _ _ _ _) = do
+    lx <- lift $ lenH5Dataspace x
+    ly <- lift $ lenH5Dataspace y
+    return $ shapeOfList [fromJust lx, fromJust ly]
 
---           openDataset' :: File -> DataItem -> IO Dataset
---           openDataset' hid (DataItem name _) = openDataset hid (Char8.pack name) Nothing
+  rowND d'@(XrdMeshH5 s _ _ g d w p) sh = do
+    n <- shapeND d'
+    let eof = size n == size sh
+    let mu = 0.0
+    let komega = 0.0
+    let kappa = 0.0
+    let kphi = 0.0
+    gamma <- get_position' g sh
+    delta <- get_position' d sh
+    wavelength <- get_position' w sh
+    let source = Source (head wavelength *~ nano meter)
+    let positions = concat [mu, komega, kappa, kphi, gamma, delta]
+    -- print positions
+    let geometry =  Geometry K6c source positions Nothing
+    let detector = ZeroD
+    m <- lift $ geometryDetectorRotationGet geometry detector
+    poniext <- lift $ p (MyMatrix HklB m) sh
+    return $ XrdMeshFrame s sh eof geometry poniext
+    where
+      get_position' :: Shape sh => Dataset -> sh -> MaybeT IO (Vector Double)
+      get_position' a b = lift $ do
+        v <- get_position_new a b
+        if any isNaN v then fail "File contains Nan" else return v
 
+framesND :: Pipe XrdMeshH5 XrdMeshFrame IO ()
+framesND = forever $ do
+  d <- await
+  sh <- lift $ runMaybeT $ shapeND d
+  let n = size (fromJust sh)
+  when (isJust sh)
+    ( forM_ [0..n-1] (\i' -> do
+                         f <- lift . runMaybeT $ rowND d (fromIndex (fromJust sh) i')
+                         when (isJust f) (yield (fromJust f)))
+    )
 
--- integrateMesh :: (DataSource a) => PoniExt -> XRDSample' a -> IO ()
--- integrateMesh ref (XRDSample' _ output nxss) =
---   mapM_ (integrateMesh' ref output) nxss
+withDataSource :: MonadSafe m => File -> XrdMeshSource -> PoniGenerator' -> (XrdMeshH5 -> m r) -> m r
+withDataSource h nxs'@(XrdMeshSourceNxs (Nxs' _ _ (XrdMeshH5Path _i x y g d w))) gen =
+  bracket (liftIO before) (liftIO . after)
+  where
+    -- before :: File -> DataFrameH5Path -> m DataFrameH5
+    before :: IO XrdMeshH5
+    before =  XrdMeshH5
+              <$> return nxs'
+              <*> openDataset' h x
+              <*> openDataset' h y
+              <*> openDataset' h g
+              <*> openDataset' h d
+              <*> openDataset' h w
+              <*> return gen
 
--- integrateMesh' :: (DataSource a) => PoniExt -> OutputBaseDir -> XrdNxs' a -> IO ()
--- integrateMesh' ref output (XrdNxs' _ mb t nxs'@(Nxs' f _ _)) = do
---   print f
---   withH5File f $ \h5file ->
---       runSafeT $ runEffect $
---         withDataSource h5file nxs' (gen ref) yield
---         >-> hoist lift (framesND)
---         --                 >-> savePonies (pgen output f)
---         --                 >-> saveMultiGeometry mb t)
---   where
---     gen :: PoniExt -> Pose -> Int -> IO PoniExt
---     gen ref' m _idx = return $ setPose ref' m
+    after :: XrdMeshH5 -> IO ()
+    after (XrdMeshH5 _n x' y' g' d' w' _p) = do
+      closeDataset x'
+      closeDataset y'
+      closeDataset g'
+      closeDataset d'
+      closeDataset w'
 
---     pgen :: OutputBaseDir -> FilePath -> Int -> FilePath
---     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
---       where
---         scandir = (dropExtension . takeFileName) nxs''
+    openDataset' :: File -> DataItem -> IO Dataset
+    openDataset' hid (DataItem name _) = openDataset hid (Char8.pack name) Nothing
+
+data XrdMeshFrame' = XrdMeshFrame' XrdMeshFrame FilePath
+
+savePonies' :: (DIM2 -> FilePath) -> Pipe XrdMeshFrame XrdMeshFrame' IO ()
+savePonies' g = forever $ do
+  f@(XrdMeshFrame _ sh _ _ (PoniExt p _)) <- await
+  let filename = g sh
+  lift $ saveScript (poniToText p) filename
+  yield $ XrdMeshFrame' f filename
+
+integrateMesh :: PoniExt -> XrdMeshSample -> IO ()
+integrateMesh ref (XrdMeshSample _ output nxss) =
+  mapM_ (integrateMesh' ref output) nxss
+
+integrateMesh' :: PoniExt -> OutputBaseDir -> XrdMesh -> IO ()
+integrateMesh' ref output (XrdMesh _ _mb _t nxs'@(XrdMeshSourceNxs (Nxs' f _ _))) = do
+  print f
+  withH5File f $ \h5file ->
+      runSafeT $ runEffect $
+        withDataSource h5file nxs' (gen ref) yield
+        >-> hoist lift (framesND
+        --                >-> drain)
+                        >-> savePonies' (pgen output f)
+        --                >-> saveMultiGeometry mb t
+                        >-> drain
+                       )
+  where
+    gen :: PoniExt -> Pose -> DIM2 -> IO PoniExt
+    gen ref' m _sh = return $ setPose ref' m
+
+    pgen :: OutputBaseDir -> FilePath -> DIM2 -> FilePath
+    pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d" i ++ printf "_%02d.poni" j
+      where
+        [i, j] = listOfShape idx
+        scandir = (dropExtension . takeFileName) nxs''
