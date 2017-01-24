@@ -16,8 +16,7 @@ import Prelude hiding (concat, lookup, readFile, writeFile)
 import Hkl.MyMatrix
 import Hkl.PyFAI.PoniExt
 import Hkl.Types
-import Hkl.XRD
-import Hkl.XRD.Calibration
+import Hkl.Xrd
 import Hkl.Detector
 
 -- | Samples
@@ -143,5 +142,5 @@ charlier = do
   print poniextref'
 
   -- integrate each step of the scan
-  -- _ <- mapM_ (integrateMulti poniextref') samples
+  _ <- mapM_ (integrateMesh poniextref') samples
   return ()

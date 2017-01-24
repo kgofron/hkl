@@ -111,8 +111,10 @@ library
                     , Hkl.Types
                     , Hkl.Types.Parameter
                     , Hkl.Utils
-                    , Hkl.XRD
-                    , Hkl.XRD.Calibration
+                    , Hkl.Xrd
+                    , Hkl.Xrd.Calibration
+                    , Hkl.Xrd.Mesh
+                    , Hkl.Xrd.OneD
   other-extensions:    CPP
                      , ForeignFunctionInterface
                      , EmptyDataDecls

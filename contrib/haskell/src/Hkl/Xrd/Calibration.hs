@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP #-}
 
-module Hkl.XRD.Calibration
+module Hkl.Xrd.Calibration
        ( NptExt(..)
        , XRDCalibrationEntry(..)
        , XRDCalibration(..)
@@ -40,7 +40,7 @@ import Hkl.PyFAI
 import Hkl.MyMatrix
 import Hkl.PyFAI.PoniExt
 import Hkl.Types
-import Hkl.XRD
+import Hkl.Xrd.OneD
 
 #if !MIN_VERSION_hmatrix(0, 17, 0)
 (#>) :: Matrix Double -> Vector Double -> Vector Double
