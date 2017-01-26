@@ -4,7 +4,7 @@
 module Hkl.Diffabs.Charlier
        ( charlier ) where
 
--- import Control.Concurrent.Async (mapConcurrently)
+import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
@@ -25,7 +25,7 @@ project :: FilePath
 project = "/nfs/ruche-diffabs/diffabs-users/20151386/"
 
 published :: FilePath
-published = project </> "published-data"
+published = project </> "published-data" </> "xrd"
 
 beamlineUpper :: Beamline -> String
 beamlineUpper b = [Data.Char.toUpper x | x <- show b]
@@ -112,17 +112,37 @@ h5path nxentry = XrdMeshH5Path
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
 charlemagne :: XrdMeshSample
-charlemagne = XrdMeshSample "charlemagne"
-       (published </> "charlemagne")
+charlemagne = XrdMeshSample "Charlemagne"
+       (published </> "Charlemagne")
        [ XrdMesh bins multibins threshold n | n <-
-         [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_31.nxs") "scan_31" h5path ]
+         [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_31.nxs") "scan_31" h5path
+         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_32.nxs") "scan_32" h5path
+         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_33.nxs") "scan_33" h5path
+         ]
+       ]
+
+charlesLeChauve :: XrdMeshSample
+charlesLeChauve = XrdMeshSample "Charles le Chauve"
+       (published </> "Charles le Chauve")
+       [ XrdMesh bins multibins threshold n | n <-
+         [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_34.nxs") "scan_34" h5path ]
+       ]
+
+louisLePieux :: XrdMeshSample
+louisLePieux = XrdMeshSample "Louis le Pieux"
+       (published </> "Louis Le Pieux")
+       [ XrdMesh bins multibins threshold n | n <-
+         [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_35.nxs") "scan_35" h5path
+         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_36.nxs") "scan_36" h5path
+         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_37.nxs") "scan_37" h5path
+         ]
        ]
 
 -- | Main
 
 charlier :: IO ()
 charlier = do
-  let samples = [ charlemagne ]
+  let samples = [ charlemagne, charlesLeChauve, louisLePieux]
   -- # need to run f30 by itself because of a segfault in the hkl library
   -- for now f30 whcih is an incomplet scan stop the script so put it at the end.
   -- let samples = [f30, ceo2]
@@ -142,5 +162,5 @@ charlier = do
   print poniextref'
 
   -- integrate each step of the scan
-  _ <- mapM_ (integrateMesh poniextref') samples
+  _ <- mapConcurrently (integrateMesh poniextref') samples
   return ()

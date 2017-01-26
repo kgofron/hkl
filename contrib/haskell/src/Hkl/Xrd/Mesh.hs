@@ -1,8 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types #-}
 
 module Hkl.Xrd.Mesh
        ( XrdMeshSample(..)
@@ -17,28 +13,17 @@ module Hkl.Xrd.Mesh
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>), (<*>))
 #endif
-import Control.Concurrent.Async (mapConcurrently)
--- import Control.Error (EitherT, runEitherT, left, throwT)
-import Control.Monad (forM_, forever, when, zipWithM_)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Morph (hoist)
+import Control.Exception.Base (bracket)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
-import Control.Monad.Trans.State.Strict (StateT, get, put)
-import Data.Array.Repa (Shape, DIM1, DIM2, fromIndex, listOfShape, size, shapeOfList)
-import Data.Attoparsec.Text (parseOnly)
+import Data.Array.Repa (Shape, DIM1, ix1, size)
 import qualified Data.ByteString.Char8 as Char8 (pack)
-import qualified Data.List as List (intercalate, lookup)
-import Data.Maybe (fromJust, fromMaybe, isJust)
+import Data.Maybe (fromJust)
 import Data.Text (Text)
-import qualified Data.Text as Text (unlines, pack, intercalate)
-import Data.Text.IO (readFile)
+import qualified Data.Text as Text (unlines, pack)
 import Data.Vector.Storable (Vector, any, concat, head)
-import Numeric.LinearAlgebra (fromList)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
-import System.FilePath ((</>), dropExtension, takeFileName, takeDirectory)
-import System.Process ( system )
-import Text.Printf ( printf )
+import System.FilePath ((</>), dropExtension, takeFileName)
 
 import Prelude hiding
     ( any
@@ -48,22 +33,10 @@ import Prelude hiding
     , readFile
     , unlines
     )
-import Pipes
-    ( Consumer
-    , Pipe
-    , lift
-    , (>->)
-    , runEffect
-    , await
-    , yield
-    )
-import Pipes.Lift
-import Pipes.Prelude (toListM, drain)
-import Pipes.Safe ( MonadSafe(..), runSafeT, bracket )
+import Pipes ( lift )
 
 import Hkl.C
 import Hkl.Detector
-import Hkl.Edf
 import Hkl.H5
 import Hkl.PyFAI
 import Hkl.MyMatrix
@@ -73,8 +46,6 @@ import Hkl.Utils
 import Hkl.Xrd.OneD
 
 -- | Types
-
-type PoniGenerator' = Pose -> DIM2 -> IO PoniExt
 
 data XrdMeshH5Path = XrdMeshH5Path
                      DataItem -- ^ Image
@@ -86,13 +57,11 @@ data XrdMeshH5Path = XrdMeshH5Path
                    deriving (Show)
 
 data XrdMeshH5 = XrdMeshH5
-                 XrdMeshSource -- ^ Nxs
                  Dataset -- ^ MeshX
                  Dataset -- ^ MeshY
                  Dataset -- ^ Gamma
                  Dataset -- ^ Delta
                  Dataset -- ^ Wavelength
-                 PoniGenerator' -- ^ PoniGenerator'
 
 data XrdMeshSample = XrdMeshSample SampleName OutputBaseDir [XrdMesh] -- ^ nxss
 
@@ -108,115 +77,135 @@ mkXrdMeshSourceNxs :: FilePath -> NxEntry -> (NxEntry -> XrdMeshH5Path) -> XrdMe
 mkXrdMeshSourceNxs f e h = XrdMeshSourceNxs (Nxs' f e (h e))
 
 data XrdMeshFrame = XrdMeshFrame
-                    XrdMeshSource -- ^ source of the current frame
-                    DIM2 -- ^ current index in the array
-                    Bool -- ^ is it the eof of the stream
-                    Geometry -- ^ diffractometer geometry
-                    PoniExt -- ^ the ref poniext
+                    WaveLength
+                    (MyMatrix Double)
                   deriving (Show)
 
 class FrameND t where
-  shapeND :: t -> MaybeT IO DIM2
-  rowND :: t -> DIM2 -> MaybeT IO XrdMeshFrame
+  rowND :: t -> MaybeT IO XrdMeshFrame
 
 instance FrameND XrdMeshH5 where
-  shapeND (XrdMeshH5 _ x y _ _ _ _) = do
-    lx <- lift $ lenH5Dataspace x
-    ly <- lift $ lenH5Dataspace y
-    return $ shapeOfList [fromJust lx, fromJust ly]
 
-  rowND d'@(XrdMeshH5 s _ _ g d w p) sh = do
-    n <- shapeND d'
-    let eof = size n == size sh
+  rowND (XrdMeshH5 _ _ g d w) = do
     let mu = 0.0
     let komega = 0.0
     let kappa = 0.0
     let kphi = 0.0
-    gamma <- get_position' g sh
-    delta <- get_position' d sh
-    wavelength <- get_position' w sh
-    let source = Source (head wavelength *~ nano meter)
+    gamma <- get_position' g (ix1 0)
+    delta <- get_position' d (ix1 0)
+    wavelength <- get_position' w (ix1 0)
+    let source@(Source w') = Source (head wavelength *~ nano meter)
     let positions = concat [mu, komega, kappa, kphi, gamma, delta]
-    -- print positions
     let geometry =  Geometry K6c source positions Nothing
     let detector = ZeroD
     m <- lift $ geometryDetectorRotationGet geometry detector
-    poniext <- lift $ p (MyMatrix HklB m) sh
-    return $ XrdMeshFrame s sh eof geometry poniext
+    return $ XrdMeshFrame w' (MyMatrix HklB m)
     where
       get_position' :: Shape sh => Dataset -> sh -> MaybeT IO (Vector Double)
       get_position' a b = lift $ do
         v <- get_position_new a b
         if any isNaN v then fail "File contains Nan" else return v
 
-framesND :: Pipe XrdMeshH5 XrdMeshFrame IO ()
-framesND = forever $ do
-  d <- await
-  sh <- lift $ runMaybeT $ shapeND d
-  let n = size (fromJust sh)
-  when (isJust sh)
-    ( forM_ [0..n-1] (\i' -> do
-                         f <- lift . runMaybeT $ rowND d (fromIndex (fromJust sh) i')
-                         when (isJust f) (yield (fromJust f)))
-    )
 
-withDataSource :: MonadSafe m => File -> XrdMeshSource -> PoniGenerator' -> (XrdMeshH5 -> m r) -> m r
-withDataSource h nxs'@(XrdMeshSourceNxs (Nxs' _ _ (XrdMeshH5Path _i x y g d w))) gen =
-  bracket (liftIO before) (liftIO . after)
-  where
-    -- before :: File -> DataFrameH5Path -> m DataFrameH5
-    before :: IO XrdMeshH5
-    before =  XrdMeshH5
-              <$> return nxs'
-              <*> openDataset' h x
-              <*> openDataset' h y
-              <*> openDataset' h g
-              <*> openDataset' h d
-              <*> openDataset' h w
-              <*> return gen
+withDataSource :: File -> XrdMeshSource -> (XrdMeshH5 -> IO r) -> IO r
+withDataSource h s = bracket (before s) after
+    where
+      before ::XrdMeshSource -> IO XrdMeshH5
+      before (XrdMeshSourceNxs (Nxs' _ _ (XrdMeshH5Path _i x y g d w))) = XrdMeshH5
+                                                                          <$> openDataset' h x
+                                                                          <*> openDataset' h y
+                                                                          <*> openDataset' h g
+                                                                          <*> openDataset' h d
+                                                                          <*> openDataset' h w
 
-    after :: XrdMeshH5 -> IO ()
-    after (XrdMeshH5 _n x' y' g' d' w' _p) = do
-      closeDataset x'
-      closeDataset y'
-      closeDataset g'
-      closeDataset d'
-      closeDataset w'
 
-    openDataset' :: File -> DataItem -> IO Dataset
-    openDataset' hid (DataItem name _) = openDataset hid (Char8.pack name) Nothing
+      after :: XrdMeshH5 -> IO ()
+      after (XrdMeshH5 x' y' g' d' w') = do
+        closeDataset x'
+        closeDataset y'
+        closeDataset g'
+        closeDataset d'
+        closeDataset w'
 
-data XrdMeshFrame' = XrdMeshFrame' XrdMeshFrame FilePath
+      openDataset' :: File -> DataItem -> IO Dataset
+      openDataset' hid (DataItem name _) = openDataset hid (Char8.pack name) Nothing
 
-savePonies' :: (DIM2 -> FilePath) -> Pipe XrdMeshFrame XrdMeshFrame' IO ()
-savePonies' g = forever $ do
-  f@(XrdMeshFrame _ sh _ _ (PoniExt p _)) <- await
-  let filename = g sh
-  lift $ saveScript (poniToText p) filename
-  yield $ XrdMeshFrame' f filename
+
+xrdMeshPy :: FilePath -> FilePath -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> (Text, FilePath)
+xrdMeshPy p f x y i b (Threshold t) w o os = (script, os)
+    where
+      script = Text.unlines $
+               map Text.pack ["#!/bin/env python"
+                             , ""
+                             , "import numpy"
+                             , "from h5py import File"
+                             , "from pyFAI import load"
+                             , ""
+                             , "PONIFILE = " ++ show p
+                             , "NEXUSFILE = " ++ show f
+                             , "MESHX = " ++ show x
+                             , "MESHY = " ++ show y
+                             , "IMAGEPATH = " ++ show i
+                             , "N = " ++ show (size b)
+                             , "OUTPUT = " ++ show o
+                             , "WAVELENGTH = " ++ show (w /~ meter)
+                             , "THRESHOLD = " ++ show t
+                             , ""
+                             , "ai = load(PONIFILE)"
+                             , "ai.wavelength = WAVELENGTH"
+                             , "ai._empty = numpy.nan"
+                             , "mask_det = ai.detector.mask"
+                             , "mask_module = numpy.zeros_like(mask_det, dtype=bool)"
+                             , "mask_module[0:50, :] = True"
+                             , "mask_module[910:960, :] = True"
+                             , "mask_module[:,0:50] = True"
+                             , "mask_module[:,510:560] = True"
+                             , "mask_det = numpy.logical_or(mask_det, mask_module)"
+                             , "with File(NEXUSFILE, mode='r') as f:"
+                             , "    nx = f[MESHX].shape[0]"
+                             , "    ny = f[MESHY].shape[0]"
+                             , "    imgs = f[IMAGEPATH]"
+                             , "    with File(OUTPUT, mode='w') as o:"
+                             , "        o.create_dataset('map', shape=(ny, nx, N), dtype='float')"
+                             , "        for y in range(ny):"
+                             , "            for x in range(nx):"
+                             , "                img = imgs[y, x]"
+                             , "                mask = numpy.where(img > THRESHOLD, True, False)"
+                             , "                mask = numpy.logical_or(mask, mask_det)"
+                             , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"csr_ocl\", mask=mask, safe=False)"
+                             , "                o['map'][y, x] = I"
+                             ]
+
+
 
 integrateMesh :: PoniExt -> XrdMeshSample -> IO ()
 integrateMesh ref (XrdMeshSample _ output nxss) =
   mapM_ (integrateMesh' ref output) nxss
 
 integrateMesh' :: PoniExt -> OutputBaseDir -> XrdMesh -> IO ()
-integrateMesh' ref output (XrdMesh _ _mb _t nxs'@(XrdMeshSourceNxs (Nxs' f _ _))) = do
-  print f
+integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs' f _ h5path))) =
   withH5File f $ \h5file ->
-      runSafeT $ runEffect $
-        withDataSource h5file nxs' (gen ref) yield
-        >-> hoist lift (framesND
-        --                >-> drain)
-                        >-> savePonies' (pgen output f)
-        --                >-> saveMultiGeometry mb t
-                        >-> drain
-                       )
-  where
-    gen :: PoniExt -> Pose -> DIM2 -> IO PoniExt
-    gen ref' m _sh = return $ setPose ref' m
+      withDataSource h5file nxs' $ \h -> do
+        -- read the first frame and get the poni used for all the integration.
+        d <- runMaybeT $ rowND h
+        let (XrdMeshFrame w m) = fromJust d
+        let (PoniExt p _) = setPose ref m
 
-    pgen :: OutputBaseDir -> FilePath -> DIM2 -> FilePath
-    pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d" i ++ printf "_%02d.poni" j
-      where
-        [i, j] = listOfShape idx
-        scandir = (dropExtension . takeFileName) nxs''
+        -- save the poni at the right place.
+        let sdir = (dropExtension . takeFileName) f
+        let pfilename = output </> sdir </> sdir ++ ".poni"
+        saveScript (poniToText p) pfilename
+
+        -- create the python script to do the integration.
+        let (XrdMeshH5Path (DataItem i _) (DataItem x _) (DataItem y _) _ _ _) = h5path
+        let o = output </> sdir </> sdir ++ ".h5"
+        let os = output </> sdir </> sdir ++ ".py"
+        let (script, scriptPath) = xrdMeshPy pfilename f x y i b t w o os
+
+        -- save the script
+        saveScript script scriptPath
+
+        -- run the script
+        ExitSuccess <- runPythonScript scriptPath False
+
+        return ()

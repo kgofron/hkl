@@ -7,6 +7,7 @@ module Hkl.Types ( Beamline(..)
                  , Sample(..)
                  , Source(..)
                  , Trajectory
+                 , WaveLength
                    -- factory
                  , factoryFromString
                    -- hdf5
@@ -116,9 +117,9 @@ data Sample
 
 -- | Source
 
-data Source
-  = Source
-    (Length Double) -- ^ wavelength
+type WaveLength = Length Double
+
+data Source = Source WaveLength
   deriving (Show)
 
 -- | Trajectory
