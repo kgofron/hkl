@@ -1,3 +1,6 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 module Hkl.Types ( Beamline(..)
                  , Mode(..)
                  , Engine(..)
@@ -14,11 +17,12 @@ module Hkl.Types ( Beamline(..)
                  , H5Path
                  , ExtendDims(..)
                  , DataItem(..)
+                 , DataSource(..)
                  , module X
                  ) where
 
 import Hkl.Types.Parameter as X
-
+import Hkl.H5
 import Data.Vector.Storable (Vector)
 import Numeric.Units.Dimensional.Prelude (Length, Angle)
 
@@ -130,4 +134,13 @@ type Trajectory = [[Double]]
 
 type H5Path = String
 data ExtendDims = ExtendDims | StrictDims deriving (Show)
-data DataItem = DataItem H5Path ExtendDims deriving (Show)
+
+data DataItem a where
+    DataItemH5 :: H5Path -> ExtendDims -> DataItem H5
+    DataItemConst :: Double -> DataItem Double
+deriving instance Show (DataItem a)
+
+data DataSource a where
+    DataSourceH5 :: DataItem H5 -> Dataset -> DataSource H5
+    DataSourceConst :: Double -> DataSource Double
+

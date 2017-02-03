@@ -13,6 +13,7 @@ import Text.Printf (printf)
 
 import Prelude hiding (concat, lookup, readFile, writeFile)
 
+import Hkl.H5
 import Hkl.MyMatrix
 import Hkl.PyFAI.PoniExt
 import Hkl.Types
@@ -21,7 +22,6 @@ import Hkl.Detector
 
 -- | Samples
 
--- project = "/home/experiences/instrumentation/picca/data/99160066"
 project :: FilePath
 project = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/"
 
@@ -31,13 +31,6 @@ published = project </> "2016" </> "Run5B" </> "irdrx"
 beamlineUpper :: Beamline -> String
 beamlineUpper b = [Data.Char.toUpper x | x <- show b]
 
-
--- meshSample :: String
--- meshSample :: project </> "2016" </> Run5 </> "2016-11-fly" </> "scan5 </> "*"
--- h5path nxentry = exptest_01368
--- scan_data, sxpos szpos xpad_image 12x273 x 10 (fichiers)
--- delta = -6.2
--- gamma = 0.0
 
 nxs' :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
 nxs' f e h = Nxs f e (h e)
@@ -55,10 +48,10 @@ sampleRef = XRDRef "reference"
 
 h5path' :: NxEntry -> DataFrameH5Path
 h5path' nxentry =
-    DataFrameH5Path { h5pImage = DataItem (nxentry </> image) StrictDims
-                    , h5pGamma = DataItem (nxentry </> beamline </> gamma) ExtendDims
-                    , h5pDelta = DataItem (nxentry </> delta) ExtendDims
-                    , h5pWavelength = DataItem (nxentry </> beamline </> wavelength) StrictDims
+    DataFrameH5Path { h5pImage = DataItemH5 (nxentry </> image) StrictDims
+                    , h5pGamma = DataItemH5 (nxentry </> beamline </> gamma) ExtendDims
+                    , h5pDelta = DataItemH5 (nxentry </> delta) ExtendDims
+                    , h5pWavelength = DataItemH5 (nxentry </> beamline </> wavelength) StrictDims
                     }
         where
           beamline :: String
@@ -113,12 +106,48 @@ lab6 = XRDSample "LaB6"
          ]
        ]
 
+
+
+-- meshSample :: String
+-- meshSample :: project </> "2016" </> Run5 </> "2016-11-fly" </> "scan5 </> "*"
+-- h5path nxentry = exptest_01368
+-- scan_data, sxpos szpos xpad_image 12x273 x 10 (fichiers)
+-- delta = -6.2
+-- gamma = 0.0
+-- nrj 18.2 keV
+fly :: XrdMeshSample H5 H5 H5 Double Double Double
+fly = XrdMeshSample "scan5"
+      (published </> "scan5")
+      [ XrdMesh bins multibins threshold
+        ( XrdMeshSourceNxsFly [mkXrdMeshNxs (project </> "2016" </> "Run5" </> "2016-11-fly" </> "scan5" </> printf "flyscan_%05d.nxs" n) "exptest_01368" h5path |
+                               n <- [7087, 7088, 7089, 7090, 7091, 7092, 7093, 7094, 7095] :: [Int]
+                              ]
+        )
+      ]
+    where
+      h5path :: NxEntry -> (XrdMeshH5Path H5 H5 H5 Double Double Double)
+      h5path nxentry = XrdMeshH5Path
+                       (DataItemH5 (nxentry </> image) StrictDims)
+                       (DataItemH5 (nxentry </> meshx) StrictDims)
+                       (DataItemH5 (nxentry </> meshy) StrictDims)
+                       (DataItemConst gamma)
+                       (DataItemConst delta)
+                       (DataItemConst wavelength)
+
+      beamline :: String
+      beamline = beamlineUpper Diffabs
+
+      image = "scan_data/xpad_image"
+      meshx = "scan_data/sxpos"
+      meshy = "scan_data/szpos"
+      gamma = 0.0 / 180.0 * 3.14159
+      delta = -6.2 / 180.0 * 3.14159
+      wavelength = 1.54 -- TODO vérifier
+
 -- | Main
 
 mainIRDRx :: IO ()
 mainIRDRx = do
-  let samples = [lab6]
-
   p <- getPoniExtRef sampleRef
 
   let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
@@ -126,6 +155,11 @@ mainIRDRx = do
   -- full calibration
   poniextref' <- calibrate sampleCalibration poniextref ImXpadS140
 
+  print poniextref'
+
+  -- Integrate the flyscan mesh
+  _ <- mapConcurrently (integrateMesh poniextref') [fly]
+
   -- integrate each step of the scan
-  _ <- mapConcurrently (integrate poniextref') samples
+  -- _ <- mapConcurrently (integrate poniextref') [lab6]
   return ()

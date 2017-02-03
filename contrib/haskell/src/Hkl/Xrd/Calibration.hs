@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs #-}
 
 module Hkl.Xrd.Calibration
        ( NptExt(..)
@@ -72,8 +73,8 @@ data XRDCalibration = XRDCalibration { xrdCalibrationName :: Text
                                      }
                       deriving (Show)
 
-withDataItem :: MonadSafe m => File -> DataItem -> (Dataset -> m r) -> m r
-withDataItem hid (DataItem name _) = bracket (liftIO acquire') (liftIO . release')
+withDataItem :: MonadSafe m => File -> DataItem a -> (Dataset -> m r) -> m r
+withDataItem hid (DataItemH5 name _) = bracket (liftIO acquire') (liftIO . release')
     where
       acquire' :: IO Dataset
       acquire' = openDataset hid (pack name) Nothing

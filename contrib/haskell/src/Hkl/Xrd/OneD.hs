@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
@@ -127,10 +128,10 @@ class Frame t where
   row :: t -> Int -> MaybeT IO (DifTomoFrame DIM1)
 
 data DataFrameH5Path =
-  DataFrameH5Path { h5pImage :: DataItem
-                  , h5pGamma :: DataItem
-                  , h5pDelta :: DataItem
-                  , h5pWavelength :: DataItem
+  DataFrameH5Path { h5pImage :: DataItem H5
+                  , h5pGamma :: DataItem H5
+                  , h5pDelta :: DataItem H5
+                  , h5pWavelength :: DataItem H5
                   } deriving (Show)
 
 data DataFrameH5 =
@@ -312,7 +313,7 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
                                   ]
       p = takeFileName poniPath
       (Nxs nxs' _ h5path') = difTomoFrameNxs f
-      (DataItem i' _) = h5pImage h5path'
+      (DataItemH5 i' _) = h5pImage h5path'
       idx = difTomoFrameIdx f
       output = (dropExtension . takeFileName) poniPath ++ ".dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
@@ -338,7 +339,7 @@ withDataFrameH5 h nxs'@(Nxs _ _ d) gen = bracket (liftIO before) (liftIO . after
       closeDataset (h5wavelength d')
 
     -- openDataset' :: File -> DataItem -> IO Dataset
-    openDataset' hid (DataItem name _) = openDataset hid (Char8.pack name) Nothing
+    openDataset' hid (DataItemH5 name _) = openDataset hid (Char8.pack name) Nothing
 
 data DifTomoFrame' sh = DifTomoFrame' { difTomoFrame'DifTomoFrame :: DifTomoFrame sh
                                       , difTomoFrame'PoniPath :: FilePath
@@ -471,7 +472,7 @@ createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
                              , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                              ]
       (Nxs nxs' _ h5path') = difTomoFrameNxs f
-      (DataItem i' _) = h5pImage h5path'
+      (DataItemH5 i' _) = h5pImage h5path'
       output = "multi.dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
 

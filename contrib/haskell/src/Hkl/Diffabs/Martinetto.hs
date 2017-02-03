@@ -41,10 +41,10 @@ nxs f e h = XrdSourceNxs (nxs' f e h)
 
 h5path' :: NxEntry -> DataFrameH5Path
 h5path' nxentry =
-    DataFrameH5Path { h5pImage = DataItem (nxentry </> image) StrictDims
-                    , h5pGamma = DataItem (nxentry </> beamline </> gamma) ExtendDims
-                    , h5pDelta = DataItem (nxentry </> delta) ExtendDims
-                    , h5pWavelength = DataItem (nxentry </> beamline </> wavelength) StrictDims
+    DataFrameH5Path { h5pImage = DataItemH5 (nxentry </> image) StrictDims
+                    , h5pGamma = DataItemH5 (nxentry </> beamline </> gamma) ExtendDims
+                    , h5pDelta = DataItemH5 (nxentry </> delta) ExtendDims
+                    , h5pWavelength = DataItemH5 (nxentry </> beamline </> wavelength) StrictDims
                     }
         where
           beamline :: String
@@ -86,10 +86,10 @@ sampleRef = XRDRef "reference"
 
 h5path :: NxEntry -> DataFrameH5Path
 h5path nxentry =
-  DataFrameH5Path { h5pImage = DataItem (nxentry </> image) StrictDims
-                  , h5pGamma = DataItem (nxentry </> beamline </> gamma) ExtendDims
-                  , h5pDelta = DataItem (nxentry </> delta) ExtendDims
-                  , h5pWavelength = DataItem (nxentry </> beamline </> wavelength) StrictDims
+  DataFrameH5Path { h5pImage = DataItemH5 (nxentry </> image) StrictDims
+                  , h5pGamma = DataItemH5 (nxentry </> beamline </> gamma) ExtendDims
+                  , h5pDelta = DataItemH5 (nxentry </> delta) ExtendDims
+                  , h5pWavelength = DataItemH5 (nxentry </> beamline </> wavelength) StrictDims
                   }
   where
     beamline :: String

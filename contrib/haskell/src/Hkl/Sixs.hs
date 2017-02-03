@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs #-}
 module Hkl.Sixs
        ( main_sixs )
        where
@@ -25,14 +26,14 @@ import Hkl.H5
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
 data DataFrameH5Path = DataFrameH5Path
-                       { h5pImage :: DataItem
-                       , h5pMu :: DataItem
-                       , h5pOmega :: DataItem
-                       , h5pDelta :: DataItem
-                       , h5pGamma :: DataItem
-                       , h5pUB :: DataItem
-                       , h5pWavelength :: DataItem
-                       , h5pDiffractometerType :: DataItem
+                       { h5pImage :: DataItem H5
+                       , h5pMu :: DataItem H5
+                       , h5pOmega :: DataItem H5
+                       , h5pDelta :: DataItem H5
+                       , h5pGamma :: DataItem H5
+                       , h5pUB :: DataItem H5
+                       , h5pWavelength :: DataItem H5
+                       , h5pDiffractometerType :: DataItem H5
                        } deriving (Show)
 
 data DataFrameH5 = DataFrameH5
@@ -66,7 +67,7 @@ hkl_h5_open h5file dp = DataFrameH5
                          <*> openDataset' h5file (h5pWavelength dp)
                          <*> openDataset' h5file (h5pDiffractometerType dp)
   where
-    openDataset' hid (DataItem name _) = openDataset hid (pack name) Nothing
+    openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
 
 hkl_h5_is_valid :: DataFrameH5 -> IO Bool
 hkl_h5_is_valid df = do
@@ -111,14 +112,14 @@ main_sixs :: IO ()
 main_sixs = do
   let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
   let filename = "align_FLY2_omega_00045.nxs"
-  let dataframe_h5p = DataFrameH5Path { h5pImage = DataItem "com_113934/scan_data/xpad_image" StrictDims
-                                      , h5pMu = DataItem "com_113934/scan_data/UHV_MU" ExtendDims
-                                      , h5pOmega = DataItem "com_113934/scan_data/UHV_OMEGA" ExtendDims
-                                      , h5pDelta = DataItem "com_113934/scan_data/UHV_DELTA" ExtendDims
-                                      , h5pGamma = DataItem "com_113934/scan_data/UHV_GAMMA" ExtendDims
-                                      , h5pUB = DataItem "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/UB" StrictDims
-                                      , h5pWavelength = DataItem "com_113934/SIXS/Monochromator/wavelength" StrictDims
-                                      , h5pDiffractometerType = DataItem "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims
+  let dataframe_h5p = DataFrameH5Path { h5pImage = DataItemH5 "com_113934/scan_data/xpad_image" StrictDims
+                                      , h5pMu = DataItemH5 "com_113934/scan_data/UHV_MU" ExtendDims
+                                      , h5pOmega = DataItemH5 "com_113934/scan_data/UHV_OMEGA" ExtendDims
+                                      , h5pDelta = DataItemH5 "com_113934/scan_data/UHV_DELTA" ExtendDims
+                                      , h5pGamma = DataItemH5 "com_113934/scan_data/UHV_GAMMA" ExtendDims
+                                      , h5pUB = DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/UB" StrictDims
+                                      , h5pWavelength = DataItemH5 "com_113934/SIXS/Monochromator/wavelength" StrictDims
+                                      , h5pDiffractometerType = DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims
                                       }
 
   withH5File (root </> filename) $ \h5file ->

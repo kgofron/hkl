@@ -13,6 +13,7 @@ import Text.Printf (printf)
 
 import Prelude hiding (concat, lookup, readFile, writeFile)
 
+import Hkl.H5
 import Hkl.MyMatrix
 import Hkl.PyFAI.PoniExt
 import Hkl.Types
@@ -41,10 +42,10 @@ published' = project' </> "published-data"
 
 h5path' :: NxEntry -> DataFrameH5Path
 h5path' nxentry =
-    DataFrameH5Path { h5pImage = DataItem (nxentry </> image) StrictDims
-                    , h5pGamma = DataItem (nxentry </> beamline </> gamma) ExtendDims
-                    , h5pDelta = DataItem (nxentry </> delta) ExtendDims
-                    , h5pWavelength = DataItem (nxentry </> beamline </> wavelength) StrictDims
+    DataFrameH5Path { h5pImage = DataItemH5 (nxentry </> image) StrictDims
+                    , h5pGamma = DataItemH5 (nxentry </> beamline </> gamma) ExtendDims
+                    , h5pDelta = DataItemH5 (nxentry </> delta) ExtendDims
+                    , h5pWavelength = DataItemH5 (nxentry </> beamline </> wavelength) StrictDims
                     }
         where
           beamline :: String
@@ -92,14 +93,14 @@ multibins = ix1 25000
 threshold :: Threshold
 threshold = Threshold 800
 
-h5path :: NxEntry -> XrdMeshH5Path
+h5path :: NxEntry -> XrdMeshH5Path H5 H5 H5 H5 H5 H5
 h5path nxentry = XrdMeshH5Path
-                 (DataItem (nxentry </> image) StrictDims)
-                 (DataItem (nxentry </> meshx) StrictDims)
-                 (DataItem (nxentry </> meshy) StrictDims)
-                 (DataItem (nxentry </> beamline </> gamma) StrictDims)
-                 (DataItem (nxentry </> beamline </> delta) StrictDims)
-                 (DataItem (nxentry </> beamline </> wavelength) StrictDims)
+                 (DataItemH5 (nxentry </> image) StrictDims)
+                 (DataItemH5 (nxentry </> meshx) StrictDims)
+                 (DataItemH5 (nxentry </> meshy) StrictDims)
+                 (DataItemH5 (nxentry </> beamline </> gamma) StrictDims)
+                 (DataItemH5 (nxentry </> beamline </> delta) StrictDims)
+                 (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
         where
           beamline :: String
           beamline = beamlineUpper Diffabs
@@ -111,7 +112,7 @@ h5path nxentry = XrdMeshH5Path
           delta = "d13-1-cx1__EX__DIF.1-DELTA__#1/raw_value"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-charlemagne :: XrdMeshSample
+charlemagne :: XrdMeshSample H5 H5 H5 H5 H5 H5
 charlemagne = XrdMeshSample "Charlemagne"
        (published </> "Charlemagne")
        [ XrdMesh bins multibins threshold n | n <-
@@ -121,14 +122,14 @@ charlemagne = XrdMeshSample "Charlemagne"
          ]
        ]
 
-charlesLeChauve :: XrdMeshSample
+charlesLeChauve :: XrdMeshSample H5 H5 H5 H5 H5 H5
 charlesLeChauve = XrdMeshSample "Charles le Chauve"
        (published </> "Charles le Chauve")
        [ XrdMesh bins multibins threshold n | n <-
          [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_34.nxs") "scan_34" h5path ]
        ]
 
-louisLePieux :: XrdMeshSample
+louisLePieux :: XrdMeshSample H5 H5 H5 H5 H5 H5
 louisLePieux = XrdMeshSample "Louis le Pieux"
        (published </> "Louis Le Pieux")
        [ XrdMesh bins multibins threshold n | n <-

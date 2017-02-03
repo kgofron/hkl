@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs #-}
 module Hkl.Calibration
     ( main_calibration )
     where
@@ -24,14 +25,14 @@ import Hkl.H5
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
 data DataFrameH5Path =
-  DataFrameH5Path { h5pMu :: DataItem
-                  , h5pKomega :: DataItem
-                  , h5pKappa :: DataItem
-                  , h5pKphi :: DataItem
-                  , h5pGamma :: DataItem
-                  , h5pDelta :: DataItem
-                  , h5pWavelength :: DataItem
-                  , h5pDiffractometerType :: DataItem
+  DataFrameH5Path { h5pMu :: DataItem H5
+                  , h5pKomega :: DataItem H5
+                  , h5pKappa :: DataItem H5
+                  , h5pKphi :: DataItem H5
+                  , h5pGamma :: DataItem H5
+                  , h5pDelta :: DataItem H5
+                  , h5pWavelength :: DataItem H5
+                  , h5pDiffractometerType :: DataItem H5
                   } deriving (Show)
 
 data DataFrameH5 =
@@ -65,7 +66,7 @@ hkl_h5_open h5file dp =
   <*> openDataset' h5file (h5pWavelength dp)
   <*> openDataset' h5file (h5pDiffractometerType dp)
   where
-    openDataset' hid (DataItem name _) = openDataset hid (pack name) Nothing
+    openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
 
 hkl_h5_is_valid :: DataFrameH5-> IO Bool
 hkl_h5_is_valid d = do
@@ -113,14 +114,14 @@ main_calibration = do
   let root = "/nfs/ruche-diffabs/diffabs-users/20150106/2015/Run4/2015-09-17/"
   let filename = "KB-9KeV_30.nxs"
   let dataframe_h5p =
-        DataFrameH5Path { h5pMu = DataItem "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-MU__#1/raw_value" ExtendDims
-                        , h5pKomega = DataItem "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-KOMEGA__#1/raw_value" ExtendDims
-                        , h5pKappa = DataItem "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-KAPPA__#1/raw_value" ExtendDims
-                        , h5pKphi = DataItem "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-KPHI__#1/raw_value" ExtendDims
-                        , h5pGamma = DataItem "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-GAMMA__#1/raw_value" ExtendDims
-                        , h5pDelta = DataItem "scan_30/scan_data/actuator_1_1" ExtendDims
-                        , h5pWavelength = DataItem "scan_30/DIFFABS/D13-1-C03__OP__MONO__#1/wavelength" StrictDims
-                        , h5pDiffractometerType = DataItem "scan_30/DIFFABS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims
+        DataFrameH5Path { h5pMu = DataItemH5 "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-MU__#1/raw_value" ExtendDims
+                        , h5pKomega = DataItemH5 "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-KOMEGA__#1/raw_value" ExtendDims
+                        , h5pKappa = DataItemH5 "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-KAPPA__#1/raw_value" ExtendDims
+                        , h5pKphi = DataItemH5 "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-KPHI__#1/raw_value" ExtendDims
+                        , h5pGamma = DataItemH5 "scan_30/DIFFABS/d13-1-cx1__EX__DIF.1-GAMMA__#1/raw_value" ExtendDims
+                        , h5pDelta = DataItemH5 "scan_30/scan_data/actuator_1_1" ExtendDims
+                        , h5pWavelength = DataItemH5 "scan_30/DIFFABS/D13-1-C03__OP__MONO__#1/wavelength" StrictDims
+                        , h5pDiffractometerType = DataItemH5 "scan_30/DIFFABS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims
                         }
  
   withH5File (root </> filename) $ \h5file ->

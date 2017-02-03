@@ -1,6 +1,7 @@
 module Hkl.H5
     ( Dataset
     , File
+    , H5
     , check_ndims
     , closeDataset
     , get_position
@@ -45,6 +46,8 @@ import Numeric.LinearAlgebra (Matrix, reshape)
 import Prelude hiding (replicate)
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
+
+data H5
 
 check_ndims :: Dataset -> Int -> IO Bool
 check_ndims d expected = do

@@ -44,7 +44,7 @@ import Hkl.XRD
 --                     , h5pGamma = DataItem (nxentry </> beamline </> gamma) ExtendDims
 --                     , h5pDelta = DataItem (nxentry </> delta) ExtendDims
 --                     , h5pWavelength = DataItem (nxentry </> beamline </> wavelength) StrictDims
---                     }
+q--                     }
 --         where
 --           beamline :: String
 --           beamline = beamlineUpper Diffabs
