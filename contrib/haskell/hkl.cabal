@@ -102,6 +102,7 @@ library
                     , Hkl.Projects.Diffabs
                     , Hkl.Projects.Diffabs.Charlier
                     , Hkl.Projects.Diffabs.IRDRx
+                    , Hkl.Projects.Diffabs.Laure
                     , Hkl.Projects.Diffabs.Martinetto
                     , Hkl.Projects.Sixs
                     , Hkl.PyFAI

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
@@ -8,6 +9,10 @@ module Hkl.DataSource ( ExtendDims(..)
                       , openDataSource
                       , closeDataSource
                       ) where
+
+#if __GLASGOW_HASKELL__ < 710
+import Control.Applicative ((<$>), (<*>))
+#endif
 
 import Control.Monad.Trans.Maybe (MaybeT)
 import Data.Array.Repa (Shape)
