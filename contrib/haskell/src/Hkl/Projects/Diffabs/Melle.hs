@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Hkl.Diffabs.Melle
+module Hkl.Projects.Diffabs.Melle
        ( melle ) where
 
 -- import Control.Concurrent (setNumCapabilities)
@@ -14,12 +14,7 @@ module Hkl.Diffabs.Melle
 
 -- import Prelude hiding (concat, lookup, readFile, writeFile)
 
--- import Hkl.MyMatrix
--- import Hkl.PyFAI.PoniExt
--- import Hkl.Types
-import Hkl.XRD
--- import Hkl.XRD.Calibration
--- import Hkl.Detector
+import Hkl
 
 -- | Samples
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Hkl.Diffabs.Martinetto
+module Hkl.Projects.Diffabs.Martinetto
        ( martinetto
        , martinetto'
        ) where
@@ -16,12 +16,7 @@ import Text.Printf (printf)
 
 import Prelude hiding (concat, lookup, readFile, writeFile)
 
-import Hkl.DataSource
-import Hkl.MyMatrix
-import Hkl.PyFAI.PoniExt
-import Hkl.Types
-import Hkl.Xrd
-import Hkl.Detector
+import Hkl
 
 -- | Samples
 

@@ -1,7 +1,7 @@
 module Main where
 
 import Control.Monad
-import Hkl
+import Hkl.Projects
 
 main :: IO ()
 main = do

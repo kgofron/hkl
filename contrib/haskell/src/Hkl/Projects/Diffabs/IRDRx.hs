@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Hkl.Diffabs.IRDRx
+module Hkl.Projects.Diffabs.IRDRx
        ( mainIRDRx ) where
 
 import Control.Concurrent.Async (mapConcurrently)
@@ -13,13 +13,7 @@ import Text.Printf (printf)
 
 import Prelude hiding (concat, lookup, readFile, writeFile)
 
-import Hkl.DataSource
-import Hkl.H5
-import Hkl.MyMatrix
-import Hkl.PyFAI.PoniExt
-import Hkl.Types
-import Hkl.Xrd
-import Hkl.Detector
+import Hkl
 
 -- | Samples
 
@@ -151,7 +145,7 @@ mainIRDRx :: IO ()
 mainIRDRx = do
   p <- getPoniExtRef sampleRef
 
-  let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
+  let poniextref = setPose (Hkl.flip p) (MyMatrix HklB (ident 3))
 
   -- full calibration
   poniextref' <- calibrate sampleCalibration poniextref ImXpadS140

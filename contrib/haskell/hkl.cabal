@@ -90,24 +90,24 @@ executable hkl3d
 library
   exposed-modules:    Hkl
                     , Hkl.C
-                    , Hkl.D2AM
-                    , Hkl.D2AM.XRD
                     , Hkl.DataSource
                     , Hkl.Detector
-                    , Hkl.Diffabs
-                    , Hkl.Diffabs.Charlier
-                    , Hkl.Diffabs.IRDRx
-                    , Hkl.Diffabs.Martinetto
-                    -- , Hkl.Diffabs.Melle
                     , Hkl.Edf
                     , Hkl.Engine
                     , Hkl.H5
                     , Hkl.MyMatrix
+                    , Hkl.Projects
+                    , Hkl.Projects.D2AM
+                    , Hkl.Projects.D2AM.XRD
+                    , Hkl.Projects.Diffabs
+                    , Hkl.Projects.Diffabs.Charlier
+                    , Hkl.Projects.Diffabs.IRDRx
+                    , Hkl.Projects.Diffabs.Martinetto
+                    , Hkl.Projects.Sixs
                     , Hkl.PyFAI
                     , Hkl.PyFAI.Poni
                     , Hkl.PyFAI.PoniExt
                     , Hkl.PyFAI.Npt
-                    , Hkl.Sixs
                     , Hkl.Types
                     , Hkl.Types.Parameter
                     , Hkl.Utils

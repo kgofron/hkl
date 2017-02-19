@@ -1,4 +1,4 @@
-import Hkl
+import Hkl.Projects
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 

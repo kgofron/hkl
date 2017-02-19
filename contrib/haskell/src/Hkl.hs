@@ -1,11 +1,11 @@
 module Hkl (module X) where
 
 import Hkl.C as X
-import Hkl.D2AM as X
+import Hkl.DataSource as X
 import Hkl.Detector as X
-import Hkl.Diffabs as X
 import Hkl.Engine as X
 import Hkl.H5 as X
+import Hkl.MyMatrix as X
 import Hkl.PyFAI as X
-import Hkl.Sixs as X
 import Hkl.Types as X
+import Hkl.Xrd as X

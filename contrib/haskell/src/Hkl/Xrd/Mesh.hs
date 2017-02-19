@@ -43,7 +43,6 @@ import Hkl.Detector
 import Hkl.H5
 import Hkl.PyFAI
 import Hkl.MyMatrix
-import Hkl.PyFAI.PoniExt
 import Hkl.Types
 import Hkl.Utils
 import Hkl.Xrd.OneD

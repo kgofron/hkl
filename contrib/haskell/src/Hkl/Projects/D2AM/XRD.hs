@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Hkl.D2AM.XRD
+module Hkl.Projects.D2AM.XRD
        ( d2am ) where
 
 import Control.Concurrent.Async (mapConcurrently)
