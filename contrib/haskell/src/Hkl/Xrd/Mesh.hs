@@ -17,7 +17,6 @@ import Control.Applicative ((<$>), (<*>))
 import Control.Exception.Base (bracket)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Data.Array.Repa (Shape, DIM1, ix1, size)
-import qualified Data.ByteString.Char8 as Char8 (pack)
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.List (intercalate)
@@ -118,30 +117,19 @@ withDataSource h s = bracket (before s) after
     where
       before :: (XrdMeshH5Path a b c d e f) -> IO (XrdMeshH5 b c d e f)
       before (XrdMeshH5Path _i x y g d w) =
-          XrdMeshH5 <$> openDataset' h x
-                    <*> openDataset' h y
-                    <*> openDataset' h g
-                    <*> openDataset' h d
-                    <*> openDataset' h w
-
+          XrdMeshH5 <$> openDataSource h x
+                    <*> openDataSource h y
+                    <*> openDataSource h g
+                    <*> openDataSource h d
+                    <*> openDataSource h w
 
       after :: XrdMeshH5 b c d e f -> IO ()
       after (XrdMeshH5 x' y' g' d' w') = do
-        releaseDataSource x'
-        releaseDataSource y'
-        releaseDataSource g'
-        releaseDataSource d'
-        releaseDataSource w'
-
-      openDataset' :: File -> DataItem a -> IO (DataSource a)
-      openDataset' hid di@(DataItemH5 name _) = DataSourceH5
-                                                <$> return di
-                                                <*> openDataset hid (Char8.pack name) Nothing
-      openDataset' _ (DataItemConst v) = return $ DataSourceConst v
-
-      releaseDataSource :: DataSource a -> IO ()
-      releaseDataSource (DataSourceH5 _ d) = closeDataset d
-      releaseDataSource (DataSourceConst _) = return ()
+        closeDataSource x'
+        closeDataSource y'
+        closeDataSource g'
+        closeDataSource d'
+        closeDataSource w'
 
 xrdMeshPy :: FilePath -> FilePath -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> (Text, FilePath)
 xrdMeshPy p f x y i b (Threshold t) w o os = (script, os)
