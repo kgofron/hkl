@@ -37,11 +37,11 @@ nxs f e h = XrdSourceNxs (nxs' f e h)
 
 h5path' :: NxEntry -> DataFrameH5Path
 h5path' nxentry =
-    DataFrameH5Path { h5pImage = DataItemH5 (nxentry </> image) StrictDims
-                    , h5pGamma = DataItemH5 (nxentry </> beamline </> gamma) ExtendDims
-                    , h5pDelta = DataItemH5 (nxentry </> delta) ExtendDims
-                    , h5pWavelength = DataItemH5 (nxentry </> beamline </> wavelength) StrictDims
-                    }
+    DataFrameH5Path
+    (DataItemH5 (nxentry </> image) StrictDims)
+    (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
+    (DataItemH5 (nxentry </> delta) ExtendDims)
+    (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
         where
           beamline :: String
           beamline = beamlineUpper Diffabs
@@ -82,19 +82,19 @@ sampleRef = XRDRef "reference"
 
 h5path :: NxEntry -> DataFrameH5Path
 h5path nxentry =
-  DataFrameH5Path { h5pImage = DataItemH5 (nxentry </> image) StrictDims
-                  , h5pGamma = DataItemH5 (nxentry </> beamline </> gamma) ExtendDims
-                  , h5pDelta = DataItemH5 (nxentry </> delta) ExtendDims
-                  , h5pWavelength = DataItemH5 (nxentry </> beamline </> wavelength) StrictDims
-                  }
-  where
-    beamline :: String
-    beamline = beamlineUpper Diffabs
+  DataFrameH5Path
+  (DataItemH5 (nxentry </> image) StrictDims)
+  (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
+  (DataItemH5 (nxentry </> delta) ExtendDims)
+  (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
+    where
+      beamline :: String
+      beamline = beamlineUpper Diffabs
 
-    image = "scan_data/data_58"
-    gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
-    delta = "scan_data/actuator_1_1"
-    wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
+      image = "scan_data/data_58"
+      gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
+      delta = "scan_data/actuator_1_1"
+      wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
 bins :: DIM1
 bins = ix1 8000

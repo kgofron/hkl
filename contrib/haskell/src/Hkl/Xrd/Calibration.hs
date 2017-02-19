@@ -73,7 +73,7 @@ data XRDCalibration = XRDCalibration { xrdCalibrationName :: Text
                                      }
                       deriving (Show)
 
-withDataItem :: MonadSafe m => File -> DataItem a -> (Dataset -> m r) -> m r
+withDataItem :: MonadSafe m => File -> DataItem H5 -> (Dataset -> m r) -> m r
 withDataItem hid (DataItemH5 name _) = bracket (liftIO acquire') (liftIO . release')
     where
       acquire' :: IO Dataset
@@ -83,10 +83,10 @@ withDataItem hid (DataItemH5 name _) = bracket (liftIO acquire') (liftIO . relea
       release' = closeDataset
 
 getMNxs :: File -> DataFrameH5Path -> Int -> IO (MyMatrix Double) -- TODO move to XRD
-getMNxs f p i' = runSafeT $
-    withDataItem f (h5pGamma p) $ \g' ->
-    withDataItem f (h5pDelta p) $ \d' ->
-    withDataItem f (h5pWavelength p) $ \w' -> liftIO $ do
+getMNxs f (DataFrameH5Path _ g d w) i' = runSafeT $
+    withDataItem f g $ \g' ->
+    withDataItem f d $ \d' ->
+    withDataItem f w $ \w' -> liftIO $ do
       let mu = 0.0
       let komega = 0.0
       let kappa = 0.0

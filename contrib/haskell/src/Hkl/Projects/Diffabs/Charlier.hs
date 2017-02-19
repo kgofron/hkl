@@ -37,11 +37,11 @@ published' = project' </> "published-data"
 
 h5path' :: NxEntry -> DataFrameH5Path
 h5path' nxentry =
-    DataFrameH5Path { h5pImage = DataItemH5 (nxentry </> image) StrictDims
-                    , h5pGamma = DataItemH5 (nxentry </> beamline </> gamma) ExtendDims
-                    , h5pDelta = DataItemH5 (nxentry </> delta) ExtendDims
-                    , h5pWavelength = DataItemH5 (nxentry </> beamline </> wavelength) StrictDims
-                    }
+    DataFrameH5Path
+    (DataItemH5 (nxentry </> image) StrictDims)
+    (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
+    (DataItemH5 (nxentry </> delta) ExtendDims)
+    (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
         where
           beamline :: String
           beamline = beamlineUpper Diffabs

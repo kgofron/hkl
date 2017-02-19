@@ -126,12 +126,13 @@ class Frame t where
   len :: t -> IO (Maybe Int)
   row :: t -> Int -> MaybeT IO (DifTomoFrame DIM1)
 
-data DataFrameH5Path =
-  DataFrameH5Path { h5pImage :: DataItem H5
-                  , h5pGamma :: DataItem H5
-                  , h5pDelta :: DataItem H5
-                  , h5pWavelength :: DataItem H5
-                  } deriving (Show)
+data DataFrameH5Path
+    = DataFrameH5Path
+      (DataItem H5) -- image
+      (DataItem H5) -- gamma
+      (DataItem H5) -- delta
+      (DataItem H5) -- wavelength
+    deriving (Show)
 
 data DataFrameH5
     = DataFrameH5
@@ -303,8 +304,7 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
                              , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"lut\", mask=mask)"
                                   ]
       p = takeFileName poniPath
-      (Nxs nxs' _ h5path') = difTomoFrameNxs f
-      (DataItemH5 i' _) = h5pImage h5path'
+      (Nxs nxs' _ (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       idx = difTomoFrameIdx f
       output = (dropExtension . takeFileName) poniPath ++ ".dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
@@ -459,8 +459,7 @@ createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
                              , "# Save the datas"
                              , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                              ]
-      (Nxs nxs' _ h5path') = difTomoFrameNxs f
-      (DataItemH5 i' _) = h5pImage h5path'
+      (Nxs nxs' _ (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       output = "multi.dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
 
