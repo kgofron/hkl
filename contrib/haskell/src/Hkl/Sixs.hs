@@ -20,6 +20,7 @@ import Pipes (Producer, runEffect, (>->), lift, yield)
 import Pipes.Prelude (print)
 import System.FilePath.Posix ((</>))
 
+import Hkl.DataSource
 import Hkl.Types
 import Hkl.H5
 
@@ -67,6 +68,7 @@ hkl_h5_open h5file dp = DataFrameH5
                          <*> openDataset' h5file (h5pWavelength dp)
                          <*> openDataset' h5file (h5pDiffractometerType dp)
   where
+    openDataset' :: File -> DataItem H5 -> IO Dataset
     openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
 
 hkl_h5_is_valid :: DataFrameH5 -> IO Bool

@@ -90,9 +90,9 @@ executable hkl3d
 library
   exposed-modules:    Hkl
                     , Hkl.C
-                    , Hkl.Calibration
                     , Hkl.D2AM
                     , Hkl.D2AM.XRD
+                    , Hkl.DataSource
                     , Hkl.Detector
                     , Hkl.Diffabs
                     , Hkl.Diffabs.Charlier

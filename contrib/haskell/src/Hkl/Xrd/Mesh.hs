@@ -38,6 +38,7 @@ import Prelude hiding
 import Pipes ( lift )
 
 import Hkl.C
+import Hkl.DataSource
 import Hkl.Detector
 import Hkl.H5
 import Hkl.PyFAI

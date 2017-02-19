@@ -37,7 +37,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
-import Data.Array.Repa (Shape, DIM1, size)
+import Data.Array.Repa (DIM1, size)
 import Data.Attoparsec.Text (parseOnly)
 import qualified Data.ByteString.Char8 as Char8 (pack)
 import qualified Data.List as List (intercalate, lookup)
@@ -75,6 +75,7 @@ import Pipes.Prelude (toListM)
 import Pipes.Safe ( MonadSafe(..), runSafeT, bracket )
 
 import Hkl.C
+import Hkl.DataSource
 import Hkl.Detector
 import Hkl.Edf
 import Hkl.H5
@@ -276,7 +277,7 @@ integrate' ref output (XrdNxs b _ t (XrdSourceNxs nxs'@(Nxs f _ _))) = do
         scandir = (dropExtension . takeFileName) nxs''
 integrate' _ _ (XrdNxs _ _ _ (XrdSourceEdf _)) = error "integrate' not yet implemented"
 
-createPy :: (Shape sh) => DIM1 -> Threshold -> DifTomoFrame' sh -> (Text, FilePath)
+createPy :: DIM1 -> Threshold -> DifTomoFrame' sh -> (Text, FilePath)
 createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
     where
       script = Text.unlines $
@@ -338,14 +339,14 @@ withDataFrameH5 h nxs'@(Nxs _ _ d) gen = bracket (liftIO before) (liftIO . after
       closeDataset (h5delta d')
       closeDataset (h5wavelength d')
 
-    -- openDataset' :: File -> DataItem -> IO Dataset
+    openDataset' :: File -> DataItem H5 -> IO Dataset
     openDataset' hid (DataItemH5 name _) = openDataset hid (Char8.pack name) Nothing
 
 data DifTomoFrame' sh = DifTomoFrame' { difTomoFrame'DifTomoFrame :: DifTomoFrame sh
                                       , difTomoFrame'PoniPath :: FilePath
                                       }
 
-savePonies :: (Shape sh) => (Int -> FilePath) -> Pipe (DifTomoFrame sh) (DifTomoFrame' sh) IO ()
+savePonies :: (Int -> FilePath) -> Pipe (DifTomoFrame sh) (DifTomoFrame' sh) IO ()
 savePonies g = forever $ do
   f <- await
   let filename = g (difTomoFrameIdx f)
@@ -361,7 +362,7 @@ data DifTomoFrame'' sh = DifTomoFrame'' { difTomoFrame''DifTomoFrame' :: DifTomo
                                         , difTomoFrame''DataPath :: FilePath
                                         }
 
-savePy :: (Shape sh) => DIM1 -> Threshold -> Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
+savePy :: DIM1 -> Threshold -> Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
 savePy b t = forever $ do
   f@(DifTomoFrame' _difTomoFrame poniPath) <- await
   let directory = takeDirectory poniPath
@@ -375,7 +376,7 @@ savePy b t = forever $ do
                          , difTomoFrame''DataPath = dataPath
                          }
 
-saveGnuplot' :: (Shape sh) => Consumer (DifTomoFrame'' sh) (StateT [FilePath] IO) r
+saveGnuplot' :: Consumer (DifTomoFrame'' sh) (StateT [FilePath] IO) r
 saveGnuplot' = forever $ do
   curves <- lift get
   (DifTomoFrame'' (DifTomoFrame' _ poniPath) _ _ dataPath) <- await
@@ -392,7 +393,7 @@ saveGnuplot' = forever $ do
                  ++ [Text.intercalate ",\\\n" [ Text.pack (show (takeFileName c) ++ " u 1:2 w l") | c <- cs ]]
                  ++ ["pause -1"]
 
-saveGnuplot :: (Shape sh) => Consumer (DifTomoFrame'' sh) IO r
+saveGnuplot :: Consumer (DifTomoFrame'' sh) IO r
 saveGnuplot = evalStateP [] saveGnuplot'
 
 -- | PyFAI MultiGeometry
@@ -434,7 +435,7 @@ integrateMulti' ref output (XrdNxs b _ t (XrdSourceEdf fs)) = do
         let (PoniExt p _) = setPose ref m
         saveScript (poniToText p) o
 
-createMultiPy :: (Shape sh) => DIM1 -> Threshold -> DifTomoFrame' sh -> [FilePath] -> (Text, FilePath)
+createMultiPy :: DIM1 -> Threshold -> DifTomoFrame' sh -> [FilePath] -> (Text, FilePath)
 createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
     where
       script = Text.unlines $
@@ -509,7 +510,7 @@ createMultiPyEdf b (Threshold t) edfs ponies output = script
                              , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                              ]
 
-saveMulti' :: (Shape sh) => DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) (StateT [FilePath] IO) r
+saveMulti' :: DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) (StateT [FilePath] IO) r
 saveMulti' b t = forever $ do
   ponies <- lift get
   f'@(DifTomoFrame' f poniPath) <- await
@@ -526,5 +527,5 @@ saveMulti' b t = forever $ do
           return ()
         go _ _ False = return ()
 
-saveMultiGeometry :: (Shape sh) => DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) IO r
+saveMultiGeometry :: DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) IO r
 saveMultiGeometry b t = evalStateP [] (saveMulti' b t)

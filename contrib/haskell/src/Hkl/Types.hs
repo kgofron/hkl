@@ -15,9 +15,6 @@ module Hkl.Types ( Beamline(..)
                  , factoryFromString
                    -- hdf5
                  , H5Path
-                 , ExtendDims(..)
-                 , DataItem(..)
-                 , DataSource(..)
                  , module X
                  ) where
 
@@ -129,18 +126,3 @@ data Source = Source WaveLength
 -- | Trajectory
 
 type Trajectory = [[Double]]
-
--- | Hdf5
-
-type H5Path = String
-data ExtendDims = ExtendDims | StrictDims deriving (Show)
-
-data DataItem a where
-    DataItemH5 :: H5Path -> ExtendDims -> DataItem H5
-    DataItemConst :: Double -> DataItem Double
-deriving instance Show (DataItem a)
-
-data DataSource a where
-    DataSourceH5 :: DataItem H5 -> Dataset -> DataSource H5
-    DataSourceConst :: Double -> DataSource Double
-

@@ -13,6 +13,7 @@ import Text.Printf (printf)
 
 import Prelude hiding (concat, lookup, readFile, writeFile)
 
+import Hkl.DataSource
 import Hkl.H5
 import Hkl.MyMatrix
 import Hkl.PyFAI.PoniExt

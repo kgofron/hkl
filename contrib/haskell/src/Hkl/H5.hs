@@ -2,6 +2,7 @@ module Hkl.H5
     ( Dataset
     , File
     , H5
+    , H5Path
     , check_ndims
     , closeDataset
     , get_position
@@ -48,6 +49,9 @@ import Prelude hiding (replicate)
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
 data H5
+
+type H5Path = String
+
 
 check_ndims :: Dataset -> Int -> IO Bool
 check_ndims d expected = do
