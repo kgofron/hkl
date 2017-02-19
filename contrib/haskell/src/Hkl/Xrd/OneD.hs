@@ -37,15 +37,14 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
-import Data.Array.Repa (DIM1, size)
+import Data.Array.Repa (DIM1, ix1, size)
 import Data.Attoparsec.Text (parseOnly)
-import qualified Data.ByteString.Char8 as Char8 (pack)
 import qualified Data.List as List (intercalate, lookup)
 import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Text (Text)
 import qualified Data.Text as Text (unlines, pack, intercalate)
 import Data.Text.IO (readFile)
-import Data.Vector.Storable (Vector, any, concat, head)
+import Data.Vector.Storable (concat, head)
 import Numeric.LinearAlgebra (fromList)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
@@ -134,48 +133,40 @@ data DataFrameH5Path =
                   , h5pWavelength :: DataItem H5
                   } deriving (Show)
 
-data DataFrameH5 =
-  DataFrameH5 { h5nxs :: Nxs
-              , h5gamma :: Dataset
-              , h5delta :: Dataset
-              , h5wavelength :: Dataset
-              , ponigen :: PoniGenerator
-              }
+data DataFrameH5
+    = DataFrameH5
+      Nxs -- Nexus file
+      (DataSource H5) -- gamma
+      (DataSource H5) -- delta
+      (DataSource H5) -- wavelength
+      PoniGenerator -- ponie generator
 
 instance Frame DataFrameH5 where
-  len d =  lenH5Dataspace (h5delta d)
+  len (DataFrameH5 _ (DataSourceH5 _ g) _ _ _) = lenH5Dataspace g
 
-  row d idx = do
+  row d@(DataFrameH5 nxs' g d' w ponigen) idx = do
     n <- lift $ len d
     let eof = fromJust n - 1 == idx
-    let nxs' = h5nxs d
     let mu = 0.0
     let komega = 0.0
     let kappa = 0.0
     let kphi = 0.0
-    gamma <- get_position' (h5gamma d) 0
-    delta <- get_position' (h5delta d) idx
-    wavelength <- get_position' (h5wavelength d) 0
-    let source = Source (head (fromJust wavelength) *~ nano meter)
-    let positions = concat [mu, komega, kappa, kphi, fromJust gamma, fromJust delta]
+    gamma <- g `atIndex'` (ix1 0)
+    delta <- d' `atIndex'` (ix1 idx)
+    wavelength <- w `atIndex'` (ix1 0)
+    let source = Source (head wavelength *~ nano meter)
+    let positions = concat [mu, komega, kappa, kphi, gamma, delta]
     -- print positions
     let geometry =  Geometry K6c source positions Nothing
     let detector = ZeroD
     m <- lift $ geometryDetectorRotationGet geometry detector
-    poniext <- lift $ ponigen d (MyMatrix HklB m) idx
+    poniext <- lift $ ponigen (MyMatrix HklB m) idx
     return $ DifTomoFrame { difTomoFrameNxs = nxs'
                           , difTomoFrameIdx = idx
                           , difTomoFrameEOF = eof
                           , difTomoFrameGeometry = geometry
                           , difTomoFramePoniExt = poniext
                           }
-    where
-      get_position' :: Dataset -> Int -> MaybeT IO (Maybe (Vector Double))
-      get_position' a b = lift $ do
-        v <- get_position a b
-        return $ if any isNaN v
-                 then Nothing
-                 else Just v
 
 -- type PipeE e a b m r = EitherT e (Pipe a b m) r
 
@@ -321,25 +312,22 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
 -- | Pipes
 
 withDataFrameH5 :: (MonadSafe m) => File -> Nxs -> PoniGenerator -> (DataFrameH5 -> m r) -> m r
-withDataFrameH5 h nxs'@(Nxs _ _ d) gen = bracket (liftIO before) (liftIO . after)
+withDataFrameH5 h nxs'@(Nxs _ _ (DataFrameH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
   where
     -- before :: File -> DataFrameH5Path -> m DataFrameH5
     before :: IO DataFrameH5
     before =  DataFrameH5
               <$> return nxs'
-              <*> openDataset' h (h5pGamma d)
-              <*> openDataset' h (h5pDelta d)
-              <*> openDataset' h (h5pWavelength d)
+              <*> openDataSource h g
+              <*> openDataSource h d
+              <*> openDataSource h w
               <*> return gen
 
     -- after :: DataFrameH5 -> IO ()
-    after d' = do
-      closeDataset (h5gamma d')
-      closeDataset (h5delta d')
-      closeDataset (h5wavelength d')
-
-    openDataset' :: File -> DataItem H5 -> IO Dataset
-    openDataset' hid (DataItemH5 name _) = openDataset hid (Char8.pack name) Nothing
+    after (DataFrameH5 _ g' d' w' _) = do
+      closeDataSource g'
+      closeDataSource d'
+      closeDataSource w'
 
 data DifTomoFrame' sh = DifTomoFrame' { difTomoFrame'DifTomoFrame :: DifTomoFrame sh
                                       , difTomoFrame'PoniPath :: FilePath
