@@ -194,6 +194,9 @@ frames' is = do
               f <- lift $ runMaybeT $ row d i'
               when (isJust f) (yield (fromJust f)))
 
+skip :: Shape sh => [Int] -> DifTomoFrame sh -> Bool
+skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
+
 -- {-# ANN module "HLint: ignore Use camelCase" #-}
 
 
@@ -275,9 +278,6 @@ integrate' ref output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _ _))) = do
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
-
-    skip :: Shape sh => [Int] -> DifTomoFrame sh -> Bool
-    skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
 integrate' _ _ (XrdNxs _ _ _ _ (XrdSourceEdf _)) = error "integrate' not yet implemented"
 
 createPy :: DIM1 -> Threshold -> DifTomoFrame' sh -> (Text, FilePath)
@@ -402,12 +402,13 @@ integrateMulti ref (XRDSample _ output nxss) =
   mapM_ (integrateMulti' ref output) nxss
 
 integrateMulti' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
-integrateMulti' ref output (XrdNxs _ mb t _ (XrdSourceNxs nxs'@(Nxs f _ _))) = do
+integrateMulti' ref output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _ _))) = do
   print f
   withH5File f $ \h5file ->
       runSafeT $ runEffect $
         withDataFrameH5 h5file nxs' (gen ref) yield
         >-> hoist lift (frames
+                        >-> filter (skip is)
                         >-> savePonies (pgen output f)
                         >-> saveMultiGeometry mb t)
   where
@@ -435,8 +436,8 @@ integrateMulti' ref output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
         let (PoniExt p _) = setPose ref m
         saveScript (poniToText p) o
 
-createMultiPy :: DIM1 -> Threshold -> DifTomoFrame' sh -> [FilePath] -> (Text, FilePath)
-createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
+createMultiPy :: DIM1 -> Threshold -> DifTomoFrame' sh -> [(Int, FilePath)] -> (Text, FilePath)
+createMultiPy b (Threshold t) (DifTomoFrame' f _) idxPonies = (script, output)
     where
       script = Text.unlines $
                map Text.pack ["#!/bin/env python"
@@ -454,10 +455,13 @@ createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
                              , ""
                              , "# Load all images"
                              , "PONIES = [" ++ List.intercalate ",\n" (map show ponies) ++ "]"
+                             , "IDXS = [" ++ List.intercalate ", " (map show idxs) ++ "]"
                              , ""
                              , "# Read all the images"
+                             , "imgs = []"
                              , "with File(NEXUSFILE, mode='r') as f:"
-                             , "    imgs = f[IMAGEPATH][:]"
+                             , "    for idx in IDXS:"
+                             , "        imgs.append(f[IMAGEPATH][idx])"
                              , ""
                              , "# Compute the mask"
                              , "mask = numpy.zeros_like(imgs[0], dtype=bool)"
@@ -475,6 +479,7 @@ createMultiPy b (Threshold t) (DifTomoFrame' f _) ponies = (script, output)
       (Nxs nxs' _ (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       output = "multi.dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
+      (idxs, ponies) = unzip idxPonies
 
 createMultiPyEdf :: DIM1 -> Threshold -> [FilePath] -> [FilePath] -> FilePath -> Text
 createMultiPyEdf b (Threshold t) edfs ponies output = script
@@ -509,16 +514,16 @@ createMultiPyEdf b (Threshold t) edfs ponies output = script
                              , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                              ]
 
-saveMulti' :: DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) (StateT [FilePath] IO) r
+saveMulti' :: DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) (StateT [(Int, FilePath)] IO) r
 saveMulti' b t = forever $ do
-  ponies <- lift get
-  f'@(DifTomoFrame' f poniPath) <- await
+  idxPonies <- lift get
+  f'@(DifTomoFrame' f@(DifTomoFrame _ idx _ _ _) poniPath) <- await
   let directory = takeDirectory poniPath
   let filename = directory </> "multi.py"
-  let (script, _) = createMultiPy b t f' ponies
+  let (script, _) = createMultiPy b t f' idxPonies
   lift . lift $ saveScript script filename
   lift . lift $ go directory filename (difTomoFrameEOF f)
-  lift $ put $! (ponies ++ [poniPath])
+  lift $ put $! (idxPonies ++ [(idx, poniPath)])
       where
         go :: FilePath -> FilePath -> Bool -> IO ()
         go d s True = do
