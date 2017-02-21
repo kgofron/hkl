@@ -87,10 +87,13 @@ multibins = ix1 10000
 threshold :: Threshold
 threshold = Threshold 5000
 
+skipedFrames :: [Int]
+skipedFrames = []
+
 lab6 :: XRDSample
 lab6 = XRDSample "LaB6"
        (published </> "LaB6")
-       [ XrdNxs bins multibins threshold n | n <-
+       [ XrdNxs bins multibins threshold skipedFrames n | n <-
          [ nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_39.nxs") "scan_39" h5path'
          , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_40.nxs") "scan_40" h5path'
          , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_41.nxs") "scan_41" h5path'

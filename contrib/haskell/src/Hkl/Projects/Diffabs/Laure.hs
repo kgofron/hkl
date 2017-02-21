@@ -16,9 +16,9 @@ import Prelude hiding (lookup, readFile, writeFile)
 import Hkl
 
 -- | TODO
+-- * add the possibility to remove a bunch of images when doing the computation. (here the number 4)
 -- * Add the flat.
 -- * remove the air to each spectrum.
--- * add the possibility to remove a bunch of images when doing the computation. (here the number 4)
 -- * deal with the multi geometry intensity problem. I = 1e9 ???
 -- * simplify with the list of nxs using list comprehension.
 -- * add the flyscan mesh
@@ -97,6 +97,9 @@ multibins = ix1 25000
 threshold :: Threshold
 threshold = Threshold 800
 
+skipedFrames :: [Int]
+skipedFrames = [4]
+
 -- Scan en delta
 
 nxs' :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
@@ -124,7 +127,7 @@ h5path'' nxentry =
 mkXRDSample :: String -> [(FilePath, [Int])] -> XRDSample
 mkXRDSample n ps = XRDSample n
                 (published </> n)
-                [ XrdNxs bins multibins threshold n' | n' <- concatMap nxs''' ps ]
+                [ XrdNxs bins multibins threshold skipedFrames n' | n' <- concatMap nxs''' ps ]
     where
       nxs'' :: FilePath -> (NxEntry -> DataFrameH5Path) -> Int -> XrdSource
       nxs'' f h idx = nxs f' e h

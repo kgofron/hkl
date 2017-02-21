@@ -64,10 +64,13 @@ multibins = ix1 10000
 threshold :: Threshold
 threshold = Threshold 5000
 
+skipedFrames :: [Int]
+skipedFrames = []
+
 lab6 :: XRDSample
 lab6 = XRDSample "test"
        (published </> "test")
-       [XrdNxs bins multibins threshold entries]
+       [XrdNxs bins multibins threshold skipedFrames entries]
            where
              idxs :: [Int]
              idxs = [268, 271, 285, 295]

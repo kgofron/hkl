@@ -37,7 +37,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
-import Data.Array.Repa (DIM1, ix1, size)
+import Data.Array.Repa (DIM1, Shape, ix1, size)
 import Data.Attoparsec.Text (parseOnly)
 import qualified Data.List as List (intercalate, lookup)
 import Data.Maybe (fromJust, fromMaybe, isJust)
@@ -55,6 +55,7 @@ import Text.Printf ( printf )
 import Prelude hiding
     ( any
     , concat
+    , filter
     , head
     , lookup
     , readFile
@@ -70,7 +71,7 @@ import Pipes
     , yield
     )
 import Pipes.Lift
-import Pipes.Prelude (toListM)
+import Pipes.Prelude (filter, toListM)
 import Pipes.Safe ( MonadSafe(..), runSafeT, bracket )
 
 import Hkl.C
@@ -107,7 +108,14 @@ data XrdSource = XrdSourceNxs Nxs
                | XrdSourceEdf [FilePath]
                  deriving (Show)
 
-data XrdNxs = XrdNxs DIM1 DIM1 Threshold XrdSource deriving (Show)
+data XrdNxs
+    = XrdNxs
+      DIM1 -- bins
+      DIM1 -- bins for the multibins
+      Threshold -- threshold use to remove image Intensity
+      [Int] -- Index of the frames to skip
+      XrdSource -- data source
+    deriving (Show)
 
 data Nxs = Nxs FilePath NxEntry DataFrameH5Path deriving (Show)
 
@@ -143,7 +151,7 @@ data DataFrameH5
       PoniGenerator -- ponie generator
 
 instance Frame DataFrameH5 where
-  len (DataFrameH5 _ (DataSourceH5 _ g) _ _ _) = lenH5Dataspace g
+  len (DataFrameH5 _ _ (DataSourceH5 _ d) _ _) = lenH5Dataspace d
 
   row d@(DataFrameH5 nxs' g d' w ponigen) idx = do
     n <- lift $ len d
@@ -249,12 +257,13 @@ integrate ref (XRDSample _ output nxss) = do
   return ()
 
 integrate' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
-integrate' ref output (XrdNxs b _ t (XrdSourceNxs nxs'@(Nxs f _ _))) = do
+integrate' ref output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _ _))) = do
   print f
   withH5File f $ \h5file ->
       runSafeT $ runEffect $
         withDataFrameH5 h5file nxs' (gen ref) yield
         >-> hoist lift (frames
+                        >-> filter (skip is)
                         >-> savePonies (pgen output f)
                         >-> savePy b t
                         >-> saveGnuplot)
@@ -266,7 +275,10 @@ integrate' ref output (XrdNxs b _ t (XrdSourceNxs nxs'@(Nxs f _ _))) = do
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
-integrate' _ _ (XrdNxs _ _ _ (XrdSourceEdf _)) = error "integrate' not yet implemented"
+
+    skip :: Shape sh => [Int] -> DifTomoFrame sh -> Bool
+    skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
+integrate' _ _ (XrdNxs _ _ _ _ (XrdSourceEdf _)) = error "integrate' not yet implemented"
 
 createPy :: DIM1 -> Threshold -> DifTomoFrame' sh -> (Text, FilePath)
 createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
@@ -390,7 +402,7 @@ integrateMulti ref (XRDSample _ output nxss) =
   mapM_ (integrateMulti' ref output) nxss
 
 integrateMulti' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
-integrateMulti' ref output (XrdNxs _ mb t (XrdSourceNxs nxs'@(Nxs f _ _))) = do
+integrateMulti' ref output (XrdNxs _ mb t _ (XrdSourceNxs nxs'@(Nxs f _ _))) = do
   print f
   withH5File f $ \h5file ->
       runSafeT $ runEffect $
@@ -406,7 +418,8 @@ integrateMulti' ref output (XrdNxs _ mb t (XrdSourceNxs nxs'@(Nxs f _ _))) = do
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
-integrateMulti' ref output (XrdNxs b _ t (XrdSourceEdf fs)) = do
+
+integrateMulti' ref output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
   -- generate all the ponies
   zipWithM_ go fs ponies
 
