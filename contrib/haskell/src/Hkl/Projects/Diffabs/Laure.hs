@@ -4,16 +4,25 @@
 module Hkl.Projects.Diffabs.Laure
        ( laure ) where
 
-import Control.Concurrent.Async (mapConcurrently)
+-- import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
 import System.FilePath ((</>))
 import Text.Printf (printf)
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+import Prelude hiding (lookup, readFile, writeFile)
 
 import Hkl
+
+-- | TODO
+-- * Add the flat.
+-- * remove the air to each spectrum.
+-- * add the possibility to remove a bunch of images when doing the computation. (here the number 4)
+-- * deal with the multi geometry intensity problem. I = 1e9 ???
+-- * simplify with the list of nxs using list comprehension.
+-- * add the flyscan mesh
+-- * add possibility to sum a bunch of pixel coordinates from a mesh. on a mask
 
 -- | Samples
 
@@ -22,7 +31,6 @@ project = "/nfs/ruche-diffabs/diffabs-users/20160370/"
 
 published :: FilePath
 published = project </> "published-data" </> "xrd"
-
 beamlineUpper :: Beamline -> String
 beamlineUpper b = [Data.Char.toUpper x | x <- show b]
 
@@ -30,9 +38,9 @@ beamlineUpper b = [Data.Char.toUpper x | x <- show b]
 -- | Calibration part
 
 project' :: FilePath
-project' = "/nfs/ruche-diffabs/diffabs-users/20150106/"
+project' = "/nfs/ruche-diffabs/diffabs-users/20160370/"
 
-published':: FilePath
+published' :: FilePath
 published' = project' </> "published-data"
 
 h5path' :: NxEntry -> DataFrameH5Path
@@ -47,7 +55,7 @@ h5path' nxentry =
           beamline = beamlineUpper Diffabs
 
           image = "scan_data/data_02"
-          gamma = "d13-1-cx1__EX__DIF.1-GAMMA__#1/raw_value"
+          gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
@@ -55,8 +63,8 @@ sampleRef :: XRDRef
 sampleRef = XRDRef "reference"
             (published' </> "calibration")
             (XrdRefNxs
-             (mkNxs (published' </> "calibration" </> "XRD18keV_26.nxs") "scan_26" h5path')
-             19 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
+             (mkNxs (published' </> "calibration" </> "scan_45.nxs") "scan_44" h5path')
+             10 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
 sampleCalibration :: XRDCalibration
@@ -66,13 +74,13 @@ sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    }
     where
       idxs :: [Int]
-      idxs = [3, 6, 9, 15, 18, 21, 24, 27, 30, 33, 36, 39, 43]
+      idxs = [00, 01, 02, 03, 04, 09, 10, 11, 12, 14, 15, 18, 19, 22, 23, 26, 29, 33, 38, 42, 49, 53]
 
       entry :: Int -> XRDCalibrationEntry
       entry idx = XRDCalibrationEntryNxs
-                { xrdCalibrationEntryNxs'Nxs = mkNxs (published' </> "calibration" </> "XRD18keV_26.nxs") "scan_26" h5path'
+                { xrdCalibrationEntryNxs'Nxs = mkNxs (published' </> "calibration" </> "scan_45.nxs") "scan_44" h5path'
                 , xrdCalibrationEntryNxs'Idx = idx
-                , xrdCalibrationEntryNxs'NptPath = published' </> "calibration" </> printf "XRD18keV_26.nxs_%02d.npt" idx
+                , xrdCalibrationEntryNxs'NptPath = published' </> "calibration" </> printf "scan_45.nxs_%02d.npt" idx
                 }
 
       entries :: [XRDCalibrationEntry]
@@ -81,62 +89,13 @@ sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
 -- | Data treatment
 
 bins :: DIM1
-bins = ix1 8000
+bins = ix1 3000
 
 multibins :: DIM1
 multibins = ix1 25000
 
 threshold :: Threshold
 threshold = Threshold 800
-
-
--- Mesh
-
-h5path :: NxEntry -> XrdMeshH5Path H5 H5 H5 H5 H5 H5
-h5path nxentry = XrdMeshH5Path
-                 (DataItemH5 (nxentry </> image) StrictDims)
-                 (DataItemH5 (nxentry </> meshx) StrictDims)
-                 (DataItemH5 (nxentry </> meshy) StrictDims)
-                 (DataItemH5 (nxentry </> beamline </> gamma) StrictDims)
-                 (DataItemH5 (nxentry </> beamline </> delta) StrictDims)
-                 (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
-        where
-          beamline :: String
-          beamline = beamlineUpper Diffabs
-
-          image = "scan_data/data_53"
-          meshx = "scan_data/actuator_1_1"
-          meshy = "scan_data/actuator_2_1"
-          gamma = "d13-1-cx1__EX__DIF.1-GAMMA__#1/raw_value"
-          delta = "d13-1-cx1__EX__DIF.1-DELTA__#1/raw_value"
-          wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
-
-charlemagne :: XrdMeshSample H5 H5 H5 H5 H5 H5
-charlemagne = XrdMeshSample "Charlemagne"
-       (published </> "Charlemagne")
-       [ XrdMesh bins multibins threshold n | n <-
-         [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_31.nxs") "scan_31" h5path
-         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_32.nxs") "scan_32" h5path
-         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_33.nxs") "scan_33" h5path
-         ]
-       ]
-
-charlesLeChauve :: XrdMeshSample H5 H5 H5 H5 H5 H5
-charlesLeChauve = XrdMeshSample "Charles le Chauve"
-       (published </> "Charles le Chauve")
-       [ XrdMesh bins multibins threshold n | n <-
-         [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_34.nxs") "scan_34" h5path ]
-       ]
-
-louisLePieux :: XrdMeshSample H5 H5 H5 H5 H5 H5
-louisLePieux = XrdMeshSample "Louis le Pieux"
-       (published </> "Louis Le Pieux")
-       [ XrdMesh bins multibins threshold n | n <-
-         [ mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_35.nxs") "scan_35" h5path
-         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_36.nxs") "scan_36" h5path
-         , mkXrdMeshSourceNxs (project </> "2016" </> "Run2" </> "2016-03-24" </> "XRD18keV_37.nxs") "scan_37" h5path
-         ]
-       ]
 
 -- Scan en delta
 
@@ -157,32 +116,78 @@ h5path'' nxentry =
     beamline :: String
     beamline = beamlineUpper Diffabs
 
-    image = "scan_data/data_58"
+    image = "scan_data/data_02"
     gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
     delta = "scan_data/actuator_1_1"
     wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-r35n1 :: XRDSample
-r35n1 = XRDSample "R35N1"
-        (published </> "R35N1")
-        [ XrdNxs bins multibins threshold n | n <-
-          [ nxs (project </> "2016" </> "Run2" </> "2016-03-26" </> "R35N1_25.nxs") "scan_19" h5path''
-          , nxs (project </> "2016" </> "Run2" </> "2016-03-26" </> "R35N1_26.nxs") "scan_20" h5path''
-          , nxs (project </> "2016" </> "Run2" </> "2016-03-26" </> "R35N1_27.nxs") "scan_21" h5path''
+mkXRDSample :: String -> [(FilePath, [Int])] -> XRDSample
+mkXRDSample n ps = XRDSample n
+                (published </> n)
+                [ XrdNxs bins multibins threshold n' | n' <- concatMap nxs''' ps ]
+    where
+      nxs'' :: FilePath -> (NxEntry -> DataFrameH5Path) -> Int -> XrdSource
+      nxs'' f h idx = nxs f' e h
+          where
+            f' = f </> printf "scan_%d.nxs" idx
+            e = printf "scan_%d" (idx - 1)
+
+      nxs''' :: (FilePath, [Int]) -> [XrdSource]
+      nxs''' (p, idxs) = [nxs'' p h5path'' idx | idx <- idxs]
+
+
+samples :: [XRDSample]
+samples = [ mkXRDSample n ps | (n, ps) <- [ ("CeO2",               [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [45 :: Int])  ])
+                                          , ("kapton",             [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [197 :: Int]) ])
+                                          , ("air",                [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [198 :: Int]) ])
+                                          , ("chlorite",           [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [53 :: Int])  ])
+                                          , ("dMnO2",              [ ((project </> "2017" </> "Run1" </> "2017-02-16"), [135 :: Int]) ])
+                                          , ("bulk_L2",            [ ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"), [315..316 :: Int]) ])
+                                          , ("L1-H_3",             [ ((project </> "2017" </> "Run1" </> "2017-02-15"), concat [ [62..63 :: Int]
+                                                                                                                               , [65..70 :: Int]
+                                                                                                                               , [74, 75 :: Int]
+                                                                                                                               ])
+                                                                   , ((project </> "2017" </> "Run1" </> "2017-02-16"), [76..89 :: Int])
+                                                                   ])
+                                          , ("L1-H_4",             [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [71..73 :: Int])
+                                                                   , ((project </> "2017" </> "Run1" </> "2017-02-16"), concat [ [90..94 :: Int]
+                                                                                                                               , [96..103 :: Int]
+                                                                                                                               , [119..127 :: Int]
+                                                                                                                               ])
+                                                                   ])
+                                          , ("L1-H_5",             [ ((project </> "2017" </> "Run1" </> "2017-02-16"), [104..118 :: Int]) ])
+                                          , ("L1-Patine_1",        [ ((project </> "2017" </> "Run1" </> "2017-02-16"), [136..151 :: Int])
+                                                                   , ((project </> "2017" </> "Run1" </> "2017-02-17"), concat [ [152..184 :: Int]
+                                                                                                                               , [186 :: Int]
+                                                                                                                               ])
+                                                                   ])
+                                          , ("L1-Patine_2",        [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [187..196 :: Int]) ])
+                                          , ("L2-H_1",             [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [199..213 :: Int]) ])
+                                          , ("L2-H_2",             [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [214..220 :: Int])
+                                                                   , ((project </> "2017" </> "Run1" </> "2017-02-18"), concat [ [221..228 :: Int]
+                                                                                                                               , [259..262 :: Int]
+                                                                                                                               ])
+                                                                   ])
+                                          , ("L2-H_3",             [ ((project </> "2017" </> "Run1" </> "2017-02-18"), [229..248 :: Int]) ])
+                                          , ("L2-PatineFoncee",    [ ((project </> "2017" </> "Run1" </> "2017-02-18"), [249..258 :: Int]) ])
+                                          , ("L2-PatineFonceeNew", [ ((project </> "2017" </> "Run1" </> "2017-02-18"), concat [ [263, 264, 266, 267 :: Int]
+                                                                                                                               , [269..273 :: Int]])
+                                                                   ])
+                                          , ("L2-patineLabo_1",    [ ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"),[295..313 :: Int])  ])
+                                          , ("L2-PatineClaire_1",  [ ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"), [317..324 :: Int])
+                                                                   , ((project </> "2017" </> "Shutdown1-2" </> "2017-02-20"), [325..356 :: Int])
+                                                                   ])
+                                          , ("L3-patine_1",        [ ((project </> "2017" </> "Run1" </> "2017-02-19"), [274..293 :: Int])
+                                                                   , ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"), [294, 295 :: Int])
+                                                                   ])
+                                          ]
           ]
-        ]
+
 
 -- | Main
 
 laure :: IO ()
 laure = do
-  -- TODO add the extraction of all nexus images used for the calibration.
-
-  -- let samples = [ charlemagne, charlesLeChauve, louisLePieux]
-  -- # need to run f30 by itself because of a segfault in the hkl library
-  -- for now f30 whcih is an incomplet scan stop the script so put it at the end.
-  -- let samples = [f30, ceo2]
-  -- let samples = [ceo2]
 
   p <- getPoniExtRef sampleRef
 
@@ -195,11 +200,9 @@ laure = do
   poniextref' <- calibrate sampleCalibration poniextref ImXpadS140
   -- print p
   print poniextref
-  print poniextref'
+  -- print poniextref'
 
   -- integrate scan with multi geometry
-  _ <- mapM_ (integrateMulti poniextref') [r35n1]
-
-  -- integrate mesh with one position of detector
-  _ <- mapConcurrently (integrateMesh poniextref') []
-  return ()
+  _ <- mapM_ (integrateMulti poniextref') samples
+  _ <- mapM_ (integrate poniextref') samples
+  return()
