@@ -109,7 +109,7 @@ readXRDCalibrationEntry d e@(XRDCalibrationEntryNxs _ _ _) =
       return (NptExt npt m d)
     where
       idx = xrdCalibrationEntryNxs'Idx e
-      (Nxs f _ p) = xrdCalibrationEntryNxs'Nxs e
+      (Nxs f p) = xrdCalibrationEntryNxs'Nxs e
 readXRDCalibrationEntry d e@(XRDCalibrationEntryEdf _ _) = do
   m <- getMEdf (xrdCalibrationEntryEdf'Edf e)
   npt <-  nptFromFile (xrdCalibrationEntryEdf'NptPath e)

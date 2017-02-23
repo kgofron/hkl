@@ -118,10 +118,10 @@ data XrdNxs
       XrdSource -- data source
     deriving (Show)
 
-data Nxs = Nxs FilePath NxEntry DataFrameH5Path deriving (Show)
+data Nxs = Nxs FilePath DataFrameH5Path deriving (Show)
 
 mkNxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
-mkNxs f e h = Nxs f e (h e)
+mkNxs f e h = Nxs f (h e)
 
 data DifTomoFrame sh =
   DifTomoFrame { difTomoFrameNxs :: Nxs -- ^ nexus of the current frame
@@ -239,7 +239,7 @@ poniFromFile filename = do
     Right poni -> poni
 
 getPoniExtRef :: XRDRef -> IO PoniExt
-getPoniExtRef (XRDRef _ output (XrdRefNxs nxs'@(Nxs f _ _) idx)) = do
+getPoniExtRef (XRDRef _ output (XrdRefNxs nxs'@(Nxs f _) idx)) = do
   poniExtRefs <- runSafeT $
                  toListM ( withDataFrameH5 nxs' (gen output f) yield
                            >-> hoist lift ( frames' [idx]))
@@ -262,7 +262,7 @@ integrate ref (XRDSample _ output nxss) = do
   return ()
 
 integrate' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
-integrate' ref output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _ _))) = do
+integrate' ref output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen ref) yield
@@ -317,7 +317,7 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
                              , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"lut\", mask=mask)"
                                   ]
       p = takeFileName poniPath
-      (Nxs nxs' _ (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
+      (Nxs nxs' (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       idx = difTomoFrameIdx f
       output = (dropExtension . takeFileName) poniPath ++ ".dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
@@ -325,7 +325,7 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
 -- | Pipes
 
 withDataFrameH5 :: (MonadSafe m) => Nxs -> PoniGenerator -> (DataFrameH5 -> m r) -> m r
-withDataFrameH5 nxs'@(Nxs f _ (DataFrameH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
+withDataFrameH5 nxs'@(Nxs f (DataFrameH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
   where
     -- before :: File -> DataFrameH5Path -> m DataFrameH5
     before :: IO DataFrameH5
@@ -407,7 +407,7 @@ integrateMulti ref (XRDSample _ output nxss) =
   mapM_ (integrateMulti' ref output) nxss
 
 integrateMulti' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
-integrateMulti' ref output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _ _))) = do
+integrateMulti' ref output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen ref) yield
@@ -480,7 +480,7 @@ createMultiPy b (Threshold t) (DifTomoFrame' f _) idxPonies = (script, output)
                              , "# Save the datas"
                              , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                              ]
-      (Nxs nxs' _ (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
+      (Nxs nxs' (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       output = "multi.dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
       (idxs, ponies) = unzip idxPonies

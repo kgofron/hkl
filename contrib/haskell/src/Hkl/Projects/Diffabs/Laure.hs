@@ -102,12 +102,6 @@ skipedFrames = [4]
 
 -- Scan en delta
 
-nxs' :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
-nxs' f e h = Nxs f e (h e)
-
-nxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> XrdSource
-nxs f e h = XrdSourceNxs (nxs' f e h)
-
 h5path'' :: NxEntry -> DataFrameH5Path
 h5path'' nxentry =
   DataFrameH5Path
@@ -130,7 +124,7 @@ mkXRDSample n ps = XRDSample n
                 [ XrdNxs bins multibins threshold skipedFrames n' | n' <- concatMap nxs''' ps ]
     where
       nxs'' :: FilePath -> (NxEntry -> DataFrameH5Path) -> Int -> XrdSource
-      nxs'' f h idx = nxs f' e h
+      nxs'' f h idx = XrdSourceNxs (mkNxs f' e h)
           where
             f' = f </> printf "scan_%d.nxs" idx
             e = printf "scan_%d" (idx - 1)

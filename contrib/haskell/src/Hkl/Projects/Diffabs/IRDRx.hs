@@ -26,18 +26,11 @@ published = project </> "2016" </> "Run5B" </> "irdrx"
 beamlineUpper :: Beamline -> String
 beamlineUpper b = [Data.Char.toUpper x | x <- show b]
 
-
-nxs' :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
-nxs' f e h = Nxs f e (h e)
-
-nxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> XrdSource
-nxs f e h = XrdSourceNxs (nxs' f e h)
-
 sampleRef :: XRDRef
 sampleRef = XRDRef "reference"
             (published </> "calibration")
             (XrdRefNxs
-             (nxs' (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_39.nxs") "scan_39" h5path')
+             (mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_39.nxs") "scan_39" h5path')
              10
             )
 
@@ -69,7 +62,7 @@ sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
 
       entry :: Int -> XRDCalibrationEntry
       entry idx = XRDCalibrationEntryNxs
-                { xrdCalibrationEntryNxs'Nxs = nxs' (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_39.nxs") "scan_39" h5path'
+                { xrdCalibrationEntryNxs'Nxs = mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_39.nxs") "scan_39" h5path'
                 , xrdCalibrationEntryNxs'Idx = idx
                 , xrdCalibrationEntryNxs'NptPath = published </> "calibration" </> printf "scan_39.nxs_%02d.npt" idx
                 }
@@ -93,14 +86,14 @@ skipedFrames = []
 lab6 :: XRDSample
 lab6 = XRDSample "LaB6"
        (published </> "LaB6")
-       [ XrdNxs bins multibins threshold skipedFrames n | n <-
-         [ nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_39.nxs") "scan_39" h5path'
-         , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_40.nxs") "scan_40" h5path'
-         , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_41.nxs") "scan_41" h5path'
-         , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_42.nxs") "scan_42" h5path'
-         , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_43.nxs") "scan_43" h5path'
-         , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_44.nxs") "scan_44" h5path'
-         , nxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_45.nxs") "scan_45" h5path'
+       [ XrdNxs bins multibins threshold skipedFrames (XrdSourceNxs n) | n <-
+         [ mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_39.nxs") "scan_39" h5path'
+         , mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_40.nxs") "scan_40" h5path'
+         , mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_41.nxs") "scan_41" h5path'
+         , mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_42.nxs") "scan_42" h5path'
+         , mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_43.nxs") "scan_43" h5path'
+         , mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_44.nxs") "scan_44" h5path'
+         , mkNxs (project </> "2016" </> "Run5" </> "2016-11-09" </> "scan_45.nxs") "scan_45" h5path'
          ]
        ]
 
