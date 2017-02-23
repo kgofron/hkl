@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Xrd.OneD
        ( XRDRef(..)
@@ -239,9 +240,9 @@ poniFromFile filename = do
 
 getPoniExtRef :: XRDRef -> IO PoniExt
 getPoniExtRef (XRDRef _ output (XrdRefNxs nxs'@(Nxs f _ _) idx)) = do
-  poniExtRefs <- withH5File f $ \h5file ->
-    runSafeT $ toListM ( withDataFrameH5 h5file nxs' (gen output f) yield
-                         >-> hoist lift ( frames' [idx]))
+  poniExtRefs <- runSafeT $
+                 toListM ( withDataFrameH5 nxs' (gen output f) yield
+                           >-> hoist lift ( frames' [idx]))
   return $ difTomoFramePoniExt (Prelude.last poniExtRefs)
   where
     gen :: FilePath -> FilePath -> MyMatrix Double -> Int -> IO PoniExt
@@ -263,14 +264,13 @@ integrate ref (XRDSample _ output nxss) = do
 integrate' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
 integrate' ref output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _ _))) = do
   print f
-  withH5File f $ \h5file ->
-      runSafeT $ runEffect $
-        withDataFrameH5 h5file nxs' (gen ref) yield
-        >-> hoist lift (frames
-                        >-> filter (skip is)
-                        >-> savePonies (pgen output f)
-                        >-> savePy b t
-                        >-> saveGnuplot)
+  runSafeT $ runEffect $
+    withDataFrameH5 nxs' (gen ref) yield
+    >-> hoist lift (frames
+                    >-> filter (skip is)
+                    >-> savePonies (pgen output f)
+                    >-> savePy b t
+                    >-> saveGnuplot)
   where
     gen :: PoniExt -> Pose -> Int -> IO PoniExt
     gen ref' m _idx = return $ setPose ref' m
@@ -324,24 +324,27 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
 
 -- | Pipes
 
-withDataFrameH5 :: (MonadSafe m) => File -> Nxs -> PoniGenerator -> (DataFrameH5 -> m r) -> m r
-withDataFrameH5 h nxs'@(Nxs _ _ (DataFrameH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
+withDataFrameH5 :: (MonadSafe m) => Nxs -> PoniGenerator -> (DataFrameH5 -> m r) -> m r
+withDataFrameH5 nxs'@(Nxs f _ (DataFrameH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
   where
     -- before :: File -> DataFrameH5Path -> m DataFrameH5
     before :: IO DataFrameH5
-    before =  DataFrameH5
-              <$> return nxs'
-              <*> return h
-              <*> openDataSource h g
-              <*> openDataSource h d
-              <*> openDataSource h w
-              <*> return gen
+    before =  do
+      h ← openH5 f
+      DataFrameH5
+        <$> return nxs'
+        <*> return h
+        <*> openDataSource h g
+        <*> openDataSource h d
+        <*> openDataSource h w
+        <*> return gen
 
     -- after :: DataFrameH5 -> IO ()
-    after (DataFrameH5 _ _ g' d' w' _) = do
+    after (DataFrameH5 _ f' g' d' w' _) = do
       closeDataSource g'
       closeDataSource d'
       closeDataSource w'
+      closeFile f'
 
 data DifTomoFrame' sh = DifTomoFrame' { difTomoFrame'DifTomoFrame :: DifTomoFrame sh
                                       , difTomoFrame'PoniPath :: FilePath
@@ -406,13 +409,12 @@ integrateMulti ref (XRDSample _ output nxss) =
 integrateMulti' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
 integrateMulti' ref output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _ _))) = do
   print f
-  withH5File f $ \h5file ->
-      runSafeT $ runEffect $
-        withDataFrameH5 h5file nxs' (gen ref) yield
-        >-> hoist lift (frames
-                        >-> filter (skip is)
-                        >-> savePonies (pgen output f)
-                        >-> saveMultiGeometry mb t)
+  runSafeT $ runEffect $
+    withDataFrameH5 nxs' (gen ref) yield
+    >-> hoist lift (frames
+                    >-> filter (skip is)
+                    >-> savePonies (pgen output f)
+                    >-> saveMultiGeometry mb t)
   where
     gen :: PoniExt -> Pose -> Int -> IO PoniExt
     gen ref' m _idx = return $ setPose ref' m

@@ -1,3 +1,4 @@
+{-# LANGUAGE UnicodeSyntax #-}
 module Hkl.H5
     ( Dataset
     , File
@@ -11,6 +12,8 @@ module Hkl.H5
     , lenH5Dataspace
     , openDataset
     , withH5File
+    , openH5
+    , closeFile
     )
     where
 
@@ -96,6 +99,9 @@ withH5File fp = bracket acquire release
     where
       acquire = openFile (pack fp) [ReadOnly] Nothing
       release = closeFile
+
+openH5 ∷ FilePath → IO File
+openH5 f = openFile (pack f) [ReadOnly] Nothing
 
 -- | Dataspace
 
