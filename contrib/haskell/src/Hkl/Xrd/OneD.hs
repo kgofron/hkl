@@ -145,15 +145,16 @@ data DataFrameH5Path
 data DataFrameH5
     = DataFrameH5
       Nxs -- Nexus file
+      File
       (DataSource H5) -- gamma
       (DataSource H5) -- delta
       (DataSource H5) -- wavelength
       PoniGenerator -- ponie generator
 
 instance Frame DataFrameH5 where
-  len (DataFrameH5 _ _ (DataSourceH5 _ d) _ _) = lenH5Dataspace d
+  len (DataFrameH5 _ _ _ (DataSourceH5 _ d) _ _) = lenH5Dataspace d
 
-  row d@(DataFrameH5 nxs' g d' w ponigen) idx = do
+  row d@(DataFrameH5 nxs' _ g d' w ponigen) idx = do
     n <- lift $ len d
     let eof = fromJust n - 1 == idx
     let mu = 0.0
@@ -330,13 +331,14 @@ withDataFrameH5 h nxs'@(Nxs _ _ (DataFrameH5Path _ g d w)) gen = bracket (liftIO
     before :: IO DataFrameH5
     before =  DataFrameH5
               <$> return nxs'
+              <*> return h
               <*> openDataSource h g
               <*> openDataSource h d
               <*> openDataSource h w
               <*> return gen
 
     -- after :: DataFrameH5 -> IO ()
-    after (DataFrameH5 _ g' d' w' _) = do
+    after (DataFrameH5 _ _ g' d' w' _) = do
       closeDataSource g'
       closeDataSource d'
       closeDataSource w'
