@@ -40,6 +40,7 @@ import Hkl.Detector
 import Hkl.H5
 import Hkl.PyFAI
 import Hkl.MyMatrix
+import Hkl.Nxs
 import Hkl.Types
 import Hkl.Xrd.OneD
 
@@ -83,7 +84,7 @@ withDataItem hid (DataItemH5 name _) = bracket (liftIO acquire') (liftIO . relea
       release' = closeDataset
 
 getMNxs :: File -> DataFrameH5Path XrdOneD -> Int -> IO (MyMatrix Double) -- TODO move to XRD
-getMNxs f (DataFrameH5Path _ g d w) i' = runSafeT $
+getMNxs f (XrdOneDH5Path _ g d w) i' = runSafeT $
     withDataItem f g $ \g' ->
     withDataItem f d $ \d' ->
     withDataItem f w $ \w' -> liftIO $ do

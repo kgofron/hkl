@@ -36,7 +36,7 @@ sampleRef = XRDRef "reference"
 
 h5path' :: NxEntry -> DataFrameH5Path XrdOneD
 h5path' nxentry =
-    DataFrameH5Path
+    XrdOneDH5Path
     (DataItemH5 (nxentry </> image) StrictDims)
     (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
     (DataItemH5 (nxentry </> delta) ExtendDims)

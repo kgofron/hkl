@@ -12,15 +12,10 @@ module Hkl.Xrd.OneD
        , XRDRef(..)
        , XrdRefSource(..)
        , XRDSample(..)
-       , DataFrameH5(..)
-       , DataFrameH5Path(..)
-       , NxEntry
-       , Nxs(..)
        , OutputBaseDir
        , SampleName
        , Threshold(..)
        , XrdNxs(..)
-       , mkNxs
        , XrdSource(..)
        , PoniExt(..)
          -- reference
@@ -84,36 +79,17 @@ import Hkl.Edf
 import Hkl.H5
 import Hkl.PyFAI
 import Hkl.MyMatrix
+import Hkl.Nxs
 import Hkl.Types
 import Hkl.Utils
 
 -- | Types
 
-type NxEntry = String
 type OutputBaseDir = FilePath
-type PoniGenerator = Pose -> Int -> IO PoniExt
 type SampleName = String
 
 data Threshold = Threshold Int deriving (Show)
 
-data XrdFlat
-data XrdOneD
-
-data DataFrameH5Path a where
-  DataFrameH5Path ∷ (DataItem H5) -- image
-                  → (DataItem H5) -- gamma
-                  → (DataItem H5) -- delta
-                  → (DataItem H5) -- wavelength
-                  → DataFrameH5Path XrdOneD
-  XrdFlatH5Path ∷ (DataItem H5) -- image
-                → DataFrameH5Path XrdFlat
-
-deriving instance Show (DataFrameH5Path a)
-
-data Nxs a where
-  Nxs ∷ FilePath → DataFrameH5Path a → Nxs a
-
-deriving instance Show (Nxs a)
 
 data XrdRefSource = XrdRefNxs (Nxs XrdOneD) Int
                   | XrdRefEdf FilePath FilePath
@@ -138,10 +114,6 @@ data XrdNxs
       XrdSource -- data source
     deriving (Show)
 
-
-mkNxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path a) -> Nxs a
-mkNxs f e h = Nxs f (h e)
-
 data DifTomoFrame sh =
   DifTomoFrame { difTomoFrameNxs :: Nxs XrdOneD-- ^ nexus of the current frame
                , difTomoFrameIdx :: Int -- ^ index of the current frame
@@ -153,20 +125,6 @@ data DifTomoFrame sh =
 class Frame t where
   len :: t -> IO (Maybe Int)
   row :: t -> Int -> MaybeT IO (DifTomoFrame DIM1)
-
-
-data DataFrameH5 a where
-  DataFrameH5 ∷ (Nxs XrdOneD)-- Nexus file
-              → File
-              → (DataSource H5) -- gamma
-              → (DataSource H5) -- delta
-              → (DataSource H5) -- wavelength
-              → PoniGenerator -- ponie generator
-              → DataFrameH5 XrdOneD
-  XrdFlatH5 ∷ (Nxs XrdFlat) -- Nexus Source file
-            → File -- h5file handler
-            → (DataSource H5) --images
-            → DataFrameH5 XrdFlat
 
 instance Frame (DataFrameH5 XrdOneD) where
   len (DataFrameH5 _ _ _ (DataSourceH5 _ d) _ _) = lenH5Dataspace d
@@ -333,7 +291,7 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
                              , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"lut\", mask=mask)"
                                   ]
       p = takeFileName poniPath
-      (Nxs nxs' (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
+      (Nxs nxs' (XrdOneDH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       idx = difTomoFrameIdx f
       output = (dropExtension . takeFileName) poniPath ++ ".dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
@@ -341,7 +299,7 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
 -- | Pipes
 
 withDataFrameH5 :: (MonadSafe m) => Nxs XrdOneD -> PoniGenerator -> (DataFrameH5 XrdOneD -> m r) -> m r
-withDataFrameH5 nxs'@(Nxs f (DataFrameH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
+withDataFrameH5 nxs'@(Nxs f (XrdOneDH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
   where
     -- before :: File -> DataFrameH5Path -> m DataFrameH5
     before :: IO (DataFrameH5 XrdOneD)
@@ -355,7 +313,7 @@ withDataFrameH5 nxs'@(Nxs f (DataFrameH5Path _ g d w)) gen = bracket (liftIO bef
         <*> openDataSource h w
         <*> return gen
 
-    -- after :: DataFrameH5 -> IO ()
+    after ∷ DataFrameH5 XrdOneD → IO () 
     after (DataFrameH5 _ f' g' d' w' _) = do
       closeDataSource g'
       closeDataSource d'
@@ -496,7 +454,7 @@ createMultiPy b (Threshold t) (DifTomoFrame' f _) idxPonies = (script, output)
                              , "# Save the datas"
                              , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                              ]
-      (Nxs nxs' (DataFrameH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
+      (Nxs nxs' (XrdOneDH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       output = "multi.dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
       (idxs, ponies) = unzip idxPonies

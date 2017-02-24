@@ -96,6 +96,7 @@ library
                     , Hkl.Engine
                     , Hkl.H5
                     , Hkl.MyMatrix
+                    , Hkl.Nxs
                     , Hkl.Projects
                     , Hkl.Projects.D2AM
                     , Hkl.Projects.D2AM.XRD
