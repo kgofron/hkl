@@ -4,10 +4,12 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Xrd.OneD
-       ( XRDRef(..)
+       ( XrdOneD
+       , XRDRef(..)
        , XrdRefSource(..)
        , XRDSample(..)
        , DataFrameH5(..)
@@ -94,9 +96,26 @@ type SampleName = String
 
 data Threshold = Threshold Int deriving (Show)
 
-data Nxs = Nxs FilePath DataFrameH5Path deriving (Show)
+data XrdFlat
+data XrdOneD
 
-data XrdRefSource = XrdRefNxs Nxs Int
+data DataFrameH5Path a where
+  DataFrameH5Path ∷ (DataItem H5) -- image
+                  → (DataItem H5) -- gamma
+                  → (DataItem H5) -- delta
+                  → (DataItem H5) -- wavelength
+                  → DataFrameH5Path XrdOneD
+  XrdFlatH5Path ∷ (DataItem H5) -- image
+                → DataFrameH5Path XrdFlat
+
+deriving instance Show (DataFrameH5Path a)
+
+data Nxs a where
+  Nxs ∷ FilePath → DataFrameH5Path a → Nxs a
+
+deriving instance Show (Nxs a)
+
+data XrdRefSource = XrdRefNxs (Nxs XrdOneD) Int
                   | XrdRefEdf FilePath FilePath
                   deriving (Show)
 
@@ -106,7 +125,7 @@ data XRDRef = XRDRef SampleName OutputBaseDir XrdRefSource
 data XRDSample = XRDSample SampleName OutputBaseDir [XrdNxs] -- ^ nxss
                deriving (Show)
 
-data XrdSource = XrdSourceNxs Nxs
+data XrdSource = XrdSourceNxs (Nxs XrdOneD)
                | XrdSourceEdf [FilePath]
                  deriving (Show)
 
@@ -120,11 +139,11 @@ data XrdNxs
     deriving (Show)
 
 
-mkNxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
+mkNxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path a) -> Nxs a
 mkNxs f e h = Nxs f (h e)
 
 data DifTomoFrame sh =
-  DifTomoFrame { difTomoFrameNxs :: Nxs -- ^ nexus of the current frame
+  DifTomoFrame { difTomoFrameNxs :: Nxs XrdOneD-- ^ nexus of the current frame
                , difTomoFrameIdx :: Int -- ^ index of the current frame
                , difTomoFrameEOF :: Bool -- ^ is it the eof of the stream
                , difTomoFrameGeometry :: Geometry -- ^ diffractometer geometry
@@ -135,24 +154,21 @@ class Frame t where
   len :: t -> IO (Maybe Int)
   row :: t -> Int -> MaybeT IO (DifTomoFrame DIM1)
 
-data DataFrameH5Path
-    = DataFrameH5Path
-      (DataItem H5) -- image
-      (DataItem H5) -- gamma
-      (DataItem H5) -- delta
-      (DataItem H5) -- wavelength
-    deriving (Show)
 
-data DataFrameH5
-    = DataFrameH5
-      Nxs -- Nexus file
-      File
-      (DataSource H5) -- gamma
-      (DataSource H5) -- delta
-      (DataSource H5) -- wavelength
-      PoniGenerator -- ponie generator
+data DataFrameH5 a where
+  DataFrameH5 ∷ (Nxs XrdOneD)-- Nexus file
+              → File
+              → (DataSource H5) -- gamma
+              → (DataSource H5) -- delta
+              → (DataSource H5) -- wavelength
+              → PoniGenerator -- ponie generator
+              → DataFrameH5 XrdOneD
+  XrdFlatH5 ∷ (Nxs XrdFlat) -- Nexus Source file
+            → File -- h5file handler
+            → (DataSource H5) --images
+            → DataFrameH5 XrdFlat
 
-instance Frame DataFrameH5 where
+instance Frame (DataFrameH5 XrdOneD) where
   len (DataFrameH5 _ _ _ (DataSourceH5 _ d) _ _) = lenH5Dataspace d
 
   row d@(DataFrameH5 nxs' _ g d' w ponigen) idx = do
@@ -324,11 +340,11 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
 
 -- | Pipes
 
-withDataFrameH5 :: (MonadSafe m) => Nxs -> PoniGenerator -> (DataFrameH5 -> m r) -> m r
+withDataFrameH5 :: (MonadSafe m) => Nxs XrdOneD -> PoniGenerator -> (DataFrameH5 XrdOneD -> m r) -> m r
 withDataFrameH5 nxs'@(Nxs f (DataFrameH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
   where
     -- before :: File -> DataFrameH5Path -> m DataFrameH5
-    before :: IO DataFrameH5
+    before :: IO (DataFrameH5 XrdOneD)
     before =  do
       h ← openH5 f
       DataFrameH5

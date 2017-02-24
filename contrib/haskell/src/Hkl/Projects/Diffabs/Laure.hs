@@ -43,7 +43,7 @@ project' = "/nfs/ruche-diffabs/diffabs-users/20160370/"
 published' :: FilePath
 published' = project' </> "published-data"
 
-h5path' :: NxEntry -> DataFrameH5Path
+h5path' :: NxEntry -> DataFrameH5Path XrdOneD
 h5path' nxentry =
     DataFrameH5Path
     (DataItemH5 (nxentry </> image) StrictDims)
@@ -102,7 +102,7 @@ skipedFrames = [4]
 
 -- Scan en delta
 
-h5path'' :: NxEntry -> DataFrameH5Path
+h5path'' :: NxEntry -> DataFrameH5Path XrdOneD
 h5path'' nxentry =
   DataFrameH5Path
   (DataItemH5 (nxentry </> image) StrictDims)
@@ -123,7 +123,7 @@ mkXRDSample n ps = XRDSample n
                 (published </> n)
                 [ XrdNxs bins multibins threshold skipedFrames n' | n' <- concatMap nxs''' ps ]
     where
-      nxs'' :: FilePath -> (NxEntry -> DataFrameH5Path) -> Int -> XrdSource
+      nxs'' :: FilePath -> (NxEntry -> DataFrameH5Path XrdOneD) -> Int -> XrdSource
       nxs'' f h idx = XrdSourceNxs (mkNxs f' e h)
           where
             f' = f </> printf "scan_%d.nxs" idx

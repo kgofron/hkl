@@ -34,7 +34,7 @@ sampleRef = XRDRef "reference"
              10
             )
 
-h5path' :: NxEntry -> DataFrameH5Path
+h5path' :: NxEntry -> DataFrameH5Path XrdOneD
 h5path' nxentry =
     DataFrameH5Path
     (DataItemH5 (nxentry </> image) StrictDims)

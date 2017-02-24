@@ -29,7 +29,7 @@ published = project </> "published-data"
 beamlineUpper :: Beamline -> String
 beamlineUpper b = [Data.Char.toUpper x | x <- show b]
 
-h5path' :: NxEntry -> DataFrameH5Path
+h5path' :: NxEntry -> DataFrameH5Path XrdOneD
 h5path' nxentry =
     DataFrameH5Path
     (DataItemH5 (nxentry </> image) StrictDims)
@@ -74,7 +74,7 @@ sampleRef = XRDRef "reference"
              6 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
-h5path :: NxEntry -> DataFrameH5Path
+h5path :: NxEntry -> DataFrameH5Path XrdOneD
 h5path nxentry =
   DataFrameH5Path
   (DataItemH5 (nxentry </> image) StrictDims)

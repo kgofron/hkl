@@ -35,7 +35,7 @@ project' = "/nfs/ruche-diffabs/diffabs-users/99160066/"
 published':: FilePath
 published' = project' </> "published-data"
 
-h5path' :: NxEntry -> DataFrameH5Path
+h5path' :: NxEntry -> DataFrameH5Path XrdOneD
 h5path' nxentry =
     DataFrameH5Path
     (DataItemH5 (nxentry </> image) StrictDims)
