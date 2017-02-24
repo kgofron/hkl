@@ -92,12 +92,13 @@ type OutputBaseDir = FilePath
 type PoniGenerator = Pose -> Int -> IO PoniExt
 type SampleName = String
 
-data Threshold = Threshold Int
-               deriving (Show)
+data Threshold = Threshold Int deriving (Show)
+
+data Nxs = Nxs FilePath DataFrameH5Path deriving (Show)
 
 data XrdRefSource = XrdRefNxs Nxs Int
                   | XrdRefEdf FilePath FilePath
-                    deriving (Show)
+                  deriving (Show)
 
 data XRDRef = XRDRef SampleName OutputBaseDir XrdRefSource
             deriving (Show)
@@ -118,7 +119,6 @@ data XrdNxs
       XrdSource -- data source
     deriving (Show)
 
-data Nxs = Nxs FilePath DataFrameH5Path deriving (Show)
 
 mkNxs :: FilePath -> NxEntry -> (NxEntry -> DataFrameH5Path) -> Nxs
 mkNxs f e h = Nxs f (h e)
