@@ -88,8 +88,8 @@ multibins = ix1 25000
 threshold :: Threshold
 threshold = Threshold 800
 
-h5path :: NxEntry -> XrdMeshH5Path H5 H5 H5 H5 H5 H5
-h5path nxentry = XrdMeshH5Path
+h5path :: NxEntry -> XrdMeshH5Path' H5 H5 H5 H5 H5 H5
+h5path nxentry = XrdMeshH5Path'
                  (DataItemH5 (nxentry </> image) StrictDims)
                  (DataItemH5 (nxentry </> meshx) StrictDims)
                  (DataItemH5 (nxentry </> meshy) StrictDims)

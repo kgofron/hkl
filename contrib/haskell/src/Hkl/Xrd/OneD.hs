@@ -170,7 +170,7 @@ frames' is = do
               f <- lift $ runMaybeT $ row d i'
               when (isJust f) (yield (fromJust f)))
 
-skip :: Shape sh => [Int] -> DifTomoFrame sh -> Bool
+skip :: [Int] -> DifTomoFrame sh -> Bool
 skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
 
 -- {-# ANN module "HLint: ignore Use camelCase" #-}

@@ -116,8 +116,8 @@ fly = XrdMeshSample "scan5"
         )
       ]
     where
-      h5path :: NxEntry -> (XrdMeshH5Path H5 H5 H5 Double Double Double)
-      h5path nxentry = XrdMeshH5Path
+      h5path :: NxEntry -> (XrdMeshH5Path' H5 H5 H5 Double Double Double)
+      h5path nxentry = XrdMeshH5Path'
                        (DataItemH5 (nxentry </> image) StrictDims)
                        (DataItemH5 (nxentry </> meshx) StrictDims)
                        (DataItemH5 (nxentry </> meshy) StrictDims)

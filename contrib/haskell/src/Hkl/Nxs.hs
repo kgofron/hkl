@@ -10,6 +10,7 @@ module Hkl.Nxs
     , PoniGenerator
     , XrdFlat
     , XrdOneD
+    , XrdMesh
     , mkNxs
     ) where
 
@@ -24,6 +25,7 @@ type PoniGenerator = Pose -> Int -> IO PoniExt
 
 data XrdFlat
 data XrdOneD
+data XrdMesh
 
 data DataFrameH5Path a where
   XrdFlatH5Path ∷ (DataItem H5) -- ^ image
@@ -33,6 +35,20 @@ data DataFrameH5Path a where
                 → (DataItem H5) -- ^ delta
                 → (DataItem H5) -- ^ wavelength
                 → DataFrameH5Path XrdOneD
+  XrdMeshH5Path ∷ (DataItem H5) -- ^ Image
+                → (DataItem H5) -- ^ meshx
+                → (DataItem H5) -- ^ meshy
+                → (DataItem H5) -- ^ gamma
+                → (DataItem H5) -- ^ delta
+                → (DataItem H5) -- ^ wavelength
+                → DataFrameH5Path XrdMesh
+  XrdMeshFlyH5Path ∷ (DataItem H5) -- ^ Image
+                   → (DataItem H5) -- ^ meshx
+                   → (DataItem H5) -- ^ meshy
+                   → (DataItem Double) -- ^ gamma
+                   → (DataItem Double) -- ^ delta
+                   → (DataItem Double) -- ^ wavelength
+                   → DataFrameH5Path XrdMesh
 
 deriving instance Show (DataFrameH5Path a)
 
@@ -53,7 +69,24 @@ data DataFrameH5 a where
               → (DataSource H5) -- wavelength
               → PoniGenerator -- ponie generator
               → DataFrameH5 XrdOneD
-
+  XrdMeshH5 ∷ (Nxs XrdMesh) -- NexusFile Source File
+            → File -- h5file handler
+            → (DataSource H5) -- image
+            → (DataSource H5) -- meshx
+            → (DataSource H5) -- meshy
+            → (DataSource H5) -- gamma
+            → (DataSource H5) -- delta
+            → (DataSource H5) -- wavelength
+            → DataFrameH5 XrdMesh
+  XrdMeshFlyH5 ∷ (Nxs XrdMesh) -- NexusFile Source File
+               → File -- h5file handler
+               → (DataSource H5) -- image
+               → (DataSource H5) -- meshx
+               → (DataSource H5) -- meshy
+               → (DataSource Double) -- gamma
+               → (DataSource Double) -- delta
+               → (DataSource Double) -- wavelength
+               → DataFrameH5 XrdMesh
 
 mkNxs ∷ FilePath → NxEntry → (NxEntry → DataFrameH5Path a) → Nxs a
 mkNxs f e h = Nxs f (h e)
