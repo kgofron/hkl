@@ -106,18 +106,18 @@ lab6 = XRDSample "LaB6"
 -- delta = -6.2
 -- gamma = 0.0
 -- nrj 18.2 keV
-fly :: XrdMeshSample H5 H5 H5 Double Double Double
+fly :: XrdMeshSample
 fly = XrdMeshSample "scan5"
       (published </> "scan5")
       [ XrdMesh bins multibins threshold
-        ( XrdMeshSourceNxsFly [mkXrdMeshNxs (project </> "2016" </> "Run5" </> "2016-11-fly" </> "scan5" </> printf "flyscan_%05d.nxs" n) "exptest_01368" h5path |
+        ( XrdMeshSourceNxsFly [mkNxs (project </> "2016" </> "Run5" </> "2016-11-fly" </> "scan5" </> printf "flyscan_%05d.nxs" n) "exptest_01368" h5path |
                                n <- [7087, 7088, 7089, 7090, 7091, 7092, 7093, 7094, 7095] :: [Int]
                               ]
         )
       ]
     where
-      h5path :: NxEntry -> (XrdMeshH5Path' H5 H5 H5 Double Double Double)
-      h5path nxentry = XrdMeshH5Path'
+      h5path :: NxEntry -> (DataFrameH5Path XrdMesh)
+      h5path nxentry = XrdMeshFlyH5Path
                        (DataItemH5 (nxentry </> image) StrictDims)
                        (DataItemH5 (nxentry </> meshx) StrictDims)
                        (DataItemH5 (nxentry </> meshy) StrictDims)

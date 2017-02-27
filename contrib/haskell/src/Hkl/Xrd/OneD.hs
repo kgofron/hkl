@@ -98,9 +98,6 @@ data XrdRefSource = XrdRefNxs (Nxs XrdOneD) Int
 data XRDRef = XRDRef SampleName OutputBaseDir XrdRefSource
             deriving (Show)
 
-data XRDSample = XRDSample SampleName OutputBaseDir [XrdNxs] -- ^ nxss
-               deriving (Show)
-
 data XrdSource = XrdSourceNxs (Nxs XrdOneD)
                | XrdSourceEdf [FilePath]
                  deriving (Show)
@@ -113,6 +110,9 @@ data XrdNxs
       [Int] -- Index of the frames to skip
       XrdSource -- data source
     deriving (Show)
+
+data XRDSample = XRDSample SampleName OutputBaseDir [XrdNxs] -- ^ nxss
+               deriving (Show)
 
 data DifTomoFrame sh =
   DifTomoFrame { difTomoFrameNxs :: Nxs XrdOneD-- ^ nexus of the current frame

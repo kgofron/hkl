@@ -1,14 +1,13 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Xrd.Mesh
        ( XrdMeshSample(..)
        , XrdMesh'(..)
        , XrdMeshSource(..)
-       , XrdMeshH5Path'(..)
        , integrateMesh
-       , mkXrdMeshNxs
-       , mkXrdMeshSourceNxs
        ) where
 
 #if __GLASGOW_HASKELL__ < 710
@@ -49,40 +48,13 @@ import Hkl.Xrd.OneD
 
 -- | Types
 
-data XrdMeshH5Path' a b c d e f
-  = XrdMeshH5Path'
-    (DataItem a) -- ^ Image
-    (DataItem b) -- ^ meshx
-    (DataItem c) -- ^ meshy
-    (DataItem d) -- ^ gamma
-    (DataItem e) -- ^ delta
-    (DataItem f) -- ^ wavelength
-  deriving (Show)
+data XrdMeshSource  = XrdMeshSourceNxs (Nxs XrdMesh)
+                    | XrdMeshSourceNxsFly [Nxs XrdMesh]
+                    deriving (Show)
 
-data XrdMeshH5' b c d e f
-  = XrdMeshH5'
-    (DataSource b) -- ^ MeshX
-    (DataSource c) -- ^ MeshY
-    (DataSource d) -- ^ Gamma
-    (DataSource e) -- ^ Delta
-    (DataSource f) -- ^ Wavelength
+data XrdMesh' = XrdMesh DIM1 DIM1 Threshold XrdMeshSource deriving (Show)
 
-data XrdMeshSample a b c d e f = XrdMeshSample SampleName OutputBaseDir [XrdMesh' a b c d e f] -- ^ nxss
-
-data XrdMesh' a b c d e f = XrdMesh DIM1 DIM1 Threshold (XrdMeshSource a b c d e f) deriving (Show)
-
-data XrdMeshSource a b c d e f = XrdMeshSourceNxs (XrdMeshNxs a b c d e f)
-                               | XrdMeshSourceNxsFly [XrdMeshNxs a b c d e f]
-                               deriving (Show)
-
-data XrdMeshNxs a b c d e f = XrdMeshNxs FilePath NxEntry (XrdMeshH5Path' a b c d e f)
-                  deriving (Show)
-
-mkXrdMeshNxs :: FilePath -> NxEntry -> (NxEntry -> XrdMeshH5Path' a b c d e f) -> (XrdMeshNxs a b c d e f)
-mkXrdMeshNxs f e h = XrdMeshNxs f e (h e)
-
-mkXrdMeshSourceNxs :: FilePath -> NxEntry -> (NxEntry -> XrdMeshH5Path' a b c d e f) -> (XrdMeshSource a b c d e f)
-mkXrdMeshSourceNxs f e h = XrdMeshSourceNxs $ mkXrdMeshNxs f e h
+data XrdMeshSample = XrdMeshSample SampleName OutputBaseDir [XrdMesh'] -- ^ nxss
 
 data XrdMeshFrame = XrdMeshFrame
                     WaveLength
@@ -92,9 +64,9 @@ data XrdMeshFrame = XrdMeshFrame
 class FrameND t where
   rowND :: t -> MaybeT IO XrdMeshFrame
 
-instance FrameND (XrdMeshH5' a b c d e) where
+instance FrameND (DataFrameH5 XrdMesh) where
 
-  rowND (XrdMeshH5' _ _ g d w) = do
+  rowND (XrdMeshH5 _ _ _ _ _ g d w) = do
     let mu = 0.0
     let komega = 0.0
     let kappa = 0.0
@@ -115,24 +87,74 @@ instance FrameND (XrdMeshH5' a b c d e) where
         if any isNaN v then fail "File contains Nan" else return v
       get_position' (DataSourceConst v) _ = lift $ return $ singleton v
 
-withDataSource :: File -> (XrdMeshH5Path' a b c d e f) -> (XrdMeshH5' b c d e f -> IO r) -> IO r
-withDataSource h s = bracket (before s) after
+  rowND (XrdMeshFlyH5 _ _ _ _ _ g d w) = do
+    let mu = 0.0
+    let komega = 0.0
+    let kappa = 0.0
+    let kphi = 0.0
+    gamma <- get_position' g (ix1 0)
+    delta <- get_position' d (ix1 0)
+    wavelength <- get_position' w (ix1 0)
+    let source@(Source w') = Source (head wavelength *~ nano meter)
+    let positions = concat [mu, komega, kappa, kphi, gamma, delta]
+    let geometry =  Geometry K6c source positions Nothing
+    let detector = ZeroD
+    m <- lift $ geometryDetectorRotationGet geometry detector
+    return $ XrdMeshFrame w' (MyMatrix HklB m)
     where
-      before :: (XrdMeshH5Path' a b c d e f) -> IO (XrdMeshH5' b c d e f)
-      before (XrdMeshH5Path' _i x y g d w) =
-          XrdMeshH5' <$> openDataSource h x
-                    <*> openDataSource h y
-                    <*> openDataSource h g
-                    <*> openDataSource h d
-                    <*> openDataSource h w
+      get_position' :: Shape sh => DataSource a -> sh -> MaybeT IO (Vector Double)
+      get_position' (DataSourceH5 _ a ) b = lift $ do
+        v <- get_position_new a b
+        if any isNaN v then fail "File contains Nan" else return v
+      get_position' (DataSourceConst v) _ = lift $ return $ singleton v
 
-      after :: XrdMeshH5' b c d e f -> IO ()
-      after (XrdMeshH5' x' y' g' d' w') = do
-        closeDataSource x'
-        closeDataSource y'
-        closeDataSource g'
-        closeDataSource d'
-        closeDataSource w'
+after ∷ DataFrameH5 XrdMesh → IO ()
+after (XrdMeshH5 _ f' i' x' y' g' d' w') = do
+  closeDataSource i'
+  closeDataSource x'
+  closeDataSource y'
+  closeDataSource g'
+  closeDataSource d'
+  closeDataSource w'
+  closeFile f'
+after (XrdMeshFlyH5 _ f' i' x' y' g' d' w') = do
+  closeDataSource i'
+  closeDataSource x'
+  closeDataSource y'
+  closeDataSource g'
+  closeDataSource d'
+  closeDataSource w'
+  closeFile f'
+
+withDataSource :: Nxs XrdMesh -> (DataFrameH5 XrdMesh -> IO r) -> IO r
+withDataSource nxs'@(Nxs f (XrdMeshH5Path i x y g d w)) = bracket before after
+    where
+      before :: IO (DataFrameH5 XrdMesh)
+      before = do
+        h ← openH5 f
+        XrdMeshH5
+          <$> return nxs'
+          <*> return h
+          <*> openDataSource h i
+          <*> openDataSource h x
+          <*> openDataSource h y
+          <*> openDataSource h g
+          <*> openDataSource h d
+          <*> openDataSource h w
+withDataSource nxs'@(Nxs f (XrdMeshFlyH5Path i x y g d w)) = bracket before after
+  where
+    before ∷ IO (DataFrameH5 XrdMesh)
+    before = do
+      h ← openH5 f
+      XrdMeshFlyH5
+        <$> return nxs'
+        <*> return h
+        <*> openDataSource h i
+        <*> openDataSource h x
+        <*> openDataSource h y
+        <*> openDataSource h g
+        <*> openDataSource h d
+        <*> openDataSource h w
 
 xrdMeshPy :: FilePath -> FilePath -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> (Text, FilePath)
 xrdMeshPy p f x y i b (Threshold t) w o os = (script, os)
@@ -224,30 +246,28 @@ xrdMeshFlyPy p fs x y i b (Threshold t) w o os = (script, os)
                              , "                o['map'][y, x] = I"
                              ]
 
-getWaveLengthAndPoniExt :: PoniExt -> XrdMeshSource a b c d e f -> IO (WaveLength, PoniExt)
-getWaveLengthAndPoniExt ref (XrdMeshSourceNxs (XrdMeshNxs f _ h5path)) =
-    withH5File f $ \h5file ->
-        withDataSource h5file h5path $ \h -> do
-          -- read the first frame and get the poni used for all the integration.
-          d <- runMaybeT $ rowND h
-          let (XrdMeshFrame w m) = fromJust d
-          let poniext = setPose ref m
-          return (w, poniext)
-getWaveLengthAndPoniExt ref (XrdMeshSourceNxsFly (XrdMeshNxs f _ h5path:_)) =
-    withH5File f $ \h5file ->
-      withDataSource h5file h5path $ \h -> do
-        -- read the first frame and get the poni used for all the integration.
-        d <- runMaybeT $ rowND h
-        let (XrdMeshFrame w m) = fromJust d
-        let poniext = setPose ref m
-        return (w, poniext)
+getWaveLengthAndPoniExt :: PoniExt -> XrdMeshSource -> IO (WaveLength, PoniExt)
+getWaveLengthAndPoniExt ref (XrdMeshSourceNxs nxs) =
+  withDataSource nxs $ \h -> do
+    -- read the first frame and get the poni used for all the integration.
+    d <- runMaybeT $ rowND h
+    let (XrdMeshFrame w m) = fromJust d
+    let poniext = setPose ref m
+    return (w, poniext)
+getWaveLengthAndPoniExt ref (XrdMeshSourceNxsFly (nxs:_)) =
+  withDataSource nxs $ \h -> do
+    -- read the first frame and get the poni used for all the integration.
+    d <- runMaybeT $ rowND h
+    let (XrdMeshFrame w m) = fromJust d
+    let poniext = setPose ref m
+    return (w, poniext)
 
-integrateMesh :: PoniExt -> (XrdMeshSample a b c d e f) -> IO ()
+integrateMesh :: PoniExt -> XrdMeshSample -> IO ()
 integrateMesh ref (XrdMeshSample _ output nxss) =
   mapM_ (integrateMesh' ref output) nxss
 
-integrateMesh' :: PoniExt -> OutputBaseDir -> (XrdMesh' a b c d e f) -> IO ()
-integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (XrdMeshNxs f _ h5path))) = do
+integrateMesh' :: PoniExt -> OutputBaseDir -> XrdMesh' -> IO ()
+integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
     -- get the poniext for all the scan
     (w, (PoniExt p _)) <- getWaveLengthAndPoniExt ref nxs'
 
@@ -257,7 +277,7 @@ integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (XrdMeshNxs f _ 
     saveScript (poniToText p) pfilename
 
     -- create the python script to do the integration.
-    let (XrdMeshH5Path' (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
+    let (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
     let o = output </> sdir </> sdir ++ ".h5"
     let os = output </> sdir </> sdir ++ ".py"
     let (script, scriptPath) = xrdMeshPy pfilename f x y i b t w o os
@@ -269,21 +289,21 @@ integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (XrdMeshNxs f _ 
     ExitSuccess <- runPythonScript scriptPath False
 
     return ()
-integrateMesh' ref output (XrdMesh b _ t ss) = do
-    -- get the poniext for all the scan
-    (w, PoniExt p _) <- getWaveLengthAndPoniExt ref ss
+-- integrateMesh' ref output (XrdMesh b _ t ss) = do
+--     -- get the poniext for all the scan
+--     (w, PoniExt p _) <- getWaveLengthAndPoniExt ref ss
 
-    -- save this poni at the right place
-    let (XrdMeshSourceNxsFly (XrdMeshNxs _ nxentry h5path:_)) = ss
-    let pfilename = output </> nxentry </> nxentry ++ ".poni"
-    saveScript (poniToText p) pfilename
+--     -- save this poni at the right place
+--     let (XrdMeshSourceNxsFly (Nxs _ nxentry h5path:_)) = ss
+--     let pfilename = output </> nxentry </> nxentry ++ ".poni"
+--     saveScript (poniToText p) pfilename
 
-    -- create the python script to do the integration
-    let (XrdMeshH5Path' (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
-    let o = output </> nxentry </> nxentry ++ ".h5"
-    let os = output </> nxentry </> nxentry ++ ".py"
+--     -- create the python script to do the integration
+--     let (XrdMeshH5Path' (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
+--     let o = output </> nxentry </> nxentry ++ ".h5"
+--     let os = output </> nxentry </> nxentry ++ ".py"
 
-    -- let (script, scriptPath) = xrdMeshFlyPy
-    -- save it
-    -- run it
-    return ()
+--     -- let (script, scriptPath) = xrdMeshFlyPy
+--     -- save it
+--     -- run it
+--     return ()
