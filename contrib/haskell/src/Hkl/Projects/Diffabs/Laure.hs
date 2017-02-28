@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Projects.Diffabs.Laure
        ( laure ) where
@@ -16,8 +17,8 @@ import Prelude hiding (lookup, readFile, writeFile)
 import Hkl
 
 -- | TODO
--- * add the possibility to remove a bunch of images when doing the computation. (here the number 4)
--- * Add the flat.
+-- * Livre 45 p159
+-- * Add the flat. scan 57, 58, 59, 60 faire une moyenne de toutes ces images et l'utiliser comme flat lors de l'intégration.
 -- * remove the air to each spectrum.
 -- * deal with the multi geometry intensity problem. I = 1e9 ???
 -- * simplify with the list of nxs using list comprehension.
@@ -100,6 +101,22 @@ threshold = Threshold 800
 skipedFrames :: [Int]
 skipedFrames = [4]
 
+-- Flat
+
+mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
+mkNxs' d idx h = mkNxs f' e h
+  where
+     f ∷ FilePath → Int → (FilePath, NxEntry)
+     f d' i' = (d' </> printf "scan_%d.nxs" i', printf "scan_%d" (i' - 1))
+
+     (f', e) = f d idx
+
+flat ∷ [Nxs XrdFlat]
+flat = [mkNxs' (project </> "2017" </> "Run1" </> "2017-02-15") idx h5path | idx ← [57..60 ∷ Int]]
+  where
+    h5path :: NxEntry -> DataFrameH5Path XrdFlat
+    h5path nxentry = XrdFlatH5Path (DataItemH5 (nxentry </> "scan_data/data_02") StrictDims)
+
 -- Scan en delta
 
 h5path'' :: NxEntry -> DataFrameH5Path XrdOneD
@@ -123,14 +140,8 @@ mkXRDSample n ps = XRDSample n
                 (published </> n)
                 [ XrdNxs bins multibins threshold skipedFrames n' | n' <- concatMap nxs''' ps ]
     where
-      nxs'' :: FilePath -> (NxEntry -> DataFrameH5Path XrdOneD) -> Int -> XrdSource
-      nxs'' f h idx = XrdSourceNxs (mkNxs f' e h)
-          where
-            f' = f </> printf "scan_%d.nxs" idx
-            e = printf "scan_%d" (idx - 1)
-
       nxs''' :: (FilePath, [Int]) -> [XrdSource]
-      nxs''' (p, idxs) = [nxs'' p h5path'' idx | idx <- idxs]
+      nxs''' (p, idxs) = [XrdSourceNxs (mkNxs' p idx h5path'') | idx <- idxs]
 
 
 samples :: [XRDSample]

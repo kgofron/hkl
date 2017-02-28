@@ -105,6 +105,9 @@ mkNxs f e h = Nxs f (h e)
 -- acquire and release the resources
 
 after ∷ DataFrameH5 a → IO ()
+after (XrdFlatH5 _ f i) = do
+  closeDataSource i
+  closeFile f
 after (DataFrameH5 _ f g d w _) = do
   closeDataSource g
   closeDataSource d
