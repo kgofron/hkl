@@ -10,10 +10,6 @@ module Hkl.Xrd.Mesh
        , integrateMesh
        ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>), (<*>))
-#endif
-import Control.Exception.Base (bracket)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Data.Array.Repa (Shape, DIM1, ix1, size)
 import Data.Maybe (fromJust)
@@ -108,53 +104,6 @@ instance FrameND (DataFrameH5 XrdMesh) where
         if any isNaN v then fail "File contains Nan" else return v
       get_position' (DataSourceConst v) _ = lift $ return $ singleton v
 
-after ∷ DataFrameH5 XrdMesh → IO ()
-after (XrdMeshH5 _ f' i' x' y' g' d' w') = do
-  closeDataSource i'
-  closeDataSource x'
-  closeDataSource y'
-  closeDataSource g'
-  closeDataSource d'
-  closeDataSource w'
-  closeFile f'
-after (XrdMeshFlyH5 _ f' i' x' y' g' d' w') = do
-  closeDataSource i'
-  closeDataSource x'
-  closeDataSource y'
-  closeDataSource g'
-  closeDataSource d'
-  closeDataSource w'
-  closeFile f'
-
-withDataSource :: Nxs XrdMesh -> (DataFrameH5 XrdMesh -> IO r) -> IO r
-withDataSource nxs'@(Nxs f (XrdMeshH5Path i x y g d w)) = bracket before after
-    where
-      before :: IO (DataFrameH5 XrdMesh)
-      before = do
-        h ← openH5 f
-        XrdMeshH5
-          <$> return nxs'
-          <*> return h
-          <*> openDataSource h i
-          <*> openDataSource h x
-          <*> openDataSource h y
-          <*> openDataSource h g
-          <*> openDataSource h d
-          <*> openDataSource h w
-withDataSource nxs'@(Nxs f (XrdMeshFlyH5Path i x y g d w)) = bracket before after
-  where
-    before ∷ IO (DataFrameH5 XrdMesh)
-    before = do
-      h ← openH5 f
-      XrdMeshFlyH5
-        <$> return nxs'
-        <*> return h
-        <*> openDataSource h i
-        <*> openDataSource h x
-        <*> openDataSource h y
-        <*> openDataSource h g
-        <*> openDataSource h d
-        <*> openDataSource h w
 
 xrdMeshPy :: FilePath -> FilePath -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> (Text, FilePath)
 xrdMeshPy p f x y i b (Threshold t) w o os = (script, os)

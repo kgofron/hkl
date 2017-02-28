@@ -26,12 +26,8 @@ module Hkl.Xrd.OneD
        , integrateMulti
        ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>), (<*>))
-#endif
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Monad (forM_, forever, when, zipWithM_)
-import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
@@ -70,7 +66,7 @@ import Pipes
     )
 import Pipes.Lift
 import Pipes.Prelude (filter, toListM)
-import Pipes.Safe ( MonadSafe(..), runSafeT, bracket )
+import Pipes.Safe (runSafeT)
 
 import Hkl.C
 import Hkl.DataSource
@@ -297,28 +293,6 @@ createPy b (Threshold t) (DifTomoFrame' f poniPath) = (script, output)
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
 
 -- | Pipes
-
-withDataFrameH5 :: (MonadSafe m) => Nxs XrdOneD -> PoniGenerator -> (DataFrameH5 XrdOneD -> m r) -> m r
-withDataFrameH5 nxs'@(Nxs f (XrdOneDH5Path _ g d w)) gen = bracket (liftIO before) (liftIO . after)
-  where
-    -- before :: File -> DataFrameH5Path -> m DataFrameH5
-    before :: IO (DataFrameH5 XrdOneD)
-    before =  do
-      h ← openH5 f
-      DataFrameH5
-        <$> return nxs'
-        <*> return h
-        <*> openDataSource h g
-        <*> openDataSource h d
-        <*> openDataSource h w
-        <*> return gen
-
-    after ∷ DataFrameH5 XrdOneD → IO () 
-    after (DataFrameH5 _ f' g' d' w' _) = do
-      closeDataSource g'
-      closeDataSource d'
-      closeDataSource w'
-      closeFile f'
 
 data DifTomoFrame' sh = DifTomoFrame' { difTomoFrame'DifTomoFrame :: DifTomoFrame sh
                                       , difTomoFrame'PoniPath :: FilePath
