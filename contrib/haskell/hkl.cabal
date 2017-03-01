@@ -97,6 +97,7 @@ library
                     , Hkl.Detector
                     , Hkl.Edf
                     , Hkl.Engine
+                    , Hkl.Flat
                     , Hkl.H5
                     , Hkl.MyMatrix
                     , Hkl.Nxs
@@ -113,6 +114,7 @@ library
                     , Hkl.PyFAI.Poni
                     , Hkl.PyFAI.PoniExt
                     , Hkl.PyFAI.Npt
+                    , Hkl.Script
                     , Hkl.Types
                     , Hkl.Types.Parameter
                     , Hkl.Utils

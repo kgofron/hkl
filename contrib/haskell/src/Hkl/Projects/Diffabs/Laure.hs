@@ -27,24 +27,24 @@ import Hkl
 
 -- | Samples
 
-project :: FilePath
+project ∷ FilePath
 project = "/nfs/ruche-diffabs/diffabs-users/20160370/"
 
-published :: FilePath
+published ∷ FilePath
 published = project </> "published-data" </> "xrd"
-beamlineUpper :: Beamline -> String
-beamlineUpper b = [Data.Char.toUpper x | x <- show b]
+beamlineUpper ∷ Beamline → String
+beamlineUpper b = [Data.Char.toUpper x | x ← show b]
 
 
 -- | Calibration part
 
-project' :: FilePath
+project' ∷ FilePath
 project' = "/nfs/ruche-diffabs/diffabs-users/20160370/"
 
-published' :: FilePath
+published' ∷ FilePath
 published' = project' </> "published-data"
 
-h5path' :: NxEntry -> DataFrameH5Path XrdOneD
+h5path' ∷ NxEntry → DataFrameH5Path XrdOneD
 h5path' nxentry =
     XrdOneDH5Path
     (DataItemH5 (nxentry </> image) StrictDims)
@@ -60,7 +60,7 @@ h5path' nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleRef :: XRDRef
+sampleRef ∷ XRDRef
 sampleRef = XRDRef "reference"
             (published' </> "calibration")
             (XrdRefNxs
@@ -68,37 +68,37 @@ sampleRef = XRDRef "reference"
              10 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
-sampleCalibration :: XRDCalibration
+sampleCalibration ∷ XRDCalibration
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published' </> "calibration"
                                    , xrdCalibrationEntries = entries
                                    }
     where
-      idxs :: [Int]
+      idxs ∷ [Int]
       idxs = [00, 01, 02, 03, 04, 09, 10, 11, 12, 14, 15, 18, 19, 22, 23, 26, 29, 33, 38, 42, 49, 53]
 
-      entry :: Int -> XRDCalibrationEntry
+      entry ∷ Int -> XRDCalibrationEntry
       entry idx = XRDCalibrationEntryNxs
                 { xrdCalibrationEntryNxs'Nxs = mkNxs (published' </> "calibration" </> "scan_45.nxs") "scan_44" h5path'
                 , xrdCalibrationEntryNxs'Idx = idx
                 , xrdCalibrationEntryNxs'NptPath = published' </> "calibration" </> printf "scan_45.nxs_%02d.npt" idx
                 }
 
-      entries :: [XRDCalibrationEntry]
-      entries = [ entry idx | idx <- idxs]
+      entries ∷ [XRDCalibrationEntry]
+      entries = [ entry idx | idx ← idxs]
 
 -- | Data treatment
 
-bins :: DIM1
+bins ∷ DIM1
 bins = ix1 3000
 
-multibins :: DIM1
+multibins ∷ DIM1
 multibins = ix1 25000
 
-threshold :: Threshold
+threshold ∷ Threshold
 threshold = Threshold 800
 
-skipedFrames :: [Int]
+skipedFrames ∷ [Int]
 skipedFrames = [4]
 
 -- Flat
@@ -112,14 +112,14 @@ mkNxs' d idx h = mkNxs f' e h
      (f', e) = f d idx
 
 flat ∷ [Nxs XrdFlat]
-flat = [mkNxs' (project </> "2017" </> "Run1" </> "2017-02-15") idx h5path | idx ← [57..60 ∷ Int]]
+flat = [mkNxs' (project </> "2017" </> "Run1" </> "2017-02-15") idx h5path | idx ← [57, 60 ∷ Int]] -- skip 58 59 for now (problème de droits d'accès)
   where
     h5path :: NxEntry -> DataFrameH5Path XrdFlat
     h5path nxentry = XrdFlatH5Path (DataItemH5 (nxentry </> "scan_data/data_02") StrictDims)
 
 -- Scan en delta
 
-h5path'' :: NxEntry -> DataFrameH5Path XrdOneD
+h5path'' ∷ NxEntry -> DataFrameH5Path XrdOneD
 h5path'' nxentry =
   XrdOneDH5Path
   (DataItemH5 (nxentry </> image) StrictDims)
@@ -135,17 +135,17 @@ h5path'' nxentry =
     delta = "scan_data/actuator_1_1"
     wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-mkXRDSample :: String -> [(FilePath, [Int])] -> XRDSample
+mkXRDSample ∷ String → [(FilePath, [Int])] -> XRDSample
 mkXRDSample n ps = XRDSample n
                 (published </> n)
-                [ XrdNxs bins multibins threshold skipedFrames n' | n' <- concatMap nxs''' ps ]
+                [ XrdNxs bins multibins threshold skipedFrames n' | n' ← concatMap nxs''' ps ]
     where
-      nxs''' :: (FilePath, [Int]) -> [XrdSource]
-      nxs''' (p, idxs) = [XrdSourceNxs (mkNxs' p idx h5path'') | idx <- idxs]
+      nxs''' ∷ (FilePath, [Int]) → [XrdSource]
+      nxs''' (p, idxs) = [XrdSourceNxs (mkNxs' p idx h5path'') | idx ← idxs]
 
 
 samples :: [XRDSample]
-samples = [ mkXRDSample n ps | (n, ps) <- [ ("CeO2",               [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [45 :: Int])  ])
+samples = [ mkXRDSample n ps | (n, ps) ← [ ("CeO2",               [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [45 :: Int])  ])
                                           , ("kapton",             [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [197 :: Int]) ])
                                           , ("air",                [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [198 :: Int]) ])
                                           , ("chlorite",           [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [53 :: Int])  ])
@@ -194,23 +194,29 @@ samples = [ mkXRDSample n ps | (n, ps) <- [ ("CeO2",               [ ((project <
 
 -- | Main
 
-laure :: IO ()
+laure ∷ IO ()
 laure = do
 
-  p <- getPoniExtRef sampleRef
+  -- compute the flat
+  flat' ← computeFlat flat (published </> "flat" </> "flat.npy")
 
-  -- flip the ref poni in order to fit the reality
-  -- let poniextref = p
-  let poniextref = setPose p (MyMatrix HklB (ident 3))
-  -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
+  print flat'
 
-  -- full calibration
-  poniextref' <- calibrate sampleCalibration poniextref ImXpadS140
-  -- print p
-  print poniextref
-  -- print poniextref'
+  -- -- get a ref poni
+  -- p <- getPoniExtRef sampleRef
 
-  -- integrate scan with multi geometry
-  _ <- mapM_ (integrateMulti poniextref') samples
-  _ <- mapM_ (integrate poniextref') samples
+  -- -- flip the ref poni in order to fit the reality
+  -- -- let poniextref = p
+  -- let poniextref = setPose p (MyMatrix HklB (ident 3))
+  -- -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
+
+  -- -- full calibration
+  -- poniextref' <- calibrate sampleCalibration poniextref ImXpadS140
+  -- -- print p
+  -- print poniextref
+  -- -- print poniextref'
+
+  -- -- integrate scan with multi geometry
+  -- _ <- mapM_ (integrateMulti poniextref') samples
+  -- _ <- mapM_ (integrate poniextref') samples
   return()
