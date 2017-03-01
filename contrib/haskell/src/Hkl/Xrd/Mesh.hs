@@ -38,6 +38,7 @@ import Hkl.H5
 import Hkl.PyFAI
 import Hkl.MyMatrix
 import Hkl.Nxs
+import Hkl.Script
 import Hkl.Types
 import Hkl.Utils
 import Hkl.Xrd.OneD
@@ -105,50 +106,50 @@ instance FrameND (DataFrameH5 XrdMesh) where
       get_position' (DataSourceConst v) _ = lift $ return $ singleton v
 
 
-xrdMeshPy :: FilePath -> FilePath -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> (Text, FilePath)
-xrdMeshPy p f x y i b (Threshold t) w o os = (script, os)
+xrdMeshPy :: FilePath -> FilePath -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> Script Py2
+xrdMeshPy p f x y i b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
     where
-      script = Text.unlines $
-               map Text.pack ["#!/bin/env python"
-                             , ""
-                             , "import numpy"
-                             , "from h5py import File"
-                             , "from pyFAI import load"
-                             , ""
-                             , "PONIFILE = " ++ show p
-                             , "NEXUSFILE = " ++ show f
-                             , "MESHX = " ++ show x
-                             , "MESHY = " ++ show y
-                             , "IMAGEPATH = " ++ show i
-                             , "N = " ++ show (size b)
-                             , "OUTPUT = " ++ show o
-                             , "WAVELENGTH = " ++ show (w /~ meter)
-                             , "THRESHOLD = " ++ show t
-                             , ""
-                             , "ai = load(PONIFILE)"
-                             , "ai.wavelength = WAVELENGTH"
-                             , "ai._empty = numpy.nan"
-                             , "mask_det = ai.detector.mask"
-                             , "mask_module = numpy.zeros_like(mask_det, dtype=bool)"
-                             , "mask_module[0:50, :] = True"
-                             , "mask_module[910:960, :] = True"
-                             , "mask_module[:,0:50] = True"
-                             , "mask_module[:,510:560] = True"
-                             , "mask_det = numpy.logical_or(mask_det, mask_module)"
-                             , "with File(NEXUSFILE, mode='r') as f:"
-                             , "    nx = f[MESHX].shape[0]"
-                             , "    ny = f[MESHY].shape[0]"
-                             , "    imgs = f[IMAGEPATH]"
-                             , "    with File(OUTPUT, mode='w') as o:"
-                             , "        o.create_dataset('map', shape=(ny, nx, N), dtype='float')"
-                             , "        for y in range(ny):"
-                             , "            for x in range(nx):"
-                             , "                img = imgs[y, x]"
-                             , "                mask = numpy.where(img > THRESHOLD, True, False)"
-                             , "                mask = numpy.logical_or(mask, mask_det)"
-                             , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"csr_ocl\", mask=mask, safe=False)"
-                             , "                o['map'][y, x] = I"
-                             ]
+      content = Text.unlines $
+                map Text.pack ["#!/bin/env python"
+                              , ""
+                              , "import numpy"
+                              , "from h5py import File"
+                              , "from pyFAI import load"
+                              , ""
+                              , "PONIFILE = " ++ show p
+                              , "NEXUSFILE = " ++ show f
+                              , "MESHX = " ++ show x
+                              , "MESHY = " ++ show y
+                              , "IMAGEPATH = " ++ show i
+                              , "N = " ++ show (size b)
+                              , "OUTPUT = " ++ show o
+                              , "WAVELENGTH = " ++ show (w /~ meter)
+                              , "THRESHOLD = " ++ show t
+                              , ""
+                              , "ai = load(PONIFILE)"
+                              , "ai.wavelength = WAVELENGTH"
+                              , "ai._empty = numpy.nan"
+                              , "mask_det = ai.detector.mask"
+                              , "mask_module = numpy.zeros_like(mask_det, dtype=bool)"
+                              , "mask_module[0:50, :] = True"
+                              , "mask_module[910:960, :] = True"
+                              , "mask_module[:,0:50] = True"
+                              , "mask_module[:,510:560] = True"
+                              , "mask_det = numpy.logical_or(mask_det, mask_module)"
+                              , "with File(NEXUSFILE, mode='r') as f:"
+                              , "    nx = f[MESHX].shape[0]"
+                              , "    ny = f[MESHY].shape[0]"
+                              , "    imgs = f[IMAGEPATH]"
+                              , "    with File(OUTPUT, mode='w') as o:"
+                              , "        o.create_dataset('map', shape=(ny, nx, N), dtype='float')"
+                              , "        for y in range(ny):"
+                              , "            for x in range(nx):"
+                              , "                img = imgs[y, x]"
+                              , "                mask = numpy.where(img > THRESHOLD, True, False)"
+                              , "                mask = numpy.logical_or(mask, mask_det)"
+                              , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"csr_ocl\", mask=mask, safe=False)"
+                              , "                o['map'][y, x] = I"
+                              ]
 
 xrdMeshFlyPy :: FilePath -> [FilePath] -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> (Text, FilePath)
 xrdMeshFlyPy p fs x y i b (Threshold t) w o os = (script, os)
@@ -225,17 +226,12 @@ integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path)))
     let pfilename = output </> sdir </> sdir ++ ".poni"
     saveScript (poniToText p) pfilename
 
-    -- create the python script to do the integration.
+    -- create and execute the python script to do the integration.
     let (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
     let o = output </> sdir </> sdir ++ ".h5"
     let os = output </> sdir </> sdir ++ ".py"
-    let (script, scriptPath) = xrdMeshPy pfilename f x y i b t w o os
-
-    -- save the script
-    saveScript script scriptPath
-
-    -- run the script
-    ExitSuccess <- runPythonScript scriptPath False
+    let script = xrdMeshPy pfilename f x y i b t w o os
+    ExitSuccess <- run script False
 
     return ()
 -- integrateMesh' ref output (XrdMesh b _ t ss) = do

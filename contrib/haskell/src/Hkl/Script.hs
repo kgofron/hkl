@@ -5,6 +5,7 @@
 module Hkl.Script
     ( Py2
     , Script(..)
+    , run
     , scriptRun
     , scriptSave )
         where
@@ -59,3 +60,8 @@ scriptRun (Py2Script (_, p)) d
 
       directory :: FilePath
       directory = takeDirectory p
+
+run ∷ Script a → Bool → IO ExitCode
+run s b = do
+  scriptSave s
+  scriptRun s b

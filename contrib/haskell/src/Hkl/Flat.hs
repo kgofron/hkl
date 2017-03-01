@@ -64,8 +64,7 @@ computeFlat ∷ [Nxs XrdFlat] → FilePath → IO (Flat Npy)
 computeFlat ns o = do
   -- create the python script.
   let script = scriptPy2Flat ns o
-  scriptSave script
   -- execute this script.
-  ExitSuccess ← scriptRun script False
+  ExitSuccess ← run script False
   -- return the filepath of the generated file.
   return (FlatNpy o)
