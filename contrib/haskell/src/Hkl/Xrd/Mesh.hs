@@ -224,7 +224,7 @@ integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path)))
     -- save the poni at the right place.
     let sdir = (dropExtension . takeFileName) f
     let pfilename = output </> sdir </> sdir ++ ".poni"
-    saveScript (poniToText p) pfilename
+    pfilename `hasContent` (poniToText p)
 
     -- create and execute the python script to do the integration.
     let (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path

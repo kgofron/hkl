@@ -303,7 +303,7 @@ savePonies g = forever $ do
   f <- await
   let filename = g (difTomoFrameIdx f)
   let (PoniExt p _) = difTomoFramePoniExt f
-  lift $ saveScript (poniToText p) filename
+  lift $ filename `hasContent` (poniToText p)
   yield $ DifTomoFrame' { difTomoFrame'DifTomoFrame = f
                         , difTomoFrame'PoniPath = filename
                         }
@@ -330,7 +330,7 @@ saveGnuplot' = forever $ do
   (DifTomoFrame'' (DifTomoFrame' _ poniPath) _ dataPath) <- await
   let directory = takeDirectory poniPath
   let filename = directory </> "plot.gnuplot"
-  lift . lift $ saveScript (new_content curves) filename
+  lift . lift $ filename `hasContent` (new_content curves)
   lift $ put $! (curves ++ [dataPath])
     where
       new_content :: [FilePath] -> Text
@@ -382,7 +382,7 @@ integrateMulti' ref output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
       go f o = do
         m <- getMEdf f
         let (PoniExt p _) = setPose ref m
-        saveScript (poniToText p) o
+        o `hasContent` (poniToText p)
 
 createMultiPy ∷ DIM1 → Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → (Script Py2, FilePath)
 createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies = (Py2Script (content, scriptPath), output)
