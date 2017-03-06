@@ -224,5 +224,6 @@ laure = do
   -- Integrate each image of the scans
   -- Lut → 21.52 minutes
   -- Csr → 21.9 minutes
-  _ ← mapConcurrently (integrate poniextref' (Just flat') aiMethod ) samples
+  let p = XrdOneDParams poniextref' (Just flat') aiMethod
+  _ ← mapConcurrently (integrate p) samples
   return ()

@@ -16,6 +16,7 @@ module Hkl.Xrd.OneD
        , SampleName
        , Threshold(..)
        , XrdNxs(..)
+       , XrdOneDParams(..)
        , XrdSource(..)
        , PoniExt(..)
          -- reference
@@ -110,6 +111,8 @@ data XrdNxs
 
 data XRDSample = XRDSample SampleName OutputBaseDir [XrdNxs] -- ^ nxss
                deriving (Show)
+
+data XrdOneDParams a = XrdOneDParams PoniExt (Maybe (Flat a)) AIMethod
 
 data DifTomoFrame sh =
   DifTomoFrame { difTomoFrameNxs :: Nxs XrdOneD-- ^ nexus of the current frame
@@ -227,32 +230,32 @@ getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = do
   m <- getMEdf e
   return $ PoniExt poni m
 
-integrate ∷ PoniExt → Maybe (Flat a) → AIMethod → XRDSample → IO ()
-integrate ref mflat method (XRDSample _ output nxss) = do
-  _ <- mapConcurrently (integrate' ref output mflat method) nxss
+integrate ∷ XrdOneDParams a → XRDSample → IO ()
+integrate p (XRDSample _ output nxss) = do
+  _ <- mapConcurrently (integrate' p output) nxss
   return ()
 
-integrate' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → AIMethod → XrdNxs → IO ()
-integrate' ref output mflat method (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
+integrate' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
+integrate' p output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
-    withDataFrameH5 nxs' (gen ref) yield
+    withDataFrameH5 nxs' (gen p) yield
     >-> hoist lift (frames
                     >-> filter (skip is)
                     >-> savePonies (pgen output f)
-                    >-> savePy b t mflat method
+                    >-> savePy p b t
                     >-> saveGnuplot)
   where
-    gen :: PoniExt -> Pose -> Int -> IO PoniExt
-    gen ref' m _idx = return $ setPose ref' m
+    gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
+    gen (XrdOneDParams ref' _ _) m _idx = return $ setPose ref' m
 
     pgen :: OutputBaseDir -> FilePath -> Int -> FilePath
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
 
-createPy ∷ DIM1 → Threshold → FilePath → Maybe (Flat a) → AIMethod → DifTomoFrame' sh → (Script Py2, FilePath)
-createPy b (Threshold t) scriptPath mflat m (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
+createPy ∷ XrdOneDParams a → DIM1 → Threshold → FilePath → DifTomoFrame' sh → (Script Py2, FilePath)
+createPy (XrdOneDParams _ mflat m) b (Threshold t) scriptPath (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
     where
       script = Text.unlines $
                map Text.pack ["#!/bin/env python"
@@ -315,11 +318,11 @@ data DifTomoFrame'' sh = DifTomoFrame'' { difTomoFrame''DifTomoFrame' :: DifTomo
                                         , difTomoFrame''DataPath :: FilePath
                                         }
 
-savePy ∷ DIM1 → Threshold → Maybe (Flat a) → AIMethod → Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
-savePy b t mflat method = forever $ do
+savePy ∷ XrdOneDParams a → DIM1 → Threshold → Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
+savePy p b t = forever $ do
   f@(DifTomoFrame' _difTomoFrame poniPath) <- await
   let scriptPath = poniPath `replaceExtension`"py"
-  let (script, dataPath) = createPy b t scriptPath mflat method f
+  let (script, dataPath) = createPy p b t scriptPath f
   ExitSuccess <- lift $ run script True
   yield $ DifTomoFrame'' { difTomoFrame''DifTomoFrame' = f
                          , difTomoFrame''PySCript = script
