@@ -34,6 +34,7 @@ import Pipes ( lift )
 import Hkl.C
 import Hkl.DataSource
 import Hkl.Detector
+import Hkl.Flat
 import Hkl.H5
 import Hkl.PyFAI
 import Hkl.MyMatrix
@@ -106,8 +107,8 @@ instance FrameND (DataFrameH5 XrdMesh) where
       get_position' (DataSourceConst v) _ = lift $ return $ singleton v
 
 
-xrdMeshPy :: FilePath -> FilePath -> String -> String -> String -> DIM1 -> Threshold -> WaveLength -> FilePath -> FilePath -> Script Py2
-xrdMeshPy p f x y i b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
+xrdMeshPy ∷ FilePath → FilePath → String → String → String → DIM1 → Threshold → WaveLength → FilePath → FilePath → Maybe (Flat a) → Script Py2
+xrdMeshPy p f x y i b (Threshold t) w o scriptPath mflat = Py2Script (content, scriptPath)
     where
       content = Text.unlines $
                 map Text.pack ["#!/bin/env python"
@@ -125,6 +126,9 @@ xrdMeshPy p f x y i b (Threshold t) w o scriptPath = Py2Script (content, scriptP
                               , "OUTPUT = " ++ show o
                               , "WAVELENGTH = " ++ show (w /~ meter)
                               , "THRESHOLD = " ++ show t
+                              , ""
+                              , "# load the flat"
+                              , "flat = " ++ flatValueForPy mflat
                               , ""
                               , "ai = load(PONIFILE)"
                               , "ai.wavelength = WAVELENGTH"
@@ -147,7 +151,7 @@ xrdMeshPy p f x y i b (Threshold t) w o scriptPath = Py2Script (content, scriptP
                               , "                img = imgs[y, x]"
                               , "                mask = numpy.where(img > THRESHOLD, True, False)"
                               , "                mask = numpy.logical_or(mask, mask_det)"
-                              , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"csr_ocl\", mask=mask, safe=False)"
+                              , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"csr_ocl\", mask=mask, safe=False, flat=flat)"
                               , "                o['map'][y, x] = I"
                               ]
 
@@ -212,12 +216,12 @@ getWaveLengthAndPoniExt ref (XrdMeshSourceNxsFly (nxs:_)) =
     let poniext = setPose ref m
     return (w, poniext)
 
-integrateMesh :: PoniExt -> XrdMeshSample -> IO ()
-integrateMesh ref (XrdMeshSample _ output nxss) =
-  mapM_ (integrateMesh' ref output) nxss
+integrateMesh ∷ PoniExt → Maybe (Flat a) → XrdMeshSample → IO ()
+integrateMesh ref mflat (XrdMeshSample _ output nxss) =
+  mapM_ (integrateMesh' ref output mflat) nxss
 
-integrateMesh' :: PoniExt -> OutputBaseDir -> XrdMesh' -> IO ()
-integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
+integrateMesh' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → XrdMesh' → IO ()
+integrateMesh' ref output mflat (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
     -- get the poniext for all the scan
     (w, (PoniExt p _)) <- getWaveLengthAndPoniExt ref nxs'
 
@@ -230,7 +234,7 @@ integrateMesh' ref output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path)))
     let (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
     let o = output </> sdir </> sdir ++ ".h5"
     let os = output </> sdir </> sdir ++ ".py"
-    let script = xrdMeshPy pfilename f x y i b t w o os
+    let script = xrdMeshPy pfilename f x y i b t w o os mflat
     ExitSuccess <- run script False
 
     return ()

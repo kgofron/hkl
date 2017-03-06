@@ -71,6 +71,7 @@ import Hkl.C
 import Hkl.DataSource
 import Hkl.Detector
 import Hkl.Edf
+import Hkl.Flat
 import Hkl.H5
 import Hkl.PyFAI
 import Hkl.MyMatrix
@@ -226,20 +227,20 @@ getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = do
   m <- getMEdf e
   return $ PoniExt poni m
 
-integrate :: PoniExt -> XRDSample -> IO ()
-integrate ref (XRDSample _ output nxss) = do
-  _ <- mapConcurrently (integrate' ref output) nxss
+integrate ∷ PoniExt → Maybe (Flat a) → XRDSample → IO ()
+integrate ref mflat (XRDSample _ output nxss) = do
+  _ <- mapConcurrently (integrate' ref output mflat) nxss
   return ()
 
-integrate' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
-integrate' ref output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
+integrate' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → XrdNxs → IO ()
+integrate' ref output mflat (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen ref) yield
     >-> hoist lift (frames
                     >-> filter (skip is)
                     >-> savePonies (pgen output f)
-                    >-> savePy b t
+                    >-> savePy b t mflat
                     >-> saveGnuplot)
   where
     gen :: PoniExt -> Pose -> Int -> IO PoniExt
@@ -249,10 +250,9 @@ integrate' ref output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
-integrate' _ _ (XrdNxs _ _ _ _ (XrdSourceEdf _)) = error "integrate' not yet implemented"
 
-createPy ∷ DIM1 → Threshold → FilePath → DifTomoFrame' sh → (Script Py2, FilePath)
-createPy b (Threshold t) scriptPath (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
+createPy ∷ DIM1 → Threshold → FilePath → Maybe (Flat a) → DifTomoFrame' sh → (Script Py2, FilePath)
+createPy b (Threshold t) scriptPath mflat (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
     where
       script = Text.unlines $
                map Text.pack ["#!/bin/env python"
@@ -261,7 +261,7 @@ createPy b (Threshold t) scriptPath (DifTomoFrame' f poniPath) = (Py2Script (scr
                              , "from h5py import File"
                              , "from pyFAI import load"
                              , ""
-                             , "PONIFILE = " ++ show p
+                             , "PONIFILE = " ++ show poniPath
                              , "NEXUSFILE = " ++ show nxs'
                              , "IMAGEPATH = " ++ show i'
                              , "IDX = " ++ show idx
@@ -269,6 +269,9 @@ createPy b (Threshold t) scriptPath (DifTomoFrame' f poniPath) = (Py2Script (scr
                              , "OUTPUT = " ++ show output
                              , "WAVELENGTH = " ++ show (w /~ meter)
                              , "THRESHOLD = " ++ show t
+                             , ""
+                             , "# load the flat"
+                             , "flat = " ++ flatValueForPy mflat
                              , ""
                              , "ai = load(PONIFILE)"
                              , "ai.wavelength = WAVELENGTH"
@@ -284,9 +287,8 @@ createPy b (Threshold t) scriptPath (DifTomoFrame' f poniPath) = (Py2Script (scr
                              , "    mask = numpy.where(img > THRESHOLD, True, False)"
                              , "    mask = numpy.logical_or(mask, mask_det)"
                              , "    mask = numpy.logical_or(mask, mask_module)"
-                             , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"lut\", mask=mask)"
+                             , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"lut\", mask=mask, flat=flat)"
                                   ]
-      p = takeFileName poniPath
       (Nxs nxs' (XrdOneDH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       idx = difTomoFrameIdx f
       output = poniPath `replaceExtension` "dat"
@@ -313,11 +315,11 @@ data DifTomoFrame'' sh = DifTomoFrame'' { difTomoFrame''DifTomoFrame' :: DifTomo
                                         , difTomoFrame''DataPath :: FilePath
                                         }
 
-savePy :: DIM1 -> Threshold -> Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
-savePy b t = forever $ do
+savePy ∷ DIM1 → Threshold → Maybe (Flat a) → Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
+savePy b t mflat = forever $ do
   f@(DifTomoFrame' _difTomoFrame poniPath) <- await
   let scriptPath = poniPath `replaceExtension`"py"
-  let (script, dataPath) = createPy b t scriptPath f
+  let (script, dataPath) = createPy b t scriptPath mflat f
   ExitSuccess <- lift $ run script True
   yield $ DifTomoFrame'' { difTomoFrame''DifTomoFrame' = f
                          , difTomoFrame''PySCript = script
@@ -346,19 +348,19 @@ saveGnuplot = evalStateP [] saveGnuplot'
 
 -- | PyFAI MultiGeometry
 
-integrateMulti :: PoniExt -> XRDSample -> IO ()
-integrateMulti ref (XRDSample _ output nxss) =
-  mapM_ (integrateMulti' ref output) nxss
+integrateMulti ∷ PoniExt → Maybe (Flat a) → XRDSample → IO ()
+integrateMulti ref mflat (XRDSample _ output nxss) =
+  mapM_ (integrateMulti' ref output mflat) nxss
 
-integrateMulti' :: PoniExt -> OutputBaseDir -> XrdNxs -> IO ()
-integrateMulti' ref output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
+integrateMulti' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → XrdNxs → IO ()
+integrateMulti' ref output mflat (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen ref) yield
     >-> hoist lift (frames
                     >-> filter (skip is)
                     >-> savePonies (pgen output f)
-                    >-> saveMultiGeometry mb t)
+                    >-> saveMultiGeometry mb t mflat)
   where
     gen :: PoniExt -> Pose -> Int -> IO PoniExt
     gen ref' m _idx = return $ setPose ref' m
@@ -367,13 +369,13 @@ integrateMulti' ref output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
-integrateMulti' ref output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
+integrateMulti' ref output mflat (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
   -- generate all the ponies
   zipWithM_ go fs ponies
 
   -- generate the multi.py python script
   let scriptPath = output </> "multi.py"
-  let (script, _) = createMultiPyEdf b t fs ponies scriptPath (output </> "multi.dat")
+  let (script, _) = createMultiPyEdf b t fs ponies scriptPath (output </> "multi.dat") mflat
   scriptSave script
     where
       ponies = [output </> (dropExtension . takeFileName) f ++ ".poni" | f <- fs]
@@ -384,8 +386,8 @@ integrateMulti' ref output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
         let (PoniExt p _) = setPose ref m
         o `hasContent` (poniToText p)
 
-createMultiPy ∷ DIM1 → Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → (Script Py2, FilePath)
-createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies = (Py2Script (content, scriptPath), output)
+createMultiPy ∷ DIM1 → Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → Maybe (Flat a) → (Script Py2, FilePath)
+createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies mflat = (Py2Script (content, scriptPath), output)
     where
       content = Text.unlines $
                map Text.pack ["#!/bin/env python"
@@ -400,6 +402,9 @@ createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies = (Py2Scr
                              , "OUTPUT = " ++ show output
                              , "WAVELENGTH = " ++ show (w /~ meter)
                              , "THRESHOLD = " ++ show t
+                             , ""
+                             , "# load the flat"
+                             , "flat = " ++ flatValueForPy mflat
                              , ""
                              , "# Load all images"
                              , "PONIES = [" ++ List.intercalate ",\n" (map show ponies) ++ "]"
@@ -416,10 +421,13 @@ createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies = (Py2Scr
                              , "for img in imgs:"
                              , "    mask_t = numpy.where(img > THRESHOLD, True, False)"
                              , "    mask = numpy.logical_or(mask, mask_t)"
+                             , "    if flat is not None:  # this should be removed for pyFAI >= 0.13.1 it is now done by PyFAI"
+                             , "        mask_f = flat == 0.0"
+                             , "        mask = numpy.logical_or(mask, mask_f)"
                              , ""
                              , "# Integration multi-geometry 1D"
                              , "mg = MultiGeometry(PONIES, unit=\"2th_deg\", radial_range=(0,80))"
-                             , "p = mg.integrate1d(imgs, BINS, lst_mask=mask)"
+                             , "p = mg.integrate1d(imgs, BINS, lst_mask=mask, lst_flat=flat)"
                              , ""
                              , "# Save the datas"
                              , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
@@ -429,8 +437,8 @@ createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies = (Py2Scr
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
       (idxs, ponies) = unzip idxPonies
 
-createMultiPyEdf ∷ DIM1 → Threshold → [FilePath] → [FilePath] → FilePath → FilePath → (Script Py2, FilePath)
-createMultiPyEdf b (Threshold t) edfs ponies scriptPath output = (Py2Script (content, scriptPath), output)
+createMultiPyEdf ∷ DIM1 → Threshold → [FilePath] → [FilePath] → FilePath → FilePath → Maybe (Flat a) → (Script Py2, FilePath)
+createMultiPyEdf b (Threshold t) edfs ponies scriptPath output mflat = (Py2Script (content, scriptPath), output)
     where
       content = Text.unlines $
                 map Text.pack ["#!/bin/env python"
@@ -444,6 +452,9 @@ createMultiPyEdf b (Threshold t) edfs ponies scriptPath output = (Py2Script (con
                               , "BINS = " ++ show (size b)
                               , "OUTPUT = " ++ show output
                               , "THRESHOLD = " ++ show t
+                              , ""
+                              , "# load the flat"
+                              , "flat = " ++ flatValueForPy mflat
                               , ""
                               , "# Read all the images"
                               , "imgs = [open(edf).data for edf in EDFS]"
@@ -462,15 +473,15 @@ createMultiPyEdf b (Threshold t) edfs ponies scriptPath output = (Py2Script (con
                               , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                               ]
 
-saveMulti' :: DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) (StateT [(Int, FilePath)] IO) r
-saveMulti' b t = forever $ do
+saveMulti' ∷ DIM1 → Threshold → Maybe (Flat a) → Consumer (DifTomoFrame' sh) (StateT [(Int, FilePath)] IO) r
+saveMulti' b t mf = forever $ do
   idxPonies <- lift get
   f'@(DifTomoFrame' f@(DifTomoFrame _ idx _ _ _) poniPath) <- await
   let directory = takeDirectory poniPath
   let filename = directory </> "multi.py"
-  let (script, _) = createMultiPy b t filename f' idxPonies
+  let (script, _) = createMultiPy b t filename f' idxPonies mf
   ExitSuccess ← lift . lift $ if (difTomoFrameEOF f) then (run script True) else return ExitSuccess
   lift $ put $! (idxPonies ++ [(idx, poniPath)])
 
-saveMultiGeometry :: DIM1 -> Threshold -> Consumer (DifTomoFrame' sh) IO r
-saveMultiGeometry b t = evalStateP [] (saveMulti' b t)
+saveMultiGeometry ∷ DIM1 → Threshold → Maybe (Flat a) → Consumer (DifTomoFrame' sh) IO r
+saveMultiGeometry b t f = evalStateP [] (saveMulti' b t f)

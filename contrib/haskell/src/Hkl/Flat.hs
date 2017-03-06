@@ -5,7 +5,9 @@
 module Hkl.Flat
        ( Flat(..)
        , Npy
-       , computeFlat )
+       , computeFlat
+       , flatValueForPy
+       )
        where
 
 import Data.List (intercalate)
@@ -49,7 +51,7 @@ scriptPy2Flat ns output = Py2Script (script, scriptName)
                         , "        imgs = f[h5path]"
                         , "        flat += numpy.sum(imgs[:], axis=0)"
                         , "        n += imgs.shape[0]"
-                        , "numpy.save(OUTPUT, flat / n)"
+                        , "numpy.save(OUTPUT, flat.astype('f') / n)"
                         ]
       nxs' ∷ [String]
       nxs' = [f | (Nxs f _) ← ns]
@@ -68,3 +70,6 @@ computeFlat ns o = do
   ExitSuccess ← run script False
   -- return the filepath of the generated file.
   return (FlatNpy o)
+
+flatValueForPy ∷ Maybe (Flat a) → String
+flatValueForPy m = maybe "None" (\(FlatNpy x) → "numpy.load(" ++ show x ++ ")") m

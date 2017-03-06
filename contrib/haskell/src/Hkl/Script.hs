@@ -33,6 +33,8 @@ withCurrentDirectory dir action =
     action
 #endif
 
+type Profile = Bool
+
 data Py2
 
 data Script a where
@@ -49,6 +51,9 @@ scriptRun (Py2Script (_, p)) d
     | d == True = withCurrentDirectory directory go
     | otherwise = go
     where
+      p' ∷ Profile
+      p' = False
+
       go :: IO ExitCode
       go = rawSystem python args
 
@@ -56,7 +61,9 @@ scriptRun (Py2Script (_, p)) d
       python = "/usr/bin/python"
 
       args :: [String]
-      args = [p]
+      args
+        | p' == True = ["-m" , "cProfile", p]
+        | otherwise = [p]
 
       directory :: FilePath
       directory = takeDirectory p

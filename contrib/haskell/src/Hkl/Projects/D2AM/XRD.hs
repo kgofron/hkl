@@ -86,6 +86,7 @@ lab6 = XRDSample "test"
 d2am :: IO ()
 d2am = do
   let samples = [lab6]
+  let mflat = Nothing
 
   p <- getPoniExtRef sampleRef
 
@@ -99,5 +100,5 @@ d2am = do
   print poniextref'
 
   -- integrate each step of the scan
-  _ <- mapConcurrently (integrateMulti poniextref') samples
+  _ <- mapConcurrently (integrateMulti poniextref' mflat) samples
   return ()

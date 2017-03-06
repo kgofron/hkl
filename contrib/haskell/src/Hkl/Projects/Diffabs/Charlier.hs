@@ -143,6 +143,7 @@ charlier = do
   -- for now f30 whcih is an incomplet scan stop the script so put it at the end.
   -- let samples = [f30, ceo2]
   -- let samples = [ceo2]
+  let mflat = Nothing
 
   p <- getPoniExtRef sampleRef
 
@@ -158,5 +159,5 @@ charlier = do
   print poniextref'
 
   -- integrate each step of the scan
-  _ <- mapConcurrently (integrateMesh poniextref') samples
+  _ <- mapConcurrently (integrateMesh poniextref' mflat) samples
   return ()

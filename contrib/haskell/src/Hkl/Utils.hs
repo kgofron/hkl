@@ -13,8 +13,6 @@ import System.FilePath (takeDirectory)
 
 import Prelude hiding (writeFile)
 
--- TODO rename into hasContent
-
 hasContent ∷ FilePath → Text → IO ()
 hasContent f c = do
     createDirectoryIfMissing True (takeDirectory f)

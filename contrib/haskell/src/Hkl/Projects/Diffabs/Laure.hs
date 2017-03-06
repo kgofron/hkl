@@ -18,7 +18,6 @@ import Hkl
 
 -- | TODO
 -- * Livre 45 p159
--- * Add the flat. scan 57, 58, 59, 60 faire une moyenne de toutes ces images et l'utiliser comme flat lors de l'intégration.
 -- * remove the air to each spectrum.
 -- * deal with the multi geometry intensity problem. I = 1e9 ???
 -- * simplify with the list of nxs using list comprehension.
@@ -202,21 +201,21 @@ laure = do
 
   print flat'
 
-  -- -- get a ref poni
-  -- p <- getPoniExtRef sampleRef
+  -- get a ref poni
+  p ← getPoniExtRef sampleRef
 
-  -- -- flip the ref poni in order to fit the reality
-  -- -- let poniextref = p
-  -- let poniextref = setPose p (MyMatrix HklB (ident 3))
-  -- -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
+  -- flip the ref poni in order to fit the reality
+  -- let poniextref = p
+  let poniextref = setPose p (MyMatrix HklB (ident 3))
+  -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
 
-  -- -- full calibration
-  -- poniextref' <- calibrate sampleCalibration poniextref ImXpadS140
-  -- -- print p
-  -- print poniextref
-  -- -- print poniextref'
+  -- full calibration
+  poniextref' ← calibrate sampleCalibration poniextref ImXpadS140
+  -- print p
+  print poniextref
+  -- print poniextref'
 
-  -- -- integrate scan with multi geometry
-  -- _ <- mapM_ (integrateMulti poniextref') samples
-  -- _ <- mapM_ (integrate poniextref') samples
-  return()
+  -- integrate scan with multi geometry
+  _ ← mapM_ (integrateMulti poniextref' (Just flat')) samples
+  _ ← mapM_ (integrate poniextref' (Just flat')) samples
+  return ()
