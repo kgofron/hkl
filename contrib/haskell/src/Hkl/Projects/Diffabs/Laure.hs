@@ -201,6 +201,8 @@ laure = do
 
   print flat'
 
+  let aiMethod = Csr
+
   -- get a ref poni
   p ← getPoniExtRef sampleRef
 
@@ -216,6 +218,11 @@ laure = do
   -- print poniextref'
 
   -- integrate scan with multi geometry
+  -- splitPixel (the only available now) → 17m47.825s
   _ ← mapM_ (integrateMulti poniextref' (Just flat')) samples
-  _ ← mapConcurrently (integrate poniextref' (Just flat')) samples
+
+  -- Integrate each image of the scans
+  -- Lut → 21.52 minutes
+  -- Csr → 21.9 minutes
+  _ ← mapConcurrently (integrate poniextref' (Just flat') aiMethod ) samples
   return ()

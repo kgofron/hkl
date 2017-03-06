@@ -262,6 +262,7 @@ martinetto = do
   -- let samples = [ceo2, a2, a3, a26, d2, d3, d16, f30, k9a2, n27t2, r11, r18, r23, r34n1, r35n1]
   let samples = [ceo2]
   let mflat = Nothing
+  let aiMethod = Lut
 
   p <- getPoniExtRef sampleRef
 
@@ -269,7 +270,7 @@ martinetto = do
   -- let poniextref = Hkl.PyFAI.PoniExt.flip p
   let poniextref = p
   -- integrate each step of the scan
-  _ <- mapConcurrently (integrate poniextref mflat) samples
+  _ <- mapConcurrently (integrate poniextref mflat aiMethod) samples
 
   -- plot de la figure. (script python ou autre ?)
   return ()

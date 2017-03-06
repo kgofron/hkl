@@ -227,20 +227,20 @@ getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = do
   m <- getMEdf e
   return $ PoniExt poni m
 
-integrate ∷ PoniExt → Maybe (Flat a) → XRDSample → IO ()
-integrate ref mflat (XRDSample _ output nxss) = do
-  _ <- mapConcurrently (integrate' ref output mflat) nxss
+integrate ∷ PoniExt → Maybe (Flat a) → AIMethod → XRDSample → IO ()
+integrate ref mflat method (XRDSample _ output nxss) = do
+  _ <- mapConcurrently (integrate' ref output mflat method) nxss
   return ()
 
-integrate' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → XrdNxs → IO ()
-integrate' ref output mflat (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
+integrate' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → AIMethod → XrdNxs → IO ()
+integrate' ref output mflat method (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen ref) yield
     >-> hoist lift (frames
                     >-> filter (skip is)
                     >-> savePonies (pgen output f)
-                    >-> savePy b t mflat
+                    >-> savePy b t mflat method
                     >-> saveGnuplot)
   where
     gen :: PoniExt -> Pose -> Int -> IO PoniExt
@@ -251,8 +251,8 @@ integrate' ref output mflat (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
       where
         scandir = (dropExtension . takeFileName) nxs''
 
-createPy ∷ DIM1 → Threshold → FilePath → Maybe (Flat a) → DifTomoFrame' sh → (Script Py2, FilePath)
-createPy b (Threshold t) scriptPath mflat (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
+createPy ∷ DIM1 → Threshold → FilePath → Maybe (Flat a) → AIMethod → DifTomoFrame' sh → (Script Py2, FilePath)
+createPy b (Threshold t) scriptPath mflat m (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
     where
       script = Text.unlines $
                map Text.pack ["#!/bin/env python"
@@ -287,7 +287,7 @@ createPy b (Threshold t) scriptPath mflat (DifTomoFrame' f poniPath) = (Py2Scrip
                              , "    mask = numpy.where(img > THRESHOLD, True, False)"
                              , "    #mask = numpy.logical_or(mask, mask_det)"
                              , "    mask = numpy.logical_or(mask, mask_module)"
-                             , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"lut\", mask=mask, flat=flat)"
+                             , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"" ++ show m ++ "\", mask=mask, flat=flat)"
                                   ]
       (Nxs nxs' (XrdOneDH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       idx = difTomoFrameIdx f
@@ -315,11 +315,11 @@ data DifTomoFrame'' sh = DifTomoFrame'' { difTomoFrame''DifTomoFrame' :: DifTomo
                                         , difTomoFrame''DataPath :: FilePath
                                         }
 
-savePy ∷ DIM1 → Threshold → Maybe (Flat a) → Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
-savePy b t mflat = forever $ do
+savePy ∷ DIM1 → Threshold → Maybe (Flat a) → AIMethod → Pipe (DifTomoFrame' sh) (DifTomoFrame'' sh) IO ()
+savePy b t mflat method = forever $ do
   f@(DifTomoFrame' _difTomoFrame poniPath) <- await
   let scriptPath = poniPath `replaceExtension`"py"
-  let (script, dataPath) = createPy b t scriptPath mflat f
+  let (script, dataPath) = createPy b t scriptPath mflat method f
   ExitSuccess <- lift $ run script True
   yield $ DifTomoFrame'' { difTomoFrame''DifTomoFrame' = f
                          , difTomoFrame''PySCript = script

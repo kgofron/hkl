@@ -111,6 +111,7 @@ library
                     , Hkl.Projects.Diffabs.Martinetto
                     , Hkl.Projects.Sixs
                     , Hkl.PyFAI
+                    , Hkl.PyFAI.AzimuthalIntegrator
                     , Hkl.PyFAI.Poni
                     , Hkl.PyFAI.PoniExt
                     , Hkl.PyFAI.Npt

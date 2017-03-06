@@ -140,6 +140,7 @@ fly = XrdMeshSample "scan5"
 mainIRDRx :: IO ()
 mainIRDRx = do
   let mflat = Nothing
+  let method = CsrOcl
 
   p <- getPoniExtRef sampleRef
 
@@ -151,7 +152,7 @@ mainIRDRx = do
   print poniextref'
 
   -- Integrate the flyscan mesh
-  _ <- mapConcurrently (integrateMesh poniextref' mflat) [fly]
+  _ <- mapConcurrently (integrateMesh poniextref' mflat method) [fly]
 
   -- integrate each step of the scan
   -- _ <- mapConcurrently (integrate poniextref') [lab6]
