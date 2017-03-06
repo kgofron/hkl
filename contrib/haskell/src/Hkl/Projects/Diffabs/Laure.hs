@@ -5,7 +5,7 @@
 module Hkl.Projects.Diffabs.Laure
        ( laure ) where
 
--- import Control.Concurrent.Async (mapConcurrently)
+import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
@@ -217,5 +217,5 @@ laure = do
 
   -- integrate scan with multi geometry
   _ ← mapM_ (integrateMulti poniextref' (Just flat')) samples
-  _ ← mapM_ (integrate poniextref' (Just flat')) samples
+  _ ← mapConcurrently (integrate poniextref' (Just flat')) samples
   return ()
