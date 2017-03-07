@@ -160,5 +160,5 @@ charlier = do
   print poniextref'
 
   -- integrate each step of the scan
-  _ <- mapConcurrently (integrateMesh poniextref' mflat method) samples
+  _ <- mapConcurrently (integrateMesh (XrdMeshParams poniextref' mflat method)) samples
   return ()

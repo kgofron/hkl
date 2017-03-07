@@ -6,6 +6,7 @@
 module Hkl.Xrd.Mesh
        ( XrdMeshSample(..)
        , XrdMesh'(..)
+       , XrdMeshParams(..)
        , XrdMeshSource(..)
        , integrateMesh
        ) where
@@ -53,6 +54,8 @@ data XrdMeshSource  = XrdMeshSourceNxs (Nxs XrdMesh)
 data XrdMesh' = XrdMesh DIM1 DIM1 Threshold XrdMeshSource deriving (Show)
 
 data XrdMeshSample = XrdMeshSample SampleName OutputBaseDir [XrdMesh'] -- ^ nxss
+
+data XrdMeshParams a = XrdMeshParams PoniExt (Maybe (Flat a)) AIMethod
 
 data XrdMeshFrame = XrdMeshFrame
                     WaveLength
@@ -107,8 +110,8 @@ instance FrameND (DataFrameH5 XrdMesh) where
       get_position' (DataSourceConst v) _ = lift $ return $ singleton v
 
 
-xrdMeshPy ∷ FilePath → FilePath → String → String → String → DIM1 → Threshold → WaveLength → AIMethod → FilePath → FilePath → Maybe (Flat a) → Script Py2
-xrdMeshPy p f x y i b (Threshold t) w m o scriptPath mflat = Py2Script (content, scriptPath)
+xrdMeshPy ∷ XrdMeshParams a → FilePath → FilePath → String → String → String → DIM1 → Threshold → WaveLength → FilePath → FilePath → Script Py2
+xrdMeshPy (XrdMeshParams _ mflat m) p f x y i b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
     where
       content = Text.unlines $
                 map Text.pack ["#!/bin/env python"
@@ -206,15 +209,15 @@ xrdMeshFlyPy p fs x y i b (Threshold t) w m o os = (script, os)
                              , "                o['map'][y, x] = I"
                              ]
 
-getWaveLengthAndPoniExt :: PoniExt -> XrdMeshSource -> IO (WaveLength, PoniExt)
-getWaveLengthAndPoniExt ref (XrdMeshSourceNxs nxs) =
+getWaveLengthAndPoniExt ∷ XrdMeshParams a → XrdMeshSource → IO (WaveLength, PoniExt)
+getWaveLengthAndPoniExt (XrdMeshParams ref _ _) (XrdMeshSourceNxs nxs) =
   withDataSource nxs $ \h -> do
     -- read the first frame and get the poni used for all the integration.
     d <- runMaybeT $ rowND h
     let (XrdMeshFrame w m) = fromJust d
     let poniext = setPose ref m
     return (w, poniext)
-getWaveLengthAndPoniExt ref (XrdMeshSourceNxsFly (nxs:_)) =
+getWaveLengthAndPoniExt (XrdMeshParams ref _ _) (XrdMeshSourceNxsFly (nxs:_)) =
   withDataSource nxs $ \h -> do
     -- read the first frame and get the poni used for all the integration.
     d <- runMaybeT $ rowND h
@@ -222,14 +225,14 @@ getWaveLengthAndPoniExt ref (XrdMeshSourceNxsFly (nxs:_)) =
     let poniext = setPose ref m
     return (w, poniext)
 
-integrateMesh ∷ PoniExt → Maybe (Flat a) → AIMethod → XrdMeshSample → IO ()
-integrateMesh ref mflat method (XrdMeshSample _ output nxss) =
-  mapM_ (integrateMesh' ref output mflat method) nxss
+integrateMesh ∷ XrdMeshParams a → XrdMeshSample → IO ()
+integrateMesh p (XrdMeshSample _ output nxss) =
+  mapM_ (integrateMesh' p output) nxss
 
-integrateMesh' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → AIMethod → XrdMesh' → IO ()
-integrateMesh' ref output mflat method (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
+integrateMesh' ∷ XrdMeshParams a → OutputBaseDir → XrdMesh' → IO ()
+integrateMesh' p' output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
     -- get the poniext for all the scan
-    (w, (PoniExt p _)) <- getWaveLengthAndPoniExt ref nxs'
+    (w, (PoniExt p _)) <- getWaveLengthAndPoniExt p' nxs'
 
     -- save the poni at the right place.
     let sdir = (dropExtension . takeFileName) f
@@ -240,7 +243,7 @@ integrateMesh' ref output mflat method (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nx
     let (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
     let o = output </> sdir </> sdir ++ ".h5"
     let os = output </> sdir </> sdir ++ ".py"
-    let script = xrdMeshPy pfilename f x y i b t w method o os mflat
+    let script = xrdMeshPy p' pfilename f x y i b t w o os
     ExitSuccess <- run script False
 
     return ()
