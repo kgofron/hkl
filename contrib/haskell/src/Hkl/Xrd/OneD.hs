@@ -65,7 +65,7 @@ import Pipes
     , yield
     )
 import Pipes.Lift
-import Pipes.Prelude (filter, toListM)
+import Pipes.Prelude (drain, filter, toListM)
 import Pipes.Safe (runSafeT)
 
 import Hkl.C
@@ -244,7 +244,8 @@ integrate' p output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
                     >-> filter (skip is)
                     >-> savePonies (pgen output f)
                     >-> savePy p b t
-                    >-> saveGnuplot)
+                    >-> saveGnuplot
+                    >-> drain)
   where
     gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
     gen (XrdOneDParams ref' _ _) m _idx = return $ setPose ref' m
@@ -291,7 +292,7 @@ createPy (XrdOneDParams _ mflat m) b (Threshold t) scriptPath (DifTomoFrame' f p
                              , "    #mask = numpy.logical_or(mask, mask_det)"
                              , "    mask = numpy.logical_or(mask, mask_module)"
                              , "    ai.integrate1d(img, N, filename=OUTPUT, unit=\"2th_deg\", error_model=\"poisson\", correctSolidAngle=False, method=\"" ++ show m ++ "\", mask=mask, flat=flat)"
-                                  ]
+                             ]
       (Nxs nxs' (XrdOneDH5Path (DataItemH5 i' _) _ _ _)) = difTomoFrameNxs f
       idx = difTomoFrameIdx f
       output = poniPath `replaceExtension` "dat"
@@ -329,14 +330,23 @@ savePy p b t = forever $ do
                          , difTomoFrame''DataPath = dataPath
                          }
 
-saveGnuplot' :: Consumer (DifTomoFrame'' sh) (StateT [FilePath] IO) r
+data DifTomoFrame''' sh = DifTomoFrame''' { difTomoFrame'''DifTomoFrame'' ∷ DifTomoFrame'' sh
+                                          , difTomoFrame'''GnuplotScript ∷ Script Gnuplot
+                                          , difTomoFrame'''Curves ∷ [FilePath]
+                                          }
+
+saveGnuplot' :: Pipe (DifTomoFrame'' sh) (DifTomoFrame''' sh) (StateT [FilePath] IO) r
 saveGnuplot' = forever $ do
   curves <- lift get
-  (DifTomoFrame'' (DifTomoFrame' _ poniPath) _ dataPath) <- await
-  let directory = takeDirectory poniPath
-  let filename = directory </> "plot.gnuplot"
-  lift . lift $ filename `hasContent` (new_content curves)
-  lift $ put $! (curves ++ [dataPath])
+  f@(DifTomoFrame'' (DifTomoFrame' _ poniPath) _ dataPath) <- await
+  let script = ScriptGnuplot (new_content curves, takeDirectory poniPath </> "plot.gnuplot")
+  let curves' = curves ++ [dataPath]
+  lift . lift $ scriptSave script
+  lift $ put $! curves'
+  yield $ DifTomoFrame''' { difTomoFrame'''DifTomoFrame'' = f
+                          , difTomoFrame'''GnuplotScript = script
+                          , difTomoFrame'''Curves = curves'
+                          }
     where
       new_content :: [FilePath] -> Text
       new_content cs = Text.unlines (lines' cs)
@@ -346,7 +356,7 @@ saveGnuplot' = forever $ do
                  ++ [Text.intercalate ",\\\n" [ Text.pack (show (takeFileName c) ++ " u 1:2 w l") | c <- cs ]]
                  ++ ["pause -1"]
 
-saveGnuplot :: Consumer (DifTomoFrame'' sh) IO r
+saveGnuplot :: Pipe (DifTomoFrame'' sh) (DifTomoFrame''' sh) IO r
 saveGnuplot = evalStateP [] saveGnuplot'
 
 -- | PyFAI MultiGeometry
@@ -386,8 +396,8 @@ integrateMulti' p output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
       go ∷ XrdOneDParams a → FilePath → FilePath → IO ()
       go (XrdOneDParams ref _ _) f o = do
         m <- getMEdf f
-        let (PoniExt p _) = setPose ref m
-        o `hasContent` (poniToText p)
+        let (PoniExt p' _) = setPose ref m
+        o `hasContent` (poniToText p')
 
 createMultiPy ∷ XrdOneDParams a → DIM1 → Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → (Script Py2, FilePath)
 createMultiPy (XrdOneDParams _ mflat _) b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies = (Py2Script (content, scriptPath), output)
