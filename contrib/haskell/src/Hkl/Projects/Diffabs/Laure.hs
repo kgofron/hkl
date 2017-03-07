@@ -197,36 +197,38 @@ samples = air : map (uncurry mkXRDSample)
 laure ∷ IO ()
 laure = do
 
-  -- compute the flat
+  -- | compute the flat
   flat' ← computeFlat flat (published </> "flat" </> "flat.npy")
 
-  print flat'
-
-  let aiMethod = Csr
-
-  -- get a ref poni
+  -- | get a first ref poniExt
   p ← getPoniExtRef sampleRef
-
   -- flip the ref poni in order to fit the reality
   -- let poniextref = p
   let poniextref = setPose p (MyMatrix HklB (ident 3))
   -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
-
-  -- full calibration
-  poniextref' ← calibrate sampleCalibration poniextref ImXpadS140
-  -- print p
   print poniextref
-  -- print poniextref'
+
+  -- | full calibration
+  poniextref' ← calibrate sampleCalibration poniextref ImXpadS140
+  print poniextref'
+
+  -- | set the integration parameters
+  let mflat = Just flat'
+  let aiMethod = Csr
+  let params = XrdOneDParams poniextref' mflat aiMethod
+
+  -- integrate the air
+  integrate params air
+  integrateMulti params air
 
   -- integrate scan with multi geometry
   -- splitPixel (the only available now) → 17m47.825s
-  let params = XrdOneDParams poniextref' (Just flat') aiMethod
-  _ ← mapM_ (integrateMulti params) samples
+  -- _ ← mapM_ (integrateMulti params) samples
 
   -- Integrate each image of the scans
   -- Lut → 21.52 minutes
   -- Csr → 21.9 minutes
-  _ ← mapConcurrently (integrate params) samples
+  -- _ ← mapConcurrently (integrate params) samples
 
   -- substrack the air from all samples
   -- substract air samples
