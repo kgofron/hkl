@@ -3,7 +3,8 @@
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Script
-    ( Py2
+    ( Gnuplot
+    , Py2
     , Script(..)
     , run
     , scriptRun
@@ -35,38 +36,46 @@ withCurrentDirectory dir action =
 
 type Profile = Bool
 
+data Gnuplot
 data Py2
+
 
 data Script a where
   Py2Script ∷ (Text, FilePath) → Script Py2
+  ScriptGnuplot ∷ (Text, FilePath) → Script Gnuplot
 
-scriptSave ∷ Script a → IO ()
-scriptSave (Py2Script (c, f)) = do
+scriptSave' ∷ Text → FilePath → IO ()
+scriptSave' c f = do
     createDirectoryIfMissing True (takeDirectory f)
     writeFile f c
     print $ "--> created : " ++ f
 
-scriptRun ∷ Script a → Bool → IO ExitCode
-scriptRun (Py2Script (_, p)) d
+scriptSave ∷ Script a → IO ()
+scriptSave (Py2Script (c, f)) = scriptSave' c f
+scriptSave (ScriptGnuplot (c, f)) = scriptSave' c f
+
+scriptRun' ∷ FilePath → String → [String] → Bool → IO ExitCode
+scriptRun' f prog args d
     | d == True = withCurrentDirectory directory go
     | otherwise = go
+  where
+      go :: IO ExitCode
+      go = rawSystem prog args
+
+      directory :: FilePath
+      directory = takeDirectory f
+
+scriptRun ∷ Script a → Bool → IO ExitCode
+scriptRun (Py2Script (_, p)) d = scriptRun' p "python" args d
     where
       p' ∷ Profile
       p' = False
-
-      go :: IO ExitCode
-      go = rawSystem python args
-
-      python :: String
-      python = "/usr/bin/python"
 
       args :: [String]
       args
         | p' == True = ["-m" , "cProfile", p]
         | otherwise = [p]
-
-      directory :: FilePath
-      directory = takeDirectory p
+scriptRun (ScriptGnuplot (_, p)) d = scriptRun' p "gnuplot" [p] d
 
 run ∷ Script a → Bool → IO ExitCode
 run s b = do
