@@ -294,5 +294,5 @@ martinetto' = do
 
   -- integrate each step of the scan
   setNumCapabilities 2
-  _ <- mapM_ (integrateMulti poniextref' mflat) samples
+  _ <- mapM_ (integrateMulti (XrdOneDParams poniextref' mflat Csr)) samples
   return ()

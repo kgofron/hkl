@@ -351,46 +351,46 @@ saveGnuplot = evalStateP [] saveGnuplot'
 
 -- | PyFAI MultiGeometry
 
-integrateMulti ∷ PoniExt → Maybe (Flat a) → XRDSample → IO ()
-integrateMulti ref mflat (XRDSample _ output nxss) =
-  mapM_ (integrateMulti' ref output mflat) nxss
+integrateMulti ∷ XrdOneDParams a → XRDSample → IO ()
+integrateMulti p (XRDSample _ output nxss) =
+  mapM_ (integrateMulti' p output) nxss
 
-integrateMulti' ∷ PoniExt → OutputBaseDir → Maybe (Flat a) → XrdNxs → IO ()
-integrateMulti' ref output mflat (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
+integrateMulti' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
+integrateMulti' p output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
-    withDataFrameH5 nxs' (gen ref) yield
+    withDataFrameH5 nxs' (gen p) yield
     >-> hoist lift (frames
                     >-> filter (skip is)
                     >-> savePonies (pgen output f)
-                    >-> saveMultiGeometry mb t mflat)
+                    >-> saveMultiGeometry p mb t)
   where
-    gen :: PoniExt -> Pose -> Int -> IO PoniExt
-    gen ref' m _idx = return $ setPose ref' m
+    gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
+    gen (XrdOneDParams ref' _ _)  m _idx = return $ setPose ref' m
 
     pgen :: OutputBaseDir -> FilePath -> Int -> FilePath
     pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
       where
         scandir = (dropExtension . takeFileName) nxs''
-integrateMulti' ref output mflat (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
+integrateMulti' p output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
   -- generate all the ponies
-  zipWithM_ go fs ponies
+  zipWithM_ (go p) fs ponies
 
   -- generate the multi.py python script
   let scriptPath = output </> "multi.py"
-  let (script, _) = createMultiPyEdf b t fs ponies scriptPath (output </> "multi.dat") mflat
+  let (script, _) = createMultiPyEdf p b t fs ponies scriptPath (output </> "multi.dat")
   scriptSave script
     where
       ponies = [output </> (dropExtension . takeFileName) f ++ ".poni" | f <- fs]
 
-      go :: FilePath -> FilePath -> IO ()
-      go f o = do
+      go ∷ XrdOneDParams a → FilePath → FilePath → IO ()
+      go (XrdOneDParams ref _ _) f o = do
         m <- getMEdf f
         let (PoniExt p _) = setPose ref m
         o `hasContent` (poniToText p)
 
-createMultiPy ∷ DIM1 → Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → Maybe (Flat a) → (Script Py2, FilePath)
-createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies mflat = (Py2Script (content, scriptPath), output)
+createMultiPy ∷ XrdOneDParams a → DIM1 → Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → (Script Py2, FilePath)
+createMultiPy (XrdOneDParams _ mflat _) b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies = (Py2Script (content, scriptPath), output)
     where
       content = Text.unlines $
                map Text.pack ["#!/bin/env python"
@@ -441,8 +441,8 @@ createMultiPy b (Threshold t) scriptPath (DifTomoFrame' f _) idxPonies mflat = (
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
       (idxs, ponies) = unzip idxPonies
 
-createMultiPyEdf ∷ DIM1 → Threshold → [FilePath] → [FilePath] → FilePath → FilePath → Maybe (Flat a) → (Script Py2, FilePath)
-createMultiPyEdf b (Threshold t) edfs ponies scriptPath output mflat = (Py2Script (content, scriptPath), output)
+createMultiPyEdf ∷ XrdOneDParams a → DIM1 → Threshold → [FilePath] → [FilePath] → FilePath → FilePath → (Script Py2, FilePath)
+createMultiPyEdf (XrdOneDParams _ mflat _) b (Threshold t) edfs ponies scriptPath output = (Py2Script (content, scriptPath), output)
     where
       content = Text.unlines $
                 map Text.pack ["#!/bin/env python"
@@ -477,15 +477,15 @@ createMultiPyEdf b (Threshold t) edfs ponies scriptPath output mflat = (Py2Scrip
                               , "numpy.savetxt(OUTPUT, numpy.array(p).T)"
                               ]
 
-saveMulti' ∷ DIM1 → Threshold → Maybe (Flat a) → Consumer (DifTomoFrame' sh) (StateT [(Int, FilePath)] IO) r
-saveMulti' b t mf = forever $ do
+saveMulti' ∷ XrdOneDParams a → DIM1 → Threshold → Consumer (DifTomoFrame' sh) (StateT [(Int, FilePath)] IO) r
+saveMulti' p b t = forever $ do
   idxPonies <- lift get
   f'@(DifTomoFrame' f@(DifTomoFrame _ idx _ _ _) poniPath) <- await
   let directory = takeDirectory poniPath
   let filename = directory </> "multi.py"
-  let (script, _) = createMultiPy b t filename f' idxPonies mf
+  let (script, _) = createMultiPy p b t filename f' idxPonies
   ExitSuccess ← lift . lift $ if (difTomoFrameEOF f) then (run script True) else return ExitSuccess
   lift $ put $! (idxPonies ++ [(idx, poniPath)])
 
-saveMultiGeometry ∷ DIM1 → Threshold → Maybe (Flat a) → Consumer (DifTomoFrame' sh) IO r
-saveMultiGeometry b t f = evalStateP [] (saveMulti' b t f)
+saveMultiGeometry ∷ XrdOneDParams a → DIM1 → Threshold → Consumer (DifTomoFrame' sh) IO r
+saveMultiGeometry p b t = evalStateP [] (saveMulti' p b t)

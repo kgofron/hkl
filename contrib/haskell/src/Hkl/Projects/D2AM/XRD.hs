@@ -14,8 +14,7 @@ import Text.Printf (printf)
 import Prelude hiding (concat, lookup, readFile, writeFile)
 
 import Hkl.MyMatrix
-import Hkl.PyFAI.PoniExt
--- import Hkl.Types
+import Hkl.PyFAI
 import Hkl.Xrd
 import Hkl.Detector
 
@@ -86,7 +85,6 @@ lab6 = XRDSample "test"
 d2am :: IO ()
 d2am = do
   let samples = [lab6]
-  let mflat = Nothing
 
   p <- getPoniExtRef sampleRef
 
@@ -100,5 +98,6 @@ d2am = do
   print poniextref'
 
   -- integrate each step of the scan
-  _ <- mapConcurrently (integrateMulti poniextref' mflat) samples
+  let params = XrdOneDParams poniextref' Nothing Csr -- waiting for PyFAI to manage method in multi geometry
+  _ <- mapConcurrently (integrateMulti params) samples
   return ()

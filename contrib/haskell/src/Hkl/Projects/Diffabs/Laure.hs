@@ -219,11 +219,11 @@ laure = do
 
   -- integrate scan with multi geometry
   -- splitPixel (the only available now) → 17m47.825s
-  _ ← mapM_ (integrateMulti poniextref' (Just flat')) samples
+  let params = XrdOneDParams poniextref' (Just flat') aiMethod
+  _ ← mapM_ (integrateMulti params) samples
 
   -- Integrate each image of the scans
   -- Lut → 21.52 minutes
   -- Csr → 21.9 minutes
-  let p = XrdOneDParams poniextref' (Just flat') aiMethod
-  _ ← mapConcurrently (integrate p) samples
+  _ ← mapConcurrently (integrate params) samples
   return ()
