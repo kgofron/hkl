@@ -28,14 +28,17 @@ import Foreign ( ForeignPtr
 import Foreign.C (CInt(..), CDouble(..), CSize(..), CString,
                  peekCString, withCString)
 import Foreign.Storable
-import Hkl.Types
-import Hkl.Detector
+
 import Numeric.Units.Dimensional.Prelude ( meter, degree, radian, nano
                                          , (*~), (/~))
 import Pipes (Pipe, await, lift, yield)
 
 import qualified Data.Vector.Storable as V
 import qualified Data.Vector.Storable.Mutable as MV
+
+import Hkl.Detector
+import Hkl.Lattice
+import Hkl.Types
 
 #include "hkl.h"
 
@@ -75,7 +78,7 @@ solve' engine n (Engine _ ps _) = do
       c_hkl_engine_pseudo_axis_values_set engine values n unit nullPtr
       >>= newForeignPtr c_hkl_geometry_list_free
 
-solve :: Geometry -> Detector a -> Sample -> Engine -> IO [Geometry]
+solve :: Geometry -> Detector a -> Sample b -> Engine -> IO [Geometry]
 solve g@(Geometry f _ _ _) d s e@(Engine name _ _) = do
   withSample s $ \sample ->
       withDetector d $ \detector ->
@@ -96,7 +99,7 @@ getSolution0 gl = withForeignPtr gl $ \solutions ->
 engineName :: Engine -> String
 engineName (Engine name _ _) = name
 
-solveTraj :: Geometry -> Detector a -> Sample -> [Engine] -> IO [Geometry]
+solveTraj :: Geometry -> Detector a -> Sample b -> [Engine] -> IO [Geometry]
 solveTraj g@(Geometry f _ _ _) d s es = do
   let name = engineName (head es)
   withSample s $ \sample ->
@@ -123,7 +126,7 @@ withDiffractometer d fun = do
   let f_engines = difEngineList d
   withForeignPtr f_engines fun
 
-newDiffractometer :: Geometry -> Detector a -> Sample -> IO Diffractometer
+newDiffractometer :: Geometry -> Detector a -> Sample b -> IO Diffractometer
 newDiffractometer g@(Geometry f _ _ _) d s = do
   f_engines <- newEngineList f
   f_geometry <- newGeometry g
@@ -140,13 +143,13 @@ newDiffractometer g@(Geometry f _ _ _) d s = do
                               , difSample = f_sample
                               }
 
-computePipe :: Detector a -> Sample -> Pipe Geometry [Engine] IO ()
+computePipe :: Detector a -> Sample b -> Pipe Geometry [Engine] IO ()
 computePipe d s = forever $ do
   g <- await
   e <- lift $ compute g d s
   yield e
 
-solveTrajPipe :: Geometry -> Detector a -> Sample -> Pipe Engine Geometry IO ()
+solveTrajPipe :: Geometry -> Detector a -> Sample b -> Pipe Engine Geometry IO ()
 solveTrajPipe g d s = do
   dif <- lift $ newDiffractometer g d s
   solveTrajPipe' dif
@@ -460,7 +463,7 @@ engineListEnginesGet e = do
 foreign import ccall unsafe "hkl.h hkl_engine_list_engines_get"
   c_hkl_engine_list_engines_get:: Ptr HklEngineList -> IO (Ptr ())
 
-compute :: Geometry -> Detector a -> Sample -> IO [Engine]
+compute :: Geometry -> Detector a -> Sample b -> IO [Engine]
 compute g@(Geometry f _ _ _) d s = do
   withSample s $ \sample ->
       withDetector d $ \detector ->
@@ -478,7 +481,7 @@ foreign import ccall unsafe "hkl.h hkl_engine_list_get"
 
 -- Lattice
 
-withLattice :: Lattice -> (Ptr HklLattice -> IO b) -> IO b
+withLattice :: Lattice a -> (Ptr HklLattice -> IO r) -> IO r
 withLattice l func = do
   fptr <- newLattice l
   withForeignPtr fptr func
@@ -494,7 +497,7 @@ newLattice' a b c alpha beta gamma = do
   lattice <- c_hkl_lattice_new a b c alpha beta gamma nullPtr
   newForeignPtr c_hkl_lattice_free lattice
 
-newLattice :: Lattice -> IO (ForeignPtr HklLattice)
+newLattice :: Lattice a -> IO (ForeignPtr HklLattice)
 newLattice  (Cubic la) = do
   let a = CDouble (la /~ nano meter)
   let alpha = CDouble ((90 *~ degree) /~ radian)
@@ -551,12 +554,12 @@ foreign import ccall unsafe "hkl.h &hkl_lattice_free"
 
 -- Sample
 
-withSample :: Sample -> (Ptr HklSample -> IO b) -> IO b
+withSample :: Sample a -> (Ptr HklSample -> IO r) -> IO r
 withSample s fun = do
   fptr <- newSample s
   withForeignPtr fptr fun
 
-newSample :: Sample -> IO (ForeignPtr HklSample)
+newSample :: Sample a -> IO (ForeignPtr HklSample)
 newSample (Sample name l ux uy uz) =
     withCString name $ \cname -> do
       sample <- c_hkl_sample_new cname

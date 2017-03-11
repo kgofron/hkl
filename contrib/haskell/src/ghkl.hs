@@ -11,7 +11,7 @@ import Hkl
 
 import Prelude hiding (lookup)
 
-gaAs :: Sample
+gaAs :: Sample Cubic
 gaAs = Sample "GaAs" (Cubic (5.6533 *~ nano meter))
        (Parameter "ux" (-90.003382) (Range (-180) 180))
        (Parameter "uy" 0.12907 (Range (-180) 180))

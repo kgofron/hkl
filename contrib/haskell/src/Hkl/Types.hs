@@ -1,12 +1,12 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Types ( Beamline(..)
                  , Mode(..)
                  , Engine(..)
                  , Factory(..)
                  , Geometry(..)
-                 , Lattice(..)
                  , Sample(..)
                  , Source(..)
                  , Trajectory
@@ -20,8 +20,9 @@ module Hkl.Types ( Beamline(..)
 
 import Hkl.Types.Parameter as X
 import Hkl.H5
+import Hkl.Lattice
 import Data.Vector.Storable (Vector)
-import Numeric.Units.Dimensional.Prelude (Length, Angle)
+import Numeric.Units.Dimensional.Prelude (Length)
 
 -- | Beamline
 
@@ -75,44 +76,12 @@ data Geometry = Geometry
                 (Maybe [Parameter]) -- ^ axes configuration
               deriving (Show)
 
--- | Lattice
-
-data Lattice
-  = Cubic -- ^ a = b = c, alpha = beta = gamma = 90
-    (Length Double) -- a
-  | Tetragonal -- ^ a = b != c,  alpha = beta = gamma = 90
-    (Length Double) -- ^ a, b
-    (Length Double) -- ^ c
-  | Orthorhombic -- ^ a != b != c,  alpha = beta = gamma = 90
-    (Length Double) -- ^ a
-    (Length Double) -- ^ b
-    (Length Double) -- ^ c
-  | Rhombohedral -- ^ a = b = c, alpha = beta = gamma != 90
-    (Length Double) -- ^ a, b, c
-    (Angle Double) -- ^ alpha, beta, gamma
-  | Hexagonal -- ^ a = b != c, alpha = beta = 90, gamma = 120
-    (Length Double) -- ^ a, b
-    (Length Double) -- ^ c
-  | Monoclinic -- ^ a != b != c, alpha = gamma = 90, beta != 90
-    (Length Double) -- ^ a
-    (Length Double) -- ^ b
-    (Length Double) -- ^ c
-    (Angle Double) -- ^ beta
-  | Triclinic -- ^ a != b != c, alpha != beta != gamma != 90
-    (Length Double) -- ^ a
-    (Length Double) -- ^ b
-    (Length Double) -- ^ c
-    (Angle Double) -- ^ alpha
-    (Angle Double) -- ^ beta
-    (Angle Double) -- ^ gamma
-  deriving (Show)
-
 -- | Sample
 
-data Sample
+data Sample a
   = Sample
     String -- ^ name of the sample
-    Lattice -- ^ the lattice of the sample
+    (Lattice a) -- ^ the lattice of the sample
     Parameter -- ^ ux
     Parameter -- ^ uy
     Parameter -- ^ uz
@@ -122,8 +91,7 @@ data Sample
 
 type WaveLength = Length Double
 
-data Source = Source WaveLength
-  deriving (Show)
+data Source = Source WaveLength deriving (Show)
 
 -- | Trajectory
 

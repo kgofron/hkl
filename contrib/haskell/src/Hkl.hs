@@ -6,6 +6,7 @@ import Hkl.Detector as X
 import Hkl.Engine as X
 import Hkl.Flat as X
 import Hkl.H5 as X
+import Hkl.Lattice as X
 import Hkl.MyMatrix as X
 import Hkl.Nxs as X
 import Hkl.PyFAI as X

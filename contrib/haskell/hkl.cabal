@@ -99,6 +99,7 @@ library
                     , Hkl.Engine
                     , Hkl.Flat
                     , Hkl.H5
+                    , Hkl.Lattice
                     , Hkl.MyMatrix
                     , Hkl.Nxs
                     , Hkl.Projects
