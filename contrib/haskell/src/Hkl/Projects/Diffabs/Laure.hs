@@ -218,8 +218,8 @@ laure = do
   let params = XrdOneDParams poniextref' mflat aiMethod
 
   -- integrate the air
-  integrate params air
-  integrateMulti params air
+  -- integrate params air
+  -- integrateMulti params air
 
   -- integrate scan with multi geometry
   -- splitPixel (the only available now) → 17m47.825s
@@ -231,6 +231,6 @@ laure = do
   -- _ ← mapConcurrently (integrate params) samples
 
   -- substrack the air from all samples
-  -- substract air samples
+  substract params air samples
 
   return ()

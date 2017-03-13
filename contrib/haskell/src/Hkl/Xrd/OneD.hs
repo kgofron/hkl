@@ -24,11 +24,13 @@ module Hkl.Xrd.OneD
        , getPoniExtRef
          -- integration
        , integrate
+       , substract
+         -- integrateMulti
        , integrateMulti
        ) where
 
 import Control.Concurrent.Async (mapConcurrently)
-import Control.Monad (forM_, forever, when, zipWithM_)
+import Control.Monad (forM_, forever, void, when, zipWithM_)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
@@ -43,7 +45,7 @@ import Data.Vector.Storable (concat, head)
 import Numeric.LinearAlgebra (fromList)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
-import System.FilePath ((</>), dropExtension, replaceExtension, takeFileName, takeDirectory)
+import System.FilePath ((<.>), (</>), dropExtension, replaceExtension, takeFileName, takeDirectory)
 import Text.Printf ( printf )
 
 import Prelude hiding
@@ -191,6 +193,14 @@ skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
 
 -- | Usual methods
 
+getScanDir ∷ OutputBaseDir → FilePath → FilePath
+getScanDir o f = o </> (dropExtension . takeFileName) f
+
+pgen :: OutputBaseDir -> FilePath -> Int -> FilePath
+pgen o f i = o </> scandir </>  scandir ++ printf "_%02d.poni" i
+  where
+    scandir = (dropExtension . takeFileName) f
+
 getMEdf :: FilePath -> IO (MyMatrix Double)
 getMEdf f = do
   edf <- edfFromFile f
@@ -249,11 +259,6 @@ integrate' p output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   where
     gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
     gen (XrdOneDParams ref' _ _) m _idx = return $ setPose ref' m
-
-    pgen :: OutputBaseDir -> FilePath -> Int -> FilePath
-    pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
-      where
-        scandir = (dropExtension . takeFileName) nxs''
 
 createPy ∷ XrdOneDParams a → DIM1 → Threshold → FilePath → DifTomoFrame' sh → (Script Py2, FilePath)
 createPy (XrdOneDParams _ mflat m) b (Threshold t) scriptPath (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
@@ -359,6 +364,83 @@ saveGnuplot' = forever $ do
 saveGnuplot :: Pipe (DifTomoFrame'' sh) (DifTomoFrame''' sh) IO r
 saveGnuplot = evalStateP [] saveGnuplot'
 
+-- substract a sample from another one
+
+targetP ∷ (Int → FilePath) → Pipe (DifTomoFrame sh) FilePath IO ()
+targetP g = forever $ do
+  f ← await
+  let poniPath = g (difTomoFrameIdx f)
+  let dataPath = poniPath `replaceExtension` "dat"
+  yield dataPath
+
+target' ∷  XrdOneDParams a → OutputBaseDir → XrdNxs → IO (FilePath, [FilePath])
+target' p output (XrdNxs _ _ _ is (XrdSourceNxs nxs'@(Nxs f _))) = do
+  fs ← runSafeT $ toListM $
+       withDataFrameH5 nxs' (gen p) yield
+       >-> hoist lift (frames
+                       >-> filter (skip is)
+                       >-> targetP (pgen output f)
+                      )
+  return (getScanDir output f, fs)
+  where
+    gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
+    gen (XrdOneDParams ref' _ _) m _idx = return $ setPose ref' m
+
+targets ∷ XrdOneDParams a → XRDSample → IO [(FilePath, [FilePath])]
+targets p (XRDSample _ output nxss) = mapConcurrently (target' p output) nxss
+
+substract' ∷ XrdOneDParams a → XRDSample → XRDSample → IO ()
+substract' p s1@(XRDSample name _ _) s2 = do
+  -- compute the output of the s1 sample
+  -- we take only the first list of the sample
+  f1s:_ ← targets p s1
+  -- compute the output of the s2 sample
+  f2s ← targets p s2
+  -- do the substraction via a python script.
+  _ ← mapConcurrently (go f1s) f2s
+
+  return ()
+  where
+    go ∷ (FilePath, [FilePath]) → (FilePath, [FilePath]) → IO ()
+    go (_, f1) (d, f2) = do
+      -- compute the substracted output file names
+      let outputs = [dropExtension f ++ "-" ++ name <.> "dat" | f ← f2]
+      -- compute the script name
+      let scriptPath = d </> "substract.py"
+      let script = script' f1 f2 outputs scriptPath
+      print scriptPath
+      ExitSuccess ← run script False
+      return ()
+
+
+    script' ∷ [FilePath] → [FilePath] → [FilePath] → FilePath → Script Py2
+    script' fs1 fs2 os scriptPath = Py2Script (content, scriptPath)
+      where
+        content ∷ Text
+        content = Text.unlines $
+              map Text.pack ["#!/bin/env python"
+                            , ""
+                            , "import numpy"
+                            , ""
+                            , "S1 = [" ++ List.intercalate ",\n" (map show fs1) ++ "]"
+                            , "S2 = [" ++ List.intercalate ",\n" (map show fs2) ++ "]"
+                            , "OUTPUTS = [" ++ List.intercalate ",\n" (map show os) ++ "]"
+                            , ""
+                            , "def substract(f1, f2, o):"
+                            , "    a1 = numpy.genfromtxt(f1)"
+                            , "    a2 = numpy.genfromtxt(f2)"
+                            , "    res = numpy.copy(a2)"
+                            , "    res[:,1] -= a1[:,1]"
+                            , "    # TODO deal with the error propagation"
+                            , "    numpy.savetxt(output, res)"
+                            , ""
+                            , "for (s1, s2, output) in zip(S1, S2, OUTPUTS):"
+                            , "    substract(s1, s2, output)"
+                            ]
+
+substract ∷  XrdOneDParams a → XRDSample → [XRDSample] → IO ()
+substract p s ss = mapM_ (substract' p s) ss
+
 -- | PyFAI MultiGeometry
 
 integrateMulti ∷ XrdOneDParams a → XRDSample → IO ()
@@ -378,10 +460,6 @@ integrateMulti' p output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
     gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
     gen (XrdOneDParams ref' _ _)  m _idx = return $ setPose ref' m
 
-    pgen :: OutputBaseDir -> FilePath -> Int -> FilePath
-    pgen o nxs'' idx = o </> scandir </>  scandir ++ printf "_%02d.poni" idx
-      where
-        scandir = (dropExtension . takeFileName) nxs''
 integrateMulti' p output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
   -- generate all the ponies
   zipWithM_ (go p) fs ponies
