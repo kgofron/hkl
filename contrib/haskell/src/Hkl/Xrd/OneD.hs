@@ -30,7 +30,7 @@ module Hkl.Xrd.OneD
        ) where
 
 import Control.Concurrent.Async (mapConcurrently)
-import Control.Monad (forM_, forever, void, when, zipWithM_)
+import Control.Monad (forM_, forever, when, zipWithM_)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
@@ -340,26 +340,26 @@ data DifTomoFrame''' sh = DifTomoFrame''' { difTomoFrame'''DifTomoFrame'' ∷ Di
                                           , difTomoFrame'''Curves ∷ [FilePath]
                                           }
 
+mkGnuplot ∷ [FilePath] → FilePath → Script Gnuplot
+mkGnuplot fs o = ScriptGnuplot (content, o)
+  where
+    content = Text.unlines $
+              ["plot \\"]
+              ++ [Text.intercalate ",\\\n" [ Text.pack (show f ++ " u 1:2 w l") | f <- fs ]]
+              ++ ["pause -1"]
+
 saveGnuplot' :: Pipe (DifTomoFrame'' sh) (DifTomoFrame''' sh) (StateT [FilePath] IO) r
 saveGnuplot' = forever $ do
   curves <- lift get
   f@(DifTomoFrame'' (DifTomoFrame' _ poniPath) _ dataPath) <- await
-  let script = ScriptGnuplot (new_content curves, takeDirectory poniPath </> "plot.gnuplot")
   let curves' = curves ++ [dataPath]
+  let script = mkGnuplot curves' (takeDirectory poniPath </> "plot.gnuplot")
   lift . lift $ scriptSave script
   lift $ put $! curves'
   yield $ DifTomoFrame''' { difTomoFrame'''DifTomoFrame'' = f
                           , difTomoFrame'''GnuplotScript = script
                           , difTomoFrame'''Curves = curves'
                           }
-    where
-      new_content :: [FilePath] -> Text
-      new_content cs = Text.unlines (lines' cs)
-
-      lines' :: [FilePath] -> [Text]
-      lines' cs = ["plot \\"]
-                 ++ [Text.intercalate ",\\\n" [ Text.pack (show (takeFileName c) ++ " u 1:2 w l") | c <- cs ]]
-                 ++ ["pause -1"]
 
 saveGnuplot :: Pipe (DifTomoFrame'' sh) (DifTomoFrame''' sh) IO r
 saveGnuplot = evalStateP [] saveGnuplot'
@@ -396,7 +396,7 @@ substract' p s1@(XRDSample name _ _) s2 = do
   f1s:_ ← targets p s1
   -- compute the output of the s2 sample
   f2s ← targets p s2
-  -- do the substraction via a python script.
+  -- do the substraction via a python script and add the gnuplot file
   _ ← mapConcurrently (go f1s) f2s
 
   return ()
@@ -408,10 +408,11 @@ substract' p s1@(XRDSample name _ _) s2 = do
       -- compute the script name
       let scriptPath = d </> "substract.py"
       let script = script' f1 f2 outputs scriptPath
-      print scriptPath
       ExitSuccess ← run script False
+      -- gnuplot
+      let gnuplotPath = d </> "substract.gnuplot"
+      scriptSave $ mkGnuplot outputs gnuplotPath
       return ()
-
 
     script' ∷ [FilePath] → [FilePath] → [FilePath] → FilePath → Script Py2
     script' fs1 fs2 os scriptPath = Py2Script (content, scriptPath)
