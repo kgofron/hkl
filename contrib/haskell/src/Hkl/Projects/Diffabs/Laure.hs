@@ -217,13 +217,9 @@ laure = do
   let aiMethod = Csr
   let params = XrdOneDParams poniextref' mflat aiMethod
 
-  -- integrate the air
-  -- integrate params air
-  -- integrateMulti params air
-
   -- integrate scan with multi geometry
   -- splitPixel (the only available now) → 17m47.825s
-  -- _ ← mapM_ (integrateMulti params) samples
+  _ ← mapM_ (integrateMulti params) samples
 
   -- Integrate each image of the scans
   -- Lut → 21.52 minutes
@@ -232,5 +228,6 @@ laure = do
 
   -- substrack the air from all samples
   substract params air samples
+  substractMulti params air samples
 
   return ()

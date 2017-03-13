@@ -27,6 +27,7 @@ module Hkl.Xrd.OneD
        , substract
          -- integrateMulti
        , integrateMulti
+       , substractMulti
        ) where
 
 import Control.Concurrent.Async (mapConcurrently)
@@ -583,3 +584,68 @@ saveMulti' p b t = forever $ do
 
 saveMultiGeometry ∷ XrdOneDParams a → DIM1 → Threshold → Consumer (DifTomoFrame' sh) IO r
 saveMultiGeometry p b t = evalStateP [] (saveMulti' p b t)
+
+
+-- substract a sample from another one
+
+targetMulti' ∷  XrdOneDParams a → OutputBaseDir → XrdNxs → (FilePath, FilePath)
+targetMulti' _ output (XrdNxs _ _ _ _ (XrdSourceNxs (Nxs f _))) = (d, o)
+  where
+    d = getScanDir output f
+    o = d </> "multi.dat"
+
+targetMulti ∷ XrdOneDParams a → XRDSample → [(FilePath, FilePath)]
+targetMulti p (XRDSample _ output nxss) = map (targetMulti' p output) nxss
+
+substractMulti' ∷ XrdOneDParams a → XRDSample → XRDSample → IO ()
+substractMulti' p s1@(XRDSample name _ _) s2 = do
+  -- compute the output of the s1 sample
+  -- we take only the first list of the sample
+  let f1s:_ = targetMulti p s1
+  -- compute the output of the s2 sample
+  let f2s = targetMulti p s2
+  -- do the substraction via a python script and add the gnuplot file
+  _ ← mapConcurrently (go f1s) f2s
+
+  return ()
+  where
+    go ∷ (FilePath, FilePath) → (FilePath, FilePath) → IO ()
+    go (_, f1) (d, f2) = do
+      -- compute the substracted output file names
+      let outputs = dropExtension f2 ++ "-" ++ name <.> "dat"
+      -- compute the script name
+      let scriptPath = d </> "multi-substract.py"
+      let script = script' [f1] [f2] [outputs] scriptPath
+      ExitSuccess ← run script False
+      -- gnuplot
+      let gnuplotPath = d </> "multi-substract.gnuplot"
+      scriptSave $ mkGnuplot [outputs] gnuplotPath
+      return ()
+
+    script' ∷ [FilePath] → [FilePath] → [FilePath] → FilePath → Script Py2
+    script' fs1 fs2 os scriptPath = Py2Script (content, scriptPath)
+      where
+        content ∷ Text
+        content = Text.unlines $
+              map Text.pack ["#!/bin/env python"
+                            , ""
+                            , "import numpy"
+                            , ""
+                            , "S1 = [" ++ List.intercalate ",\n" (map show fs1) ++ "]"
+                            , "S2 = [" ++ List.intercalate ",\n" (map show fs2) ++ "]"
+                            , "OUTPUTS = [" ++ List.intercalate ",\n" (map show os) ++ "]"
+                            , ""
+                            , "def substract(f1, f2, o):"
+                            , "    a1 = numpy.genfromtxt(f1)"
+                            , "    a2 = numpy.genfromtxt(f2)"
+                            , "    res = numpy.copy(a2)"
+                            , "    res[:,1] -= a1[:,1]"
+                            , "    # TODO deal with the error propagation"
+                            , "    numpy.savetxt(output, res)"
+                            , ""
+                            , "for (s1, s2, output) in zip(S1, S2, OUTPUTS):"
+                            , "    substract(s1, s2, output)"
+                            ]
+
+substractMulti ∷  XrdOneDParams a → XRDSample → [XRDSample] → IO ()
+substractMulti p s ss = mapM_ (substractMulti' p s) ss
