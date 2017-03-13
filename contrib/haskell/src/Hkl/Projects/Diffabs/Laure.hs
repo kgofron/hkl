@@ -228,7 +228,7 @@ laure = do
   -- Integrate each image of the scans
   -- Lut → 21.52 minutes
   -- Csr → 21.9 minutes
-  -- _ ← mapConcurrently (integrate params) samples
+  _ ← mapConcurrently (integrate params) samples
 
   -- substrack the air from all samples
   substract params air samples
