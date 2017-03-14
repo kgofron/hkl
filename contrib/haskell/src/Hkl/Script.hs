@@ -9,16 +9,18 @@ module Hkl.Script
     , run
     , scriptRun
     , scriptSave )
-        where
+    where
 
+import Control.Monad (when)
 import Data.Text (Text)
 import Data.Text.IO (writeFile)
 import System.Directory (createDirectoryIfMissing)
-import System.Exit ( ExitCode )
-import System.FilePath (takeDirectory)
+import System.Exit ( ExitCode(..) )
+import System.FilePath ( (<.>), takeDirectory)
 import System.Process ( rawSystem ) -- callProcess for futur
 
 import Prelude hiding (writeFile)
+import Paths_hkl (getDataFileName)
 
 #if MIN_VERSION_directory(1, 3, 0)
 import System.Directory (withCurrentDirectory)
@@ -66,14 +68,29 @@ scriptRun' f prog args d
       directory = takeDirectory f
 
 scriptRun ∷ Script a → Bool → IO ExitCode
-scriptRun (Py2Script (_, p)) d = scriptRun' p "python" args d
+scriptRun (Py2Script (_, p)) d = do
+  ExitSuccess ← scriptRun' p "python" args d
+  when p' ( do
+               gprof2dot ← getDataFileName "data/gprof2dot.py"
+               ExitSuccess ← rawSystem gprof2dot ["-f", "pstats", stats, "-o", stats <.> "dot"]
+               ExitSuccess ← rawSystem dot ["-Tsvg", "-o", stats <.> "svg", stats <.> "dot"]
+               return ()
+          )
+  return ExitSuccess
     where
+      -- BEWARE once actived the profiling multiply by two the computing time.
       p' ∷ Profile
-      p' = False
+      p' = True
+
+      dot ∷ String
+      dot = "dot"
+
+      stats ∷ String
+      stats = p <.> "pstats"
 
       args :: [String]
       args
-        | p' == True = ["-m" , "cProfile", p]
+        | p' == True = ["-m" , "cProfile", "-o", stats, p]
         | otherwise = [p]
 scriptRun (ScriptGnuplot (_, p)) d = scriptRun' p "gnuplot" [p] d
 

@@ -18,7 +18,6 @@ import Hkl
 
 -- | TODO
 -- * Livre 45 p159
--- * remove the air to each spectrum.
 -- * deal with the multi geometry intensity problem. I = 1e9 ???
 -- * simplify with the list of nxs using list comprehension.
 -- * add the flyscan mesh

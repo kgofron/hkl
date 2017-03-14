@@ -34,7 +34,6 @@ scriptPy2Flat ns output = Py2Script (script, scriptName)
                         , ""
                         , "import numpy"
                         , "from h5py import File"
-                        , "from pyFAI import load"
                         , ""
                         , "NEXUSFILES = [" ++ intercalate ",\n" (map show nxs') ++ "]"
                         , "IMAGEPATHS = [" ++ intercalate ",\n" (map show hpaths) ++ "]"

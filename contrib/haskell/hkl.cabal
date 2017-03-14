@@ -15,6 +15,7 @@ copyright:           Synchrotron SOLEIL
 build-type:          Simple
 cabal-version:       >= 1.10
 Data-Files:          data/ghkl3.ui
+                   , data/gprof2dot.py
                    , data/pseudo3.ui
                    , data/3d3.ui
 
@@ -124,6 +125,7 @@ library
                     , Hkl.Xrd.Calibration
                     , Hkl.Xrd.Mesh
                     , Hkl.Xrd.OneD
+  other-modules:      Paths_hkl
   other-extensions:    CPP
                      , ForeignFunctionInterface
                      , EmptyDataDecls
