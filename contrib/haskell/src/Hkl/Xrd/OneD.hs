@@ -372,6 +372,31 @@ saveGnuplot = evalStateP [] saveGnuplot'
 
 -- substract a sample from another one
 
+substractPy ∷ [FilePath] → [FilePath] → [FilePath] → FilePath → Script Py2
+substractPy fs1 fs2 os scriptPath = Py2Script (content, scriptPath)
+  where
+    content ∷ Text
+    content = Text.unlines $
+              map Text.pack ["#!/bin/env python"
+                            , ""
+                            , "import numpy"
+                            , ""
+                            , "S1 = [" ++ List.intercalate ",\n" (map show fs1) ++ "]"
+                            , "S2 = [" ++ List.intercalate ",\n" (map show fs2) ++ "]"
+                            , "OUTPUTS = [" ++ List.intercalate ",\n" (map show os) ++ "]"
+                            , ""
+                            , "def substract(f1, f2, o):"
+                            , "    a1 = numpy.genfromtxt(f1)"
+                            , "    a2 = numpy.genfromtxt(f2)"
+                            , "    res = numpy.copy(a2)"
+                            , "    res[:,1] -= a1[:,1]"
+                            , "    # TODO deal with the error propagation"
+                            , "    numpy.savetxt(output, res)"
+                            , ""
+                            , "for (s1, s2, output) in zip(S1, S2, OUTPUTS):"
+                            , "    substract(s1, s2, output)"
+                            ]
+
 targetP ∷ (Int → FilePath) → Pipe (DifTomoFrame sh) FilePath IO ()
 targetP g = forever $ do
   f ← await
@@ -404,7 +429,6 @@ substract' p s1@(XRDSample name _ _) s2 = do
   f2s ← targets p s2
   -- do the substraction via a python script and add the gnuplot file
   _ ← mapConcurrently (go f1s) f2s
-
   return ()
   where
     go ∷ (FilePath, [FilePath]) → (FilePath, [FilePath]) → IO ()
@@ -413,37 +437,12 @@ substract' p s1@(XRDSample name _ _) s2 = do
       let outputs = [dropExtension f ++ "-" ++ name <.> "dat" | f ← f2]
       -- compute the script name
       let scriptPath = d </> "substract.py"
-      let script = script' f1 f2 outputs scriptPath
+      let script = substractPy f1 f2 outputs scriptPath
       ExitSuccess ← run script False
       -- gnuplot
       let gnuplotPath = d </> "substract.gnuplot"
       scriptSave $ mkGnuplot outputs gnuplotPath
       return ()
-
-    script' ∷ [FilePath] → [FilePath] → [FilePath] → FilePath → Script Py2
-    script' fs1 fs2 os scriptPath = Py2Script (content, scriptPath)
-      where
-        content ∷ Text
-        content = Text.unlines $
-              map Text.pack ["#!/bin/env python"
-                            , ""
-                            , "import numpy"
-                            , ""
-                            , "S1 = [" ++ List.intercalate ",\n" (map show fs1) ++ "]"
-                            , "S2 = [" ++ List.intercalate ",\n" (map show fs2) ++ "]"
-                            , "OUTPUTS = [" ++ List.intercalate ",\n" (map show os) ++ "]"
-                            , ""
-                            , "def substract(f1, f2, o):"
-                            , "    a1 = numpy.genfromtxt(f1)"
-                            , "    a2 = numpy.genfromtxt(f2)"
-                            , "    res = numpy.copy(a2)"
-                            , "    res[:,1] -= a1[:,1]"
-                            , "    # TODO deal with the error propagation"
-                            , "    numpy.savetxt(output, res)"
-                            , ""
-                            , "for (s1, s2, output) in zip(S1, S2, OUTPUTS):"
-                            , "    substract(s1, s2, output)"
-                            ]
 
 substract ∷  XrdOneDParams a → XRDSample → [XRDSample] → IO ()
 substract p s ss = mapM_ (substract' p s) ss
@@ -615,37 +614,12 @@ substractMulti' p s1@(XRDSample name _ _) s2 = do
       let outputs = dropExtension f2 ++ "-" ++ name <.> "dat"
       -- compute the script name
       let scriptPath = d </> "multi-substract.py"
-      let script = script' [f1] [f2] [outputs] scriptPath
+      let script = substractPy [f1] [f2] [outputs] scriptPath
       ExitSuccess ← run script False
       -- gnuplot
       let gnuplotPath = d </> "multi-substract.gnuplot"
       scriptSave $ mkGnuplot [outputs] gnuplotPath
       return ()
-
-    script' ∷ [FilePath] → [FilePath] → [FilePath] → FilePath → Script Py2
-    script' fs1 fs2 os scriptPath = Py2Script (content, scriptPath)
-      where
-        content ∷ Text
-        content = Text.unlines $
-              map Text.pack ["#!/bin/env python"
-                            , ""
-                            , "import numpy"
-                            , ""
-                            , "S1 = [" ++ List.intercalate ",\n" (map show fs1) ++ "]"
-                            , "S2 = [" ++ List.intercalate ",\n" (map show fs2) ++ "]"
-                            , "OUTPUTS = [" ++ List.intercalate ",\n" (map show os) ++ "]"
-                            , ""
-                            , "def substract(f1, f2, o):"
-                            , "    a1 = numpy.genfromtxt(f1)"
-                            , "    a2 = numpy.genfromtxt(f2)"
-                            , "    res = numpy.copy(a2)"
-                            , "    res[:,1] -= a1[:,1]"
-                            , "    # TODO deal with the error propagation"
-                            , "    numpy.savetxt(output, res)"
-                            , ""
-                            , "for (s1, s2, output) in zip(S1, S2, OUTPUTS):"
-                            , "    substract(s1, s2, output)"
-                            ]
 
 substractMulti ∷  XrdOneDParams a → XRDSample → [XRDSample] → IO ()
 substractMulti p s ss = mapM_ (substractMulti' p s) ss
