@@ -6,8 +6,6 @@ module Hkl.Projects.Diffabs.Martinetto
        , martinetto'
        ) where
 
-import Control.Concurrent (setNumCapabilities)
-import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
@@ -269,7 +267,7 @@ martinetto = do
   let poniextref = p
   -- integrate each step of the scan
   let params = XrdOneDParams poniextref Nothing Lut
-  _ <- mapConcurrently (integrate params) samples
+  integrate params samples
 
   -- plot de la figure. (script python ou autre ?)
   return ()
@@ -293,6 +291,6 @@ martinetto' = do
   print poniextref'
 
   -- integrate each step of the scan
-  setNumCapabilities 2
-  _ <- mapM_ (integrateMulti (XrdOneDParams poniextref' mflat Csr)) samples
+  integrateMulti (XrdOneDParams poniextref' mflat Csr) samples
+
   return ()

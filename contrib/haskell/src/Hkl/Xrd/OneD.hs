@@ -31,7 +31,7 @@ module Hkl.Xrd.OneD
        ) where
 
 import Control.Concurrent.Async (mapConcurrently)
-import Control.Monad (forM_, forever, when, zipWithM_)
+import Control.Monad (forM_, forever, void, when, zipWithM_)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
@@ -241,13 +241,14 @@ getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = do
   m <- getMEdf e
   return $ PoniExt poni m
 
-integrate ∷ XrdOneDParams a → XRDSample → IO ()
-integrate p (XRDSample _ output nxss) = do
-  _ <- mapConcurrently (integrate' p output) nxss
-  return ()
+integrate ∷ XrdOneDParams a → [XRDSample] → IO ()
+integrate p ss = void $ mapConcurrently (integrate' p) ss
 
-integrate' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
-integrate' p output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
+integrate' ∷ XrdOneDParams a → XRDSample → IO ()
+integrate' p (XRDSample _ output nxss) = void $ mapConcurrently (integrate'' p output) nxss
+
+integrate'' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
+integrate'' p output (XrdNxs b _ t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen p) yield
@@ -449,12 +450,14 @@ substract p s ss = mapM_ (substract' p s) ss
 
 -- | PyFAI MultiGeometry
 
-integrateMulti ∷ XrdOneDParams a → XRDSample → IO ()
-integrateMulti p (XRDSample _ output nxss) =
-  mapM_ (integrateMulti' p output) nxss
+integrateMulti ∷ XrdOneDParams a → [XRDSample] → IO ()
+integrateMulti p samples = mapM_ (integrateMulti' p) samples
 
-integrateMulti' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
-integrateMulti' p output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
+integrateMulti' ∷ XrdOneDParams a → XRDSample → IO ()
+integrateMulti' p (XRDSample _ output nxss) = mapM_ (integrateMulti'' p output) nxss
+
+integrateMulti'' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
+integrateMulti'' p output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen p) yield
@@ -466,7 +469,7 @@ integrateMulti' p output (XrdNxs _ mb t is (XrdSourceNxs nxs'@(Nxs f _))) = do
     gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
     gen (XrdOneDParams ref' _ _)  m _idx = return $ setPose ref' m
 
-integrateMulti' p output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
+integrateMulti'' p output (XrdNxs b _ t _ (XrdSourceEdf fs)) = do
   -- generate all the ponies
   zipWithM_ (go p) fs ponies
 

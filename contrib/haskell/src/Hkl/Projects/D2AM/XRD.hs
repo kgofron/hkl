@@ -4,7 +4,6 @@
 module Hkl.Projects.D2AM.XRD
        ( d2am ) where
 
-import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 -- import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
@@ -99,5 +98,6 @@ d2am = do
 
   -- integrate each step of the scan
   let params = XrdOneDParams poniextref' Nothing Csr -- waiting for PyFAI to manage method in multi geometry
-  _ <- mapConcurrently (integrateMulti params) samples
+  integrateMulti params samples
+
   return ()

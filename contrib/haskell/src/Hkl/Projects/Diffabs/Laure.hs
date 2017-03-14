@@ -5,7 +5,6 @@
 module Hkl.Projects.Diffabs.Laure
        ( laure ) where
 
-import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
@@ -218,12 +217,12 @@ laure = do
 
   -- integrate scan with multi geometry
   -- splitPixel (the only available now) → 17m47.825s
-  _ ← mapM_ (integrateMulti params) samples
+  integrateMulti params samples
 
   -- Integrate each image of the scans
   -- Lut → 21.52 minutes
   -- Csr → 21.9 minutes
-  _ ← mapConcurrently (integrate params) samples
+  integrate params samples
 
   -- substrack the air from all samples
   substract params air samples
