@@ -4,7 +4,6 @@
 module Hkl.Projects.Diffabs.IRDRx
        ( mainIRDRx ) where
 
-import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
@@ -152,7 +151,7 @@ mainIRDRx = do
   print poniextref'
 
   -- Integrate the flyscan mesh
-  _ <- mapConcurrently (integrateMesh (XrdMeshParams poniextref' mflat method)) [fly]
+  integrateMesh (XrdMeshParams poniextref' mflat method) [fly]
 
   -- integrate each step of the scan
   -- _ <- mapConcurrently (integrate poniextref') [lab6]

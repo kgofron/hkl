@@ -11,6 +11,8 @@ module Hkl.Xrd.Mesh
        , integrateMesh
        ) where
 
+import Control.Concurrent.Async (mapConcurrently)
+import Control.Monad (void)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Data.Array.Repa (Shape, DIM1, ix1, size)
 import Data.Maybe (fromJust)
@@ -225,12 +227,14 @@ getWaveLengthAndPoniExt (XrdMeshParams ref _ _) (XrdMeshSourceNxsFly (nxs:_)) =
     let poniext = setPose ref m
     return (w, poniext)
 
-integrateMesh ∷ XrdMeshParams a → XrdMeshSample → IO ()
-integrateMesh p (XrdMeshSample _ output nxss) =
-  mapM_ (integrateMesh' p output) nxss
+integrateMesh ∷  XrdMeshParams a → [XrdMeshSample] → IO ()
+integrateMesh p ss = void $ mapConcurrently (integrateMesh' p) ss
 
-integrateMesh' ∷ XrdMeshParams a → OutputBaseDir → XrdMesh' → IO ()
-integrateMesh' p' output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
+integrateMesh' ∷ XrdMeshParams a → XrdMeshSample → IO ()
+integrateMesh' p (XrdMeshSample _ output nxss) = mapM_ (integrateMesh'' p output) nxss
+
+integrateMesh'' ∷ XrdMeshParams a → OutputBaseDir → XrdMesh' → IO ()
+integrateMesh'' p' output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
     -- get the poniext for all the scan
     (w, (PoniExt p _)) <- getWaveLengthAndPoniExt p' nxs'
 
@@ -247,7 +251,7 @@ integrateMesh' p' output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) 
     ExitSuccess <- run script False
 
     return ()
--- integrateMesh' ref output (XrdMesh b _ t ss) = do
+-- integrateMesh'' ref output (XrdMesh b _ t ss) = do
 --     -- get the poniext for all the scan
 --     (w, PoniExt p _) <- getWaveLengthAndPoniExt ref ss
 

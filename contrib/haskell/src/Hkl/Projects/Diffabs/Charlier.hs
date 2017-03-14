@@ -4,7 +4,6 @@
 module Hkl.Projects.Diffabs.Charlier
        ( charlier ) where
 
-import Control.Concurrent.Async (mapConcurrently)
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
@@ -160,5 +159,5 @@ charlier = do
   print poniextref'
 
   -- integrate each step of the scan
-  _ <- mapConcurrently (integrateMesh (XrdMeshParams poniextref' mflat method)) samples
+  integrateMesh (XrdMeshParams poniextref' mflat method) samples
   return ()
