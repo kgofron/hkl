@@ -434,8 +434,9 @@ substract' p s1@(XRDSample name _ _) s2 = do
   where
     go ∷ (FilePath, [FilePath]) → (FilePath, [FilePath]) → IO ()
     go (_, f1) (d, f2) = do
-      -- compute the substracted output file names
-      let outputs = [dropExtension f ++ "-" ++ name <.> "dat" | f ← f2]
+      -- compute the substracted output file names take into account
+      -- that f1 and f2 could have different length
+      let outputs = [dropExtension f ++ "-" ++ name <.> "dat" | (_, f) ← zip f1 f2]
       -- compute the script name
       let scriptPath = d </> "substract.py"
       let script = substractPy f1 f2 outputs scriptPath
