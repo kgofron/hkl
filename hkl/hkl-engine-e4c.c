@@ -240,6 +240,7 @@ static HklEngineList *hkl_engine_list_new_eulerian4C_vertical(const HklFactory *
 	hkl_engine_e4c_psi_new(self);
 	hkl_engine_q_new(self);
 	hkl_engine_e4c_incidence_new(self);
+	hkl_engine_e4c_emergence_new(self);
 
 	return self;
 }
@@ -289,6 +290,7 @@ static HklEngineList *hkl_engine_list_new_soleil_mars(const HklFactory *factory)
 	hkl_engine_e4c_psi_new(self);
 	hkl_engine_q_new(self);
 	hkl_engine_e4c_incidence_new(self);
+	hkl_engine_e4c_emergence_new(self);
 
 	return self;
 }
