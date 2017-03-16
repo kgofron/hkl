@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.Projects.Diffabs.IRDRx
-       ( mainIRDRx ) where
+       ( irdrx ) where
 
 import Data.Array.Repa (DIM1, ix1)
 import Data.Char (toUpper)
@@ -136,8 +136,8 @@ fly = XrdMeshSample "scan5"
 
 -- | Main
 
-mainIRDRx :: IO ()
-mainIRDRx = do
+irdrx :: IO ()
+irdrx = do
   let mflat = Nothing
   let method = CsrOcl
 

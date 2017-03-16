@@ -16,13 +16,13 @@ import Control.Monad (void)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Data.Array.Repa (Shape, DIM1, ix1, size)
 import Data.Maybe (fromJust)
-import Data.Text (Text)
-import Data.List (intercalate)
-import qualified Data.Text as Text (unlines, pack)
 import Data.Vector.Storable (Vector, any, concat, head, singleton)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
-import System.FilePath ((</>), dropExtension, takeFileName)
+import System.FilePath ((</>), (<.>), dropExtension, splitDirectories, takeFileName)
+
+import qualified Data.List as List (intercalate)
+import qualified Data.Text as Text (unlines, pack)
 
 import Prelude hiding
     ( any
@@ -111,12 +111,59 @@ instance FrameND (DataFrameH5 XrdMesh) where
         if any isNaN v then fail "File contains Nan" else return v
       get_position' (DataSourceConst v) _ = lift $ return $ singleton v
 
+integrateMesh ∷  XrdMeshParams a → [XrdMeshSample] → IO ()
+integrateMesh p ss = void $ mapConcurrently (integrateMesh' p) ss
 
-xrdMeshPy ∷ XrdMeshParams a → FilePath → FilePath → String → String → String → DIM1 → Threshold → WaveLength → FilePath → FilePath → Script Py2
-xrdMeshPy (XrdMeshParams _ mflat m) p f x y i b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
+integrateMesh' ∷ XrdMeshParams a → XrdMeshSample → IO ()
+integrateMesh' p (XrdMeshSample _ output nxss) = mapM_ (integrateMesh'' p output) nxss
+
+getWaveLengthAndPoniExt' ∷ XrdMeshParams a → Nxs XrdMesh → IO (WaveLength, PoniExt)
+getWaveLengthAndPoniExt' (XrdMeshParams ref _ _) nxs =
+   withDataSource nxs $ \h -> do
+    -- read the first frame and get the poni used for all the integration.
+    d <- runMaybeT $ rowND h
+    let (XrdMeshFrame w m) = fromJust d
+    let poniext = setPose ref m
+    return (w, poniext)
+
+getWaveLengthAndPoniExt ∷ XrdMeshParams a → XrdMeshSource → IO (WaveLength, PoniExt)
+getWaveLengthAndPoniExt p (XrdMeshSourceNxs nxs) = getWaveLengthAndPoniExt' p nxs
+getWaveLengthAndPoniExt p (XrdMeshSourceNxsFly (nxs:_)) = getWaveLengthAndPoniExt' p nxs
+getWaveLengthAndPoniExt _ (XrdMeshSourceNxsFly []) = error "getWaveLengthAndPoniExt"
+
+getOutputPath' ∷ OutputBaseDir → FilePath → (FilePath, FilePath, FilePath)
+getOutputPath' o d = (poni, h5, py)
+  where
+    poni = o </> d </> d <.> "poni"
+    h5 = o </> d </> d <.> "h5"
+    py =  o </> d </> d <.> "py"
+
+getOutputPath ∷ OutputBaseDir → XrdMeshSource → (FilePath, FilePath, FilePath)
+getOutputPath o (XrdMeshSourceNxs (Nxs f _)) = getOutputPath' o dir
+  where
+    dir ∷ FilePath
+    dir =  (dropExtension . takeFileName) f
+getOutputPath o (XrdMeshSourceNxsFly (Nxs _ h:_)) = getOutputPath' o dir
+  where
+    (XrdMeshFlyH5Path (DataItemH5 i _) _ _ _ _ _) = h
+    dir:_ = splitDirectories i
+getOutputPath _ (XrdMeshSourceNxsFly []) = error "getOutputPath"
+
+xrdMeshPy' ∷ XrdMeshParams a
+           → XrdMeshSource -- data source
+           → FilePath -- ponipath
+           → DIM1 -- bins
+           → Threshold -- threshold
+           → WaveLength -- wavelength
+           → FilePath -- output h5
+           → FilePath -- script name
+           → Script Py2
+xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxs (Nxs f h5path)) p b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
     where
+      (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
+
       content = Text.unlines $
-                map Text.pack ["#!/bin/env python"
+                map Text.pack [ "#!/bin/env python"
                               , ""
                               , "import numpy"
                               , "from h5py import File"
@@ -132,140 +179,121 @@ xrdMeshPy (XrdMeshParams _ mflat m) p f x y i b (Threshold t) w o scriptPath = P
                               , "WAVELENGTH = " ++ show (w /~ meter)
                               , "THRESHOLD = " ++ show t
                               , ""
-                              , "# load the flat"
+                              , "# Load the flat"
                               , "flat = " ++ flatValueForPy mflat
                               , ""
+                              , "# Load and prepare the common Azimuthal Integrator"
                               , "ai = load(PONIFILE)"
                               , "ai.wavelength = WAVELENGTH"
                               , "ai._empty = numpy.nan"
-                              , "mask_det = ai.detector.mask"
-                              , "mask_module = numpy.zeros_like(mask_det, dtype=bool)"
-                              , "mask_module[0:50, :] = True"
-                              , "mask_module[910:960, :] = True"
-                              , "mask_module[:,0:50] = True"
-                              , "mask_module[:,510:560] = True"
-                              , "mask_det = numpy.logical_or(mask_det, mask_module)"
+                              , ""
+                              , "# Compute the fix part of the mask"
+                              , "mask = numpy.zeros_like(ai.detector.mask, dtype=bool)"
+                              , "mask[0:50, :] = True"
+                              , "mask[910:960, :] = True"
+                              , "mask[:,0:50] = True"
+                              , "mask[:,510:560] = True"
+                              , "mask = numpy.logical_or(mask, ai.detector.mask if flat is None else flat)"
+                              , ""
+                              , "# Compute the mesh"
                               , "with File(NEXUSFILE, mode='r') as f:"
                               , "    nx = f[MESHX].shape[0]"
                               , "    ny = f[MESHY].shape[0]"
                               , "    imgs = f[IMAGEPATH]"
                               , "    with File(OUTPUT, mode='w') as o:"
-                              , "        o.create_dataset('map', shape=(ny, nx, N), dtype='float')"
-                              , "        for y in range(ny):"
-                              , "            for x in range(nx):"
-                              , "                img = imgs[y, x]"
-                              , "                mask = numpy.where(img > THRESHOLD, True, False)"
-                              , "                mask = numpy.logical_or(mask, mask_det)"
+                              , "        dataset = o.create_dataset('map', shape=(ny, nx, N), dtype='float')"
+                              , "        for _dataset, _imgs in zip(dataset, imgs):"
+                              , "            for out, img in zip(_dataset, _imgs):"
+                              , "                mask_t = numpy.where(img > THRESHOLD, True, False)"
                               , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\","
                               , "                                               error_model=\"poisson\", correctSolidAngle=False,"
                               , "                                               method=\"" ++ show m ++ "\","
-                              , "                                               mask=mask, safe=False, flat=flat)"
-                              , "                o['map'][y, x] = I"
+                              , "                                               mask=numpy.logical_or(mask, mask_t),"
+                              , "                                               safe=False, flat=flat)"
+                              , "                out = I"
+                              ]
+xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
+    where
+      fs ∷ [FilePath]
+      fs = [f | (Nxs f _) ← nxss]
+
+      (Nxs _ h5path):_ = nxss
+
+      (XrdMeshFlyH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
+
+      content = Text.unlines $
+                map Text.pack ["#!/bin/env python"
+                              , ""
+                              , "import itertools"
+                              , "import numpy"
+                              , "from h5py import File"
+                              , "from pyFAI import load"
+                              , ""
+                              , "PONIFILE = " ++ show p
+                              , "NEXUSFILES = [" ++ List.intercalate ",\n" (map show fs) ++ "]"
+                              , "MESHX = " ++ show x
+                              , "MESHY = " ++ show y
+                              , "IMAGEPATH = " ++ show i
+                              , "N = " ++ show (size b)
+                              , "OUTPUT = " ++ show o
+                              , "WAVELENGTH = " ++ show (w /~ meter)
+                              , "THRESHOLD = " ++ show t
+                              , ""
+                              , "# Load the flat"
+                              , "flat = " ++ flatValueForPy mflat
+                              , ""
+                              , "# Load and prepare the common Azimuthal Integrator"
+                              , "ai = load(PONIFILE)"
+                              , "ai.wavelength = WAVELENGTH"
+                              , "ai._empty = numpy.nan"
+                              , ""
+                              , "# Compute the fix part of the mask"
+                              , "mask = numpy.zeros_like(ai.detector.mask, dtype=bool)"
+                              , "mask[0:50, :] = True"
+                              , "mask[910:960, :] = True"
+                              , "mask[:,0:50] = True"
+                              , "mask[:,510:560] = True"
+                              , "mask = numpy.logical_or(mask, ai.detector.mask if flat is None else flat)"
+                              , ""
+                              , "# Compute the size of the output"
+                              , "FS = [File(n, mode='r') for n in NEXUSFILES]"
+                              , "NX = 0"
+                              , "NY = 0"
+                              , "for f in FS:"
+                              , "    NX  = f[MESHX].shape[1]"
+                              , "    NY += f[MESHY].shape[0]"
+                              , ""
+                              , "def gen(fs):"
+                              , "    for f in fs:"
+                              , "        for i in f[IMAGEPATH]:"
+                              , "            yield i"
+                              , ""
+                              , "# Create and fill the ouput file"
+                              , "with File(OUTPUT, mode='w') as o:"
+                              , "    dataset = o.create_dataset('map', shape=(NY, NX, N), dtype='float')"
+                              , "    imgs = gen(FS)"
+                              , "    for _dataset, _imgs in zip(dataset, imgs):"
+                              , "       for out, img in zip(_dataset, _imgs):"
+                              , "            mask_t = numpy.where(img > THRESHOLD, True, False)"
+                              , "            tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\","
+                              , "                                           error_model=\"poisson\", correctSolidAngle=False,"
+                              , "                                           method=\"" ++ show m ++ "\","
+                              , "                                           mask=numpy.logical_or(mask, mask_t),"
+                              , "                                           safe=False, flat=flat)"
+                              , "            out = I"
                               ]
 
-xrdMeshFlyPy ∷ FilePath → [FilePath] → String → String → String → DIM1 → Threshold → WaveLength → AIMethod → FilePath → FilePath → (Text, FilePath)
-xrdMeshFlyPy p fs x y i b (Threshold t) w m o os = (script, os)
-    where
-      script = Text.unlines $
-               map Text.pack ["#!/bin/env python"
-                             , ""
-                             , "import numpy"
-                             , "from h5py import File"
-                             , "from pyFAI import load"
-                             , ""
-                             , "PONIFILE = " ++ show p
-                             , "NEXUSFILE = [" ++ intercalate ",\n" (map show fs) ++ "]"
-                             , "MESHX = " ++ show x
-                             , "MESHY = " ++ show y
-                             , "IMAGEPATH = " ++ show i
-                             , "N = " ++ show (size b)
-                             , "OUTPUT = " ++ show o
-                             , "WAVELENGTH = " ++ show (w /~ meter)
-                             , "THRESHOLD = " ++ show t
-                             , ""
-                             , "ai = load(PONIFILE)"
-                             , "ai.wavelength = WAVELENGTH"
-                             , "ai._empty = numpy.nan"
-                             , "mask_det = ai.detector.mask"
-                             , "mask_module = numpy.zeros_like(mask_det, dtype=bool)"
-                             , "mask_module[0:50, :] = True"
-                             , "mask_module[910:960, :] = True"
-                             , "mask_module[:,0:50] = True"
-                             , "mask_module[:,510:560] = True"
-                             , "mask_det = numpy.logical_or(mask_det, mask_module)"
-                             , "with File(NEXUSFILE, mode='r') as f:"
-                             , "    nx = f[MESHX].shape[0]"
-                             , "    ny = f[MESHY].shape[0]"
-                             , "    imgs = f[IMAGEPATH]"
-                             , "    with File(OUTPUT, mode='w') as o:"
-                             , "        o.create_dataset('map', shape=(ny, nx, N), dtype='float')"
-                             , "        for y in range(ny):"
-                             , "            for x in range(nx):"
-                             , "                img = imgs[y, x]"
-                             , "                mask = numpy.where(img > THRESHOLD, True, False)"
-                             , "                mask = numpy.logical_or(mask, mask_det)"
-                             , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\","
-                             , "                                               error_model=\"poisson\", correctSolidAngle=False,"
-                             , "                                               method=\"" ++ show m ++ "\","
-                             , "                                               mask=mask, safe=False)"
-                             , "                o['map'][y, x] = I"
-                             ]
-
-getWaveLengthAndPoniExt ∷ XrdMeshParams a → XrdMeshSource → IO (WaveLength, PoniExt)
-getWaveLengthAndPoniExt (XrdMeshParams ref _ _) (XrdMeshSourceNxs nxs) =
-  withDataSource nxs $ \h -> do
-    -- read the first frame and get the poni used for all the integration.
-    d <- runMaybeT $ rowND h
-    let (XrdMeshFrame w m) = fromJust d
-    let poniext = setPose ref m
-    return (w, poniext)
-getWaveLengthAndPoniExt (XrdMeshParams ref _ _) (XrdMeshSourceNxsFly (nxs:_)) =
-  withDataSource nxs $ \h -> do
-    -- read the first frame and get the poni used for all the integration.
-    d <- runMaybeT $ rowND h
-    let (XrdMeshFrame w m) = fromJust d
-    let poniext = setPose ref m
-    return (w, poniext)
-
-integrateMesh ∷  XrdMeshParams a → [XrdMeshSample] → IO ()
-integrateMesh p ss = void $ mapConcurrently (integrateMesh' p) ss
-
-integrateMesh' ∷ XrdMeshParams a → XrdMeshSample → IO ()
-integrateMesh' p (XrdMeshSample _ output nxss) = mapM_ (integrateMesh'' p output) nxss
-
 integrateMesh'' ∷ XrdMeshParams a → OutputBaseDir → XrdMesh' → IO ()
-integrateMesh'' p' output (XrdMesh b _ t nxs'@(XrdMeshSourceNxs (Nxs f h5path))) = do
+integrateMesh'' p' output (XrdMesh b _ t s) = do
     -- get the poniext for all the scan
-    (w, (PoniExt p _)) <- getWaveLengthAndPoniExt p' nxs'
+    (w, PoniExt p _) <- getWaveLengthAndPoniExt p' s
 
-    -- save the poni at the right place.
-    let sdir = (dropExtension . takeFileName) f
-    let pfilename = output </> sdir </> sdir ++ ".poni"
-    pfilename `hasContent` (poniToText p)
+    -- save this poni at the right place
+    let (ponipath, h5, py) = getOutputPath output s
+    ponipath `hasContent` poniToText p
 
-    -- create and execute the python script to do the integration.
-    let (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
-    let o = output </> sdir </> sdir ++ ".h5"
-    let os = output </> sdir </> sdir ++ ".py"
-    let script = xrdMeshPy p' pfilename f x y i b t w o os
-    ExitSuccess <- run script False
+    -- create the python script to do the integration
+    let script = xrdMeshPy' p' s ponipath b t w h5 py
+    ExitSuccess ← run script False
 
     return ()
--- integrateMesh'' ref output (XrdMesh b _ t ss) = do
---     -- get the poniext for all the scan
---     (w, PoniExt p _) <- getWaveLengthAndPoniExt ref ss
-
---     -- save this poni at the right place
---     let (XrdMeshSourceNxsFly (Nxs _ nxentry h5path:_)) = ss
---     let pfilename = output </> nxentry </> nxentry ++ ".poni"
---     saveScript (poniToText p) pfilename
-
---     -- create the python script to do the integration
---     let (XrdMeshH5Path' (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
---     let o = output </> nxentry </> nxentry ++ ".h5"
---     let os = output </> nxentry </> nxentry ++ ".py"
-
---     -- let (script, scriptPath) = xrdMeshFlyPy
---     -- save it
---     -- run it
---     return ()
