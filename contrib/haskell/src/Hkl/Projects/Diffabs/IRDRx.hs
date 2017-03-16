@@ -151,6 +151,8 @@ irdrx = do
   print poniextref'
 
   -- Integrate the flyscan mesh
+  -- 7.088590421923755e-3 per images (3*60+29) / 29484 this contain
+  -- read/write and computation
   integrateMesh (XrdMeshParams poniextref' mflat method) [fly]
 
   -- integrate each step of the scan
