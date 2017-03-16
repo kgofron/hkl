@@ -271,16 +271,16 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b (Threshold t
                               , "# Create and fill the ouput file"
                               , "with File(OUTPUT, mode='w') as o:"
                               , "    dataset = o.create_dataset('map', shape=(NY, NX, N), dtype='float')"
-                              , "    imgs = gen(FS)"
-                              , "    for _dataset, _imgs in zip(dataset, imgs):"
-                              , "       for out, img in zip(_dataset, _imgs):"
+                              , "    lines = gen(FS)"
+                              , "    for j, line in enumerate(lines):"
+                              , "       for i, img in enumerate(line):"
                               , "            mask_t = numpy.where(img > THRESHOLD, True, False)"
                               , "            tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\","
                               , "                                           error_model=\"poisson\", correctSolidAngle=False,"
                               , "                                           method=\"" ++ show m ++ "\","
                               , "                                           mask=numpy.logical_or(mask, mask_t),"
                               , "                                           safe=False, flat=flat)"
-                              , "            out = I"
+                              , "            dataset[j, i] = I"
                               ]
 
 integrateMesh'' ∷ XrdMeshParams a → OutputBaseDir → XrdMesh' → IO ()
