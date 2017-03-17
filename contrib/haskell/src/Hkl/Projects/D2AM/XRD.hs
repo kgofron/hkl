@@ -59,8 +59,8 @@ bins = ix1 1000
 multibins :: DIM1
 multibins = ix1 10000
 
-threshold :: Threshold
-threshold = Threshold 5000
+threshold :: Maybe Threshold
+threshold = Just (Threshold 5000)
 
 skipedFrames :: [Int]
 skipedFrames = []

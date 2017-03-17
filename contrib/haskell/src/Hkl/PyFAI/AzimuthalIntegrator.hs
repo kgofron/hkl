@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.PyFAI.AzimuthalIntegrator
        ( AIMethod(..)

@@ -53,7 +53,7 @@ data XrdMeshSource  = XrdMeshSourceNxs (Nxs XrdMesh)
                     | XrdMeshSourceNxsFly [Nxs XrdMesh]
                     deriving (Show)
 
-data XrdMesh' = XrdMesh DIM1 DIM1 Threshold XrdMeshSource deriving (Show)
+data XrdMesh' = XrdMesh DIM1 DIM1 (Maybe Threshold) XrdMeshSource deriving (Show)
 
 data XrdMeshSample = XrdMeshSample SampleName OutputBaseDir [XrdMesh'] -- ^ nxss
 
@@ -153,12 +153,12 @@ xrdMeshPy' ∷ XrdMeshParams a
            → XrdMeshSource -- data source
            → FilePath -- ponipath
            → DIM1 -- bins
-           → Threshold -- threshold
+           → (Maybe Threshold) -- threshold
            → WaveLength -- wavelength
            → FilePath -- output h5
            → FilePath -- script name
            → Script Py2
-xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxs (Nxs f h5path)) p b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
+xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxs (Nxs f h5path)) p b mt w o scriptPath = Py2Script (content, scriptPath)
     where
       (XrdMeshH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
 
@@ -177,7 +177,6 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxs (Nxs f h5path)) p b (Thre
                               , "N = " ++ show (size b)
                               , "OUTPUT = " ++ show o
                               , "WAVELENGTH = " ++ show (w /~ meter)
-                              , "THRESHOLD = " ++ show t
                               , ""
                               , "# Load the flat"
                               , "flat = " ++ flatValueForPy mflat
@@ -193,7 +192,10 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxs (Nxs f h5path)) p b (Thre
                               , "mask[910:960, :] = True"
                               , "mask[:,0:50] = True"
                               , "mask[:,510:560] = True"
-                              , "mask = numpy.logical_or(mask, ai.detector.mask if flat is None else flat)"
+                              , "if flat is None:"
+                              , "    mask = numpy.logical_or(mask, ai.detector.mask)"
+                              , ""
+                              , dummiesForPy mt
                               , ""
                               , "# Compute the mesh"
                               , "with File(NEXUSFILE, mode='r') as f:"
@@ -204,15 +206,15 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxs (Nxs f h5path)) p b (Thre
                               , "        dataset = o.create_dataset('map', shape=(ny, nx, N), dtype='float')"
                               , "        for _dataset, _imgs in zip(dataset, imgs):"
                               , "            for out, img in zip(_dataset, _imgs):"
-                              , "                mask_t = numpy.where(img > THRESHOLD, True, False)"
                               , "                tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\","
                               , "                                               error_model=\"poisson\", correctSolidAngle=False,"
                               , "                                               method=\"" ++ show m ++ "\","
-                              , "                                               mask=numpy.logical_or(mask, mask_t),"
+                              , "                                               mask=mask,"
+                              , "                                               dummy=DUMMY, delta_dummy=DELTA_DUMMY,"
                               , "                                               safe=False, flat=flat)"
                               , "                out = I"
                               ]
-xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b (Threshold t) w o scriptPath = Py2Script (content, scriptPath)
+xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b mt w o scriptPath = Py2Script (content, scriptPath)
     where
       fs ∷ [FilePath]
       fs = [f | (Nxs f _) ← nxss]
@@ -237,7 +239,6 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b (Threshold t
                               , "N = " ++ show (size b)
                               , "OUTPUT = " ++ show o
                               , "WAVELENGTH = " ++ show (w /~ meter)
-                              , "THRESHOLD = " ++ show t
                               , ""
                               , "# Load the flat"
                               , "flat = " ++ flatValueForPy mflat
@@ -253,7 +254,10 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b (Threshold t
                               , "mask[910:960, :] = True"
                               , "mask[:,0:50] = True"
                               , "mask[:,510:560] = True"
-                              , "mask = numpy.logical_or(mask, ai.detector.mask if flat is None else flat)"
+                              , "if flat is None:"
+                              , "    mask = numpy.logical_or(mask, ai.detector.mask)"
+                              , ""
+                              , dummiesForPy mt
                               , ""
                               , "# Compute the size of the output"
                               , "FS = [File(n, mode='r') for n in NEXUSFILES]"
@@ -274,17 +278,17 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b (Threshold t
                               , "    lines = gen(FS)"
                               , "    for j, line in enumerate(lines):"
                               , "       for i, img in enumerate(line):"
-                              , "            mask_t = numpy.where(img > THRESHOLD, True, False)"
                               , "            tth, I, sigma = ai.integrate1d(img, N, unit=\"2th_deg\","
                               , "                                           error_model=\"poisson\", correctSolidAngle=False,"
                               , "                                           method=\"" ++ show m ++ "\","
-                              , "                                           mask=numpy.logical_or(mask, mask_t),"
+                              , "                                           mask=mask,"
+                              , "                                           dummy=DUMMY, delta_dummy=DELTA_DUMMY,"
                               , "                                           safe=False, flat=flat)"
                               , "            dataset[j, i] = I"
                               ]
 
 integrateMesh'' ∷ XrdMeshParams a → OutputBaseDir → XrdMesh' → IO ()
-integrateMesh'' p' output (XrdMesh b _ t s) = do
+integrateMesh'' p' output (XrdMesh b _ mt s) = do
     -- get the poniext for all the scan
     (w, PoniExt p _) <- getWaveLengthAndPoniExt p' s
 
@@ -293,7 +297,7 @@ integrateMesh'' p' output (XrdMesh b _ t s) = do
     ponipath `hasContent` poniToText p
 
     -- create the python script to do the integration
-    let script = xrdMeshPy' p' s ponipath b t w h5 py
+    let script = xrdMeshPy' p' s ponipath b mt w h5 py
     ExitSuccess ← run script False
 
     return ()

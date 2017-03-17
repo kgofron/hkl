@@ -4,9 +4,9 @@ import Hkl.Projects
 
 main :: IO ()
 main = do
-  irdrx
+  -- irdrx
   -- replicateM_ 1 martinetto'
   -- replicateM_ 1 melle
-  -- replicateM_ 1 d2am
+  -- d2am
   -- charlier
-  -- replicateM_ 1 laure
+  laure

@@ -92,8 +92,8 @@ bins = ix1 3000
 multibins ∷ DIM1
 multibins = ix1 25000
 
-threshold ∷ Threshold
-threshold = Threshold 800
+threshold ∷ Maybe Threshold
+threshold = Just (Threshold 800)
 
 skipedFrames ∷ [Int]
 skipedFrames = [4]

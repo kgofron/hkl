@@ -84,8 +84,8 @@ bins = ix1 8000
 multibins :: DIM1
 multibins = ix1 25000
 
-threshold :: Threshold
-threshold = Threshold 800
+threshold :: Maybe Threshold
+threshold = Just (Threshold 800)
 
 h5path :: NxEntry -> DataFrameH5Path XrdMesh
 h5path nxentry = XrdMeshH5Path
