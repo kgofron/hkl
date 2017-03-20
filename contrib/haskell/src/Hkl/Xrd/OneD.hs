@@ -39,7 +39,7 @@ import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
 import Data.Array.Repa (DIM1, ix1, size)
 import Data.Attoparsec.Text (parseOnly)
-import qualified Data.List as List (intercalate, lookup)
+import qualified Data.List as List (lookup)
 import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Text (Text)
 import qualified Data.Text as Text (unlines, pack, intercalate)
@@ -79,6 +79,7 @@ import Hkl.Edf
 import Hkl.Flat
 import Hkl.H5
 import Hkl.PyFAI
+import Hkl.Python
 import Hkl.MyMatrix
 import Hkl.Nxs
 import Hkl.Script
@@ -92,6 +93,8 @@ type SampleName = String
 
 data Threshold = Threshold Int deriving (Show)
 
+instance PyVal Threshold where
+  toPyVal (Threshold i) = toPyVal i
 
 data XrdRefSource = XrdRefNxs (Nxs XrdOneD) Int
                   | XrdRefEdf FilePath FilePath
@@ -195,9 +198,6 @@ skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
 
 -- | Usual methods
 
-thresholdValueForPy ∷ Maybe Threshold → String
-thresholdValueForPy mt = maybe "None" (\(Threshold t) → show t) mt
-
 dummiesForPy ∷ Maybe Threshold → String
 dummiesForPy mt = unlines [ "# Compute the dummy values for the dynamic mask"
                                , "DUMMY=" ++ dummy
@@ -285,16 +285,16 @@ createPy (XrdOneDParams _ mflat m) b mt scriptPath (DifTomoFrame' f poniPath) = 
                              , "from h5py import File"
                              , "from pyFAI import load"
                              , ""
-                             , "PONIFILE = " ++ show poniPath
-                             , "NEXUSFILE = " ++ show nxs'
-                             , "IMAGEPATH = " ++ show i'
-                             , "IDX = " ++ show idx
-                             , "N = " ++ show (size b)
-                             , "OUTPUT = " ++ show output
-                             , "WAVELENGTH = " ++ show (w /~ meter)
+                             , "PONIFILE = " ++ toPyVal poniPath
+                             , "NEXUSFILE = " ++ toPyVal nxs'
+                             , "IMAGEPATH = " ++ toPyVal i'
+                             , "IDX = " ++ toPyVal idx
+                             , "N = " ++ toPyVal (size b)
+                             , "OUTPUT = " ++ toPyVal output
+                             , "WAVELENGTH = " ++ toPyVal (w /~ meter)
                              , ""
                              , "# load the flat"
-                             , "flat = " ++ flatValueForPy mflat
+                             , "flat = " ++ toPyVal mflat
                              , ""
                              , dummiesForPy mt
                              , ""
@@ -393,9 +393,9 @@ substractPy fs1 fs2 os scriptPath = Py2Script (content, scriptPath)
                             , ""
                             , "import numpy"
                             , ""
-                            , "S1 = [" ++ List.intercalate ",\n" (map show fs1) ++ "]"
-                            , "S2 = [" ++ List.intercalate ",\n" (map show fs2) ++ "]"
-                            , "OUTPUTS = [" ++ List.intercalate ",\n" (map show os) ++ "]"
+                            , "S1 = " ++ toPyVal fs1
+                            , "S2 = " ++ toPyVal fs2
+                            , "OUTPUTS = " ++ toPyVal os
                             , ""
                             , "def substract(f1, f2, o):"
                             , "    a1 = numpy.genfromtxt(f1)"
@@ -508,19 +508,19 @@ createMultiPy (XrdOneDParams _ mflat _) b mt scriptPath (DifTomoFrame' f _) idxP
                              , "from h5py import File"
                              , "from pyFAI.multi_geometry import MultiGeometry"
                              , ""
-                             , "NEXUSFILE = " ++ show nxs'
-                             , "IMAGEPATH = " ++ show i'
-                             , "BINS = " ++ show (size b)
-                             , "OUTPUT = " ++ show output
-                             , "WAVELENGTH = " ++ show (w /~ meter)
-                             , "THRESHOLD = " ++ thresholdValueForPy mt
+                             , "NEXUSFILE = " ++ toPyVal nxs'
+                             , "IMAGEPATH = " ++ toPyVal i'
+                             , "BINS = " ++ toPyVal (size b)
+                             , "OUTPUT = " ++ toPyVal output
+                             , "WAVELENGTH = " ++ toPyVal (w /~ meter)
+                             , "THRESHOLD = " ++ toPyVal mt
                              , ""
                              , "# load the flat"
-                             , "flat = " ++ flatValueForPy mflat
+                             , "flat = " ++ toPyVal mflat
                              , ""
                              , "# Load all images"
-                             , "PONIES = [" ++ List.intercalate ",\n" (map show ponies) ++ "]"
-                             , "IDXS = [" ++ List.intercalate ", " (map show idxs) ++ "]"
+                             , "PONIES = " ++ toPyVal ponies
+                             , "IDXS = " ++ toPyVal idxs
                              , ""
                              , "# Read all the images"
                              , "imgs = []"
@@ -563,14 +563,14 @@ createMultiPyEdf (XrdOneDParams _ mflat _) b mt edfs ponies scriptPath output = 
                               , "from fabio import open"
                               , "from pyFAI.multi_geometry import MultiGeometry"
                               , ""
-                              , "EDFS = [" ++ List.intercalate ",\n" (map show edfs) ++ "]"
-                              , "PONIES = [" ++ List.intercalate ",\n" (map show ponies) ++ "]"
-                              , "BINS = " ++ show (size b)
-                              , "OUTPUT = " ++ show output
-                              , "THRESHOLD = " ++ thresholdValueForPy mt
+                              , "EDFS = " ++ toPyVal edfs
+                              , "PONIES = " ++ toPyVal ponies
+                              , "BINS = " ++ toPyVal (size b)
+                              , "OUTPUT = " ++ toPyVal output
+                              , "THRESHOLD = " ++ toPyVal mt
                               , ""
                               , "# load the flat"
-                              , "flat = " ++ flatValueForPy mflat
+                              , "flat = " ++ toPyVal mflat
                               , ""
                               , "# Read all the images"
                               , "imgs = [open(edf).data for edf in EDFS]"

@@ -126,6 +126,7 @@ library
                     , Hkl.Xrd.Mesh
                     , Hkl.Xrd.OneD
   other-modules:      Paths_hkl
+                    , Hkl.Python
   other-extensions:    CPP
                      , ForeignFunctionInterface
                      , EmptyDataDecls

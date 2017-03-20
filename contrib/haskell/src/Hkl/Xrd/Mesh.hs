@@ -21,7 +21,6 @@ import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
 import System.FilePath ((</>), (<.>), dropExtension, splitDirectories, takeFileName)
 
-import qualified Data.List as List (intercalate)
 import qualified Data.Text as Text (unlines, pack)
 
 import Prelude hiding
@@ -40,6 +39,7 @@ import Hkl.Detector
 import Hkl.Flat
 import Hkl.H5
 import Hkl.PyFAI
+import Hkl.Python
 import Hkl.MyMatrix
 import Hkl.Nxs
 import Hkl.Script
@@ -173,17 +173,17 @@ xrdMeshPy'' mflat m fs i x y p b mt w o scriptPath = Py2Script (content, scriptP
                               , "from h5py import File"
                               , "from pyFAI import load"
                               , ""
-                              , "PONIFILE = " ++ show p
-                              , "NEXUSFILES = [" ++ List.intercalate ",\n" (map show fs) ++ "]"
-                              , "MESHX = " ++ show x
-                              , "MESHY = " ++ show y
-                              , "IMAGEPATH = " ++ show i
-                              , "N = " ++ show (size b)
-                              , "OUTPUT = " ++ show o
-                              , "WAVELENGTH = " ++ show (w /~ meter)
+                              , "PONIFILE = " ++ toPyVal p
+                              , "NEXUSFILES = " ++ toPyVal fs
+                              , "MESHX = " ++ toPyVal x
+                              , "MESHY = " ++ toPyVal y
+                              , "IMAGEPATH = " ++ toPyVal i
+                              , "N = " ++ toPyVal (size b)
+                              , "OUTPUT = " ++ toPyVal o
+                              , "WAVELENGTH = " ++ toPyVal (w /~ meter)
                               , ""
                               , "# Load the flat"
-                              , "flat = " ++ flatValueForPy mflat
+                              , "flat = " ++ toPyVal mflat
                               , ""
                               , "# Load and prepare the common Azimuthal Integrator"
                               , "ai = load(PONIFILE)"

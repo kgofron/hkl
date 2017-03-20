@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UnicodeSyntax #-}
@@ -6,11 +7,9 @@ module Hkl.Flat
        ( Flat(..)
        , Npy
        , computeFlat
-       , flatValueForPy
        )
        where
 
-import Data.List (intercalate)
 import Data.Text (unlines, pack)
 import System.Exit ( ExitCode( ExitSuccess ) )
 import System.FilePath.Posix (replaceExtension)
@@ -18,6 +17,7 @@ import Prelude hiding (unlines)
 
 import Hkl.DataSource
 import Hkl.Nxs
+import Hkl.Python
 import Hkl.Script
 
 data Npy
@@ -35,9 +35,9 @@ scriptPy2Flat ns output = Py2Script (script, scriptName)
                         , "import numpy"
                         , "from h5py import File"
                         , ""
-                        , "NEXUSFILES = [" ++ intercalate ",\n" (map show nxs') ++ "]"
-                        , "IMAGEPATHS = [" ++ intercalate ",\n" (map show hpaths) ++ "]"
-                        , "OUTPUT = " ++ show output
+                        , "NEXUSFILES = " ++ toPyVal nxs'
+                        , "IMAGEPATHS = " ++ toPyVal hpaths
+                        , "OUTPUT = " ++ toPyVal output
                         , ""
                         , "flat = None"
                         , "n = None"
@@ -70,5 +70,5 @@ computeFlat ns o = do
   -- return the filepath of the generated file.
   return (FlatNpy o)
 
-flatValueForPy ∷ Maybe (Flat a) → String
-flatValueForPy m = maybe "None" (\(FlatNpy x) → "numpy.load(" ++ show x ++ ")") m
+instance PyVal (Flat a) where
+  toPyVal (FlatNpy v) = "numpy.load(" ++ show v ++ ")"
