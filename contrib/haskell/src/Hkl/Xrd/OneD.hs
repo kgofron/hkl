@@ -200,12 +200,12 @@ skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
 
 dummiesForPy ∷ Maybe Threshold → String
 dummiesForPy mt = unlines [ "# Compute the dummy values for the dynamic mask"
-                               , "DUMMY=" ++ dummy
-                               , "DELTA_DUMMY=" ++ delta_dummy
-                               ]
+                          , "DUMMY=" ++ dummy
+                          , "DELTA_DUMMY=" ++ delta_dummy
+                          ]
   where
-    dummy = maybe "None" (\_ → "65000") mt -- TODO thze default value depends on the number od bits per pixels.
-    delta_dummy = maybe "None" (\(Threshold t) → show t) mt
+    dummy = maybe "None" (\_ → "65000") mt -- TODO the default value depends on the number od bits per pixels.
+    delta_dummy = maybe "None" (\(Threshold t) → show (65000 - t)) mt
 
 getScanDir ∷ OutputBaseDir → FilePath → FilePath
 getScanDir o f = o </> (dropExtension . takeFileName) f
