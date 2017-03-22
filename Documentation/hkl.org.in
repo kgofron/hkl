@@ -44,9 +44,9 @@
     pattern is located at each points of the lattice node. Positions of
     those nodes are given by:
 
-    \begin{displaymath}
+    \[
     R_{uvw}=u\cdot\vec{a}+v\cdot\vec{b}+w\cdot\vec{c}
-    \end{displaymath}
+    \]
 
     $\vec{a}$, $\vec{b}$, $\vec{c}$ are the former vector of a base of the
     space. =u=, =v=, =w= are integers. The pattern contain atoms
@@ -95,9 +95,9 @@
 
     where
 
-    \begin{displaymath}
+    \[
     D=\sqrt{1-\cos^{2}\alpha-\cos^{2}\beta-\cos^{2}\gamma+2\cos\alpha\cos\beta\cos\gamma}
-    \end{displaymath}
+    \]
 
     To compute the angles between the reciprocal space vectors, it is once
     again possible to use the previous equations reciprocal to obtain the
@@ -112,16 +112,15 @@
 
     the volume of the lattice can be compute this way:
 
-    \begin{displaymath}
+    \[
     V = abcD
-    \end{displaymath}
+    \]
 
     or
 
-    \begin{displaymath}
+    \[
     V = \vec{a} \dot (\vec{b} \wedge \vec{c}) = \vec{b} \dot (\vec{c} \wedge \vec{a}) = \vec{c} \dot (\vec{a} \wedge \vec{b})
-    \end{displaymath}
-
+    \]
 
 *** Diffraction
 
@@ -130,9 +129,9 @@
     The $\vec{k_{d}}$ vector wavelength of the diffracted beam. There is
     diffusion if the diffusion vector $\vec{q}$ can be expressed as follows:
 
-    \begin{displaymath}
+    \[
     \vec{q}=\vec{k_{d}}-\vec{k_{i}}=h.\vec{a}^{*}+k.\vec{b}^{*}+l.\vec{c}^{*}
-    \end{displaymath}
+    \]
 
     where $(h,k,l)\in\mathbb{N}^{3}$ and $(h,k,l)\neq(0,0,0)$. Theses
     indices $(h,k,l)$ are named Miller indices.
@@ -140,9 +139,9 @@
     Another way of looking at things has been given by Bragg and that famous
     relationship:
 
-    \begin{displaymath}
+    \[
     n\lambda=2d\sin\theta
-    \end{displaymath}
+    \]
 
     where $d$ is the inter-plan distance and $n \in \mathbb{N}$.
 
@@ -159,39 +158,39 @@
      Theses quaternions can represent 3D rotations. There is different way to
      describe then like complex numbers.
 
-     \begin{displaymath}
+     \[
      q=a+bi+cj+dk
-     \end{displaymath}
+     \]
 
      or
 
-     \begin{displaymath}
+     \[
      q=[a,\vec{v}]
-     \end{displaymath}
+     \]
 
      To compute the quaternion's norm, we can proceed like for complex
      numbers
 
-     \begin{displaymath}
-     \lvert q \rvert = \sqrt{a{{}^2}+b{{}^2}+c{{}^2}+d{{}^2}}
-     \end{displaymath}
+     \[
+     \|q\|=\sqrt{a²+b²+c²+d²}
+     \]
 
      Its conjugate is :
 
-     \begin{displaymath}
+     \[
      q^{*}=[a,-\vec{u}]=a-bi-cj-dk
-     \end{displaymath}
+     \]
 
 **** Operations
 
      The difference with the complex number algebra is about
      non-commutativity.
 
-     \begin{displaymath}
+     \[
      qp \neq pq
-     \end{displaymath}
+     \]
 
-     \begin{displaymath}
+     \[
      \begin{bmatrix}
      ~ & 1 & i  & j  & k \cr
      1 & 1 & i  & j  & k \cr
@@ -199,7 +198,7 @@
      j & j & -k & -1 & i \cr
      k & k & j  & -i & -1
      \end{bmatrix}
-     \end{displaymath}
+     \]
 
      The product of two quaternions can be express by the Grassman product
      Grassman product. So for two quaternions $p$ and $q$:
@@ -211,15 +210,15 @@
 
      we got
 
-     \begin{displaymath}
+     \[
      pq = at - \vec{u} \cdot \vec{v} + a \vec{v} + t \vec{u} + \vec{v} \times \vec{u}
-     \end{displaymath}
+     \]
 
      or equivalent
 
-     \begin{displaymath}
+     \[
      pq = (at - bx - cy - dz) + (bt + ax + cz - dy) i + (ct + ay + dx - bz) j + (dt + az + by - cx) k
-     \end{displaymath}
+     \]
 
 **** 3D rotations
 
@@ -236,9 +235,9 @@
      rotation d'angle $\theta$ autour de l'origine, dans l'espace 3D
      l'expression équivalente est:
 
-     \begin{displaymath}
+     \[
      z'=qzq^{-1}
-     \end{displaymath}
+     \]
 
      où $q$ est le quaternion de norme 1 représentant la rotation dans
      l'espace et $z$ le quaternion représentant le vecteur qui subit la
@@ -248,20 +247,20 @@
      $q^{-1}$. En effet l'inverse d'une rotation d'angle $\theta$ est la
      rotation d'angle $-\theta$. On a donc directement:
 
-     \begin{displaymath}
+     \[
      q^{-1}=[\cos\frac{-\theta}{2},\sin\frac{-\theta}{2}\vec{u}]=[\cos\frac{\theta}{2},-\sin\frac{\theta}{2}\vec{u}]=q^{*}
-     \end{displaymath}
+     \]
 
      Le passage aux matrices de rotation se fait par la formule suivante
      $q\rightarrow M$.
 
-     \begin{displaymath}
+     \[
      \begin{bmatrix}
      a{{}^2}+b{{}^2}-c{{}^2}-d{{}^2} & 2bc-2ad & 2ac+2bd\\
      2ad+2bc & a{{}^2}-b{{}^2}+c{{}^2}-d{{}^2} & 2cd-2ab\\
      2bd-2ac & 2ab+2cd & a{{}^2}-b{{}^2}-c{{}^2}+d{{}^2}
      \end{bmatrix}
-     \end{displaymath}
+     \]
 
      La composition de rotation se fait simplement en multipliant les
      quaternions entre eux. Si l'on à $q$
@@ -294,14 +293,14 @@
     Si l'on connaît les paramètres cristallins du cristal étudié, il est
     très simple de calculer $B$:
 
-    \begin{displaymath}
+    \[
     B=
     \begin{bmatrix}
     a^{\star} & b^{\star}\cos\gamma^{\star} & c^{\star}\cos\beta^{\star}\\
     0 & b^{\star}\sin\gamma^{\star} & -c^{\star}\sin\beta^{\star}\cos\alpha\\
     0 & 0 & 1/c
     \end{bmatrix}
-    \end{displaymath}
+    \]
 
 *** Calcule de U
 
@@ -337,15 +336,15 @@
     $(\tilde{R}_{1}\vec{Q}_{1},\tilde{R}_{2}\vec{Q}_{2})$. On a alors très
     simplement:
 
-    \begin{displaymath}
+    \[
     U \cdot T_{\vec{h}} = T_{\vec{Q}}
-    \end{displaymath}
+    \]
 
     Et donc
 
-    \begin{displaymath}
+    \[
     U = T_{\vec{Q}} \cdot \tilde{T}_{\vec{h}}
-    \end{displaymath}
+    \]
 
 *** Affinement par la méthode du simplex
 
@@ -356,9 +355,9 @@
     d'euler. il faut donc être en mesure de passer d'une représentation
     eulérien à cette matrice :math::U et réciproquement.
 
-    \begin{displaymath}
+    \[
     U = X \cdot Y \cdot Z
-    \end{displaymath}
+    \]
 
     où $X$ est la matrice rotation suivant l'axe Ox et le premier angle
     d'Euler, $Y$ la matrice de rotation suivant l'axe Oy et le deuxième
@@ -372,14 +371,14 @@
 
     et donc:
 
-    \begin{displaymath}
+    \[
     U=
     \begin{bmatrix}
     CE & -CF & D\\
     BDE+AF & -BDF+AE & -BC\\
     -ADE+BF & ADF+BE & AC
     \end{bmatrix}
-    \end{displaymath}
+    \]
 
     Il est donc facile de passer des angles d'Euler à la matrice
     d'orientation.
@@ -425,9 +424,9 @@
 
    where
 
-   \begin{displaymath}
+   \[
    p = \arcsin\left(\frac{\tan\frac{\chi}{2}}{\tan\alpha}\right)
-   \end{displaymath}
+   \]
 
    and $\alpha$ is the angle of the kappa axis with the $\vec{y}$ axis.
 
@@ -451,9 +450,9 @@
 
    where
 
-   \begin{displaymath}
+   \[
    p = \arctan\left(\tan\frac{\kappa}{2} \cos\alpha\right)
-   \end{displaymath}
+   \]
 
    #+CAPTION: $\omega = 0$, $\chi = 0$, $\phi = 0$, 1st solution
    [[./figures/e2k_1.png]]
