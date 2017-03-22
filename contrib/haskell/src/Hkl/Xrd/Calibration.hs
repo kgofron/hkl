@@ -1,17 +1,20 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Xrd.Calibration
        ( NptExt(..)
        , XRDCalibrationEntry(..)
        , XRDCalibration(..)
        , calibrate
+       , extractEdf
        ) where
 
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Char8 (pack)
 import Data.List (foldl')
-import Data.Text (Text)
+import Data.Text (Text, unlines, pack)
 import Data.Vector.Storable
   ( Vector
   , head
@@ -32,6 +35,10 @@ import Numeric.GSL.Minimization
   )
 import Numeric.Units.Dimensional.Prelude (meter, radian, nano, (/~), (*~))
 import Pipes.Safe (MonadSafe(..), runSafeT, bracket)
+import System.Exit ( ExitCode( ExitSuccess ) )
+import System.FilePath.Posix ((</>), takeFileName)
+import Text.Printf ( printf )
+
 import Prelude hiding (head, concat, lookup, readFile, writeFile, unlines)
 
 import Hkl.C
@@ -39,8 +46,10 @@ import Hkl.DataSource
 import Hkl.Detector
 import Hkl.H5
 import Hkl.PyFAI
+import Hkl.Python
 import Hkl.MyMatrix
 import Hkl.Nxs
+import Hkl.Script
 import Hkl.Types
 import Hkl.Xrd.OneD
 
@@ -78,7 +87,7 @@ withDataItem :: MonadSafe m => File -> DataItem H5 -> (Dataset -> m r) -> m r
 withDataItem hid (DataItemH5 name _) = bracket (liftIO acquire') (liftIO . release')
     where
       acquire' :: IO Dataset
-      acquire' = openDataset hid (pack name) Nothing
+      acquire' = openDataset hid (Data.ByteString.Char8.pack name) Nothing
 
       release' :: Dataset -> IO ()
       release' = closeDataset
@@ -215,3 +224,46 @@ calibrate c (PoniExt p _) d =  do
             z' = kf `atIndex` 2
 
             dtth = tth - atan2 (sqrt (x'*x' + y'*y')) (-z')
+
+
+
+
+-- | Pre Calibration
+
+scriptExtractEdf ∷ FilePath → [XRDCalibrationEntry] → Script Py2
+scriptExtractEdf o es = Py2Script (content, scriptPath)
+  where
+    content = unlines $
+              map Data.Text.pack [ "#!/bin/env python"
+                            , ""
+                            , "from fabio.edfimage import edfimage"
+                            , "from h5py import File"
+                            , ""
+                            , "NEXUSFILES = " ++ toPyVal nxss
+                            , "IDXS = " ++ toPyVal idxs
+                            , "IMAGEPATHS = " ++ toPyVal (imgs ∷ [String])
+                            , "OUTPUTS = " ++ toPyVal outputs
+                            , ""
+                            , "for filename, i, p, o in zip(NEXUSFILES, IDXS, IMAGEPATHS, OUTPUTS):"
+                            , "    with File(filename, mode='r') as f:"
+                            , "        edfimage(f[p][i]).write(o)"
+                            ]
+
+    (nxss, idxs, imgs) = unzip3 [(f, i, img) | (XRDCalibrationEntryNxs (Nxs f (XrdOneDH5Path (DataItemH5 img _) _ _ _)) i _) ← es]
+
+    outputs ∷ [FilePath]
+    outputs = zipWith (output o) nxss idxs
+
+    scriptPath ∷ FilePath
+    scriptPath = o </> "pre-calibration.py"
+
+    output ∷ FilePath → FilePath → Int → FilePath
+    output o' n i = o' </> f
+      where
+        f = (takeFileName n) ++ printf "_%02d.edf" i
+
+extractEdf ∷ XRDCalibration → IO ()
+extractEdf (XRDCalibration _ o es) = do
+  let script = scriptExtractEdf o es
+  ExitSuccess ← run script False
+  return ()

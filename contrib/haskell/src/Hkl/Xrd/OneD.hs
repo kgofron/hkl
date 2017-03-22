@@ -86,6 +86,9 @@ import Hkl.Script
 import Hkl.Types
 import Hkl.Utils
 
+-- | TODO
+-- When we skip the last frame there is problem.
+
 -- | Types
 
 type OutputBaseDir = FilePath
