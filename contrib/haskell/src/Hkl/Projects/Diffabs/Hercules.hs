@@ -112,6 +112,7 @@ samples = map (uncurry mkXRDSample)
           , ("zgso4_room",      [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [96 :: Int]) ])
           , ("zgso4_450C",      [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [192 :: Int]) ])
           , ("zgso4_heating",   [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [100..190 :: Int]) ])
+          , ("zgso4_cooling",   [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [199..214 :: Int]) ])
           ]
 
 -- | Main
