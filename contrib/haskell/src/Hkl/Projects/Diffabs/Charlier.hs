@@ -5,7 +5,6 @@ module Hkl.Projects.Diffabs.Charlier
        ( charlier ) where
 
 import Data.Array.Repa (DIM1, ix1)
-import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
 import System.FilePath ((</>))
 import Text.Printf (printf)
@@ -21,10 +20,6 @@ project = "/nfs/ruche-diffabs/diffabs-users/20151386/"
 
 published :: FilePath
 published = project </> "published-data" </> "xrd"
-
-beamlineUpper :: Beamline -> String
-beamlineUpper b = [Data.Char.toUpper x | x <- show b]
-
 
 -- | Calibration part
 

@@ -5,7 +5,6 @@ module Hkl.Projects.Diffabs.IRDRx
        ( irdrx ) where
 
 import Data.Array.Repa (DIM1, ix1)
-import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
 import System.FilePath ((</>))
 import Text.Printf (printf)
@@ -21,9 +20,6 @@ project = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/"
 
 published :: FilePath
 published = project </> "2016" </> "Run5B" </> "irdrx"
-
-beamlineUpper :: Beamline -> String
-beamlineUpper b = [Data.Char.toUpper x | x <- show b]
 
 sampleRef :: XRDRef
 sampleRef = XRDRef "reference"

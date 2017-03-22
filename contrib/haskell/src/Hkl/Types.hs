@@ -3,6 +3,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Types ( Beamline(..)
+                 , beamlineUpper
                  , Mode(..)
                  , Engine(..)
                  , Factory(..)
@@ -18,6 +19,8 @@ module Hkl.Types ( Beamline(..)
                  , module X
                  ) where
 
+import Data.Char (toUpper)
+
 import Hkl.Types.Parameter as X
 import Hkl.H5
 import Hkl.Lattice
@@ -31,6 +34,9 @@ data Beamline = Diffabs | Sixs
 instance Show Beamline where
   show Diffabs = "diffabs"
   show Sixs = "sixs"
+
+beamlineUpper ∷ Beamline → String
+beamlineUpper b = [toUpper x | x ← show b]
 
 -- | Engine
 

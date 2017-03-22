@@ -7,7 +7,6 @@ module Hkl.Projects.Diffabs.Martinetto
        ) where
 
 import Data.Array.Repa (DIM1, ix1)
-import Data.Char (toUpper)
 import Numeric.LinearAlgebra (ident)
 import System.FilePath ((</>))
 import Text.Printf (printf)
@@ -23,9 +22,6 @@ project = "/nfs/ruche-diffabs/diffabs-users/99160066/"
 
 published :: FilePath
 published = project </> "published-data"
-
-beamlineUpper :: Beamline -> String
-beamlineUpper b = [Data.Char.toUpper x | x <- show b]
 
 h5path' :: NxEntry -> DataFrameH5Path XrdOneD
 h5path' nxentry =
