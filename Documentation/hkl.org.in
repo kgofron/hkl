@@ -2,7 +2,6 @@
 #+AUTHOR: Picca Frédéric-Emmanuel
 #+EMAIL: picca at synchrotron dash soleil dot fr
 #+LANGUAGE: en
-#+HTML_MATHJAX: path:"/usr/share/javascript/mathjax/MathJax.js"
 #+STYLE: <style>table.center {margin-left:auto; margin- right:auto;}</style>
 
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.pirilampo.org/styles/readtheorg/css/htmlize.css"/>

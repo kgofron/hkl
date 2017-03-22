@@ -58,6 +58,26 @@
    (quote
     ("pdflatex -interaction nonstopmode --shell-escape -output-directory %o %f" "pdflatex -interaction nonstopmode --shell-escape -output-directory %o %f" "pdflatex -interaction nonstopmode --shell-escape -output-directory %o %f")))
  '(org-export-with-sub-superscripts nil)
- '(org-src-fontify-natively t))
+ '(org-src-fontify-natively t)
+ '(org-publish-project-alist
+   (quote
+    (("hkl"
+     :base-directory "."
+     :base-extension "org"
+     :publishing-directory "/ssh:picca@people.debian.org:~/public_html/hkl/"
+     :publishing-function org-html-publish-to-html
+     :headline-levels 3
+     :section-numbers nil
+     :with-toc nil
+     :html-preamble t)
+
+    ("images"
+     :base-directory "figures/"
+     :base-extension "jpg\\|gif\\|png"
+     :publishing-directory "/ssh:picca@people.debian.org:~/public_html/hkl/figures/"
+     :publishing-function org-publish-attachment)))))
+
+(require 'ox-publish)
+
 (provide 'hkl-default)
 ;;; hkl-default ends here

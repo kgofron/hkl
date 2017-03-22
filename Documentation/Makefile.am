@@ -23,4 +23,9 @@ doc-edit:
 doc-show: hkl.html
 	sensible-browser $(builddir)/hkl.html
 
+doc-publish: hkl.html
+	env GI_TYPELIB_PATH=$(top_builddir)/hkl \
+	$(LIBTOOL) --mode=execute -dlopen $(AM_LDFLAGS) \
+	$(EMACS) $< --batch -q --load $(srcdir)/hkl-default.el -f org-publish-all --debug-init --kill
+
 .PHONY: doc-edit doc-show
