@@ -136,26 +136,6 @@ type NptEntry' = (Double, [Vector Double]) -- tth, detector pixels coordinates
 type Npt' = (Double, [NptEntry']) -- wavelength, [NptEntry']
 type NptExt' a = (Npt', Matrix Double, Detector a)
 
-poniEntryFromList :: PoniEntry -> [Double] -> PoniEntry
-poniEntryFromList p [rot1, rot2, rot3, poni1, poni2, d] =
-  p { poniEntryDistance = d *~ meter
-    , poniEntryPoni1 = poni1 *~ meter
-    , poniEntryPoni2 = poni2 *~ meter
-    , poniEntryRot1 = rot1 *~ radian
-    , poniEntryRot2 = rot2 *~ radian
-    , poniEntryRot3 = rot3 *~ radian
-    }
-poniEntryFromList _ _ = error "Can not convert to a PoniEntry"
-
-poniEntryToList :: PoniEntry -> [Double]
-poniEntryToList p = [ poniEntryRot1 p /~ radian
-                    , poniEntryRot2 p /~ radian
-                    , poniEntryRot3 p /~ radian
-                    , poniEntryPoni1 p /~ meter
-                    , poniEntryPoni2 p /~ meter
-                    , poniEntryDistance p /~ meter
-                    ]
-
 calibrate :: XRDCalibration -> PoniExt -> Detector a -> IO PoniExt
 calibrate c (PoniExt p _) d =  do
   let entry = last p

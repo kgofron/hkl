@@ -2,21 +2,41 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.PyFAI.Poni
-       ( Poni
-       , PoniEntry(..)
-       , fromAxisAndAngle
+       ( Pose
+         -- Poni
+       , Poni
        , poniP
        , poniToText
-       , flipPoniEntry
+         --  PoniEntry
+       , PoniEntry
+       , poniEntryFlip
+       , poniEntryFromList
        , poniEntryRotation
        , poniEntryTranslation
+       , poniEntryToList
+       , poniEntrySetPose
+         -- other
+       , fromAxisAndAngle
        ) where
 
-import Control.Applicative
-import Data.Attoparsec.Text
+import Control.Applicative ((<$>), (<*>), (*>), (<*), many, optional, pure)
+import Data.Attoparsec.Text (Parser, (<?>), endOfLine, isEndOfLine, many1, double, string, takeTill)
 import Data.Text (Text, append, intercalate, pack)
-import Numeric.LinearAlgebra hiding (double)
+import Data.Vector.Storable (Vector, fromList)
+import Numeric.LinearAlgebra ( Matrix, (<>), atIndex, fromLists, ident, scalar, trans)
 import Numeric.Units.Dimensional.Prelude (Angle, Length, (+), (*~), (/~), (/~~), one, meter, radian, degree)
+
+import Hkl.MyMatrix
+
+#if !MIN_VERSION_hmatrix(0, 17, 0)
+tr:: Matrix t -> Matrix t
+tr = trans
+#endif
+
+-- | Pose
+
+type Pose = MyMatrix Double
+
 
 -- | Poni
 
@@ -115,8 +135,8 @@ fromAxisAndAngle axis angle = ident 3 Prelude.+ s * q Prelude.+ c * (q <> q)
       s = scalar (sin (angle /~ one))
       q = crossprod axis
 
-flipPoniEntry :: PoniEntry -> PoniEntry
-flipPoniEntry p = p { poniEntryRot3 = new_rot3 }
+poniEntryFlip :: PoniEntry -> PoniEntry
+poniEntryFlip p = p { poniEntryRot3 = new_rot3 }
   where
     rot3 = poniEntryRot3 p
     new_rot3 = rot3 Numeric.Units.Dimensional.Prelude.+ 180 *~ degree
@@ -137,3 +157,46 @@ poniEntryTranslation e = fromList ( [ poniEntryPoni1 e
                                     , poniEntryPoni2 e
                                     , poniEntryDistance e
                                     ] /~~ meter )
+
+poniEntrySetPose :: MyMatrix Double -> MyMatrix Double -> PoniEntry -> PoniEntry
+poniEntrySetPose mym1 mym2 e = e { poniEntryRot1 = new_rot1
+                                 , poniEntryRot2 = new_rot2
+                                 , poniEntryRot3 = new_rot3
+                                 }
+  where
+    rot1 = poniEntryRot1 e
+    rot2 = poniEntryRot2 e
+    rot3 = poniEntryRot3 e
+    rotations = Prelude.map (uncurry fromAxisAndAngle)
+                [ (Data.Vector.Storable.fromList [0, 0, 1], rot3)
+                , (Data.Vector.Storable.fromList [0, 1, 0], rot2)
+                , (Data.Vector.Storable.fromList [1, 0, 0], rot1)]
+    -- M1 . R0 = R1
+    r1 = Prelude.foldl (<>) (ident 3) rotations -- pyFAIB
+    -- M2 . R0 = R2
+    -- R2 = M2 . M1.T . R1
+    r2 = Prelude.foldl (<>) m2 [tr m1, r1]
+    (new_rot1, new_rot2, new_rot3) = toEulerians r2
+
+    (MyMatrix _ m1) = changeBase mym1 PyFAIB
+    (MyMatrix _ m2) = changeBase mym2 PyFAIB
+
+poniEntryFromList :: PoniEntry -> [Double] -> PoniEntry
+poniEntryFromList p [rot1, rot2, rot3, poni1, poni2, d] =
+  p { poniEntryDistance = d *~ meter
+    , poniEntryPoni1 = poni1 *~ meter
+    , poniEntryPoni2 = poni2 *~ meter
+    , poniEntryRot1 = rot1 *~ radian
+    , poniEntryRot2 = rot2 *~ radian
+    , poniEntryRot3 = rot3 *~ radian
+    }
+poniEntryFromList _ _ = error "Can not convert to a PoniEntry"
+
+poniEntryToList :: PoniEntry -> [Double]
+poniEntryToList p = [ poniEntryRot1 p /~ radian
+                    , poniEntryRot2 p /~ radian
+                    , poniEntryRot3 p /~ radian
+                    , poniEntryPoni1 p /~ meter
+                    , poniEntryPoni2 p /~ meter
+                    , poniEntryDistance p /~ meter
+                    ]
