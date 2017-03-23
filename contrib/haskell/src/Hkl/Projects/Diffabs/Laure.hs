@@ -27,18 +27,10 @@ project ∷ FilePath
 project = "/nfs/ruche-diffabs/diffabs-users/20160370/"
 
 published ∷ FilePath
-published = project </> "published-data" </> "xrd"
+published = project </> "published-data"
 
--- | Calibration part
-
-project' ∷ FilePath
-project' = "/nfs/ruche-diffabs/diffabs-users/20160370/"
-
-published' ∷ FilePath
-published' = project' </> "published-data"
-
-h5path' ∷ NxEntry → DataFrameH5Path XrdOneD
-h5path' nxentry =
+h5path ∷ NxEntry → DataFrameH5Path XrdOneD
+h5path nxentry =
     XrdOneDH5Path
     (DataItemH5 (nxentry </> image) StrictDims)
     (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
@@ -53,17 +45,27 @@ h5path' nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
+mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
+mkNxs' d idx h = mkNxs f' e h
+  where
+     f ∷ FilePath → Int → (FilePath, NxEntry)
+     f d' i' = (d' </> printf "scan_%d.nxs" i', printf "scan_%d" (i' - 1))
+
+     (f', e) = f d idx
+
+-- | Calibration part
+
 sampleRef ∷ XRDRef
 sampleRef = XRDRef "reference"
-            (published' </> "calibration")
+            (published </> "calibration")
             (XrdRefNxs
-             (mkNxs (published' </> "calibration" </> "scan_45.nxs") "scan_44" h5path')
+             (mkNxs' (published </> "calibration") 45 h5path)
              10 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
 sampleCalibration ∷ XRDCalibration
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
-                                   , xrdCalibrationOutputDir = published' </> "calibration"
+                                   , xrdCalibrationOutputDir = published </> "calibration"
                                    , xrdCalibrationEntries = entries
                                    }
     where
@@ -72,13 +74,13 @@ sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
 
       entry ∷ Int -> XRDCalibrationEntry
       entry idx = XRDCalibrationEntryNxs
-                { xrdCalibrationEntryNxs'Nxs = mkNxs (published' </> "calibration" </> "scan_45.nxs") "scan_44" h5path'
+                { xrdCalibrationEntryNxs'Nxs = mkNxs' (published </> "calibration") 45 h5path
                 , xrdCalibrationEntryNxs'Idx = idx
-                , xrdCalibrationEntryNxs'NptPath = published' </> "calibration" </> printf "scan_45.nxs_%02d.npt" idx
+                , xrdCalibrationEntryNxs'NptPath = published </> "calibration" </> printf "scan_45.nxs_%02d.npt" idx
                 }
 
       entries ∷ [XRDCalibrationEntry]
-      entries = [ entry idx | idx ← idxs]
+      entries = map entry idxs
 
 -- | Data treatment
 
@@ -96,45 +98,21 @@ skipedFrames = [4]
 
 -- Flat
 
-mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
-mkNxs' d idx h = mkNxs f' e h
-  where
-     f ∷ FilePath → Int → (FilePath, NxEntry)
-     f d' i' = (d' </> printf "scan_%d.nxs" i', printf "scan_%d" (i' - 1))
-
-     (f', e) = f d idx
-
 flat ∷ [Nxs XrdFlat]
-flat = [mkNxs' (project </> "2017" </> "Run1" </> "2017-02-15") idx h5path | idx ← [57, 60 ∷ Int]] -- skip 58 59 for now (problème de droits d'accès)
+flat = [mkNxs' (project </> "2017" </> "Run1" </> "2017-02-15") idx h5path' | idx ← [57, 60 ∷ Int]] -- skip 58 59 for now (problème de droits d'accès)
   where
-    h5path :: NxEntry -> DataFrameH5Path XrdFlat
-    h5path nxentry = XrdFlatH5Path (DataItemH5 (nxentry </> "scan_data/data_02") StrictDims)
+    h5path' :: NxEntry -> DataFrameH5Path XrdFlat
+    h5path' nxentry = XrdFlatH5Path (DataItemH5 (nxentry </> "scan_data/data_02") StrictDims)
 
 -- Scan en delta
 
-h5path'' ∷ NxEntry -> DataFrameH5Path XrdOneD
-h5path'' nxentry =
-  XrdOneDH5Path
-  (DataItemH5 (nxentry </> image) StrictDims)
-  (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
-  (DataItemH5 (nxentry </> delta) ExtendDims)
-  (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
-  where
-    beamline :: String
-    beamline = beamlineUpper Diffabs
-
-    image = "scan_data/data_02"
-    gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
-    delta = "scan_data/actuator_1_1"
-    wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
-
 mkXRDSample ∷ String → [(FilePath, [Int])] -> XRDSample
 mkXRDSample n ps = XRDSample n
-                (published </> n)
+                (published </> "xrd" </> n)
                 [ XrdNxs bins multibins threshold skipedFrames n' | n' ← concatMap nxs''' ps ]
     where
       nxs''' ∷ (FilePath, [Int]) → [XrdSource]
-      nxs''' (p, idxs) = [XrdSourceNxs (mkNxs' p idx h5path'') | idx ← idxs]
+      nxs''' (p, idxs) = [XrdSourceNxs (mkNxs' p idx h5path) | idx ← idxs]
 
 
 air ∷ XRDSample
