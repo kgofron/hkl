@@ -5,6 +5,7 @@ module Hkl.Projects.Diffabs.Hercules
        ( hercules ) where
 
 import Data.Array.Repa (DIM1, ix1)
+import Numeric.Units.Dimensional.Prelude ((*~), centi, degree, meter)
 import System.FilePath ((</>))
 import Text.Printf (printf)
 
@@ -21,6 +22,14 @@ published ∷ FilePath
 published = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/2017/Run2B/TPHercules"
 
 -- | Calibration part
+
+mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
+mkNxs' d idx h = mkNxs f' e h
+  where
+     f ∷ FilePath → Int → (FilePath, NxEntry)
+     f d' i' = (d' </> printf "scan_%d.nxs" i', printf "scan_%d" i')
+
+     (f', e) = f d idx
 
 h5path ∷ NxEntry → DataFrameH5Path XrdOneD
 h5path nxentry =
@@ -42,7 +51,7 @@ sampleRef ∷ XRDRef
 sampleRef = XRDRef "reference"
             (published </> "calibration")
             (XrdRefNxs
-             (mkNxs (project </> "2017" </> "Run2" </> "2017-03-21" </> "scan_91.nxs") "scan_91" h5path)
+             (mkNxs' (project </> "2017" </> "Run2" </> "2017-03-21") 91 h5path)
              15 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
@@ -57,13 +66,13 @@ sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
 
       entry ∷ Int -> XRDCalibrationEntry
       entry idx = XRDCalibrationEntryNxs
-                { xrdCalibrationEntryNxs'Nxs = mkNxs (project </> "2017" </> "Run2" </>  "2017-03-21" </> "scan_91.nxs") "scan_91" h5path
+                { xrdCalibrationEntryNxs'Nxs = mkNxs' (project </> "2017" </> "Run2" </>  "2017-03-21") 91 h5path
                 , xrdCalibrationEntryNxs'Idx = idx
                 , xrdCalibrationEntryNxs'NptPath = published </> "calibration" </> printf "scan_91.nxs_%02d.npt" idx
                 }
 
       entries ∷ [XRDCalibrationEntry]
-      entries = [ entry idx | idx ← idxs]
+      entries = map entry idxs
 
 -- | Data treatment
 
@@ -88,14 +97,6 @@ skipedFrames = []
 --     h5path nxentry = XrdFlatH5Path (DataItemH5 (nxentry </> "scan_data/data_02") StrictDims)
 
 -- Scan en delta
-
-mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
-mkNxs' d idx h = mkNxs f' e h
-  where
-     f ∷ FilePath → Int → (FilePath, NxEntry)
-     f d' i' = (d' </> printf "scan_%d.nxs" i', printf "scan_%d" i')
-
-     (f', e) = f d idx
 
 mkXRDSample ∷ String → [(FilePath, [Int])] -> XRDSample
 mkXRDSample n ps = XRDSample n
@@ -129,10 +130,15 @@ hercules = do
 
   -- | get a first ref poniExt
   p ← getPoniExtRef sampleRef
-  -- flip the ref poni in order to fit the reality
-  let poniextref = p
-  -- let poniextref = setPose p (MyMatrix HklB (ident 3))
-  -- let poniextref = setPose (Hkl.flip p) (MyMatrix HklB (ident 3))
+  -- set the initial position of the poni (pyFAI calibration is not
+  -- accurate with only one ring)
+  let poniextref = set p
+                   (63 *~ centi meter) -- distance
+                   (0 *~ meter) -- poni1
+                   (0 *~ meter) -- poni2
+                   (0 *~ degree) -- rot1
+                   (0 *~ degree) -- rot2
+                   (0 *~ degree) -- rot3
   print poniextref
 
   -- | full calibration

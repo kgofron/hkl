@@ -276,7 +276,7 @@ integrate'' p output (XrdNxs b _ mt is (XrdSourceNxs nxs'@(Nxs f _))) = do
                     >-> drain)
   where
     gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
-    gen (XrdOneDParams ref' _ _) m _idx = return $ setPose ref' m
+    gen (XrdOneDParams ref' _ _) m _idx = return $ move ref' m
 
 createPy ∷ XrdOneDParams a → DIM1 → Maybe Threshold → FilePath → DifTomoFrame' sh → (Script Py2, FilePath)
 createPy (XrdOneDParams _ mflat m) b mt scriptPath (DifTomoFrame' f poniPath) = (Py2Script (script, scriptPath), output)
@@ -430,7 +430,7 @@ target' p output (XrdNxs _ _ _ is (XrdSourceNxs nxs'@(Nxs f _))) = do
   return (getScanDir output f, fs)
   where
     gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
-    gen (XrdOneDParams ref' _ _) m _idx = return $ setPose ref' m
+    gen (XrdOneDParams ref' _ _) m _idx = return $ move ref' m
 
 targets ∷ XrdOneDParams a → XRDSample → IO [(FilePath, [FilePath])]
 targets p (XRDSample _ output nxss) = mapConcurrently (target' p output) nxss
@@ -482,7 +482,7 @@ integrateMulti'' p output (XrdNxs _ mb mt is (XrdSourceNxs nxs'@(Nxs f _))) = do
                     >-> saveMultiGeometry p mb mt)
   where
     gen :: XrdOneDParams a -> Pose -> Int -> IO PoniExt
-    gen (XrdOneDParams ref' _ _)  m _idx = return $ setPose ref' m
+    gen (XrdOneDParams ref' _ _)  m _idx = return $ move ref' m
 
 integrateMulti'' p output (XrdNxs b _ mt _ (XrdSourceEdf fs)) = do
   -- generate all the ponies
@@ -498,7 +498,7 @@ integrateMulti'' p output (XrdNxs b _ mt _ (XrdSourceEdf fs)) = do
       go ∷ XrdOneDParams a → FilePath → FilePath → IO ()
       go (XrdOneDParams ref _ _) f o = do
         m <- getMEdf f
-        let (PoniExt p' _) = setPose ref m
+        let (PoniExt p' _) = move ref m
         o `hasContent` (poniToText p')
 
 createMultiPy ∷ XrdOneDParams a → DIM1 → Maybe Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → (Script Py2, FilePath)

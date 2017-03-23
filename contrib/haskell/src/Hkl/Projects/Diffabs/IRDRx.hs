@@ -139,7 +139,7 @@ irdrx = do
 
   p <- getPoniExtRef sampleRef
 
-  let poniextref = setPose (Hkl.flip p) (MyMatrix HklB (ident 3))
+  let poniextref = move (Hkl.flip p) (MyMatrix HklB (ident 3))
 
   -- full calibration
   poniextref' <- calibrate sampleCalibration poniextref ImXpadS140

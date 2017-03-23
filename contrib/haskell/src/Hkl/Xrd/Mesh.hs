@@ -123,7 +123,7 @@ getWaveLengthAndPoniExt' (XrdMeshParams ref _ _) nxs =
     -- read the first frame and get the poni used for all the integration.
     d <- runMaybeT $ rowND h
     let (XrdMeshFrame w m) = fromJust d
-    let poniext = setPose ref m
+    let poniext = move ref m
     return (w, poniext)
 
 getWaveLengthAndPoniExt ∷ XrdMeshParams a → XrdMeshSource → IO (WaveLength, PoniExt)

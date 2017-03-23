@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.PyFAI.Poni
        ( Pose
@@ -14,7 +15,8 @@ module Hkl.PyFAI.Poni
        , poniEntryRotation
        , poniEntryTranslation
        , poniEntryToList
-       , poniEntrySetPose
+       , poniEntrySet
+       , poniEntryMove
          -- other
        , fromAxisAndAngle
        ) where
@@ -158,11 +160,11 @@ poniEntryTranslation e = fromList ( [ poniEntryPoni1 e
                                     , poniEntryDistance e
                                     ] /~~ meter )
 
-poniEntrySetPose :: MyMatrix Double -> MyMatrix Double -> PoniEntry -> PoniEntry
-poniEntrySetPose mym1 mym2 e = e { poniEntryRot1 = new_rot1
-                                 , poniEntryRot2 = new_rot2
-                                 , poniEntryRot3 = new_rot3
-                                 }
+poniEntryMove :: MyMatrix Double -> MyMatrix Double -> PoniEntry -> PoniEntry
+poniEntryMove mym1 mym2 e = e { poniEntryRot1 = new_rot1
+                              , poniEntryRot2 = new_rot2
+                              , poniEntryRot3 = new_rot3
+                              }
   where
     rot1 = poniEntryRot1 e
     rot2 = poniEntryRot2 e
@@ -180,6 +182,23 @@ poniEntrySetPose mym1 mym2 e = e { poniEntryRot1 = new_rot1
 
     (MyMatrix _ m1) = changeBase mym1 PyFAIB
     (MyMatrix _ m2) = changeBase mym2 PyFAIB
+
+poniEntrySet ∷ (Length Double) -- ^ distance
+             → (Length Double) -- ^ poni1
+             → (Length Double) -- ^ poni2
+             → (Angle Double) -- ^ rot1
+             → (Angle Double) -- ^ rot2
+             → (Angle Double) -- ^ rot3
+             → PoniEntry
+             → PoniEntry
+poniEntrySet d p1 p2 r1 r2 r3 p =
+  p { poniEntryDistance = d
+    , poniEntryPoni1 = p1
+    , poniEntryPoni2 = p2
+    , poniEntryRot1 = r1
+    , poniEntryRot2 = r2
+    , poniEntryRot3 = r3
+    }
 
 poniEntryFromList :: PoniEntry -> [Double] -> PoniEntry
 poniEntryFromList p [rot1, rot2, rot3, poni1, poni2, d] =

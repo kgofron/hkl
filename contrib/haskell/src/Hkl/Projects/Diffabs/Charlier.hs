@@ -144,7 +144,7 @@ charlier = do
 
   -- flip the ref poni in order to fit the reality
   -- let poniextref = p
-  let poniextref = setPose p (MyMatrix HklB (ident 3))
+  let poniextref = move p (MyMatrix HklB (ident 3))
   -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
 
   -- full calibration
