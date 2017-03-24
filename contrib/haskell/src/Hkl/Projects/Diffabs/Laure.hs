@@ -16,7 +16,6 @@ import Hkl
 
 -- | TODO
 -- * Livre 45 p159
--- * deal with the multi geometry intensity problem. I = 1e9 ???
 -- * simplify with the list of nxs using list comprehension.
 -- * add the flyscan mesh
 -- * add possibility to sum a bunch of pixel coordinates from a mesh. on a mask
