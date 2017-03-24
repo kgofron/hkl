@@ -4,6 +4,9 @@
 
 module Hkl.Detector
        ( Detector(..)
+       , ImXpadS140
+       , Xpad32
+       , ZeroD
        , coordinates
        ) where
 
