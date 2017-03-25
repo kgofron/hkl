@@ -94,6 +94,7 @@ executable hkl3d
 library
   exposed-modules:    Hkl
                     , Hkl.C
+                    , Hkl.C.Geometry
                     , Hkl.DataSource
                     , Hkl.Detector
                     , Hkl.Edf

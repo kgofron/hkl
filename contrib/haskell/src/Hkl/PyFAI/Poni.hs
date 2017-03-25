@@ -25,14 +25,17 @@ import Control.Applicative ((<$>), (<*>), (*>), (<*), many, optional, pure)
 import Data.Attoparsec.Text (Parser, (<?>), endOfLine, isEndOfLine, many1, double, string, takeTill)
 import Data.Text (Text, append, intercalate, pack)
 import Data.Vector.Storable (Vector, fromList)
-import Numeric.LinearAlgebra ( Matrix, (<>), atIndex, fromLists, ident, scalar, trans)
+import Numeric.LinearAlgebra (Matrix, (<>), atIndex, fromLists, ident, scalar)
 import Numeric.Units.Dimensional.Prelude (Angle, Length, (+), (*~), (/~), (/~~), one, meter, radian, degree)
 
 import Hkl.MyMatrix
 
 #if !MIN_VERSION_hmatrix(0, 17, 0)
+import Numeric.LinearAlgebra (trans)
 tr:: Matrix t -> Matrix t
 tr = trans
+#else
+import Numeric.LinearAlgebra (tr)
 #endif
 
 -- | Pose
