@@ -109,7 +109,7 @@ solveTraj g@(Geometry f _ _ _) d s es = do
 -- Pipe
 
 data Diffractometer = Diffractometer { difEngineList :: (ForeignPtr HklEngineList)
-                                     , difGeometry :: (ForeignPtr HklGeometry)
+                                     , difGeometry :: (ForeignPtr Geometry)
                                      , difDetector :: (ForeignPtr HklDetector)
                                      , difSample :: (ForeignPtr HklSample)
                                      }
@@ -210,7 +210,7 @@ geometryDetectorRotationGet g d  = do
               return v
 
 foreign import ccall unsafe "hkl.h hkl_geometry_detector_rotation_get_binding"
-  c_hkl_geometry_detector_rotation_get_binding :: Ptr HklGeometry
+  c_hkl_geometry_detector_rotation_get_binding :: Ptr Geometry
                                                -> Ptr HklDetector
                                                -> IO (Ptr HklQuaternion)
 
@@ -258,7 +258,7 @@ foreign import ccall unsafe "hkl.h hkl_geometry_list_items_next_get"
 
 foreign import ccall unsafe "hkl.h hkl_geometry_list_item_geometry_get"
   c_hkl_geometry_list_item_geometry_get :: Ptr HklGeometryListItem
-                                        -> IO (Ptr HklGeometry)
+                                        -> IO (Ptr Geometry)
 
 -- Detector
 withDetector :: Detector a -> (Ptr HklDetector -> IO b) -> IO b
@@ -370,7 +370,7 @@ compute g@(Geometry f _ _ _) d s = do
                     engineListEnginesGet engines
 
 foreign import ccall unsafe "hkl.h hkl_engine_list_init"
-  c_hkl_engine_list_init:: Ptr HklEngineList -> Ptr HklGeometry -> Ptr HklDetector -> Ptr HklSample -> IO ()
+  c_hkl_engine_list_init:: Ptr HklEngineList -> Ptr Geometry -> Ptr HklDetector -> Ptr HklSample -> IO ()
 
 foreign import ccall unsafe "hkl.h hkl_engine_list_get"
   c_hkl_engine_list_get:: Ptr HklEngineList -> IO ()

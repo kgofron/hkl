@@ -7,7 +7,6 @@ module Hkl.C.Geometry
        , Factory(..)
        , HklDetector
        , HklFactory
-       , HklGeometry
        , HklMatrix
        , HklQuaternion
        , factoryFromString
@@ -75,7 +74,6 @@ data Geometry = Geometry
 
 data HklDetector
 data HklFactory
-data HklGeometry
 data HklMatrix
 data HklQuaternion
 
@@ -103,7 +101,7 @@ foreign import ccall unsafe "hkl.h hkl_factory_get_by_name"
                             -> IO (Ptr HklFactory)
 -- Geometry
 
-peekGeometry :: Ptr HklGeometry -> IO (Geometry)
+peekGeometry :: Ptr Geometry -> IO (Geometry)
 peekGeometry gp = do
   f_name <- c_hkl_geometry_name_get gp >>= peekCString
   let factory = factoryFromString f_name
@@ -119,42 +117,42 @@ peekGeometry gp = do
   ps <- mapM (getAxis gp) axis_names
   return $ Geometry factory (Source (w *~ nano meter)) vs (Just ps)
       where
-        getAxis :: Ptr HklGeometry -> CString -> IO Parameter
+        getAxis :: Ptr Geometry -> CString -> IO Parameter
         getAxis _g n = c_hkl_geometry_axis_get _g n nullPtr >>= peek
 
 foreign import ccall unsafe "hkl.h hkl_geometry_wavelength_get"
-  c_hkl_geometry_wavelength_get :: Ptr HklGeometry -- geometry
+  c_hkl_geometry_wavelength_get :: Ptr Geometry -- geometry
                                 -> CInt -- unit
                                 -> IO CDouble -- wavelength
 
 
 foreign import ccall unsafe "hkl.h hkl_geometry_axis_values_get"
-  c_hkl_geometry_axis_values_get :: Ptr HklGeometry -- geometry
+  c_hkl_geometry_axis_values_get :: Ptr Geometry -- geometry
                                  -> Ptr Double -- axis values
                                  -> CSize -- size of axis values
                                  -> CInt -- unit
                                  -> IO () -- IO CInt but for now do not deal with the errors
 
 foreign import ccall unsafe "hkl.h hkl_geometry_axis_names_get"
-  c_hkl_geometry_axis_names_get :: Ptr HklGeometry -- goemetry
+  c_hkl_geometry_axis_names_get :: Ptr Geometry -- goemetry
                                 -> IO (Ptr ()) -- darray_string
 
 foreign import ccall unsafe "hkl.h hkl_geometry_axis_get"
-  c_hkl_geometry_axis_get :: Ptr HklGeometry -- geometry
+  c_hkl_geometry_axis_get :: Ptr Geometry -- geometry
                           -> CString -- axis name
                           -> Ptr () -- gerror
                           -> IO (Ptr Parameter) -- parameter or nullPtr
 
 foreign import ccall unsafe "hkl.h hkl_geometry_name_get"
-  c_hkl_geometry_name_get :: Ptr HklGeometry -> IO CString
+  c_hkl_geometry_name_get :: Ptr Geometry -> IO CString
 
 
-withGeometry ::  Geometry -> (Ptr HklGeometry -> IO b) -> IO b
+withGeometry ::  Geometry -> (Ptr Geometry -> IO b) -> IO b
 withGeometry g fun = do
   fptr <- newGeometry g
   withForeignPtr fptr fun
 
-newGeometry :: Geometry -> IO (ForeignPtr HklGeometry)
+newGeometry :: Geometry -> IO (ForeignPtr Geometry)
 newGeometry (Geometry f (Source lw) vs _ps) = do
   let wavelength = CDouble (lw /~ nano meter)
   factory <- newFactory f
@@ -168,20 +166,20 @@ newGeometry (Geometry f (Source lw) vs _ps) = do
   newForeignPtr c_hkl_geometry_free geometry
 
 foreign import ccall unsafe "hkl.h hkl_factory_create_new_geometry"
-  c_hkl_factory_create_new_geometry :: Ptr HklFactory -> IO (Ptr HklGeometry)
+  c_hkl_factory_create_new_geometry :: Ptr HklFactory -> IO (Ptr Geometry)
 
 foreign import ccall unsafe "hkl.h &hkl_geometry_free"
-  c_hkl_geometry_free :: FunPtr (Ptr HklGeometry -> IO ())
+  c_hkl_geometry_free :: FunPtr (Ptr Geometry -> IO ())
 
 foreign import ccall unsafe "hkl.h hkl_geometry_wavelength_set"
-  c_hkl_geometry_wavelength_set :: Ptr HklGeometry -- geometry
+  c_hkl_geometry_wavelength_set :: Ptr Geometry -- geometry
                                 -> CDouble -- wavelength
                                 -> CInt -- unit
                                 -> Ptr () -- *gerror
                                 -> IO () -- IO CInt but for now do not deal with the errors
 
 foreign import ccall unsafe "hkl.h hkl_geometry_axis_values_set"
-  c_hkl_geometry_axis_values_set :: Ptr HklGeometry -- geometry
+  c_hkl_geometry_axis_values_set :: Ptr Geometry -- geometry
                                  -> Ptr Double -- axis values
                                  -> CSize -- size of axis values
                                  -> CInt -- unit
