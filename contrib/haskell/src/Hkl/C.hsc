@@ -76,7 +76,7 @@ getSolution0 :: ForeignPtr HklGeometryList -> IO Geometry
 getSolution0 gl = withForeignPtr gl $ \solutions ->
                   c_hkl_geometry_list_items_first_get solutions
                   >>= c_hkl_geometry_list_item_geometry_get
-                  >>= peekGeometry
+                  >>= peek
 
 engineName :: Engine -> String
 engineName (Engine name _ _) = name
@@ -231,7 +231,7 @@ peekHklGeometryList l = withForeignPtr l $ \ls -> do
   items <- peekItems ls
   mapM extract items
     where
-      extract it = c_hkl_geometry_list_item_geometry_get it >>= peekGeometry
+      extract it = c_hkl_geometry_list_item_geometry_get it >>= peek
 
 foreign import ccall unsafe "hkl.h hkl_geometry_list_items_first_get"
   c_hkl_geometry_list_items_first_get :: Ptr HklGeometryList
