@@ -101,11 +101,21 @@ foreign import ccall unsafe "hkl.h hkl_factory_get_by_name"
                             -> IO (Ptr HklFactory)
 -- Geometry
 
+peekSource :: Ptr Geometry -> IO (Source)
+peekSource ptr = do
+    (CDouble w) <- c_hkl_geometry_wavelength_get ptr unit
+    return (Source (w *~ nano meter))
+
+pokeSource :: Ptr Geometry -> Source -> IO ()
+pokeSource ptr (Source lw) = do
+  let wavelength = CDouble (lw /~ nano meter)
+  c_hkl_geometry_wavelength_set ptr wavelength unit nullPtr
+
 peekGeometry :: Ptr Geometry -> IO (Geometry)
 peekGeometry gp = do
   f_name <- c_hkl_geometry_name_get gp >>= peekCString
   let factory = factoryFromString f_name
-  (CDouble w) <- c_hkl_geometry_wavelength_get gp unit
+  source <- peekSource gp
   darray <- c_hkl_geometry_axis_names_get gp
   n <- darrayStringLen darray
   v <- MV.new (fromEnum n)
@@ -115,7 +125,7 @@ peekGeometry gp = do
 
   axis_names <- peekDArrayString darray
   ps <- mapM (getAxis gp) axis_names
-  return $ Geometry factory (Source (w *~ nano meter)) vs (Just ps)
+  return $ Geometry factory source vs (Just ps)
       where
         getAxis :: Ptr Geometry -> CString -> IO Parameter
         getAxis _g n = c_hkl_geometry_axis_get _g n nullPtr >>= peek
@@ -153,11 +163,10 @@ withGeometry g fun = do
   withForeignPtr fptr fun
 
 newGeometry :: Geometry -> IO (ForeignPtr Geometry)
-newGeometry (Geometry f (Source lw) vs _ps) = do
-  let wavelength = CDouble (lw /~ nano meter)
+newGeometry (Geometry f s vs _ps) = do
   factory <- newFactory f
   geometry <- c_hkl_factory_create_new_geometry factory
-  c_hkl_geometry_wavelength_set geometry wavelength unit nullPtr
+  pokeSource geometry s
   darray <- c_hkl_geometry_axis_names_get geometry
   n <- darrayStringLen darray
   V.unsafeWith vs $ \values ->
