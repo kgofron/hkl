@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE CPP #-}
@@ -24,8 +25,7 @@ import Foreign ( ForeignPtr
                , Ptr
                , nullPtr
                , newForeignPtr
-               , withForeignPtr
-               , peekArray)
+               , withForeignPtr)
 import Foreign.C (CInt(..), CDouble(..), CSize(..), CString,
                  peekCString, withCString)
 import Foreign.Storable
@@ -37,6 +37,7 @@ import qualified Data.Vector.Storable as V
 import qualified Data.Vector.Storable.Mutable as MV
 
 import Hkl.Types
+import Hkl.C.DArray
 
 #include "hkl.h"
 
@@ -77,18 +78,7 @@ data HklFactory
 data HklMatrix
 data HklQuaternion
 
--- helpers
-
-peekDArrayString :: Ptr () -> IO [CString]
-peekDArrayString p = do
-  n <- (#{peek darray_string, size} p) :: IO CSize
-  items <- #{peek darray_string ,item} p :: IO (Ptr CString)
-  peekArray (fromEnum n) items
-
-darrayStringLen :: Ptr () -> IO (CSize)
-darrayStringLen p = do
-    n <- (#{peek darray_string, size} p) :: IO CSize
-    return n
+#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
 
 -- Factory
 
@@ -111,24 +101,25 @@ pokeSource ptr (Source lw) = do
   let wavelength = CDouble (lw /~ nano meter)
   c_hkl_geometry_wavelength_set ptr wavelength unit nullPtr
 
+peekAxis :: Ptr Geometry -> CString -> IO Parameter
+peekAxis ptr s = c_hkl_geometry_axis_get ptr s nullPtr >>= peek
+
 peekGeometry :: Ptr Geometry -> IO (Geometry)
 peekGeometry gp = do
   f_name <- c_hkl_geometry_name_get gp >>= peekCString
   let factory = factoryFromString f_name
+
   source <- peekSource gp
-  darray <- c_hkl_geometry_axis_names_get gp
-  n <- darrayStringLen darray
+
+  (DArray n axis_names) <- peek =<< c_hkl_geometry_axis_names_get gp
   v <- MV.new (fromEnum n)
   MV.unsafeWith v $ \values ->
       c_hkl_geometry_axis_values_get gp values n unit
   vs <- V.freeze v
 
-  axis_names <- peekDArrayString darray
-  ps <- mapM (getAxis gp) axis_names
+  ps <- mapM (peekAxis gp) axis_names
+
   return $ Geometry factory source vs (Just ps)
-      where
-        getAxis :: Ptr Geometry -> CString -> IO Parameter
-        getAxis _g n = c_hkl_geometry_axis_get _g n nullPtr >>= peek
 
 foreign import ccall unsafe "hkl.h hkl_geometry_wavelength_get"
   c_hkl_geometry_wavelength_get :: Ptr Geometry -- geometry
@@ -145,7 +136,7 @@ foreign import ccall unsafe "hkl.h hkl_geometry_axis_values_get"
 
 foreign import ccall unsafe "hkl.h hkl_geometry_axis_names_get"
   c_hkl_geometry_axis_names_get :: Ptr Geometry -- goemetry
-                                -> IO (Ptr ()) -- darray_string
+                                -> IO (Ptr (DArray CString)) -- darray_string
 
 foreign import ccall unsafe "hkl.h hkl_geometry_axis_get"
   c_hkl_geometry_axis_get :: Ptr Geometry -- geometry
@@ -167,8 +158,7 @@ newGeometry (Geometry f s vs _ps) = do
   factory <- newFactory f
   geometry <- c_hkl_factory_create_new_geometry factory
   pokeSource geometry s
-  darray <- c_hkl_geometry_axis_names_get geometry
-  n <- darrayStringLen darray
+  (DArray n _) <- peek =<< c_hkl_geometry_axis_names_get geometry
   V.unsafeWith vs $ \values ->
       c_hkl_geometry_axis_values_set geometry values n unit nullPtr
 
