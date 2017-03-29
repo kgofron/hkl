@@ -35,7 +35,7 @@ static void getter(void)
 
 	factory = hkl_factory_get_by_name("E4CV", NULL);
 	geom = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -82,7 +82,7 @@ static void degenerated(void)
 
 	factory = hkl_factory_get_by_name("E4CV", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -143,7 +143,7 @@ static void psi_getter(void)
 
 	factory = hkl_factory_get_by_name("E4CV", NULL);
 	geom = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -209,7 +209,7 @@ static void psi_setter(void)
 
 	factory = hkl_factory_get_by_name("E4CV", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -268,7 +268,7 @@ static void q(void)
 
 	factory = hkl_factory_get_by_name("E4CV", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -327,7 +327,7 @@ static void hkl_psi_constant_vertical(void)
 
 	factory = hkl_factory_get_by_name("E4CV", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 

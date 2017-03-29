@@ -70,7 +70,7 @@ static void getter(void)
 
 	factory = hkl_factory_get_by_name("E6C", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -118,7 +118,7 @@ static void degenerated(void)
 
 	factory = hkl_factory_get_by_name("E6C", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -182,7 +182,7 @@ static void q2(void)
 
 	factory = hkl_factory_get_by_name("E6C", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
-	sample = hkl_sample_new("test");
+	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -242,25 +242,19 @@ static void petra3(void)
 	HklGeometryList *geometries;
 	HklDetector *detector;
 	HklSample *sample;
-	HklLattice *lattice;
-	HklMatrix *U;
+	struct Sample sconf = {
+		.name = "test",
+		.lattice = Cubic(7.813),
+		.ux = -112.5 * HKL_DEGTORAD,
+		.uy = -87.84 * HKL_DEGTORAD,
+		.uz = 157.48 * HKL_DEGTORAD,
+	};
 
 	factory = hkl_factory_get_by_name("E6C", NULL);
 	geometry = hkl_factory_create_new_geometry(factory);
 	res &= DIAG(hkl_geometry_wavelength_set(geometry, 2.033, HKL_UNIT_DEFAULT, NULL));
 
-	sample = hkl_sample_new("test");
-	lattice = hkl_lattice_new(7.813, 7.813, 7.813,
-				  90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 90*HKL_DEGTORAD,
-				  NULL);
-	hkl_sample_lattice_set(sample, lattice);
-	hkl_lattice_free(lattice);
-
-	U = hkl_matrix_new_euler(-112.5 * HKL_DEGTORAD,
-				 -87.84 * HKL_DEGTORAD,
-				 157.48 * HKL_DEGTORAD);
-	hkl_sample_U_set(sample, U, NULL);
-	hkl_matrix_free(U);
+	sample = newSample(sconf);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -319,11 +313,16 @@ static void petra3_2(void)
 	HklGeometryList *geometries;
 	HklDetector *detector;
 	HklSample *sample;
-	HklLattice *lattice;
-	HklMatrix *U;
 	double PSI;
 	double hkl_p[4];
 	double psi_p[3];
+	struct Sample sconf = {
+		.name = "test",
+		.lattice = Cubic(5.1),
+		.ux = -90.0 * HKL_DEGTORAD,
+		.uy = 0.0 * HKL_DEGTORAD,
+		.uz = -90.0 * HKL_DEGTORAD,
+	};
 
 	/* Wavelength 1.0332035 */
 	/* Mode       psi_constant_vertical */
@@ -338,17 +337,7 @@ static void petra3_2(void)
 	geometry = hkl_factory_create_new_geometry(factory);
 	res &= DIAG(hkl_geometry_wavelength_set(geometry, 1.0332035, HKL_UNIT_DEFAULT, NULL));
 
-	sample = hkl_sample_new("test");
-	lattice = hkl_lattice_new(5.1, 5.1, 5.1,
-				  90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 90*HKL_DEGTORAD,
-				  NULL);
-	hkl_sample_lattice_set(sample, lattice);
-	hkl_lattice_free(lattice);
-	U = hkl_matrix_new_euler(-90.0 * HKL_DEGTORAD,
-				 0.0 * HKL_DEGTORAD,
-				 -90.0 * HKL_DEGTORAD);
-	hkl_sample_U_set(sample, U, NULL);
-	hkl_matrix_free(U);
+	sample = newSample(sconf);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 

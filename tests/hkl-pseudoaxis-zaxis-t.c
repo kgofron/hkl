@@ -33,9 +33,14 @@ static void solution(void)
 	HklGeometryList *geometries;
 	HklDetector *detector;
 	HklSample *sample;
-	HklLattice *lattice;
 	static double hkl[] = {1, 1, 0};
-	HklMatrix *U;
+	static struct Sample sconf = {
+		.name = "test",
+		.lattice = Cubic(5.432),
+		.ux = -90.0 * HKL_DEGTORAD,
+		.uy = 0.0  * HKL_DEGTORAD,
+		.uz = 0.0  * HKL_DEGTORAD,
+	};
 
 	/* get the geometry and set the source */
 	factory = hkl_factory_get_by_name("ZAXIS", NULL);
@@ -43,17 +48,7 @@ static void solution(void)
 	res &= DIAG(hkl_geometry_wavelength_set(geometry, 0.842, HKL_UNIT_DEFAULT, NULL));
 
 	/* set up the sample */
-	sample = hkl_sample_new("test");
-	lattice = hkl_lattice_new(5.432, 5.432, 5.432,
-				  90 * HKL_DEGTORAD,
-				  90 * HKL_DEGTORAD,
-				  90 * HKL_DEGTORAD,
-				  NULL);
-	hkl_sample_lattice_set(sample, lattice);
-	U = hkl_matrix_new_euler(-90*HKL_DEGTORAD, 0, 0);
-	hkl_sample_U_set(sample, U, NULL);
-	hkl_lattice_free(lattice);
-	hkl_matrix_free(U);
+	sample = newSample(sconf);;
 
 	/* use a 0D detector */
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);

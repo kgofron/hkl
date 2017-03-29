@@ -161,3 +161,61 @@ void hkl_tap_engine_parameters_randomize(HklEngine *self)
 		hkl_parameter_randomize(*parameter);
 	}
 }
+
+
+
+/* API 2 */
+
+
+HklLattice *newLattice(struct Lattice lattice)
+{
+	HklLattice *self = NULL;
+
+	switch (lattice.tag) {
+	case LATTICE_CUBIC:
+		self = hkl_lattice_new(lattice.ctor.cubic.a,
+				       lattice.ctor.cubic.a,
+				       lattice.ctor.cubic.a,
+				       90*HKL_DEGTORAD,
+				       90*HKL_DEGTORAD,
+				       90*HKL_DEGTORAD,
+				       NULL);
+		break;
+	case LATTICE_HEXAGONAL:
+		self = hkl_lattice_new(lattice.ctor.hexagonal.a,
+				       lattice.ctor.hexagonal.a,
+				       lattice.ctor.hexagonal.c,
+				       90*HKL_DEGTORAD,
+				       90*HKL_DEGTORAD,
+				       120*HKL_DEGTORAD,
+				       NULL);
+		break;
+	}
+
+	return self;
+}
+
+HklSample *newSample(struct Sample sample)
+{
+	HklSample *self;
+	HklLattice *lattice;
+	HklMatrix *U;
+
+	self = hkl_sample_new(sample.name);
+	lattice = newLattice(sample.lattice);
+	hkl_sample_lattice_set(self, lattice);
+	hkl_lattice_free(lattice);
+	U = hkl_matrix_new_euler(sample.ux, sample.uy, sample.uz);
+	hkl_sample_U_set(self, U, NULL);
+	hkl_matrix_free(U);
+
+	return self;
+}
+
+const struct Sample cu = {
+	.name = "default",
+	.lattice = Cubic(1.54),
+	.ux = 0.0 * HKL_DEGTORAD,
+	.uy = 0.0 * HKL_DEGTORAD,
+	.uz = 0.0 * HKL_DEGTORAD,
+};

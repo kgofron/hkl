@@ -56,6 +56,46 @@ extern void hkl_tap_engine_parameters_randomize(HklEngine *self) HKL_ARG_NONNULL
 
 extern HklGeometryList *hkl_engine_set_values_v(HklEngine *self, ...);
 
+/* API 2 */
+
+/* Lattice */
+
+enum lattice_e {
+	LATTICE_CUBIC,
+	LATTICE_HEXAGONAL,
+};
+
+struct Lattice {
+	enum lattice_e tag;
+	union constructors {
+		struct cubic { double a; } cubic;
+		struct hexagonal { double a; double c;} hexagonal;
+	} ctor;
+};
+
+#define Cubic(_a) {.tag=LATTICE_CUBIC, .ctor.cubic.a=_a}
+#define Hexagonal(_a, _c)			\
+	{ .tag=LATTICE_HEXAGONAL,		\
+			.ctor.hexagonal.a=_a,	\
+			.ctor.hexagonal.c=_c	\
+			}
+
+extern HklLattice *newLattice(struct Lattice lattice);
+
+/* Sample */
+
+struct Sample {
+	const char *name;
+	struct Lattice lattice;
+	double ux;
+	double uy;
+	double uz;
+};
+
+extern HklSample *newSample(struct Sample sample);
+
+extern const struct Sample cu;
+
 G_END_DECLS
 
 #endif /* __HKL_TAP_H__ */

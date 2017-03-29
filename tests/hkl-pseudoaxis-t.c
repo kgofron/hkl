@@ -36,7 +36,7 @@ static int __test(unsigned int nb_iter, test_func f, int foreach_mode)
 	size_t i, j, n;
 	HklGeometry *geometry = NULL;
 	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
-	HklSample *sample = hkl_sample_new("test");
+	HklSample *sample = newSample(cu);
 	HklEngineList *engines;
 	int res = TRUE;
 	const char **mode;

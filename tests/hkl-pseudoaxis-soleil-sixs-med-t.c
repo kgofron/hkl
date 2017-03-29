@@ -32,6 +32,8 @@
 				hkl_geometry_list_items_first_get((geometries))), \
 			"gamma", NULL), HKL_UNIT_USER)
 
+/* tests */
+
 static void qper_qpar(void)
 {
 	int res = TRUE;
@@ -44,15 +46,20 @@ static void qper_qpar(void)
 	double qper_qpar[2];
 	double gamma;
 	HklGeometryList *geometries;
-	HklMatrix *U;
+
+	static struct Sample gaas = {
+		.name = "test",
+		.lattice=Cubic(1.54),
+		.ux = -90.0 * HKL_DEGTORAD,
+		.uy = 0.0 * HKL_DEGTORAD,
+		.uz = 0.0 * HKL_DEGTORAD,
+	};
 
 	factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
 	geom = hkl_factory_create_new_geometry(factory);
 
-	sample = hkl_sample_new("test");
-	U = hkl_matrix_new_euler(-90.0 * HKL_DEGTORAD, 0., 0.);
-	hkl_sample_U_set(sample, U, NULL);
-	hkl_matrix_free(U);
+	sample = newSample(gaas);
+
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
@@ -105,10 +112,16 @@ static void med_2_3(void)
 	HklGeometryList *geometries;
 	HklDetector *detector;
 	HklSample *sample;
-	HklLattice *lattice;
-	HklMatrix *U;
 	static double positions[] = {0, 1, -14.27, 99.62, 60.98, 0};
 	static double hkl_p[] = {1.95, 2, 6};
+
+	static struct Sample gaas = {
+		.name = "GaAs",
+		.lattice = Hexagonal(4.759, 12.992),
+		.ux = -90.59 * HKL_DEGTORAD,
+		.uy = -9.97 * HKL_DEGTORAD,
+		.uz = 176.35 * HKL_DEGTORAD,
+	};
 
 	/* Wavelength 1.54980 */
 	/* Mode       mu_fixed */
@@ -124,17 +137,7 @@ static void med_2_3(void)
 						 NULL));
 	res &= DIAG(hkl_geometry_wavelength_set(geometry, 1.54980, HKL_UNIT_DEFAULT, NULL));
 
-	sample = hkl_sample_new("test");
-	lattice = hkl_lattice_new(4.759, 4.759, 12.992,
-				  90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 120*HKL_DEGTORAD,
-				  NULL);
-	hkl_sample_lattice_set(sample, lattice);
-	hkl_lattice_free(lattice);
-	U = hkl_matrix_new_euler(-90.59 * HKL_DEGTORAD,
-				 -9.97 * HKL_DEGTORAD,
-				 176.35 * HKL_DEGTORAD);
-	hkl_sample_U_set(sample, U, NULL);
-	hkl_matrix_free(U);
+	sample = newSample(gaas);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
