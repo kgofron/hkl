@@ -166,6 +166,29 @@ void hkl_tap_engine_parameters_randomize(HklEngine *self)
 
 /* API 2 */
 
+HklGeometry *newGeometry(struct Geometry geometry)
+{
+	HklFactory *factory;
+	HklGeometry *self = NULL;
+
+	switch (geometry.tag) {
+	case GEOMETRY_SOLEIL_SIXS_MED_2_3:
+	{
+		factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
+		self = hkl_factory_create_new_geometry(factory);
+
+		DIAG(hkl_geometry_axis_values_set(self,
+						  geometry.soleil_sixs_med_2_3.positions,
+						  ARRAY_SIZE(geometry.soleil_sixs_med_2_3.positions),
+						  HKL_UNIT_USER, NULL));
+
+		DIAG(hkl_geometry_wavelength_set(self, geometry.soleil_sixs_med_2_3.wavelength,
+						 HKL_UNIT_DEFAULT, NULL));
+		break;
+	}
+	}
+	return self;
+}
 
 HklLattice *newLattice(struct Lattice lattice)
 {
@@ -173,18 +196,18 @@ HklLattice *newLattice(struct Lattice lattice)
 
 	switch (lattice.tag) {
 	case LATTICE_CUBIC:
-		self = hkl_lattice_new(lattice.ctor.cubic.a,
-				       lattice.ctor.cubic.a,
-				       lattice.ctor.cubic.a,
+		self = hkl_lattice_new(lattice.cubic.a,
+				       lattice.cubic.a,
+				       lattice.cubic.a,
 				       90*HKL_DEGTORAD,
 				       90*HKL_DEGTORAD,
 				       90*HKL_DEGTORAD,
 				       NULL);
 		break;
 	case LATTICE_HEXAGONAL:
-		self = hkl_lattice_new(lattice.ctor.hexagonal.a,
-				       lattice.ctor.hexagonal.a,
-				       lattice.ctor.hexagonal.c,
+		self = hkl_lattice_new(lattice.hexagonal.a,
+				       lattice.hexagonal.a,
+				       lattice.hexagonal.c,
 				       90*HKL_DEGTORAD,
 				       90*HKL_DEGTORAD,
 				       120*HKL_DEGTORAD,

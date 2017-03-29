@@ -40,7 +40,7 @@ static void qper_qpar(void)
 	HklEngineList *engines;
 	HklEngine *engine;
 	const HklFactory *factory;
-	HklGeometry *geom;
+	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
 	double qper_qpar[2];
@@ -55,21 +55,22 @@ static void qper_qpar(void)
 		.uz = 0.0 * HKL_DEGTORAD,
 	};
 
+	struct Geometry gconfig = SoleilSixsMed2_3(1.54, 0., 0.1, 0., 0., 90., 0.);
+
 	factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-	geom = hkl_factory_create_new_geometry(factory);
+
+	geometry = newGeometry(gconfig);
 
 	sample = newSample(gaas);
-
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
 	engines = hkl_factory_create_new_engine_list(factory);
-	hkl_engine_list_init(engines, geom, detector, sample);
+	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "qper_qpar", NULL);
 
 	/* the init part */
-	res &= DIAG(hkl_geometry_set_values_v(geom, HKL_UNIT_USER, NULL, 0., 0.1, 0., 0., 90., 0.));
 	res &= DIAG(hkl_engine_initialized_set(engine, TRUE, NULL));
 
 	/* gamma must be positif */
@@ -99,7 +100,7 @@ static void qper_qpar(void)
 	hkl_engine_list_free(engines);
 	hkl_detector_free(detector);
 	hkl_sample_free(sample);
-	hkl_geometry_free(geom);
+	hkl_geometry_free(geometry);
 }
 
 static void med_2_3(void)
@@ -112,7 +113,6 @@ static void med_2_3(void)
 	HklGeometryList *geometries;
 	HklDetector *detector;
 	HklSample *sample;
-	static double positions[] = {0, 1, -14.27, 99.62, 60.98, 0};
 	static double hkl_p[] = {1.95, 2, 6};
 
 	static struct Sample gaas = {
@@ -123,6 +123,9 @@ static void med_2_3(void)
 		.uz = 176.35 * HKL_DEGTORAD,
 	};
 
+	static struct Geometry gconfig = SoleilSixsMed2_3(1.54980,
+							  0, 1, -14.27, 99.62, 60.98, 0);
+
 	/* Wavelength 1.54980 */
 	/* Mode       mu_fixed */
 	/* Ux -90.59 Uy -9.97 Uz 176.35  */
@@ -130,12 +133,8 @@ static void med_2_3(void)
 	/* Alpha 90 Beta 90 Gamma 120  */
 
 	factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
 
-	res &= DIAG(hkl_geometry_axis_values_set(geometry,
-						 positions, ARRAY_SIZE(positions), HKL_UNIT_USER,
-						 NULL));
-	res &= DIAG(hkl_geometry_wavelength_set(geometry, 1.54980, HKL_UNIT_DEFAULT, NULL));
+	geometry = newGeometry(gconfig);
 
 	sample = newSample(gaas);
 

@@ -58,6 +58,45 @@ extern HklGeometryList *hkl_engine_set_values_v(HklEngine *self, ...);
 
 /* API 2 */
 
+/* Geometry */
+
+enum geometry_e {
+	GEOMETRY_SOLEIL_SIXS_MED_2_3,
+};
+
+struct Geometry {
+	enum geometry_e tag;
+	union {
+		struct {
+			double wavelength;
+			union {
+				double positions[6];
+				struct {
+					double beta;
+					double mu;
+					double omega;
+					double gamma;
+					double delta;
+					double eta_a;
+				};
+			};
+		} soleil_sixs_med_2_3;
+	};
+};
+
+#define SoleilSixsMed2_3(_w, _b, _m, _o, _g, _d, _e)			\
+	{.tag=GEOMETRY_SOLEIL_SIXS_MED_2_3,				\
+			.soleil_sixs_med_2_3.wavelength=_w,		\
+			.soleil_sixs_med_2_3.beta = _b,			\
+			.soleil_sixs_med_2_3.mu=_m,			\
+			.soleil_sixs_med_2_3.omega=_o,			\
+			.soleil_sixs_med_2_3.gamma=_g,			\
+			.soleil_sixs_med_2_3.delta=_d,			\
+			.soleil_sixs_med_2_3.eta_a=_e,			\
+			}						\
+
+extern HklGeometry *newGeometry(struct Geometry geometry);
+
 /* Lattice */
 
 enum lattice_e {
@@ -67,17 +106,17 @@ enum lattice_e {
 
 struct Lattice {
 	enum lattice_e tag;
-	union constructors {
-		struct cubic { double a; } cubic;
-		struct hexagonal { double a; double c;} hexagonal;
-	} ctor;
+	union {
+		struct { double a; } cubic;
+		struct { double a; double c;} hexagonal;
+	};
 };
 
-#define Cubic(_a) {.tag=LATTICE_CUBIC, .ctor.cubic.a=_a}
+#define Cubic(_a) {.tag=LATTICE_CUBIC, .cubic.a=_a}
 #define Hexagonal(_a, _c)			\
 	{ .tag=LATTICE_HEXAGONAL,		\
-			.ctor.hexagonal.a=_a,	\
-			.ctor.hexagonal.c=_c	\
+			.hexagonal.a=_a,	\
+			.hexagonal.c=_c,	\
 			}
 
 extern HklLattice *newLattice(struct Lattice lattice);
