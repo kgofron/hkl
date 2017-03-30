@@ -7,24 +7,25 @@ all_tests = \
 	hkl-unit-t \
 	hkl-bench-t \
 	hkl-axis-t \
-	hkl-pseudoaxis-t \
 	hkl-quaternion-t \
 	hkl-interval-t \
-	hkl-pseudoaxis-e4cv-t \
-	hkl-pseudoaxis-e4ch-t \
 	hkl-sample-t \
 	hkl-lattice-t \
-	hkl-pseudoaxis-e6c-t \
 	hkl-source-t \
 	hkl-detector-t \
 	hkl-matrix-t \
-	hkl-pseudoaxis-k4cv-t \
 	hkl-vector-t \
 	hkl-geometry-t \
 	hkl-parameter-t \
+	hkl-pseudoaxis-t \
+	hkl-pseudoaxis-e4cv-t \
+	hkl-pseudoaxis-e4ch-t \
+	hkl-pseudoaxis-e6c-t \
+	hkl-pseudoaxis-k4cv-t \
 	hkl-pseudoaxis-k6c-t \
-	hkl-pseudoaxis-zaxis-t \
-	hkl-pseudoaxis-soleil-sixs-med-t
+	hkl-pseudoaxis-soleil-sirius-kappa-t \
+	hkl-pseudoaxis-soleil-sixs-med-t \
+	hkl-pseudoaxis-zaxis-t
 
 AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
 	-I$(top_srcdir) \

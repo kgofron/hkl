@@ -67,6 +67,7 @@ enum geometry_e {
 	GEOMETRY_K4CH,
 	GEOMETRY_K4CV,
 	GEOMETRY_K6C,
+	GEOMETRY_SOLEIL_SIRIUS_KAPPA,
 	GEOMETRY_SOLEIL_SIXS_MED_2_3,
 	GEOMETRY_ZAXIS,
 };
@@ -155,6 +156,20 @@ struct Geometry {
 			union {
 				double positions[6];
 				struct {
+					double mu;
+					double komega;
+					double kappa;
+					double kphi;
+					double delta;
+					double gamma;
+				};
+			};
+		} soleil_sirius_kappa;
+		struct {
+			double wavelength;
+			union {
+				double positions[6];
+				struct {
 					double beta;
 					double mu;
 					double omega;
@@ -197,6 +212,9 @@ struct Geometry {
 #define K6c(_w, _m, _ko, _ka, _kp, _g, _d)				\
 	{.tag=GEOMETRY_K6C,						\
 			.k6c={_w, {{_m, _ko, _ka, _kp, _g, _d}}}}
+#define SoleilSiriusKappa(_w,  _m, _ko, _ka, _kp, _d, _g)		\
+	{.tag=GEOMETRY_SOLEIL_SIRIUS_KAPPA,				\
+			.soleil_sirius_kappa={_w, {{_m, _ko, _ka, _kp, _d, _g}}}}
 #define SoleilSixsMed2_3(_w, _b, _m, _o, _g, _d, _e)			\
 	{.tag=GEOMETRY_SOLEIL_SIXS_MED_2_3,				\
 			.soleil_sixs_med_2_3={_w, {{_b, _m, _o, _g, _d, _e}}}}
