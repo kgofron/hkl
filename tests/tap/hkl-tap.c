@@ -177,6 +177,9 @@ static const HklFactory *getFactory(struct Geometry geometry)
 	case GEOMETRY_E4CV:
 		self = hkl_factory_get_by_name("E4CV", NULL);
 		break;
+	case GEOMETRY_E6C:
+		self = hkl_factory_get_by_name("E6C", NULL);
+		break;
 	case GEOMETRY_SOLEIL_SIXS_MED_2_3:
 		self = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
 		break;
@@ -205,6 +208,7 @@ HklGeometry *newGeometry(struct Geometry geometry)
 	switch (geometry.tag) {
 	case GEOMETRY_E4CH: NEW_GEOMETRY(e4ch);	break;
 	case GEOMETRY_E4CV: NEW_GEOMETRY(e4cv);	break;
+	case GEOMETRY_E6C: NEW_GEOMETRY(e6c);	break;
 	case GEOMETRY_SOLEIL_SIXS_MED_2_3: NEW_GEOMETRY(soleil_sixs_med_2_3); break;
 	}
 

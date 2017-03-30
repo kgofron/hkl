@@ -63,18 +63,17 @@ static void getter(void)
 	int res = TRUE;
 	HklEngineList *engines;
 	HklEngine *engine;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
+	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
 
-	factory = hkl_factory_get_by_name("E6C", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
@@ -110,19 +109,18 @@ static void degenerated(void)
 	HklEngine *engine;
 	const darray_string *modes;
 	const char **mode;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
 	static double hkl[] = {0, 0, 1};
+	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
 
-	factory = hkl_factory_get_by_name("E6C", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
@@ -175,25 +173,23 @@ static void q2(void)
 	HklEngine *engine;
 	const char **mode;
 	const darray_string *modes;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
+	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
 
-	factory = hkl_factory_get_by_name("E6C", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "q2", NULL);
 	modes = hkl_engine_modes_names_get(engine);
 
 	/* the init part */
-	res &= DIAG(hkl_geometry_set_values_v(geometry, HKL_UNIT_USER, NULL, 0., 30., 0., 0., 0., 60.));
 	res &= DIAG(hkl_engine_initialized_set(engine, TRUE, NULL));
 
 	darray_foreach(mode, *modes){
@@ -237,7 +233,6 @@ static void petra3(void)
 	HklEngineList *engines;
 	HklEngine *hkl;
 	HklEngine *psi;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklGeometryList *geometries;
 	HklDetector *detector;
@@ -249,16 +244,14 @@ static void petra3(void)
 		.uy = -87.84 * HKL_DEGTORAD,
 		.uz = 157.48 * HKL_DEGTORAD,
 	};
+	struct Geometry gconf = E6c(2.033, 0., 30., 0., 0., 0., 60.);
 
-	factory = hkl_factory_get_by_name("E6C", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
-	res &= DIAG(hkl_geometry_wavelength_set(geometry, 2.033, HKL_UNIT_DEFAULT, NULL));
-
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 	sample = newSample(sconf);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	/* set the psi pseudo axis */
@@ -307,7 +300,6 @@ static void petra3_2(void)
 	HklEngineList *engines;
 	HklEngine *hkl;
 	HklEngine *psi;
-	const HklFactory *factory;
 	const HklGeometryListItem *item;
 	HklGeometry *geometry;
 	HklGeometryList *geometries;
@@ -323,6 +315,7 @@ static void petra3_2(void)
 		.uy = 0.0 * HKL_DEGTORAD,
 		.uz = -90.0 * HKL_DEGTORAD,
 	};
+	struct Geometry gconf = E6c(1.0332035, 0., 30., 0., 0., 0., 60.);
 
 	/* Wavelength 1.0332035 */
 	/* Mode       psi_constant_vertical */
@@ -333,15 +326,13 @@ static void petra3_2(void)
 	/* A 5.1 B 5.1 C 5.1  */
 	/* Alpha 90 Beta 90 Gamma 90  */
 
-	factory = hkl_factory_get_by_name("E6C", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
-	res &= DIAG(hkl_geometry_wavelength_set(geometry, 1.0332035, HKL_UNIT_DEFAULT, NULL));
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 
 	sample = newSample(sconf);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	/* set the hkl pseudo axis in psi_constant_vertical */

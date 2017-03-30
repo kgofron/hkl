@@ -63,6 +63,7 @@ extern HklGeometryList *hkl_engine_set_values_v(HklEngine *self, ...);
 enum geometry_e {
 	GEOMETRY_E4CH,
 	GEOMETRY_E4CV,
+	GEOMETRY_E6C,
 	GEOMETRY_SOLEIL_SIXS_MED_2_3,
 };
 
@@ -98,6 +99,20 @@ struct Geometry {
 			union {
 				double positions[6];
 				struct {
+					double mu;
+					double komega;
+					double kappa;
+					double kphi;
+					double gamma;
+					double delta;
+				};
+			};
+		} e6c;
+		struct {
+			double wavelength;
+			union {
+				double positions[6];
+				struct {
 					double beta;
 					double mu;
 					double omega;
@@ -116,9 +131,12 @@ struct Geometry {
 #define E4cv(_w, _o, _c, _p, _t)			\
 	{.tag=GEOMETRY_E4CV,				\
 			.e4cv={_w, {{_o, _c, _p, _t}}}}
+#define E6c(_w, _m, _ko, _ka, _kp, _g, _d)				\
+	{.tag=GEOMETRY_E6C,						\
+			.e6c={_w, {{_m, _ko, _ka, _kp, _g, _d}}}}
 #define SoleilSixsMed2_3(_w, _b, _m, _o, _g, _d, _e)			\
 	{.tag=GEOMETRY_SOLEIL_SIXS_MED_2_3,				\
-			.soleil_sixs_med_2_3={_w, {_b, _m, _o, _g, _d, _e}}}
+			.soleil_sixs_med_2_3={_w, {{_b, _m, _o, _g, _d, _e}}}}
 
 extern HklGeometry *newGeometry(struct Geometry geometry);
 
