@@ -68,6 +68,7 @@ enum geometry_e {
 	GEOMETRY_K4CV,
 	GEOMETRY_K6C,
 	GEOMETRY_SOLEIL_SIXS_MED_2_3,
+	GEOMETRY_ZAXIS,
 };
 
 struct Geometry {
@@ -163,6 +164,18 @@ struct Geometry {
 				};
 			};
 		} soleil_sixs_med_2_3;
+		struct {
+			double wavelength;
+			union {
+				double positions[4];
+				struct {
+					double mu;
+					double omega;
+					double delta;
+					double gamma;
+				};
+			};
+		} zaxis;
 	};
 };
 
@@ -187,6 +200,9 @@ struct Geometry {
 #define SoleilSixsMed2_3(_w, _b, _m, _o, _g, _d, _e)			\
 	{.tag=GEOMETRY_SOLEIL_SIXS_MED_2_3,				\
 			.soleil_sixs_med_2_3={_w, {{_b, _m, _o, _g, _d, _e}}}}
+#define Zaxis(_w, _m, _o, _d, _g)				\
+	{.tag=GEOMETRY_ZAXIS,					\
+			.zaxis={_w, {{_m, _o, _d, _g}}}}
 
 extern HklGeometry *newGeometry(struct Geometry geometry);
 

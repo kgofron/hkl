@@ -28,7 +28,6 @@ static void solution(void)
 	int res = TRUE;
 	HklEngineList *engines;
 	HklEngine *engine;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklGeometryList *geometries;
 	HklDetector *detector;
@@ -41,25 +40,18 @@ static void solution(void)
 		.uy = 0.0  * HKL_DEGTORAD,
 		.uz = 0.0  * HKL_DEGTORAD,
 	};
+	struct Geometry gconf = Zaxis(0.842, 1., 0., 0., 0.);
 
-	/* get the geometry and set the source */
-	factory = hkl_factory_get_by_name("ZAXIS", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
-	res &= DIAG(hkl_geometry_wavelength_set(geometry, 0.842, HKL_UNIT_DEFAULT, NULL));
-
-	/* set up the sample */
-	sample = newSample(sconf);;
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
+	sample = newSample(sconf);
 
 	/* use a 0D detector */
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
 	/* select the hkl pseudo axis */
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 	engine = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
-
-	/* the init part must succed */
-	res &= DIAG(hkl_geometry_set_values_v(geometry, HKL_UNIT_USER, NULL, 1., 0., 0., 0.));
 
 	/* compute the 1 1 0 */
 	geometries = hkl_engine_pseudo_axis_values_set(engine, hkl, ARRAY_SIZE(hkl),
