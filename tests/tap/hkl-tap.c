@@ -166,41 +166,50 @@ void hkl_tap_engine_parameters_randomize(HklEngine *self)
 
 /* API 2 */
 
-HklEngineList *newEngines(struct Geometry geometry)
+static const HklFactory *getFactory(struct Geometry geometry)
 {
-	HklFactory *factory = NULL;
+	const HklFactory *self = NULL;
 
 	switch(geometry.tag) {
+	case GEOMETRY_E4CH:
+		self = hkl_factory_get_by_name("E4CH", NULL);
+		break;
+	case GEOMETRY_E4CV:
+		self = hkl_factory_get_by_name("E4CV", NULL);
+		break;
 	case GEOMETRY_SOLEIL_SIXS_MED_2_3:
-		factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
+		self = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
 		break;
 	}
+	return self;
+}
 
-	return hkl_factory_create_new_engine_list(factory);
+HklEngineList *newEngines(struct Geometry geometry)
+{
+	return hkl_factory_create_new_engine_list(getFactory(geometry));
 }
 
 HklGeometry *newGeometry(struct Geometry geometry)
 {
-	HklFactory *factory;
-	HklGeometry *self = NULL;
+	HklGeometry *self = hkl_factory_create_new_geometry(getFactory(geometry));
+
+#define NEW_GEOMETRY(type_) do{						\
+		DIAG(hkl_geometry_axis_values_set(self,			\
+						  geometry.type_.positions, \
+						  ARRAY_SIZE(geometry.type_.positions), \
+						  HKL_UNIT_USER, NULL)); \
+		DIAG(hkl_geometry_wavelength_set(self, geometry.type_.wavelength, \
+						 HKL_UNIT_DEFAULT, NULL)); \
+	}while(0)
 
 	switch (geometry.tag) {
-	case GEOMETRY_SOLEIL_SIXS_MED_2_3:
-	{
-		factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-		self = hkl_factory_create_new_geometry(factory);
-
-		DIAG(hkl_geometry_axis_values_set(self,
-						  geometry.soleil_sixs_med_2_3.positions,
-						  ARRAY_SIZE(geometry.soleil_sixs_med_2_3.positions),
-						  HKL_UNIT_USER, NULL));
-
-		DIAG(hkl_geometry_wavelength_set(self, geometry.soleil_sixs_med_2_3.wavelength,
-						 HKL_UNIT_DEFAULT, NULL));
-		break;
+	case GEOMETRY_E4CH: NEW_GEOMETRY(e4ch);	break;
+	case GEOMETRY_E4CV: NEW_GEOMETRY(e4cv);	break;
+	case GEOMETRY_SOLEIL_SIXS_MED_2_3: NEW_GEOMETRY(soleil_sixs_med_2_3); break;
 	}
-	}
+
 	return self;
+#undef NEW_GEOMETRY
 }
 
 HklLattice *newLattice(struct Lattice lattice)

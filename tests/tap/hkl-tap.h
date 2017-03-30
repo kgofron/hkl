@@ -61,12 +61,38 @@ extern HklGeometryList *hkl_engine_set_values_v(HklEngine *self, ...);
 /* Geometry */
 
 enum geometry_e {
+	GEOMETRY_E4CH,
+	GEOMETRY_E4CV,
 	GEOMETRY_SOLEIL_SIXS_MED_2_3,
 };
 
 struct Geometry {
 	enum geometry_e tag;
 	union {
+		struct {
+			double wavelength;
+			union {
+				double positions[4];
+				struct {
+					double omega;
+					double chi;
+					double phi;
+					double tth;
+				};
+			};
+		} e4ch;
+		struct {
+			double wavelength;
+			union {
+				double positions[4];
+				struct {
+					double omega;
+					double chi;
+					double phi;
+					double tth;
+				};
+			};
+		} e4cv;
 		struct {
 			double wavelength;
 			union {
@@ -84,16 +110,15 @@ struct Geometry {
 	};
 };
 
+#define E4ch(_w, _o, _c, _p, _t)			\
+	{.tag=GEOMETRY_E4CH,				\
+			.e4ch={_w, {{_o, _c, _p, _t}}}}
+#define E4cv(_w, _o, _c, _p, _t)			\
+	{.tag=GEOMETRY_E4CV,				\
+			.e4cv={_w, {{_o, _c, _p, _t}}}}
 #define SoleilSixsMed2_3(_w, _b, _m, _o, _g, _d, _e)			\
 	{.tag=GEOMETRY_SOLEIL_SIXS_MED_2_3,				\
-			.soleil_sixs_med_2_3.wavelength=_w,		\
-			.soleil_sixs_med_2_3.beta = _b,			\
-			.soleil_sixs_med_2_3.mu=_m,			\
-			.soleil_sixs_med_2_3.omega=_o,			\
-			.soleil_sixs_med_2_3.gamma=_g,			\
-			.soleil_sixs_med_2_3.delta=_d,			\
-			.soleil_sixs_med_2_3.eta_a=_e,			\
-			}						\
+			.soleil_sixs_med_2_3={_w, {_b, _m, _o, _g, _d, _e}}}
 
 extern HklGeometry *newGeometry(struct Geometry geometry);
 
@@ -112,16 +137,12 @@ struct Lattice {
 	enum lattice_e tag;
 	union {
 		struct { double a; } cubic;
-		struct { double a; double c;} hexagonal;
+		struct { double a; double c; } hexagonal;
 	};
 };
 
-#define Cubic(_a) {.tag=LATTICE_CUBIC, .cubic.a=_a}
-#define Hexagonal(_a, _c)			\
-	{ .tag=LATTICE_HEXAGONAL,		\
-			.hexagonal.a=_a,	\
-			.hexagonal.c=_c,	\
-			}
+#define Cubic(_a) {.tag=LATTICE_CUBIC, .cubic={_a}}
+#define Hexagonal(_a, _c) {.tag=LATTICE_HEXAGONAL, .hexagonal={_a, _c}}
 
 extern HklLattice *newLattice(struct Lattice lattice);
 
