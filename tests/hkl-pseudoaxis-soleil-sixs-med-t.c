@@ -39,7 +39,6 @@ static void qper_qpar(void)
 	int res = TRUE;
 	HklEngineList *engines;
 	HklEngine *engine;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
@@ -57,15 +56,12 @@ static void qper_qpar(void)
 
 	struct Geometry gconfig = SoleilSixsMed2_3(1.54, 0., 0.1, 0., 0., 90., 0.);
 
-	factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-
 	geometry = newGeometry(gconfig);
-
+	engines = newEngines(gconfig);
 	sample = newSample(gaas);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "qper_qpar", NULL);
@@ -108,7 +104,6 @@ static void med_2_3(void)
 	int res = TRUE;
 	HklEngineList *engines;
 	HklEngine *hkl;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklGeometryList *geometries;
 	HklDetector *detector;
@@ -132,15 +127,11 @@ static void med_2_3(void)
 	/* A 4.759 B 4.759 C 12.992  */
 	/* Alpha 90 Beta 90 Gamma 120  */
 
-	factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-
 	geometry = newGeometry(gconfig);
-
+	engines = newEngines(gconfig);
 	sample = newSample(gaas);
-
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	hkl = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);

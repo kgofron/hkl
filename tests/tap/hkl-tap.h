@@ -97,6 +97,10 @@ struct Geometry {
 
 extern HklGeometry *newGeometry(struct Geometry geometry);
 
+/* Engines */
+
+extern HklEngineList *newEngines(struct Geometry geometry);
+
 /* Lattice */
 
 enum lattice_e {

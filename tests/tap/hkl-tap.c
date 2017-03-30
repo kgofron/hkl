@@ -166,6 +166,19 @@ void hkl_tap_engine_parameters_randomize(HklEngine *self)
 
 /* API 2 */
 
+HklEngineList *newEngines(struct Geometry geometry)
+{
+	HklFactory *factory = NULL;
+
+	switch(geometry.tag) {
+	case GEOMETRY_SOLEIL_SIXS_MED_2_3:
+		factory = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
+		break;
+	}
+
+	return hkl_factory_create_new_engine_list(factory);
+}
+
 HklGeometry *newGeometry(struct Geometry geometry)
 {
 	HklFactory *factory;
