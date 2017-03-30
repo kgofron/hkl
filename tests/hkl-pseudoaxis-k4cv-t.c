@@ -30,19 +30,18 @@ static void degenerated(void)
 	HklEngine *engine;
 	const darray_string *modes;
 	const char **mode;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
 	static double hkl[] = {0, 1, 0};
+	struct Geometry gconf = K4cv(1.54, 30., 0., 0., 60.);
 
-	factory = hkl_factory_get_by_name("K4CV", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
@@ -95,19 +94,18 @@ static void eulerians(void)
 	HklEngine *engine;
 	const darray_string *modes;
 	const char **mode;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
 	static double eulerians[] = {0., 90 * HKL_DEGTORAD, 0.};
+	struct Geometry gconf = K4cv(1.54, 0., 0., 0., 0.);
 
-	factory = hkl_factory_get_by_name("K4CV", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "eulerians", NULL);
@@ -170,18 +168,17 @@ static void q(void)
 	HklEngine *engine;
 	const darray_string *modes;
 	const char **mode;
-	const HklFactory *factory;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
+	struct Geometry gconf = K4cv(1.54, 30., 0., 0., 60.);
 
-	factory = hkl_factory_get_by_name("K4CV", NULL);
-	geometry = hkl_factory_create_new_geometry(factory);
+	geometry = newGeometry(gconf);
+	engines = newEngines(gconf);
 	sample = newSample(cu);
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 
-	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	engine = hkl_engine_list_engine_get_by_name(engines, "q", NULL);
