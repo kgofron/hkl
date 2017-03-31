@@ -26,13 +26,71 @@
 
 #include "hkl-axis-private.h" /* temporary */
 #include "hkl-geometry-private.h" /* temporary */
+/* Mode */
+
+enum mode_e {
+	MODE_HKL_BISSECTOR_VERTICAL,
+};
+
+struct Mode {
+	enum mode_e tag;
+};
+
+#define ModeHklBissectorVertical {.tag=MODE_HKL_BISSECTOR_VERTICAL}
+
+static const char *getModeName(struct Mode mode)
+{
+	const char *name;
+
+	switch(mode.tag){
+	case MODE_HKL_BISSECTOR_VERTICAL: name = "bissector_vertical";
+	}
+
+	return name;
+}
+
+
+/* Engine */
+
+enum engine_e {
+	ENGINE_HKL,
+};
+
+struct Engine {
+	enum engine_e tag;
+	union {
+		struct {double h; double k; double l; struct Mode mode;} hkl;
+	};
+};
+
+#define EngineHkl(h_, k_, l_, mode_) {.tag=ENGINE_HKL, .hkl={h_, k_, l_, mode_}}
+
+static HklGeometryList *solve(HklEngineList *engines, struct Engine econfig)
+{
+	HklGeometryList *geometries;
+
+	switch(econfig.tag) {
+	case ENGINE_HKL:
+	{
+		double values[3] = {econfig.hkl.h, econfig.hkl.k, econfig.hkl.l};
+		HklEngine *engine = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
+		const char *mode_name = getModeName(econfig.hkl.mode);
+		DIAG(hkl_engine_current_mode_set(engine, mode_name, NULL));
+		geometries = hkl_engine_pseudo_axis_values_set(engine,
+							       values, ARRAY_SIZE(values),
+							       HKL_UNIT_DEFAULT, NULL);
+	}
+	break;
+	}
+
+	return geometries;
+}
 
 static void stability(void)
 {
-	int i, j;
+	int i;
 	int res = TRUE;
 	HklEngineList *engines;
-	HklEngine *hkl;
 	HklGeometry *geometry;
 	HklGeometryList *geometries;
 	HklDetector *detector;
@@ -60,18 +118,15 @@ static void stability(void)
 
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
-	hkl = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
-	res &= DIAG(hkl_engine_current_mode_set(hkl, "bissector_vertical", NULL));
-
 	for(i=0; i<n; ++i){
-		double hkl_p[3];
+		double h = (to[0] - from[0]) / (n + 1) * i + from[0];
+		double k = (to[1] - from[1]) / (n + 1) * i + from[1];
+		double l = (to[2] - from[2]) / (n + 1) * i + from[2];
 
-		for(j=0; j<3; ++j)
-			hkl_p[j] = (to[j] - from[j]) / (n + 1) * i + from[j];
+		struct Engine econfig = EngineHkl(h, k, l, ModeHklBissectorVertical);
 
-		geometries = hkl_engine_pseudo_axis_values_set(hkl,
-							       hkl_p, ARRAY_SIZE(hkl_p),
-							       HKL_UNIT_DEFAULT, NULL);
+		geometries = solve(engines, econfig);
+
 		res &= DIAG((geometries != NULL));
 
 		hkl_geometry_list_fprintf(stdout, geometries);
