@@ -49,7 +49,6 @@ static const char *getModeName(struct Mode mode)
 	return name;
 }
 
-
 /* Engine */
 
 enum engine_e {
@@ -86,6 +85,112 @@ static HklGeometryList *solve(HklEngineList *engines, struct Engine econfig)
 	return geometries;
 }
 
+/* HklTrajectoryStats */
+
+typedef darray(double) darray_double;
+typedef darray(size_t) darray_sizet;
+
+typedef struct _HklTrajectoryStats HklTrajectoryStats;
+
+struct _HklTrajectoryStats {
+	size_t n;
+	darray_sizet nb_solutions;
+	darray_double axes_min;
+	darray_double axes_max;
+	darray_double axes_range;
+};
+
+static HklTrajectoryStats *hkl_trajectory_stats_new(int n)
+{
+	HklTrajectoryStats *self = HKL_MALLOC(HklTrajectoryStats);
+
+	self->n = 0;
+	darray_init(self->nb_solutions);
+	darray_init(self->axes_min);
+	darray_init(self->axes_max);
+	darray_init(self->axes_range);
+	darray_resize0(self->axes_range, n);
+
+	return self;
+}
+
+static void hkl_trajectory_stats_free(HklTrajectoryStats *self)
+{
+	darray_free(self->axes_range);
+	darray_free(self->axes_max);
+	darray_free(self->axes_min);
+	darray_free(self->nb_solutions);
+	free(self);
+}
+
+static void hkl_trajectory_stats_add(HklTrajectoryStats *self, const HklGeometryList *geometries)
+{
+	size_t i;
+
+	const HklGeometryListItem *item = hkl_geometry_list_items_first_get(geometries);
+	const HklGeometry *geometry = hkl_geometry_list_item_geometry_get(item);
+	size_t n = darray_size(*hkl_geometry_axis_names_get(geometry));
+
+	darray_append(self->nb_solutions, hkl_geometry_list_n_items_get(geometries));
+
+	if(self->n == 0){
+		darray_resize(self->axes_min, n);
+		darray_resize(self->axes_max, n);
+		darray_resize(self->axes_range, n);
+
+		hkl_geometry_axis_values_get(geometry,
+					     &darray_item(self->axes_min, 0), n,
+					     HKL_UNIT_USER);
+		hkl_geometry_axis_values_get(geometry,
+					     &darray_item(self->axes_max, 0), n,
+					     HKL_UNIT_USER);
+	}else{
+		double values[n];
+
+		hkl_geometry_axis_values_get(geometry, values, n, HKL_UNIT_USER);
+		for(i=0; i<n; ++i){
+			if (values[i] < darray_item(self->axes_min, i))
+				darray_item(self->axes_min, i) = values[i];
+			else if (values[i] > darray_item(self->axes_max, i))
+				darray_item(self->axes_max, i) = values[i];
+		}
+	}
+	for(i=0;i<n;++i)
+		darray_item(self->axes_range, i) = darray_item(self->axes_max, i) - darray_item(self->axes_min, i);
+
+	self->n += 1;
+}
+
+void hkl_trajectory_stats_fprintf(FILE *f, const HklTrajectoryStats *self)
+{
+	size_t *p;
+	double *v;
+
+	fprintf(f, "Number of points of the trajectory: %d\n", self->n);
+	fprintf(f, "Solutions per points:");
+	darray_foreach(p, self->nb_solutions){
+		fprintf(f, " %d", *p);
+	}
+	fprintf(f, "\n");
+	fprintf(f, "Axes minium:");
+	darray_foreach(v, self->axes_min){
+		fprintf(f, " %f", *v);
+	}
+	fprintf(f, "\n");
+	fprintf(f, "Axes max:");
+	darray_foreach(v, self->axes_max){
+		fprintf(f, " %f", *v);
+	}
+	fprintf(f, "\n");
+	fprintf(f, "Axes range:");
+	darray_foreach(v, self->axes_range){
+		fprintf(f, " %f", *v);
+	}
+	fprintf(f, "\n");
+}
+
+/* tests */
+
 static void stability(void)
 {
 	int i;
@@ -95,6 +200,7 @@ static void stability(void)
 	HklGeometryList *geometries;
 	HklDetector *detector;
 	HklSample *sample;
+	HklTrajectoryStats *stats;
 	static double from[] = {0, 0, 1};
 	static double to[] = {0, 0, 6};
 	static int n=10;
@@ -115,6 +221,7 @@ static void stability(void)
 	engines = newEngines(gconfig);
 	sample = newSample(gaas);
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
+	stats = hkl_trajectory_stats_new(n);
 
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
@@ -126,6 +233,7 @@ static void stability(void)
 		struct Engine econfig = EngineHkl(h, k, l, ModeHklBissectorVertical);
 
 		geometries = solve(engines, econfig);
+		hkl_trajectory_stats_add(stats, geometries);
 
 		res &= DIAG((geometries != NULL));
 
@@ -133,8 +241,11 @@ static void stability(void)
 		hkl_geometry_list_free(geometries);
 	}
 
+	hkl_trajectory_stats_fprintf(stdout, stats);
+
 	ok(res == TRUE, __func__);
 
+	hkl_trajectory_stats_free(stats);
 	hkl_engine_list_free(engines);
 	hkl_detector_free(detector);
 	hkl_sample_free(sample);
