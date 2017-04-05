@@ -97,6 +97,7 @@ library
                     , Hkl.C.DArray
                     , Hkl.C.Detector
                     , Hkl.C.Engine
+                    , Hkl.C.EngineList
                     , Hkl.C.Geometry
                     , Hkl.C.GeometryList
                     , Hkl.C.Lattice

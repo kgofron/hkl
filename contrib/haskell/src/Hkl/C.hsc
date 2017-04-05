@@ -21,17 +21,16 @@ import Foreign ( ForeignPtr
                , nullPtr
                , newForeignPtr
                , withForeignPtr
-               , peekArray
                , withArray)
 import Foreign.C ( CInt(..), CSize(..), CString
                  , withCString)
-import Foreign.Storable
 
 import Pipes (Pipe, await, lift, yield)
 
 import Hkl.C.DArray as X
 import Hkl.C.Detector as X
 import Hkl.C.Engine as X
+import Hkl.C.EngineList as X
 import Hkl.C.Geometry as X
 import Hkl.C.GeometryList as X
 import Hkl.C.Lattice as X
@@ -40,10 +39,6 @@ import Hkl.Detector
 import Hkl.Types
 
 #include "hkl.h"
-
--- private types
-
-data HklEngineList
 
 -- Engine
 
@@ -149,35 +144,6 @@ foreign import ccall unsafe "hkl.h hkl_engine_pseudo_axis_values_set"
 
 foreign import ccall unsafe "hkl.h &hkl_geometry_list_free"
   c_hkl_geometry_list_free :: FunPtr (Ptr HklGeometryList -> IO ())
-
--- EngineList
-
-withEngineList :: Factory -> (Ptr HklEngineList -> IO b) -> IO b
-withEngineList f func = do
-  fptr <- newEngineList f
-  withForeignPtr fptr func
-
-newEngineList :: Factory -> IO (ForeignPtr HklEngineList)
-newEngineList f = newFactory f
-                  >>= c_hkl_factory_create_new_engine_list
-                  >>= newForeignPtr c_hkl_engine_list_free
-
-foreign import ccall unsafe "hkl.h hkl_factory_create_new_engine_list"
-  c_hkl_factory_create_new_engine_list:: Ptr HklFactory -> IO (Ptr HklEngineList)
-
-foreign import ccall unsafe "hkl.h &hkl_engine_list_free"
-  c_hkl_engine_list_free :: FunPtr (Ptr HklEngineList -> IO ())
-
-engineListEnginesGet :: Ptr HklEngineList -> IO [Engine]
-engineListEnginesGet e = do
-  pdarray <- c_hkl_engine_list_engines_get e
-  n <- (#{peek darray_engine, size} pdarray) :: IO CSize
-  engines <- #{peek darray_engine ,item} pdarray :: IO (Ptr (Ptr HklEngine))
-  enginess <- peekArray (fromEnum n) engines
-  mapM peekEngine enginess
-
-foreign import ccall unsafe "hkl.h hkl_engine_list_engines_get"
-  c_hkl_engine_list_engines_get:: Ptr HklEngineList -> IO (Ptr ())
 
 compute :: Geometry -> Detector a -> Sample b -> IO [Engine]
 compute g@(Geometry f _ _ _) d s = do
