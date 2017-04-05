@@ -23,14 +23,15 @@ import Foreign ( ForeignPtr
                , withForeignPtr
                , peekArray
                , withArray)
-import Foreign.C (CInt(..), CSize(..), CString,
-                 peekCString, withCString)
+import Foreign.C ( CInt(..), CSize(..), CString
+                 , withCString)
 import Foreign.Storable
 
 import Pipes (Pipe, await, lift, yield)
 
 import Hkl.C.DArray as X
 import Hkl.C.Detector as X
+import Hkl.C.Engine as X
 import Hkl.C.Geometry as X
 import Hkl.C.GeometryList as X
 import Hkl.C.Lattice as X
@@ -42,7 +43,6 @@ import Hkl.Types
 
 -- private types
 
-data HklEngine
 data HklEngineList
 
 -- Engine
@@ -65,9 +65,6 @@ solve g@(Geometry f _ _ _) d s e@(Engine name _ _) = do
                   c_hkl_engine_list_init engines geometry detector sample
                   engine <- c_hkl_engine_list_engine_get_by_name engines cname nullPtr
                   solve' engine e >>= peekHklGeometryList
-
-engineName :: Engine -> String
-engineName (Engine name _ _) = name
 
 solveTraj :: Geometry -> Detector a -> Sample b -> [Engine] -> IO [Geometry]
 solveTraj g@(Geometry f _ _ _) d s es = do
@@ -152,57 +149,6 @@ foreign import ccall unsafe "hkl.h hkl_engine_pseudo_axis_values_set"
 
 foreign import ccall unsafe "hkl.h &hkl_geometry_list_free"
   c_hkl_geometry_list_free :: FunPtr (Ptr HklGeometryList -> IO ())
-
--- Engine
-
-peekMode :: Ptr HklEngine -> IO Mode
-peekMode e = do
-  name <- c_hkl_engine_current_mode_get e >>= peekCString
-  (DArray _ ns) <- peek =<< c_hkl_engine_parameters_names_get e
-  parameters <- mapM f ns
-  return (Mode name parameters)
-  where
-    f n = (c_hkl_engine_parameter_get e n nullPtr >>= peek)
-
-foreign import ccall unsafe "hkl.h hkl_engine_current_mode_get"
-  c_hkl_engine_current_mode_get :: Ptr HklEngine -> IO CString
-
-foreign import ccall unsafe "hkl.h hkl_engine_parameters_names_get"
-  c_hkl_engine_parameters_names_get:: Ptr HklEngine -> IO (Ptr (DArray CString))
-
-foreign import ccall unsafe "hkl.h hkl_engine_parameter_get"
-  c_hkl_engine_parameter_get:: Ptr HklEngine -> CString -> Ptr () -> IO (Ptr Parameter) -- darray_string
-
-
-peekEngine :: Ptr HklEngine -> IO Engine
-peekEngine e = do
-  name <- peekCString =<< c_hkl_engine_name_get e
-  ps <- enginePseudoAxesGet e
-  mode <- peekMode e
-  return (Engine name ps mode)
-
--- engineNameGet :: Ptr HklEngine -> IO String
--- engineNameGet engine = c_hkl_engine_name_get engine >>= peekCString
-
-foreign import ccall unsafe "hkl.h hkl_engine_name_get"
-  c_hkl_engine_name_get :: Ptr HklEngine -> IO CString
-
-foreign import ccall unsafe "hkl.h hkl_engine_pseudo_axis_names_get"
-  c_hkl_engine_pseudo_axis_names_get:: Ptr HklEngine -> IO (Ptr (DArray CString))
-
--- enginePseudoAxisNamesGet :: Ptr HklEngine -> IO [String]
--- enginePseudoAxisNamesGet e = enginePseudoAxisNamesGet' e >>= mapM peekCString
-
-enginePseudoAxisGet :: Ptr HklEngine -> CString -> IO Parameter
-enginePseudoAxisGet e n = c_hkl_engine_pseudo_axis_get e n nullPtr >>= peek
-
-foreign import ccall unsafe "hkl.h hkl_engine_pseudo_axis_get"
-  c_hkl_engine_pseudo_axis_get:: Ptr HklEngine -> CString -> Ptr () -> IO (Ptr Parameter)
-
-enginePseudoAxesGet :: Ptr HklEngine -> IO [Parameter]
-enginePseudoAxesGet ptr = do
-  (DArray _ ns) <- peek =<< c_hkl_engine_pseudo_axis_names_get ptr
-  mapM (enginePseudoAxisGet ptr) ns
 
 -- EngineList
 
