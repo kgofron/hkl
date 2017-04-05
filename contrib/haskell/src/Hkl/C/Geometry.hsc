@@ -1,7 +1,7 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE CPP #-}
 
 module Hkl.C.Geometry
        ( Geometry(..)
@@ -77,7 +77,9 @@ data HklFactory
 data HklMatrix
 data HklQuaternion
 
+#if __GLASGOW_HASKELL__ <= 710
 #let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
+#endif
 
 -- Factory
 

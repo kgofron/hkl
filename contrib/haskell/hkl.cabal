@@ -96,6 +96,7 @@ library
                     , Hkl.C
                     , Hkl.C.DArray
                     , Hkl.C.Geometry
+                    , Hkl.C.Lattice
                     , Hkl.DataSource
                     , Hkl.Detector
                     , Hkl.Edf
