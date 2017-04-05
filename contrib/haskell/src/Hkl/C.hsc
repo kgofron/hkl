@@ -27,14 +27,12 @@ import Foreign.C ( CInt(..), CSize(..), CString
 
 import Pipes (Pipe, await, lift, yield)
 
-import Hkl.C.DArray as X
-import Hkl.C.Detector as X
-import Hkl.C.Engine as X
-import Hkl.C.EngineList as X
+import Hkl.C.Detector
+import Hkl.C.Engine
+import Hkl.C.EngineList
 import Hkl.C.Geometry as X
 import Hkl.C.GeometryList as X
-import Hkl.C.Lattice as X
-import Hkl.C.Sample as X
+import Hkl.C.Sample
 import Hkl.Detector
 import Hkl.Types
 
