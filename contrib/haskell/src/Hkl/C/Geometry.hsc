@@ -6,7 +6,6 @@
 module Hkl.C.Geometry
        ( Geometry(..)
        , Factory(..)
-       , HklDetector
        , HklFactory
        , HklMatrix
        , HklQuaternion
@@ -72,7 +71,6 @@ data Geometry = Geometry
 
 -- private types
 
-data HklDetector
 data HklFactory
 data HklMatrix
 data HklQuaternion

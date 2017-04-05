@@ -95,7 +95,9 @@ library
   exposed-modules:    Hkl
                     , Hkl.C
                     , Hkl.C.DArray
+                    , Hkl.C.Detector
                     , Hkl.C.Geometry
+                    , Hkl.C.GeometryList
                     , Hkl.C.Lattice
                     , Hkl.C.Sample
                     , Hkl.DataSource
