@@ -24,6 +24,7 @@
 #include <tap/float.h>
 #include <tap/hkl-tap.h>
 
+#include "hkl/ccan/darray/darray.h" /* temporary */
 #include "hkl-axis-private.h" /* temporary */
 #include "hkl-geometry-private.h" /* temporary */
 /* Mode */
@@ -83,6 +84,40 @@ static HklGeometryList *solve(HklEngineList *engines, struct Engine econfig)
 	}
 
 	return geometries;
+}
+
+/* HklTrajectoryResult */
+
+typedef darray(HklGeometry *) darray_geometry;
+
+typedef struct _HklTrajectoryResult HklTrajectoryResult;
+
+struct _HklTrajectoryResult {
+	darray_geometry geometries;
+};
+
+static HklTrajectoryResult * hkl_trajectory_result_new(void)
+{
+	HklTrajectoryResult *self = HKL_MALLOC(HklTrajectoryResult);
+
+	darray_init(self->geometries);
+
+	return self;
+}
+
+static void hkl_trajectory_result_free(HklTrajectoryResult *self)
+{
+	HklGeometry **geometry;
+
+	darray_foreach(geometry, self->geometries){
+		hkl_geometry_free(*geometry);
+	}
+	darray_free(self->geometries);
+}
+
+static void hkl_trajectory_add_geometry(HklTrajectoryResult *self, const HklGeometry *geometry)
+{
+	darray_append(self->geometries, hkl_geometry_new_copy(geometry));
 }
 
 /* HklTrajectoryStats */
@@ -200,6 +235,7 @@ static void stability(void)
 	HklGeometryList *geometries;
 	HklDetector *detector;
 	HklSample *sample;
+	HklTrajectoryResult *trajectory;
 	HklTrajectoryStats *stats;
 	static double from[] = {0, 0, 1};
 	static double to[] = {0, 0, 6};
@@ -221,15 +257,17 @@ static void stability(void)
 	engines = newEngines(gconfig);
 	sample = newSample(gaas);
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
+	trajectory = hkl_trajectory_result_new();
 	stats = hkl_trajectory_stats_new(n);
 
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	for(i=0; i<n; ++i){
-		double h = (to[0] - from[0]) / (n + 1) * i + from[0];
-		double k = (to[1] - from[1]) / (n + 1) * i + from[1];
-		double l = (to[2] - from[2]) / (n + 1) * i + from[2];
+		double h = (to[0] - from[0]) / (n - 1) * i + from[0];
+		double k = (to[1] - from[1]) / (n - 1) * i + from[1];
+		double l = (to[2] - from[2]) / (n - 1) * i + from[2];
 
+		fprintf(stdout, "hkl: %f %f %f\n", h, k, l);
 		struct Engine econfig = EngineHkl(h, k, l, ModeHklBissectorVertical);
 
 		geometries = solve(engines, econfig);
@@ -237,7 +275,7 @@ static void stability(void)
 
 		res &= DIAG((geometries != NULL));
 
-		hkl_geometry_list_fprintf(stdout, geometries);
+		/* hkl_geometry_list_fprintf(stdout, geometries); */
 		hkl_geometry_list_free(geometries);
 	}
 
