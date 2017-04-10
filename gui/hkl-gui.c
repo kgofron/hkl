@@ -272,10 +272,10 @@ struct _HklGuiWindowPrivate {
 	GtkToolButton* toolbutton_del_crystal;
 	GtkToolButton* toolbutton_affiner;
 	GtkStatusbar* statusbar;
-	GtkImageMenuItem* menuitem5;
-	GtkVBox* box_info_bar; /* fake for the infor bar */
-	GtkVBox* vbox7;
-	GtkVBox* vbox2;
+	GtkMenuItem* menuitem5;
+	GtkBox* box_info_bar; /* fake for the infor bar */
+	GtkBox* vbox7;
+	GtkBox* vbox2;
 	GtkDialog* dialog1;
 	GtkButton* button1;
 	GtkComboBox* combobox1;
@@ -470,11 +470,11 @@ hkl_gui_window_get_widgets_and_objects_from_ui (HklGuiWindow* self)
 
 	get_object(builder, GTK_STATUSBAR, priv, statusbar);
 
-	get_object(builder, GTK_IMAGE_MENU_ITEM, priv, menuitem5);
+	get_object(builder, GTK_MENU_ITEM, priv, menuitem5);
 
-	get_object(builder, GTK_VBOX, priv, vbox7);
-	get_object(builder, GTK_VBOX, priv, vbox2);
-	get_object(builder, GTK_VBOX, priv, box_info_bar);
+	get_object(builder, GTK_BOX, priv, vbox7);
+	get_object(builder, GTK_BOX, priv, vbox2);
+	get_object(builder, GTK_BOX, priv, box_info_bar);
 
 	get_object(builder, GTK_DIALOG, priv, dialog1);
 
@@ -944,7 +944,7 @@ set_up_info_bar(HklGuiWindow *self)
 	gtk_container_add (GTK_CONTAINER (content_area),
 			   GTK_WIDGET(priv->info_message));
 	gtk_info_bar_add_button (priv->info_bar,
-				 GTK_STOCK_OK, GTK_RESPONSE_OK);
+				 "_OK", GTK_RESPONSE_OK);
 	g_signal_connect (priv->info_bar, "response",
 			  G_CALLBACK (gtk_widget_hide), NULL);
 
@@ -1295,19 +1295,20 @@ hkl_gui_window_treeview_solutions_cursor_changed_cb (GtkTreeView *tree_view,
 	const HklGeometryListItem *solution;
 
 	gtk_tree_view_get_cursor (tree_view, &path, &focus_column);
-	gtk_tree_model_get_iter (GTK_TREE_MODEL(priv->liststore_solutions), &iter, path);
-	gtk_tree_model_get (GTK_TREE_MODEL(priv->liststore_solutions), &iter,
-			    SOLUTION_COL_HKL_GEOMETRY_LIST_ITEM, &solution,
-			    -1);
+	if (gtk_tree_model_get_iter (GTK_TREE_MODEL(priv->liststore_solutions), &iter, path)) {
+		gtk_tree_model_get (GTK_TREE_MODEL(priv->liststore_solutions), &iter,
+				    SOLUTION_COL_HKL_GEOMETRY_LIST_ITEM, &solution,
+				    -1);
 
-	diffractometer_set_solution(priv->diffractometer, solution);
+		diffractometer_set_solution(priv->diffractometer, solution);
 
-	update_axes (self);
-	update_pseudo_axes (self);
-	update_pseudo_axes_frames (self);
-	update_3d(self);
+		update_axes (self);
+		update_pseudo_axes (self);
+		update_pseudo_axes_frames (self);
+		update_3d(self);
 
-	gtk_tree_path_free (path);
+		gtk_tree_path_free (path);
+	}
 }
 
 /* reflection h k l */

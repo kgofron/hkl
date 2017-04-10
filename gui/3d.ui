@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.20.0 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.0"/>
   <object class="GtkFileChooserDialog" id="filechooserdialog1">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
@@ -20,11 +21,9 @@
             <child>
               <object class="GtkButton" id="button2">
                 <property name="label">gtk-cancel</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="hkl_gui_3d_button2_clicked_cb" swapped="no"/>
               </object>
@@ -37,11 +36,9 @@
             <child>
               <object class="GtkButton" id="button1">
                 <property name="label">gtk-apply</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="hkl_gui_3d_button1_clicked_cb" swapped="no"/>
               </object>
@@ -69,21 +66,34 @@
       <action-widget response="0">button1</action-widget>
     </action-widgets>
   </object>
+  <object class="GtkTreeStore" id="treestore1">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name hide -->
+      <column type="gboolean"/>
+      <!-- column-name config -->
+      <column type="gpointer"/>
+      <!-- column-name object -->
+      <column type="gpointer"/>
+    </columns>
+  </object>
   <object class="GtkFrame" id="frame1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="label_xalign">0</property>
     <property name="shadow_type">none</property>
     <child>
-      <object class="GtkVPaned" id="vpaned1">
+      <object class="GtkPaned" id="vpaned1">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
+        <property name="orientation">vertical</property>
         <property name="position">181</property>
-        <property name="position_set">True</property>
         <child>
-          <object class="GtkVBox" id="vbox1">
+          <object class="GtkBox" id="vbox1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
             <child>
               <placeholder/>
             </child>
@@ -107,19 +117,18 @@
           </packing>
         </child>
         <child>
-          <object class="GtkVBox" id="vbox2">
+          <object class="GtkBox" id="vbox2">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
             <child>
               <object class="GtkToolbar" id="toolbar1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
                   <object class="GtkToolButton" id="toolbutton1">
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="use_underline">True</property>
                     <property name="stock_id">gtk-add</property>
                     <signal name="clicked" handler="hkl_gui_3d_toolbutton1_clicked_cb" swapped="no"/>
@@ -131,10 +140,8 @@
                 </child>
                 <child>
                   <object class="GtkToolButton" id="toolbutton2">
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="use_underline">True</property>
                     <property name="stock_id">gtk-remove</property>
                     <signal name="clicked" handler="hkl_gui_3d_toolbutton2_clicked_cb" swapped="no"/>
@@ -146,10 +153,8 @@
                 </child>
                 <child>
                   <object class="GtkToolButton" id="toolbutton3">
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="label" translatable="yes">3D view Reinitialize</property>
                     <property name="use_underline">True</property>
                     <property name="stock_id">gtk-home</property>
@@ -162,10 +167,8 @@
                 </child>
                 <child>
                   <object class="GtkToggleToolButton" id="toolbutton4">
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="label" translatable="yes">Aabb</property>
                     <property name="use_underline">True</property>
                     <property name="stock_id">gtk-apply</property>
@@ -244,17 +247,5 @@
         </attributes>
       </object>
     </child>
-  </object>
-  <object class="GtkTreeStore" id="treestore1">
-    <columns>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-      <!-- column-name hide -->
-      <column type="gboolean"/>
-      <!-- column-name config -->
-      <column type="gpointer"/>
-      <!-- column-name object -->
-      <column type="gpointer"/>
-    </columns>
   </object>
 </interface>

@@ -1,10 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.20.0 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.14"/>
   <object class="GtkImage" id="image1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-goto-bottom</property>
+  </object>
+  <object class="GtkListStore" id="store_mode">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name mode -->
+      <column type="gpointer"/>
+    </columns>
+  </object>
+  <object class="GtkListStore" id="store_mode_parameter">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name idx -->
+      <column type="guint"/>
+      <!-- column-name value -->
+      <column type="gdouble"/>
+    </columns>
+  </object>
+  <object class="GtkListStore" id="store_pseudo">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name idx -->
+      <column type="guint"/>
+      <!-- column-name value -->
+      <column type="gdouble"/>
+    </columns>
   </object>
   <object class="GtkFrame" id="frame1">
     <property name="visible">True</property>
@@ -17,9 +46,10 @@
         <property name="can_focus">False</property>
         <property name="left_padding">12</property>
         <child>
-          <object class="GtkVBox" id="vbox1">
+          <object class="GtkBox" id="vbox1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
             <child>
               <object class="GtkTreeView" id="treeview1">
                 <property name="visible">True</property>
@@ -64,7 +94,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkHBox" id="hbox1">
+              <object class="GtkBox" id="hbox1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="spacing">3</property>
@@ -102,11 +132,9 @@
                 <child>
                   <object class="GtkButton" id="button1">
                     <property name="label">gtk-apply</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="use_stock">True</property>
                   </object>
                   <packing>
@@ -118,11 +146,9 @@
                 <child>
                   <object class="GtkButton" id="button2">
                     <property name="label">Initialize</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="image">image1</property>
                     <property name="image_position">right</property>
                   </object>
@@ -210,33 +236,5 @@
         </attributes>
       </object>
     </child>
-  </object>
-  <object class="GtkListStore" id="store_mode">
-    <columns>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-      <!-- column-name mode -->
-      <column type="gpointer"/>
-    </columns>
-  </object>
-  <object class="GtkListStore" id="store_pseudo">
-    <columns>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-      <!-- column-name idx -->
-      <column type="guint"/>
-      <!-- column-name value -->
-      <column type="gdouble"/>
-    </columns>
-  </object>
-  <object class="GtkListStore" id="store_mode_parameter">
-    <columns>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-      <!-- column-name idx -->
-      <column type="guint"/>
-      <!-- column-name value -->
-      <column type="gdouble"/>
-    </columns>
   </object>
 </interface>
