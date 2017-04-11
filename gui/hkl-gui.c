@@ -35,7 +35,6 @@
 #include "hkl-gui.h"
 #include "hkl-gui-macros.h"
 #if HKL3D
-# include <gtk/gtkgl.h>
 # include "hkl-gui-3d.h"
 #endif
 #include "hkl-gui-pseudoaxes.h"
@@ -2359,9 +2358,7 @@ static void hkl_gui_window_init (HklGuiWindow * self)
 int main (int argc, char ** argv)
 {
 	gtk_init (&argc, &argv);
-#ifdef HKL3D
-	gtk_gl_init(&argc, &argv);
-#endif
+
 	hkl_gui_window_new ();
 
 	gtk_main ();

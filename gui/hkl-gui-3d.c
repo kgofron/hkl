@@ -20,7 +20,6 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  *	    Oussama Sboui <oussama.sboui@synchrotron-soleil.fr>
  */
-#include <gtk/gtkgl.h>
 #include <GL/gl.h>
 #include <g3d/quat.h>
 
@@ -30,18 +29,6 @@
 #include "hkl-gui-macros.h"
 #include "hkl-gui-3d.h"
 #include "hkl-gui-3d-gl.h"
-
-/*
- * updates glarea widget (redraw)
- */
-static void glarea_update(GtkWidget *glarea)
-{
-	gtk_widget_queue_draw_area(glarea,
-				   0, 0,
-				   glarea->allocation.width,
-				   glarea->allocation.height);
-}
-
 
 typedef enum  {
 	HKL_GUI_3D_COL_NAME = 0,
@@ -82,7 +69,7 @@ struct _HklGui3DPrivate {
 	GtkBuilder *builder;
 
 	GtkFrame *frame1;
-	GtkVBox *vbox1;
+	GtkBox *vbox1;
 	GtkTreeView *treeview1;
 	GtkToolButton *toolbutton1;
 	GtkToolButton *toolbutton2;
@@ -91,7 +78,7 @@ struct _HklGui3DPrivate {
 	GtkButton *button1;
 	GtkButton *button2;
 	GtkTreeStore *treestore1;
-	GtkDrawingArea *drawingarea1;
+	GtkGLArea *gl_area;
 
 	Hkl3D *hkl3d;
 
@@ -287,7 +274,9 @@ void hkl_gui_3d_invalidate(HklGui3D *self)
 	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
 
 	priv->renderoptions.updated = TRUE;
-	glarea_update(GTK_WIDGET(priv->drawingarea1));
+
+	/* queue a redraw on the GtkGLArea */
+	gtk_widget_queue_draw (GTK_WIDGET(priv->gl_area));
 }
 
 /************/
@@ -434,7 +423,7 @@ reset_3d(G3DGLRenderOptions *renderoptions)
         renderoptions->bgcolor[2] = 0.6;
         renderoptions->bgcolor[3] = 1.0;
 	renderoptions->glflags =
-//		G3D_FLAG_GL_ISOMETRIC |
+		/* G3D_FLAG_GL_ISOMETRIC | */
 		G3D_FLAG_GL_SPECULAR |
 		G3D_FLAG_GL_SHININESS |
 		G3D_FLAG_GL_TEXTURES |
@@ -833,21 +822,12 @@ hkl_gui_3d_draw_aabb(const HklGui3D *self)
 /* } */
 
 gboolean
-hkl_gui_3d_drawingarea1_expose_cb(GtkWidget *drawing_area, GdkEventExpose *event, gpointer user_data)
+hkl_gui_3d_gl_area_render_cb(GtkGLArea *area,
+			     GdkGLContext *context,
+			     gpointer user_data)
 {
-	GtkAllocation alloc;
 	HklGui3D *self = HKL_GUI_3D(user_data);
 	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
-	GdkGLContext *gl_context = gtk_widget_get_gl_context(drawing_area);
-	GdkGLDrawable *gl_drawable = gtk_widget_get_gl_drawable(drawing_area);
-
-	/* Delimits the begining of the OpenGL execution. */
-	if (!gdk_gl_drawable_gl_begin(gl_drawable, gl_context))
-		g_assert_not_reached();
-
-	gtk_widget_get_allocation(drawing_area, &alloc);
-	glViewport(0,0, alloc.width, alloc.height);
-	priv->renderoptions.aspect = (gfloat)alloc.width / (gfloat)alloc.height;
 
 	hkl_gui_3d_draw_g3dmodel(self);
 	hkl_gui_3d_draw_selected(self);
@@ -856,58 +836,27 @@ hkl_gui_3d_drawingarea1_expose_cb(GtkWidget *drawing_area, GdkEventExpose *event
 		hkl_gui_3d_draw_aabb(self);
 	/* hkl_gui_3d_draw_bullet(self); */
 
-	/* swap buffer if we're using double-buffering */
-	if (gdk_gl_drawable_is_double_buffered(gl_drawable))
-		gdk_gl_drawable_swap_buffers(gl_drawable);
-	else {
-		glFlush();
-	}
-
-	/* Delimits the end of the OpenGL execution. */
-	gdk_gl_drawable_gl_end(gl_drawable);
-
-	return FALSE;
+	return TRUE;
 }
 
 gboolean
-hkl_gui_3d_drawingarea1_configure_event_cb(GtkWidget *drawing_area,
-					   GdkEventConfigure *event,
-					   gpointer user_data)
+hkl_gui_3d_gl_area_resize_cb(GtkGLArea *area,
+			     gint width,
+			     gint height,
+			     gpointer user_data)
 {
-	GtkAllocation alloc;
 	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
-	GdkGLContext *gl_context = gtk_widget_get_gl_context(drawing_area);
-	GdkGLDrawable *gl_drawable = gtk_widget_get_gl_drawable(drawing_area);
 
-	/* Delimits the begining of the OpenGL execution. */
-	if (!gdk_gl_drawable_gl_begin(gl_drawable, gl_context))
-		g_assert_not_reached();
+	glViewport(0, 0, width, height);
+	priv->renderoptions.aspect = (gfloat)width / (gfloat)height;
 
-	gtk_widget_get_allocation(drawing_area, &alloc);
-	glViewport(0,0, alloc.width, alloc.height);
-	priv->renderoptions.aspect = (gfloat)alloc.width / (gfloat)alloc.height;
-
-	/* Delimits the end of the OpenGL execution. */
-	gdk_gl_drawable_gl_end(gl_drawable);
-
-	return FALSE;
+	return TRUE;
 }
 
 gboolean
-hkl_gui_3d_idle_cb(gpointer user_data)
-{
-	/* update control data/params in this function if needed */
-	GtkWidget *drawing_area = GTK_WIDGET(user_data);
-
-	glarea_update(drawing_area);
-
-	return FALSE;
-}
-
-gboolean
-hkl_gui_3d_drawingarea1_button_press_event_cb(GtkWidget *drawing_area,
-					      GdkEventButton* event,
-					      gpointer user_data)
+hkl_gui_3d_gl_area_button_press_event_cb(GtkWidget *gl_area,
+					 GdkEventButton* event,
+					 gpointer user_data)
 {
 	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
 
@@ -924,14 +873,11 @@ hkl_gui_3d_drawingarea1_button_press_event_cb(GtkWidget *drawing_area,
 }
 
 gboolean
-hkl_gui_3d_drawingarea1_scroll_event_cb(GtkWidget *drawing_area,
-					GdkEventScroll *event,
-					gpointer user_data)
+hkl_gui_3d_gl_area_scroll_event_cb(GtkWidget *gl_area,
+				   GdkEventScroll *event,
+				   gpointer user_data)
 {
-	GtkAllocation alloc;
 	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
-
-	gtk_widget_get_allocation(drawing_area, &alloc);
 
 #define ZOOM_BY 10
 	if(event->direction == GDK_SCROLL_DOWN)
@@ -945,27 +891,29 @@ hkl_gui_3d_drawingarea1_scroll_event_cb(GtkWidget *drawing_area,
 	if(priv->renderoptions.zoom > 120)
 		priv->renderoptions.zoom = 120;
 
-	glarea_update(drawing_area);
+	/* queue a redraw on the GtkGLArea */
+	gtk_widget_queue_draw (gl_area);
 
 	return FALSE;
 }
 
 gboolean
-hkl_gui_3d_drawingarea1_motion_notify_event_cb(GtkWidget *drawing_area,
-					       GdkEventMotion* event,
-					       gpointer user_data)
+hkl_gui_3d_gl_area_motion_notify_event_cb(GtkWidget *gl_area,
+					  GdkEventMotion* event,
+					  gpointer user_data)
 {
 	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
 	GtkAllocation alloc;
 	gint x, y;
 	GdkModifierType state;
 
-	gtk_widget_get_allocation(drawing_area, &alloc);
+	gtk_widget_get_allocation(gl_area, &alloc);
 
-	if(event->is_hint)
-		gdk_window_get_pointer(event->window, &x, &y, &state);
-	else
-	{
+	if(event->is_hint){
+		gdk_window_get_device_position(event->window,
+					       event->device,
+					       &x, &y, &state);
+	}else{
 		x = event->x;
 		y = event->y;
 		state = event->state;
@@ -1006,8 +954,6 @@ hkl_gui_3d_drawingarea1_motion_notify_event_cb(GtkWidget *drawing_area,
 			/* gui_glade_status(priv, text); */
 			/* g_free(text); */
 		}
-
-		glarea_update(GTK_WIDGET(priv->drawingarea1));
 	}
 
 	/* middle mouse button */
@@ -1019,11 +965,12 @@ hkl_gui_3d_drawingarea1_motion_notify_event_cb(GtkWidget *drawing_area,
 			priv->renderoptions.zoom = 1;
 		if(priv->renderoptions.zoom > 120)
 			priv->renderoptions.zoom = 120;
-
-		glarea_update(GTK_WIDGET(priv->drawingarea1));
 	}
 	priv->mouse.beginx = x;
 	priv->mouse.beginy = y;
+
+	/* queue a redraw on the GtkGLArea */
+	gtk_widget_queue_draw (gl_area);
 
 	return FALSE;
 }
@@ -1081,7 +1028,7 @@ static void hkl_gui_3d_init (HklGui3D * self)
 
 	// widgets
 	get_object(builder, GTK_FRAME, priv, frame1);
-	get_object(builder, GTK_VBOX, priv, vbox1);
+	get_object(builder, GTK_BOX, priv, vbox1);
 	get_object(builder, GTK_TREE_VIEW, priv, treeview1);
 	get_object(builder, GTK_TOOL_BUTTON, priv, toolbutton1);
 	get_object(builder, GTK_TOOL_BUTTON, priv, toolbutton2);
@@ -1090,7 +1037,6 @@ static void hkl_gui_3d_init (HklGui3D * self)
 	get_object(builder, GTK_BUTTON, priv, button1);
 	get_object(builder, GTK_BUTTON, priv, button2);
 	get_object(builder, GTK_TREE_STORE, priv, treestore1);
-	get_object(builder, GTK_DRAWING_AREA, priv, drawingarea1);
 
 	gtk_builder_connect_signals (builder, self);
 
@@ -1100,30 +1046,26 @@ static void hkl_gui_3d_init (HklGui3D * self)
 	reset_3d(&priv->renderoptions);
 	priv->aabb = FALSE;
 
-	/* attache GL capability to drawingarea1 */
-	GdkGLConfig *gl_config = gdk_gl_config_new_by_mode(GDK_GL_MODE_RGBA |
-							   GDK_GL_MODE_DEPTH |
-							   GDK_GL_MODE_DOUBLE);
-	if (!gl_config)
-		g_assert_not_reached();
-	if (!gtk_widget_set_gl_capability(GTK_WIDGET(priv->drawingarea1), gl_config, NULL, TRUE,
-					  GDK_GL_RGBA_TYPE))
-		g_assert_not_reached();
+	/* attache the GtkGLArea widget */
+	priv->gl_area = GTK_GL_AREA(gtk_gl_area_new());
+	gtk_gl_area_set_has_depth_buffer(priv->gl_area, TRUE);
+	gtk_box_pack_end(priv->vbox1, GTK_WIDGET(priv->gl_area), TRUE, TRUE, 0);
 
-	gtk_widget_set_can_focus(GTK_WIDGET(priv->drawingarea1), TRUE);
-	gtk_widget_add_events(GTK_WIDGET(priv->drawingarea1),
+	/* add events to the GtkGLArea */
+	gtk_widget_set_can_focus(GTK_WIDGET(priv->gl_area), TRUE);
+	gtk_widget_add_events(GTK_WIDGET(priv->gl_area),
 			      GDK_BUTTON1_MOTION_MASK |
 			      GDK_BUTTON2_MOTION_MASK |
 			      GDK_BUTTON_PRESS_MASK |
 			      GDK_VISIBILITY_NOTIFY_MASK);
 
 	/* connect the GL callbacks */
-	const gdouble TIMEOUT_PERIOD = 1000 / 60;
-	g_timeout_add(TIMEOUT_PERIOD, hkl_gui_3d_idle_cb, priv->drawingarea1);
-	g_signal_connect(priv->drawingarea1, "expose-event",
-			 G_CALLBACK(hkl_gui_3d_drawingarea1_expose_cb), self);
-	g_signal_connect(priv->drawingarea1, "button-press-event",
-			 G_CALLBACK(hkl_gui_3d_drawingarea1_button_press_event_cb), self);
-	g_signal_connect(priv->drawingarea1, "motion-notify-event",
-			 G_CALLBACK(hkl_gui_3d_drawingarea1_motion_notify_event_cb), self);
+	g_signal_connect(priv->gl_area, "render",
+			 G_CALLBACK(hkl_gui_3d_gl_area_render_cb), self);
+	g_signal_connect(priv->gl_area, "resize",
+			 G_CALLBACK(hkl_gui_3d_gl_area_resize_cb), self);
+	g_signal_connect(priv->gl_area, "button-press-event",
+			 G_CALLBACK(hkl_gui_3d_gl_area_button_press_event_cb), self);
+	g_signal_connect(priv->gl_area, "motion-notify-event",
+			 G_CALLBACK(hkl_gui_3d_gl_area_motion_notify_event_cb), self);
 }

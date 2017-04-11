@@ -42,12 +42,12 @@ AM_CFLAGS += \
 	-I$(top_srcdir)/hkl3d/bullet/src \
 	-DHKL3D \
 	$(G3D_CFLAGS) \
-	$(GTKGLEXT_CFLAGS) \
+	$(GLU_CFLAGS) \
 	$(BULLET_CFLAGS)
 
 AM_LDFLAGS += -lstdc++\
 	$(G3D_LIBS) \
-	$(GTKGLEXT_LIBS) \
+	$(GLU_LIBS) \
 	$(BULLET_LIBS)
 
 # force linkage using g++ for libhkl3d.la

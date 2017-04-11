@@ -73,10 +73,12 @@ static void gl_init(void)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
+	glEnable(GL_CULL_FACE);
+
+	/* glClearDepth(1.0f); */
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_DEPTH_TEST);
-
 
 #if 0
 	glEnable(GL_LINE_SMOOTH);
