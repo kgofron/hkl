@@ -933,8 +933,6 @@ set_up_info_bar(HklGuiWindow *self)
 	if (priv->info_bar)
 		return;
 
-	gtk_info_bar_add_button (priv->info_bar,
-				 "_OK", GTK_RESPONSE_OK);
 	g_signal_connect (priv->info_bar, "response",
 			  G_CALLBACK (gtk_widget_hide), NULL);
 }
