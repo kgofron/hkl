@@ -835,8 +835,8 @@
                             <property name="spacing">2</property>
                             <child>
                               <object class="GtkInfoBar" id="info_bar">
-                                <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <signal name="response" handler="gtk_widget_hide" swapped="no"/>
                                 <child internal-child="action_area">
                                   <object class="GtkButtonBox">
                                     <property name="can_focus">False</property>

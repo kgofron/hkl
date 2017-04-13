@@ -921,22 +921,6 @@ set_up_tree_view_solutions (HklGuiWindow* self)
 	update_solutions (self);
 }
 
-void
-set_up_info_bar(HklGuiWindow *self)
-{
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
-
-	g_return_if_fail (self != NULL);
-
-	/* set up info bar until we can use glade for this purpose or
-	 * switch to gtk3 */
-	if (priv->info_bar)
-		return;
-
-	g_signal_connect (priv->info_bar, "response",
-			  G_CALLBACK (gtk_widget_hide), NULL);
-}
-
 static void
 set_up_lambda(HklGuiWindow *self)
 {
@@ -1019,7 +1003,6 @@ hkl_gui_window_combobox1_changed_cb(GtkComboBox *combobox, gpointer *user_data)
 		set_up_tree_view_axes(self);
 		set_up_tree_view_pseudo_axes(self);
 		set_up_tree_view_solutions(self);
-		set_up_info_bar(self);
 		set_up_3D(self);
 	}
 }
