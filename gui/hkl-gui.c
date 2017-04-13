@@ -272,7 +272,6 @@ struct _HklGuiWindowPrivate {
 	GtkToolButton* toolbutton_affiner;
 	GtkStatusbar* statusbar;
 	GtkMenuItem* menuitem5;
-	GtkBox* box_info_bar; /* fake for the infor bar */
 	GtkBox* vbox7;
 	GtkBox* vbox2;
 	GtkDialog* dialog1;
@@ -473,7 +472,7 @@ hkl_gui_window_get_widgets_and_objects_from_ui (HklGuiWindow* self)
 
 	get_object(builder, GTK_BOX, priv, vbox7);
 	get_object(builder, GTK_BOX, priv, vbox2);
-	get_object(builder, GTK_BOX, priv, box_info_bar);
+	get_object(builder, GTK_INFO_BAR, priv, info_bar);
 
 	get_object(builder, GTK_DIALOG, priv, dialog1);
 
@@ -933,9 +932,6 @@ set_up_info_bar(HklGuiWindow *self)
 	if (priv->info_bar)
 		return;
 
-	priv->info_bar = GTK_INFO_BAR(gtk_info_bar_new ());
-	gtk_widget_set_no_show_all (GTK_WIDGET(priv->info_bar), TRUE);
-
 	priv->info_message = GTK_LABEL(gtk_label_new (""));
 	gtk_widget_show (GTK_WIDGET(priv->info_message));
 
@@ -946,10 +942,6 @@ set_up_info_bar(HklGuiWindow *self)
 				 "_OK", GTK_RESPONSE_OK);
 	g_signal_connect (priv->info_bar, "response",
 			  G_CALLBACK (gtk_widget_hide), NULL);
-
-	gtk_box_pack_start(GTK_BOX(priv->box_info_bar),
-			   GTK_WIDGET(priv->info_bar),
-			   TRUE, TRUE, 0);
 }
 
 static void
