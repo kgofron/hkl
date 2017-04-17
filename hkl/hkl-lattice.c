@@ -442,7 +442,6 @@ int hkl_lattice_set(HklLattice *self,
  * @gamma: (out caller-allocates):
  *
  * get the lattice parameters
- * Return value: all the parameters
  **/
 void hkl_lattice_get(const HklLattice *self,
 		     double *a, double *b, double *c,
@@ -528,9 +527,6 @@ int hkl_lattice_get_1_B(const HklLattice *self, HklMatrix *B)
 	double d;
 	double e;
 	double f;
-
-	if(!self || !B)
-		return FALSE;
 
 	/*
 	 * first compute the B matrix

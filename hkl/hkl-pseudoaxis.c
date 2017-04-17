@@ -362,8 +362,6 @@ const darray_string *hkl_engine_parameters_names_get(const HklEngine *self)
  * @unit_type: the unit type (default or user) of the returned value
  *
  * Get the engine parameters values
- *
- * return value: TRUE if succeded or FALSE otherwise.
  **/
 void hkl_engine_parameters_values_get(const HklEngine *self,
 				      double values[], size_t n_values,
