@@ -43,6 +43,7 @@ hkl_c_sources = \
 	hkl-quaternion.c \
 	hkl-sample.c \
 	hkl-source.c \
+	hkl-trajectory.c \
 	hkl-unit.c \
 	hkl-vector.c
 
@@ -69,6 +70,7 @@ hkl_private_h_sources = \
 	hkl-quaternion-private.h \
 	hkl-sample-private.h \
 	hkl-source-private.h \
+	hkl-trajectory-private.h \
 	hkl-unit-private.h \
 	hkl-vector-private.h
 
