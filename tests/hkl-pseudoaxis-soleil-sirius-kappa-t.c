@@ -92,14 +92,14 @@ static void stability(void)
 	int res = TRUE;
 	HklEngineList *engines;
 	HklGeometry *geometry;
-	HklGeometryList *geometries;
+	HklGeometryList *geometries = NULL;
 	HklDetector *detector;
 	HklSample *sample;
 	HklTrajectoryResult *trajectory;
 	HklTrajectoryStats *stats;
 	static double from[] = {0, 0, 1};
 	static double to[] = {0, 0, 6};
-	static int n=10;
+	static int n=1001;
 
 	static struct Sample gaas = {
 		.name = "GaAs",
@@ -123,6 +123,7 @@ static void stability(void)
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	for(i=0; i<n; ++i){
+		const HklGeometryListItem *solution;
 		double h = (to[0] - from[0]) / (n - 1) * i + from[0];
 		double k = (to[1] - from[1]) / (n - 1) * i + from[1];
 		double l = (to[2] - from[2]) / (n - 1) * i + from[2];
@@ -132,6 +133,8 @@ static void stability(void)
 
 		geometries = solve(engines, econfig);
 		hkl_trajectory_stats_add(stats, geometries);
+		solution = hkl_geometry_list_items_first_get(geometries);
+		hkl_engine_list_select_solution(engines, solution);
 
 		res &= DIAG((geometries != NULL));
 
