@@ -85,10 +85,10 @@ dist-hook:
 ## Update the ccan library
 
 CCAN_PUBLIC_MODULES=darray
-CCAN_PRIVATE_MODULES=array_size container_of autodata list
+CCAN_PRIVATE_MODULES=array_size container_of autodata list generator
 CCAN_LOCAL_REPO=/tmp/ccan
 CCAN_LOCAL_EXTRACT=/tmp/ccan.tmp
-CCAN_URL=git://git.ozlabs.org/~ccan/ccan
+CCAN_URL=https://github.com/rustyrussell/ccan.git
 CCAN_CREATE_TREE=rm -rf $(CCAN_LOCAL_EXTRACT) && cd $(CCAN_LOCAL_REPO) && tools/create-ccan-tree -b automake $(CCAN_LOCAL_EXTRACT)
 CCAN_DEST=$(top_srcdir)/hkl/
 CCAN_TMP_DEST=/tmp/ccan.next
@@ -107,6 +107,8 @@ ccan-update:
 	@rsync -av --exclude=Makefile.am $(CCAN_LOCAL_EXTRACT)/* $(CCAN_TMP_DEST)
 	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '*.[ch]' | xargs sed -i -e 's,ccan/,hkl/ccan/,'
 	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '*.[ch]' | xargs sed -i -e 's,"config.h",<hkl/ccan/ccan_config.h>,'
+	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '_info' | xargs rm -f
+	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name 'test' | xargs rm -rf
 
 	@$(CCAN_CREATE_TREE) $(CCAN_PUBLIC_MODULES)
 
@@ -143,5 +145,3 @@ ccan-update:
 	@echo purge the previous ccan directory
 	cd $(CCAN_DEST) && rm -rf licenses && find ccan -mindepth 1 -type d \! -name ".*" | xargs rm -rf
 	rsync -av $(CCAN_TMP_DEST)/* $(top_srcdir)/hkl
-
-

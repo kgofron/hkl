@@ -20,10 +20,12 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 #include "hkl.h"
+#include "hkl/ccan/generator/generator.h"
 #include <tap/basic.h>
 #include <tap/float.h>
 #include <tap/hkl-tap.h>
 
+#include "hkl-geometry-private.h"
 #include "hkl-trajectory-private.h"
 
 /* Mode */
@@ -64,7 +66,18 @@ struct Engine {
 
 #define EngineHkl(h_, k_, l_, mode_) {.tag=ENGINE_HKL, .hkl={h_, k_, l_, mode_}}
 
-static HklGeometryList *solve(HklEngineList *engines, struct Engine econfig)
+static void Engine_fprintf(FILE *f, struct Engine engine)
+{
+	switch(engine.tag){
+	case ENGINE_HKL:
+	{
+		fprintf(f, "hkl: %f %f %f\n", engine.hkl.h, engine.hkl.k, engine.hkl.l);
+	}
+	break;
+	}
+}
+
+static HklGeometryList *Engine_solve(HklEngineList *engines, struct Engine econfig)
 {
 	HklGeometryList *geometries;
 
@@ -84,22 +97,103 @@ static HklGeometryList *solve(HklEngineList *engines, struct Engine econfig)
 
 	return geometries;
 }
+
+/* HklTrajectory */
+enum trajectory_e {
+	TRAJECTORY_HKL_FROM_TO,
+};
+
+struct Trajectory {
+	enum trajectory_e tag;
+	union {
+		struct {double h0; double k0; double l0; double h1; double k1; double l1; uint n;} hklfromto;
+	};
+};
+
+#define TrajectoryHklFromTo(h0_, k0_, l0_, h1_, k1_, l1_, n_) {.tag=TRAJECTORY_HKL_FROM_TO, .hklfromto={h0_, k0_, l0_, h1_, k1_, l1_, n_}}
+
+generator_def_static(trajectory_gen, struct Engine, struct Trajectory, tconfig)
+{
+	switch(tconfig.tag){
+	case TRAJECTORY_HKL_FROM_TO:
+	{
+		uint i;
+		double dh = (tconfig.hklfromto.h1 - tconfig.hklfromto.h0) / (tconfig.hklfromto.n - 1);
+		double dk = (tconfig.hklfromto.k1 - tconfig.hklfromto.k0) / (tconfig.hklfromto.n - 1);
+		double dl = (tconfig.hklfromto.l1 - tconfig.hklfromto.l0) / (tconfig.hklfromto.n - 1);
+		for(i=0; i<tconfig.hklfromto.n; ++i){
+			double h = i * dh + tconfig.hklfromto.h0;
+			double k = i * dk + tconfig.hklfromto.k0;
+			double l = i * dl + tconfig.hklfromto.l0;
+
+			struct Engine econfig = EngineHkl(h, k, l, ModeHklBissectorVertical);
+			generator_yield(econfig);
+		}
+	}
+	break;
+	}
+}
+
+static uint Trajectory_len(struct Trajectory tconfig)
+{
+	uint n = 0;
+	switch(tconfig.tag){
+	case TRAJECTORY_HKL_FROM_TO:
+	{
+		n = tconfig.hklfromto.n;
+	}
+	break;
+	}
+}
+
+static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geometry gconfig, struct Sample sconfig)
+{
+	const struct Engine *econfig;
+	HklGeometryList *solutions = hkl_geometry_list_new();
+	generator_t(struct Engine) gen = trajectory_gen(tconfig);
+
+	HklGeometry *geometry = newGeometry(gconfig);
+	HklEngineList *engines = newEngines(gconfig);
+	HklSample *sample = newSample(sconfig);
+	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
+	HklTrajectoryStats *stats = hkl_trajectory_stats_new(Trajectory_len(tconfig));
+
+	hkl_engine_list_init(engines, geometry, detector, sample);
+
+	while((econfig = generator_next(gen)) != NULL){
+		const HklGeometryListItem *solution;
+
+		Engine_fprintf(stdout, *econfig);
+
+		HklGeometryList *geometries = Engine_solve(engines, *econfig);
+		hkl_trajectory_stats_add(stats, geometries);
+		solution = hkl_geometry_list_items_first_get(geometries);
+		hkl_engine_list_select_solution(engines, solution);
+
+		hkl_geometry_list_add(solutions,
+				      hkl_geometry_list_item_geometry_get(solution));
+		/* hkl_geometry_list_fprintf(stdout, geometries); */
+		hkl_geometry_list_free(geometries);
+	}
+
+	hkl_trajectory_stats_fprintf(stdout, stats);
+
+	hkl_trajectory_stats_free(stats);
+	hkl_engine_list_free(engines);
+	hkl_detector_free(detector);
+	hkl_sample_free(sample);
+	hkl_geometry_free(geometry);
+
+	return solutions;
+}
+
 /* tests */
 
 static void stability(void)
 {
 	int i;
 	int res = TRUE;
-	HklEngineList *engines;
-	HklGeometry *geometry;
-	HklGeometryList *geometries = NULL;
-	HklDetector *detector;
-	HklSample *sample;
-	HklTrajectoryResult *trajectory;
-	HklTrajectoryStats *stats;
-	static double from[] = {0, 0, 1};
-	static double to[] = {0, 0, 6};
-	static int n=1001;
+	HklGeometryList *solutions;
 
 	static struct Sample gaas = {
 		.name = "GaAs",
@@ -109,48 +203,18 @@ static void stability(void)
 		.uz = -159.91372 * HKL_DEGTORAD,
 	};
 
-	static struct Geometry gconfig = \
+	static struct Geometry gconfig =	\
 		SoleilSiriusKappa(1.458637,
 				  -0.5193202, 64.7853160, 133.5621380, -80.9690000, -0.0223369, 30.0000299);
 
-	geometry = newGeometry(gconfig);
-	engines = newEngines(gconfig);
-	sample = newSample(gaas);
-	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
-	trajectory = hkl_trajectory_result_new();
-	stats = hkl_trajectory_stats_new(n);
+	static struct Trajectory tconfig = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
 
-	hkl_engine_list_init(engines, geometry, detector, sample);
-
-	for(i=0; i<n; ++i){
-		const HklGeometryListItem *solution;
-		double h = (to[0] - from[0]) / (n - 1) * i + from[0];
-		double k = (to[1] - from[1]) / (n - 1) * i + from[1];
-		double l = (to[2] - from[2]) / (n - 1) * i + from[2];
-
-		fprintf(stdout, "hkl: %f %f %f\n", h, k, l);
-		struct Engine econfig = EngineHkl(h, k, l, ModeHklBissectorVertical);
-
-		geometries = solve(engines, econfig);
-		hkl_trajectory_stats_add(stats, geometries);
-		solution = hkl_geometry_list_items_first_get(geometries);
-		hkl_engine_list_select_solution(engines, solution);
-
-		res &= DIAG((geometries != NULL));
-
-		/* hkl_geometry_list_fprintf(stdout, geometries); */
-		hkl_geometry_list_free(geometries);
-	}
-
-	hkl_trajectory_stats_fprintf(stdout, stats);
+	solutions = Trajectory_solve(tconfig, gconfig, gaas);
+	res &= DIAG(NULL != solutions);
 
 	ok(res == TRUE, __func__);
 
-	hkl_trajectory_stats_free(stats);
-	hkl_engine_list_free(engines);
-	hkl_detector_free(detector);
-	hkl_sample_free(sample);
-	hkl_geometry_free(geometry);
+	hkl_geometry_list_free(solutions);
 }
 
 int main(void)

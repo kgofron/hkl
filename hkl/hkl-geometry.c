@@ -928,7 +928,7 @@ void hkl_geometry_list_free(HklGeometryList *self)
  * set the geometry axes and copy it to the right geometries. We do
  * not gives the x len as it is equal to the self->axes_len.
  **/
-void hkl_geometry_list_add(HklGeometryList *self, HklGeometry *geometry)
+void hkl_geometry_list_add(HklGeometryList *self, const HklGeometry *geometry)
 {
 	HklGeometryListItem *item;
 

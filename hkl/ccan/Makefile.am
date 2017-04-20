@@ -7,24 +7,32 @@ ccan_config.h: configurator
 noinst_LTLIBRARIES=libccan.la
 libccan_la_SOURCES = \
 	ccan_config.h \
-	array_size/array_size.h \
-	noerr/noerr.c \
+	list/list.h \
+	list/list.c \
 	noerr/noerr.h \
-	check_type/check_type.h \
-	str/str.h \
+	noerr/noerr.c \
+	darray/darray.h \
+	container_of/container_of.h \
+	typesafe_cb/typesafe_cb.h \
 	str/str_debug.h \
+	str/str.h \
 	str/str.c \
 	str/debug.c \
-	darray/darray.h \
-	compiler/compiler.h \
-	autodata/autodata.h \
-	autodata/autodata.c \
-	container_of/container_of.h \
-	build_assert/build_assert.h \
-	list/list.c \
-	list/list.h \
+	ptrint/ptrint.h \
+	generator/generator.h \
+	generator/generator.c \
+	cppmagic/cppmagic.h \
+	check_type/check_type.h \
+	array_size/array_size.h \
+	ptr_valid/ptr_valid.h \
 	ptr_valid/ptr_valid.c \
-	ptr_valid/ptr_valid.h
+	autodata/autodata.c \
+	autodata/autodata.h \
+	alignof/alignof.h \
+	build_assert/build_assert.h \
+	compiler/compiler.h \
+	coroutine/coroutine.c \
+	coroutine/coroutine.h
 
 ccanincludedir=$(includedir)/hkl-@VMAJ@/hkl/ccan
 nobase_ccaninclude_HEADERS= \

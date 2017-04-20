@@ -137,7 +137,7 @@ extern HklGeometryList *hkl_geometry_list_new(void);
 
 extern HklGeometryList *hkl_geometry_list_new_copy(const HklGeometryList *self);
 
-extern void hkl_geometry_list_add(HklGeometryList *self, HklGeometry *geometry);
+extern void hkl_geometry_list_add(HklGeometryList *self, const HklGeometry *geometry);
 
 extern void hkl_geometry_list_reset(HklGeometryList *self);
 
