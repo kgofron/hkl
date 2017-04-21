@@ -1010,7 +1010,10 @@ git clone git://repo.or.cz/hkl.git
     another solution which is at around 180° of the other solutions.
 
    #+CAPTION: plot the [0,0,1] -> [0,0,6] trajectory from two different starting point and different step size
-    [[./figures/sirius.svg]]
+    [[./figures/sirius-s.svg]]
+
+   #+CAPTION: plot the [0,0,1] -> [0,0,6] trajectory from two different starting point and different step size
+    [[./figures/sirius-m.svg]]
 
 *** TODO [0/2] PetraIII
 **** TODO computation problem

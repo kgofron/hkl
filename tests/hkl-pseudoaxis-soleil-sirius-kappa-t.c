@@ -170,7 +170,7 @@ static uint Trajectory_len(struct Trajectory tconfig)
 	return n;
 }
 
-static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geometry gconfig, struct Sample sconfig)
+static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geometry gconfig, struct Sample sconfig, uint move)
 {
 	const struct Engine *econfig;
 	HklGeometryList *solutions = hkl_geometry_list_new();
@@ -192,7 +192,8 @@ static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geome
 		HklGeometryList *geometries = Engine_solve(engines, *econfig);
 		hkl_trajectory_stats_add(stats, geometries);
 		solution = hkl_geometry_list_items_first_get(geometries);
-		hkl_engine_list_select_solution(engines, solution);
+		if(move)
+			hkl_engine_list_select_solution(engines, solution);
 
 		hkl_geometry_list_add(solutions,
 				      hkl_geometry_list_item_geometry_get(solution));
@@ -276,24 +277,46 @@ static void stability(void)
 		SoleilSiriusKappa(1.458637,
 				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
 
+	/* move between each step */
 	static struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11);
-	solutions = Trajectory_solve(tconfig1, gconfig, gaas);
-	GeometryList_save_as_dat("../Documentation/figures/s1-11.dat", tconfig1, solutions);
+	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
+	GeometryList_save_as_dat("../Documentation/figures/m1-11.dat", tconfig1, solutions);
 	res &= DIAG(NULL != solutions);
 	hkl_geometry_list_free(solutions);
 
-	solutions = Trajectory_solve(tconfig1, gconfig, gaas);
-	GeometryList_save_as_dat("../Documentation/figures/s2-11.dat", tconfig1, solutions);
+	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
+	GeometryList_save_as_dat("../Documentation/figures/m2-11.dat", tconfig1, solutions);
 	res &= DIAG(NULL != solutions);
 	hkl_geometry_list_free(solutions);
 
 	static struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
-	solutions = Trajectory_solve(tconfig2, gconfig, gaas);
+	solutions = Trajectory_solve(tconfig2, gconfig, gaas, TRUE);
+	GeometryList_save_as_dat("../Documentation/figures/m1-101.dat", tconfig2, solutions);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
+
+	solutions = Trajectory_solve(tconfig2, gconfig2, gaas, TRUE);
+	GeometryList_save_as_dat("../Documentation/figures/m2-101.dat", tconfig2, solutions);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
+
+	/* do not move between each steps */
+	solutions = Trajectory_solve(tconfig1, gconfig, gaas, FALSE);
+	GeometryList_save_as_dat("../Documentation/figures/s1-11.dat", tconfig1, solutions);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
+
+	solutions = Trajectory_solve(tconfig1, gconfig, gaas, FALSE);
+	GeometryList_save_as_dat("../Documentation/figures/s2-11.dat", tconfig1, solutions);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
+
+	solutions = Trajectory_solve(tconfig2, gconfig, gaas, FALSE);
 	GeometryList_save_as_dat("../Documentation/figures/s1-101.dat", tconfig2, solutions);
 	res &= DIAG(NULL != solutions);
 	hkl_geometry_list_free(solutions);
 
-	solutions = Trajectory_solve(tconfig2, gconfig2, gaas);
+	solutions = Trajectory_solve(tconfig2, gconfig2, gaas, FALSE);
 	GeometryList_save_as_dat("../Documentation/figures/s2-101.dat", tconfig2, solutions);
 	res &= DIAG(NULL != solutions);
 	hkl_geometry_list_free(solutions);
