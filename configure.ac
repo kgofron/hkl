@@ -208,6 +208,7 @@ AM_COND_IF([CONTRIB],
 
 AC_CONFIG_FILES([Makefile
 		 hkl/Makefile
+		 hkl/api2/Makefile
 		 hkl/ccan/Makefile
 		 hkl.pc
 		 hkl3d/Makefile

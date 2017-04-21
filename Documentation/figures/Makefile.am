@@ -4,11 +4,48 @@
 .asy.pdf:
 	-@ASY@ -config "" -render=0 -f pdf -noprc -o $@ $<
 
+
+AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/hkl \
+	$(GLIB_CFLAGS) \
+	$(GSL_CFLAGS)
+
+LDADD = $(top_builddir)/hkl/libhkl.la \
+	$(top_builddir)/hkl/api2/libhkl2.la \
+	$(GLIB_LIBS) \
+	$(GSL_LIBS)
+
+noinst_PROGRAMS = sirius
+
+SIRIUSFILES=s1-11.dat s2-11.dat s1-101.dat s2-101.dat m1-11.dat m2-11.dat m1-101.dat m2-101.dat
+
+sirius.stamp: sirius
+	$(builddir)/sirius
+
+$(SIRIUSFILES): sirius.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+		trap 'rm -rf sirius.lock sirius.stamp' 1 2 13 15; \
+		## mkdir is a portable test-and-set
+		if mkdir sirius.lock 2>/dev/null; then \
+		## This code is being executed by the first process.
+			rm -f sirius.stamp; \
+			$(MAKE) $(AM_MAKEFLAGS) sirius.stamp; \
+		else \
+		## This code is being executed by the follower processes.
+		## Wait until the first process is done.
+			while test -d sirius.lock; do sleep 1; done; \
+		## Succeed if and only if the first process succeeded.
+			test -f sirius.stamp; exit $$?; \
+		fi; \
+	fi
+
 sirius-s.svg: sirius-s.gnuplot s1-11.dat s2-11.dat s1-101.dat s2-101.dat
-		-@GNUPLOT@ sirius-s.gnuplot
+		-@GNUPLOT@ $(srcdir)/sirius-s.gnuplot
 
 sirius-m.svg: sirius-m.gnuplot m1-11.dat m2-11.dat m1-101.dat m2-101.dat
-		-@GNUPLOT@ sirius-m.gnuplot
+		-@GNUPLOT@ $(srcdir)/sirius-m.gnuplot
 
 dist_noinst_DATA = \
 	3S+1D.png \
@@ -32,6 +69,8 @@ dist_noinst_DATA = \
 	qper_qpar.png \
 	sirius-s.svg \
 	sirius-m.svg
+
+CLEANFILES = $(SIRIUSFILES) sirius-s.svg sirius-m.svg
 
 MAINTAINERCLEANFILES = $(dist_noinst_DATA)
 
@@ -59,3 +98,9 @@ EXTRA_DIST = \
 	qper_qpar.asy \
 	sirius-s.gnuplot \
 	sirius-m.gnuplot
+
+# Support for GNU Flymake, in Emacs.
+
+check-syntax: AM_CFLAGS += -fsyntax-only -pipe
+check-syntax:
+	test -z "$(CHK_SOURCES)" || $(COMPILE) $(CHK_SOURCES)

@@ -19,19 +19,55 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
-#include <tap/basic.h>
-#include <tap/float.h>
-#include <tap/hkl-tap.h>
-
+#include "hkl/api2/hkl2.h"
+#include "hkl/ccan/array_size/array_size.h"
 #include "hkl/ccan/generator/generator.h"
 #include "hkl-geometry-private.h"
 #include "hkl-trajectory-private.h"
 
-/* tests */
-
-static void stability(void)
+static void hkl_geometry_save_as_dat(FILE *f, const HklGeometry *self)
 {
-	int res = TRUE;
+	HklParameter **axis;
+	darray_foreach(axis, self->axes){
+		double value = hkl_parameter_value_get(*axis, HKL_UNIT_USER);
+		fprintf(f, " % 18.15f", value);
+	}
+}
+
+static void GeometryList_save_as_dat(const char *filename,  const struct Trajectory trajectory, const HklGeometryList *geometries)
+{
+	HklParameter **axis;
+	const HklGeometryListItem *item;
+	const struct Engine *econfig;
+	generator_t(struct Engine) gen = trajectory_gen(trajectory);
+	FILE *f = fopen(filename, "w+");
+
+	/* print the header */
+	econfig = generator_next(gen);
+	fprintf(f, "#");
+	Engine_header(f, *econfig);
+
+	item = hkl_geometry_list_items_first_get(geometries);
+	darray_foreach(axis, item->geometry->axes){
+		fprintf(f, "%19s", (*axis)->name);
+	}
+
+	/* save the first point */
+	fprintf(f, "\n");
+	Engine_save_as_dat(f, *econfig);
+	hkl_geometry_save_as_dat(f, item->geometry);
+
+	while((econfig = generator_next(gen)) != NULL){
+		fprintf(f, "\n");
+		Engine_save_as_dat(f, *econfig);
+		item = hkl_geometry_list_items_next_get(geometries, item);
+		hkl_geometry_save_as_dat(f, item->geometry);
+	}
+	fclose(f);
+}
+
+int main(void)
+{
 	HklGeometryList *solutions;
 
 	static struct Sample gaas = {
@@ -53,48 +89,38 @@ static void stability(void)
 	/* move between each step */
 	static struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11);
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("m1-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("m2-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
 	static struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
 	solutions = Trajectory_solve(tconfig2, gconfig, gaas, TRUE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("m1-101.dat", tconfig2, solutions);
 	hkl_geometry_list_free(solutions);
 
 	solutions = Trajectory_solve(tconfig2, gconfig2, gaas, TRUE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("m2-101.dat", tconfig2, solutions);
 	hkl_geometry_list_free(solutions);
 
 	/* do not move between each steps */
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, FALSE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("s1-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, FALSE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("s2-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
 	solutions = Trajectory_solve(tconfig2, gconfig, gaas, FALSE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("s1-101.dat", tconfig2, solutions);
 	hkl_geometry_list_free(solutions);
 
 	solutions = Trajectory_solve(tconfig2, gconfig2, gaas, FALSE);
-	res &= DIAG(NULL != solutions);
+	GeometryList_save_as_dat("s2-101.dat", tconfig2, solutions);
 	hkl_geometry_list_free(solutions);
-
-	ok(res == TRUE, __func__);
-
-}
-
-int main(void)
-{
-	plan(1);
-
-	stability();
 
 	return 0;
 }

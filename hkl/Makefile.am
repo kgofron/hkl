@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS = ccan
+SUBDIRS = ccan . api2
 
 AM_LDFLAGS = \
 	-no-undefined -version-info 5:0:0 \
