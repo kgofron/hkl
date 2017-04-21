@@ -140,6 +140,8 @@ AM_COND_IF([HKL_DOC],
 	    AC_PATH_PROG([ASY], [asy], [echo])
 	    dnl *** emacs ***
 	    AC_PATH_PROG([EMACS], [emacs], [no])
+	    dnl *** gnuplot ***
+	    AC_PATH_PROG([GNUPLOT], [gnuplot], [echo])
 	   ])
 
 dnl *** gtk-doc ***

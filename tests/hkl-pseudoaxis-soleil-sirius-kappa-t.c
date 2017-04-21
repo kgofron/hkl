@@ -77,6 +77,28 @@ static void Engine_fprintf(FILE *f, struct Engine engine)
 	}
 }
 
+static void Engine_header(FILE *f, const struct Engine engine)
+{
+	switch(engine.tag){
+	case ENGINE_HKL:
+	{
+		fprintf(f, "h k l");
+	}
+	break;
+	}
+}
+
+static void Engine_save_as_dat(FILE *f, const struct Engine engine)
+{
+	switch(engine.tag){
+	case ENGINE_HKL:
+	{
+		fprintf(f, "%f %f %f", engine.hkl.h, engine.hkl.k, engine.hkl.l);
+	}
+	break;
+	}
+}
+
 static HklGeometryList *Engine_solve(HklEngineList *engines, struct Engine econfig)
 {
 	HklGeometryList *geometries;
@@ -99,6 +121,7 @@ static HklGeometryList *Engine_solve(HklEngineList *engines, struct Engine econf
 }
 
 /* HklTrajectory */
+
 enum trajectory_e {
 	TRAJECTORY_HKL_FROM_TO,
 };
@@ -118,10 +141,10 @@ generator_def_static(trajectory_gen, struct Engine, struct Trajectory, tconfig)
 	case TRAJECTORY_HKL_FROM_TO:
 	{
 		uint i;
-		double dh = (tconfig.hklfromto.h1 - tconfig.hklfromto.h0) / (tconfig.hklfromto.n - 1);
-		double dk = (tconfig.hklfromto.k1 - tconfig.hklfromto.k0) / (tconfig.hklfromto.n - 1);
-		double dl = (tconfig.hklfromto.l1 - tconfig.hklfromto.l0) / (tconfig.hklfromto.n - 1);
-		for(i=0; i<tconfig.hklfromto.n; ++i){
+		double dh = (tconfig.hklfromto.h1 - tconfig.hklfromto.h0) / (tconfig.hklfromto.n);
+		double dk = (tconfig.hklfromto.k1 - tconfig.hklfromto.k0) / (tconfig.hklfromto.n);
+		double dl = (tconfig.hklfromto.l1 - tconfig.hklfromto.l0) / (tconfig.hklfromto.n);
+		for(i=0; i<tconfig.hklfromto.n + 1; ++i){
 			double h = i * dh + tconfig.hklfromto.h0;
 			double k = i * dk + tconfig.hklfromto.k0;
 			double l = i * dl + tconfig.hklfromto.l0;
@@ -140,10 +163,11 @@ static uint Trajectory_len(struct Trajectory tconfig)
 	switch(tconfig.tag){
 	case TRAJECTORY_HKL_FROM_TO:
 	{
-		n = tconfig.hklfromto.n;
+		n = tconfig.hklfromto.n + 1;
 	}
 	break;
 	}
+	return n;
 }
 
 static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geometry gconfig, struct Sample sconfig)
@@ -163,7 +187,7 @@ static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geome
 	while((econfig = generator_next(gen)) != NULL){
 		const HklGeometryListItem *solution;
 
-		Engine_fprintf(stdout, *econfig);
+		/* Engine_fprintf(stdout, *econfig); */
 
 		HklGeometryList *geometries = Engine_solve(engines, *econfig);
 		hkl_trajectory_stats_add(stats, geometries);
@@ -176,7 +200,7 @@ static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geome
 		hkl_geometry_list_free(geometries);
 	}
 
-	hkl_trajectory_stats_fprintf(stdout, stats);
+	/* hkl_trajectory_stats_fprintf(stdout, stats); */
 
 	hkl_trajectory_stats_free(stats);
 	hkl_engine_list_free(engines);
@@ -185,6 +209,47 @@ static HklGeometryList *Trajectory_solve(struct Trajectory tconfig, struct Geome
 	hkl_geometry_free(geometry);
 
 	return solutions;
+}
+
+static void hkl_geometry_save_as_dat(FILE *f, const HklGeometry *self)
+{
+	HklParameter **axis;
+	darray_foreach(axis, self->axes){
+		double value = hkl_parameter_value_get(*axis, HKL_UNIT_USER);
+		fprintf(f, " % 18.15f", value);
+	}
+}
+
+static void GeometryList_save_as_dat(const char *filename,  const struct Trajectory trajectory, const HklGeometryList *geometries)
+{
+	HklParameter **axis;
+	const HklGeometryListItem *item;
+	const struct Engine *econfig;
+	generator_t(struct Engine) gen = trajectory_gen(trajectory);
+	FILE *f = fopen(filename, "w+");
+
+	/* print the header */
+	econfig = generator_next(gen);
+	fprintf(f, "#");
+	Engine_header(f, *econfig);
+
+	item = hkl_geometry_list_items_first_get(geometries);
+	darray_foreach(axis, item->geometry->axes){
+		fprintf(f, "%19s", (*axis)->name);
+	}
+
+	/* save the first point */
+	fprintf(f, "\n");
+	Engine_save_as_dat(f, *econfig);
+	hkl_geometry_save_as_dat(f, item->geometry);
+
+	while((econfig = generator_next(gen)) != NULL){
+		fprintf(f, "\n");
+		Engine_save_as_dat(f, *econfig);
+		item = hkl_geometry_list_items_next_get(geometries, item);
+		hkl_geometry_save_as_dat(f, item->geometry);
+	}
+	fclose(f);
 }
 
 /* tests */
@@ -207,14 +272,34 @@ static void stability(void)
 		SoleilSiriusKappa(1.458637,
 				  -0.5193202, 64.7853160, 133.5621380, -80.9690000, -0.0223369, 30.0000299);
 
-	static struct Trajectory tconfig = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
+	static struct Geometry gconfig2 =	\
+		SoleilSiriusKappa(1.458637,
+				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
 
-	solutions = Trajectory_solve(tconfig, gconfig, gaas);
+	static struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11);
+	solutions = Trajectory_solve(tconfig1, gconfig, gaas);
+	GeometryList_save_as_dat("../Documentation/figures/s1-11.dat", tconfig1, solutions);
 	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
+
+	solutions = Trajectory_solve(tconfig1, gconfig, gaas);
+	GeometryList_save_as_dat("../Documentation/figures/s2-11.dat", tconfig1, solutions);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
+
+	static struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
+	solutions = Trajectory_solve(tconfig2, gconfig, gaas);
+	GeometryList_save_as_dat("../Documentation/figures/s1-101.dat", tconfig2, solutions);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
+
+	solutions = Trajectory_solve(tconfig2, gconfig2, gaas);
+	GeometryList_save_as_dat("../Documentation/figures/s2-101.dat", tconfig2, solutions);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_free(solutions);
 
 	ok(res == TRUE, __func__);
 
-	hkl_geometry_list_free(solutions);
 }
 
 int main(void)

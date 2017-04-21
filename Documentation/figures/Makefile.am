@@ -4,6 +4,9 @@
 .asy.pdf:
 	-@ASY@ -config "" -render=0 -f pdf -noprc -o $@ $<
 
+sirius.svg: sirius.gnuplot s1-11.dat s2-11.dat s1-101.dat s2-101.dat
+	-@GNUPLOT@ sirius.gnuplot
+
 dist_noinst_DATA = \
 	3S+1D.png \
 	B_b3_y.png \
@@ -23,7 +26,8 @@ dist_noinst_DATA = \
 	e2k_2.png \
 	e2k_3.png \
 	e2k_4.png \
-	qper_qpar.png
+	qper_qpar.png \
+	sirius.svg
 
 MAINTAINERCLEANFILES = $(dist_noinst_DATA)
 
@@ -48,4 +52,5 @@ EXTRA_DIST = \
 	e2k_2.asy \
 	e2k_3.asy \
 	e2k_4.asy \
-	qper_qpar.asy
+	qper_qpar.asy \
+	sirius.gnuplot
