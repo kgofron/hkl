@@ -1009,11 +1009,44 @@ git clone git://repo.or.cz/hkl.git
     As we can see the phi and kphi motor switch from time to time to
     another solution which is at around 180° of the other solutions.
 
-   #+CAPTION: plot the [0,0,1] -> [0,0,6] trajectory from two different starting point and different step size
-    [[./figures/sirius-s.svg]]
+    #+CAPTION: plot the [0,0,1] -> [0,0,6] trajectory from two different starting point and different step size.
+    #+BEGIN_SRC gnuplot :file figures/sirius-s.svg
+    set title '[0,0,1] -> [0,0,6] s1/s2 (starting point) 10/100 (steps)'
+    set xlabel 'l'
+    set ylabel 'kphi'
+    plot \
+    'figures/s1-11.dat' u 3:7 w lp t 's1-10',\
+    'figures/s2-11.dat' u 3:7 w lp t 's2-10',\
+    'figures/s1-101.dat' u 3:7 w lp t 's1-100',\
+    'figures/s2-101.dat' u 3:7 w lp t 's2-100'
+    #+END_SRC
 
-   #+CAPTION: plot the [0,0,1] -> [0,0,6] trajectory from two different starting point and different step size
-    [[./figures/sirius-m.svg]]
+    #+CAPTION: plot the [0,0,1] -> [0,0,6] idem previous figure but move the diffractometer.
+    #+BEGIN_SRC gnuplot :file figures/sirius-m.svg
+    set title '[0,0,1] -> [0,0,6] s1/s2 (starting point) 10/100 (steps)'
+    set xlabel 'l'
+    set ylabel 'kphi'
+    plot \
+    'figures/m1-11.dat' u 3:7 w lp t 'm1-10',\
+    'figures/m2-11.dat' u 3:7 w lp t 'm2-10',\
+    'figures/m1-101.dat' u 3:7 w lp t 'm1-100',\
+    'figures/m2-101.dat' u 3:7 w lp t 'm2-100'
+    #+END_SRC
+
+    #+CAPTION: zoom on the 2 solutions.
+    #+BEGIN_SRC gnuplot :file figures/sirius-m-zoom.svg
+    set title '[0,0,1] -> [0,0,6] s1/s2 (starting point) 10/100 (steps)'
+    set xlabel 'l'
+
+    set ylabel 'kphi m1'
+    set ytics nomirror
+
+    set y2label 'kphi m2'
+    set y2tics
+    plot \
+    'figures/m1-101.dat' using 3:7 axis x1y1 with lp title 'm1-100',\
+    'figures/m2-101.dat' using 3:7 axis x1y2 with lp title 'm2-100'
+    #+END_SRC
 
 *** TODO [0/2] PetraIII
 **** TODO computation problem

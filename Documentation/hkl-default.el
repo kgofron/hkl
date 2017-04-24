@@ -43,7 +43,8 @@
    (quote
     ((latex . t)
      (python . t)
-     (emacs-lisp . t))))
+     (emacs-lisp . t)
+     (gnuplot . t))))
  '(org-confirm-babel-evaluate nil)
  '(org-latex-listings (quote minted))
  '(org-latex-minted-langs

@@ -21,7 +21,7 @@ noinst_PROGRAMS = sirius
 SIRIUSFILES=s1-11.dat s2-11.dat s1-101.dat s2-101.dat m1-11.dat m2-11.dat m1-101.dat m2-101.dat
 
 sirius.stamp: sirius
-	$(builddir)/sirius
+	cd $(builddir) && ./sirius
 
 $(SIRIUSFILES): sirius.stamp
 	## Recover from the removal of $@
@@ -40,12 +40,6 @@ $(SIRIUSFILES): sirius.stamp
 			test -f sirius.stamp; exit $$?; \
 		fi; \
 	fi
-
-sirius-s.svg: sirius-s.gnuplot s1-11.dat s2-11.dat s1-101.dat s2-101.dat
-		-@GNUPLOT@ $(srcdir)/sirius-s.gnuplot
-
-sirius-m.svg: sirius-m.gnuplot m1-11.dat m2-11.dat m1-101.dat m2-101.dat
-		-@GNUPLOT@ $(srcdir)/sirius-m.gnuplot
 
 dist_noinst_DATA = \
 	3S+1D.png \
@@ -66,11 +60,9 @@ dist_noinst_DATA = \
 	e2k_2.png \
 	e2k_3.png \
 	e2k_4.png \
-	qper_qpar.png \
-	sirius-s.svg \
-	sirius-m.svg
+	qper_qpar.png
 
-CLEANFILES = $(SIRIUSFILES) sirius-s.svg sirius-m.svg
+CLEANFILES = $(SIRIUSFILES) sirius-s.svg sirius-m.svg sirius-m-zoom.svg
 
 MAINTAINERCLEANFILES = $(dist_noinst_DATA)
 
@@ -95,9 +87,7 @@ EXTRA_DIST = \
 	e2k_2.asy \
 	e2k_3.asy \
 	e2k_4.asy \
-	qper_qpar.asy \
-	sirius-s.gnuplot \
-	sirius-m.gnuplot
+	qper_qpar.asy
 
 # Support for GNU Flymake, in Emacs.
 
