@@ -32,13 +32,13 @@
 /***********************
 
     Description
-         
+
 There are 5 real motors:
 
 mchi  (monochromator rotation)  -> rotation y axis +1
 sphi  (sample rotation)         -> rotation z axis +1
 dtth  (detector table rotation) -> rotation z axis -1
-dh    (detector height)         -> traslation z axis +1
+dh    (detector height)         -> translation z axis +1
 drot  (detector rotation)       -> rotation x axis +1
 
 There are 4 pseudo motors related to them:
@@ -46,23 +46,37 @@ There are 4 pseudo motors related to them:
 alpha   (incident angle - kin with xy plane)
 beta    (outgoing angle - kout with xy plane)
 sth      (angle between the kin projection in the xy plane and the y axis)
+FRED: looking at the Abb.4.4 sth is the angle between kin projection and the vector defines via sphi.
+So whcih one is the right one ?
 stth     (angle between kin and kout projections in the xy plane)
 
 sth and stth has to be independently as pseudomotors.
 
-For a given energy, E, one can compute mchi, sphi, dtth, dh and drot from
-alpha, beta, th and tth and viceversa.
-The solutions are not unique, for fixing them one has to set:
+For a given energy, E, one can compute mchi, sphi, dtth, dh and drot
+from alpha, beta, th and tth and viceversa. The solutions are not
+unique, for fixing them one has to set:
 
- - Detector rotation tracking -> the detector table rotation, dtth, follows the monochromator
- rotation, mchi, so that the position of stth stays constant. For stth = 0 the detector is in
- diffraction plane.
+FRED: reading this and looking at the schema, it seems that you need a
+pseudo motor engine with the four pseudo motors. something which takes
+alpha, beta, sth and stth in order to compute the 5 real motors
+positions. So maybe the right things to do is to create a pm with all
+the pseudo motors and not only stth and sth.
 
- - mchi rotation direction -> if set to '+' the mchi angle goes from 0 to pi, set to '-' it goes from
- 0 to -pi.
+Maybe the right things to do is to create for now, only pseudo motors
+with the read part.  So once we have this setup it will be easier for
+us to understand what is going on.
 
- - allow rotation sample -> if 'yes' the sample will be rotated with the monochromator, so that
-   sth will stay constant. If 'no' the sample will not be rotated.
+ - Detector rotation tracking -> the detector table rotation, dtth,
+   follows the monochromator rotation, mchi, so that the position of
+   stth stays constant. For stth = 0 the detector is in diffraction
+   plane.
+
+ - mchi rotation direction -> if set to '+' the mchi angle goes from 0
+   to pi, set to '-' it goes from 0 to -pi.
+
+ - allow rotation sample -> if 'yes' the sample will be rotated with
+   the monochromator, so that sth will stay constant. If 'no' the
+   sample will not be rotated.
 
 The following geometry constants have to be set:
 
@@ -72,18 +86,25 @@ The following geometry constants have to be set:
   - first crystal diffraction parameter
   - second crystal diffraction parameter
 
-For a alpha, beta, th and tth set there are different possibilities of choosing the position
-of the real motors for getting a given h,k,l. Four possible geometry modes have to be implemented,
-each mode gives an unique solution for the real computers computed from the angles.
-These modes are:
+FRED: Do you want to set these parameters in the code or do you want
+to add these parameters to the geometry dynamiquely ?  So the user can
+change this during the experimenta ? I would prefer a static
+declaration for now in the code.
+
+For a alpha, beta, th and tth set there are different possibilities of
+choosing the position of the real motors for getting a given
+h,k,l. Four possible geometry modes have to be implemented, each mode
+gives an unique solution for the real computers computed from the
+angles. These modes are:
 
   - mode 0 -> K axis from reciprocal space parallel to incident beam.
   - mode 1 -> alpha = beta
   - mode 2 -> th = tth/2
   - mode 3 -> K axis from reciprocal space parallel to outgoing beam.
 
-There are some corrections (motor movements) that have to be done if the energy is changed,
-in order to correct the shifts in the position of the beam on the sample.
+There are some corrections (motor movements) that have to be done if
+the energy is changed, in order to correct the shifts in the position
+of the beam on the sample.
 
 *******************/
 
@@ -103,7 +124,7 @@ in order to correct the shifts in the position of the beam on the sample.
 /************/
 
 #define HKL_GEOMETRY_PETRA3_P08_LISA_DESCRIPTION \
-  "+ xrays source fix along the :math:`\\vec{x}` direction (1, 0, 0)\n"   \		  
+  "+ xrays source fix along the :math:`\\vec{x}` direction (1, 0, 0)\n"   \
   "+ 1 axes for the monochromator\n"					\
   "\n"									\
   "  + **" MCHI "** : rotation around the :math:`\\vec{x}` direction (1, 0, 0)\n" \
@@ -119,23 +140,213 @@ in order to correct the shifts in the position of the beam on the sample.
   "  + **" DH   "** : traslation along the :math:`\\vec{z}` direction (0, 0, 1)\n" \
   "\n"
 
+/*
+FRED: I would put the axes in this order DTTH -> DH -> DROT. even if
+this is not that important.  I think that we need to create a
+dedicated hkl_mode_operations, for yur diffractometer.  This will
+allow to not care about the current internal geometry (rotation
+axes). We will juste use axes as a list of parameters and use these
+parameters to compute the hkl coordinates.
+*/
+
+static int hkl_mode_petra3_p08_lisa_get_hkl_real(HklMode *self,
+						 HklEngine *engine,
+						 HklGeometry *geometry,
+						 HklDetector *detector,
+						 HklSample *sample,
+						 GError **error)
+{
+	HklHolder *sample_holder;
+	HklMatrix RUB;
+	HklVector hkl, ki, Q;
+	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
+
+/* FRED: need to be implemented for your diffractometer */
+
+	/* update the geometry internals */
+	hkl_geometry_update(geometry);
+
+	/* R * UB */
+	/* for now the 0 holder is the sample holder. */
+	sample_holder = darray_item(geometry->holders, 0);
+	hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
+	hkl_matrix_times_matrix(&RUB, &sample->UB);
+
+	/* kf - ki = Q */
+	hkl_source_compute_ki(&geometry->source, &ki);
+	hkl_detector_compute_kf(detector, geometry, &Q);
+	hkl_vector_minus_vector(&Q, &ki);
+
+	hkl_matrix_solve(&RUB, &hkl, &Q);
+
+	engine_hkl->h->_value = hkl.data[0];
+	engine_hkl->k->_value = hkl.data[1];
+	engine_hkl->l->_value = hkl.data[2];
+
+	return TRUE;
+}
+
+int hkl_mode_petra3_p08_lisa_set_hkl_real(HklMode *self,
+					  HklEngine *engine,
+					  HklGeometry *geometry,
+					  HklDetector *detector,
+					  HklSample *sample,
+					  GError **error)
+{
+/* FRED: to implement */
+	int last_axis;
+
+	hkl_error (error == NULL || *error == NULL);
+
+	/* check the input parameters */
+	if(!hkl_is_reachable(engine, geometry->source.wave_length,
+			     error)){
+		hkl_assert(error == NULL || *error != NULL);
+		return FALSE;
+	}
+	hkl_assert(error == NULL || *error == NULL);
+
+	/* compute the mode */
+	if(!hkl_mode_auto_set_real(self, engine,
+				   geometry, detector, sample,
+				   error)){
+		hkl_assert(error == NULL || *error != NULL);
+		//fprintf(stdout, "message :%s\n", (*error)->message);
+		return FALSE;
+	}
+	hkl_assert(error == NULL || *error == NULL);
+
+	/* check that the mode allow to move a sample axis */
+	/* FIXME for now the sample holder is the first one */
+	last_axis = get_last_axis_idx(geometry, 0, &self->info->axes_w);
+	if(last_axis >= 0){
+		uint i;
+		const HklGeometryListItem *item;
+		uint len = engine->engines->geometries->n_items;
+
+		/* For each solution already found we will generate another one */
+		/* using the Ewalds construction by rotating Q around the last sample */
+		/* axis of the mode until it intersect again the Ewald sphere. */
+		/* FIXME do not work if ki is colinear with the axis. */
+
+		/* for this we needs : */
+		/* - the coordinates of the end of the Q vector (q) */
+		/* - the last sample axis orientation of the mode (axis_v) */
+		/* - the coordinates of the center of the ewalds sphere (c) */
+		/* - the coordinates of the center of rotation of the sample (o = 0, 0, 0) */
+
+		/* then we can : */
+		/* - project the origin in plane of normal axis_v containing q (o') */
+		/* - project the center of the ewalds sphere into the same plan (c') */
+		/* - rotate q around this (o', c') line of 180° to find the (q2) solution */
+		/* - compute the (kf2) corresponding to this q2 solution */
+		/* at the end we just need to solve numerically the position of the detector */
+
+		/* we will add solution to the geometries so save its length before */
+		for(i=0, item=list_top(&engine->engines->geometries->items, HklGeometryListItem, list);
+		    i<len;
+		    ++i, item=list_next(&engine->engines->geometries->items, item, list)){
+			int j;
+			HklVector ki;
+			HklVector kf2;
+			HklVector q;
+			HklVector axis_v;
+			HklQuaternion qr;
+			HklAxis *axis;
+			HklVector cp = {{0}};
+			HklVector op = {{0}};
+			double angle;
+			HklGeometry *geom;
+
+			geom = hkl_geometry_new_copy(item->geometry);
+
+			/* get the Q vector kf - ki */
+			hkl_detector_compute_kf(detector, geom, &q);
+			hkl_source_compute_ki(&geom->source, &ki);
+			hkl_vector_minus_vector(&q, &ki);
+
+			/* compute the current orientation of the last axis */
+			axis = container_of(darray_item(geom->axes,
+							darray_item(geom->holders, 0)->config->idx[last_axis]),
+					    HklAxis, parameter);
+			axis_v = axis->axis_v;
+			hkl_quaternion_init(&qr, 1, 0, 0, 0);
+			for(j=0; j<last_axis; ++j)
+				hkl_quaternion_times_quaternion(
+					&qr,
+					&container_of(darray_item(geom->axes,
+								  darray_item(geom->holders, 0)->config->idx[j]),
+						      HklAxis, parameter)->q);
+			hkl_vector_rotated_quaternion(&axis_v, &qr);
+
+			/* - project the center of the ewalds sphere into the same plan (c') */
+			hkl_vector_minus_vector(&cp, &ki);
+			hkl_vector_project_on_plan_with_point(&cp, &axis_v, &q);
+			hkl_vector_project_on_plan_with_point(&op, &axis_v, &q);
+
+			/* - rotate q around this (o', c') line of 180° to find the (q2) solution */
+			kf2 = q;
+			hkl_vector_rotated_around_line(&kf2, M_PI, &cp, &op);
+			angle = hkl_vector_oriented_angle_points(&q, &op, &kf2, &axis_v);
+			/* TODO parameter list for geometry */
+			if(!hkl_parameter_value_set(&axis->parameter,
+						    hkl_parameter_value_get(&axis->parameter, HKL_UNIT_DEFAULT) + angle,
+						    HKL_UNIT_DEFAULT, error))
+				return FALSE;
+			hkl_geometry_update(geom);
+#ifdef DEBUG
+			fprintf(stdout, "\n- try to add a solution by rotating Q <%f, %f, %f> around the \"%s\" axis <%f, %f, %f> of %f radian",
+				q.data[0], q.data[1], q.data[2],
+				((HklParameter *)axis)->name,
+				axis_v.data[0], axis_v.data[1], axis_v.data[2],
+				angle);
+			fprintf(stdout, "\n   op: <%f, %f, %f>", op.data[0], op.data[1], op.data[2]);
+			fprintf(stdout, "\n   q2: <%f, %f, %f>", kf2.data[0], kf2.data[1], kf2.data[2]);
+#endif
+			hkl_vector_add_vector(&kf2, &ki);
+
+			/* at the end we just need to solve numerically the position of the detector */
+			if(fit_detector_position(self, geom, detector, &kf2))
+				hkl_geometry_list_add(engine->engines->geometries,
+						      geom);
+
+			hkl_geometry_free(geom);
+		}
+	}
+	return TRUE;
+}
+
+#define HKL_MODE_HKL_PETRA3_P08_LISA_HKL_OPERATIONS_DEFAULTS	\
+	HKL_MODE_OPERATIONS_AUTO_DEFAULTS,			\
+		.get = hkl_mode_petra3_p08_lisa_get_hkl_real	\
+		.set = hkl_mode_petra3_p08_lisa_set_hkl_real
+
+static const HklModeOperations hkl_mode_hkl_petra3_p08_lisa_operations = {
+	HKL_MODE_HKL_PETRA3_P08_LISA_OPERATIONS_DEFAULTS,
+};
+
 static const char* hkl_geometry_petra3_p08_lisa_axes[] = {MCHI, SPHI, DTTH, DH, DROT};
 
 static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 {
 	HklGeometry *self = hkl_geometry_new(factory);
 	HklHolder *h;
-	
+
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation_axis(h, MCHI, 1, 0, 0);
 
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation_axis(h, SPHI, 0, 0, 1);
-	
+
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation_axis(h, DTTH, 0, 0, -1);
+	/* FRED: for now just add
+	hkl_holder_add_rotation_axis(h, DH, 0, 0, 0);
+
+	and define a new hkl_mode_petra3_p08_lisa_operations in order
+	to compute the hkl coordinates. You can find the hkl_mode_operations here
+	 */
 	hkl_holder_add_rotation_axis(h, DROT, 0, -1, 0);
-	//hkl_holder_add_translation_axis(h, DH, 0, 0, 1)
 
 	return self;
 }
@@ -149,11 +360,11 @@ static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 static HklMode *k_parallel_incident(void)
 {
   /* TODO: check if the axes are correct, add the functions and implement them */
-  
-  static const char* axes_r[] = {MCHI, SPHI, DTTH, DROT}; 
+
+  static const char* axes_r[] = {MCHI, SPHI, DTTH, DROT};
 
   static const char* axes_w[] = {MCHI, SPHI, DTTH, DROT};
-  
+
   static const HklFunction *functions[] = {};
 
   /* here just the description of the mode: name, axes_r, axes_w, functions */
@@ -163,19 +374,19 @@ static HklMode *k_parallel_incident(void)
 
   /* instantiate a new mode */
   return hkl_mode_auto_new(&info,
-			   &hkl_mode_operations,
+			   &hkl_mode_hkl_petra3_p08_lisa_operations,
 			   TRUE);
-  
+
 }
 
 static HklMode *alpha_eq_beta(void)
 {
   /* TODO: check if the axes are correct, add the functions and implement them */
-  
+
   static const char* axes_r[] = {MCHI, SPHI, DTTH, DROT};
 
   static const char* axes_w[] = {MCHI, SPHI, DTTH, DROT};
-  
+
   static const HklFunction *functions[] = {};
 
   /* here just the description of the mode: name, axes_r, axes_w, functions */
@@ -185,17 +396,17 @@ static HklMode *alpha_eq_beta(void)
 
   /* instantiate a new mode */
   return hkl_mode_auto_new(&info,
-			   &hkl_mode_operations,
+			   &hkl_mode_hkl_petra3_p08_lisa_operations,
 			   TRUE);
 }
 static HklMode *th_eq_tth2(void)
 {
   /* TODO: check if the axes are correct, add the functions and implement them */
-  
+
   static const char* axes_r[] = {MCHI, SPHI, DTTH, DROT};
 
   static const char* axes_w[] = {MCHI, SPHI, DTTH, DROT};
-  
+
   static const HklFunction *functions[] = {};
 
   /* here just the description of the mode: name, axes_r, axes_w, functions */
@@ -205,17 +416,17 @@ static HklMode *th_eq_tth2(void)
 
   /* instantiate a new mode */
   return hkl_mode_auto_new(&info,
-			   &hkl_mode_operations,
+			   &hkl_mode_hkl_petra3_p08_lisa_operations,
 			   TRUE);
 }
 static HklMode *k_parallel_outgoing(void)
 {
   /* TODO: check if the axes are correct, add the functions and implement them */
-  
+
   static const char* axes_r[] = {MCHI, SPHI, DTTH, DROT};
 
   static const char* axes_w[] = {MCHI, SPHI, DTTH, DROT};
-  
+
   static const HklFunction *functions[] = {};
 
   /* here just the description of the mode: name, axes_r, axes_w, functions */
@@ -225,7 +436,7 @@ static HklMode *k_parallel_outgoing(void)
 
   /* instantiate a new mode */
   return hkl_mode_auto_new(&info,
-			   &hkl_mode_operations,
+			   &hkl_mode_hkl_petra3_p08_lisa_operations,
 			   TRUE);
 }
 
@@ -276,12 +487,14 @@ static const HklFunction mode_lisa_pm_pm_to_m_func = {
 
 static HklMode *mode_lisa_pm(void)
 {
-  
+
   static const char* axes_r[] = {MCHI, SPHI, DTTH}; /* QUESTION: these are the two motors I need for computing sth and stth positions, is this right ??? */
 
   static const char* axes_w[] = {MCHI, SPHI, DTTH}; /* QUESTION: these are the motors I move if I write to the pseudomotor sth or stth, is this right ??? */
 
+
   /* here a list of functions use to solve the mode */ /* QUESTION: which functions should be here ???, I need one for computing motor positions from pseudomotor and one for computing pseudonmotor from motor positions. Why in the other diffractometers there is only one function here ??? */
+  /* FRED this are not the functions in order to do get and set but only to do the set. the get/set is done in the hkl_mode_operations. */
   static const HklFunction *functions[] = {&mode_lisa_pm_m_to_pm_func, &mode_lisa_pm_pm_to_m_func};
 
   /* here just the description of the mode: name, axes_r, axes_w, functions */
@@ -291,10 +504,11 @@ static HklMode *mode_lisa_pm(void)
 
   /* instantiate a new mode */
   return hkl_mode_auto_new(&info,
-			   &hkl_mode_operations,
+			   &hkl_mode_operations, /* FRED these operation must be specifique to the pseudo motors look at the read_only emergence pseudo in hkl-pseudoaxis-common-readonly code. */
 			   TRUE);
 }
 
+/* FRED let's start with a simple read-only code then we will add the set part */
 
 /*****************/
 /* mode readonly */
@@ -338,12 +552,12 @@ HklEngine *hkl_engine_lisa_pm_new(HklEngineList *engines)
 		HKL_PARAMETER_DEFAULTS_ANGLE, .name="sth",
 		.description = "angle of the projection of $\\vec{ki}$ in the $xy$ and the sample table rotation",
 	};
-	
+
 	static const HklParameter stth = {
 		HKL_PARAMETER_DEFAULTS_ANGLE, .name="stth",
 		.description = "angle of the projection of $\\vec{ki}$ in the $xy$ and the detector arm",
 	};
-	
+
 	static const HklParameter *pseudo_axes[] = {&sth, &stth};
 	static const HklEngineInfo info = {
 		HKL_ENGINE_INFO("LisaPM",
@@ -414,7 +628,7 @@ static HklEngineList *hkl_engine_list_new_petra3_p08_lisa(const HklFactory *fact
 	HklEngineList *self = hkl_engine_list_new();
 
 	hkl_engine_petra3_p08_lisa_pm_new(self);
-  
+
 	hkl_engine_petra3_p08_lisa_hkl_new(self);
 
 	return self;
