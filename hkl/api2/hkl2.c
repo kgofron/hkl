@@ -305,10 +305,11 @@ HklGeometryList *Trajectory_solve(struct Trajectory tconfig,
 	/* hkl_trajectory_stats_fprintf(stdout, stats); */
 
 	hkl_trajectory_stats_free(stats);
-	hkl_engine_list_free(engines);
 	hkl_detector_free(detector);
 	hkl_sample_free(sample);
+	hkl_engine_list_free(engines);
 	hkl_geometry_free(geometry);
+	generator_free(gen);
 
 	return solutions;
 }

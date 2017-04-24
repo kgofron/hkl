@@ -136,6 +136,13 @@ HklMode *hkl_mode_incidence_new(const HklModeInfo *info)
 	return &self->parent;
 }
 
+static void hkl_engine_incidence_free_real(HklEngine *base)
+{
+	HklEngineIncidence *self=container_of(base, HklEngineIncidence, engine);
+	hkl_engine_release(&self->engine);
+	free(self);
+}
+
 HklEngine *hkl_engine_incidence_new(HklEngineList *engines)
 {
 	HklEngineIncidence *self;
@@ -155,6 +162,7 @@ HklEngine *hkl_engine_incidence_new(HklEngineList *engines)
 	};
 	static HklEngineOperations operations = {
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
+		.free=hkl_engine_incidence_free_real,
 	};
 
 	self = HKL_MALLOC(HklEngineIncidence);
@@ -270,6 +278,13 @@ HklMode *hkl_mode_emergence_new(const HklModeInfo *info)
 	return &self->parent;
 }
 
+static void hkl_engine_emergence_free_real(HklEngine *base)
+{
+	HklEngineEmergence *self=container_of(base, HklEngineEmergence, engine);
+	hkl_engine_release(&self->engine);
+	free(self);
+}
+
 HklEngine *hkl_engine_emergence_new(HklEngineList *engines)
 {
 	HklEngineEmergence *self;
@@ -289,6 +304,8 @@ HklEngine *hkl_engine_emergence_new(HklEngineList *engines)
 	};
 	static HklEngineOperations operations = {
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
+		.free=hkl_engine_emergence_free_real,
+
 	};
 
 	self = HKL_MALLOC(HklEngineEmergence);
