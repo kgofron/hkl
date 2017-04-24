@@ -18,7 +18,7 @@ LDADD = $(top_builddir)/hkl/libhkl.la \
 
 noinst_PROGRAMS = sirius
 
-SIRIUSFILES=s1-11.dat s2-11.dat s1-101.dat s2-101.dat m1-11.dat m2-11.dat m1-101.dat m2-101.dat
+SIRIUSFILES=s1-11.dat s2-11.dat s1-101.dat s2-101.dat m1-11.dat m2-11.dat m1-101.dat m2-101.dat traj_n.dat
 
 sirius.stamp: sirius
 	cd $(builddir) && ./sirius
@@ -62,7 +62,7 @@ dist_noinst_DATA = \
 	e2k_4.png \
 	qper_qpar.png
 
-CLEANFILES = $(SIRIUSFILES) sirius-s.svg sirius-m.svg sirius-m-zoom.svg
+CLEANFILES = $(SIRIUSFILES) sirius-s.svg sirius-m.svg sirius-m-zoom.svg traj_n.svg
 
 MAINTAINERCLEANFILES = $(dist_noinst_DATA)
 

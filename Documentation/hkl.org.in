@@ -1011,6 +1011,7 @@ git clone git://repo.or.cz/hkl.git
 
     #+CAPTION: plot the [0,0,1] -> [0,0,6] trajectory from two different starting point and different step size.
     #+BEGIN_SRC gnuplot :file figures/sirius-s.svg
+    reset
     set title '[0,0,1] -> [0,0,6] s1/s2 (starting point) 10/100 (steps)'
     set xlabel 'l'
     set ylabel 'kphi'
@@ -1023,6 +1024,7 @@ git clone git://repo.or.cz/hkl.git
 
     #+CAPTION: plot the [0,0,1] -> [0,0,6] idem previous figure but move the diffractometer.
     #+BEGIN_SRC gnuplot :file figures/sirius-m.svg
+    reset
     set title '[0,0,1] -> [0,0,6] s1/s2 (starting point) 10/100 (steps)'
     set xlabel 'l'
     set ylabel 'kphi'
@@ -1035,6 +1037,7 @@ git clone git://repo.or.cz/hkl.git
 
     #+CAPTION: zoom on the 2 solutions.
     #+BEGIN_SRC gnuplot :file figures/sirius-m-zoom.svg
+    reset
     set title '[0,0,1] -> [0,0,6] s1/s2 (starting point) 10/100 (steps)'
     set xlabel 'l'
 
@@ -1046,6 +1049,16 @@ git clone git://repo.or.cz/hkl.git
     plot \
     'figures/m1-101.dat' using 3:7 axis x1y1 with lp title 'm1-100',\
     'figures/m2-101.dat' using 3:7 axis x1y2 with lp title 'm2-100'
+    #+END_SRC
+
+    #+CAPTION: plot the [0,0,1] -> [0,0,6]  for different number of steps
+    #+BEGIN_SRC gnuplot :file figures/traj_n.svg
+    reset
+    set title '[0,0,1] -> [0,0,6] 1 -> 100 (steps)'
+    set xlabel 'n steps'
+
+    set ylabel 'range'
+    plot 'figures/traj_n.dat' using 1:2 with lp title 'kphi range'
     #+END_SRC
 
 *** TODO [0/2] PetraIII

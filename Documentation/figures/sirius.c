@@ -64,11 +64,78 @@ static void GeometryList_save_as_dat(const char *filename,  const struct Traject
 		hkl_geometry_save_as_dat(f, item->geometry);
 	}
 	fclose(f);
+
+	generator_free(gen);
+}
+
+static double hkl_geometry_list_kphi_range(const HklGeometryList *self)
+{
+	uint idx = 0;
+	double min, max;
+	const HklGeometryListItem *item;
+	HklParameter **axis;
+
+	/* get the kphi index */
+	item = hkl_geometry_list_items_first_get(self);
+	darray_foreach(axis, item->geometry->axes){
+		if (!strcmp((*axis)->name, "kphi"))
+			break;
+		idx++;
+	}
+
+	min = max = hkl_parameter_value_get(darray_item(item->geometry->axes, idx), HKL_UNIT_USER);
+	for(;item;item = hkl_geometry_list_items_next_get(self, item)){
+		double current = hkl_parameter_value_get(darray_item(item->geometry->axes, idx), HKL_UNIT_USER);
+		min = current < min ? current : min;
+		max = current >= max ? current : max;
+	}
+
+	return max - min;
+}
+
+typedef struct _XY XY;
+
+struct _XY {
+	darray(int) x;
+	darray(double) y;
+};
+
+static void xy_init(XY *xy) {
+	darray_init(xy->x);
+	darray_init(xy->y);
+}
+
+static void xy_add(XY *xy, int x, double y)
+{
+	darray_append(xy->x, x);
+	darray_append(xy->y, y);
+}
+
+static void xy_free(XY *xy)
+{
+	darray_free(xy->x);
+	darray_free(xy->y);
+};
+
+static void xy_save_as_dat(XY *xy, const char *filename)
+{
+	uint i;
+	FILE *f = fopen(filename, "w+");
+	fprintf(f, "# x y");
+	for(i=0; i<darray_size(xy->x); ++i)
+		fprintf(f, "\n%d %f",
+			darray_item(xy->x, i),
+			darray_item(xy->y, i));
+	fclose(f);
 }
 
 int main(void)
 {
+	uint i;
 	HklGeometryList *solutions;
+	XY plot;
+
+	xy_init(&plot);
 
 	static struct Sample gaas = {
 		.name = "GaAs",
@@ -86,8 +153,10 @@ int main(void)
 		SoleilSiriusKappa(1.458637,
 				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
 
-	/* move between each step */
+	/* Trajectory */
 	static struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11);
+	static struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
+	/* move between each step */
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
 	GeometryList_save_as_dat("m1-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
@@ -96,7 +165,6 @@ int main(void)
 	GeometryList_save_as_dat("m2-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
-	static struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
 	solutions = Trajectory_solve(tconfig2, gconfig, gaas, TRUE);
 	GeometryList_save_as_dat("m1-101.dat", tconfig2, solutions);
 	hkl_geometry_list_free(solutions);
@@ -121,6 +189,19 @@ int main(void)
 	solutions = Trajectory_solve(tconfig2, gconfig2, gaas, FALSE);
 	GeometryList_save_as_dat("s2-101.dat", tconfig2, solutions);
 	hkl_geometry_list_free(solutions);
+
+	for(i=1; i<102; ++i){
+		double range;
+		struct Trajectory tconfig3 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, i);
+
+		solutions = Trajectory_solve(tconfig3, gconfig2, gaas, TRUE);
+		range = hkl_geometry_list_kphi_range(solutions);
+		xy_add(&plot, i, range);
+		hkl_geometry_list_free(solutions);
+	}
+
+	xy_save_as_dat(&plot, "traj_n.dat");
+	xy_free(&plot);
 
 	return 0;
 }
