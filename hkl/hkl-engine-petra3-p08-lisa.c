@@ -21,13 +21,16 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  *          Teresa Núñez <tnunez@mail.desy.de>
  */
+#include "hkl.h"
 #include <gsl/gsl_sys.h>                // for gsl_isnan
 #include "hkl-factory-private.h"        // for autodata_factories_, etc
+#include "hkl-matrix-private.h"
 #include "hkl-pseudoaxis-common-hkl-private.h"  // for hkl_mode_operations, etc
 #include "hkl-pseudoaxis-common-psi-private.h"  // for hkl_engine_psi_new, etc
 #include "hkl-pseudoaxis-common-q-private.h"  // for hkl_engine_q2_new, etc
 #include "hkl-pseudoaxis-common-tth-private.h"  // for hkl_engine_tth2_new, etc
 #include "hkl-pseudoaxis-common-readonly-private.h"
+#include "hkl-sample-private.h"
 
 /***********************
 
@@ -149,7 +152,7 @@ axes). We will juste use axes as a list of parameters and use these
 parameters to compute the hkl coordinates.
 */
 
-static int hkl_mode_petra3_p08_lisa_get_hkl_real(HklMode *self,
+static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 						 HklEngine *engine,
 						 HklGeometry *geometry,
 						 HklDetector *detector,
@@ -161,20 +164,18 @@ static int hkl_mode_petra3_p08_lisa_get_hkl_real(HklMode *self,
 	HklVector hkl, ki, Q;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
 
-/* FRED: need to be implemented for your diffractometer */
-
 	/* update the geometry internals */
 	hkl_geometry_update(geometry);
 
 	/* R * UB */
-	/* for now the 0 holder is the sample holder. */
-	sample_holder = darray_item(geometry->holders, 0);
+	/* for the lisa geometry the holder 1 is the sample holder. */
+	sample_holder = darray_item(geometry->holders, 1);
 	hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
 	hkl_matrix_times_matrix(&RUB, &sample->UB);
 
 	/* kf - ki = Q */
-	hkl_source_compute_ki(&geometry->source, &ki);
-	hkl_detector_compute_kf(detector, geometry, &Q);
+	hkl_source_compute_ki(&geometry->source, &ki); /* WRONG should be adapted to your diffractometer */
+	hkl_detector_compute_kf(detector, geometry, &Q); /* idem */
 	hkl_vector_minus_vector(&Q, &ki);
 
 	hkl_matrix_solve(&RUB, &hkl, &Q);
@@ -186,7 +187,7 @@ static int hkl_mode_petra3_p08_lisa_get_hkl_real(HklMode *self,
 	return TRUE;
 }
 
-int hkl_mode_petra3_p08_lisa_set_hkl_real(HklMode *self,
+int hkl_mode_hkl_petra3_p08_lisa_set_real(HklMode *self,
 					  HklEngine *engine,
 					  HklGeometry *geometry,
 					  HklDetector *detector,
@@ -194,132 +195,132 @@ int hkl_mode_petra3_p08_lisa_set_hkl_real(HklMode *self,
 					  GError **error)
 {
 /* FRED: to implement */
-	int last_axis;
+/* 	int last_axis; */
 
-	hkl_error (error == NULL || *error == NULL);
+/* 	hkl_error (error == NULL || *error == NULL); */
 
-	/* check the input parameters */
-	if(!hkl_is_reachable(engine, geometry->source.wave_length,
-			     error)){
-		hkl_assert(error == NULL || *error != NULL);
-		return FALSE;
-	}
-	hkl_assert(error == NULL || *error == NULL);
+/* 	/\* check the input parameters *\/ */
+/* 	if(!hkl_is_reachable(engine, geometry->source.wave_length, */
+/* 			     error)){ */
+/* 		hkl_assert(error == NULL || *error != NULL); */
+/* 		return FALSE; */
+/* 	} */
+/* 	hkl_assert(error == NULL || *error == NULL); */
 
-	/* compute the mode */
-	if(!hkl_mode_auto_set_real(self, engine,
-				   geometry, detector, sample,
-				   error)){
-		hkl_assert(error == NULL || *error != NULL);
-		//fprintf(stdout, "message :%s\n", (*error)->message);
-		return FALSE;
-	}
-	hkl_assert(error == NULL || *error == NULL);
+/* 	/\* compute the mode *\/ */
+/* 	if(!hkl_mode_auto_set_real(self, engine, */
+/* 				   geometry, detector, sample, */
+/* 				   error)){ */
+/* 		hkl_assert(error == NULL || *error != NULL); */
+/* 		//fprintf(stdout, "message :%s\n", (*error)->message); */
+/* 		return FALSE; */
+/* 	} */
+/* 	hkl_assert(error == NULL || *error == NULL); */
 
-	/* check that the mode allow to move a sample axis */
-	/* FIXME for now the sample holder is the first one */
-	last_axis = get_last_axis_idx(geometry, 0, &self->info->axes_w);
-	if(last_axis >= 0){
-		uint i;
-		const HklGeometryListItem *item;
-		uint len = engine->engines->geometries->n_items;
+/* 	/\* check that the mode allow to move a sample axis *\/ */
+/* 	/\* FIXME for now the sample holder is the first one *\/ */
+/* 	last_axis = get_last_axis_idx(geometry, 0, &self->info->axes_w); */
+/* 	if(last_axis >= 0){ */
+/* 		uint i; */
+/* 		const HklGeometryListItem *item; */
+/* 		uint len = engine->engines->geometries->n_items; */
 
-		/* For each solution already found we will generate another one */
-		/* using the Ewalds construction by rotating Q around the last sample */
-		/* axis of the mode until it intersect again the Ewald sphere. */
-		/* FIXME do not work if ki is colinear with the axis. */
+/* 		/\* For each solution already found we will generate another one *\/ */
+/* 		/\* using the Ewalds construction by rotating Q around the last sample *\/ */
+/* 		/\* axis of the mode until it intersect again the Ewald sphere. *\/ */
+/* 		/\* FIXME do not work if ki is colinear with the axis. *\/ */
 
-		/* for this we needs : */
-		/* - the coordinates of the end of the Q vector (q) */
-		/* - the last sample axis orientation of the mode (axis_v) */
-		/* - the coordinates of the center of the ewalds sphere (c) */
-		/* - the coordinates of the center of rotation of the sample (o = 0, 0, 0) */
+/* 		/\* for this we needs : *\/ */
+/* 		/\* - the coordinates of the end of the Q vector (q) *\/ */
+/* 		/\* - the last sample axis orientation of the mode (axis_v) *\/ */
+/* 		/\* - the coordinates of the center of the ewalds sphere (c) *\/ */
+/* 		/\* - the coordinates of the center of rotation of the sample (o = 0, 0, 0) *\/ */
 
-		/* then we can : */
-		/* - project the origin in plane of normal axis_v containing q (o') */
-		/* - project the center of the ewalds sphere into the same plan (c') */
-		/* - rotate q around this (o', c') line of 180° to find the (q2) solution */
-		/* - compute the (kf2) corresponding to this q2 solution */
-		/* at the end we just need to solve numerically the position of the detector */
+/* 		/\* then we can : *\/ */
+/* 		/\* - project the origin in plane of normal axis_v containing q (o') *\/ */
+/* 		/\* - project the center of the ewalds sphere into the same plan (c') *\/ */
+/* 		/\* - rotate q around this (o', c') line of 180° to find the (q2) solution *\/ */
+/* 		/\* - compute the (kf2) corresponding to this q2 solution *\/ */
+/* 		/\* at the end we just need to solve numerically the position of the detector *\/ */
 
-		/* we will add solution to the geometries so save its length before */
-		for(i=0, item=list_top(&engine->engines->geometries->items, HklGeometryListItem, list);
-		    i<len;
-		    ++i, item=list_next(&engine->engines->geometries->items, item, list)){
-			int j;
-			HklVector ki;
-			HklVector kf2;
-			HklVector q;
-			HklVector axis_v;
-			HklQuaternion qr;
-			HklAxis *axis;
-			HklVector cp = {{0}};
-			HklVector op = {{0}};
-			double angle;
-			HklGeometry *geom;
+/* 		/\* we will add solution to the geometries so save its length before *\/ */
+/* 		for(i=0, item=list_top(&engine->engines->geometries->items, HklGeometryListItem, list); */
+/* 		    i<len; */
+/* 		    ++i, item=list_next(&engine->engines->geometries->items, item, list)){ */
+/* 			int j; */
+/* 			HklVector ki; */
+/* 			HklVector kf2; */
+/* 			HklVector q; */
+/* 			HklVector axis_v; */
+/* 			HklQuaternion qr; */
+/* 			HklAxis *axis; */
+/* 			HklVector cp = {{0}}; */
+/* 			HklVector op = {{0}}; */
+/* 			double angle; */
+/* 			HklGeometry *geom; */
 
-			geom = hkl_geometry_new_copy(item->geometry);
+/* 			geom = hkl_geometry_new_copy(item->geometry); */
 
-			/* get the Q vector kf - ki */
-			hkl_detector_compute_kf(detector, geom, &q);
-			hkl_source_compute_ki(&geom->source, &ki);
-			hkl_vector_minus_vector(&q, &ki);
+/* 			/\* get the Q vector kf - ki *\/ */
+/* 			hkl_detector_compute_kf(detector, geom, &q); */
+/* 			hkl_source_compute_ki(&geom->source, &ki); */
+/* 			hkl_vector_minus_vector(&q, &ki); */
 
-			/* compute the current orientation of the last axis */
-			axis = container_of(darray_item(geom->axes,
-							darray_item(geom->holders, 0)->config->idx[last_axis]),
-					    HklAxis, parameter);
-			axis_v = axis->axis_v;
-			hkl_quaternion_init(&qr, 1, 0, 0, 0);
-			for(j=0; j<last_axis; ++j)
-				hkl_quaternion_times_quaternion(
-					&qr,
-					&container_of(darray_item(geom->axes,
-								  darray_item(geom->holders, 0)->config->idx[j]),
-						      HklAxis, parameter)->q);
-			hkl_vector_rotated_quaternion(&axis_v, &qr);
+/* 			/\* compute the current orientation of the last axis *\/ */
+/* 			axis = container_of(darray_item(geom->axes, */
+/* 							darray_item(geom->holders, 0)->config->idx[last_axis]), */
+/* 					    HklAxis, parameter); */
+/* 			axis_v = axis->axis_v; */
+/* 			hkl_quaternion_init(&qr, 1, 0, 0, 0); */
+/* 			for(j=0; j<last_axis; ++j) */
+/* 				hkl_quaternion_times_quaternion( */
+/* 					&qr, */
+/* 					&container_of(darray_item(geom->axes, */
+/* 								  darray_item(geom->holders, 0)->config->idx[j]), */
+/* 						      HklAxis, parameter)->q); */
+/* 			hkl_vector_rotated_quaternion(&axis_v, &qr); */
 
-			/* - project the center of the ewalds sphere into the same plan (c') */
-			hkl_vector_minus_vector(&cp, &ki);
-			hkl_vector_project_on_plan_with_point(&cp, &axis_v, &q);
-			hkl_vector_project_on_plan_with_point(&op, &axis_v, &q);
+/* 			/\* - project the center of the ewalds sphere into the same plan (c') *\/ */
+/* 			hkl_vector_minus_vector(&cp, &ki); */
+/* 			hkl_vector_project_on_plan_with_point(&cp, &axis_v, &q); */
+/* 			hkl_vector_project_on_plan_with_point(&op, &axis_v, &q); */
 
-			/* - rotate q around this (o', c') line of 180° to find the (q2) solution */
-			kf2 = q;
-			hkl_vector_rotated_around_line(&kf2, M_PI, &cp, &op);
-			angle = hkl_vector_oriented_angle_points(&q, &op, &kf2, &axis_v);
-			/* TODO parameter list for geometry */
-			if(!hkl_parameter_value_set(&axis->parameter,
-						    hkl_parameter_value_get(&axis->parameter, HKL_UNIT_DEFAULT) + angle,
-						    HKL_UNIT_DEFAULT, error))
-				return FALSE;
-			hkl_geometry_update(geom);
-#ifdef DEBUG
-			fprintf(stdout, "\n- try to add a solution by rotating Q <%f, %f, %f> around the \"%s\" axis <%f, %f, %f> of %f radian",
-				q.data[0], q.data[1], q.data[2],
-				((HklParameter *)axis)->name,
-				axis_v.data[0], axis_v.data[1], axis_v.data[2],
-				angle);
-			fprintf(stdout, "\n   op: <%f, %f, %f>", op.data[0], op.data[1], op.data[2]);
-			fprintf(stdout, "\n   q2: <%f, %f, %f>", kf2.data[0], kf2.data[1], kf2.data[2]);
-#endif
-			hkl_vector_add_vector(&kf2, &ki);
+/* 			/\* - rotate q around this (o', c') line of 180° to find the (q2) solution *\/ */
+/* 			kf2 = q; */
+/* 			hkl_vector_rotated_around_line(&kf2, M_PI, &cp, &op); */
+/* 			angle = hkl_vector_oriented_angle_points(&q, &op, &kf2, &axis_v); */
+/* 			/\* TODO parameter list for geometry *\/ */
+/* 			if(!hkl_parameter_value_set(&axis->parameter, */
+/* 						    hkl_parameter_value_get(&axis->parameter, HKL_UNIT_DEFAULT) + angle, */
+/* 						    HKL_UNIT_DEFAULT, error)) */
+/* 				return FALSE; */
+/* 			hkl_geometry_update(geom); */
+/* #ifdef DEBUG */
+/* 			fprintf(stdout, "\n- try to add a solution by rotating Q <%f, %f, %f> around the \"%s\" axis <%f, %f, %f> of %f radian", */
+/* 				q.data[0], q.data[1], q.data[2], */
+/* 				((HklParameter *)axis)->name, */
+/* 				axis_v.data[0], axis_v.data[1], axis_v.data[2], */
+/* 				angle); */
+/* 			fprintf(stdout, "\n   op: <%f, %f, %f>", op.data[0], op.data[1], op.data[2]); */
+/* 			fprintf(stdout, "\n   q2: <%f, %f, %f>", kf2.data[0], kf2.data[1], kf2.data[2]); */
+/* #endif */
+/* 			hkl_vector_add_vector(&kf2, &ki); */
 
-			/* at the end we just need to solve numerically the position of the detector */
-			if(fit_detector_position(self, geom, detector, &kf2))
-				hkl_geometry_list_add(engine->engines->geometries,
-						      geom);
+/* 			/\* at the end we just need to solve numerically the position of the detector *\/ */
+/* 			if(fit_detector_position(self, geom, detector, &kf2)) */
+/* 				hkl_geometry_list_add(engine->engines->geometries, */
+/* 						      geom); */
 
-			hkl_geometry_free(geom);
-		}
-	}
+/* 			hkl_geometry_free(geom); */
+/* 		} */
+/* 	} */
 	return TRUE;
 }
 
-#define HKL_MODE_HKL_PETRA3_P08_LISA_HKL_OPERATIONS_DEFAULTS	\
+#define HKL_MODE_HKL_PETRA3_P08_LISA_OPERATIONS_DEFAULTS	\
 	HKL_MODE_OPERATIONS_AUTO_DEFAULTS,			\
-		.get = hkl_mode_petra3_p08_lisa_get_hkl_real	\
-		.set = hkl_mode_petra3_p08_lisa_set_hkl_real
+		.get = hkl_mode_hkl_petra3_p08_lisa_get_real,	\
+		.set = hkl_mode_hkl_petra3_p08_lisa_set_real
 
 static const HklModeOperations hkl_mode_hkl_petra3_p08_lisa_operations = {
 	HKL_MODE_HKL_PETRA3_P08_LISA_OPERATIONS_DEFAULTS,
@@ -332,20 +333,18 @@ static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 	HklGeometry *self = hkl_geometry_new(factory);
 	HklHolder *h;
 
+	/* source */
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation_axis(h, MCHI, 1, 0, 0);
 
+	/* sample */
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation_axis(h, SPHI, 0, 0, 1);
 
+	/* detector */
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation_axis(h, DTTH, 0, 0, -1);
-	/* FRED: for now just add
-	hkl_holder_add_rotation_axis(h, DH, 0, 0, 0);
-
-	and define a new hkl_mode_petra3_p08_lisa_operations in order
-	to compute the hkl coordinates. You can find the hkl_mode_operations here
-	 */
+	hkl_holder_add_rotation_axis(h, DH, 0, 0, 0); /* should be a translation let's try with a rotation for now */
 	hkl_holder_add_rotation_axis(h, DROT, 0, -1, 0);
 
 	return self;
@@ -355,7 +354,7 @@ static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 /* Modes */
 /********/
 
-
+/* hkl modes */
 
 static HklMode *k_parallel_incident(void)
 {
@@ -440,7 +439,7 @@ static HklMode *k_parallel_outgoing(void)
 			   TRUE);
 }
 
-/* mode_lisa_pm for LisaPM Engine */
+/* lisapm modes */
 
 
 static const HklParameter mode_lisa_pm_parameters[] = {
@@ -508,25 +507,9 @@ static HklMode *mode_lisa_pm(void)
 			   TRUE);
 }
 
-/* FRED let's start with a simple read-only code then we will add the set part */
-
+/******************/
+/* LisaPM Engine */
 /*****************/
-/* mode readonly */
-/*****************/
-
-REGISTER_READONLY_INCIDENCE(hkl_engine_template_incidence_new,
-			    P99_PROTECT({MCHI}),
-			    surface_parameters_y);
-
-REGISTER_READONLY_EMERGENCE(hkl_engine_template_emergence_new,
-			    P99_PROTECT({DROT}),
-			    surface_parameters_y);
-
-
-
-/*************/
-/* LisaSth Engine */
-/*************/
 
 struct _HklEngineLisaPM
 {
@@ -627,9 +610,8 @@ static HklEngineList *hkl_engine_list_new_petra3_p08_lisa(const HklFactory *fact
 
 	HklEngineList *self = hkl_engine_list_new();
 
-	hkl_engine_petra3_p08_lisa_pm_new(self);
-
 	hkl_engine_petra3_p08_lisa_hkl_new(self);
+	/* hkl_engine_petra3_p08_lisa_pm_new(self); */
 
 	return self;
 }

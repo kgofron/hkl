@@ -45,6 +45,8 @@ extern int _emergence_fixed_func(const gsl_vector *x, void *params, gsl_vector *
 extern int RUBh_minus_Q(double const x[], void *params, double f[]);
 extern int _double_diffraction(double const x[], void *params, double f[]);
 
+extern int hkl_is_reachable(HklEngine *engine, double wavelength, GError **error);
+
 extern int hkl_mode_get_hkl_real(HklMode *self,
 				 HklEngine *engine,
 				 HklGeometry *geometry,

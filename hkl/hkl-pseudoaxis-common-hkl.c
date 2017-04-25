@@ -253,7 +253,7 @@ static int get_last_axis_idx(HklGeometry *geometry, int holder_idx, const darray
 }
 
 
-static int hkl_is_reachable(HklEngine *engine, double wavelength, GError **error)
+int hkl_is_reachable(HklEngine *engine, double wavelength, GError **error)
 {
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
 	HklVector Hkl = {
