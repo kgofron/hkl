@@ -48,9 +48,7 @@ There are 4 pseudo motors related to them:
 
 alpha   (incident angle - kin with xy plane)
 beta    (outgoing angle - kout with xy plane)
-sth      (angle between the kin projection in the xy plane and the y axis)
-FRED: looking at the Abb.4.4 sth is the angle between kin projection and the vector defines via sphi.
-So whcih one is the right one ?
+sth      (angle between the kin projection and the vector defined via sphi)
 stth     (angle between kin and kout projections in the xy plane)
 
 sth and stth has to be independently as pseudomotors.
@@ -64,6 +62,9 @@ pseudo motor engine with the four pseudo motors. something which takes
 alpha, beta, sth and stth in order to compute the 5 real motors
 positions. So maybe the right things to do is to create a pm with all
 the pseudo motors and not only stth and sth.
+
+Teresa: I agree. The users told me only about stth and sth, as the manual
+also says, but it is better to have the four ones.
 
 Maybe the right things to do is to create for now, only pseudo motors
 with the read part.  So once we have this setup it will be easier for
@@ -83,11 +84,20 @@ us to understand what is going on.
 
 The following geometry constants have to be set:
 
-  - distance sample center to detector
-  - distance first crystal to sample center
-  - distance first crystal to second one.
+  - distance sample center to detector = 500
+  - distance first crystal (mono1) to sample center = 650
+  - distance first crystal (mono1) to second one (mono2) = 25
   - first crystal diffraction parameter
   - second crystal diffraction parameter
+
+lambda = hc_over_e/Energy
+bragg1 = g_tau1 * lambda * 1/(4*pi)
+bragg2 = g_tau2 * lambda * 1/(4*pi)
+
+where
+
+g_tau1 = ?
+g_tau2 = ?
 
 FRED: Do you want to set these parameters in the code or do you want
 to add these parameters to the geometry dynamiquely ?  So the user can
