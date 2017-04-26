@@ -96,8 +96,16 @@ bragg2 = g_tau2 * lambda * 1/(4*pi)
 
 where
 
-g_tau1 = ?
-g_tau2 = ?
+the crystals used are Si111 and Si220.
+
+g_tau1 = 2*PI/d111
+g_tau2 = 2*PI/d220
+
+where d111 and d220 are the lattice plane distances (in Amstrong) of the
+crystals.
+
+d111 = 3.136 A
+d220 = 1.920 A
 
 FRED: Do you want to set these parameters in the code or do you want
 to add these parameters to the geometry dynamiquely ?  So the user can
