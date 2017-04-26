@@ -161,7 +161,7 @@ int main(void)
 	GeometryList_save_as_dat("m1-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
-	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
+	solutions = Trajectory_solve(tconfig1, gconfig2, gaas, TRUE);
 	GeometryList_save_as_dat("m2-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
@@ -178,7 +178,7 @@ int main(void)
 	GeometryList_save_as_dat("s1-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
-	solutions = Trajectory_solve(tconfig1, gconfig, gaas, FALSE);
+	solutions = Trajectory_solve(tconfig1, gconfig2, gaas, FALSE);
 	GeometryList_save_as_dat("s2-11.dat", tconfig1, solutions);
 	hkl_geometry_list_free(solutions);
 
