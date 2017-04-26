@@ -23,6 +23,7 @@
  */
 #include "hkl.h"
 #include <gsl/gsl_sys.h>                // for gsl_isnan
+#include "hkl-axis-private.h"
 #include "hkl-factory-private.h"        // for autodata_factories_, etc
 #include "hkl-matrix-private.h"
 #include "hkl-pseudoaxis-common-hkl-private.h"  // for hkl_mode_operations, etc
@@ -140,6 +141,12 @@ of the beam on the sample.
 #define DROT "drot"
 #define MCHI "mchi"
 
+#define D_SD 500.0 /* milli meter */
+#define D_M1S 650.0 /* milli meter */
+#define D_M1M2 25 /* milli meter */
+#define D_Si111 3.136 /* Si111 of mono1 Angstöm */
+#define D_Si220 1.920 /* Si220 ok mono2 Angstöm */
+
 /************/
 /* Geometry */
 /************/
@@ -157,18 +164,15 @@ of the beam on the sample.
   "+ 2 axes for the detector\n"						\
   "\n"									\
   "  + **" DTTH "** : rotation around the :math:`-\\vec{z}` direction (0, 0, -1)\n" \
-  "  + **" DROT "** : rotation around the :math:`-\\vec{y}` direction (0, -1, 0)\n" \
-  "  + **" DH   "** : traslation along the :math:`\\vec{z}` direction (0, 0, 1)\n" \
-  "\n"
+  "  + **" DH   "** : translation along the :math:`\\vec{z}` direction (0, 0, 1)\n" \
+  "  + **" DROT "** : rotation around the :math:`-\\vec{y}` direction (0, -1, 0)\n"
 
-/*
-FRED: I would put the axes in this order DTTH -> DH -> DROT. even if
-this is not that important.  I think that we need to create a
-dedicated hkl_mode_operations, for yur diffractometer.  This will
-allow to not care about the current internal geometry (rotation
-axes). We will juste use axes as a list of parameters and use these
-parameters to compute the hkl coordinates.
-*/
+static double _alpha_max(double wavelength, double d1, double d2)
+{
+	double theta1 = asin(wavelength / (2 * d1));
+	double theta2 = asin(wavelength / (2 * d2));
+	return 2 * (theta2 - theta1);
+}
 
 static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 						 HklEngine *engine,
@@ -177,10 +181,16 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 						 HklSample *sample,
 						 GError **error)
 {
+	double alpha_max = _alpha_max(geometry->source.wave_length, D_Si111, D_Si220);
 	HklHolder *sample_holder;
+	HklHolder *source_holder;
 	HklMatrix RUB;
-	HklVector hkl, ki, Q;
+	HklVector hkl;
+	HklVector ki = {{cos(alpha_max), 0, -sin(alpha_max)}};
+	HklVector Q = {{D_SD, 0, 0}};
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
+	HklAxis *dtth = container_of(darray_item(geometry->axes, 2), HklAxis, parameter);
+	HklParameter *dh = darray_item(geometry->axes, 3);
 
 	/* update the geometry internals */
 	hkl_geometry_update(geometry);
@@ -192,9 +202,25 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 	hkl_matrix_times_matrix(&RUB, &sample->UB);
 
 	/* kf - ki = Q */
-	hkl_source_compute_ki(&geometry->source, &ki); /* WRONG should be adapted to your diffractometer */
-	hkl_detector_compute_kf(detector, geometry, &Q); /* idem */
+	source_holder = darray_item(geometry->holders, 0);
+	hkl_vector_rotated_quaternion(&ki, &source_holder->q);
+	hkl_vector_times_double(&ki, HKL_TAU / geometry->source.wave_length);
+	/* fprintf(stdout, "ki: "); */
+	/* hkl_vector_fprintf(stdout, &ki); */
+
+	hkl_vector_rotated_quaternion(&Q, &dtth->q);
+	Q.data[2] += dh->_value;
+	hkl_vector_normalize(&Q);
+	hkl_vector_times_double(&Q,HKL_TAU / geometry->source.wave_length);
+	/* fprintf(stdout, " kf: "); */
+	/* hkl_vector_fprintf(stdout, &Q); */
+
 	hkl_vector_minus_vector(&Q, &ki);
+	/* fprintf(stdout, " Q: "); */
+	/* hkl_vector_fprintf(stdout, &Q); */
+	/* fprintf(stdout, "\n"); */
+
+	/* compute hkl */
 
 	hkl_matrix_solve(&RUB, &hkl, &Q);
 

@@ -100,6 +100,10 @@ struct _HklVector
 	double data[3];
 };
 
+#define HKL_VECTOR_X {{1, 0, 0}}
+#define HKL_VECTOR_Y {{0, 1, 0}}
+#define HKL_VECTOR_Z {{0, 0, 1}}
+
 HKLAPI void hkl_vector_init(HklVector *self, double x, double y, double z);
 
 /**************/
