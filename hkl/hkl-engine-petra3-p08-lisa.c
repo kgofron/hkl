@@ -147,10 +147,6 @@ of the beam on the sample.
 #define D_Si111 3.136 /* Si111 of mono1 Angstöm */
 #define D_Si220 1.920 /* Si220 ok mono2 Angstöm */
 
-/************/
-/* Geometry */
-/************/
-
 #define HKL_GEOMETRY_PETRA3_P08_LISA_DESCRIPTION \
   "+ xrays source fix along the :math:`\\vec{x}` direction (1, 0, 0)\n"   \
   "+ 1 axes for the monochromator\n"					\
@@ -182,43 +178,35 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 						 GError **error)
 {
 	double alpha_max = _alpha_max(geometry->source.wave_length, D_Si111, D_Si220);
-	HklHolder *sample_holder;
-	HklHolder *source_holder;
+	HklHolder *holder;
 	HklMatrix RUB;
 	HklVector hkl;
 	HklVector ki = {{cos(alpha_max), 0, -sin(alpha_max)}};
 	HklVector Q = {{D_SD, 0, 0}};
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	HklAxis *dtth = container_of(darray_item(geometry->axes, 2), HklAxis, parameter);
-	HklParameter *dh = darray_item(geometry->axes, 3);
+	HklAxis *dtth = container_of(hkl_geometry_get_axis_by_name(geometry, DTTH), HklAxis, parameter);
+	HklParameter *dh = hkl_geometry_get_axis_by_name(geometry, DH);
 
 	/* update the geometry internals */
 	hkl_geometry_update(geometry);
 
 	/* R * UB */
 	/* for the lisa geometry the holder 1 is the sample holder. */
-	sample_holder = darray_item(geometry->holders, 1);
-	hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
+	holder = darray_item(geometry->holders, 1);
+	hkl_quaternion_to_matrix(&holder->q, &RUB);
 	hkl_matrix_times_matrix(&RUB, &sample->UB);
 
 	/* kf - ki = Q */
-	source_holder = darray_item(geometry->holders, 0);
-	hkl_vector_rotated_quaternion(&ki, &source_holder->q);
+	holder = darray_item(geometry->holders, 0);
+	hkl_vector_rotated_quaternion(&ki, &holder->q);
 	hkl_vector_times_double(&ki, HKL_TAU / geometry->source.wave_length);
-	/* fprintf(stdout, "ki: "); */
-	/* hkl_vector_fprintf(stdout, &ki); */
 
 	hkl_vector_rotated_quaternion(&Q, &dtth->q);
 	Q.data[2] += dh->_value;
 	hkl_vector_normalize(&Q);
-	hkl_vector_times_double(&Q,HKL_TAU / geometry->source.wave_length);
-	/* fprintf(stdout, " kf: "); */
-	/* hkl_vector_fprintf(stdout, &Q); */
+	hkl_vector_times_double(&Q, HKL_TAU / geometry->source.wave_length);
 
 	hkl_vector_minus_vector(&Q, &ki);
-	/* fprintf(stdout, " Q: "); */
-	/* hkl_vector_fprintf(stdout, &Q); */
-	/* fprintf(stdout, "\n"); */
 
 	/* compute hkl */
 
