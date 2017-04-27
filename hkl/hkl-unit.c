@@ -67,53 +67,27 @@ void hkl_unit_free(HklUnit *self)
  *
  * Returns: TRUE or FALSE
  **/
-int hkl_unit_compatible(const HklUnit *self, const HklUnit *unit)
+int hkl_unit_compatible(const HklUnit *unit1, const HklUnit *unit2)
 {
-	int res = TRUE;
-	if (self && unit){
-		switch(self->type){
-		case HKL_UNIT_ANGLE_DEG:
-			switch(unit->type){
-			case HKL_UNIT_ANGLE_DEG:
-			case HKL_UNIT_ANGLE_RAD:
-			case HKL_UNIT_ANGLE_MRAD:
-				break;
-			default:
-				res = FALSE;
-				break;
-			}
-			break;
-		case HKL_UNIT_ANGLE_RAD:
-			switch(unit->type){
-			case HKL_UNIT_ANGLE_DEG:
-			case HKL_UNIT_ANGLE_RAD:
-			case HKL_UNIT_ANGLE_MRAD:
-				break;
-			default:
-				res = FALSE;
-				break;
-			}
-			break;
-		case HKL_UNIT_LENGTH_NM:
-			switch(unit->type){
-			case HKL_UNIT_LENGTH_NM:
-				break;
-			default:
-				res = FALSE;
-				break;
-			}
-			break;
-		case HKL_UNIT_ANGLE_MRAD:
-			switch(unit->type){
-			case HKL_UNIT_ANGLE_DEG:
-			case HKL_UNIT_ANGLE_RAD:
-			case HKL_UNIT_ANGLE_MRAD:
-				break;
-			default:
-				res = FALSE;
-				break;
-			}
-			break;
+	int res = FALSE;
+
+	if (unit1 == NULL) {
+		if (unit2 == NULL) {
+			res = TRUE;
+		}else{
+			res = FALSE;
+		}
+	}else{
+		if (unit2 == NULL){
+			res = FALSE;
+		}else{
+			res = ( (unit1->dimension.l == unit2->dimension.l)
+				&& (unit1->dimension.m == unit2->dimension.m)
+				&& (unit1->dimension.t == unit2->dimension.t)
+				&& (unit1->dimension.i == unit2->dimension.i)
+				&& (unit1->dimension.th == unit2->dimension.th)
+				&& (unit1->dimension.n == unit2->dimension.n)
+				&& (unit1->dimension.j == unit2->dimension.j));
 		}
 	}
 	return res;
@@ -129,67 +103,23 @@ int hkl_unit_compatible(const HklUnit *self, const HklUnit *unit)
  *
  * Returns: the factor of the conversion.
  **/
-double hkl_unit_factor(const HklUnit *self, const HklUnit *unit)
+double hkl_unit_factor(const HklUnit *from, const HklUnit *to)
 {
-	double factor = 1.;
+	double res = 1.0;
 
-	if (self && unit){
-		switch(self->type){
-		case HKL_UNIT_ANGLE_DEG:
-			switch(unit->type){
-			case HKL_UNIT_ANGLE_DEG:
-				break;
-			case HKL_UNIT_ANGLE_RAD:
-				factor = HKL_DEGTORAD;
-				break;
-			case HKL_UNIT_ANGLE_MRAD:
-				factor = HKL_DEGTORAD * 1e3;
-				break;
-			default:
-				factor = GSL_NAN;
-				break;
-			}
-			break;
-		case HKL_UNIT_ANGLE_RAD:
-			switch(unit->type){
-			case HKL_UNIT_ANGLE_DEG:
-				factor = HKL_RADTODEG;
-				break;
-			case HKL_UNIT_ANGLE_RAD:
-				break;
-			case HKL_UNIT_ANGLE_MRAD:
-				factor = 1e3;
-				break;
-			default:
-				factor = GSL_NAN;
-				break;
-			}
-			break;
-		case HKL_UNIT_LENGTH_NM:
-			switch(unit->type){
-			case HKL_UNIT_LENGTH_NM:
-				break;
-			default:
-				factor = GSL_NAN;
-				break;
-			}
-			break;
-		case HKL_UNIT_ANGLE_MRAD:
-			switch(unit->type){
-			case HKL_UNIT_ANGLE_DEG:
-				factor = 1e-3 * HKL_RADTODEG;
-				break;
-			case HKL_UNIT_ANGLE_RAD:
-				factor = 1e-3;
-				break;
-			case HKL_UNIT_ANGLE_MRAD:
-				break;
-			default:
-				factor = GSL_NAN;
-				break;
-			}
-			break;
+	if (from == NULL) {
+		if (to == NULL) {
+			res = 1.0;
+		}else{
+			res = 1.0 / to->factor;
+		}
+	}else{
+		if (to == NULL){
+			res = from->factor;
+		}else{
+			res = from->factor / to->factor;
 		}
 	}
-	return factor;
+
+	return res;
 }

@@ -26,34 +26,44 @@
 
 G_BEGIN_DECLS
 
-typedef struct _HklUnit HklUnit;
+typedef struct _HklUnitDimension HklUnitDimension;
 
-typedef enum _HklUnitType /*< unit,prefix=HKL >*/
+struct _HklUnitDimension
 {
-	HKL_UNIT_ANGLE_DEG,
-	HKL_UNIT_ANGLE_RAD,
-	HKL_UNIT_LENGTH_NM,
-	HKL_UNIT_ANGLE_MRAD,
-} HklUnitType;
+	int l; /* Length */
+	int m; /* Mass */
+	int t; /* Time */
+	int i; /* Electric current */
+	int th; /* Thermodynamic temperature */
+	int n; /* Amount of substance */
+	int j; /* Luminous intensity */
+};
+
+#define HklDPlaneAngle {0, 0, 0, 0, 0, 0, 0}
+#define HklDLength {1, 0, 0, 0, 0, 0, 0}
+
+typedef struct _HklUnit HklUnit;
 
 struct _HklUnit
 {
-	HklUnitType type;
+	HklUnitDimension dimension;
+	double factor;
 	char const *name;
 	char const *repr;
 };
 
-static HklUnit const hkl_unit_angle_deg = {HKL_UNIT_ANGLE_DEG, "Degree", "°"};
-static HklUnit const hkl_unit_angle_rad = {HKL_UNIT_ANGLE_RAD, "Radian", "rad"};
-static HklUnit const hkl_unit_length_nm = {HKL_UNIT_LENGTH_NM, "NanoMeter", "nm"};
-static HklUnit const hkl_unit_angle_mrad = {HKL_UNIT_ANGLE_MRAD, "Milli Radian", "mrad"};
+static HklUnit const hkl_unit_angle_deg = {HklDPlaneAngle, M_PI/180., "Degree", "°"};
+static HklUnit const hkl_unit_angle_rad = {HklDPlaneAngle, 1., "Radian", "rad"};
+static HklUnit const hkl_unit_length_nm = {HklDLength, 1e-9, "Nano Meter", "nm"};
+static HklUnit const hkl_unit_angle_mrad = {HklDPlaneAngle, 1e-3, "Milli Radian", "mrad"};
+static HklUnit const hkl_unit_length_mm = {HklDLength, 1e-3, "Milli Meter", "mm"};
 
 extern HklUnit *hkl_unit_dup(const HklUnit *self);
 extern void hkl_unit_free(HklUnit *self);
 
-extern int hkl_unit_compatible(const HklUnit *self, const HklUnit *unit);
+extern int hkl_unit_compatible(const HklUnit *unit1, const HklUnit *unit2);
 
-extern double hkl_unit_factor(const HklUnit *self, const HklUnit *unit);
+extern double hkl_unit_factor(const HklUnit *from, const HklUnit *to);
 
 G_END_DECLS
 
