@@ -37,7 +37,7 @@ struct _HklAxis {
 	HklQuaternion q; /* internal */
 };
 
-extern HklParameter *hkl_parameter_new_axis(const char* name, HklVector const *axis_v, const HklUnit *punit);
+extern HklParameter *hkl_parameter_new_rotation(const char* name, HklVector const *axis_v, const HklUnit *punit);
 
 G_END_DECLS
 

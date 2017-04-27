@@ -31,7 +31,7 @@ static void new(void)
 	HklParameter *axis;
 	static HklVector v = {{1, 0, 0}};
 	double min, max;
-	axis = hkl_parameter_new_axis("omega", &v, &hkl_unit_angle_deg);
+	axis = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
 
 	is_string("omega", hkl_parameter_name_get(axis), __func__);
 	hkl_parameter_min_max_get(axis, &min, &max, HKL_UNIT_DEFAULT);
@@ -50,7 +50,7 @@ static void get_quaternions(void)
 	static HklQuaternion q2_ref = {{M_SQRT1_2, -M_SQRT1_2, 0, 0}};
 	HklParameter *axis;
 
-	axis = hkl_parameter_new_axis("omega", &v_ref, &hkl_unit_angle_deg);
+	axis = hkl_parameter_new_rotation("omega", &v_ref, &hkl_unit_angle_deg);
 
 	is_quaternion(&q1_ref, hkl_parameter_quaternion_get(axis), __func__);
 
@@ -69,7 +69,7 @@ static void copy(void)
 	double min, max;
 
 
-	axis = hkl_parameter_new_axis("omega", &v, &hkl_unit_angle_deg);
+	axis = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
 	ok(TRUE == hkl_parameter_value_set(axis, -M_PI_2, HKL_UNIT_DEFAULT, NULL), __func__);
 
 	copy = hkl_parameter_new_copy(axis);
@@ -92,7 +92,7 @@ static void is_valid(void)
 	static HklVector v = {{1, 0, 0}};
 	HklParameter *axis1;
 
-	axis1 = hkl_parameter_new_axis("omega", &v, &hkl_unit_angle_deg);
+	axis1 = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
 
 	ok(TRUE == hkl_parameter_value_set(axis1, 45, HKL_UNIT_USER, NULL), __func__);
 	ok(TRUE == hkl_parameter_is_valid(axis1), __func__);
@@ -124,7 +124,7 @@ static void set_value_smallest_in_range(void)
 	HklParameter *axis;
 	static HklVector v = {{1, 0, 0}};
 
-	axis = hkl_parameter_new_axis("omega", &v, &hkl_unit_angle_deg);
+	axis = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
 
 	ok(TRUE == hkl_parameter_min_max_set(axis, -190, 190, HKL_UNIT_USER, NULL), __func__);
 
@@ -160,8 +160,8 @@ static void get_value_closest(void)
 	HklParameter *axis1, *axis2;
 	static HklVector v = {{1, 0, 0}};
 
-	axis1 = hkl_parameter_new_axis("omega", &v, &hkl_unit_angle_deg);
-	axis2 = hkl_parameter_new_axis("omega", &v, &hkl_unit_angle_deg);
+	axis1 = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
+	axis2 = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
 
 	ok(TRUE == hkl_parameter_value_set(axis1, 0, HKL_UNIT_USER, NULL), __func__);
 	ok(TRUE == hkl_parameter_value_set(axis2, 0, HKL_UNIT_USER, NULL), __func__);

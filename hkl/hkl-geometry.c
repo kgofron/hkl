@@ -76,7 +76,7 @@ static size_t hkl_geometry_add_rotation(HklGeometry *self,
 	}
 
 	/* no so create and add it to the list */
-	darray_append(self->axes, hkl_parameter_new_axis(name, axis_v, punit));
+	darray_append(self->axes, hkl_parameter_new_rotation(name, axis_v, punit));
 
 	return darray_size(self->axes) - 1;
 }
@@ -178,11 +178,7 @@ HklParameter *hkl_holder_add_rotation_axis_with_punit(HklHolder *self,
 {
 	HklParameter *axis = NULL;
 	size_t i, idx;
-	HklVector axis_v;
-
-	axis_v.data[0] = x;
-	axis_v.data[1] = y;
-	axis_v.data[2] = z;
+	HklVector axis_v = {{x, y, z}};
 
 	idx = hkl_geometry_add_rotation(self->geometry, name, &axis_v, punit);
 

@@ -235,7 +235,7 @@ static HklParameterOperations hkl_parameter_operations_axis = {
 	.quaternion_get = hkl_axis_quaternion_get_real
 };
 
-HklParameter *hkl_parameter_new_axis(const char *name, HklVector const *axis_v, const HklUnit *punit)
+HklParameter *hkl_parameter_new_rotation(const char *name, HklVector const *axis_v, const HklUnit *punit)
 {
 	HklAxis axis0 = {
 		.parameter = { HKL_PARAMETER_DEFAULTS_ANGLE,
