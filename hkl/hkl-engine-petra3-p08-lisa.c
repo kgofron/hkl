@@ -376,7 +376,7 @@ static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 	/* detector */
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation_axis(h, DTTH, 0, 0, -1);
-	hkl_holder_add_rotation_axis(h, DH, 0, 0, 0); /* should be a translation let's try with a rotation for now */
+	hkl_holder_add_translation_with_punit(h, DH, 0, 0, 1, &hkl_unit_length_mm);
 	hkl_holder_add_rotation_axis(h, DROT, 0, -1, 0);
 
 	return self;

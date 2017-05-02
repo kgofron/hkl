@@ -81,6 +81,48 @@ static size_t hkl_geometry_add_rotation(HklGeometry *self,
 	return darray_size(self->axes) - 1;
 }
 
+/*
+ * Try to add a axis to the axes list,
+ * if a identical axis is present in the list return it
+ * else create a new on and add it to the list.
+ * die if try to add an axis with the same name but a different axis_v
+ */
+static size_t hkl_geometry_add_translation(HklGeometry *self,
+					   const char *name,
+					   const HklVector *axis_v,
+					   const HklUnit *punit)
+{
+	uint i = 0;
+	HklParameter **parameter;
+
+	/* check if an axis with the same name is on the axis list */
+	darray_foreach(parameter, self->axes){
+		HklTranslation *translation = container_of(*parameter, HklTranslation, parameter);
+		if(!strcmp((*parameter)->name, name)){
+			if (hkl_vector_cmp(&translation->axis_v,
+					   axis_v)){
+				fprintf(stderr, "can not add two tranlsation with the same name \"%s\" but different axes <%f, %f, %f> != <%f, %f, %f> into an HklHolder.",
+					name,
+					translation->axis_v.data[0],
+					translation->axis_v.data[1],
+					translation->axis_v.data[2],
+					axis_v->data[0],
+					axis_v->data[1],
+					axis_v->data[2]);
+				exit(128);
+			}else{
+				return i;
+			}
+		}
+		++i;
+	}
+
+	/* no so create and add it to the list */
+	darray_append(self->axes, hkl_parameter_new_translation(name, axis_v, punit));
+
+	return darray_size(self->axes) - 1;
+}
+
 /*******************/
 /* HklHolderConfig */
 /*******************/
@@ -194,6 +236,28 @@ HklParameter *hkl_holder_add_rotation_axis_with_punit(HklHolder *self,
 	return axis;
 }
 
+HklParameter *hkl_holder_add_translation_with_punit(HklHolder *self,
+						    const char *name,
+						    double x, double y, double z,
+						    const HklUnit *punit)
+{
+	HklParameter *axis = NULL;
+	size_t i, idx;
+	HklVector axis_v = {{x, y, z}};
+
+	idx = hkl_geometry_add_translation(self->geometry, name, &axis_v, punit);
+
+	/* check that the axis is not already in the holder */
+	for(i=0; i<self->config->len; i++)
+		if (idx == self->config->idx[i])
+			return NULL;
+
+	axis = darray_item(self->geometry->axes, idx);
+	self->config->idx = realloc(self->config->idx, sizeof(*self->config->idx) * (self->config->len + 1));
+	self->config->idx[self->config->len++] = idx;
+
+	return axis;
+}
 /***************/
 /* HklGeometry */
 /***************/

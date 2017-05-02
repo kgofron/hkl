@@ -96,6 +96,12 @@ extern HklParameter *hkl_holder_add_rotation_axis(HklHolder *self,
 extern HklParameter *hkl_holder_add_rotation_axis_with_punit(HklHolder *self,
 							     char const *name, double x, double y, double z,
 							     const HklUnit *punit);
+
+extern HklParameter *hkl_holder_add_translation_with_punit(HklHolder *self,
+							   char const *name,
+							   double x, double y, double z,
+							   const HklUnit *punit);
+
 /***************/
 /* HklGeometry */
 /***************/
