@@ -253,3 +253,84 @@ HklParameter *hkl_parameter_new_rotation(const char *name, HklVector const *axis
 
 	return &self->parameter;
 }
+
+/**********************/
+/* HklTranslation */
+/**********************/
+
+static inline HklParameter *hkl_translation_copy_real(const HklParameter *base)
+{
+	HklTranslation *self = container_of(base, HklTranslation, parameter);
+	HklTranslation *dup;
+
+	dup = HKL_MALLOC(HklTranslation);
+
+	*dup = *self;
+
+	return &dup->parameter;
+}
+
+static inline void hkl_translation_free_real(HklParameter *base)
+{
+	free(container_of(base, HklTranslation, parameter));
+}
+
+static inline int hkl_translation_init_copy_real(HklParameter *base,
+							   const HklParameter *base_src,
+							   GError **error)
+{
+	HklTranslation *self = container_of(base, HklTranslation, parameter);
+	HklTranslation *src = container_of(base_src, HklTranslation, parameter);
+
+	/* need to check that parameters are compatibles */
+	hkl_error (error == NULL || *error == NULL);
+
+	*self = *src;
+	base->changed = TRUE;
+
+	return TRUE;
+}
+
+static inline void hkl_translation_fprintf_real(FILE *f, const HklParameter *base)
+{
+	HklTranslation *self = container_of(base, HklTranslation, parameter);
+
+	hkl_parameter_fprintf_real(f, base);
+	hkl_vector_fprintf(f, &self->axis_v);
+}
+
+static inline const HklVector *hkl_translation_axis_v_get_real(const HklParameter *base)
+{
+	return &container_of(base, HklTranslation, parameter)->axis_v;
+}
+
+#define HKL_PARAMETER_OPERATIONS_TRANSLATION_DEFAULTS			\
+	HKL_PARAMETER_OPERATIONS_DEFAULTS,				\
+		.copy = hkl_translation_copy_real,			\
+		.free = hkl_translation_free_real,			\
+		.init_copy = hkl_translation_init_copy_real,		\
+		.fprintf = hkl_translation_fprintf_real	,		\
+		.axis_v_get = hkl_translation_axis_v_get_real
+
+static HklParameterOperations hkl_parameter_operations_translation =
+{
+	HKL_PARAMETER_OPERATIONS_TRANSLATION_DEFAULTS,
+};
+
+HklParameter *hkl_parameter_new_translation(const char *name, HklVector const *axis_v, const HklUnit *punit)
+{
+	HklTranslation translation0 = {
+		.parameter = { HKL_PARAMETER_DEFAULTS,
+			       .name = name,
+			       .punit = punit,
+			       .ops = &hkl_parameter_operations_translation,
+		},
+		.axis_v = *axis_v,
+	};
+
+	HklTranslation *self =  HKL_MALLOC(HklTranslation);
+
+	*self = translation0;
+
+	return &self->parameter;
+}
