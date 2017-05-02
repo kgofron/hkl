@@ -208,6 +208,23 @@ static void hkl_holder_update(HklHolder *self)
 							      HklAxis, parameter)->q);
 }
 
+static HklParameter * hkl_holder_add_axis_if_not_present(const HklHolder *self, int idx)
+{
+	size_t i;
+	HklParameter *res = NULL;
+
+	/* check if the axis was already in the geometry */
+	for(i=0; i<self->config->len; i++)
+		if (idx == self->config->idx[i])
+			return NULL;
+
+	res = darray_item(self->geometry->axes, idx);
+	self->config->idx = realloc(self->config->idx, sizeof(*self->config->idx) * (self->config->len + 1));
+	self->config->idx[self->config->len++] = idx;
+
+	return res;
+}
+
 HklParameter *hkl_holder_add_rotation_axis(HklHolder *self,
 					   const char *name, double x, double y, double z)
 {
@@ -218,22 +235,11 @@ HklParameter *hkl_holder_add_rotation_axis_with_punit(HklHolder *self,
 						      const char *name, double x, double y, double z,
 						      const HklUnit *punit)
 {
-	HklParameter *axis = NULL;
-	size_t i, idx;
 	HklVector axis_v = {{x, y, z}};
 
-	idx = hkl_geometry_add_rotation(self->geometry, name, &axis_v, punit);
-
-	/* check that the axis is not already in the holder */
-	for(i=0; i<self->config->len; i++)
-		if (idx == self->config->idx[i])
-			return NULL;
-
-	axis = darray_item(self->geometry->axes, idx);
-	self->config->idx = realloc(self->config->idx, sizeof(*self->config->idx) * (self->config->len + 1));
-	self->config->idx[self->config->len++] = idx;
-
-	return axis;
+	return hkl_holder_add_axis_if_not_present(
+		self,
+		hkl_geometry_add_rotation(self->geometry, name, &axis_v, punit));
 }
 
 HklParameter *hkl_holder_add_translation_with_punit(HklHolder *self,
@@ -241,23 +247,13 @@ HklParameter *hkl_holder_add_translation_with_punit(HklHolder *self,
 						    double x, double y, double z,
 						    const HklUnit *punit)
 {
-	HklParameter *axis = NULL;
-	size_t i, idx;
 	HklVector axis_v = {{x, y, z}};
 
-	idx = hkl_geometry_add_translation(self->geometry, name, &axis_v, punit);
-
-	/* check that the axis is not already in the holder */
-	for(i=0; i<self->config->len; i++)
-		if (idx == self->config->idx[i])
-			return NULL;
-
-	axis = darray_item(self->geometry->axes, idx);
-	self->config->idx = realloc(self->config->idx, sizeof(*self->config->idx) * (self->config->len + 1));
-	self->config->idx[self->config->len++] = idx;
-
-	return axis;
+	return hkl_holder_add_axis_if_not_present(
+		self,
+		hkl_geometry_add_translation(self->geometry, name, &axis_v, punit));
 }
+
 /***************/
 /* HklGeometry */
 /***************/
