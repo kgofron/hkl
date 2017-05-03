@@ -45,10 +45,10 @@ static HklGeometry *hkl_geometry_new_twoC(const HklFactory *factory)
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, OMEGA, 0, -1, 0);
+	hkl_holder_add_rotation(h, OMEGA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, TTH, 0, -1, 0);
+	hkl_holder_add_rotation(h, TTH, 0, -1, 0, &hkl_unit_angle_deg);
 
 	return self;
 }

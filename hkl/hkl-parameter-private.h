@@ -48,7 +48,7 @@ struct _HklParameter {
 	const HklParameterOperations *ops;
 };
 
-#define HKL_PARAMETER_DEFAULTS .name="dummy", .description="no description", .range={.min=0, .max=0}, ._value=0, .unit=NULL, .punit=NULL, .fit=TRUE, .changed=TRUE, .ops = &hkl_parameter_operations_defaults
+#define HKL_PARAMETER_DEFAULTS .name="dummy", .description="no description", .range={.min=-DBL_MAX, .max=DBL_MAX}, ._value=0, .unit=NULL, .punit=NULL, .fit=TRUE, .changed=TRUE, .ops = &hkl_parameter_operations_defaults
 
 #define HKL_PARAMETER_DEFAULTS_ANGLE HKL_PARAMETER_DEFAULTS, .range={.min=-M_PI, .max=M_PI}, .unit = &hkl_unit_angle_rad, .punit = &hkl_unit_angle_deg
 

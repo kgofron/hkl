@@ -103,15 +103,15 @@ static HklGeometry *hkl_geometry_new_soleil_sirius_turret(const HklFactory *fact
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis_with_punit(h, BASEPITCH, 0, 1, 0, &hkl_unit_angle_mrad);
-	hkl_holder_add_rotation_axis(h, THETAH, 0, 0, -1);
-	hkl_holder_add_rotation_axis(h, ALPHAY, 0, 1, 0);
-	hkl_holder_add_rotation_axis(h, ALPHAX, 1, 0, 0);
+	hkl_holder_add_rotation(h, BASEPITCH, 0, 1, 0, &hkl_unit_angle_mrad);
+	hkl_holder_add_rotation(h, THETAH, 0, 0, -1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, ALPHAY, 0, 1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, ALPHAX, 1, 0, 0, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis_with_punit(h, BASEPITCH, 0, 1, 0, &hkl_unit_angle_mrad);
-	hkl_holder_add_rotation_axis(h, DELTA, 0, 0, -1);
-	hkl_holder_add_rotation_axis(h, GAMMA, 0, -1, 0);
+	hkl_holder_add_rotation(h, BASEPITCH, 0, 1, 0, &hkl_unit_angle_mrad);
+	hkl_holder_add_rotation(h, DELTA, 0, 0, -1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, GAMMA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	return self;
 }

@@ -322,6 +322,7 @@ HklParameter *hkl_parameter_new_translation(const char *name, HklVector const *a
 	HklTranslation translation0 = {
 		.parameter = { HKL_PARAMETER_DEFAULTS,
 			       .name = name,
+			       .unit = &hkl_unit_length_meter,
 			       .punit = punit,
 			       .ops = &hkl_parameter_operations_translation,
 		},

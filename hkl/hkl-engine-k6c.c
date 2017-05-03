@@ -685,14 +685,14 @@ static HklGeometry *hkl_geometry_new_kappa6C(const HklFactory *factory)
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, MU, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, KOMEGA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, KAPPA, 0, -cos(alpha), -sin(alpha));
-	hkl_holder_add_rotation_axis(h, KPHI, 0, -1, 0);
+	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, KOMEGA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, KAPPA, 0, -cos(alpha), -sin(alpha), &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, KPHI, 0, -1, 0, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, GAMMA, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, DELTA, 0, -1, 0);
+	hkl_holder_add_rotation(h, GAMMA, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, DELTA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	return self;
 }
@@ -1008,14 +1008,14 @@ static HklGeometry *hkl_geometry_new_soleil_sirius_kappa(const HklFactory *facto
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, MU, 0, 0, -1);
-	hkl_holder_add_rotation_axis(h, KOMEGA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, KAPPA, 0, -cos(alpha), -sin(alpha));
-	hkl_holder_add_rotation_axis(h, KPHI, 0, -1, 0);
+	hkl_holder_add_rotation(h, MU, 0, 0, -1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, KOMEGA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, KAPPA, 0, -cos(alpha), -sin(alpha), &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, KPHI, 0, -1, 0, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, DELTA, 0, 0, -1);
-	hkl_holder_add_rotation_axis(h, GAMMA, 0, -1, 0);
+	hkl_holder_add_rotation(h, DELTA, 0, 0, -1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, GAMMA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	return self;
 }

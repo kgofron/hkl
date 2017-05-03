@@ -367,17 +367,17 @@ static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 
 	/* source */
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, MCHI, 1, 0, 0);
+	hkl_holder_add_rotation(h, MCHI, 1, 0, 0, &hkl_unit_angle_deg);
 
 	/* sample */
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, SPHI, 0, 0, 1);
+	hkl_holder_add_rotation(h, SPHI, 0, 0, 1, &hkl_unit_angle_deg);
 
 	/* detector */
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, DTTH, 0, 0, -1);
-	hkl_holder_add_translation_with_punit(h, DH, 0, 0, 1, &hkl_unit_length_mm);
-	hkl_holder_add_rotation_axis(h, DROT, 0, -1, 0);
+	hkl_holder_add_rotation(h, DTTH, 0, 0, -1, &hkl_unit_angle_deg);
+	hkl_holder_add_translation(h, DH, 0, 0, 1, &hkl_unit_length_mm);
+	hkl_holder_add_rotation(h, DROT, 0, -1, 0, &hkl_unit_angle_deg);
 
 	return self;
 }

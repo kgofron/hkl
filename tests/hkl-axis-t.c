@@ -31,15 +31,23 @@ static void new(void)
 	HklParameter *axis;
 	static HklVector v = {{1, 0, 0}};
 	double min, max;
-	axis = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
 
-	is_string("omega", hkl_parameter_name_get(axis), __func__);
+	axis = hkl_parameter_new_rotation("rotation", &v, &hkl_unit_angle_deg);
+	is_string("rotation", hkl_parameter_name_get(axis), __func__);
 	hkl_parameter_min_max_get(axis, &min, &max, HKL_UNIT_DEFAULT);
 	is_double(-M_PI, min, HKL_EPSILON, __func__);
 	is_double(M_PI, max, HKL_EPSILON, __func__);
 	is_double(0., hkl_parameter_value_get(axis, HKL_UNIT_DEFAULT), HKL_EPSILON, __func__);
 	ok(TRUE == hkl_parameter_fit_get(axis), __func__);
+	hkl_parameter_free(axis);
 
+	axis = hkl_parameter_new_translation("translation", &v, &hkl_unit_length_mm);
+	is_string("translation", hkl_parameter_name_get(axis), __func__);
+	hkl_parameter_min_max_get(axis, &min, &max, HKL_UNIT_DEFAULT);
+	is_double(-DBL_MAX, min, HKL_EPSILON, __func__);
+	is_double(DBL_MAX, max, HKL_EPSILON, __func__);
+	is_double(0., hkl_parameter_value_get(axis, HKL_UNIT_DEFAULT), HKL_EPSILON, __func__);
+	ok(TRUE == hkl_parameter_fit_get(axis), __func__);
 	hkl_parameter_free(axis);
 }
 
@@ -50,13 +58,14 @@ static void get_quaternions(void)
 	static HklQuaternion q2_ref = {{M_SQRT1_2, -M_SQRT1_2, 0, 0}};
 	HklParameter *axis;
 
-	axis = hkl_parameter_new_rotation("omega", &v_ref, &hkl_unit_angle_deg);
-
+	axis = hkl_parameter_new_rotation("rotation", &v_ref, &hkl_unit_angle_deg);
 	is_quaternion(&q1_ref, hkl_parameter_quaternion_get(axis), __func__);
-
 	ok(TRUE == hkl_parameter_value_set(axis, -M_PI_2, HKL_UNIT_DEFAULT, NULL), __func__);
 	is_quaternion(&q2_ref, hkl_parameter_quaternion_get(axis), __func__);
+	hkl_parameter_free(axis);
 
+	axis = hkl_parameter_new_translation("translation", &v_ref, &hkl_unit_length_mm);
+	ok(NULL == hkl_parameter_quaternion_get(axis), __func__);
 	hkl_parameter_free(axis);
 }
 
@@ -69,20 +78,29 @@ static void copy(void)
 	double min, max;
 
 
-	axis = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
+	axis = hkl_parameter_new_rotation("rotation", &v, &hkl_unit_angle_deg);
 	ok(TRUE == hkl_parameter_value_set(axis, -M_PI_2, HKL_UNIT_DEFAULT, NULL), __func__);
-
 	copy = hkl_parameter_new_copy(axis);
-
-	is_string("omega", hkl_parameter_name_get(copy), __func__);
+	is_string("rotation", hkl_parameter_name_get(copy), __func__);
 	hkl_parameter_min_max_get(copy, &min, &max, HKL_UNIT_DEFAULT);
 	is_double(-M_PI, min, HKL_EPSILON, __func__);
 	is_double(M_PI, max, HKL_EPSILON, __func__);
 	is_double(-M_PI_2, hkl_parameter_value_get(copy, HKL_UNIT_DEFAULT), HKL_EPSILON, __func__);
 	ok(TRUE == hkl_parameter_fit_get(copy), __func__);
-
 	is_quaternion(&q_ref, hkl_parameter_quaternion_get(copy), __func__);
+	hkl_parameter_free(axis);
+	hkl_parameter_free(copy);
 
+	axis = hkl_parameter_new_translation("translation", &v, &hkl_unit_length_mm);
+	ok(TRUE == hkl_parameter_value_set(axis, 100, HKL_UNIT_DEFAULT, NULL), __func__);
+	copy = hkl_parameter_new_copy(axis);
+	is_string("translation", hkl_parameter_name_get(copy), __func__);
+	hkl_parameter_min_max_get(copy, &min, &max, HKL_UNIT_DEFAULT);
+	is_double(-DBL_MAX, min, HKL_EPSILON, __func__);
+	is_double(DBL_MAX, max, HKL_EPSILON, __func__);
+	is_double(100, hkl_parameter_value_get(copy, HKL_UNIT_DEFAULT), HKL_EPSILON, __func__);
+	ok(TRUE == hkl_parameter_fit_get(copy), __func__);
+	ok(NULL == hkl_parameter_quaternion_get(copy), __func__);
 	hkl_parameter_free(axis);
 	hkl_parameter_free(copy);
 }
@@ -90,33 +108,36 @@ static void copy(void)
 static void is_valid(void)
 {
 	static HklVector v = {{1, 0, 0}};
-	HklParameter *axis1;
+	HklParameter *axis;
 
-	axis1 = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
+	axis = hkl_parameter_new_rotation("rotation", &v, &hkl_unit_angle_deg);
 
-	ok(TRUE == hkl_parameter_value_set(axis1, 45, HKL_UNIT_USER, NULL), __func__);
-	ok(TRUE == hkl_parameter_is_valid(axis1), __func__);
+	ok(TRUE == hkl_parameter_value_set(axis, 45, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_min_max_set(axis, -270, 0, HKL_UNIT_USER, NULL), __func__);
+	ok(FALSE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_value_set(axis, -45, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_min_max_set(axis, 350, 450, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_value_set(axis, 45, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_value_set(axis, -45, HKL_UNIT_USER, NULL), __func__);
+	ok(FALSE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_min_max_set(axis, -10, 90, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_value_set(axis, 405, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_value_set(axis, -405, HKL_UNIT_USER, NULL), __func__);
+	ok(FALSE == hkl_parameter_is_valid(axis), __func__);
+	hkl_parameter_free(axis);
 
-	/* change the range of axis1 */
-	ok(TRUE == hkl_parameter_min_max_set(axis1, -270, 0, HKL_UNIT_USER, NULL), __func__);
-	ok(FALSE == hkl_parameter_is_valid(axis1), __func__);
-
-	ok(TRUE == hkl_parameter_value_set(axis1, -45, HKL_UNIT_USER, NULL), __func__);
-	ok(TRUE == hkl_parameter_is_valid(axis1), __func__);
-
-	ok(TRUE == hkl_parameter_min_max_set(axis1, 350, 450, HKL_UNIT_USER, NULL), __func__);
-	ok(TRUE == hkl_parameter_value_set(axis1, 45, HKL_UNIT_USER, NULL), __func__);
-	ok(TRUE == hkl_parameter_is_valid(axis1), __func__);
-	ok(TRUE == hkl_parameter_value_set(axis1, -45, HKL_UNIT_USER, NULL), __func__);
-	ok(FALSE == hkl_parameter_is_valid(axis1), __func__);
-
-	ok(TRUE == hkl_parameter_min_max_set(axis1, -10, 90, HKL_UNIT_USER, NULL), __func__);
-	ok(TRUE == hkl_parameter_value_set(axis1, 405, HKL_UNIT_USER, NULL), __func__);
-	ok(TRUE == hkl_parameter_is_valid(axis1), __func__);
-	ok(TRUE == hkl_parameter_value_set(axis1, -405, HKL_UNIT_USER, NULL), __func__);
-	ok(FALSE == hkl_parameter_is_valid(axis1), __func__);
-
-	hkl_parameter_free(axis1);
+	axis = hkl_parameter_new_translation("translation", &v, &hkl_unit_length_mm);
+	ok(TRUE == hkl_parameter_value_set(axis, 45, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_min_max_set(axis, -270, 0, HKL_UNIT_USER, NULL), __func__);
+	ok(FALSE == hkl_parameter_is_valid(axis), __func__);
+	ok(TRUE == hkl_parameter_value_set(axis, -45, HKL_UNIT_USER, NULL), __func__);
+	ok(TRUE == hkl_parameter_is_valid(axis), __func__);
+	hkl_parameter_free(axis);
 }
 
 static void set_value_smallest_in_range(void)
@@ -124,7 +145,7 @@ static void set_value_smallest_in_range(void)
 	HklParameter *axis;
 	static HklVector v = {{1, 0, 0}};
 
-	axis = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
+	axis = hkl_parameter_new_rotation("rotation", &v, &hkl_unit_angle_deg);
 
 	ok(TRUE == hkl_parameter_min_max_set(axis, -190, 190, HKL_UNIT_USER, NULL), __func__);
 
@@ -160,8 +181,8 @@ static void get_value_closest(void)
 	HklParameter *axis1, *axis2;
 	static HklVector v = {{1, 0, 0}};
 
-	axis1 = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
-	axis2 = hkl_parameter_new_rotation("omega", &v, &hkl_unit_angle_deg);
+	axis1 = hkl_parameter_new_rotation("rotation", &v, &hkl_unit_angle_deg);
+	axis2 = hkl_parameter_new_rotation("rotation", &v, &hkl_unit_angle_deg);
 
 	ok(TRUE == hkl_parameter_value_set(axis1, 0, HKL_UNIT_USER, NULL), __func__);
 	ok(TRUE == hkl_parameter_value_set(axis2, 0, HKL_UNIT_USER, NULL), __func__);
@@ -189,7 +210,7 @@ static void get_value_closest(void)
 
 int main(void)
 {
-	plan(53);
+	plan(72);
 
 	new();
 	get_quaternions();

@@ -57,6 +57,7 @@ static HklUnit const hkl_unit_angle_rad = {HklDPlaneAngle, 1., "Radian", "rad"};
 static HklUnit const hkl_unit_length_nm = {HklDLength, 1e-9, "Nano Meter", "nm"};
 static HklUnit const hkl_unit_angle_mrad = {HklDPlaneAngle, 1e-3, "Milli Radian", "mrad"};
 static HklUnit const hkl_unit_length_mm = {HklDLength, 1e-3, "Milli Meter", "mm"};
+static HklUnit const hkl_unit_length_meter = {HklDLength, 1., "Meter", "m"};
 
 extern HklUnit *hkl_unit_dup(const HklUnit *self);
 extern void hkl_unit_free(HklUnit *self);

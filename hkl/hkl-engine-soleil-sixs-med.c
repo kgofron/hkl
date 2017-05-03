@@ -420,14 +420,14 @@ static HklGeometry *hkl_geometry_new_soleil_sixs_med_2_2(const HklFactory *facto
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, BETA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, MU, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, OMEGA, 0, -1, 0);
+	hkl_holder_add_rotation(h, BETA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, OMEGA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, BETA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, GAMMA, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, DELTA, 0, -1, 0);
+	hkl_holder_add_rotation(h, BETA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, GAMMA, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, DELTA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	return self;
 }
@@ -472,13 +472,13 @@ static HklGeometry *hkl_geometry_new_soleil_sixs_med_1_2(const HklFactory *facto
 	HklGeometry *self = hkl_geometry_new(factory);
 	HklHolder *h;
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, PITCH, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, MU, 0, 0, 1);
+	hkl_holder_add_rotation(h, PITCH, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, PITCH, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, GAMMA, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, DELTA, 0, -1, 0);
+	hkl_holder_add_rotation(h, PITCH, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, GAMMA, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, DELTA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	return self;
 }
@@ -527,15 +527,15 @@ static HklGeometry *hkl_geometry_new_soleil_sixs_med_2_3(const HklFactory *facto
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, BETA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, MU, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, OMEGA, 0, -1, 0);
+	hkl_holder_add_rotation(h, BETA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, OMEGA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, BETA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, GAMMA, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, DELTA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, ETA_A, -1, 0, 0);
+	hkl_holder_add_rotation(h, BETA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, GAMMA, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, DELTA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, ETA_A, -1, 0, 0, &hkl_unit_angle_deg);
 
 	return self;
 }

@@ -139,13 +139,13 @@ static HklGeometry *hkl_geometry_new_zaxis(const HklFactory *factory)
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, MU, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, OMEGA, 0, -1, 0);
+	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, OMEGA, 0, -1, 0, &hkl_unit_angle_deg);
 
 	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation_axis(h, MU, 0, 0, 1);
-	hkl_holder_add_rotation_axis(h, DELTA, 0, -1, 0);
-	hkl_holder_add_rotation_axis(h, GAMMA, 0, 0, 1);
+	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, DELTA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, GAMMA, 0, 0, 1, &hkl_unit_angle_deg);
 
 	return self;
 }

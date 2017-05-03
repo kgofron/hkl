@@ -79,8 +79,8 @@ static void compute_kf(void)
 	 * holder. We will decide about a better API to connect
 	 * geometry and detector */
 	holder = hkl_geometry_add_holder(geometry);
-	hkl_holder_add_rotation_axis(holder, "a", 1, 0, 0);
-	hkl_holder_add_rotation_axis(holder, "b", 0, 1, 0);
+	hkl_holder_add_rotation(holder, "a", 1, 0, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(holder, "b", 0, 1, 0, &hkl_unit_angle_deg);
 
 	res &= DIAG(hkl_parameter_value_set(darray_item(geometry->axes, 0), M_PI_2, HKL_UNIT_DEFAULT, NULL));
 	res &= DIAG(hkl_parameter_value_set(darray_item(geometry->axes, 1), M_PI_2, HKL_UNIT_DEFAULT, NULL));

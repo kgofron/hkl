@@ -201,11 +201,28 @@ static void hkl_holder_update(HklHolder *self)
 	size_t i;
 
 	self->q = q0;
-	for(i=0; i<self->config->len; ++i)
-		hkl_quaternion_times_quaternion(&self->q,
-						&container_of(darray_item(self->geometry->axes,
-									  self->config->idx[i]),
-							      HklAxis, parameter)->q);
+	/*
+	 * The initial meaning of hkl_holder_update was to compute the
+	 * global rotation of the holder. The first holder contained
+	 * only centered rotations. Now that we have added also
+	 * translation, we stop this computation at the first non
+	 * rotation axis
+	 *
+	 * The right think to do should be to add an
+	 * HklVector hkl_holder_apply_transformation(const Hklholder, const HklVector *vector)
+	 * for every kind of transformation (translation, rotation, etc...)
+	 */
+	for(i=0; i<self->config->len; ++i){
+		const HklParameter *p;
+		const HklQuaternion *q;
+
+		p = darray_item(self->geometry->axes, self->config->idx[i]);
+		q = hkl_parameter_quaternion_get(p);
+		if(NULL == q)
+			break;
+		else
+			hkl_quaternion_times_quaternion(&self->q, q);
+	}
 }
 
 static HklParameter * hkl_holder_add_axis_if_not_present(const HklHolder *self, int idx)
@@ -225,15 +242,10 @@ static HklParameter * hkl_holder_add_axis_if_not_present(const HklHolder *self, 
 	return res;
 }
 
-HklParameter *hkl_holder_add_rotation_axis(HklHolder *self,
-					   const char *name, double x, double y, double z)
-{
-	return hkl_holder_add_rotation_axis_with_punit(self, name, x, y, z, &hkl_unit_angle_deg);
-}
-
-HklParameter *hkl_holder_add_rotation_axis_with_punit(HklHolder *self,
-						      const char *name, double x, double y, double z,
-						      const HklUnit *punit)
+HklParameter *hkl_holder_add_rotation(HklHolder *self,
+				      const char *name,
+				      double x, double y, double z,
+				      const HklUnit *punit)
 {
 	HklVector axis_v = {{x, y, z}};
 
@@ -242,10 +254,10 @@ HklParameter *hkl_holder_add_rotation_axis_with_punit(HklHolder *self,
 		hkl_geometry_add_rotation(self->geometry, name, &axis_v, punit));
 }
 
-HklParameter *hkl_holder_add_translation_with_punit(HklHolder *self,
-						    const char *name,
-						    double x, double y, double z,
-						    const HklUnit *punit)
+HklParameter *hkl_holder_add_translation(HklHolder *self,
+					 const char *name,
+					 double x, double y, double z,
+					 const HklUnit *punit)
 {
 	HklVector axis_v = {{x, y, z}};
 
@@ -1135,22 +1147,13 @@ void hkl_geometry_list_fprintf(FILE *f, const HklGeometryList *self)
 			fprintf(f, "\n%d :", i++);
 			darray_foreach(axis, item->geometry->axes){
 				value = hkl_parameter_value_get(*axis, HKL_UNIT_DEFAULT);
-				if ((*axis)->punit)
-					fprintf(f, " % 18.15f %s", value, (*axis)->punit->repr);
-				else
-					fprintf(f, " % 18.15f", value);
+				fprintf(f, " % 18.15f %s", value, (*axis)->unit->repr);
 
 			}
 			fprintf(f, "\n   ");
 			darray_foreach(axis, item->geometry->axes){
-				value = hkl_parameter_value_get(*axis, HKL_UNIT_DEFAULT);
-				value = gsl_sf_angle_restrict_symm(value);
-				value *= hkl_unit_factor((*axis)->unit,
-							 (*axis)->punit);
-				if ((*axis)->punit)
-					fprintf(f, " % 18.15f %s", value, (*axis)->punit->repr);
-				else
-					fprintf(f, " % 18.15f", value);
+				value = hkl_parameter_value_get(*axis, HKL_UNIT_USER);
+				fprintf(f, " % 18.15f %s", value, (*axis)->punit->repr);
 			}
 			fprintf(f, "\n");
 		}
