@@ -141,9 +141,7 @@ of the beam on the sample.
 #define DROT "drot"
 #define MCHI "mchi"
 
-#define D_SD 500.0 /* milli meter */
-#define D_M1S 650.0 /* milli meter */
-#define D_M1M2 25 /* milli meter */
+#define D_SD 0.5 /* meter */
 #define D_Si111 3.136 /* Si111 of mono1 Angstöm */
 #define D_Si220 1.920 /* Si220 ok mono2 Angstöm */
 
