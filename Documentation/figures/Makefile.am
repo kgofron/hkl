@@ -60,7 +60,8 @@ dist_noinst_DATA = \
 	e2k_2.png \
 	e2k_3.png \
 	e2k_4.png \
-	qper_qpar.png
+	qper_qpar.png \
+	$(SIRIUSFILES)
 
 CLEANFILES = $(SIRIUSFILES) sirius-s.svg sirius-m.svg sirius-m-zoom.svg traj_n.svg
 

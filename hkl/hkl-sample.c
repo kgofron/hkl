@@ -334,10 +334,6 @@ HklSample* hkl_sample_new(const char *name)
 {
 	HklSample *self = NULL;
 
-	/* check parameters */
-	if(!name)
-		return self;
-
 	self = HKL_MALLOC(HklSample);
 
 	self->name = strdup(name);
@@ -380,10 +376,6 @@ HklSample *hkl_sample_new_copy(const HklSample *self)
 {
 	HklSample *dup = NULL;
 
-	/* check parameters */
-	if(!self)
-		return dup;
-
 	dup = HKL_MALLOC(HklSample);
 
 	dup->name = strdup(self->name);
@@ -407,9 +399,6 @@ HklSample *hkl_sample_new_copy(const HklSample *self)
  **/
 void hkl_sample_free(HklSample *self)
 {
-	if (!self)
-		return;
-
 	free(self->name);
 	hkl_lattice_free(self->lattice);
 	hkl_parameter_free(self->ux);
@@ -915,10 +904,7 @@ HklSampleReflection *hkl_sample_reflection_new(const HklGeometry *geometry,
 					       double h, double k, double l,
 					       GError **error)
 {
-	HklSampleReflection *self;
-
-	if (!geometry || !detector)
-		return NULL;
+	HklSampleReflection *self = NULL;
 
 	self = HKL_MALLOC(HklSampleReflection);
 

@@ -305,9 +305,6 @@ HklGeometry *hkl_geometry_new_copy(const HklGeometry *src)
 	HklParameter **axis;
 	HklHolder **holder;
 
-	if(!src)
-		return self;
-
 	self = HKL_MALLOC(HklGeometry);
 
 	self->factory = src->factory;
