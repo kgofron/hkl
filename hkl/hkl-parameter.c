@@ -373,7 +373,7 @@ int hkl_parameter_is_valid_range(const HklParameter *self)
  *
  * print into the #FILE f an #HklParameter
  **/
-void hkl_parameter_fprintf(FILE *f, HklParameter *self)
+void hkl_parameter_fprintf(FILE *f, const HklParameter *self)
 {
 	double factor = hkl_unit_factor(self->unit, self->punit);
 	if (self->punit)
@@ -435,7 +435,7 @@ const char *hkl_parameter_description_get(const HklParameter *self)
  *          (0) compatible, (!= 0) not-compatible
  **/
 int hkl_parameter_transformation_cmp(const HklParameter *self,
-				    const HklParameter *p2)
+				     const HklParameter *p2)
 {
 	return self->ops->transformation_cmp(self, p2);
 }

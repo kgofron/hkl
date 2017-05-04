@@ -50,23 +50,20 @@
  * else create a new on and add it to the list.
  * die if try to add an axis with the same name but a different axis_v
  */
-static size_t hkl_geometry_add_rotation(HklGeometry *self,
-					const char *name, const HklVector *axis_v,
-					const HklUnit *punit)
+static size_t hkl_geometry_add_axis(HklGeometry *self, const HklParameter *axis)
 {
 	uint i = 0;
 	HklParameter **parameter;
 
 	/* check if an axis with the same name is on the axis list */
 	darray_foreach(parameter, self->axes){
-		HklAxis *axis = container_of(*parameter, HklAxis, parameter);
-		if(!strcmp((*parameter)->name, name)){
-			if (hkl_vector_cmp(&axis->axis_v,
-					   axis_v)){
-				fprintf(stderr, "can not add two axis with the same name \"%s\" but different axes <%f, %f, %f> != <%f, %f, %f> into an HklAxes.",
-					name,
-					axis->axis_v.data[0], axis->axis_v.data[1], axis->axis_v.data[2],
-					axis_v->data[0], axis_v->data[1], axis_v->data[2]);
+		if(!strcmp((*parameter)->name, axis->name)){
+			if (hkl_parameter_transformation_cmp(*parameter, axis)){
+				fprintf(stderr,
+					"can not add two axis with the same name \"%s\" but not compatible transformation",
+					axis->name);
+				hkl_parameter_fprintf(stderr, *parameter);
+				hkl_parameter_fprintf(stderr, axis);
 				exit(128);
 			}else{
 				return i;
@@ -76,49 +73,7 @@ static size_t hkl_geometry_add_rotation(HklGeometry *self,
 	}
 
 	/* no so create and add it to the list */
-	darray_append(self->axes, hkl_parameter_new_rotation(name, axis_v, punit));
-
-	return darray_size(self->axes) - 1;
-}
-
-/*
- * Try to add a axis to the axes list,
- * if a identical axis is present in the list return it
- * else create a new on and add it to the list.
- * die if try to add an axis with the same name but a different axis_v
- */
-static size_t hkl_geometry_add_translation(HklGeometry *self,
-					   const char *name,
-					   const HklVector *axis_v,
-					   const HklUnit *punit)
-{
-	uint i = 0;
-	HklParameter **parameter;
-
-	/* check if an axis with the same name is on the axis list */
-	darray_foreach(parameter, self->axes){
-		HklTranslation *translation = container_of(*parameter, HklTranslation, parameter);
-		if(!strcmp((*parameter)->name, name)){
-			if (hkl_vector_cmp(&translation->axis_v,
-					   axis_v)){
-				fprintf(stderr, "can not add two tranlsation with the same name \"%s\" but different axes <%f, %f, %f> != <%f, %f, %f> into an HklHolder.",
-					name,
-					translation->axis_v.data[0],
-					translation->axis_v.data[1],
-					translation->axis_v.data[2],
-					axis_v->data[0],
-					axis_v->data[1],
-					axis_v->data[2]);
-				exit(128);
-			}else{
-				return i;
-			}
-		}
-		++i;
-	}
-
-	/* no so create and add it to the list */
-	darray_append(self->axes, hkl_parameter_new_translation(name, axis_v, punit));
+	darray_append(self->axes, hkl_parameter_new_copy(axis));
 
 	return darray_size(self->axes) - 1;
 }
@@ -248,10 +203,11 @@ HklParameter *hkl_holder_add_rotation(HklHolder *self,
 				      const HklUnit *punit)
 {
 	HklVector axis_v = {{x, y, z}};
+	HklParameter *axis = hkl_parameter_new_rotation(name, &axis_v, punit);
+	int idx = hkl_geometry_add_axis(self->geometry, axis);
+	hkl_parameter_free(axis);
 
-	return hkl_holder_add_axis_if_not_present(
-		self,
-		hkl_geometry_add_rotation(self->geometry, name, &axis_v, punit));
+	return hkl_holder_add_axis_if_not_present(self, idx);
 }
 
 HklParameter *hkl_holder_add_translation(HklHolder *self,
@@ -260,10 +216,11 @@ HklParameter *hkl_holder_add_translation(HklHolder *self,
 					 const HklUnit *punit)
 {
 	HklVector axis_v = {{x, y, z}};
+	HklParameter *axis = hkl_parameter_new_translation(name, &axis_v, punit);
+	int idx = hkl_geometry_add_axis(self->geometry, axis);
+	hkl_parameter_free(axis);
 
-	return hkl_holder_add_axis_if_not_present(
-		self,
-		hkl_geometry_add_translation(self->geometry, name, &axis_v, punit));
+	return hkl_holder_add_axis_if_not_present(self, idx);
 }
 
 /***************/

@@ -233,7 +233,7 @@ extern int hkl_parameter_is_valid(const HklParameter *self);
 
 extern int hkl_parameter_is_valid_range(const HklParameter *self);
 
-extern void hkl_parameter_fprintf(FILE *f, HklParameter *self);
+extern void hkl_parameter_fprintf(FILE *f, const HklParameter *self);
 
 extern int hkl_parameter_transformation_cmp(const HklParameter *self,
 					    const HklParameter *p2);
