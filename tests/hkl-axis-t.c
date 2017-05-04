@@ -198,19 +198,50 @@ static void get_value_closest(void)
 	is_double(100 * HKL_DEGTORAD, hkl_parameter_value_get_closest(axis1,
 								      axis2),
 		  HKL_EPSILON, __func__);
-
 	ok(TRUE == hkl_parameter_value_set(axis2, -85, HKL_UNIT_USER, NULL), __func__);
 	is_double(-260 * HKL_DEGTORAD, hkl_parameter_value_get_closest(axis1,
 								       axis2),
 		  HKL_EPSILON, __func__);
 
 	hkl_parameter_free(axis1);
+}
+
+static void transformation_cmp(void)
+{
+	int res = TRUE;
+	HklParameter *axis1, *axis2, *translation1, *translation2;
+	static HklVector v1 = {{1, 0, 0}};
+	static HklVector v2 = {{0, 1, 0}};
+
+	axis1 = hkl_parameter_new_rotation("rotation", &v1, &hkl_unit_angle_deg);
+	axis2 = hkl_parameter_new_rotation("rotation", &v2, &hkl_unit_angle_deg);
+	translation1 = hkl_parameter_new_translation("translation", &v1, &hkl_unit_length_mm);
+	translation2 = hkl_parameter_new_translation("translation", &v2, &hkl_unit_length_mm);
+
+	res &= DIAG(0 == hkl_parameter_transformation_cmp(axis1, axis1));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(axis1, axis2));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(axis1, translation1));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(axis1, translation2));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(axis2, translation1));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(axis2, translation2));
+	res &= DIAG(0 == hkl_parameter_transformation_cmp(translation1, translation1));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(translation1, translation2));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(translation1, axis1));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(translation1, axis2));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(translation2, axis1));
+	res &= DIAG(0 != hkl_parameter_transformation_cmp(translation2, axis2));
+
+	ok(res == TRUE, __func__);
+
+	hkl_parameter_free(translation2);
+	hkl_parameter_free(translation1);
 	hkl_parameter_free(axis2);
+	hkl_parameter_free(axis1);
 }
 
 int main(void)
 {
-	plan(72);
+	plan(73);
 
 	new();
 	get_quaternions();
@@ -218,6 +249,7 @@ int main(void)
 	is_valid();
 	set_value_smallest_in_range();
 	get_value_closest();
+	transformation_cmp();
 
 	return 0;
 }

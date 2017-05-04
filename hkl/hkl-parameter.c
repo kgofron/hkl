@@ -425,3 +425,17 @@ const char *hkl_parameter_description_get(const HklParameter *self)
 {
 	return self->description;
 }
+
+/**
+ * hkl_parameter_transformation_cmp: (skip)
+ * @self: the this ptr
+ * @p2: the second parameter to test with
+ *
+ * Returns: if two parameter transformations are compatibles.
+ *          (0) compatible, (!= 0) not-compatible
+ **/
+int hkl_parameter_transformation_cmp(const HklParameter *self,
+				    const HklParameter *p2)
+{
+	return self->ops->transformation_cmp(self, p2);
+}

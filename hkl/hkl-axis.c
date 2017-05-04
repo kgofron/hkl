@@ -220,6 +220,15 @@ static inline const HklQuaternion *hkl_axis_quaternion_get_real(const HklParamet
 	return &container_of(self, HklAxis, parameter)->q;
 }
 
+static inline int hkl_axis_transformation_cmp_real(const HklParameter *base, const HklParameter *p2)
+{
+	const HklAxis *self = container_of(base, HklAxis, parameter);
+	const HklAxis *axis2 = container_of(p2, HklAxis, parameter);
+
+	return hkl_parameter_transformation_cmp_real(base, p2)
+	       || hkl_vector_cmp(&self->axis_v, &axis2->axis_v);
+}
+
 static HklParameterOperations hkl_parameter_operations_axis = {
 	HKL_PARAMETER_OPERATIONS_DEFAULTS,
 	.copy = hkl_axis_copy_real,
@@ -232,7 +241,8 @@ static HklParameterOperations hkl_parameter_operations_axis = {
 	.is_valid = hkl_axis_is_valid_real,
 	.fprintf = hkl_axis_fprintf_real,
 	.axis_v_get = hkl_axis_axis_v_get_real,
-	.quaternion_get = hkl_axis_quaternion_get_real
+	.quaternion_get = hkl_axis_quaternion_get_real,
+	.transformation_cmp = hkl_axis_transformation_cmp_real
 };
 
 HklParameter *hkl_parameter_new_rotation(const char *name, HklVector const *axis_v, const HklUnit *punit)
@@ -304,13 +314,24 @@ static inline const HklVector *hkl_translation_axis_v_get_real(const HklParamete
 	return &container_of(base, HklTranslation, parameter)->axis_v;
 }
 
+static inline int hkl_translation_transformation_cmp_real(const HklParameter *base,
+							  const HklParameter *p2)
+{
+	const HklTranslation *self = container_of(base, HklTranslation, parameter);
+	const HklTranslation *translation2 = container_of(p2, HklTranslation, parameter);
+
+	return hkl_parameter_transformation_cmp_real(base, p2)
+		|| hkl_vector_cmp(&self->axis_v, &translation2->axis_v);
+}
+
 #define HKL_PARAMETER_OPERATIONS_TRANSLATION_DEFAULTS			\
 	HKL_PARAMETER_OPERATIONS_DEFAULTS,				\
 		.copy = hkl_translation_copy_real,			\
 		.free = hkl_translation_free_real,			\
 		.init_copy = hkl_translation_init_copy_real,		\
 		.fprintf = hkl_translation_fprintf_real	,		\
-		.axis_v_get = hkl_translation_axis_v_get_real
+		.axis_v_get = hkl_translation_axis_v_get_real,		\
+		.transformation_cmp = hkl_translation_transformation_cmp_real
 
 static HklParameterOperations hkl_parameter_operations_translation =
 {
