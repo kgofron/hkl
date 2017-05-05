@@ -324,6 +324,7 @@ int RUBh_minus_Q(double const x[], void *params, double f[])
 	/* for now the 0 holder is the sample holder. */
 	sample_holder = darray_item(engine->geometry->holders, 0);
 	hkl_matrix_times_vector(&engine->sample->UB, &Hkl);
+	/* Hkl = hkl_holder_transformation_apply(sample_holder, &Hkl); */
 	hkl_vector_rotated_quaternion(&Hkl, &sample_holder->q);
 
 	/* kf - ki = Q */

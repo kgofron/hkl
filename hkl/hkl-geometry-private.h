@@ -95,10 +95,19 @@ extern HklParameter *hkl_holder_add_rotation(HklHolder *self,
 					     double x, double y, double z,
 					     const HklUnit *punit);
 
+extern HklParameter *hkl_holder_add_rotation_with_origin(HklHolder *self,
+							 const char *name,
+							 double x, double y, double z,
+							 double ox, double oy, double oz,
+							 const HklUnit *punit);
+
 extern HklParameter *hkl_holder_add_translation(HklHolder *self,
 						char const *name,
 						double x, double y, double z,
 						const HklUnit *punit);
+
+extern HklVector hkl_holder_transformation_apply(const HklHolder *self,
+						 const HklVector *v);
 
 /***************/
 /* HklGeometry */

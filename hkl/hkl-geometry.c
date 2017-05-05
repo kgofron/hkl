@@ -210,6 +210,23 @@ HklParameter *hkl_holder_add_rotation(HklHolder *self,
 	return hkl_holder_add_axis_if_not_present(self, idx);
 }
 
+HklParameter *hkl_holder_add_rotation_with_origin(HklHolder *self,
+						  const char *name,
+						  double x, double y, double z,
+						  double ox, double oy, double oz,
+						  const HklUnit *punit)
+{
+	HklVector axis_v = {{x, y, z}};
+	HklVector origin = {{ox, oy, oz}};
+	HklParameter *axis = hkl_parameter_new_rotation_with_origin(name, &axis_v, &origin, punit);
+	int idx = hkl_geometry_add_axis(self->geometry, axis);
+	hkl_parameter_free(axis);
+
+	return hkl_holder_add_axis_if_not_present(self, idx);
+
+}
+
+
 HklParameter *hkl_holder_add_translation(HklHolder *self,
 					 const char *name,
 					 double x, double y, double z,
@@ -221,6 +238,22 @@ HklParameter *hkl_holder_add_translation(HklHolder *self,
 	hkl_parameter_free(axis);
 
 	return hkl_holder_add_axis_if_not_present(self, idx);
+}
+
+HklVector hkl_holder_transformation_apply(const HklHolder *self,
+					  const HklVector *v)
+{
+	size_t i;
+	HklVector res = *v;
+
+	/* for each axis from the end apply the transformation to the vector */
+	for(i=0;i<self->config->len;i++){
+		HklParameter *p = darray_item(self->geometry->axes,
+					      self->config->idx[self->config->len - 1 - i]);
+		res = hkl_parameter_transformation_apply(p, &res);
+	}
+
+	return res;
 }
 
 /***************/

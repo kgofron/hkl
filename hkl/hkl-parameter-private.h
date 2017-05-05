@@ -84,6 +84,7 @@ struct _HklParameterOperations {
 	const HklVector *     (*axis_v_get)(const HklParameter *self);
 	const HklQuaternion * (*quaternion_get)(const HklParameter *self);
 	int                   (*transformation_cmp)(const HklParameter *self, const HklParameter *p2);
+	HklVector             (*transformation_apply)(const HklParameter *self, const HklVector *v);
 };
 
 #define HKL_PARAMETER_OPERATIONS_DEFAULTS				\
@@ -99,7 +100,8 @@ struct _HklParameterOperations {
 		.fprintf = hkl_parameter_fprintf_real,			\
 		.axis_v_get = hkl_parameter_axis_v_get_real,		\
 		.quaternion_get = hkl_parameter_quaternion_get_real,	\
-		.transformation_cmp = hkl_parameter_transformation_cmp_real
+		.transformation_cmp = hkl_parameter_transformation_cmp_real, \
+		.transformation_apply = hkl_parameter_transformation_apply_real
 
 static inline HklParameter *hkl_parameter_copy_real(const HklParameter *self)
 {
@@ -210,6 +212,12 @@ static inline int hkl_parameter_transformation_cmp_real(const HklParameter *self
 	return self->ops != p2->ops;
 }
 
+static inline HklVector hkl_parameter_transformation_apply_real(UNUSED const HklParameter *self,
+								const HklVector *v)
+{
+	return *v;
+}
+
 static NEEDED HklParameterOperations hkl_parameter_operations_defaults = {
 	HKL_PARAMETER_OPERATIONS_DEFAULTS,
 };
@@ -237,6 +245,9 @@ extern void hkl_parameter_fprintf(FILE *f, const HklParameter *self);
 
 extern int hkl_parameter_transformation_cmp(const HklParameter *self,
 					    const HklParameter *p2);
+
+extern HklVector hkl_parameter_transformation_apply(const HklParameter *self,
+						    const HklVector *v);
 
 /********************/
 /* HklParameterList */

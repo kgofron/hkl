@@ -182,8 +182,6 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 	HklVector ki = {{cos(alpha_max), 0, -sin(alpha_max)}};
 	HklVector Q = {{D_SD, 0, 0}};
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	HklAxis *dtth = container_of(hkl_geometry_get_axis_by_name(geometry, DTTH), HklAxis, parameter);
-	HklParameter *dh = hkl_geometry_get_axis_by_name(geometry, DH);
 
 	/* update the geometry internals */
 	hkl_geometry_update(geometry);
@@ -196,11 +194,11 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 
 	/* kf - ki = Q */
 	holder = darray_item(geometry->holders, 0);
-	hkl_vector_rotated_quaternion(&ki, &holder->q);
+	ki = hkl_holder_transformation_apply(holder, &ki);
 	hkl_vector_times_double(&ki, HKL_TAU / geometry->source.wave_length);
 
-	hkl_vector_rotated_quaternion(&Q, &dtth->q);
-	Q.data[2] += dh->_value;
+	holder = darray_item(geometry->holders, 2);
+	Q = hkl_holder_transformation_apply(holder, &Q);
 	hkl_vector_normalize(&Q);
 	hkl_vector_times_double(&Q, HKL_TAU / geometry->source.wave_length);
 
@@ -375,7 +373,7 @@ static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation(h, DTTH, 0, 0, -1, &hkl_unit_angle_deg);
 	hkl_holder_add_translation(h, DH, 0, 0, 1, &hkl_unit_length_mm);
-	hkl_holder_add_rotation(h, DROT, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation_with_origin(h, DROT, 0, -1, 0, D_SD, 0, 0, &hkl_unit_angle_deg);
 
 	return self;
 }

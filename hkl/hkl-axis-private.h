@@ -30,6 +30,7 @@
 G_BEGIN_DECLS
 
 typedef struct _HklAxis HklAxis;
+typedef struct _HklRotationWithOrigin HklRotationWithOrigin;
 typedef struct _HklTranslation HklTranslation;
 
 struct _HklAxis {
@@ -38,13 +39,28 @@ struct _HklAxis {
 	HklQuaternion q; /* internal */
 };
 
+struct _HklRotationWithOrigin {
+	HklAxis axis;
+	HklVector origin;
+};
+
 struct _HklTranslation {
 	HklParameter parameter;
 	HklVector axis_v;
 };
 
-extern HklParameter *hkl_parameter_new_rotation(const char* name, HklVector const *axis_v, const HklUnit *punit);
-extern HklParameter *hkl_parameter_new_translation(const char *name, const HklVector *axis_v, const HklUnit *punit);
+extern HklParameter *hkl_parameter_new_rotation(const char* name,
+						HklVector const *axis_v,
+						const HklUnit *punit);
+
+extern HklParameter *hkl_parameter_new_rotation_with_origin(const char* name,
+							    const HklVector *axis_v,
+							    const HklVector *origin,
+							    const HklUnit *punit);
+
+extern HklParameter *hkl_parameter_new_translation(const char *name,
+						   const HklVector *axis_v,
+						   const HklUnit *punit);
 
 G_END_DECLS
 

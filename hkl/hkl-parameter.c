@@ -439,3 +439,16 @@ int hkl_parameter_transformation_cmp(const HklParameter *self,
 {
 	return self->ops->transformation_cmp(self, p2);
 }
+
+/**
+ * hkl_parameter_transformation_apply: (skip)
+ * @self: the this ptr
+ * @v: the #HklVector to transform
+ *
+ * Returns: the transformed #HklVector
+ **/
+HklVector hkl_parameter_transformation_apply(const HklParameter *self,
+					   const HklVector *v)
+{
+	return self->ops->transformation_apply(self, v);
+}
