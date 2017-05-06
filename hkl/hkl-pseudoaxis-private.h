@@ -136,13 +136,13 @@ static inline int hkl_mode_initialized_get(const HklMode *self)
 }
 
 
-static inline int hkl_mode_initialized_set_real(HklMode *self,
-						HklEngine *engine,
-						HklGeometry *geometry,
-						HklDetector *detector,
-						HklSample *sample,
-						int initialized,
-						GError **error)
+static inline int hkl_mode_initialized_set_real(UNUSED HklMode *self,
+						UNUSED HklEngine *engine,
+						UNUSED HklGeometry *geometry,
+						UNUSED HklDetector *detector,
+						UNUSED HklSample *sample,
+						UNUSED int initialized,
+						UNUSED GError **error)
 {
 	/* by default do nothing and no error */
 	return TRUE;
@@ -163,24 +163,24 @@ static inline int hkl_mode_initialized_set(HklMode *self,
 }
 
 
-static inline int hkl_mode_get_real(HklMode *self,
-				    HklEngine *engine,
-				    HklGeometry *geometry,
-				    HklDetector *detector,
-				    HklSample *sample,
-				    GError **error)
+static inline int hkl_mode_get_real(UNUSED HklMode *self,
+				    UNUSED HklEngine *engine,
+				    UNUSED HklGeometry *geometry,
+				    UNUSED HklDetector *detector,
+				    UNUSED HklSample *sample,
+				    UNUSED GError **error)
 {
 	/* by default do nothing and no error */
 	return FALSE;
 }
 
 
-static inline int hkl_mode_set_real(HklMode *self,
-				    HklEngine *engine,
-				    HklGeometry *geometry,
-				    HklDetector *detector,
-				    HklSample *sample,
-				    GError **error)
+static inline int hkl_mode_set_real(UNUSED HklMode *self,
+				    UNUSED HklEngine *engine,
+				    UNUSED HklGeometry *geometry,
+				    UNUSED HklDetector *detector,
+				    UNUSED HklSample *sample,
+				    UNUSED GError **error)
 {
 	/* by default do nothing and no error */
 	return FALSE;
@@ -352,7 +352,7 @@ struct _HklEngineOperations
 #define HKL_ENGINE_OPERATIONS_DEFAULTS .free=hkl_engine_free_real
 
 
-static inline void hkl_engine_free_real(HklEngine *self)
+static inline void hkl_engine_free_real(UNUSED HklEngine *self)
 {
 }
 
@@ -646,7 +646,7 @@ static inline HklEngineList *hkl_engine_list_new(void)
  *
  * Returns: (transfer none): NULL all the time the structure is non-copyable
  **/
-static inline const HklEngineList *hkl_engine_list_new_copy(const HklEngineList *self)
+static inline const HklEngineList *hkl_engine_list_new_copy(UNUSED const HklEngineList *self)
 {
 	return NULL;
 }
