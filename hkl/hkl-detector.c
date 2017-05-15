@@ -42,7 +42,7 @@ HklDetector *hkl_detector_new(void)
 
 	self = HKL_MALLOC(HklDetector);
 
-	self->idx = 1;
+	self->idx = HKL_HOLDER_DETECTOR_IDX;
 	self->holder = NULL;
 
 	return self;
@@ -107,7 +107,7 @@ int hkl_detector_compute_kf(HklDetector const *self, HklGeometry *g,
 
 	hkl_geometry_update(g);
 
-	holder = darray_item(g->holders, self->idx);
+	holder = hkl_geometry_detector_holder_get(g, self);
 	if (holder) {
 		hkl_vector_init(kf, HKL_TAU / g->source.wave_length, 0, 0);
 		hkl_vector_rotated_quaternion(kf, &holder->q);

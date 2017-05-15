@@ -420,7 +420,7 @@ static const char* hkl_geometry_kappa4C_vertical_axes[] = {KOMEGA, KAPPA, KPHI, 
 
 static HklGeometry *hkl_geometry_new_kappa4C_vertical(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	double alpha = 50 * HKL_DEGTORAD;
 	HklHolder *h;
 

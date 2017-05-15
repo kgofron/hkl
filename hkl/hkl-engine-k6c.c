@@ -351,13 +351,14 @@ static int _constant_incidence_func(const gsl_vector *x, void *params, gsl_vecto
 	 * the surface is oriented along the nx, ny, nz axis for all
 	 * diffractometer angles equal to zero */
 	if(mode->geometry){
-		HklQuaternion q0 = darray_item(mode->geometry->holders, 0)->q;
+		HklQuaternion q0 = hkl_geometry_sample_holder_get(mode->geometry, mode->sample)->q;
 
 		hkl_quaternion_conjugate(&q0);
 		hkl_vector_rotated_quaternion(&n, &q0);
 	}
 
-	hkl_vector_rotated_quaternion(&n, &darray_item(engine->geometry->holders, 0)->q);
+	hkl_vector_rotated_quaternion(&n, &hkl_geometry_sample_holder_get(engine->geometry,
+									  mode->sample)->q);
 
 	hkl_source_compute_ki(&engine->geometry->source, &ki);
 	incidence = _incidence(&n, &ki);
@@ -680,7 +681,7 @@ static const char* hkl_geometry_kappa6C_axes[] = {MU, KOMEGA, KAPPA, KPHI, GAMMA
 
 static HklGeometry *hkl_geometry_new_kappa6C(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	double alpha = 50 * HKL_DEGTORAD;
 	HklHolder *h;
 
@@ -1003,7 +1004,7 @@ static const char* hkl_geometry_soleil_sirius_kappa_axes[] = {MU, KOMEGA, KAPPA,
 
 static HklGeometry *hkl_geometry_new_soleil_sirius_kappa(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	double alpha = 50 * HKL_DEGTORAD;
 	HklHolder *h;
 

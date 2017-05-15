@@ -86,7 +86,8 @@ static int hkl_mode_incidence_get_real(HklMode *base,
 	}
 
 	/* compute the orientation of the surface */
-	hkl_vector_rotated_quaternion(&n, &darray_item(geometry->holders, 0)->q);
+	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
 
 	hkl_source_compute_ki(&geometry->source, &ki);
 	incidence = _incidence(&n, &ki);
@@ -242,7 +243,8 @@ static int hkl_mode_emergence_get_real(HklMode *base,
 	}
 
 	/* compute the orientation of the surface */
-	hkl_vector_rotated_quaternion(&n, &darray_item(geometry->holders, 0)->q);
+	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
 
 	hkl_detector_compute_kf(detector, geometry, &kf);
 	emergence = _emergence(&n, &kf);

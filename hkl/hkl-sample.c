@@ -99,6 +99,10 @@ static void hkl_sample_reflection_update(HklSampleReflection *self)
 {
 	HklVector ki;
 	HklQuaternion q;
+	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(self->geometry,
+									self->sample);
+	const HklHolder *detector_holder = hkl_geometry_detector_holder_get(self->geometry,
+									    self->detector);
 
 	if(!self)
 		return;
@@ -107,11 +111,10 @@ static void hkl_sample_reflection_update(HklSampleReflection *self)
 	/* first Q from angles */
 	hkl_source_compute_ki(&self->geometry->source, &ki);
 	self->_hkl = ki;
-	hkl_vector_rotated_quaternion(&self->_hkl,
-				      &darray_item(self->geometry->holders, self->detector->idx)->q);
+	hkl_vector_rotated_quaternion(&self->_hkl, &detector_holder->q);
 	hkl_vector_minus_vector(&self->_hkl, &ki);
 
-	q = darray_item(self->geometry->holders, 0)->q;
+	q = sample_holder->q;
 	hkl_quaternion_conjugate(&q);
 	hkl_vector_rotated_quaternion(&self->_hkl, &q);
 }
@@ -694,6 +697,9 @@ void hkl_sample_add_reflection(HklSample *self,
 			return;
 	}
 
+	reflection->sample = self;
+	hkl_sample_reflection_update(reflection);
+
 	list_add_tail(&self->reflections, &reflection->list);
 	self->n_reflections++;
 }
@@ -910,12 +916,11 @@ HklSampleReflection *hkl_sample_reflection_new(const HklGeometry *geometry,
 
 	self->geometry = hkl_geometry_new_copy(geometry);
 	self->detector = hkl_detector_new_copy(detector);
+	self->sample = NULL;
 	self->hkl.data[0] = h;
 	self->hkl.data[1] = k;
 	self->hkl.data[2] = l;
 	self->flag = TRUE;
-
-	hkl_sample_reflection_update(self);
 
 	return self;
 }

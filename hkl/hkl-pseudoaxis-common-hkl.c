@@ -105,8 +105,11 @@ static int fit_detector_function(const gsl_vector *x, void *params, gsl_vector *
 }
 
 
-static int fit_detector_position(HklMode *mode, HklGeometry *geometry,
-				 HklDetector *detector, HklVector *kf)
+static int fit_detector_position(HklMode *mode,
+				 HklGeometry *geometry,
+				 HklDetector *detector,
+				 const HklSample *sample,
+				 HklVector *kf)
 {
 	const char **axis_name;
 	HklDetectorFit params;
@@ -117,8 +120,8 @@ static int fit_detector_position(HklMode *mode, HklGeometry *geometry,
 	int status;
 	int res = FALSE;
 	int iter;
-	HklHolder *sample_holder = darray_item(geometry->holders, 0);
-	HklHolder *detector_holder = darray_item(geometry->holders, 1);
+	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+	const HklHolder *detector_holder = hkl_geometry_detector_holder_get(geometry, detector);
 
 	/* fit the detector part to find the position of the detector for a given kf */
 	/* FIXME for now the sample and detector holder are respectively the first and the second one */
@@ -230,21 +233,21 @@ static int fit_detector_position(HklMode *mode, HklGeometry *geometry,
 /* BEWARE, NOT the axis index in the geometry->axes */
 /* which is part of the axis_names of the mode */
 /* return -1 if there is no axes of the mode in the sample part of the geometry */
-static int get_last_axis_idx(HklGeometry *geometry, int holder_idx, const darray_string *axes)
+static int get_last_sample_axis_idx(HklGeometry *geometry, const HklSample *sample,
+				    const darray_string *axes)
 {
 	int last = -1;
 	const char **axis_name;
-	HklHolder *holder;
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
 
-	holder = darray_item(geometry->holders, holder_idx);
 	darray_foreach(axis_name, *axes){
 		size_t i;
 		size_t idx;
 
 		/* FIXME for now the sample holder is the first one */
 		idx = hkl_geometry_get_axis_idx_by_name(geometry, *axis_name);
-		for(i=0; i<holder->config->len; ++i)
-			if(idx == holder->config->idx[i]){
+		for(i=0; i<sample_holder->config->len; ++i)
+			if(idx == sample_holder->config->idx[i]){
 				last = last > (int)i ? last : (int)i;
 				break;
 			}
@@ -315,14 +318,14 @@ int RUBh_minus_Q(double const x[], void *params, double f[])
 		},
 	};
 	HklVector ki, dQ;
-	HklHolder *sample_holder;
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(engine->geometry,
+								  engine->sample);
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x);
 
 	/* R * UB * h = Q */
 	/* for now the 0 holder is the sample holder. */
-	sample_holder = darray_item(engine->geometry->holders, 0);
 	hkl_matrix_times_vector(&engine->sample->UB, &Hkl);
 	/* Hkl = hkl_holder_transformation_apply(sample_holder, &Hkl); */
 	hkl_vector_rotated_quaternion(&Hkl, &sample_holder->q);
@@ -348,17 +351,15 @@ int hkl_mode_get_hkl_real(HklMode *self,
 			  HklSample *sample,
 			  GError **error)
 {
-	HklHolder *sample_holder;
 	HklMatrix RUB;
 	HklVector hkl, ki, Q;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
 
 	/* update the geometry internals */
 	hkl_geometry_update(geometry);
 
 	/* R * UB */
-	/* for now the 0 holder is the sample holder. */
-	sample_holder = darray_item(geometry->holders, 0);
 	hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
 	hkl_matrix_times_matrix(&RUB, &sample->UB);
 
@@ -407,7 +408,7 @@ int hkl_mode_set_hkl_real(HklMode *self,
 
 	/* check that the mode allow to move a sample axis */
 	/* FIXME for now the sample holder is the first one */
-	last_axis = get_last_axis_idx(geometry, 0, &self->info->axes_w);
+	last_axis = get_last_sample_axis_idx(geometry, sample, &self->info->axes_w);
 	if(last_axis >= 0){
 		uint i;
 		const HklGeometryListItem *item;
@@ -445,7 +446,8 @@ int hkl_mode_set_hkl_real(HklMode *self,
 			HklVector cp = {{0}};
 			HklVector op = {{0}};
 			double angle;
-			HklGeometry *geom;
+			HklGeometry *geom = hkl_geometry_new_copy(item->geometry);
+			HklHolder *sample_holder = hkl_geometry_sample_holder_get(geom, sample);
 
 			geom = hkl_geometry_new_copy(item->geometry);
 
@@ -456,7 +458,7 @@ int hkl_mode_set_hkl_real(HklMode *self,
 
 			/* compute the current orientation of the last axis */
 			axis = container_of(darray_item(geom->axes,
-							darray_item(geom->holders, 0)->config->idx[last_axis]),
+							sample_holder->config->idx[last_axis]),
 					    HklAxis, parameter);
 			axis_v = axis->axis_v;
 			hkl_quaternion_init(&qr, 1, 0, 0, 0);
@@ -464,7 +466,7 @@ int hkl_mode_set_hkl_real(HklMode *self,
 				hkl_quaternion_times_quaternion(
 					&qr,
 					&container_of(darray_item(geom->axes,
-								  darray_item(geom->holders, 0)->config->idx[j]),
+								  sample_holder->config->idx[j]),
 						      HklAxis, parameter)->q);
 			hkl_vector_rotated_quaternion(&axis_v, &qr);
 
@@ -495,7 +497,7 @@ int hkl_mode_set_hkl_real(HklMode *self,
 			hkl_vector_add_vector(&kf2, &ki);
 
 			/* at the end we just need to solve numerically the position of the detector */
-			if(fit_detector_position(self, geom, detector, &kf2))
+			if(fit_detector_position(self, geom, detector, sample, &kf2))
 				hkl_geometry_list_add(engine->engines->geometries,
 						      geom);
 
@@ -533,7 +535,8 @@ int _double_diffraction(double const x[], void *params, double f[])
 	HklVector kf2;
 	HklVector ki;
 	HklVector dQ;
-	HklHolder *sample_holder;
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(engine->geometry,
+								  engine->sample);
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x);
@@ -546,7 +549,6 @@ int _double_diffraction(double const x[], void *params, double f[])
 
 	/* R * UB * hkl = Q */
 	/* for now the 0 holder is the sample holder. */
-	sample_holder = darray_item(engine->geometry->holders, 0);
 	hkl_matrix_times_vector(&engine->sample->UB, &hkl);
 	hkl_vector_rotated_quaternion(&hkl, &sample_holder->q);
 
@@ -627,6 +629,8 @@ int _psi_constant_vertical_func(gsl_vector const *x, void *params, gsl_vector *f
 	if(hkl_vector_normalize(&Q)){
 		HklVector hkl;
 		HklVector n;
+		HklHolder *sample_holder = hkl_geometry_sample_holder_get(engine->geometry,
+									  engine->sample);
 
 		/* compute n the intersection of the plan P(kf, ki) and PQ (normal Q) */
 		n = kf;
@@ -635,13 +639,11 @@ int _psi_constant_vertical_func(gsl_vector const *x, void *params, gsl_vector *f
 
 		/* compute the hkl ref position in the laboratory */
 		/* referentiel. The geometry was already updated. */
-		/* FIXME for now the 0 holder is the sample holder. */
 		hkl.data[0] = darray_item(engine->mode->parameters, 0)->_value;
 		hkl.data[1] = darray_item(engine->mode->parameters, 1)->_value;
 		hkl.data[2] = darray_item(engine->mode->parameters, 2)->_value;
 		hkl_matrix_times_vector(&engine->sample->UB, &hkl);
-		hkl_vector_rotated_quaternion(&hkl,
-					      &darray_item(engine->geometry->holders, 0)->q);
+		hkl_vector_rotated_quaternion(&hkl, &sample_holder->q);
 
 		/* project hkl on the plan of normal Q */
 		hkl_vector_project_on_plan(&hkl, &Q);
@@ -700,6 +702,8 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 				    "\nplease select a non-null hkl", self->info->name);
 			return FALSE;
 		}else{
+			const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+
 			/* needed for a problem of precision */
 			hkl_vector_normalize(&Q);
 
@@ -710,13 +714,11 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 
 			/* compute hkl in the laboratory referentiel */
 			/* the geometry was already updated in the detector compute kf */
-			/* for now the 0 holder is the sample holder */
 			hkl.data[0] = darray_item(self->parameters, 0)->_value;
 			hkl.data[1] = darray_item(self->parameters, 1)->_value;
 			hkl.data[2] = darray_item(self->parameters, 2)->_value;
 			hkl_matrix_times_vector(&sample->UB, &hkl);
-			hkl_vector_rotated_quaternion(&hkl,
-						      &darray_item(geometry->holders, 0)->q);
+			hkl_vector_rotated_quaternion(&hkl, &sample_holder->q);
 
 			/* project hkl on the plan of normal Q */
 			hkl_vector_project_on_plan(&hkl, &Q);
@@ -799,6 +801,7 @@ static int hkl_mode_hkl_emergence_fixed_initialized_set_real(HklMode *self,
 	const HklModeAutoHklEmergenceFixed *mode = container_of(self, HklModeAutoHklEmergenceFixed, parent);
 	HklVector kf;
 	HklVector n = surface(mode);
+	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
 
 	/* first check the parameters */
 	if (hkl_vector_is_null(&n)){
@@ -810,7 +813,7 @@ static int hkl_mode_hkl_emergence_fixed_initialized_set_real(HklMode *self,
 	}
 
 	/* compute the orientation of the surface */
-	hkl_vector_rotated_quaternion(&n, &darray_item(geometry->holders, 0)->q);
+	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
 
 	hkl_detector_compute_kf(detector, geometry, &kf);
 
@@ -831,15 +834,17 @@ int _emergence_fixed_func(const gsl_vector *x, void *params, gsl_vector *f)
 							  parent);
 	HklGeometry *geometry = engine->geometry;
 	const HklDetector *detector = engine->detector;
+	const HklSample *sample = engine->sample;
 	HklVector n = surface(mode);
 	HklVector kf;
+	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
 
 	CHECK_NAN(x->data, x->size);
 
 	RUBh_minus_Q(x->data, params, f->data);
 
 	/* compute the orientation of the surface */
-	hkl_vector_rotated_quaternion(&n, &darray_item(geometry->holders, 0)->q);
+	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
 	hkl_detector_compute_kf(detector, geometry, &kf);
 
 	f->data[3] = expected_emergence(mode) - _emergence(&n, &kf);

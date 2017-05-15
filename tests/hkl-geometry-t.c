@@ -36,7 +36,7 @@ static void add_holder(void)
 	HklGeometry *g = NULL;
 	HklHolder *holder = NULL;
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	is_int(0, darray_size(g->holders), __func__);
 
 	holder = hkl_geometry_add_holder(g);
@@ -64,7 +64,7 @@ static void get_axis(void)
 	const HklParameter *axis0;
 	GError *error;
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
@@ -127,7 +127,7 @@ static void update(void)
 	HklAxis *axis1;
 	HklQuaternion q_ref = {{1./sqrt(2), 1./sqrt(2), 0.0, 0.0 }};
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
@@ -163,7 +163,7 @@ static void set(void)
 	HklHolder *holder;
 	HklFactory *fake_factory;
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);
@@ -175,7 +175,7 @@ static void set(void)
 	/* it is required to use a fake factory, with the public API
 	 * geometry contain always a real factory */
 	fake_factory = (HklFactory *)0x1;
-	g2 = hkl_geometry_new(fake_factory);
+	g2 = hkl_geometry_new(fake_factory, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);
@@ -197,7 +197,7 @@ static void axis_values_get_set(void)
 	double values[4];
 	GError *error;
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);
@@ -237,7 +237,7 @@ static void distance(void)
 	HklGeometry *g2 = NULL;
 	HklHolder *holder = NULL;
 
-	g1 = hkl_geometry_new(NULL);
+	g1 = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(g1);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);
@@ -262,7 +262,7 @@ static void is_valid(void)
 	HklGeometry *geom = NULL;
 	HklHolder *holder = NULL;
 
-	geom = hkl_geometry_new(NULL);
+	geom = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(geom);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);
@@ -290,7 +290,7 @@ static void wavelength(void)
 	HklGeometry *geom = NULL;
 	GError *error;
 
-	geom = hkl_geometry_new(NULL);
+	geom = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 
 	is_double(1.54, hkl_geometry_wavelength_get(geom, HKL_UNIT_DEFAULT), HKL_EPSILON, __func__);
 
@@ -345,7 +345,7 @@ static void list(void)
 	HklHolder *holder;
 	static double values[] = {0. * HKL_DEGTORAD, 10 * HKL_DEGTORAD, 30 * HKL_DEGTORAD, 100 * HKL_DEGTORAD};
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);
@@ -391,7 +391,7 @@ static void  list_multiply_from_range(void)
 	HklHolder *holder;
 	HklParameter *axisA, *axisB, *axisC, *axisT;
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);
@@ -432,7 +432,7 @@ static void  list_remove_invalid(void)
 	HklHolder *holder;
 	HklParameter *axisA, *axisB, *axisC, *axisT;
 
-	g = hkl_geometry_new(NULL);
+	g = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(g);
 	hkl_holder_add_rotation(holder, "A", 1., 0., 0., &hkl_unit_angle_deg);
 	hkl_holder_add_rotation(holder, "B", 1., 0., 0., &hkl_unit_angle_deg);

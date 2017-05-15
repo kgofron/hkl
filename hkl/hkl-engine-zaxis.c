@@ -135,7 +135,7 @@ static const char* hkl_geometry_zaxis_axes[] = {MU, OMEGA, DELTA, GAMMA};
 
 static HklGeometry *hkl_geometry_new_zaxis(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);

@@ -416,7 +416,7 @@ static const char* hkl_geometry_soleil_sixs_med_2_2_axes[] = {BETA, MU, OMEGA, G
 
 static HklGeometry *hkl_geometry_new_soleil_sixs_med_2_2(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
@@ -469,7 +469,7 @@ static const char* hkl_geometry_soleil_sixs_med_1_2_axes[] = {PITCH, MU, GAMMA, 
 
 static HklGeometry *hkl_geometry_new_soleil_sixs_med_1_2(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 	h = hkl_geometry_add_holder(self);
 	hkl_holder_add_rotation(h, PITCH, 0, -1, 0, &hkl_unit_angle_deg);
@@ -523,7 +523,7 @@ static const char* hkl_geometry_soleil_sixs_med_2_3_axes[] = {BETA, MU, OMEGA, G
 
 static HklGeometry *hkl_geometry_new_soleil_sixs_med_2_3(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);

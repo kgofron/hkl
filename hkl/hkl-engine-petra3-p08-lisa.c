@@ -145,6 +145,10 @@ of the beam on the sample.
 #define D_Si111 3.136 /* Si111 of mono1 Angstöm */
 #define D_Si220 1.920 /* Si220 ok mono2 Angstöm */
 
+#define PETRA3_P08_LISA_SOURCE_HOLDER_IDX 0
+#define PETRA3_P08_LISA_SAMPLE_HOLDER_IDX 1
+#define PETRA3_P08_LISA_DETECTOR_HOLDER_IDX 2
+
 #define HKL_GEOMETRY_PETRA3_P08_LISA_DESCRIPTION \
   "+ xrays source fix along the :math:`\\vec{x}` direction (1, 0, 0)\n"   \
   "+ 1 axes for the monochromator\n"					\
@@ -188,16 +192,16 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 
 	/* R * UB */
 	/* for the lisa geometry the holder 1 is the sample holder. */
-	holder = darray_item(geometry->holders, 1);
+	holder = hkl_geometry_sample_holder_get(geometry, sample);
 	hkl_quaternion_to_matrix(&holder->q, &RUB);
 	hkl_matrix_times_matrix(&RUB, &sample->UB);
 
 	/* kf - ki = Q */
-	holder = darray_item(geometry->holders, 0);
+	holder = hkl_geometry_detector_holder_get(geometry, detector);
 	ki = hkl_holder_transformation_apply(holder, &ki);
 	hkl_vector_times_double(&ki, HKL_TAU / geometry->source.wave_length);
 
-	holder = darray_item(geometry->holders, 2);
+	holder = darray_item(geometry->holders, PETRA3_P08_LISA_SOURCE_HOLDER_IDX);
 	Q = hkl_holder_transformation_apply(holder, &Q);
 	hkl_vector_normalize(&Q);
 	hkl_vector_times_double(&Q, HKL_TAU / geometry->source.wave_length);
@@ -356,9 +360,24 @@ static const HklModeOperations hkl_mode_hkl_petra3_p08_lisa_operations = {
 
 static const char* hkl_geometry_petra3_p08_lisa_axes[] = {MCHI, SPHI, DTTH, DH, DROT};
 
+static HklHolder *hkl_geometry_petra3_p08_lisa_sample_holder_get_real(const HklGeometry *geometry, const HklSample *sample)
+{
+	return darray_item(geometry->holders, PETRA3_P08_LISA_SAMPLE_HOLDER_IDX);
+}
+
+static HklHolder *hkl_geometry_petra3_p08_lisa_detector_holder_get_real(const HklGeometry *geometry, const HklDetector *detector)
+{
+	return darray_item(geometry->holders, PETRA3_P08_LISA_DETECTOR_HOLDER_IDX);
+}
+
 static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	static HklGeometryOperations ops = {
+		HKL_GEOMETRY_OPERATIONS_DEFAULTS,
+		.sample_holder_get = hkl_geometry_petra3_p08_lisa_sample_holder_get_real,
+		.detector_holder_get = hkl_geometry_petra3_p08_lisa_detector_holder_get_real
+	};
+	HklGeometry *self = hkl_geometry_new(factory, &ops);
 	HklHolder *h;
 
 	/* source */

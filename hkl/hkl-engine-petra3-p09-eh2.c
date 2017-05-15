@@ -281,7 +281,7 @@ static const char* hkl_geometry_petra3_p09_eh2_axes[] = {MU, OMEGA, CHI, PHI, DE
 
 static HklGeometry *hkl_geometry_new_petra3_p09_eh2(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);

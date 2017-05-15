@@ -34,6 +34,9 @@
 
 G_BEGIN_DECLS
 
+#define HKL_HOLDER_SAMPLE_IDX 0
+#define HKL_HOLDER_DETECTOR_IDX 1
+
 typedef struct _HklHolder HklHolder;
 
 typedef void (* HklGeometryListMultiplyFunction) (HklGeometryList *self,
@@ -53,13 +56,41 @@ struct _HklHolder {
 	HklQuaternion q;
 };
 
+typedef struct _HklGeometryOperations HklGeometryOperations;
+
+struct _HklGeometryOperations
+{
+	HklHolder* (*sample_holder_get) (const HklGeometry *self, const HklSample *sample);
+
+	HklHolder* (*detector_holder_get) (const HklGeometry *self, const HklDetector *detector);
+};
+
 struct _HklGeometry
 {
 	const HklFactory *factory;
 	HklSource source;
 	darray_parameter axes;
 	darray_holder holders;
+	const HklGeometryOperations *ops;
 };
+
+static HklHolder *hkl_geometry_sample_holder_get_real(const HklGeometry *self,
+						      UNUSED const HklSample *sample)
+{
+	return darray_item(self->holders, HKL_HOLDER_SAMPLE_IDX);
+}
+
+static HklHolder *hkl_geometry_detector_holder_get_real(const HklGeometry *self,
+							UNUSED const HklDetector *detector)
+{
+	return darray_item(self->holders, HKL_HOLDER_DETECTOR_IDX);
+}
+
+#define HKL_GEOMETRY_OPERATIONS_DEFAULTS				\
+	.sample_holder_get = hkl_geometry_sample_holder_get_real,	\
+		.detector_holder_get = hkl_geometry_detector_holder_get_real
+
+static HklGeometryOperations hkl_geometry_operations_defaults = {HKL_GEOMETRY_OPERATIONS_DEFAULTS};
 
 #define HKL_GEOMETRY_ERROR hkl_geometry_error_quark ()
 
@@ -113,7 +144,8 @@ extern HklVector hkl_holder_transformation_apply(const HklHolder *self,
 /* HklGeometry */
 /***************/
 
-extern HklGeometry *hkl_geometry_new(const HklFactory *factory);
+extern HklGeometry *hkl_geometry_new(const HklFactory *factory,
+				     const HklGeometryOperations *ops);
 
 extern int hkl_geometry_init_geometry(HklGeometry *self,
 				      const HklGeometry *src);
@@ -141,6 +173,10 @@ extern int hkl_geometry_closest_from_geometry_with_range(HklGeometry *self,
 extern int hkl_geometry_is_valid(const HklGeometry *self);
 
 extern int hkl_geometry_is_valid_range(const HklGeometry *self);
+
+extern HklHolder *hkl_geometry_sample_holder_get(const HklGeometry *self, const HklSample *sample);
+
+extern HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self, const HklDetector *detector);
 
 /*******************/
 /* HklGeometryList */

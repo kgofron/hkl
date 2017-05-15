@@ -218,7 +218,7 @@ static const char* hkl_geometry_eulerian4C_vertical_axes[] = {OMEGA, CHI, PHI, T
 
 static HklGeometry *hkl_geometry_new_eulerian4C_vertical(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
@@ -267,7 +267,7 @@ static const char* hkl_geometry_soleil_mars_axes[] = {OMEGA, CHI, PHI, TTH};
 
 static HklGeometry *hkl_geometry_new_soleil_mars(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
@@ -315,7 +315,7 @@ static const char* hkl_geometry_eulerian4C_horizontal_axes[] = {OMEGA, CHI, PHI,
 
 static HklGeometry *hkl_geometry_new_eulerian4C_horizontal(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);

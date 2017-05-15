@@ -51,7 +51,7 @@ static void attach_to_holder(void)
 	HklHolder *holder = NULL;
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
-	geometry = hkl_geometry_new(NULL);
+	geometry = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	holder = hkl_geometry_add_holder(geometry);
 	hkl_detector_attach_to_holder(detector, holder);
 
@@ -72,7 +72,7 @@ static void compute_kf(void)
 	HklVector kf_ref = {{0, HKL_TAU / HKL_SOURCE_DEFAULT_WAVE_LENGTH, 0}};
 
 	detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
-	geometry = hkl_geometry_new(NULL);
+	geometry = hkl_geometry_new(NULL, &hkl_geometry_operations_defaults);
 	/* add a fake first holder */
 	holder = hkl_geometry_add_holder(geometry);
 	/* for now all detectors MUST be connected to the second

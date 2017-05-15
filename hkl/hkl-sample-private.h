@@ -69,6 +69,7 @@ extern void hkl_sample_fprintf(FILE *f, const HklSample *self);
 struct _HklSampleReflection {
 	HklGeometry *geometry;
 	HklDetector *detector;
+	HklSample *sample;
 	HklVector hkl;
 	HklVector _hkl;
 	int flag;

@@ -267,11 +267,13 @@ HklVector hkl_holder_transformation_apply(const HklHolder *self,
  *
  * Returns:
  **/
-HklGeometry *hkl_geometry_new(const HklFactory *factory)
+HklGeometry *hkl_geometry_new(const HklFactory *factory,
+			      const HklGeometryOperations *ops)
 {
 	HklGeometry *g = NULL;
 
 	g = HKL_MALLOC(HklGeometry);
+	g->ops = ops;
 
 	g->factory = factory;
 	hkl_source_init(&g->source, 1.54, 1, 0, 0);
@@ -297,8 +299,7 @@ HklGeometry *hkl_geometry_new_copy(const HklGeometry *src)
 
 	self = HKL_MALLOC(HklGeometry);
 
-	self->factory = src->factory;
-	self->source = src->source;
+	*self = *src;
 
 	/* copy the axes */
 	darray_init(self->axes);
@@ -354,6 +355,7 @@ int hkl_geometry_set(HklGeometry *self, const HklGeometry *src)
 	size_t i;
 
 	hkl_error(self->factory == src->factory);
+	hkl_error(self->ops == src->ops);
 
 	self->source = src->source;
 
@@ -867,7 +869,7 @@ int hkl_geometry_closest_from_geometry_with_range(HklGeometry *self,
 HklQuaternion hkl_geometry_sample_rotation_get(const HklGeometry *self,
 					       const HklSample *sample)
 {
-	return darray_item(self->holders, 0)->q;
+	return hkl_geometry_sample_holder_get(self, sample)->q;
 }
 
 /**
@@ -883,7 +885,7 @@ HklQuaternion hkl_geometry_sample_rotation_get(const HklGeometry *self,
 HklQuaternion hkl_geometry_detector_rotation_get(const HklGeometry *self,
 						 const HklDetector *detector)
 {
-	return darray_item(self->holders, detector->idx)->q;
+	return hkl_geometry_detector_holder_get(self, detector)->q;
 }
 
 
@@ -903,6 +905,18 @@ void hkl_geometry_fprintf(FILE *file, const HklGeometry *self)
 		fprintf(file, " ");
 		hkl_parameter_fprintf(file, darray_item(self->axes, i));
 	}
+}
+
+HklHolder *hkl_geometry_sample_holder_get(const HklGeometry *self,
+					  const HklSample *sample)
+{
+	return self->ops->sample_holder_get(self, sample);
+}
+
+HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self,
+					    const HklDetector *detector)
+{
+	return self->ops->detector_holder_get(self, detector);
 }
 
 /*******************/

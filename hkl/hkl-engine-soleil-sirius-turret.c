@@ -99,7 +99,7 @@ static const char* hkl_geometry_soleil_sirius_turret_axes[] = {BASEPITCH, THETAH
 
 static HklGeometry *hkl_geometry_new_soleil_sirius_turret(const HklFactory *factory)
 {
-	HklGeometry *self = hkl_geometry_new(factory);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);
