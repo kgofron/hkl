@@ -41,7 +41,6 @@
 #include "hkl-pseudoaxis-private.h"     // for _HklEngine, _HklMode, etc
 #include "hkl-quaternion-private.h"     // for hkl_quaternion_init, etc
 #include "hkl-sample-private.h"         // for _HklSample
-#include "hkl-source-private.h"         // for hkl_source_compute_ki
 #include "hkl-vector-private.h"         // for HklVector, etc
 #include "hkl.h"                        // for HklEngine, HklGeometry, etc
 #include "hkl/ccan/array_size/array_size.h"  // for ARRAY_SIZE
@@ -81,7 +80,7 @@ static int fit_detector_function(const gsl_vector *x, void *params, gsl_vector *
 
 	hkl_geometry_update(fitp->geometry);
 
-	hkl_detector_compute_kf(fitp->detector, fitp->geometry, &kf);
+	kf = hkl_geometry_kf_get(fitp->geometry, fitp->detector);
 
 	f->data[0] = fabs(fitp->kf0->data[0] - kf.data[0])
 		+ fabs(fitp->kf0->data[1] - kf.data[1])
@@ -331,8 +330,8 @@ int RUBh_minus_Q(double const x[], void *params, double f[])
 	hkl_vector_rotated_quaternion(&Hkl, &sample_holder->q);
 
 	/* kf - ki = Q */
-	hkl_source_compute_ki(&engine->geometry->source, &ki);
-	hkl_detector_compute_kf(engine->detector, engine->geometry, &dQ);
+	ki = hkl_geometry_ki_get(engine->geometry);
+	dQ = hkl_geometry_kf_get(engine->geometry, engine->detector);
 	hkl_vector_minus_vector(&dQ, &ki);
 
 	hkl_vector_minus_vector(&dQ, &Hkl);
@@ -364,8 +363,9 @@ int hkl_mode_get_hkl_real(HklMode *self,
 	hkl_matrix_times_matrix(&RUB, &sample->UB);
 
 	/* kf - ki = Q */
-	hkl_source_compute_ki(&geometry->source, &ki);
-	hkl_detector_compute_kf(detector, geometry, &Q);
+	ki = hkl_geometry_ki_get(geometry);
+
+	Q  = hkl_geometry_kf_get(geometry, detector);
 	hkl_vector_minus_vector(&Q, &ki);
 
 	hkl_matrix_solve(&RUB, &hkl, &Q);
@@ -452,8 +452,8 @@ int hkl_mode_set_hkl_real(HklMode *self,
 			geom = hkl_geometry_new_copy(item->geometry);
 
 			/* get the Q vector kf - ki */
-			hkl_detector_compute_kf(detector, geom, &q);
-			hkl_source_compute_ki(&geom->source, &ki);
+			ki = hkl_geometry_ki_get(geom);
+			q = hkl_geometry_kf_get(geom, detector);
 			hkl_vector_minus_vector(&q, &ki);
 
 			/* compute the current orientation of the last axis */
@@ -553,8 +553,8 @@ int _double_diffraction(double const x[], void *params, double f[])
 	hkl_vector_rotated_quaternion(&hkl, &sample_holder->q);
 
 	/* kf - ki = Q */
-	hkl_source_compute_ki(&engine->geometry->source, &ki);
-	hkl_detector_compute_kf(engine->detector, engine->geometry, &dQ);
+	ki = hkl_geometry_ki_get(engine->geometry);
+	dQ = hkl_geometry_kf_get(engine->geometry, engine->detector);
 	hkl_vector_minus_vector(&dQ, &ki);
 	hkl_vector_minus_vector(&dQ, &hkl);
 
@@ -618,8 +618,8 @@ int _psi_constant_vertical_func(gsl_vector const *x, void *params, gsl_vector *f
 	set_geometry_axes(engine, x->data);
 
 	/* kf - ki = Q */
-	hkl_source_compute_ki(&engine->geometry->source, &ki);
-	hkl_detector_compute_kf(engine->detector, engine->geometry, &kf);
+	ki = hkl_geometry_ki_get(engine->geometry);
+	kf = hkl_geometry_kf_get(engine->geometry, engine->detector);
 	Q = kf;
 	hkl_vector_minus_vector(&Q, &ki);
 
@@ -689,8 +689,8 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 
 	if(initialized){
 		/* kf - ki = Q */
-		hkl_source_compute_ki(&geometry->source, &ki);
-		hkl_detector_compute_kf(detector, geometry, &kf);
+		ki = hkl_geometry_ki_get(geometry);
+		kf = hkl_geometry_kf_get(geometry, detector);
 		Q = kf;
 		hkl_vector_minus_vector(&Q, &ki);
 
@@ -815,7 +815,7 @@ static int hkl_mode_hkl_emergence_fixed_initialized_set_real(HklMode *self,
 	/* compute the orientation of the surface */
 	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
 
-	hkl_detector_compute_kf(detector, geometry, &kf);
+	kf = hkl_geometry_kf_get(geometry, detector);
 
 	/* compute emergence and keep it */
 	mode->emergence->_value = _emergence(&n, &kf);
@@ -845,7 +845,7 @@ int _emergence_fixed_func(const gsl_vector *x, void *params, gsl_vector *f)
 
 	/* compute the orientation of the surface */
 	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
-	hkl_detector_compute_kf(detector, geometry, &kf);
+	kf = hkl_geometry_kf_get(geometry, detector);
 
 	f->data[3] = expected_emergence(mode) - _emergence(&n, &kf);
 

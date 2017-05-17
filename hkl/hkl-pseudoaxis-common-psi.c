@@ -75,8 +75,8 @@ int _psi_func(const gsl_vector *x, void *params, gsl_vector *f)
 	set_geometry_axes(engine, x->data);
 
 	/* kf - ki = Q */
-	hkl_source_compute_ki(&engine->geometry->source, &ki);
-	hkl_detector_compute_kf(engine->detector, engine->geometry, &kf);
+	ki = hkl_geometry_ki_get(engine->geometry);
+	kf = hkl_geometry_kf_get(engine->geometry, engine->detector);
 	Q = kf;
 	hkl_vector_minus_vector(&Q, &ki);
 	if (hkl_vector_is_null(&Q)){
@@ -87,7 +87,8 @@ int _psi_func(const gsl_vector *x, void *params, gsl_vector *f)
 	}else{
 		/* R * UB */
 		/* for now the 0 holder is the sample holder. */
-		sample_holder = darray_item(engine->geometry->holders, 0);
+		sample_holder = hkl_geometry_sample_holder_get(engine->geometry,
+							       engine->sample);
 		hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
 		hkl_matrix_times_matrix(&RUB, &engine->sample->UB);
 
@@ -142,7 +143,7 @@ static int hkl_mode_initialized_set_psi_real(HklMode *self,
 	HklVector ki;
 	HklMatrix RUB;
 	HklModePsi *psi_mode = container_of(self, HklModePsi, parent);
-	HklHolder *sample_holder;
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
 
 	hkl_error (error == NULL || *error == NULL);
 
@@ -152,13 +153,12 @@ static int hkl_mode_initialized_set_psi_real(HklMode *self,
 
 		/* R * UB */
 		/* for now the 0 holder is the sample holder. */
-		sample_holder = darray_item(geometry->holders, 0);
 		hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
 		hkl_matrix_times_matrix(&RUB, &sample->UB);
 
 		/* kf - ki = Q0 */
-		hkl_source_compute_ki(&geometry->source, &ki);
-		hkl_detector_compute_kf(detector, geometry, &psi_mode->Q0);
+		ki = hkl_geometry_ki_get(geometry);
+		psi_mode->Q0 = hkl_geometry_kf_get(geometry, detector);
 		hkl_vector_minus_vector(&psi_mode->Q0, &ki);
 		if (hkl_vector_is_null(&psi_mode->Q0)){
 			g_set_error(error,
@@ -199,8 +199,8 @@ static int hkl_mode_get_psi_real(HklMode *base,
 	}
 
 	/* get kf, ki and Q */
-	hkl_source_compute_ki(&geometry->source, &ki);
-	hkl_detector_compute_kf(detector, geometry, &kf);
+	ki = hkl_geometry_ki_get(geometry);
+	kf = hkl_geometry_kf_get(geometry, detector);
 	Q = kf;
 	hkl_vector_minus_vector(&Q, &ki);
 	if (hkl_vector_is_null(&Q)){
@@ -210,6 +210,8 @@ static int hkl_mode_get_psi_real(HklMode *base,
 			    "can not compute psi when hkl is null (kf == ki)");
 		return FALSE;
 	}else{
+		HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+
 		/* needed for a problem of precision */
 		hkl_vector_normalize(&Q);
 
@@ -225,7 +227,7 @@ static int hkl_mode_get_psi_real(HklMode *base,
 			hkl1.data[i] = darray_item(base->parameters, i)->_value;
 
 		hkl_matrix_times_vector(&sample->UB, &hkl1);
-		hkl_vector_rotated_quaternion(&hkl1, &darray_item(geometry->holders, 0)->q);
+		hkl_vector_rotated_quaternion(&hkl1, &sample_holder->q);
 
 		/* project hkl1 on the plan of normal Q */
 		hkl_vector_project_on_plan(&hkl1, &Q);

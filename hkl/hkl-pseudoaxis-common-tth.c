@@ -60,8 +60,8 @@ static void _tth2(HklGeometry *geometry, HklDetector *detector,
 		.data = {1, 0, 0},
 	};
 
-	hkl_source_compute_ki(&geometry->source, &ki);
-	hkl_detector_compute_kf(detector, geometry, &kf);
+	ki = hkl_geometry_ki_get(geometry);
+	kf = hkl_geometry_kf_get(geometry, detector);
 	*tth = hkl_vector_angle(&ki, &kf);
 
 	/* project kf on the x plan to compute alpha */

@@ -360,7 +360,7 @@ static int _constant_incidence_func(const gsl_vector *x, void *params, gsl_vecto
 	hkl_vector_rotated_quaternion(&n, &hkl_geometry_sample_holder_get(engine->geometry,
 									  mode->sample)->q);
 
-	hkl_source_compute_ki(&engine->geometry->source, &ki);
+	ki = hkl_geometry_ki_get(engine->geometry);
 	incidence = _incidence(&n, &ki);
 
 	hkl_vector_project_on_plan(&n, &ki);

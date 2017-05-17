@@ -63,6 +63,10 @@ struct _HklGeometryOperations
 	HklHolder* (*sample_holder_get) (const HklGeometry *self, const HklSample *sample);
 
 	HklHolder* (*detector_holder_get) (const HklGeometry *self, const HklDetector *detector);
+
+	HklVector (*ki_get) (const HklGeometry *geometry);
+
+	HklVector (*kf_get) (const HklGeometry *self, const HklDetector *detector);
 };
 
 struct _HklGeometry
@@ -86,9 +90,31 @@ static HklHolder *hkl_geometry_detector_holder_get_real(const HklGeometry *self,
 	return darray_item(self->holders, HKL_HOLDER_DETECTOR_IDX);
 }
 
+static HklVector hkl_geometry_ki_get_real(const HklGeometry *self)
+{
+	HklVector ki;
+
+	hkl_source_compute_ki(&self->source, &ki);
+
+	return ki;
+}
+
+static HklVector hkl_geometry_kf_get_real(const HklGeometry *self,
+					  const HklDetector *detector)
+{
+	HklVector kf = {{HKL_TAU / self->source.wave_length, 0, 0}};
+	HklHolder *detector_holder = darray_item(self->holders, HKL_HOLDER_DETECTOR_IDX);
+
+	hkl_vector_rotated_quaternion(&kf, &detector_holder->q);
+
+	return kf;
+}
+
 #define HKL_GEOMETRY_OPERATIONS_DEFAULTS				\
 	.sample_holder_get = hkl_geometry_sample_holder_get_real,	\
-		.detector_holder_get = hkl_geometry_detector_holder_get_real
+		.detector_holder_get = hkl_geometry_detector_holder_get_real, \
+		.ki_get = hkl_geometry_ki_get_real,			\
+		.kf_get = hkl_geometry_kf_get_real
 
 static HklGeometryOperations hkl_geometry_operations_defaults = {HKL_GEOMETRY_OPERATIONS_DEFAULTS};
 
@@ -177,6 +203,11 @@ extern int hkl_geometry_is_valid_range(const HklGeometry *self);
 extern HklHolder *hkl_geometry_sample_holder_get(const HklGeometry *self, const HklSample *sample);
 
 extern HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self, const HklDetector *detector);
+
+extern HklVector hkl_geometry_ki_get(const HklGeometry *self);
+
+extern HklVector hkl_geometry_kf_get(const HklGeometry *self,
+				     const HklDetector *detector);
 
 /*******************/
 /* HklGeometryList */

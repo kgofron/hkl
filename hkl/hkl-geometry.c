@@ -919,6 +919,17 @@ HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self,
 	return self->ops->detector_holder_get(self, detector);
 }
 
+HklVector hkl_geometry_ki_get(const HklGeometry *self)
+{
+	return self->ops->ki_get(self);
+}
+
+HklVector hkl_geometry_kf_get(const HklGeometry *self,
+			      const HklDetector *detector)
+{
+	return self->ops->kf_get(self, detector);
+}
+
 /*******************/
 /* HklGeometryList */
 /*******************/

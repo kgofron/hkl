@@ -101,8 +101,8 @@ static int get_q_real(HklMode *self,
 	HklEngineQ *engine = container_of(base, HklEngineQ, engine);
 
 	wavelength = hkl_source_get_wavelength(&geometry->source);
-	hkl_source_compute_ki(&geometry->source, &ki);
-	hkl_detector_compute_kf(detector, geometry, &kf);
+	ki = hkl_geometry_ki_get(geometry);
+	kf = hkl_geometry_kf_get(geometry, detector);
 	theta = hkl_vector_angle(&ki, &kf) / 2.;
 
 	/* we decide of the sign of theta depending on the orientation
@@ -195,8 +195,8 @@ static void _q2(HklGeometry *geometry, HklDetector *detector,
 	};
 
 	wavelength = hkl_source_get_wavelength(&geometry->source);
-	hkl_source_compute_ki(&geometry->source, &ki);
-	hkl_detector_compute_kf(detector, geometry, &kf);
+	ki = hkl_geometry_ki_get(geometry);
+	kf = hkl_geometry_kf_get(geometry, detector);
 	theta = hkl_vector_angle(&ki, &kf) / 2.;
 
 	*q = qmax(wavelength) * sin(theta);
@@ -205,7 +205,6 @@ static void _q2(HklGeometry *geometry, HklDetector *detector,
 	hkl_vector_project_on_plan(&kf, &x);
 
 	*alpha = atan2(kf.data[2], kf.data[1]);
-
 }
 
 static int _q2_func(const gsl_vector *x, void *params, gsl_vector *f)
@@ -317,10 +316,13 @@ struct _HklEngineQperQpar
 };
 
 static void _qper_qpar(HklEngine *engine,
-		       HklGeometry *geometry, HklDetector *detector,
+		       const HklGeometry *geometry,
+		       const HklDetector *detector,
+		       const HklSample *sample,
 		       double *qper, double *qpar)
 {
 	HklModeQperQpar *mode = container_of(engine->mode, HklModeQperQpar, parent);
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
 	HklVector ki;
 	HklVector q;
 	HklVector n = {
@@ -336,12 +338,12 @@ static void _qper_qpar(HklEngine *engine,
 	double norm;
 
 	/* compute q = kf - ki */
-	hkl_source_compute_ki(&geometry->source, &ki);
-	hkl_detector_compute_kf(detector, geometry, &q);
+	ki = hkl_geometry_ki_get(geometry);
+	q = hkl_geometry_kf_get(geometry, detector);
 	hkl_vector_minus_vector(&q, &ki);
 
 	/* compute the real orientation of the surface n */
-	hkl_vector_rotated_quaternion(&n, &darray_item(geometry->holders, 0)->q);
+	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
 	hkl_vector_normalize(&n);
 
 	/* compute the npar used to define the sign of qpar */
@@ -377,7 +379,7 @@ static int _qper_qpar_func(const gsl_vector *x, void *params, gsl_vector *f)
 	/* update the workspace from x */
 	set_geometry_axes(engine, x->data);
 
-	_qper_qpar(engine, engine->geometry, engine->detector,
+	_qper_qpar(engine, engine->geometry, engine->detector, engine->sample,
 		   &qper, &qpar);
 
 	f->data[0] = engine_qper_qpar->qper->_value - qper;
@@ -400,7 +402,7 @@ static int get_qper_qpar_real(HklMode *self,
 {
 	HklEngineQperQpar *engine_qper_qpar = container_of(engine, HklEngineQperQpar, engine);
 
-	_qper_qpar(engine, geometry, detector,
+	_qper_qpar(engine, geometry, detector, sample,
 		   &engine_qper_qpar->qper->_value,
 		   &engine_qper_qpar->qpar->_value);
 

@@ -179,12 +179,11 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 						 HklSample *sample,
 						 GError **error)
 {
-	double alpha_max = _alpha_max(geometry->source.wave_length, D_Si111, D_Si220);
 	HklHolder *holder;
 	HklMatrix RUB;
 	HklVector hkl;
-	HklVector ki = {{cos(alpha_max), 0, -sin(alpha_max)}};
-	HklVector Q = {{D_SD, 0, 0}};
+	HklVector ki;
+	HklVector Q;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
 
 	/* update the geometry internals */
@@ -197,14 +196,9 @@ static int hkl_mode_hkl_petra3_p08_lisa_get_real(HklMode *self,
 	hkl_matrix_times_matrix(&RUB, &sample->UB);
 
 	/* kf - ki = Q */
-	holder = hkl_geometry_detector_holder_get(geometry, detector);
-	ki = hkl_holder_transformation_apply(holder, &ki);
-	hkl_vector_times_double(&ki, HKL_TAU / geometry->source.wave_length);
+	ki = hkl_geometry_ki_get(geometry);
 
-	holder = darray_item(geometry->holders, PETRA3_P08_LISA_SOURCE_HOLDER_IDX);
-	Q = hkl_holder_transformation_apply(holder, &Q);
-	hkl_vector_normalize(&Q);
-	hkl_vector_times_double(&Q, HKL_TAU / geometry->source.wave_length);
+	Q = hkl_geometry_kf_get(geometry, detector);
 
 	hkl_vector_minus_vector(&Q, &ki);
 
@@ -360,23 +354,55 @@ static const HklModeOperations hkl_mode_hkl_petra3_p08_lisa_operations = {
 
 static const char* hkl_geometry_petra3_p08_lisa_axes[] = {MCHI, SPHI, DTTH, DH, DROT};
 
-static HklHolder *hkl_geometry_petra3_p08_lisa_sample_holder_get_real(const HklGeometry *geometry, const HklSample *sample)
+static HklHolder *hkl_geometry_petra3_p08_lisa_sample_holder_get_real(const HklGeometry *geometry,
+								      const HklSample *sample)
 {
 	return darray_item(geometry->holders, PETRA3_P08_LISA_SAMPLE_HOLDER_IDX);
 }
 
-static HklHolder *hkl_geometry_petra3_p08_lisa_detector_holder_get_real(const HklGeometry *geometry, const HklDetector *detector)
+static HklHolder *hkl_geometry_petra3_p08_lisa_detector_holder_get_real(const HklGeometry *geometry,
+									const HklDetector *detector)
 {
 	return darray_item(geometry->holders, PETRA3_P08_LISA_DETECTOR_HOLDER_IDX);
 }
 
+static HklVector hkl_geometry_petra3_p08_lisa_ki_get_real(const HklGeometry *geometry)
+{
+	double alpha_max = _alpha_max(geometry->source.wave_length, D_Si111, D_Si220);
+	HklHolder *holder;
+	HklVector ki = {{cos(alpha_max), 0, -sin(alpha_max)}};
+
+	holder = darray_item(geometry->holders, PETRA3_P08_LISA_SOURCE_HOLDER_IDX);
+	ki = hkl_holder_transformation_apply(holder, &ki);
+	hkl_vector_times_double(&ki, HKL_TAU / geometry->source.wave_length);
+
+	return ki;
+}
+
+static HklVector hkl_geometry_petra3_p08_lisa_kf_get_real(const HklGeometry *geometry,
+							  const HklDetector *detector)
+{
+	HklHolder *holder;
+	HklVector kf = {{D_SD, 0, 0}};
+
+	holder = hkl_geometry_detector_holder_get(geometry, detector);
+	kf = hkl_holder_transformation_apply(holder, &kf);
+	hkl_vector_normalize(&kf);
+	hkl_vector_times_double(&kf, HKL_TAU / geometry->source.wave_length);
+
+	return kf;
+}
+
+#define HKL_GEOMETRY_PETRA3_P08_LISA_OPERATIONS_DEFAULTS		\
+	HKL_GEOMETRY_OPERATIONS_DEFAULTS,				\
+		.sample_holder_get = hkl_geometry_petra3_p08_lisa_sample_holder_get_real, \
+		.detector_holder_get = hkl_geometry_petra3_p08_lisa_detector_holder_get_real, \
+		.ki_get = hkl_geometry_petra3_p08_lisa_ki_get_real,	\
+		.kf_get = hkl_geometry_petra3_p08_lisa_kf_get_real
+
 static HklGeometry *hkl_geometry_new_petra3_p08_lisa(const HklFactory *factory)
 {
-	static HklGeometryOperations ops = {
-		HKL_GEOMETRY_OPERATIONS_DEFAULTS,
-		.sample_holder_get = hkl_geometry_petra3_p08_lisa_sample_holder_get_real,
-		.detector_holder_get = hkl_geometry_petra3_p08_lisa_detector_holder_get_real
-	};
+	static HklGeometryOperations ops = {HKL_GEOMETRY_PETRA3_P08_LISA_OPERATIONS_DEFAULTS};
 	HklGeometry *self = hkl_geometry_new(factory, &ops);
 	HklHolder *h;
 
