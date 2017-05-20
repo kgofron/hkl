@@ -3,14 +3,8 @@
 #+EMAIL: picca at synchrotron dash soleil dot fr
 #+LANGUAGE: en
 #+STYLE: <style>table.center {margin-left:auto; margin- right:auto;}</style>
-
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.pirilampo.org/styles/readtheorg/css/htmlize.css"/>
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.pirilampo.org/styles/readtheorg/css/readtheorg.css"/>
-
-#+HTML_HEAD: <script src="http://code.jquery.com/jquery-2.2.0.min.js"></script>
-#+HTML_HEAD: <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-#+HTML_HEAD: <script type="text/javascript" src="http://www.pirilampo.org/styles/lib/js/jquery.stickytableheaders.js"></script>
-#+HTML_HEAD: <script type="text/javascript" src="http://www.pirilampo.org/styles/readtheorg/js/readtheorg.js"></script>
+#+HTML_HEAD: <link href="css/style.css" rel="stylesheet" type="text/css" />
+#+HTML_MATHJAX:  path:"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"
 
 * Introduction
   The purpose of the library is to factorize single crystal

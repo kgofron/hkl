@@ -11,7 +11,7 @@ hkl.html: hkl.org $(srcdir)/hkl-default.el
 	$(LIBTOOL) --mode=execute -dlopen $(AM_LDFLAGS) \
 	$(EMACS) $< --batch -q --load $(srcdir)/hkl-default.el -f org-html-export-to-html --debug-init --kill
 
-EXTRA_DIST=hkl-default.el
+EXTRA_DIST=hkl-default.el css/style.css
 
 CLEANFILES=hkl.html
 

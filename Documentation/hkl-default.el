@@ -68,15 +68,25 @@
      :publishing-directory "/ssh:picca@people.debian.org:~/public_html/hkl/"
      :publishing-function org-html-publish-to-html
      :headline-levels 3
-     :section-numbers nil
-     :with-toc nil
+     :section-numbers t
+     :with-toc t
+     :html-head "<link rel=\"stylesheet\"
+                       href=\"../css/style.css\" type=\"text/css\"/>"
      :html-preamble t)
 
     ("images"
      :base-directory "figures/"
-     :base-extension "jpg\\|gif\\|png"
+     :base-extension "svg\\|jpg\\|gif\\|png"
      :publishing-directory "/ssh:picca@people.debian.org:~/public_html/hkl/figures/"
-     :publishing-function org-publish-attachment)))))
+     :publishing-function org-publish-attachment)
+
+    ("css"
+     :base-directory "css/"
+     :base-extension "css"
+     :publishing-directory "/ssh:picca@people.debian.org:~/public_html/hkl/css/"
+     :publishing-function org-publish-attachment)
+
+    ))))
 
 (require 'ox-publish)
 
