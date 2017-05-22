@@ -210,6 +210,11 @@ calibrate c (PoniExt p _) d =  do
 
 -- | Pre Calibration
 
+edf ∷ FilePath → FilePath → Int → FilePath
+edf o n i = o </> f
+  where
+    f = (takeFileName n) ++ printf "_%02d.edf" i
+
 scriptExtractEdf ∷ FilePath → [XRDCalibrationEntry] → Script Py2
 scriptExtractEdf o es = Py2Script (content, scriptPath)
   where
@@ -232,18 +237,28 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
     (nxss, idxs, imgs) = unzip3 [(f, i, img) | (XRDCalibrationEntryNxs (Nxs f (XrdOneDH5Path (DataItemH5 img _) _ _ _)) i _) ← es]
 
     outputs ∷ [FilePath]
-    outputs = zipWith (output o) nxss idxs
+    outputs = zipWith (edf o) nxss idxs
 
     scriptPath ∷ FilePath
     scriptPath = o </> "pre-calibration.py"
 
-    output ∷ FilePath → FilePath → Int → FilePath
-    output o' n i = o' </> f
-      where
-        f = (takeFileName n) ++ printf "_%02d.edf" i
+scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Script Sh
+scriptPyFAICalib o e = ScriptSh (content, scriptPath)
+  where
+    content = unlines $
+              map Data.Text.pack [ "#!/usr/bin/env sh"
+                                 , ""
+                                 , "pyFAI-calib -e 18 -c CeO2 -D xpad_flat " ++ edf o n i]
+
+    (XRDCalibrationEntryNxs (Nxs n _) i _) = e
+
+    scriptPath ∷ FilePath
+    scriptPath = o </> (takeFileName n) ++ printf "_%02d.sh" i
+
 
 extractEdf ∷ XRDCalibration → IO ()
 extractEdf (XRDCalibration _ o es) = do
   let script = scriptExtractEdf o es
   ExitSuccess ← run script False
+  mapM_ (\e → scriptSave $ scriptPyFAICalib o e) es
   return ()

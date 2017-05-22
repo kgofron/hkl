@@ -5,6 +5,7 @@
 module Hkl.Script
     ( Gnuplot
     , Py2
+    , Sh
     , Script(..)
     , run
     , scriptRun
@@ -40,11 +41,12 @@ type Profile = Bool
 
 data Gnuplot
 data Py2
-
+data Sh
 
 data Script a where
   Py2Script ∷ (Text, FilePath) → Script Py2
   ScriptGnuplot ∷ (Text, FilePath) → Script Gnuplot
+  ScriptSh ∷ (Text, FilePath) → Script Sh
 
 scriptSave' ∷ Text → FilePath → IO ()
 scriptSave' c f = do
@@ -55,6 +57,7 @@ scriptSave' c f = do
 scriptSave ∷ Script a → IO ()
 scriptSave (Py2Script (c, f)) = scriptSave' c f
 scriptSave (ScriptGnuplot (c, f)) = scriptSave' c f
+scriptSave (ScriptSh (c, f)) = scriptSave' c f
 
 scriptRun' ∷ FilePath → String → [String] → Bool → IO ExitCode
 scriptRun' f prog args d
@@ -93,6 +96,7 @@ scriptRun (Py2Script (_, p)) d = do
         | p' == True = ["-m" , "cProfile", "-o", stats, p]
         | otherwise = [p]
 scriptRun (ScriptGnuplot (_, p)) d = scriptRun' p "gnuplot" [p] d
+scriptRun (ScriptSh (_, p)) d = scriptRun' p p [] d
 
 run ∷ Script a → Bool → IO ExitCode
 run s b = do

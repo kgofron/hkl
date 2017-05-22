@@ -10,4 +10,5 @@ main = do
   -- d2am
   -- charlier
   -- laure
-  hercules
+  -- hercules
+  hamon

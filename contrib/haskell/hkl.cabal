@@ -116,6 +116,7 @@ library
                     , Hkl.Projects.D2AM.XRD
                     , Hkl.Projects.Diffabs
                     , Hkl.Projects.Diffabs.Charlier
+                    , Hkl.Projects.Diffabs.Hamon
                     , Hkl.Projects.Diffabs.Hercules
                     , Hkl.Projects.Diffabs.IRDRx
                     , Hkl.Projects.Diffabs.Laure
