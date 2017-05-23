@@ -51,9 +51,10 @@ h5path' nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleCalibration :: XRDCalibration
+sampleCalibration :: XRDCalibration Xpad32
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "xrd" </> "calibration" -- TODO pourquoi ce output
+                                   , xrdCalibrationDetector = Xpad32
                                    , xrdCalibrationEntries = entries
                                    }
     where
@@ -108,7 +109,7 @@ hamon = do
   let poniextref = move p (MyMatrix HklB (ident 3))
 
   -- full calibration
-  poniextref' <- calibrate sampleCalibration poniextref Xpad32
+  poniextref' <- calibrate sampleCalibration poniextref
 
   print poniextref
   print poniextref'

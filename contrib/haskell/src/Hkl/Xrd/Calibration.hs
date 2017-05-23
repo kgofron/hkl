@@ -77,10 +77,11 @@ data XRDCalibrationEntry = XRDCalibrationEntryNxs { xrdCalibrationEntryNxs'Nxs :
                                                   }
                            deriving (Show)
 
-data XRDCalibration = XRDCalibration { xrdCalibrationName :: Text
-                                     , xrdCalibrationOutputDir :: FilePath
-                                     , xrdCalibrationEntries :: [XRDCalibrationEntry]
-                                     }
+data XRDCalibration a = XRDCalibration { xrdCalibrationName :: Text
+                                       , xrdCalibrationOutputDir :: FilePath
+                                       , xrdCalibrationDetector ∷ Detector a
+                                       , xrdCalibrationEntries :: [XRDCalibrationEntry]
+                                       }
                       deriving (Show)
 
 withDataItem :: MonadSafe m => File -> DataItem H5 -> (Dataset -> m r) -> m r
@@ -136,12 +137,12 @@ type NptEntry' = (Double, [Vector Double]) -- tth, detector pixels coordinates
 type Npt' = (Double, [NptEntry']) -- wavelength, [NptEntry']
 type NptExt' a = (Npt', Matrix Double, Detector a)
 
-calibrate :: XRDCalibration -> PoniExt -> Detector a -> IO PoniExt
-calibrate c (PoniExt p _) d =  do
+calibrate :: XRDCalibration a -> PoniExt -> IO PoniExt
+calibrate c (PoniExt p _) =  do
   let entry = last p
   let guess = fromList $ poniEntryToList entry
   -- read all the NptExt
-  npts <- mapM (readXRDCalibrationEntry d) (xrdCalibrationEntries c)
+  npts <- mapM (readXRDCalibrationEntry (xrdCalibrationDetector c)) (xrdCalibrationEntries c)
   -- in order to improve computation speed, pre-compute the pixel coodinates.
 
   let (solution, _p) = minimizeV NMSimplex2 1E-16 3000 box (f (preCalibrate npts)) guess
@@ -242,13 +243,13 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
     scriptPath ∷ FilePath
     scriptPath = o </> "pre-calibration.py"
 
-scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Script Sh
-scriptPyFAICalib o e = ScriptSh (content, scriptPath)
+scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Detector a → Script Sh
+scriptPyFAICalib o e d = ScriptSh (content, scriptPath)
   where
     content = unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
-                                 , "pyFAI-calib -e 18 -c CeO2 -D xpad_flat " ++ edf o n i]
+                                 , "pyFAI-calib -e 18 -c CeO2 " ++ toPyFAICalibArg d ++ " " ++ edf o n i]
 
     (XRDCalibrationEntryNxs (Nxs n _) i _) = e
 
@@ -256,9 +257,9 @@ scriptPyFAICalib o e = ScriptSh (content, scriptPath)
     scriptPath = o </> (takeFileName n) ++ printf "_%02d.sh" i
 
 
-extractEdf ∷ XRDCalibration → IO ()
-extractEdf (XRDCalibration _ o es) = do
+extractEdf ∷ XRDCalibration a → IO ()
+extractEdf (XRDCalibration _ o d es) = do
   let script = scriptExtractEdf o es
   ExitSuccess ← run script False
-  mapM_ (\e → scriptSave $ scriptPyFAICalib o e) es
+  mapM_ (\e → scriptSave $ scriptPyFAICalib o e d) es
   return ()

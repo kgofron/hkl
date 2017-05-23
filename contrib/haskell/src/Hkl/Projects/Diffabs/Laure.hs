@@ -62,9 +62,10 @@ sampleRef = XRDRef "reference"
              10 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
-sampleCalibration ∷ XRDCalibration
+sampleCalibration ∷ XRDCalibration ImXpadS140
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration"
+                                   , xrdCalibrationDetector = ImXpadS140
                                    , xrdCalibrationEntries = entries
                                    }
     where
@@ -180,7 +181,7 @@ laure = do
   print poniextref
 
   -- | full calibration
-  poniextref' ← calibrate sampleCalibration poniextref ImXpadS140
+  poniextref' ← calibrate sampleCalibration poniextref
   print poniextref'
 
   -- | set the integration parameters

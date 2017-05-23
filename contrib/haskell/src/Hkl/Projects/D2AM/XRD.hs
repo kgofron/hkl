@@ -34,9 +34,10 @@ sampleRef =  XRDRef "reference"
              (project </> "16Dec08D5_0268-rsz.poni")
             )
 
-sampleCalibration :: XRDCalibration
+sampleCalibration :: XRDCalibration Xpad32
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration" -- TODO pourquoi ce output
+                                   , xrdCalibrationDetector = Xpad32
                                    , xrdCalibrationEntries = entries
                                    }
     where
@@ -91,7 +92,7 @@ d2am = do
   let poniextref = move p (MyMatrix HklB (ident 3))
 
   -- full calibration
-  poniextref' <- calibrate sampleCalibration poniextref Xpad32
+  poniextref' <- calibrate sampleCalibration poniextref
 
   print poniextref
   print poniextref'

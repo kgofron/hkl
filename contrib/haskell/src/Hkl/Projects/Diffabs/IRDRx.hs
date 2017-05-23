@@ -45,9 +45,10 @@ h5path' nxentry =
           delta = "scan_data/data_03"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleCalibration :: XRDCalibration
+sampleCalibration :: XRDCalibration ImXpadS140
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration" -- TODO pourquoi ce output
+                                   , xrdCalibrationDetector = ImXpadS140
                                    , xrdCalibrationEntries = entries
                                    }
     where
@@ -142,7 +143,7 @@ irdrx = do
   let poniextref = move (Hkl.flip p) (MyMatrix HklB (ident 3))
 
   -- full calibration
-  poniextref' <- calibrate sampleCalibration poniextref ImXpadS140
+  poniextref' <- calibrate sampleCalibration poniextref
 
   print poniextref'
 

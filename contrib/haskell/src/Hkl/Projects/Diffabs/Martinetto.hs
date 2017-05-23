@@ -39,9 +39,10 @@ h5path' nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleCalibration :: XRDCalibration
+sampleCalibration :: XRDCalibration Xpad32
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration"
+                                   , xrdCalibrationDetector = Xpad32
                                    , xrdCalibrationEntries = entries
                                    }
     where
@@ -281,7 +282,7 @@ martinetto' = do
   -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
 
   -- full calibration
-  poniextref' <- calibrate sampleCalibration poniextref Xpad32
+  poniextref' <- calibrate sampleCalibration poniextref
   -- print p
   print poniextref
   print poniextref'
