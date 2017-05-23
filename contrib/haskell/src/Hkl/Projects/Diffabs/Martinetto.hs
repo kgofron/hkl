@@ -43,6 +43,7 @@ sampleCalibration :: XRDCalibration Xpad32
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration"
                                    , xrdCalibrationDetector = Xpad32
+                                   , xrdCalibrationCalibrant = CeO2
                                    , xrdCalibrationEntries = entries
                                    }
     where

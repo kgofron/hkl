@@ -124,7 +124,8 @@ library
                     , Hkl.Projects.Sixs
                     , Hkl.PyFAI
                     , Hkl.PyFAI.AzimuthalIntegrator
-                    , Hkl.PyFAI.Detector
+                    , Hkl.PyFAI.Calib
+                    , Hkl.PyFAI.Calibrant
                     , Hkl.PyFAI.Poni
                     , Hkl.PyFAI.PoniExt
                     , Hkl.PyFAI.Npt

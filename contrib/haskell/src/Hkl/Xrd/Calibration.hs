@@ -80,6 +80,7 @@ data XRDCalibrationEntry = XRDCalibrationEntryNxs { xrdCalibrationEntryNxs'Nxs :
 data XRDCalibration a = XRDCalibration { xrdCalibrationName :: Text
                                        , xrdCalibrationOutputDir :: FilePath
                                        , xrdCalibrationDetector ∷ Detector a
+                                       , xrdCalibrationCalibrant ∷ Calibrant
                                        , xrdCalibrationEntries :: [XRDCalibrationEntry]
                                        }
                       deriving (Show)
@@ -243,13 +244,13 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
     scriptPath ∷ FilePath
     scriptPath = o </> "pre-calibration.py"
 
-scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Detector a → Script Sh
-scriptPyFAICalib o e d = ScriptSh (content, scriptPath)
+scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Detector a → Calibrant → Script Sh
+scriptPyFAICalib o e d c = ScriptSh (content, scriptPath)
   where
     content = unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
-                                 , "pyFAI-calib -e 18 -c CeO2 " ++ toPyFAICalibArg d ++ " " ++ edf o n i]
+                                 , "pyFAI-calib -e 18 " ++ toPyFAICalibArg c ++ " " ++ toPyFAICalibArg d ++ " " ++ edf o n i]
 
     (XRDCalibrationEntryNxs (Nxs n _) i _) = e
 
@@ -258,8 +259,8 @@ scriptPyFAICalib o e d = ScriptSh (content, scriptPath)
 
 
 extractEdf ∷ XRDCalibration a → IO ()
-extractEdf (XRDCalibration _ o d es) = do
+extractEdf (XRDCalibration _ o d c es) = do
   let script = scriptExtractEdf o es
   ExitSuccess ← run script False
-  mapM_ (\e → scriptSave $ scriptPyFAICalib o e d) es
+  mapM_ (\e → scriptSave $ scriptPyFAICalib o e d c) es
   return ()

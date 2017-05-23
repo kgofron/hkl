@@ -59,6 +59,7 @@ sampleCalibration ∷ XRDCalibration ImXpadS140
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration"
                                    , xrdCalibrationDetector =  ImXpadS140
+                                   , xrdCalibrationCalibrant = CeO2
                                    , xrdCalibrationEntries = entries
                                    }
     where
