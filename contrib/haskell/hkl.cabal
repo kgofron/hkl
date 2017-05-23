@@ -166,6 +166,7 @@ library
                      , repa
                      , text
                      , transformers >= 0.3
+                     , unix >= 2.6.0.0
                      , vector >= 0.10.0.1
 
   if flag(useHMatrixGsl)

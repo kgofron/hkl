@@ -13,11 +13,14 @@ module Hkl.Script
     where
 
 import Control.Monad (when)
+import Data.Bits ((.|.))
 import Data.Text (Text)
 import Data.Text.IO (writeFile)
 import System.Directory (createDirectoryIfMissing)
 import System.Exit ( ExitCode(..) )
 import System.FilePath ( (<.>), takeDirectory)
+import System.Posix.Files (accessModes, groupModes, ownerModes, setFileMode)
+import System.Posix.Types (FileMode)
 import System.Process ( rawSystem ) -- callProcess for futur
 
 import Prelude hiding (writeFile)
@@ -48,16 +51,17 @@ data Script a where
   ScriptGnuplot ∷ (Text, FilePath) → Script Gnuplot
   ScriptSh ∷ (Text, FilePath) → Script Sh
 
-scriptSave' ∷ Text → FilePath → IO ()
-scriptSave' c f = do
+scriptSave' ∷ Text → FilePath → FileMode → IO ()
+scriptSave' c f m = do
     createDirectoryIfMissing True (takeDirectory f)
     writeFile f c
+    setFileMode f m
     print $ "--> created : " ++ f
 
 scriptSave ∷ Script a → IO ()
-scriptSave (Py2Script (c, f)) = scriptSave' c f
-scriptSave (ScriptGnuplot (c, f)) = scriptSave' c f
-scriptSave (ScriptSh (c, f)) = scriptSave' c f
+scriptSave (Py2Script (c, f)) = scriptSave' c f (ownerModes .|. groupModes)
+scriptSave (ScriptGnuplot (c, f)) = scriptSave' c f accessModes
+scriptSave (ScriptSh (c, f)) = scriptSave' c f (ownerModes .|. groupModes)
 
 scriptRun' ∷ FilePath → String → [String] → Bool → IO ExitCode
 scriptRun' f prog args d
