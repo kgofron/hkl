@@ -113,6 +113,20 @@ getMNxs f (XrdOneDH5Path _ g d w) i' = runSafeT $
       m <- geometryDetectorRotationGet geometry detector
       return (MyMatrix HklB m)
 
+
+getWavelength ∷ File → DataFrameH5Path XrdOneD → IO WaveLength
+getWavelength f (XrdOneDH5Path _ _ _ w) = runSafeT $
+    withDataItem f w $ \w' -> liftIO $ do
+      wavelength <- get_position w' 0
+      return $ head wavelength *~ nano meter
+
+readWavelength :: XRDCalibrationEntry -> IO (WaveLength)
+readWavelength e =
+    withH5File f $ \h5file -> getWavelength h5file p
+    where
+      (Nxs f p) = xrdCalibrationEntryNxs'Nxs e
+
+
 readXRDCalibrationEntry :: Detector a -> XRDCalibrationEntry -> IO (NptExt a)
 readXRDCalibrationEntry d e@(XRDCalibrationEntryNxs _ _ _) =
     withH5File f $ \h5file -> do
@@ -244,13 +258,17 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
     scriptPath ∷ FilePath
     scriptPath = o </> "pre-calibration.py"
 
-scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Detector a → Calibrant → Script Sh
-scriptPyFAICalib o e d c = ScriptSh (content, scriptPath)
+scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Detector a → Calibrant → WaveLength → Script Sh
+scriptPyFAICalib o e d c w = ScriptSh (content, scriptPath)
   where
     content = unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
-                                 , "pyFAI-calib -e 18 " ++ toPyFAICalibArg c ++ " " ++ toPyFAICalibArg d ++ " " ++ edf o n i]
+                                 , "pyFAI-calib"
+                                   ++ " " ++ toPyFAICalibArg w
+                                   ++ " " ++ toPyFAICalibArg c
+                                   ++ " " ++ toPyFAICalibArg d
+                                   ++ " " ++ edf o n i]
 
     (XRDCalibrationEntryNxs (Nxs n _) i _) = e
 
@@ -262,5 +280,9 @@ extractEdf ∷ XRDCalibration a → IO ()
 extractEdf (XRDCalibration _ o d c es) = do
   let script = scriptExtractEdf o es
   ExitSuccess ← run script False
-  mapM_ (\e → scriptSave $ scriptPyFAICalib o e d c) es
+  mapM_ go es
   return ()
+  where
+    go e = do
+      w ← readWavelength e
+      scriptSave $ scriptPyFAICalib o e d c w
