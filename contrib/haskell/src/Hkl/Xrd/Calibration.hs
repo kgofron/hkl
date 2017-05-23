@@ -13,7 +13,7 @@ module Hkl.Xrd.Calibration
 
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Char8 (pack)
-import Data.List (foldl')
+import Data.List (foldl', intercalate)
 import Data.Text (Text, unlines, pack)
 import Data.Vector.Storable
   ( Vector
@@ -264,11 +264,13 @@ scriptPyFAICalib o e d c w = ScriptSh (content, scriptPath)
     content = unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
-                                 , "pyFAI-calib"
-                                   ++ " " ++ toPyFAICalibArg w
-                                   ++ " " ++ toPyFAICalibArg c
-                                   ++ " " ++ toPyFAICalibArg d
-                                   ++ " " ++ edf o n i]
+                                 , "pyFAI-calib" ++ intercalate " " args
+                                 ]
+
+    args = [ toPyFAICalibArg w
+           , toPyFAICalibArg c
+           , toPyFAICalibArg d
+           , toPyFAICalibArg (edf o n i) ]
 
     (XRDCalibrationEntryNxs (Nxs n _) i _) = e
 
