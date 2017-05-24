@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
@@ -21,14 +22,16 @@ module Hkl.PyFAI.Poni
        , fromAxisAndAngle
        ) where
 
-import Control.Applicative ((<$>), (<*>), (*>), (<*), many, optional, pure)
+import Control.Applicative ((<$>), (<|>), (<*>), (*>), (<*), many, optional, pure)
 import Data.Attoparsec.Text (Parser, (<?>), endOfLine, isEndOfLine, many1, double, string, takeTill)
 import Data.Text (Text, append, intercalate, pack)
 import Data.Vector.Storable (Vector, fromList)
 import Numeric.LinearAlgebra (Matrix, (<>), atIndex, fromLists, ident, scalar)
 import Numeric.Units.Dimensional.Prelude (Angle, Length, (+), (*~), (/~), (/~~), one, meter, radian, degree)
 
+import Hkl.Detector
 import Hkl.MyMatrix
+import Hkl.PyFAI.Detector
 import Hkl.Types
 
 #if !MIN_VERSION_hmatrix(0, 17, 0)
@@ -43,11 +46,20 @@ import Numeric.LinearAlgebra (tr)
 
 type Pose = MyMatrix Double
 
+-- | ADetector
+
+data ADetector = forall a. ADetector (Detector a)
+
+instance Show ADetector where
+  show (ADetector v) = show v
+
+instance ToPyFAI ADetector where
+  toPyFAI (ADetector v) = toPyFAI v
 
 -- | Poni
 
 data PoniEntry = PoniEntry { poniEntryHeader :: [Text]
-                           , poniEntryDetector :: (Maybe Text) -- ^ Detector Name
+                           , poniEntryDetector :: (Maybe ADetector) -- ^ Detector Name
                            , poniEntryPixelSize1 :: (Length Double) -- ^ pixels size 1
                            , poniEntryPixelSize2 :: (Length Double) -- ^ pixels size 1
                            , poniEntryDistance :: (Length Double) -- ^ pixels size 2
@@ -59,9 +71,21 @@ data PoniEntry = PoniEntry { poniEntryHeader :: [Text]
                            , poniEntrySpline :: (Maybe Text) -- ^ spline file
                            , poniEntryWavelength :: WaveLength -- ^ wavelength
                            }
-                 deriving (Show)
+               deriving (Show)
 
 type Poni = [PoniEntry]
+
+class ToPoni a where
+  toPoni ∷ a → Text
+
+instance ToPoni ADetector where
+  toPoni (ADetector v) = toPyFAI v
+
+instance ToPoni Double where
+  toPoni v = pack $ show v
+
+instance ToPoni Text where
+  toPoni = id
 
 commentP :: Parser Text
 commentP =  "#" *> takeTill isEndOfLine <* endOfLine <?> "commentP"
@@ -82,10 +106,18 @@ angleP key = do
     value <-doubleP key
     pure $ value *~ radian
 
+detectorP ∷ ToPyFAI a ⇒ a → Parser a
+detectorP d = do
+  _ ← "Detector: " *> string (toPyFAI d) <* endOfLine
+  pure d
+
+aDetectorP ∷ Parser ADetector
+aDetectorP = (ADetector <$> detectorP Xpad32) <|> (ADetector <$> detectorP ImXpadS140)
+
 poniEntryP :: Parser PoniEntry
 poniEntryP = PoniEntry
         <$> headerP
-        <*> optional ("Detector: " *> takeTill isEndOfLine <* endOfLine)
+        <*> optional aDetectorP
         <*> lengthP "PixelSize1: "
         <*> lengthP "PixelSize2: "
         <*> lengthP "Distance: "
@@ -107,7 +139,7 @@ poniToText p = Data.Text.intercalate (Data.Text.pack "\n") (map poniEntryToText 
 poniEntryToText :: PoniEntry -> Text
 poniEntryToText p = intercalate (Data.Text.pack "\n") $
                     map (Data.Text.append "#") (poniEntryHeader p)
-                    ++ maybe [] (poniLine' "Detector: ") (poniEntryDetector p)
+                    ++ maybe [] (poniLine "Detector: ") (poniEntryDetector p)
                     ++ poniLine "PixelSize1: " (poniEntryPixelSize1 p /~ meter)
                     ++ poniLine "PixelSize2: " (poniEntryPixelSize2 p /~ meter)
                     ++ poniLine "Distance: " (poniEntryDistance p /~ meter)
@@ -116,14 +148,11 @@ poniEntryToText p = intercalate (Data.Text.pack "\n") $
                     ++ poniLine "Rot1: " (poniEntryRot1 p /~ radian)
                     ++ poniLine "Rot2: " (poniEntryRot2 p /~ radian)
                     ++ poniLine "Rot3: " (poniEntryRot3 p /~ radian)
-                    ++ maybe [] (poniLine' "SplineFile: ") (poniEntrySpline p)
+                    ++ maybe [] (poniLine "SplineFile: ") (poniEntrySpline p)
                     ++ poniLine "Wavelength: " (poniEntryWavelength p /~ meter)
   where
-    poniLine :: Show a => String -> a -> [Text]
-    poniLine key v = [Data.Text.append (Data.Text.pack key) (Data.Text.pack $ show v)]
-
-    poniLine' :: String -> Text -> [Text]
-    poniLine' key v = [Data.Text.append (Data.Text.pack key) v]
+    poniLine :: ToPoni a ⇒ String → a → [Text]
+    poniLine key v = [Data.Text.append (Data.Text.pack key) (toPoni v)]
 
 crossprod :: Vector Double -> Matrix Double
 crossprod axis = fromLists [[ 0, -z,  y],

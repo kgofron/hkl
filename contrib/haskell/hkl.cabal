@@ -126,6 +126,7 @@ library
                     , Hkl.PyFAI.AzimuthalIntegrator
                     , Hkl.PyFAI.Calib
                     , Hkl.PyFAI.Calibrant
+                    , Hkl.PyFAI.Detector
                     , Hkl.PyFAI.Poni
                     , Hkl.PyFAI.PoniExt
                     , Hkl.PyFAI.Npt
