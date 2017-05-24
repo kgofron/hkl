@@ -87,7 +87,9 @@ import Hkl.Types
 import Hkl.Utils
 
 -- | TODO
--- When we skip the last frame there is problem.
+-- * When we skip the last frame there is problem.
+
+-- * Let's add a method in order to customize the movement of the poni.
 
 -- | Types
 
