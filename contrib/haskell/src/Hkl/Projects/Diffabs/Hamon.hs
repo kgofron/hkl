@@ -15,7 +15,6 @@ import Hkl
 
 -- | TODO
 -- * take into account a non-centered sample.
--- * better script for pyFAI-calibration (take the wavelength from the nexus file, make it executable by default)
 -- * find a way to use integrateMulti with a small amount of memory.
 -- * better mask for each detector.
 
@@ -123,7 +122,7 @@ hamon = do
   -- | set the integration parameters
   let mflat = Nothing
   let aiMethod = Csr
-  let params = XrdOneDParams poniextref mflat aiMethod
+  let params = XrdOneDParams poniextref' mflat aiMethod
 
   -- integrate each step of the scan
   integrate params [ceo2]
