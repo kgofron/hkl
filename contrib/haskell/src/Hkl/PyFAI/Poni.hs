@@ -29,6 +29,7 @@ import Numeric.LinearAlgebra (Matrix, (<>), atIndex, fromLists, ident, scalar)
 import Numeric.Units.Dimensional.Prelude (Angle, Length, (+), (*~), (/~), (/~~), one, meter, radian, degree)
 
 import Hkl.MyMatrix
+import Hkl.Types
 
 #if !MIN_VERSION_hmatrix(0, 17, 0)
 import Numeric.LinearAlgebra (trans)
@@ -56,7 +57,7 @@ data PoniEntry = PoniEntry { poniEntryHeader :: [Text]
                            , poniEntryRot2 :: (Angle Double) -- ^ rot2
                            , poniEntryRot3 :: (Angle Double) -- ^ rot3
                            , poniEntrySpline :: (Maybe Text) -- ^ spline file
-                           , poniEntryWavelength :: (Length Double) -- ^ wavelength
+                           , poniEntryWavelength :: WaveLength -- ^ wavelength
                            }
                  deriving (Show)
 
