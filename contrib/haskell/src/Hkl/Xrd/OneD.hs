@@ -252,8 +252,6 @@ getPoniExtRef (XRDRef _ output (XrdRefNxs nxs'@(Nxs f _) idx)) = do
     gen root nxs'' m idx' = do
       poni <- poniFromFile $ root </> scandir ++ printf "_%02d.poni" idx'
       return $ PoniExt poni m
-      where
-        scandir = takeFileName nxs''
 getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = do
   poni <- poniFromFile p
   m <- getMEdf e
