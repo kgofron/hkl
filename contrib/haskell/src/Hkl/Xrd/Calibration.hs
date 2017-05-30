@@ -11,6 +11,7 @@ module Hkl.Xrd.Calibration
        , extractEdf
        ) where
 
+import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Char8 (pack)
 import Data.List (foldl', intercalate)
@@ -129,17 +130,18 @@ readWavelength e =
 
 readXRDCalibrationEntry :: Detector a -> XRDCalibrationEntry -> IO (NptExt a)
 readXRDCalibrationEntry d e@(XRDCalibrationEntryNxs _ _ _) =
-    withH5File f $ \h5file -> do
-      m <- getMNxs h5file p idx
-      npt <- nptFromFile (xrdCalibrationEntryNxs'NptPath e)
-      return (NptExt npt m d)
-    where
-      idx = xrdCalibrationEntryNxs'Idx e
-      (Nxs f p) = xrdCalibrationEntryNxs'Nxs e
-readXRDCalibrationEntry d e@(XRDCalibrationEntryEdf _ _) = do
-  m <- getMEdf (xrdCalibrationEntryEdf'Edf e)
-  npt <-  nptFromFile (xrdCalibrationEntryEdf'NptPath e)
-  return (NptExt npt m d)
+  withH5File f $ \h5file -> NptExt
+                            <$> nptFromFile (xrdCalibrationEntryNxs'NptPath e)
+                            <*> getMNxs h5file p idx
+                            <*> pure d
+  where
+    idx = xrdCalibrationEntryNxs'Idx e
+    (Nxs f p) = xrdCalibrationEntryNxs'Nxs e
+readXRDCalibrationEntry d e@(XRDCalibrationEntryEdf _ _) =
+  NptExt
+  <$> nptFromFile (xrdCalibrationEntryEdf'NptPath e)
+  <*> getMEdf (xrdCalibrationEntryEdf'Edf e)
+  <*> pure d
 
 -- | Poni Calibration
 

@@ -32,6 +32,7 @@ module Hkl.Xrd.OneD
        , dummiesForPy
        ) where
 
+import Control.Applicative ((<$>), (<*>), pure)
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Monad (forM_, forever, void, when, zipWithM_)
 import Control.Monad.Morph (hoist)
@@ -249,13 +250,14 @@ getPoniExtRef (XRDRef _ output (XrdRefNxs nxs'@(Nxs f _) idx)) = do
   return $ difTomoFramePoniExt (Prelude.last poniExtRefs)
   where
     gen :: FilePath -> FilePath -> MyMatrix Double -> Int -> IO PoniExt
-    gen root nxs'' m idx' = do
-      poni <- poniFromFile $ root </> scandir ++ printf "_%02d.poni" idx'
-      return $ PoniExt poni m
-getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = do
-  poni <- poniFromFile p
-  m <- getMEdf e
-  return $ PoniExt poni m
+    gen root nxs'' m idx' = PoniExt
+                            <$> poniFromFile (root </> scandir ++ printf "_%02d.poni" idx')
+                            <*> pure m
+      where
+        scandir = takeFileName nxs''
+getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = PoniExt
+                                             <$> poniFromFile p
+                                             <*> getMEdf e
 
 integrate ∷ XrdOneDParams a → [XRDSample] → IO ()
 integrate p ss = void $ mapConcurrently (integrate' p) ss
