@@ -6,6 +6,8 @@ module Hkl.Types ( Beamline(..)
                  , beamlineUpper
                  , Mode(..)
                  , Engine(..)
+                 , OutputBaseDir
+                 , SampleName
                  , Sample(..)
                  , Source(..)
                  , Trajectory
@@ -16,11 +18,17 @@ module Hkl.Types ( Beamline(..)
                  ) where
 
 import Data.Char (toUpper)
+import Data.Text (Text)
 
 import Hkl.Types.Parameter as X
 import Hkl.H5
 import Hkl.Lattice
 import Numeric.Units.Dimensional.Prelude (Length)
+
+-- Common
+
+type OutputBaseDir = FilePath
+type SampleName = String
 
 -- | Beamline
 

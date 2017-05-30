@@ -15,7 +15,7 @@ import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Char8 (pack)
 import Data.List (foldl', intercalate)
-import Data.Text (Text, unlines, pack)
+import Data.Text (unlines, pack)
 import Data.Vector.Storable
   ( Vector
   , head
@@ -78,7 +78,7 @@ data XRDCalibrationEntry = XRDCalibrationEntryNxs { xrdCalibrationEntryNxs'Nxs :
                                                   }
                            deriving (Show)
 
-data XRDCalibration a = XRDCalibration { xrdCalibrationName :: Text
+data XRDCalibration a = XRDCalibration { xrdCalibrationName :: SampleName
                                        , xrdCalibrationOutputDir :: FilePath
                                        , xrdCalibrationDetector ∷ Detector a
                                        , xrdCalibrationCalibrant ∷ Calibrant

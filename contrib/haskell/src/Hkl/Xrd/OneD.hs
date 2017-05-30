@@ -94,9 +94,6 @@ import Hkl.Utils
 
 -- | Types
 
-type OutputBaseDir = FilePath
-type SampleName = String
-
 data Threshold = Threshold Int deriving (Show)
 
 instance PyVal Threshold where
