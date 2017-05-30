@@ -64,7 +64,7 @@ import Numeric.LinearAlgebra ((#>))
 -- | Calibration
 
 data NptExt a = NptExt { nptExtNpt :: Npt
-                       , nptExtMyMatrix :: MyMatrix Double
+                       , nptExtPose :: Pose
                        , nptExtDetector :: Detector a
                        }
               deriving (Show)
@@ -95,8 +95,8 @@ withDataItem hid (DataItemH5 name _) = bracket (liftIO acquire') (liftIO . relea
       release' :: Dataset -> IO ()
       release' = closeDataset
 
-getMNxs :: File -> DataFrameH5Path XrdOneD -> Int -> IO (MyMatrix Double) -- TODO move to XRD
-getMNxs f (XrdOneDH5Path _ g d w) i' = runSafeT $
+getPoseNxs :: File -> DataFrameH5Path XrdOneD -> Int -> IO Pose -- TODO move to XRD
+getPoseNxs f (XrdOneDH5Path _ g d w) i' = runSafeT $
     withDataItem f g $ \g' ->
     withDataItem f d $ \d' ->
     withDataItem f w $ \w' -> liftIO $ do
@@ -112,7 +112,7 @@ getMNxs f (XrdOneDH5Path _ g d w) i' = runSafeT $
       let geometry = Geometry K6c source positions Nothing
       let detector = ZeroD
       m <- geometryDetectorRotationGet geometry detector
-      return (MyMatrix HklB m)
+      return $ Pose (MyMatrix HklB m)
 
 
 getWavelength ∷ File → DataFrameH5Path XrdOneD → IO WaveLength
@@ -132,7 +132,7 @@ readXRDCalibrationEntry :: Detector a -> XRDCalibrationEntry -> IO (NptExt a)
 readXRDCalibrationEntry d e@(XRDCalibrationEntryNxs _ _ _) =
   withH5File f $ \h5file -> NptExt
                             <$> nptFromFile (xrdCalibrationEntryNxs'NptPath e)
-                            <*> getMNxs h5file p idx
+                            <*> getPoseNxs h5file p idx
                             <*> pure d
   where
     idx = xrdCalibrationEntryNxs'Idx e
@@ -140,7 +140,7 @@ readXRDCalibrationEntry d e@(XRDCalibrationEntryNxs _ _ _) =
 readXRDCalibrationEntry d e@(XRDCalibrationEntryEdf _ _) =
   NptExt
   <$> nptFromFile (xrdCalibrationEntryEdf'NptPath e)
-  <*> getMEdf (xrdCalibrationEntryEdf'Edf e)
+  <*> getPoseEdf (xrdCalibrationEntryEdf'Edf e)
   <*> pure d
 
 -- | Poni Calibration
@@ -165,7 +165,8 @@ calibrate c (PoniExt p _) =  do
   let (solution, _p) = minimizeV NMSimplex2 1E-16 3000 box (f (preCalibrate npts)) guess
   -- mplot $ drop 3 (toColumns p)
   print _p
-  return $ PoniExt [poniEntryFromList entry (toList solution)] (MyMatrix HklB (ident 3))
+  let pose = Pose (MyMatrix HklB (ident 3))
+  return $ PoniExt [poniEntryFromList entry (toList solution)] pose
     where
       preCalibrate''' :: Detector a -> NptEntry -> NptEntry'
       preCalibrate''' detector (NptEntry _ tth _ points) = (tth /~ radian, map (coordinates detector) points)
@@ -174,7 +175,7 @@ calibrate c (PoniExt p _) =  do
       preCalibrate'' n detector = (nptWavelength n /~ meter, map (preCalibrate''' detector) (nptEntries n))
 
       preCalibrate' :: NptExt a -> NptExt' a
-      preCalibrate' (NptExt n m detector) = (preCalibrate'' n detector, m', detector)
+      preCalibrate' (NptExt n (Pose m) detector) = (preCalibrate'' n detector, m', detector)
         where
           (MyMatrix _ m') = changeBase m PyFAIB
 

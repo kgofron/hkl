@@ -18,7 +18,7 @@ module Hkl.Xrd.OneD
        , XrdSource(..)
        , PoniExt(..)
          -- reference
-       , getMEdf
+       , getPoseEdf
        , getPoniExtRef
          -- integration
        , integrate
@@ -153,7 +153,8 @@ instance Frame (DataFrameH5 XrdOneD) where
     let geometry =  Geometry K6c source positions Nothing
     let detector = ZeroD
     m <- lift $ geometryDetectorRotationGet geometry detector
-    poniext <- lift $ ponigen (MyMatrix HklB m) idx
+    let pose = Pose (MyMatrix HklB m)
+    poniext <- lift $ ponigen pose idx
     return $ DifTomoFrame { difTomoFrameNxs = nxs'
                           , difTomoFrameIdx = idx
                           , difTomoFrameEOF = eof
@@ -216,8 +217,8 @@ pgen o f i = o </> scandir </>  scandir ++ printf "_%02d.poni" i
   where
     scandir = (dropExtension . takeFileName) f
 
-getMEdf :: FilePath -> IO (MyMatrix Double)
-getMEdf f = do
+getPoseEdf :: FilePath -> IO Pose
+getPoseEdf f = do
   edf <- edfFromFile f
   let mnes = map Text.pack ["_mu", "_keta", "_kap", "_kphi", "nu", "del"]
   let source = Source (edf'Lambda edf)
@@ -225,7 +226,7 @@ getMEdf f = do
   let geometry =  Geometry K6c source positions Nothing
   let detector = ZeroD
   m <- geometryDetectorRotationGet geometry detector
-  return $ MyMatrix HklB m
+  return $ Pose (MyMatrix HklB m)
     where
       extract :: Edf -> Text -> Double
       extract (Edf _ ms) key = fromMaybe 0.0 (List.lookup key ms)
@@ -244,15 +245,15 @@ getPoniExtRef (XRDRef _ output (XrdRefNxs nxs'@(Nxs f _) idx)) = do
                            >-> hoist lift ( frames' [idx]))
   return $ difTomoFramePoniExt (Prelude.last poniExtRefs)
   where
-    gen :: FilePath -> FilePath -> MyMatrix Double -> Int -> IO PoniExt
-    gen root nxs'' m idx' = PoniExt
+    gen :: FilePath -> FilePath -> Pose -> Int -> IO PoniExt
+    gen root nxs'' p idx' = PoniExt
                             <$> poniFromFile (root </> scandir ++ printf "_%02d.poni" idx')
-                            <*> pure m
+                            <*> pure p
       where
         scandir = takeFileName nxs''
 getPoniExtRef (XRDRef _ _ (XrdRefEdf e p)) = PoniExt
                                              <$> poniFromFile p
-                                             <*> getMEdf e
+                                             <*> getPoseEdf e
 
 integrate ∷ XrdOneDParams a → [XRDSample] → IO ()
 integrate p ss = void $ mapConcurrently (integrate' p) ss
@@ -494,7 +495,7 @@ integrateMulti'' p output (XrdNxs b _ mt _ (XrdSourceEdf fs)) = do
 
       go ∷ XrdOneDParams a → FilePath → FilePath → IO ()
       go (XrdOneDParams ref _ _) f o = do
-        m <- getMEdf f
+        m <- getPoseEdf f
         let (PoniExt p' _) = move ref m
         o `hasContent` (poniToText p')
 

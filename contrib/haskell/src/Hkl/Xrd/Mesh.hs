@@ -61,7 +61,7 @@ data XrdMeshParams a = XrdMeshParams PoniExt (Maybe (Flat a)) AIMethod
 
 data XrdMeshFrame = XrdMeshFrame
                     WaveLength
-                    (MyMatrix Double)
+                    Pose
                   deriving (Show)
 
 class FrameND t where
@@ -82,7 +82,8 @@ instance FrameND (DataFrameH5 XrdMesh) where
     let geometry =  Geometry K6c source positions Nothing
     let detector = ZeroD
     m <- lift $ geometryDetectorRotationGet geometry detector
-    return $ XrdMeshFrame w' (MyMatrix HklB m)
+    let pose = Pose (MyMatrix HklB m)
+    return $ XrdMeshFrame w' pose
     where
       get_position' :: Shape sh => DataSource a -> sh -> MaybeT IO (Vector Double)
       get_position' (DataSourceH5 _ a ) b = lift $ do
@@ -103,7 +104,8 @@ instance FrameND (DataFrameH5 XrdMesh) where
     let geometry =  Geometry K6c source positions Nothing
     let detector = ZeroD
     m <- lift $ geometryDetectorRotationGet geometry detector
-    return $ XrdMeshFrame w' (MyMatrix HklB m)
+    let pose = Pose (MyMatrix HklB m)
+    return $ XrdMeshFrame w' pose
     where
       get_position' :: Shape sh => DataSource a -> sh -> MaybeT IO (Vector Double)
       get_position' (DataSourceH5 _ a ) b = lift $ do
@@ -122,8 +124,8 @@ getWaveLengthAndPoniExt' (XrdMeshParams ref _ _) nxs =
    withDataSource nxs $ \h -> do
     -- read the first frame and get the poni used for all the integration.
     d <- runMaybeT $ rowND h
-    let (XrdMeshFrame w m) = fromJust d
-    let poniext = move ref m
+    let (XrdMeshFrame w p) = fromJust d
+    let poniext = move ref p
     return (w, poniext)
 
 getWaveLengthAndPoniExt ∷ XrdMeshParams a → XrdMeshSource → IO (WaveLength, PoniExt)

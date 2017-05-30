@@ -4,7 +4,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.PyFAI.Poni
-       ( Pose
+       ( Pose(..)
          -- Poni
        , Poni
        , poniP
@@ -44,7 +44,7 @@ import Numeric.LinearAlgebra (tr)
 
 -- | Pose
 
-type Pose = MyMatrix Double
+data Pose = Pose (MyMatrix Double) deriving (Show)
 
 -- | ADetector
 

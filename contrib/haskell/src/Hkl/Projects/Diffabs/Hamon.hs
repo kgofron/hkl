@@ -106,7 +106,7 @@ hamon = do
 
   p <- getPoniExtRef sampleRef
 
-  let poniextref = move p (MyMatrix HklB (ident 3))
+  let poniextref = move p (Pose (MyMatrix HklB (ident 3)))
 
   -- full calibration
   poniextref' <- calibrate sampleCalibration poniextref

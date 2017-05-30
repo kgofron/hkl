@@ -90,7 +90,7 @@ d2am = do
   p <- getPoniExtRef sampleRef
 
   -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
-  let poniextref = move p (MyMatrix HklB (ident 3))
+  let poniextref = move p (Pose (MyMatrix HklB (ident 3)))
 
   -- full calibration
   poniextref' <- calibrate sampleCalibration poniextref
