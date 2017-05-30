@@ -12,8 +12,6 @@ module Hkl.Xrd.OneD
        , XRDRef(..)
        , XrdRefSource(..)
        , XRDSample(..)
-       , OutputBaseDir
-       , SampleName
        , Threshold(..)
        , XrdNxs(..)
        , XrdOneDParams(..)
@@ -103,7 +101,7 @@ data XrdRefSource = XrdRefNxs (Nxs XrdOneD) Int
                   | XrdRefEdf FilePath FilePath
                   deriving (Show)
 
-data XRDRef = XRDRef SampleName OutputBaseDir XrdRefSource
+data XRDRef = XRDRef SampleName AbsDirPath XrdRefSource
             deriving (Show)
 
 data XrdSource = XrdSourceNxs (Nxs XrdOneD)
@@ -119,7 +117,7 @@ data XrdNxs
       XrdSource -- data source
     deriving (Show)
 
-data XRDSample = XRDSample SampleName OutputBaseDir [XrdNxs] -- ^ nxss
+data XRDSample = XRDSample SampleName AbsDirPath [XrdNxs] -- ^ nxss
                deriving (Show)
 
 data XrdOneDParams a = XrdOneDParams PoniExt (Maybe (Flat a)) AIMethod
@@ -210,10 +208,10 @@ dummiesForPy mt = unlines [ "# Compute the dummy values for the dynamic mask"
     dummy = maybe "None" (\_ → "65000") mt -- TODO the default value depends on the number od bits per pixels.
     delta_dummy = maybe "None" (\(Threshold t) → show (65000 - t)) mt
 
-getScanDir ∷ OutputBaseDir → FilePath → FilePath
+getScanDir ∷ AbsDirPath → FilePath → FilePath
 getScanDir o f = o </> (dropExtension . takeFileName) f
 
-pgen :: OutputBaseDir -> FilePath -> Int -> FilePath
+pgen :: AbsDirPath -> FilePath -> Int -> FilePath
 pgen o f i = o </> scandir </>  scandir ++ printf "_%02d.poni" i
   where
     scandir = (dropExtension . takeFileName) f
@@ -262,7 +260,7 @@ integrate p ss = void $ mapConcurrently (integrate' p) ss
 integrate' ∷ XrdOneDParams a → XRDSample → IO ()
 integrate' p (XRDSample _ output nxss) = void $ mapConcurrently (integrate'' p output) nxss
 
-integrate'' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
+integrate'' ∷ XrdOneDParams a → AbsDirPath → XrdNxs → IO ()
 integrate'' p output (XrdNxs b _ mt is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
@@ -418,7 +416,7 @@ targetP g = forever $ do
   let dataPath = poniPath `replaceExtension` "dat"
   yield dataPath
 
-target' ∷  XrdOneDParams a → OutputBaseDir → XrdNxs → IO (FilePath, [FilePath])
+target' ∷  XrdOneDParams a → AbsDirPath → XrdNxs → IO (FilePath, [FilePath])
 target' p output (XrdNxs _ _ _ is (XrdSourceNxs nxs'@(Nxs f _))) = do
   fs ← runSafeT $ toListM $
        withDataFrameH5 nxs' (gen p) yield
@@ -470,7 +468,7 @@ integrateMulti p samples = mapM_ (integrateMulti' p) samples
 integrateMulti' ∷ XrdOneDParams a → XRDSample → IO ()
 integrateMulti' p (XRDSample _ output nxss) = mapM_ (integrateMulti'' p output) nxss
 
-integrateMulti'' ∷ XrdOneDParams a → OutputBaseDir → XrdNxs → IO ()
+integrateMulti'' ∷ XrdOneDParams a → AbsDirPath → XrdNxs → IO ()
 integrateMulti'' p output (XrdNxs _ mb mt is (XrdSourceNxs nxs'@(Nxs f _))) = do
   print f
   runSafeT $ runEffect $
@@ -608,7 +606,7 @@ saveMultiGeometry p b mt = evalStateP [] (saveMulti' p b mt)
 
 -- substract a sample from another one
 
-targetMulti' ∷  XrdOneDParams a → OutputBaseDir → XrdNxs → (FilePath, FilePath)
+targetMulti' ∷  XrdOneDParams a → AbsDirPath → XrdNxs → (FilePath, FilePath)
 targetMulti' _ output (XrdNxs _ _ _ _ (XrdSourceNxs (Nxs f _))) = (d, o)
   where
     d = getScanDir output f

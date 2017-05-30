@@ -2,11 +2,11 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
-module Hkl.Types ( Beamline(..)
+module Hkl.Types ( AbsDirPath
+                 , Beamline(..)
                  , beamlineUpper
                  , Mode(..)
                  , Engine(..)
-                 , OutputBaseDir
                  , SampleName
                  , Sample(..)
                  , Source(..)
@@ -18,7 +18,6 @@ module Hkl.Types ( Beamline(..)
                  ) where
 
 import Data.Char (toUpper)
-import Data.Text (Text)
 
 import Hkl.Types.Parameter as X
 import Hkl.H5
@@ -27,7 +26,7 @@ import Numeric.Units.Dimensional.Prelude (Length)
 
 -- Common
 
-type OutputBaseDir = FilePath
+type AbsDirPath = FilePath
 type SampleName = String
 
 -- | Beamline

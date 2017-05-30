@@ -79,7 +79,7 @@ data XRDCalibrationEntry = XRDCalibrationEntryNxs { xrdCalibrationEntryNxs'Nxs :
                            deriving (Show)
 
 data XRDCalibration a = XRDCalibration { xrdCalibrationName :: SampleName
-                                       , xrdCalibrationOutputDir :: FilePath
+                                       , xrdCalibrationOutputDir :: AbsDirPath
                                        , xrdCalibrationDetector ∷ Detector a
                                        , xrdCalibrationCalibrant ∷ Calibrant
                                        , xrdCalibrationEntries :: [XRDCalibrationEntry]
@@ -228,12 +228,12 @@ calibrate c (PoniExt p _) =  do
 
 -- | Pre Calibration
 
-edf ∷ FilePath → FilePath → Int → FilePath
+edf ∷ AbsDirPath → FilePath → Int → FilePath
 edf o n i = o </> f
   where
     f = (takeFileName n) ++ printf "_%02d.edf" i
 
-scriptExtractEdf ∷ FilePath → [XRDCalibrationEntry] → Script Py2
+scriptExtractEdf ∷ AbsDirPath → [XRDCalibrationEntry] → Script Py2
 scriptExtractEdf o es = Py2Script (content, scriptPath)
   where
     content = unlines $
@@ -260,7 +260,7 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
     scriptPath ∷ FilePath
     scriptPath = o </> "pre-calibration.py"
 
-scriptPyFAICalib ∷ FilePath → XRDCalibrationEntry → Detector a → Calibrant → WaveLength → Script Sh
+scriptPyFAICalib ∷ AbsDirPath → XRDCalibrationEntry → Detector a → Calibrant → WaveLength → Script Sh
 scriptPyFAICalib o e d c w = ScriptSh (content, scriptPath)
   where
     content = unlines $

@@ -55,7 +55,7 @@ data XrdMeshSource  = XrdMeshSourceNxs (Nxs XrdMesh)
 
 data XrdMesh' = XrdMesh DIM1 DIM1 (Maybe Threshold) XrdMeshSource deriving (Show)
 
-data XrdMeshSample = XrdMeshSample SampleName OutputBaseDir [XrdMesh'] -- ^ nxss
+data XrdMeshSample = XrdMeshSample SampleName AbsDirPath [XrdMesh'] -- ^ nxss
 
 data XrdMeshParams a = XrdMeshParams PoniExt (Maybe (Flat a)) AIMethod
 
@@ -131,14 +131,14 @@ getWaveLengthAndPoniExt p (XrdMeshSourceNxs nxs) = getWaveLengthAndPoniExt' p nx
 getWaveLengthAndPoniExt p (XrdMeshSourceNxsFly (nxs:_)) = getWaveLengthAndPoniExt' p nxs
 getWaveLengthAndPoniExt _ (XrdMeshSourceNxsFly []) = error "getWaveLengthAndPoniExt"
 
-getOutputPath' ∷ OutputBaseDir → FilePath → (FilePath, FilePath, FilePath)
+getOutputPath' ∷ AbsDirPath → FilePath → (FilePath, FilePath, FilePath)
 getOutputPath' o d = (poni, h5, py)
   where
     poni = o </> d </> d <.> "poni"
     h5 = o </> d </> d <.> "h5"
     py =  o </> d </> d <.> "py"
 
-getOutputPath ∷ OutputBaseDir → XrdMeshSource → (FilePath, FilePath, FilePath)
+getOutputPath ∷ AbsDirPath → XrdMeshSource → (FilePath, FilePath, FilePath)
 getOutputPath o (XrdMeshSourceNxs (Nxs f _)) = getOutputPath' o dir
   where
     dir ∷ FilePath
@@ -252,7 +252,7 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b mt w o scrip
 
     (XrdMeshFlyH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
 
-integrateMesh'' ∷ XrdMeshParams a → OutputBaseDir → XrdMesh' → IO ()
+integrateMesh'' ∷ XrdMeshParams a → AbsDirPath → XrdMesh' → IO ()
 integrateMesh'' p' output (XrdMesh b _ mt s) = do
     -- get the poniext for all the scan
     (w, PoniExt p _) <- getWaveLengthAndPoniExt p' s
