@@ -121,7 +121,7 @@ getWavelength f (XrdOneDH5Path _ _ _ w) = runSafeT $
       wavelength <- get_position w' 0
       return $ head wavelength *~ nano meter
 
-readWavelength :: XRDCalibrationEntry -> IO (WaveLength)
+readWavelength :: XRDCalibrationEntry -> IO WaveLength
 readWavelength e =
     withH5File f $ \h5file -> getWavelength h5file p
     where
@@ -154,38 +154,42 @@ type NptEntry' = (Double, [Vector Double]) -- tth, detector pixels coordinates
 type Npt' = (Double, [NptEntry']) -- wavelength, [NptEntry']
 type NptExt' a = (Npt', Matrix Double, Detector a)
 
-calibrate :: XRDCalibration a -> PoniExt -> IO PoniExt
-calibrate c (PoniExt p _) =  do
-  let entry = last p
-  let guess = fromList $ poniEntryToList entry
-  -- read all the NptExt
-  npts <- mapM (readXRDCalibrationEntry (xrdCalibrationDetector c)) (xrdCalibrationEntries c)
-  -- in order to improve computation speed, pre-compute the pixel coodinates.
+class ToGsl a where
+  toGsl ∷ a → Vector Double
 
-  let (solution, _p) = minimizeV NMSimplex2 1E-16 3000 box (f (preCalibrate npts)) guess
-  -- mplot $ drop 3 (toColumns p)
-  print _p
-  let pose = Pose (MyMatrix HklB (ident 3))
-  return $ PoniExt [poniEntryFromList entry (toList solution)] pose
+class FromGsl a where
+  fromGsl ∷ a → Vector Double → a
+
+class ToGslFunc a where
+  toGslFunc ∷ a → [NptExt b] → (Vector Double → Double)
+
+instance ToGsl PoniExt where
+  toGsl (PoniExt p _) = fromList $ poniEntryToList (last p)
+
+instance FromGsl PoniExt where
+  fromGsl (PoniExt p pose) v = PoniExt poni pose
     where
-      preCalibrate''' :: Detector a -> NptEntry -> NptEntry'
+      poni ∷ Poni
+      poni = [poniEntryFromList (last p) (toList v)]
+
+instance ToGslFunc PoniExt where
+  toGslFunc _ npts = f (preCalibrate npts)
+    where
+      preCalibrate''' ∷ Detector a → NptEntry → NptEntry'
       preCalibrate''' detector (NptEntry _ tth _ points) = (tth /~ radian, map (coordinates detector) points)
 
-      preCalibrate'' :: Npt -> Detector a -> Npt'
+      preCalibrate'' ∷ Npt → Detector a → Npt'
       preCalibrate'' n detector = (nptWavelength n /~ meter, map (preCalibrate''' detector) (nptEntries n))
 
-      preCalibrate' :: NptExt a -> NptExt' a
+      preCalibrate' ∷ NptExt a → NptExt' a
       preCalibrate' (NptExt n (Pose m) detector) = (preCalibrate'' n detector, m', detector)
         where
           (MyMatrix _ m') = changeBase m PyFAIB
 
-      preCalibrate :: [NptExt a] -> [NptExt' a]
+      preCalibrate ∷ [NptExt a] → [NptExt' a]
       preCalibrate = map preCalibrate'
 
-      box :: Vector Double
-      box = fromList [0.1, 0.1, 0.1, 0.01, 0.01, 0.01]
-
-      f :: [NptExt' a] -> Vector Double -> Double
+      f :: [NptExt' a] → Vector Double → Double
       f ns params = foldl' (f' rotation translation) 0 ns
         where
             rot1 = params `atIndex` 0
@@ -202,18 +206,18 @@ calibrate c (PoniExt p _) =  do
             translation :: Vector Double
             translation = slice 3 3 params
 
-      f' :: Matrix Double -> Vector Double -> Double -> NptExt' a -> Double
+      f' ∷ Matrix Double → Vector Double → Double → NptExt' a → Double
       f' rotation translation x ((_wavelength, entries), m, _detector) =
         foldl' (f'' translation r) x entries
           where
             r :: Matrix Double
             r = m <> rotation
 
-      f'' :: Vector Double -> Matrix Double -> Double -> NptEntry'-> Double
+      f'' ∷ Vector Double → Matrix Double → Double → NptEntry' → Double
       {-# INLINE f'' #-}
       f'' translation r x (tth, pixels) = foldl' (f''' translation r tth) x pixels
 
-      f''' :: Vector Double -> Matrix Double -> Double -> Double -> Vector Double -> Double
+      f''' ∷ Vector Double → Matrix Double → Double → Double → Vector Double → Double
       {-# INLINE f''' #-}
       f''' translation r tth x pixel = x + dtth * dtth
           where
@@ -224,8 +228,15 @@ calibrate c (PoniExt p _) =  do
 
             dtth = tth - atan2 (sqrt (x'*x' + y'*y')) (-z')
 
-
-
+calibrate ∷ XRDCalibration a → PoniExt → IO PoniExt
+calibrate (XRDCalibration _ _ d _ es) p = do
+  npts ← mapM (readXRDCalibrationEntry d) es
+  let guess = toGsl p
+  let f = toGslFunc p npts
+  let box = fromList [0.1, 0.1, 0.1, 0.01, 0.01, 0.01]
+  let (solution, _p) = minimizeV NMSimplex2 1E-16 3000 box f guess
+  print _p
+  return $ fromGsl p solution
 
 -- | Pre Calibration
 
