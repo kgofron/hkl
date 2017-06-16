@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Edf
        ( Edf(..)
+       , ExtractEdf(..)
        , edfP
        , edfFromFile
        ) where
@@ -20,51 +22,9 @@ data Edf = Edf { edf'Lambda :: Length Double
                }
          deriving (Show)
 
--- commentP :: Parser Text
--- commentP =  "#" *> takeTill isEndOfLine <* endOfLine <?> "commentP"
+class ExtractEdf a where
+  extractEdf ∷ a → IO ()
 
--- headerP :: Parser [Text]
--- headerP = many1 commentP <?> "headerP"
-
--- calibrantP :: Parser Text
--- calibrantP = "calibrant: " *> takeTill isEndOfLine <* endOfLine <?> "calibrantP"
-
--- dspacingP :: Parser [Length Double]
--- dspacingP = "dspacing:" *> many1 lengthP' <* endOfLine <?> "dspasingP"
-
--- doubleP :: Text -> Parser Double
--- doubleP key = string key *> double <* endOfLine <?> "doubleP"
-
--- lengthP' :: Parser (Length Double)
--- lengthP' = do
---   skipSpace
---   value <- double
---   pure $ value *~ meter
-
--- lengthP :: Text -> Parser (Length Double)
--- lengthP key = do
---   value <- doubleP key
---   pure $ value *~ meter
-
--- angleP :: Text -> Parser (Angle Double)
--- angleP key = do
---   value <-doubleP key
---   pure $ value *~ radian
-
--- intP :: Text -> Parser Int
--- intP key = string key *> decimal <* endOfLine <?> "intP"
-
--- nptPointP :: Parser NptPoint
--- nptPointP = NptPoint
---   <$> ("point: x=" *> double)
---   <*> (" y=" *> double <* endOfLine)
-
--- nptEntryP :: Parser NptEntry
--- nptEntryP = NptEntry
---             <$> (skipSpace *> intP "New group of points: ")
---             <*> angleP "2theta: "
---             <*> intP "ring: "
---             <*> many nptPointP
 
 edf'LambdaP :: Parser (Length Double)
 edf'LambdaP = do

@@ -11,4 +11,5 @@ main = do
   -- charlier
   -- laure
   -- hercules
-  hamon
+  -- hamon
+  schlegel

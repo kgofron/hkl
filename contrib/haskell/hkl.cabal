@@ -121,6 +121,8 @@ library
                     , Hkl.Projects.Diffabs.IRDRx
                     , Hkl.Projects.Diffabs.Laure
                     , Hkl.Projects.Diffabs.Martinetto
+                    , Hkl.Projects.Mars
+                    , Hkl.Projects.Mars.Schlegel
                     , Hkl.Projects.Sixs
                     , Hkl.PyFAI
                     , Hkl.PyFAI.AzimuthalIntegrator
@@ -138,6 +140,7 @@ library
                     , Hkl.Xrd.Calibration
                     , Hkl.Xrd.Mesh
                     , Hkl.Xrd.OneD
+                    , Hkl.Xrd.ZeroD
   other-modules:      Paths_hkl
                     , Hkl.Python
   other-extensions:    CPP

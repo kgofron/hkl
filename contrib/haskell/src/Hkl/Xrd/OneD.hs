@@ -98,7 +98,7 @@ instance PyVal Threshold where
   toPyVal (Threshold i) = toPyVal i
 
 data XrdRefSource = XrdRefNxs (Nxs XrdOneD) Int
-                  | XrdRefEdf FilePath FilePath
+                  | XrdRefEdf FilePath PoniPath
                   deriving (Show)
 
 data XRDRef = XRDRef SampleName AbsDirPath XrdRefSource

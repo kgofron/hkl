@@ -12,6 +12,7 @@ module Hkl.Nxs
     , XrdFlat
     , XrdOneD
     , XrdMesh
+    , XrdZeroD
     , mkNxs
     , withDataFrameH5
     , withDataSource
@@ -36,6 +37,7 @@ type PoniGenerator = Pose -> Int -> IO PoniExt
 data XrdFlat
 data XrdOneD
 data XrdMesh
+data XrdZeroD
 
 data DataFrameH5Path a where
   XrdFlatH5Path ∷ (DataItem H5) -- ^ image
@@ -59,6 +61,9 @@ data DataFrameH5Path a where
                    → (DataItem Double) -- ^ delta
                    → (DataItem Double) -- ^ wavelength
                    → DataFrameH5Path XrdMesh
+  XrdZeroDH5Path ∷ (DataItem H5) -- ^ image
+                 → (DataItem Double) -- ^ wavelength
+                 → DataFrameH5Path XrdZeroD -- used to integrate one static image
 
 deriving instance Show (DataFrameH5Path a)
 

@@ -7,6 +7,7 @@ module Hkl.PyFAI.Poni
        ( Pose(..)
          -- Poni
        , Poni
+       , PoniPath
        , poniP
        , poniToText
          --  PoniEntry
@@ -41,6 +42,8 @@ tr = trans
 #else
 import Numeric.LinearAlgebra (tr)
 #endif
+
+type PoniPath = FilePath
 
 -- | Pose
 
