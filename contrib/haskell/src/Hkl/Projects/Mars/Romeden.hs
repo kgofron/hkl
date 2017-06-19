@@ -15,9 +15,16 @@ import Hkl
 -- | TODO
 -- first extract only the images for each nexus file
 -- /nfs/ruche-mars/mars-soleil/com-mars/2017_Run2/commisioning_microfaisceau
--- scan 101 → LaB6
--- EM10_600C_1000h_profile_1_scan128.nxs 128 → 138 en tiff
--- EM10_500C_5000h_profile_1_scan154.nxs 154 → 164 en tiff
+-- Scan_101_01.nxs → LaB6
+-- EM10_600C_1000h_profile_1_scan128_xx.nxs pour xx [1 → 13] en tiff
+-- EM10_500C_5000h_profile_1_scan154_xx.nxs pour xx [1 → 12] en tiff
+-- scan_172_01.nxs -> Cr Exptime 30s
+-- scan_173_01.nxs -> Cr Exptime 60s
+-- scan_174_01.nxs -> Cr Exptime 60s
+-- scan_175_01.nxs -> Fe Exptime 60s
+-- scan_176_01.nxs -> Fe Exptime 300s
+-- scan_178_01.nxs -> Fe Exptime 30s
+-- scan_179_01.nxs -> Fe Exptime 10s
 
 -- * check if the
 -- * find a way to use integrateMulti with a small amount of memory.
