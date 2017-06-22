@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UnicodeSyntax #-}
@@ -18,8 +19,13 @@ module Hkl.Nxs
     , withDataSource
     ) where
 
+import Bindings.HDF5.Dataset ( readDataset
+                             , getDatasetSpace )
+import Bindings.HDF5.Dataspace ( getSimpleDataspaceExtent )
+import Codec.Picture ( DynamicImage( ImageY16 )
+                     , Image(..) )
 #if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>), (<*>))
+import Control.Applicative ((<$>), (<*>), pure)
 #endif
 import Control.Exception.Base (bracket)
 import Control.Monad.IO.Class (liftIO)
@@ -28,6 +34,7 @@ import Pipes.Safe ( MonadSafe, bracket )
 import Hkl.DataSource
 import Hkl.H5
 import Hkl.PyFAI
+import Hkl.Tiff
 
 type NxEntry = String
 
@@ -102,6 +109,11 @@ data DataFrameH5 a where
                → (DataSource Double) -- delta
                → (DataSource Double) -- wavelength
                → DataFrameH5 XrdMesh
+  XrdZeroDH5 ∷ (Nxs XrdZeroD) -- NexusFile Source File
+               → File -- h5file handler
+               → (DataSource H5) -- image
+               → (DataSource Double) -- wavelength
+               → DataFrameH5 XrdZeroD
 
 mkNxs ∷ FilePath → NxEntry → (NxEntry → DataFrameH5Path a) → Nxs a
 mkNxs f e h = Nxs f (h e)
@@ -134,8 +146,27 @@ after (XrdMeshFlyH5 _ f i x y g d w) = do
   closeDataSource d
   closeDataSource w
   closeFile f
+after (XrdZeroDH5 _ f i w) = do
+  closeDataSource i
+  closeDataSource w
+  closeFile f
 
-before :: Nxs XrdMesh → IO (DataFrameH5 XrdMesh)
+before :: Nxs a → IO (DataFrameH5 a)
+before nxs'@(Nxs f (XrdFlatH5Path i)) = do
+  h ← openH5 f
+  XrdFlatH5
+    <$> return nxs'
+    <*> return h
+    <*> openDataSource h i
+-- before nxs'@(Nxs f (XrdOneDH5Path i g d w)) = do
+--   h ← openH5 f
+--   DataFrameH5
+--     <$> return nxs'
+--     <*> return h
+--     <*> openDataSource h g
+--     <*> openDataSource h d
+--     <*> openDataSource h w
+--     <*> return gen
 before nxs'@(Nxs f (XrdMeshH5Path i x y g d w)) = do
   h ← openH5 f
   XrdMeshH5
@@ -158,8 +189,15 @@ before nxs'@(Nxs f (XrdMeshFlyH5Path i x y g d w))= do
     <*> openDataSource h g
     <*> openDataSource h d
     <*> openDataSource h w
+before nxs'@(Nxs f (XrdZeroDH5Path i w)) = do
+  h ← openH5 f
+  XrdZeroDH5
+    <$> return nxs'
+    <*> return h
+    <*> openDataSource h i
+    <*> openDataSource h w
 
-withDataSource :: Nxs XrdMesh -> (DataFrameH5 XrdMesh -> IO r) -> IO r
+withDataSource :: Nxs a -> (DataFrameH5 a -> IO r) -> IO r
 withDataSource s = Control.Exception.Base.bracket (before s) after
 
 -- | Pipe
@@ -178,3 +216,12 @@ withDataFrameH5 nxs'@(Nxs f (XrdOneDH5Path _ g d w)) gen = Pipes.Safe.bracket (l
         <*> openDataSource h d
         <*> openDataSource h w
         <*> return gen
+
+instance ToTiff (Nxs XrdFlat) where
+  toTiff n@(Nxs f _) = withDataSource n $
+                  \(XrdFlatH5 _ _ (DataSourceH5 _ i)) → do
+                    ([w, h], _) ← getSimpleDataspaceExtent =<< (getDatasetSpace i)
+                    ImageY16 <$> ( Image
+                                   <$> pure (fromIntegral w)
+                                   <*> pure (fromIntegral h)
+                                   <*> readDataset i Nothing Nothing )

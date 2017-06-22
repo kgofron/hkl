@@ -4,6 +4,7 @@
 module Hkl.Projects.Mars.Romeden
        ( romeden ) where
 
+import Codec.Picture ( saveTiffImage )
 import Numeric.LinearAlgebra (ident)
 import System.FilePath ((</>))
 import Text.Printf (printf)
@@ -33,33 +34,35 @@ import Hkl
 -- | Samples
 
 project :: FilePath
-project = "/nfs/ruche-mars/mars-soleil/com-mars/2017_Run2/comisioning_microfaisceau"
+-- project = "/nfs/ruche-mars/mars-soleil/com-mars/2017_Run2/comisioning_microfaisceau"
+-- project = "/home/experiences/instrumentation/picca"
+project = "/media/picca/Transcend/ROMEDENNE"
 
 published :: FilePath
 published = project </> "published-data"
 
-h5path :: NxEntry -> DataFrameH5Path XrdZeroD
+h5path :: NxEntry -> DataFrameH5Path XrdFlat
 h5path nxentry =
-  XrdZeroDH5Path
+  XrdFlatH5Path
   (DataItemH5 (nxentry </> image) StrictDims)
-  (DataItemConst 0.0485945)
   where
     image ∷ H5Path
-    image = "scan_data/data_01"
+    image = "image#0/data"
 
-sampleCalibration ∷ XrdZeroDCalibration Xpad32
-sampleCalibration = XrdZeroDCalibration (XrdZeroDSample name outputdir entries) Xpad32 LaB6
-    where
-      name ∷ String
-      name = "lab6"
+-- sampleCalibration ∷ XrdZeroDCalibration Xpad32
+-- sampleCalibration = XrdZeroDCalibration (XrdZeroDSample name outputdir entries) Xpad32 LaB6
+--     where
+--       name ∷ String
+--       name = "lab6"
 
-      outputdir ∷ AbsDirPath
-      outputdir = published </> "xrd" </> "calibration"
+--       outputdir ∷ AbsDirPath
+--       outputdir = published </> "xrd" </> "calibration"
 
-      entries :: [XrdZeroDSource]
-      entries = [ XrdZeroDSourceNxs $
-                  mkNxs (project </> "2017" </> "Run3" </> "scan_5_01.nxs") "_5" h5path
-                ]
+--       entries :: [XrdZeroDSource]
+--       entries = [ XrdZeroDSourceNxs $
+--                   -- mkNxs (project </> "2017" </> "Run3" </> "scan_5_01.nxs") "_5" h5path
+--                   mkNxs (project </> "EM10_600C_1000h_profile_1scan_128_01.nxs") "_137" h5path
+--                 ]
 
 
 -- bins :: DIM1
@@ -84,14 +87,49 @@ sampleCalibration = XrdZeroDCalibration (XrdZeroDSample name outputdir entries) 
 --          , mkNxs (project </> "2016" </> "Run4" </> "2016-09-07" </> "IHR_58.nxs") "scan_58" h5path'
 --          ]
 --        ]
+em10_500 ∷ [(FilePath, [Int])]
+em10_500 = [ ( printf "EM10_500C_5000h_profile_1scan_154_%02d.nxs" i,
+               [363 + i * 10 .. 363 + i * 10 + 9] ) | i ← [1..11 ∷ Int]]
+           ++ [ ("EM10_500C_5000h_profile_1scan_154_12.nxs", [483 ∷ Int]) ]
+
+em10_600 ∷ [(FilePath, [Int])]
+em10_600 = [ ( printf "EM10_600C_1000h_profile_1scan_128_%02d.nxs" i,
+               [127 + i * 10 .. 127 + i * 10 + 9] ) | i ← [1..12 ∷ Int]]
+           ++ [ ("EM10_600C_1000h_profile_1scan_128_13.nxs", [257 ∷ Int]) ]
+
+scans ∷ [(FilePath, [Int])]
+scans = [ ( printf "scan_%d_01.nxs" i, [n]) | (i, n) ← zip (101 : [171..180 ∷ Int]) (101 : [500..509 ∷ Int])]
+
+names ∷ [(FilePath, [Int])]
+names = em10_500 ++ em10_600 ++ scans
+-- names = scans
+
+samples ∷ [(Nxs XrdFlat, FilePath)]
+samples = concatMap f names
+  where
+    f (n, is) = [ (( mkNxs (project </> n') (printf "_%d" i) h5path)
+                  , (project </> n' ++ (printf "_%d.tiff" i)))
+                  | (n', i) ← zip (repeat n) is]
+
+
+--   [ ( (mkNxs (project </> n) (printf "_%d" i) h5path)
+--             , printf "" )
+--           | (n, i) ← [(n ,i) | i ← is]
+--                      (n, is) ← names]
+
+-- [(n, i) | i ← is]
+
+saveAsTiff ∷ Nxs XrdFlat → FilePath → IO ()
+saveAsTiff n o = saveTiffImage o =<< toTiff n
 
 -- | Main
 
-schlegel :: IO ()
-schlegel = do
+romeden :: IO ()
+romeden = do
   -- | pre-calibrate (extract from nexus to edf in order to do the
   -- calibration)
-  extractEdf sampleCalibration
+  -- print samples
+  mapM_ (uncurry $ saveAsTiff) samples
 
   -- p <- getPoniExtRef sampleRef
 
