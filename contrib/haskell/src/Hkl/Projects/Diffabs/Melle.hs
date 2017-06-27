@@ -137,7 +137,7 @@ skipedFrames = []
 
 melleScan :: XRDSample
 melleScan = XRDSample "MELLE_29"
-       (published </> "MELLE_29")
+       (published </> "session2" </> "xrd" </> "oned")
        [ XrdNxs bins multibins threshold skipedFrames (XrdSourceNxs n) | n <-
          [ mkNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_25.nxs") "scan_25" h5path2
          , mkNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_26.nxs") "scan_26" h5path2
@@ -151,7 +151,7 @@ melleScan = XRDSample "MELLE_29"
 
 melleMesh :: XrdMeshSample
 melleMesh = XrdMeshSample "MELLE_29"
-          (published </> "MELLE_29")
+          (published </> "session2" </> "xrd" </> "mesh")
           [ XrdMesh bins multibins threshold (XrdMeshSourceNxs n) | n <-
             [ mkNxs (project2' </> "2016" </> "Run2" </> "2016-03-28" </> "MELLE_29.nxs") "scan_29" h5path2'
             ]
@@ -198,15 +198,28 @@ session2 = do
 
   return ()
 
--- ** session 4
+-- | session 4
 -- macro
 -- 18keV, ?= 0,6888Å
 -- detection : XPAD 3.2
+
+session4 ∷ IO ()
+session4 = do
+  -- calibration
+  p ← getPoniExtRef sampleRef
+  poniextref <- calibrate sampleCalibration p
 
 -- calibration : CeO2
 -- IHR_56
 -- IHR_58
 -- diffabs-soleil\com-diffabs\2016\Run4\2016-09-07
+
+  -- | set the integration parameters
+  let mflat = Nothing
+  let params = XrdOneDParams poniextref mflat Csr
+
+  -- integrate each step of the scan
+  integrate params [ceo2]
 
 -- "MESH" à partir d'une serie 2THETA
 -- IHR_63 à 95
@@ -214,6 +227,85 @@ session2 = do
 -- IHR_96 à 190
 -- diffabs-soleil\com-diffabs\2016\Run4\2016-09-08
 
+
+  return ()
+
+  where
+
+    project :: FilePath
+    project = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/"
+
+    published' :: FilePath
+    published' = project </> "2016" </> "Run4B" </> "OutilsMetallo_CarolineHamon"
+
+    sampleRef :: XRDRef
+    sampleRef = XRDRef "reference"
+                (published' </> "xrd" </> "calibration")
+                (XrdRefNxs
+                 (mkNxs (project </> "2016" </> "Run4" </> "2016-09-07" </> "IHR_30.nxs") "scan_30" h5path')
+                 33
+                )
+
+    h5path' :: NxEntry -> DataFrameH5Path XrdOneD
+    h5path' nxentry =
+      XrdOneDH5Path
+      (DataItemH5 (nxentry </> image) StrictDims)
+      (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
+      (DataItemH5 (nxentry </> delta) ExtendDims)
+      (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
+      where
+        beamline :: String
+        beamline = beamlineUpper Diffabs
+
+        image = "scan_data/data_02"
+        gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
+        delta = "scan_data/actuator_1_1"
+        wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
+
+    sampleCalibration :: XRDCalibration Xpad32
+    sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
+                                       , xrdCalibrationOutputDir = published' </> "xrd" </> "calibration" -- TODO pourquoi ce output
+                                       , xrdCalibrationDetector = Xpad32
+                                       , xrdCalibrationCalibrant = CeO2
+                                       , xrdCalibrationEntries = entries
+                                       }
+      where
+
+        idxs :: [Int]
+        idxs = [5, 33, 100, 246, 300, 436]
+
+        entry :: Int -> XRDCalibrationEntry
+        entry idx = XRDCalibrationEntryNxs
+                { xrdCalibrationEntryNxs'Nxs = mkNxs (project </> "2016" </> "Run4" </> "2016-09-07" </> "IHR_30.nxs") "scan_30" h5path'
+                , xrdCalibrationEntryNxs'Idx = idx
+                , xrdCalibrationEntryNxs'NptPath = published' </> "xrd" </> "calibration" </> printf "IHR_30.nxs_%02d.npt" idx
+                }
+
+        entries :: [XRDCalibrationEntry]
+        entries = [ entry idx | idx <- idxs]
+
+    bins :: DIM1
+    bins = ix1 1000
+
+    multibins :: DIM1
+    multibins = ix1 10000
+
+    threshold :: Maybe Threshold
+    threshold = Just (Threshold 5000)
+
+    skipedFrames :: [Int]
+    skipedFrames = []
+
+    ceo2 :: XRDSample
+    ceo2 = XRDSample "CeO2"
+           (published </> "session4" </> "xrd" </> "CeO2")
+           [ XrdNxs bins multibins threshold skipedFrames (XrdSourceNxs n) | n <-
+                [ mkNxs (project </> "2016" </> "Run4" </> "2016-09-07" </> "IHR_29.nxs") "scan_29" h5path'
+                , mkNxs (project </> "2016" </> "Run4" </> "2016-09-07" </> "IHR_30.nxs") "scan_30" h5path'
+                , mkNxs (project </> "2016" </> "Run4" </> "2016-09-07" </> "IHR_56.nxs") "scan_56" h5path'
+                , mkNxs (project </> "2016" </> "Run4" </> "2016-09-07" </> "IHR_58.nxs") "scan_58" h5path'
+                ]
+           ]
 
 -- ** session 5
 -- micro
@@ -334,3 +426,4 @@ session2 = do
 melle ∷ IO ()
 melle = do
   session2
+  session4
