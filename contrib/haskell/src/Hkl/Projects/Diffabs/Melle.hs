@@ -60,6 +60,15 @@ published = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/Reguer/USERSexperienc
 -- 18keV, ?= 0,6888Å
 -- detection : XPAD 3.2 / image = data  58
 -- sample : ? = 5° et ? = 80°.
+-- calibration CeO2
+-- data dans le dossier du proposal de Philippe Charlier 2015 1386
+-- voir aussi script Martinetto  proposal IHR 99160066
+-- scan_25  = ascan(delta, -14.5, 60.5, 75, 0.5)
+-- scan_26 = ascan(delta, -14, 60, 75, 1)
+-- scan_27 = ascan(delta, -14, 60, 46, 1)
+
+-- MESH : MELLE_29.nxs
+-- dossier: diffabs-soleil/com-diffabs/2016/Run2/2016-03-28
 
 -- calibration
 
@@ -123,66 +132,70 @@ multibins = ix1 25000
 threshold :: Maybe Threshold
 threshold = Just (Threshold 800)
 
--- calibration CeO2
--- data dans le dossier du proposal de Philippe Charlier 2015 1386
--- voir aussi script Martinetto  proposal IHR 99160066
--- scan_25  = ascan(delta, -14.5, 60.5, 75, 0.5)
--- scan_26 = ascan(delta, -14, 60, 75, 1)
--- scan_27 = ascan(delta, -14, 60, 46, 1)
+skipedFrames :: [Int]
+skipedFrames = []
 
--- MESH : MELLE_29.nxs
--- dossier: diffabs-soleil/com-diffabs/2016/Run2/2016-03-28
-
-
-project2' :: FilePath
-project2' = "/nfs/ruche-diffabs/diffabs-users/99160066/"
-
-h5path2' :: NxEntry -> DataFrameH5Path XrdMesh
-h5path2' nxentry =
-  XrdMeshH5Path
-  (DataItemH5 (nxentry </> image) StrictDims)
-  (DataItemH5 (nxentry </> meshX) StrictDims)
-  (DataItemH5 (nxentry </> meshY) StrictDims)
-  (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
-  (DataItemH5 (nxentry </> beamline </> delta) ExtendDims)
-  (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
+melleScan :: XRDSample
+melleScan = XRDSample "MELLE_29"
+       (published </> "MELLE_29")
+       [ XrdNxs bins multibins threshold skipedFrames (XrdSourceNxs n) | n <-
+         [ mkNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_25.nxs") "scan_25" h5path2
+         , mkNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_26.nxs") "scan_26" h5path2
+         , mkNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_27.nxs") "scan_27" h5path2
+         ]
+       ]
   where
-    beamline :: String
-    beamline = beamlineUpper Diffabs
+    project ∷ FilePath
+    project = "/nfs/ruche-diffabs/diffabs-users/20151386/"
 
-    image = "scan_data/data_58"
-    meshX = "scan_data/actuator_1_1"
-    meshY = "scan_data/actuator_2_1"
-    gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
-    delta = "D13-1-CX1__EX__DIF.1-DELTA__#1/raw_value"
-    wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-melle29 :: XrdMeshSample
-melle29 = XrdMeshSample "MELLE_29"
+melleMesh :: XrdMeshSample
+melleMesh = XrdMeshSample "MELLE_29"
           (published </> "MELLE_29")
           [ XrdMesh bins multibins threshold (XrdMeshSourceNxs n) | n <-
             [ mkNxs (project2' </> "2016" </> "Run2" </> "2016-03-28" </> "MELLE_29.nxs") "scan_29" h5path2'
             ]
           ]
+  where
+    project2' :: FilePath
+    project2' = "/nfs/ruche-diffabs/diffabs-users/99160066/"
 
--- -- meshSample :: String
--- -- meshSample = project </> "2016" "Run2" "2016-03-28" "MELLE_29.nxs"
--- -- scan_29 scan_data actuator_1_1 actuator_2_1 data_58 (images)
+    h5path2' :: NxEntry -> DataFrameH5Path XrdMesh
+    h5path2' nxentry =
+      XrdMeshH5Path
+      (DataItemH5 (nxentry </> image) StrictDims)
+      (DataItemH5 (nxentry </> meshX) StrictDims)
+      (DataItemH5 (nxentry </> meshY) StrictDims)
+      (DataItemH5 (nxentry </> beamline </> gamma) ExtendDims)
+      (DataItemH5 (nxentry </> beamline </> delta) ExtendDims)
+      (DataItemH5 (nxentry </> beamline </> wavelength) StrictDims)
+      where
+        beamline :: String
+        beamline = beamlineUpper Diffabs
 
--- -- | Main
+        image = "scan_data/data_58"
+        meshX = "scan_data/actuator_1_1"
+        meshY = "scan_data/actuator_2_1"
+        gamma = "D13-1-CX1__EX__DIF.1-GAMMA__#1/raw_value"
+        delta = "D13-1-CX1__EX__DIF.1-DELTA__#1/raw_value"
+        wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
+
 
 session2 :: IO ()
 session2 = do
+  -- compute the ref poni
   p ← getPoniExtRef sampleRef2
-  -- full calibration
   poniextref <- calibrate sampleCalibration2 p
 
-  let samples = [melle29]
+  -- integrate the mesh
   let mflat = Nothing
-  let method = CsrOcl
+  integrateMesh (XrdMeshParams poniextref mflat CsrOcl) [melleMesh]
 
-  -- integrate each step of the scan
-  integrateMesh (XrdMeshParams poniextref mflat method) samples
+  -- integrate the scan parts
+  let params = XrdOneDParams poniextref mflat Csr
+  integrate params [melleScan]
+  integrateMulti params [melleScan]
+
   return ()
 
 -- ** session 4
