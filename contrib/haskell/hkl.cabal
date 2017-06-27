@@ -120,6 +120,7 @@ library
                     , Hkl.Projects.Diffabs.Hercules
                     , Hkl.Projects.Diffabs.IRDRx
                     , Hkl.Projects.Diffabs.Laure
+                    , Hkl.Projects.Diffabs.Melle
                     , Hkl.Projects.Diffabs.Martinetto
                     , Hkl.Projects.Mars
                     , Hkl.Projects.Mars.Romeden

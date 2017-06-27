@@ -6,4 +6,4 @@ import Hkl.Projects.Diffabs.Hercules as X
 import Hkl.Projects.Diffabs.IRDRx as X
 import Hkl.Projects.Diffabs.Laure as X
 import Hkl.Projects.Diffabs.Martinetto as X
--- import Hkl.Projects.Diffabs.Melle as X
+import Hkl.Projects.Diffabs.Melle as X

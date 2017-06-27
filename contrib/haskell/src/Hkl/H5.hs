@@ -6,24 +6,29 @@ module Hkl.H5
     , H5Path
     , check_ndims
     , closeDataset
+    , closeFile
     , get_position
     , get_position_new
     , get_ub
     , lenH5Dataspace
+    , nxEntries
     , openDataset
-    , withH5File
     , openH5
-    , closeFile
+    , withH5File
     )
     where
 
 
-import Bindings.HDF5.Core ( HSize(..) )
+import Bindings.HDF5.Core ( HSize(..)
+                          , IndexType(..)
+                          , IterOrder(..)
+                          )
 import Bindings.HDF5.File ( File
                           , AccFlags(ReadOnly)
                           , openFile
                           , closeFile
                           )
+import Bindings.HDF5.Group ( Group )
 import Bindings.HDF5.Dataset ( Dataset
                              , openDataset
                              , closeDataset
@@ -39,10 +44,11 @@ import Bindings.HDF5.Dataspace ( Dataspace
                                , getSimpleDataspaceExtentNPoints
                                , selectHyperslab
                                )
-
+import Bindings.HDF5.Link ( LinkInfo, iterateLinks, visitLinks )
+import Bindings.HDF5.Raw ( HErr_t(..) )
 import Control.Exception (bracket)
 import Data.Array.Repa (Shape, listOfShape)
-import Data.ByteString.Char8 (pack)
+import Data.ByteString.Char8 (ByteString, pack)
 import Data.Vector.Storable (Vector, freeze)
 import Data.Vector.Storable.Mutable (replicate)
 import Foreign.C.Types (CInt(..))
@@ -126,3 +132,13 @@ lenH5Dataspace = withDataspace'' len
     len space_id = do
       (HSize n) <- getSimpleDataspaceExtentNPoints space_id
       return $ if n < 0 then Nothing else Just (fromIntegral n)
+
+nxEntries ∷ FilePath → IO [String]
+nxEntries f = withH5File f $ \h → do
+  _ ← visitLinks h ByName Native op
+  return ["toto"]
+  where
+    op ∷ Group → ByteString → LinkInfo → IO HErr_t
+    op _g n _i = do
+      print n
+      return $ HErr_t 0

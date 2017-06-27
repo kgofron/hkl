@@ -35,8 +35,8 @@ import Hkl
 
 project :: FilePath
 -- project = "/nfs/ruche-mars/mars-soleil/com-mars/2017_Run2/comisioning_microfaisceau"
--- project = "/home/experiences/instrumentation/picca"
-project = "/media/picca/Transcend/ROMEDENNE"
+project = "/home/experiences/instrumentation/picca"
+-- project = "/media/picca/Transcend/ROMEDENNE"
 
 published :: FilePath
 published = project </> "published-data"
@@ -111,13 +111,9 @@ samples = concatMap f names
                   , (project </> n' ++ (printf "_%d.tiff" i)))
                   | (n', i) ← zip (repeat n) is]
 
+sample ∷ FilePath
+sample = project </> "EM10_600C_1000h_profile_1scan_128_01.nxs"
 
---   [ ( (mkNxs (project </> n) (printf "_%d" i) h5path)
---             , printf "" )
---           | (n, i) ← [(n ,i) | i ← is]
---                      (n, is) ← names]
-
--- [(n, i) | i ← is]
 
 saveAsTiff ∷ Nxs XrdFlat → FilePath → IO ()
 saveAsTiff n o = saveTiffImage o =<< toTiff n
@@ -129,7 +125,9 @@ romeden = do
   -- | pre-calibrate (extract from nexus to edf in order to do the
   -- calibration)
   -- print samples
-  mapM_ (uncurry $ saveAsTiff) samples
+  ns ← nxEntries sample
+  print ns
+  -- mapM_ (uncurry $ saveAsTiff) samples
 
   -- p <- getPoniExtRef sampleRef
 
