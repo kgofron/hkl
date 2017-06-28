@@ -425,5 +425,9 @@ session4 = do
 
 melle ∷ IO ()
 melle = do
-  session2
-  session4
+  let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
+  let filename = "align_FLY2_omega_00045.nxs"
+  l <- nxEntries (root </> filename)
+  print l
+  -- session2
+  -- session4
