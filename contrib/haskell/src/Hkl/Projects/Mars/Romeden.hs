@@ -26,6 +26,7 @@ import Hkl
 -- scan_176_01.nxs -> Fe Exptime 300s
 -- scan_178_01.nxs -> Fe Exptime 30s
 -- scan_179_01.nxs -> Fe Exptime 10s
+-- ne pas planter lorsque l'image est manquante dans une nx entry.
 
 -- * check if the
 -- * find a way to use integrateMulti with a small amount of memory.
@@ -35,8 +36,8 @@ import Hkl
 
 project :: FilePath
 -- project = "/nfs/ruche-mars/mars-soleil/com-mars/2017_Run2/comisioning_microfaisceau"
-project = "/home/experiences/instrumentation/picca"
--- project = "/media/picca/Transcend/ROMEDENNE"
+-- project = "/home/experiences/instrumentation/picca"
+project = "/media/picca/Transcend/ROMEDENNE"
 
 published :: FilePath
 published = project </> "published-data"
@@ -90,14 +91,22 @@ h5path nxentry =
 em10_500 ∷ [FilePath]
 em10_500 = [ printf "EM10_500C_5000h_profile_1scan_154_%02d.nxs" i | i ← [1..12 ∷ Int] ]
 
+em10_500' ∷ [FilePath]
+em10_500' = [ printf "EM10_500C_5000h_profile_1scan_145_%02d.nxs" i | i ← [1..8 ∷ Int] ]
+            ++ [ printf "EM10_500C_5000h_profile_1scan_147_%02d.nxs" i | i ← [1..2 ∷ Int] ]
+
 em10_600 ∷ [FilePath]
 em10_600 = [ printf "EM10_600C_1000h_profile_1scan_128_%02d.nxs" i | i ← [1..13 ∷ Int] ]
 
+em10_ref ∷ [FilePath]
+em10_ref = [ printf "EM10_ref_scan_%d_01.nxs" i | i ← [102..106 ∷ Int] ++ [108]]
+
 scans ∷ [FilePath]
-scans = [ printf "scan_%d_01.nxs" i | i ← (101 : [171..180 ∷ Int])]
+scans = [ printf "scan_%d_01.nxs" i | i ← [171..180 ∷ Int] ++[101] ]
 
 samples ∷ [FilePath]
-samples = em10_500 ++ em10_600 ++ scans
+-- samples = em10_500 ++ em10_600 ++ scans
+samples = map (\p → project </> p) em10_ref
 
 sample ∷ FilePath
 sample = project </> "EM10_600C_1000h_profile_1scan_128_01.nxs"
@@ -126,8 +135,8 @@ romeden = do
   -- | pre-calibrate (extract from nexus to edf in order to do the
   -- calibration)
   -- print samples
-  saveAsTiff sample h5path
-  -- mapM_ (\f → saveAsTiff f h5path) samples
+  -- saveAsTiff sample h5path
+  mapM_ (\f → saveAsTiff f h5path) samples
 
   -- p <- getPoniExtRef sampleRef
 
