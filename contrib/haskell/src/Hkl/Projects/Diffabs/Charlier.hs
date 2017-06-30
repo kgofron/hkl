@@ -13,6 +13,9 @@ import Prelude hiding (concat, lookup, readFile, writeFile)
 
 import Hkl
 
+-- | TODO
+-- ⋅ gerer le dummy correctement en focntion du type de données des images uint32, int16
+-- ∘ couper la fin du spectre qui nous embète.
 -- | Samples
 
 project :: FilePath
@@ -82,7 +85,7 @@ multibins :: DIM1
 multibins = ix1 25000
 
 threshold :: Maybe Threshold
-threshold = Just (Threshold 800)
+threshold = Just (Threshold 1200)
 
 h5path :: NxEntry -> DataFrameH5Path XrdMesh
 h5path nxentry = XrdMeshH5Path
@@ -135,6 +138,7 @@ louisLePieux = XrdMeshSample "Louis le Pieux"
 charlier :: IO ()
 charlier = do
   let samples = [ charlemagne, charlesLeChauve, louisLePieux]
+  -- let samples = [ louisLePieux ]
   -- # need to run f30 by itself because of a segfault in the hkl library
   -- for now f30 whcih is an incomplet scan stop the script so put it at the end.
   -- let samples = [f30, ceo2]

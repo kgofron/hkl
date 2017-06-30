@@ -6,9 +6,9 @@ main :: IO ()
 main = do
   -- irdrx
   -- martinetto'
-  melle
+  -- melle
   -- d2am
-  -- charlier
+  charlier
   -- laure
   -- hercules
   -- hamon

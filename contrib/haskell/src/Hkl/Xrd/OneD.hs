@@ -206,8 +206,8 @@ dummiesForPy mt = unlines [ "# Compute the dummy values for the dynamic mask"
                           , "DELTA_DUMMY=" ++ delta_dummy
                           ]
   where
-    dummy = maybe "None" (\_ → "65000") mt -- TODO the default value depends on the number od bits per pixels.
-    delta_dummy = maybe "None" (\(Threshold t) → show (65000 - t)) mt
+    dummy = maybe "None" (\_ → "4294967296") mt -- TODO the default value depends on the number od bits per pixels.
+    delta_dummy = maybe "None" (\(Threshold t) → show (4294967296 - t)) mt
 
 getScanDir ∷ AbsDirPath → FilePath → FilePath
 getScanDir o f = o </> (dropExtension . takeFileName) f
