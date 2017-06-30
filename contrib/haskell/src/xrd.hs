@@ -6,11 +6,11 @@ main :: IO ()
 main = do
   -- irdrx
   -- martinetto'
-  -- melle
+  melle
   -- d2am
   -- charlier
   -- laure
   -- hercules
   -- hamon
   -- schlegel
-  romeden
+  -- romeden

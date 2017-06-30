@@ -136,8 +136,8 @@ skipedFrames :: [Int]
 skipedFrames = []
 
 melleScan :: XRDSample
-melleScan = XRDSample "MELLE_29"
-       (published </> "session2" </> "xrd" </> "oned")
+melleScan = XRDSample "CeO2"
+       (published </> "xrd" </> "session2" </> "oned")
        [ XrdNxs bins multibins threshold skipedFrames (XrdSourceNxs n) | n <-
          [ mkNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_25.nxs") "scan_25" h5path2
          , mkNxs (project </> "2016" </> "Run2" </> "2016-03-23" </> "XRD18keV_26.nxs") "scan_26" h5path2
@@ -151,7 +151,7 @@ melleScan = XRDSample "MELLE_29"
 
 melleMesh :: XrdMeshSample
 melleMesh = XrdMeshSample "MELLE_29"
-          (published </> "session2" </> "xrd" </> "mesh")
+          (published </> "xrd" </> "session2" </> "mesh")
           [ XrdMesh bins multibins threshold (XrdMeshSourceNxs n) | n <-
             [ mkNxs (project2' </> "2016" </> "Run2" </> "2016-03-28" </> "MELLE_29.nxs") "scan_29" h5path2'
             ]
@@ -210,8 +210,10 @@ session4 = do
   poniextref <- calibrate sampleCalibration p
 
 -- calibration : CeO2
+-- On peut utiliser la calib de IHR_30, mais il faut prendre en compte le décentrage.
 -- IHR_56
 -- IHR_58
+-- sont deux autres possibilité de calibration.
 -- diffabs-soleil\com-diffabs\2016\Run4\2016-09-07
 
   -- | set the integration parameters
@@ -221,12 +223,20 @@ session4 = do
   -- integrate each step of the scan
   integrate params [ceo2]
 
--- "MESH" à partir d'une serie 2THETA
+-- 1 seul "MESH"(20, 49)  à partir d'une serie 2THETA
 -- IHR_63 à 95
 -- diffabs-soleil\com-diffabs\2016\Run4\2016-09-07
 -- IHR_96 à 190
 -- diffabs-soleil\com-diffabs\2016\Run4\2016-09-08
-
+-- obtenu via la macro suivante.
+-- for i in range(20):
+--    myx = -11 + i
+--    mv(txs, myx)  # exhantillon à 45 degree donc ce double déplacement correspond au vrai x
+--    mv(tys, myx)
+--    for j in range(29):
+--         myy = 12 + j
+--         mv(tabV, myy)
+--         ascan(δ, -13.6, 30, 109, 5)
 
   return ()
 
@@ -323,13 +333,13 @@ session4 = do
 -- 18p1kev_75
 -- ruche-diffabs\diffabs-users\99170085\2017\Run3\2017-05-14
 
--- FLAT (à verifier si suffisant)
+-- FLAT (à verifier si suffisant) (faire la somme des trois fichiers)
 -- 18p1kev_82
 -- 18p1kev_83
 -- 18p1kev_84
 -- ruche-diffabs\diffabs-users\99170085\2017\Run3\2017-05-14
 
--- FLY
+-- FLY -- ????
 -- flyscan_16602
 -- diffabs-soleil\com-diffabs\2017\Run3\fly_IHRSol
 
