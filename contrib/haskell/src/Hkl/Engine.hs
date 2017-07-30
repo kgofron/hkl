@@ -3,11 +3,13 @@ module Hkl.Engine
        , fromToPipe
        ) where
 
-import Control.Monad (forever, forM_)
-import Numeric.LinearAlgebra (Vector, toList)
-import Pipes
+import Control.Monad ( forever, forM_ )
+import Numeric.LinearAlgebra ( Vector, toList )
+import Pipes ( Pipe, Producer, await, yield )
 
-import Hkl.Types
+import Hkl.Types ( Engine ( Engine )
+                 , Parameter ( Parameter )
+                 )
 
 engineSetValues :: Engine -> Vector Double -> Engine
 engineSetValues (Engine name ps mode) vs = Engine name nps mode
