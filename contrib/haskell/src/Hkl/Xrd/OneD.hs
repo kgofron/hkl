@@ -59,23 +59,53 @@ import Pipes
     , await
     , yield
     )
-import Pipes.Lift
-import Pipes.Prelude (drain, filter, toListM)
-import Pipes.Safe (runSafeT)
+import Pipes.Lift ( evalStateP )
+import Pipes.Prelude ( drain, filter, toListM )
+import Pipes.Safe ( runSafeT )
 
-import Hkl.C
-import Hkl.DataSource
-import Hkl.Detector
-import Hkl.Edf
-import Hkl.Flat
-import Hkl.H5
-import Hkl.PyFAI
-import Hkl.Python
-import Hkl.MyMatrix
-import Hkl.Nxs
-import Hkl.Script
-import Hkl.Types
-import Hkl.Utils
+import Hkl.C ( Factory ( K6c )
+             , Geometry ( Geometry )
+             , geometryDetectorRotationGet
+             )
+import Hkl.DataSource ( DataItem ( DataItemH5 )
+                      , DataSource( DataSourceH5 )
+                      , atIndex'
+                      )
+import Hkl.Detector ( Detector ( ZeroD ) )
+import Hkl.Edf ( Edf ( Edf )
+               , edfFromFile
+               )
+import Hkl.Flat ( Flat )
+import Hkl.H5 ( lenH5Dataspace )
+import Hkl.PyFAI ( AIMethod, Poni
+                 , PoniExt ( PoniExt )
+                 , PoniPath
+                 , Pose ( Pose )
+                 , move
+                 , poniP
+                 , poniToText
+                 )
+import Hkl.Python ( PyVal
+                  , toPyVal
+                  )
+import Hkl.MyMatrix ( Basis ( HklB )
+                    , MyMatrix ( MyMatrix )
+                    )
+import Hkl.Nxs ( DataFrameH5 ( DataFrameH5 )
+               , Nxs ( Nxs )
+               , XrdOneD
+               , DataFrameH5Path ( XrdOneDH5Path )
+               , withDataFrameH5
+               )
+import Hkl.Script ( Gnuplot, Py2
+                  , Script ( ScriptGnuplot, Py2Script )
+                  , run
+                  , scriptSave
+                  )
+import Hkl.Types ( AbsDirPath, SampleName
+                 , Source ( Source )
+                 )
+import Hkl.Utils ( hasContent )
 
 -- | TODO
 -- * When we skip the last frame there is problem.
@@ -211,9 +241,9 @@ pgen o f i = o </> scandir </>  scandir ++ printf "_%02d.poni" i
 
 getPoseEdf :: FilePath -> IO Pose
 getPoseEdf f = do
-  edf <- edfFromFile f
+  edf@(Edf lambda _) <- edfFromFile f
   let mnes = map Text.pack ["_mu", "_keta", "_kap", "_kphi", "nu", "del"]
-  let source = Source (edf'Lambda edf)
+  let source = Source lambda
   let positions = fromList $ map (extract edf) mnes
   let geometry =  Geometry K6c source positions Nothing
   let detector = ZeroD
