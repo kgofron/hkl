@@ -8,14 +8,22 @@ module Hkl.Edf
        , edfFromFile
        ) where
 
-import Control.Applicative
-import Data.Attoparsec.Text
+import Data.Attoparsec.Text ( Parser
+                            , (<?>)
+                            , anyChar
+                            , double
+                            , many1
+                            , manyTill
+                            , parseOnly
+                            , skipSpace
+                            , string
+                            , takeTill
+                            , try
+                            )
 import Data.ByteString.Char8 (readFile, split)
 import Data.Text (Text, words)
 import Data.Text.Encoding (decodeUtf8)
 import Numeric.Units.Dimensional.Prelude (Length, (*~), nano, meter)
-
-import Prelude hiding (readFile, words)
 
 data Edf = Edf { edf'Lambda :: Length Double
                , edf'Motors :: [(Text, Double)]
@@ -38,7 +46,7 @@ edf'MotorsP = do
   vs <- many1 (skipSpace *> double)
   _ <- manyTill anyChar (try $ string "motor_mne = ")
   ns <- takeTill (\c -> c == ';')
-  return $ zip (words ns) vs
+  return $ zip (Data.Text.words ns) vs
 
 edfP :: Parser Edf
 edfP = Edf
@@ -48,7 +56,7 @@ edfP = Edf
 
 edfFromFile :: FilePath -> IO Edf
 edfFromFile filename = do
-  content <- readFile filename
+  content <- Data.ByteString.Char8.readFile filename
   let header = head (split '}' content)
   return $ case parseOnly edfP (decodeUtf8 header) of
     Left _     -> error $ "Can not parse the " ++ filename ++ " edf file"
