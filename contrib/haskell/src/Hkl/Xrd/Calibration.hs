@@ -31,16 +31,66 @@ import Numeric.LinearAlgebra
   , ident
   )
 import Numeric.GSL.Minimization
-  ( MinimizeMethod(NMSimplex2)
+  ( MinimizeMethod ( NMSimplex2 )
   , minimizeV
   )
 import Numeric.Units.Dimensional.Prelude (meter, radian, nano, (/~), (*~))
-import Pipes.Safe (MonadSafe(..), runSafeT, bracket)
+import Pipes.Safe ( MonadSafe
+                  , runSafeT, bracket
+                  )
 import System.Exit ( ExitCode( ExitSuccess ) )
 import System.FilePath.Posix ((</>), takeFileName)
 import Text.Printf ( printf )
 
-import Prelude hiding (head, concat, lookup, readFile, writeFile, unlines)
+-- import Hkl.C ( Geometry ( Geometry )
+--              , Factory ( K6c )
+--              , geometryDetectorRotationGet
+--              )
+-- import Hkl.DataSource ( DataItem ( DataItemH5 ) )
+-- import Hkl.Detector ( Detector ( ZeroD )
+--                     , coordinates
+--                     )
+-- import Hkl.Edf ( ExtractEdf()
+--                , extractEdf
+--                )
+-- import Hkl.H5 ( Dataset, File, H5
+--               , closeDataset
+--               , get_position
+--               , openDataset
+--               , withH5File
+--               )
+-- import Hkl.PyFAI ( Calibrant, Npt
+--                  , NptEntry ( NptEntry )
+--                  , Poni
+--                  , PoniExt ( PoniExt )
+--                  , Pose ( Pose )
+--                  , fromAxisAndAngle
+--                  , nptEntries
+--                  , nptFromFile
+--                  , nptWavelength
+--                  , poniEntryFromList
+--                  , poniEntryToList
+--                  , toPyFAICalibArg
+--                  )
+-- import Hkl.Python ( toPyVal )
+-- import Hkl.MyMatrix ( Basis ( HklB, PyFAIB )
+--                     , MyMatrix ( MyMatrix )
+--                     , changeBase
+--                     )
+-- import Hkl.Nxs ( DataFrameH5Path ( XrdOneDH5Path )
+--                , Nxs ( Nxs )
+--                )
+-- import Hkl.Script ( Py2, Sh
+--                   , Script ( Py2Script, ScriptSh )
+--                   , run
+--                   , scriptSave
+--                   )
+-- import Hkl.Types ( AbsDirPath, SampleName
+--                  , Source ( Source )
+--                  , WaveLength )
+-- import Hkl.Xrd.OneD ( XrdOneD
+--                     , getPoseEdf
+--                     )
 
 import Hkl.C
 import Hkl.DataSource
@@ -108,8 +158,8 @@ getPoseNxs f (XrdOneDH5Path _ g d w) i' = runSafeT $
       gamma <- get_position g' 0
       delta <- get_position d' i'
       wavelength <- get_position w' 0
-      let source = Source (head wavelength *~ nano meter)
-      let positions = concat [mu, komega, kappa, kphi, gamma, delta]
+      let source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
+      let positions = Data.Vector.Storable.concat [mu, komega, kappa, kphi, gamma, delta]
       let geometry = Geometry K6c source positions Nothing
       let detector = ZeroD
       m <- geometryDetectorRotationGet geometry detector
@@ -120,7 +170,7 @@ getWavelength ∷ File → DataFrameH5Path XrdOneD → IO WaveLength
 getWavelength f (XrdOneDH5Path _ _ _ w) = runSafeT $
     withDataItem f w $ \w' -> liftIO $ do
       wavelength <- get_position w' 0
-      return $ head wavelength *~ nano meter
+      return $ Data.Vector.Storable.head wavelength *~ nano meter
 
 readWavelength :: XRDCalibrationEntry -> IO WaveLength
 readWavelength e =
@@ -249,7 +299,7 @@ edf o n i = o </> f
 scriptExtractEdf ∷ AbsDirPath → [XRDCalibrationEntry] → Script Py2
 scriptExtractEdf o es = Py2Script (content, scriptPath)
   where
-    content = unlines $
+    content = Data.Text.unlines $
               map Data.Text.pack [ "#!/bin/env python"
                             , ""
                             , "from fabio.edfimage import edfimage"
@@ -276,7 +326,7 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
 scriptPyFAICalib ∷ AbsDirPath → XRDCalibrationEntry → Detector a → Calibrant → WaveLength → Script Sh
 scriptPyFAICalib o e d c w = ScriptSh (content, scriptPath)
   where
-    content = unlines $
+    content = Data.Text.unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
                                  , "pyFAI-calib " ++ intercalate " " args
