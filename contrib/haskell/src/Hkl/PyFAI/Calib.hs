@@ -8,10 +8,10 @@ module Hkl.PyFAI.Calib
 import Data.Text (unpack)
 import Numeric.Units.Dimensional.Prelude ((/~), nano, meter)
 
-import Hkl.Types
-import Hkl.Detector
-import Hkl.PyFAI.Calibrant
-import Hkl.PyFAI.Detector
+import Hkl.Types ( WaveLength )
+import Hkl.Detector ( Detector )
+import Hkl.PyFAI.Calibrant ( Calibrant )
+import Hkl.PyFAI.Detector ( toPyFAI )
 
 class ToPyFAICalibArg a where
   toPyFAICalibArg ∷ a → String
