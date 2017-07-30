@@ -11,8 +11,8 @@ module Hkl.Types.Parameter
 import Control.Monad (void)
 import Foreign (nullPtr, Ptr, ForeignPtr, newForeignPtr, FunPtr)
 import Foreign.Marshal.Alloc (alloca)
-import Foreign.C ( CInt(..)
-                 , CDouble(..)
+import Foreign.C ( CInt ( CInt )
+                 , CDouble ( CDouble )
                  )
 import Foreign.C.String ( CString, peekCString )
 import Foreign.Storable ( Storable
