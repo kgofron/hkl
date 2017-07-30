@@ -23,7 +23,8 @@ import Bindings.HDF5.Dataset ( readDataset
                              , getDatasetSpace )
 import Bindings.HDF5.Dataspace ( getSimpleDataspaceExtent )
 import Codec.Picture ( DynamicImage( ImageY16 )
-                     , Image(..) )
+                     , Image ( Image )
+                     )
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>), (<*>), pure)
 #endif
@@ -31,10 +32,19 @@ import Control.Exception.Base (bracket)
 import Control.Monad.IO.Class (liftIO)
 import Pipes.Safe ( MonadSafe, bracket )
 
-import Hkl.DataSource
-import Hkl.H5
-import Hkl.PyFAI
-import Hkl.Tiff
+import Hkl.DataSource ( DataItem
+                      , DataSource ( DataSourceH5 )
+                      , closeDataSource
+                      , openDataSource
+                      )
+import Hkl.H5 ( File, H5
+              , closeFile
+              , openH5
+              )
+import Hkl.PyFAI ( Pose, PoniExt )
+import Hkl.Tiff ( ToTiff
+                , toTiff
+                )
 
 type NxEntry = String
 
@@ -218,10 +228,10 @@ withDataFrameH5 nxs'@(Nxs f (XrdOneDH5Path _ g d w)) gen = Pipes.Safe.bracket (l
         <*> return gen
 
 instance ToTiff (Nxs XrdFlat) where
-  toTiff n@(Nxs f _) = withDataSource n $
-                  \(XrdFlatH5 _ _ (DataSourceH5 _ i)) → do
-                    ([w, h], _) ← getSimpleDataspaceExtent =<< (getDatasetSpace i)
-                    ImageY16 <$> ( Image
-                                   <$> pure (fromIntegral w)
-                                   <*> pure (fromIntegral h)
-                                   <*> readDataset i Nothing Nothing )
+  toTiff n = withDataSource n $
+             \(XrdFlatH5 _ _ (DataSourceH5 _ i)) → do
+               ([w, h], _) ← getSimpleDataspaceExtent =<< (getDatasetSpace i)
+               ImageY16 <$> ( Image
+                              <$> pure (fromIntegral w)
+                              <*> pure (fromIntegral h)
+                              <*> readDataset i Nothing Nothing )
