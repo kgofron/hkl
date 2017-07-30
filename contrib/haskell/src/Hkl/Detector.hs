@@ -10,8 +10,12 @@ module Hkl.Detector
        , coordinates
        ) where
 
-import Hkl.PyFAI.Npt
-import Numeric.LinearAlgebra
+import Data.Vector.Storable ( Vector
+                            , fromList
+                            )
+
+import Hkl.PyFAI.Npt ( NptPoint ( NptPoint ) )
+
 
 data ImXpadS140
 data Xpad32
