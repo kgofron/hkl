@@ -17,13 +17,12 @@ import Data.Bits ((.|.))
 import Data.Text (Text)
 import Data.Text.IO (writeFile)
 import System.Directory (createDirectoryIfMissing)
-import System.Exit ( ExitCode(..) )
+import System.Exit ( ExitCode ( ExitSuccess ) )
 import System.FilePath ( (<.>), takeDirectory)
 import System.Posix.Files (accessModes, groupModes, ownerModes, setFileMode)
 import System.Posix.Types (FileMode)
 import System.Process ( rawSystem ) -- callProcess for futur
 
-import Prelude hiding (writeFile)
 import Paths_hkl (getDataFileName)
 
 #if MIN_VERSION_directory(1, 3, 0)
@@ -54,7 +53,7 @@ data Script a where
 scriptSave' ∷ Text → FilePath → FileMode → IO ()
 scriptSave' c f m = do
     createDirectoryIfMissing True (takeDirectory f)
-    writeFile f c
+    Data.Text.IO.writeFile f c
     setFileMode f m
     print $ "--> created : " ++ f
 
