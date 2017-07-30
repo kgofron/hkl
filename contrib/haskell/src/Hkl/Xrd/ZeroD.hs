@@ -17,24 +17,23 @@ import System.Exit ( ExitCode( ExitSuccess ) )
 import System.FilePath.Posix ((</>), takeFileName)
 import Text.Printf ( printf )
 
-import Prelude hiding
-    ( any
-    , concat
-    , head
-    , lookup
-    , readFile
-    , unlines
-    )
-
-import Hkl.DataSource
-import Hkl.Detector
-import Hkl.Edf
-import Hkl.Flat
-import Hkl.PyFAI
-import Hkl.Python
-import Hkl.Nxs
-import Hkl.Script
-import Hkl.Types
+import Hkl.DataSource ( DataItem ( DataItemH5, DataItemConst ) )
+import Hkl.Detector ( Detector )
+import Hkl.Edf ( ExtractEdf, extractEdf )
+import Hkl.Flat ( Flat )
+import Hkl.PyFAI ( AIMethod,Calibrant, PoniExt, Pose
+                 , toPyFAICalibArg )
+import Hkl.Python ( toPyVal )
+import Hkl.Nxs ( DataFrameH5Path( XrdZeroDH5Path )
+               , Nxs ( Nxs )
+               , XrdZeroD
+               )
+import Hkl.Script ( Script ( Py2Script, ScriptSh )
+                  , Py2, Sh
+                  , run
+                  , scriptSave
+                  )
+import Hkl.Types ( AbsDirPath, SampleName, WaveLength )
 
 -- | Types
 
@@ -56,7 +55,7 @@ edf o n i = o </> f
 scriptExtractEdf ∷ AbsDirPath → [XrdZeroDSource] → Script Py2
 scriptExtractEdf o es = Py2Script (content, scriptPath)
   where
-    content = unlines $
+    content = Data.Text.unlines $
               map Data.Text.pack [ "#!/usr/bin/env python"
                                  , ""
                                  , "from fabio.edfimage import edfimage"
@@ -87,7 +86,7 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
 scriptPyFAICalib ∷ AbsDirPath → XrdZeroDSource → Detector a → Calibrant → Script Sh
 scriptPyFAICalib o e@(XrdZeroDSourceNxs (Nxs n _)) d c = ScriptSh (content, scriptPath)
   where
-    content = unlines $
+    content = Data.Text.unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
                                  , "pyFAI-calib " ++ intercalate " " args
