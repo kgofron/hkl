@@ -4,8 +4,6 @@ module Hkl.Projects.Sixs
        ( main_sixs )
        where
 
-import Prelude hiding (concat, head, print)
-
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>), (<*>))
 #endif
@@ -20,7 +18,22 @@ import Pipes (Producer, runEffect, (>->), lift, yield)
 import Pipes.Prelude (print)
 import System.FilePath.Posix ((</>))
 
-import Hkl
+import Hkl ( DataItem ( DataItemH5 )
+           , Dataset
+           , ExtendDims ( ExtendDims, StrictDims )
+           , Factory(Uhv)
+           , File
+           , Geometry(Geometry)
+           , H5
+           , Source(Source)
+           , check_ndims
+           , closeDataset
+           , get_position
+           , get_ub
+           , lenH5Dataspace
+           , openDataset
+           , withH5File
+           )
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -98,8 +111,8 @@ getDataFrame' (DataFrameHklH5 _ m o d g u w _) i = do
   gamma <- get_position g i
   wavelength <- get_position w 0
   ub <- get_ub u
-  let positions = concat [mu, omega, delta, gamma]
-  let source = Source (head wavelength *~ nano meter)
+  let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
+  let source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
   return $ DataFrame i (Geometry Uhv source positions Nothing) ub
 
 getDataFrame :: DataFrameHklH5 -> Producer DataFrame IO ()
@@ -125,4 +138,4 @@ main_sixs = do
     withDataframeH5 h5file dataframe_h5p $ \dataframe_h5 -> do
       True <- hkl_h5_is_valid dataframe_h5
       runEffect $ getDataFrame dataframe_h5
-        >->  print
+        >->  Pipes.Prelude.print
