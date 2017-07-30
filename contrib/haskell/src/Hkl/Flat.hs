@@ -10,15 +10,22 @@ module Hkl.Flat
        )
        where
 
-import Data.Text (unlines, pack)
+import Data.Text ( unlines, pack )
 import System.Exit ( ExitCode( ExitSuccess ) )
-import System.FilePath.Posix (replaceExtension)
-import Prelude hiding (unlines)
+import System.FilePath.Posix ( replaceExtension )
 
-import Hkl.DataSource
-import Hkl.Nxs
-import Hkl.Python
-import Hkl.Script
+import Hkl.DataSource ( DataItem ( DataItemH5 ) )
+import Hkl.Nxs ( Nxs ( Nxs )
+               , XrdFlat
+               , DataFrameH5Path ( XrdFlatH5Path )
+               )
+import Hkl.Python ( PyVal
+                  , toPyVal
+                  )
+import Hkl.Script ( Py2
+                  , Script ( Py2Script )
+                  , run
+                  )
 
 data Npy
 
@@ -29,7 +36,7 @@ deriving instance (Show) (Flat a)
 scriptPy2Flat ∷ [Nxs XrdFlat] → FilePath → Script Py2
 scriptPy2Flat ns output = Py2Script (script, scriptName)
     where
-      script = unlines $
+      script = Data.Text.unlines $
                map pack ["#!/bin/env python"
                         , ""
                         , "import numpy"
