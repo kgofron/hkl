@@ -8,8 +8,6 @@ module Hkl.C.Sample
        , withSample
        ) where
 
-import Prelude hiding (min, max)
-
 import Control.Monad (void)
 import Foreign ( ForeignPtr
                , FunPtr
