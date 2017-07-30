@@ -50,14 +50,6 @@ import System.Exit ( ExitCode( ExitSuccess ) )
 import System.FilePath ((<.>), (</>), dropExtension, replaceExtension, takeFileName, takeDirectory)
 import Text.Printf ( printf )
 
-import Prelude hiding
-    ( any
-    , concat
-    , filter
-    , head
-    , lookup
-    , readFile
-    )
 import Pipes
     ( Consumer
     , Pipe
@@ -147,8 +139,8 @@ instance Frame (DataFrameH5 XrdOneD) where
     gamma <- g `atIndex'` (ix1 0)
     delta <- d' `atIndex'` (ix1 idx)
     wavelength <- w `atIndex'` (ix1 0)
-    let source = Source (head wavelength *~ nano meter)
-    let positions = concat [mu, komega, kappa, kphi, gamma, delta]
+    let source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
+    let positions = Data.Vector.Storable.concat [mu, komega, kappa, kphi, gamma, delta]
     -- print positions
     let geometry =  Geometry K6c source positions Nothing
     let detector = ZeroD
@@ -233,7 +225,7 @@ getPoseEdf f = do
 
 poniFromFile :: FilePath -> IO Poni
 poniFromFile filename = do
-  content <- readFile filename
+  content <- Data.Text.IO.readFile filename
   return $ case parseOnly poniP content of
     Left _     -> error $ "Can not parse the " ++ filename ++ " poni file"
     Right poni -> poni
@@ -267,7 +259,7 @@ integrate'' p output (XrdNxs b _ mt is (XrdSourceNxs nxs'@(Nxs f _))) = do
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen p) yield
     >-> hoist lift (frames
-                    >-> filter (skip is)
+                    >-> Pipes.Prelude.filter (skip is)
                     >-> savePonies (pgen output f)
                     >-> savePy p b mt
                     >-> saveGnuplot
@@ -422,7 +414,7 @@ target' p output (XrdNxs _ _ _ is (XrdSourceNxs nxs'@(Nxs f _))) = do
   fs ← runSafeT $ toListM $
        withDataFrameH5 nxs' (gen p) yield
        >-> hoist lift (frames
-                       >-> filter (skip is)
+                       >-> Pipes.Prelude.filter (skip is)
                        >-> targetP (pgen output f)
                       )
   return (getScanDir output f, fs)
@@ -475,7 +467,7 @@ integrateMulti'' p output (XrdNxs _ mb mt is (XrdSourceNxs nxs'@(Nxs f _))) = do
   runSafeT $ runEffect $
     withDataFrameH5 nxs' (gen p) yield
     >-> hoist lift (frames
-                    >-> filter (skip is)
+                    >-> Pipes.Prelude.filter (skip is)
                     >-> savePonies (pgen output f)
                     >-> saveMultiGeometry p mb mt)
   where
