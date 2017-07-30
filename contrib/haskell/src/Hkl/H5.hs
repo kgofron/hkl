@@ -19,10 +19,9 @@ module Hkl.H5
     )
     where
 
-
-import Bindings.HDF5.Core ( HSize(..)
-                          , IndexType(..)
-                          , IterOrder(..)
+import Bindings.HDF5.Core ( HSize(HSize)
+                          , IndexType(ByName)
+                          , IterOrder(Native)
                           , hid
                           , hSize
                           , indexTypeCode
@@ -33,7 +32,6 @@ import Bindings.HDF5.File ( File
                           , openFile
                           , closeFile
                           )
-import Bindings.HDF5.Group ( Group )
 import Bindings.HDF5.Dataset ( Dataset
                              , openDataset
                              , closeDataset
@@ -49,18 +47,15 @@ import Bindings.HDF5.Dataspace ( Dataspace
                                , getSimpleDataspaceExtentNPoints
                                , selectHyperslab
                                )
-import Bindings.HDF5.Link ( LinkInfo, iterateLinks, visitLinks )
-import Bindings.HDF5.Raw ( HErr_t(..)
-                         , HId_t(..)
-                         , HSize_t(..)
+import Bindings.HDF5.Raw ( HErr_t(HErr_t)
+                         , HId_t(HId_t)
                          , H5L_info_t
-                         , H5L_iterate_t
                          , h5l_iterate
                          )
 import Control.Exception (bracket)
 import Data.Array.Repa (Shape, listOfShape)
 import Data.ByteString.Char8 ( pack )
-import Data.IORef ( newIORef, readIORef, writeIORef)
+import Data.IORef ( newIORef, readIORef, writeIORef )
 import Data.Vector.Storable (Vector, freeze)
 import Data.Vector.Storable.Mutable (replicate)
 import Foreign.StablePtr ( castPtrToStablePtr
@@ -69,17 +64,15 @@ import Foreign.StablePtr ( castPtrToStablePtr
                          , freeStablePtr
                          , newStablePtr
                          )
-import Foreign.Ptr ( FunPtr, Ptr , freeHaskellFunPtr )
-import Foreign.Ptr.Conventions ( In(..)
-                               , InOut(..)
-                               , WrappedPtr(..)
-                               , withInOut
+import Foreign.Ptr ( FunPtr, freeHaskellFunPtr )
+import Foreign.Ptr.Conventions ( In(In)
+                               , InOut(InOut)
+                               , castWrappedPtr
                                , withInOut_
                                )
 import Foreign.C.String ( CString, peekCString )
-import Foreign.C.Types (CInt(..))
+import Foreign.C.Types (CInt(CInt))
 import Numeric.LinearAlgebra (Matrix, reshape)
-import Prelude hiding (replicate)
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -102,7 +95,7 @@ get_position_new dataset s =
     withDataspace dataset $ \dataspace -> do
       selectHyperslab dataspace Set (toHyperslab s)
       withDataspace' $ \memspace -> do
-        data_out <- replicate 1 (0.0 :: Double)
+        data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
         readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
 
@@ -115,7 +108,7 @@ get_position dataset n =
       let block = Just (HSize 1)
       selectHyperslab dataspace Set [(start, stride, count, block)]
       withDataspace' $ \memspace -> do
-        data_out <- replicate 1 (0.0 :: Double)
+        data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
         readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
 
