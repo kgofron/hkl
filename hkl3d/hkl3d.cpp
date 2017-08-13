@@ -712,9 +712,6 @@ Hkl3D *hkl3d_new(const char *filename, HklGeometry *geometry)
 
 void hkl3d_free(Hkl3D *self)
 {
-	if(!self)
-		return;
-
 	/* remove all objects from the collision world */
 	for(size_t i=0; i<self->config->len; ++i)
 		for(size_t j=0; j<self->config->models[i]->len; ++j)
@@ -1122,9 +1119,6 @@ void hkl3d_hide_object(Hkl3D *self, Hkl3DObject *object, int hide)
 /* remove an object from the model */
 void hkl3d_remove_object(Hkl3D *self, Hkl3DObject *object)
 {
-	if(!self || !object)
-		return;
-
 	hkl3d_hide_object(self, object, TRUE);
 	hkl3d_axis_detach_object(object->axis, object);
 
