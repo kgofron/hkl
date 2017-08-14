@@ -128,6 +128,15 @@ HklLattice *newLattice(struct Lattice lattice)
 				       120*HKL_DEGTORAD,
 				       NULL);
 		break;
+	case LATTICE_TETRAGONAL:
+		self = hkl_lattice_new(lattice.tetragonal.a,
+				       lattice.tetragonal.a,
+				       lattice.tetragonal.c,
+				       90*HKL_DEGTORAD,
+				       90*HKL_DEGTORAD,
+				       90*HKL_DEGTORAD,
+				       NULL);
+		break;
 	}
 
 	return self;
@@ -164,10 +173,11 @@ const struct Sample cu = {
 
 const char *getModeName(struct Mode mode)
 {
-	const char *name;
+	const char *name = NULL;
 
 	switch(mode.tag){
-	case MODE_HKL_BISSECTOR_VERTICAL: name = "bissector_vertical";
+	case MODE_HKL_BISSECTOR_VERTICAL: name = "bissector_vertical"; break;
+	case MODE_HKL_E4CH_CONSTANT_PHI: name = "constant_phi"; break;
 	}
 
 	return name;
@@ -247,7 +257,7 @@ generator_def(trajectory_gen, struct Engine, struct Trajectory, tconfig)
 			double k = i * dk + tconfig.hklfromto.k0;
 			double l = i * dl + tconfig.hklfromto.l0;
 
-			struct Engine econfig = EngineHkl(h, k, l, ModeHklBissectorVertical);
+			struct Engine econfig = EngineHkl(h, k, l, tconfig.hklfromto.mode);
 			generator_yield(econfig);
 		}
 	}
@@ -286,20 +296,21 @@ HklGeometryList *Trajectory_solve(struct Trajectory tconfig,
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	while((econfig = generator_next(gen)) != NULL){
-		const HklGeometryListItem *solution;
-
-		/* Engine_fprintf(stdout, *econfig); */
-
+		Engine_fprintf(stdout, *econfig);
 		HklGeometryList *geometries = Engine_solve(engines, *econfig);
-		hkl_trajectory_stats_add(stats, geometries);
-		solution = hkl_geometry_list_items_first_get(geometries);
-		if(move)
-			hkl_engine_list_select_solution(engines, solution);
+		if(NULL != geometries){
+			const HklGeometryListItem *solution;
 
-		hkl_geometry_list_add(solutions,
-				      hkl_geometry_list_item_geometry_get(solution));
-		/* hkl_geometry_list_fprintf(stdout, geometries); */
-		hkl_geometry_list_free(geometries);
+			hkl_trajectory_stats_add(stats, geometries);
+			solution = hkl_geometry_list_items_first_get(geometries);
+			if(move)
+				hkl_engine_list_select_solution(engines, solution);
+
+			hkl_geometry_list_add(solutions,
+					      hkl_geometry_list_item_geometry_get(solution));
+			/* hkl_geometry_list_fprintf(stdout, geometries); */
+			hkl_geometry_list_free(geometries);
+		}
 	}
 
 	/* hkl_trajectory_stats_fprintf(stdout, stats); */

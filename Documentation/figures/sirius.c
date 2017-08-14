@@ -154,8 +154,9 @@ int main(void)
 				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
 
 	/* Trajectory */
-	static struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11);
-	static struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
+	struct Mode mode = ModeHklBissectorVertical;
+	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11, mode);
+	struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101, mode);
 	/* move between each step */
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
 	GeometryList_save_as_dat("m1-11.dat", tconfig1, solutions);
@@ -192,7 +193,7 @@ int main(void)
 
 	for(i=1; i<102; ++i){
 		double range;
-		struct Trajectory tconfig3 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, i);
+		struct Trajectory tconfig3 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, i, mode);
 
 		solutions = Trajectory_solve(tconfig3, gconfig2, gaas, TRUE);
 		range = hkl_geometry_list_kphi_range(solutions);

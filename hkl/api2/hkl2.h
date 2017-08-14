@@ -202,6 +202,7 @@ extern HklEngineList *newEngines(struct Geometry geometry);
 enum lattice_e {
 	LATTICE_CUBIC,
 	LATTICE_HEXAGONAL,
+	LATTICE_TETRAGONAL,
 };
 
 struct Lattice {
@@ -209,11 +210,13 @@ struct Lattice {
 	union {
 		struct { double a; } cubic;
 		struct { double a; double c; } hexagonal;
+		struct { double a; double c; } tetragonal;
 	};
 };
 
 #define Cubic(_a) {.tag=LATTICE_CUBIC, .cubic={_a}}
 #define Hexagonal(_a, _c) {.tag=LATTICE_HEXAGONAL, .hexagonal={_a, _c}}
+#define Tetragonal(_a, _c) {.tag=LATTICE_TETRAGONAL, .tetragonal={_a, _c}}
 
 extern HklLattice *newLattice(struct Lattice lattice);
 
@@ -236,13 +239,15 @@ extern const struct Sample cu;
 
 enum mode_e {
 	MODE_HKL_BISSECTOR_VERTICAL,
+	MODE_HKL_E4CH_CONSTANT_PHI,
 };
 
 struct Mode {
 	enum mode_e tag;
 };
 
-#define ModeHklBissectorVertical {.tag=MODE_HKL_BISSECTOR_VERTICAL}
+#define ModeHklBissectorVertical { .tag=MODE_HKL_BISSECTOR_VERTICAL }
+#define ModeHklE4CHConstantPhi { .tag=MODE_HKL_E4CH_CONSTANT_PHI }
 
 extern const char *getModeName(struct Mode mode);
 
@@ -279,11 +284,13 @@ enum trajectory_e {
 struct Trajectory {
 	enum trajectory_e tag;
 	union {
-		struct {double h0; double k0; double l0; double h1; double k1; double l1; uint n;} hklfromto;
+		struct {double h0; double k0; double l0;
+			double h1; double k1; double l1;
+			uint n; struct Mode mode;} hklfromto;
 	};
 };
 
-#define TrajectoryHklFromTo(h0_, k0_, l0_, h1_, k1_, l1_, n_) {.tag=TRAJECTORY_HKL_FROM_TO, .hklfromto={h0_, k0_, l0_, h1_, k1_, l1_, n_}}
+#define TrajectoryHklFromTo(h0_, k0_, l0_, h1_, k1_, l1_, n_, mode_) {.tag=TRAJECTORY_HKL_FROM_TO, .hklfromto={h0_, k0_, l0_, h1_, k1_, l1_, n_, .mode=mode_}}
 
 extern generator_declare(trajectory_gen, struct Engine, struct Trajectory, tconfig);
 

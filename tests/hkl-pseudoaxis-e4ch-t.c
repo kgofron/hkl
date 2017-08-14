@@ -24,6 +24,10 @@
 #include <tap/basic.h>
 #include <tap/hkl-tap.h>
 
+#include "hkl/ccan/generator/generator.h"
+#include "hkl-geometry-private.h"
+#include "hkl-trajectory-private.h"
+
 static void getter(void)
 {
 	int res = TRUE;
@@ -358,9 +362,37 @@ static void hkl_psi_constant_horizontal(void)
 	hkl_geometry_free(geometry);
 }
 
+static void petra3_p01(void)
+{
+	int res = TRUE;
+	HklGeometryList *solutions;
+
+	struct Sample sample = {
+		.name = "Sample",
+		.lattice = Tetragonal(5.4, 11.9),
+		.ux = -90 * HKL_DEGTORAD,
+		.uy = 9 * HKL_DEGTORAD,
+		.uz = -45 * HKL_DEGTORAD,
+	};
+
+	struct Geometry gconfig = E4ch(4.3687,
+				       0., 0., 6., 0.);
+
+	struct Mode mode = ModeHklE4CHConstantPhi;
+
+	/* move between each step */
+	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 4, 1, 1, 4, 30, mode);
+	solutions = Trajectory_solve(tconfig1, gconfig, sample, TRUE);
+	res &= DIAG(NULL != solutions);
+	hkl_geometry_list_fprintf(stdout, solutions);
+	hkl_geometry_list_free(solutions);
+
+	ok(res == TRUE, __func__);
+}
+
 int main(void)
 {
-	plan(6);
+	plan(7);
 
 	getter();
 	degenerated();
@@ -368,6 +400,7 @@ int main(void)
 	psi_setter();
 	q();
 	hkl_psi_constant_horizontal();
+	petra3_p01();
 
 	return 0;
 }

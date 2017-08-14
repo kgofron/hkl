@@ -34,7 +34,7 @@ static void stability(void)
 	int res = TRUE;
 	HklGeometryList *solutions;
 
-	static struct Sample gaas = {
+	struct Sample gaas = {
 		.name = "GaAs",
 		.lattice = Cubic(5.6533),
 		.ux = -90.003382 * HKL_DEGTORAD,
@@ -42,16 +42,18 @@ static void stability(void)
 		.uz = -159.91372 * HKL_DEGTORAD,
 	};
 
-	static struct Geometry gconfig =	\
+	struct Geometry gconfig =		\
 		SoleilSiriusKappa(1.458637,
 				  -0.5193202, 64.7853160, 133.5621380, -80.9690000, -0.0223369, 30.0000299);
 
-	static struct Geometry gconfig2 =	\
+	struct Geometry gconfig2 =		\
 		SoleilSiriusKappa(1.458637,
 				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
 
+	struct Mode mode = ModeHklBissectorVertical;
+
 	/* move between each step */
-	static struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11);
+	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11, mode);
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
 	res &= DIAG(NULL != solutions);
 	hkl_geometry_list_free(solutions);
@@ -60,7 +62,7 @@ static void stability(void)
 	res &= DIAG(NULL != solutions);
 	hkl_geometry_list_free(solutions);
 
-	static struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101);
+	struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101, mode);
 	solutions = Trajectory_solve(tconfig2, gconfig, gaas, TRUE);
 	res &= DIAG(NULL != solutions);
 	hkl_geometry_list_free(solutions);
