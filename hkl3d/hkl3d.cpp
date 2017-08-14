@@ -51,7 +51,6 @@
 /***************/
 /* static part */
 /***************/
-
 static float identity[] = {1, 0, 0, 0,
 			   0, 1, 0, 0,
 			   0, 0, 1 ,0,
@@ -712,9 +711,6 @@ Hkl3D *hkl3d_new(const char *filename, HklGeometry *geometry)
 
 void hkl3d_free(Hkl3D *self)
 {
-	if(!self)
-		return;
-
 	/* remove all objects from the collision world */
 	for(size_t i=0; i<self->config->len; ++i)
 		for(size_t j=0; j<self->config->models[i]->len; ++j)
@@ -1122,9 +1118,6 @@ void hkl3d_hide_object(Hkl3D *self, Hkl3DObject *object, int hide)
 /* remove an object from the model */
 void hkl3d_remove_object(Hkl3D *self, Hkl3DObject *object)
 {
-	if(!self || !object)
-		return;
-
 	hkl3d_hide_object(self, object, TRUE);
 	hkl3d_axis_detach_object(object->axis, object);
 
@@ -1133,28 +1126,6 @@ void hkl3d_remove_object(Hkl3D *self, Hkl3DObject *object)
 	hkl3d_model_delete_object(object->model, object);
 }
 
-/* use for the transparency of colliding objects */
-struct ContactSensorCallback : public btCollisionWorld::ContactResultCallback
-{
-	ContactSensorCallback(Hkl3DObject *object)
-		: btCollisionWorld::ContactResultCallback(),
-		  collisionObject(object->btObject),
-		  object(object)
-		{ }
-
-	btCollisionObject *collisionObject;
-	Hkl3DObject *object;
-
-	virtual btScalar addSingleResult(btManifoldPoint & cp,
-					 const btCollisionObjectWrapper *colObj0, int partId0, int index0,
-					 const btCollisionObjectWrapper *colObj1, int partId1, int index1)
-		{
-			if(colObj0->m_collisionObject == collisionObject
-			   || colObj1->m_collisionObject == collisionObject)
-				object->is_colliding = TRUE;
-			return 0;
-		}
-};
 
 int hkl3d_is_colliding(Hkl3D *self)
 {
@@ -1173,20 +1144,20 @@ int hkl3d_is_colliding(Hkl3D *self)
 	gettimeofday(&fin, NULL);
 	timersub(&fin, &debut, &self->stats.collision);
 
-	numManifolds = self->_btWorld->getDispatcher()->getNumManifolds();
+	numManifolds = self->_btDispatcher->getNumManifolds();
 
-	/* reset all the collisions */
-	for(size_t i=0; i<self->config->len; i++)
-		for(size_t j=0; j<self->config->models[i]->len; j++)
-			self->config->models[i]->objects[j]->is_colliding = FALSE;
-
-	/* check all the collisions */
-	for(size_t i=0; i<self->config->len; i++)
+	/* update Hkl3DObject collision from manifolds */
+	for(size_t i=0; i<self->config->len; i++){
 		for(size_t j=0; j<self->config->models[i]->len; j++){
 			Hkl3DObject *object = self->config->models[i]->objects[j];
-			ContactSensorCallback callback(object);
-			self->_btWorld->contactTest(object->btObject, callback);
+			object->is_colliding = FALSE;
+			for(int k=0; k<numManifolds; ++k){
+				btPersistentManifold *manifold = self->_btDispatcher->getManifoldByIndexInternal(k);
+				object->is_colliding |= object->btObject == manifold->getBody0();
+				object->is_colliding |= object->btObject == manifold->getBody1();
+			}
 		}
+	}
 
 	return numManifolds != 0;
 }

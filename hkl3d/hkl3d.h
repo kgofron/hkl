@@ -155,30 +155,33 @@ extern "C" {
 #endif
 	};
 
-	extern Hkl3D* hkl3d_new(const char *filename, HklGeometry *geometry);
-	extern void hkl3d_free(Hkl3D *self);
+	HKLAPI extern Hkl3D* hkl3d_new(const char *filename, HklGeometry *geometry) HKL_ARG_NONNULL(2);
+	HKLAPI extern void hkl3d_free(Hkl3D *self) HKL_ARG_NONNULL(1);
 
-	extern int hkl3d_is_colliding(Hkl3D *self);
-	extern void hkl3d_load_config(Hkl3D *self, const char *filename);
-	extern void hkl3d_save_config(Hkl3D *self, const char *filename);
-	extern Hkl3DModel *hkl3d_add_model_from_file(Hkl3D *self,
-						     const char *filename, const char *directory);
+	HKLAPI extern int hkl3d_is_colliding(Hkl3D *self) HKL_ARG_NONNULL(1);
+	HKLAPI extern void hkl3d_load_config(Hkl3D *self, const char *filename) HKL_ARG_NONNULL(1, 2);
+	HKLAPI extern void hkl3d_save_config(Hkl3D *self, const char *filename) HKL_ARG_NONNULL(1, 2);
+	HKLAPI extern Hkl3DModel *hkl3d_add_model_from_file(Hkl3D *self,
+							    const char *filename,
+							    const char *directory) HKL_ARG_NONNULL(1, 2, 3);
 
-	extern void hkl3d_connect_all_axes(Hkl3D *self);
-	extern void hkl3d_hide_object(Hkl3D *self, Hkl3DObject *object, int hide);
-	extern void hkl3d_remove_object(Hkl3D *self, Hkl3DObject *object);
+	HKLAPI extern void hkl3d_connect_all_axes(Hkl3D *self) HKL_ARG_NONNULL(1);
+	HKLAPI extern void hkl3d_hide_object(Hkl3D *self, Hkl3DObject *object, int hide) HKL_ARG_NONNULL(1, 2);
+	HKLAPI extern void hkl3d_remove_object(Hkl3D *self, Hkl3DObject *object) HKL_ARG_NONNULL(1, 2);
 
-	extern void hkl3d_get_bounding_boxes(Hkl3D *self,
-					     struct btVector3 *min, struct btVector3 *max);
-	extern int hkl3d_get_nb_manifolds(Hkl3D *self);
-	extern int hkl3d_get_nb_contacts(Hkl3D *self, int manifold);
-	extern void hkl3d_get_collision_coordinates(Hkl3D *self, int manifold, int contact,
-						    double *xa, double *ya, double *za,
-						    double *xb, double *yb, double *zb);
-	extern void hkl3d_connect_object_to_axis(Hkl3D *self,
-						 Hkl3DObject *object, const char *name);
+	HKLAPI extern void hkl3d_get_bounding_boxes(Hkl3D *self,
+						    struct btVector3 *min,
+						    struct btVector3 *max) HKL_ARG_NONNULL(1, 2, 3);
+	HKLAPI extern int hkl3d_get_nb_manifolds(Hkl3D *self) HKL_ARG_NONNULL(1);
+	HKLAPI extern int hkl3d_get_nb_contacts(Hkl3D *self, int manifold) HKL_ARG_NONNULL(1);
+	HKLAPI extern void hkl3d_get_collision_coordinates(Hkl3D *self, int manifold, int contact,
+							   double *xa, double *ya, double *za,
+							   double *xb, double *yb, double *zb) HKL_ARG_NONNULL(1);
+	HKLAPI extern void hkl3d_connect_object_to_axis(Hkl3D *self,
+							Hkl3DObject *object,
+							const char *name) HKL_ARG_NONNULL(1, 2, 3);
 
-	extern void hkl3d_fprintf(FILE *f, const Hkl3D *self);
+	HKLAPI extern void hkl3d_fprintf(FILE *f, const Hkl3D *self) HKL_ARG_NONNULL(1, 2);
 
 #ifdef __cplusplus
 }

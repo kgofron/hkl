@@ -856,6 +856,8 @@ git clone git://repo.or.cz/hkl.git
    #+END_QUOTE
 * Releases
 ** @VERSION@
+*** DONE add emergence on all e4c diffractometers <2017-03-16 Thu>
+    The emergence pseudo axis is was added to =SOLEIL MARS= and =E4CV=
 *** DONE Fix for multiarch (headers) <2016-05-04 mer.>
     The =ccan_config.h= generated file is arch specific. It is then
     necessary to install this file under /usr/include/<triplet> on
