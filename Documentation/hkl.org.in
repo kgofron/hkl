@@ -864,6 +864,13 @@ git clone git://repo.or.cz/hkl.git
     Debian like systems. This way it will be possible to co-installa
     32/64 bit version of hkl, or to do cross-compilation (arm on
     x86_64, etc...)
+*** DONE Fix the FTBFS with the new bullet 2.86.1 version <2017-08-13 dim.>
+    In order to update the internal structures of =Hkl3DObject= (the
+    =is-colliding= member), we were using a callback which became
+    un-effectiv with this new version of bullet. The logic was
+    rewritten in order to be much more efficent using the manifold
+    informations. Now we iterate on =Hkl3DObject= object only once
+    (n) complexity instead of (n²) with the previous one.
 ** 5.0.0.2080 <2016-04-27 mer.>
 *** DONE =HklEngine= <2016-01-20 mer.>
     emergence_fixed for the SOLEIL SIX MED 2+2 geometry.
