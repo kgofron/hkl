@@ -181,10 +181,6 @@ static HklEngine *hkl_engine_soleil_sixs_med_1_2_hkl_new(HklEngineList *engines)
 
 /* mode incidence */
 
-static const HklParameter surface_parameters[] = {
-	SURFACE_PARAMETERS(0, 0, 1),
-};
-
 REGISTER_READONLY_INCIDENCE(hkl_engine_soleil_sixs_med_1_2_incidence_new,
 			    P99_PROTECT({PITCH, MU}),
 			    surface_parameters_z);

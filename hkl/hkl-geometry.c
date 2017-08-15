@@ -260,6 +260,8 @@ HklVector hkl_holder_transformation_apply(const HklHolder *self,
 /* HklGeometry */
 /***************/
 
+const HklGeometryOperations hkl_geometry_operations_defaults = { HKL_GEOMETRY_OPERATIONS_DEFAULTS };
+
 /**
  * hkl_geometry_new: (skip)
  *
