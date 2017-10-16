@@ -51,17 +51,20 @@ PUBLISHED = os.path.join(ROOT, "published-data")
 
 CALIB = os.path.join(ROOT, "scan_3_01.nxs")
 
+# H5PATH data
 H5OptionalItemValue = namedtuple('H5OptionalItemValue', ['path', 'default'])
+
+MetaDataSource = namedtuple("MetaDataSource", ["img", "tx", "tz"])
 
 MetaData = namedtuple("MetaData", ["img", "tx", "tz"])
 
-MultiCalib = namedtuple("MultiCalib", ["filename", "h5path", "idxs",
+MultiCalib = namedtuple("MultiCalib", ["filename", "metasources", "idxs",
                                        "calibrant", "detector", "wavelength"])
 
 Parameter = namedtuple("Parameter", ["name", "value", "bounds"])
 
 
-def visit_images(acc: List[h5py.Dataset], _name: str, obj) -> None:
+def visit_attrs(acc: List[h5py.Dataset], _name: str, obj) -> None:
     """extract all the images and accumulate them in the acc variable"""
     if isinstance(obj, h5py.Dataset):
         if 'interpretation' in obj.attrs and obj.attrs['interpretation'] == b'image':
@@ -76,27 +79,20 @@ def visit_key(acc: List[h5py.Dataset], key: str, name: str, obj) -> None:
 
 
 def get_images(h5file: h5py.File) -> List[h5py.Dataset]:
-    acc = []
-    h5file.visititems(functools.partial(visit_images, acc))
+    acc = []  # type: List[h5py.Dataset]
+    h5file.visititems(functools.partial(visit_attrs, acc))
     return acc
 
 
 def get_tx(h5file: h5py.File) -> List[h5py.Dataset]:
-    txs = []
+    txs = []  # type: List[h5py.Dataset]
     h5file.visititems(functools.partial(visit_key, txs, "scan_data/actuator_1_1"))
     return txs
-
-
-def get_tz(h5file: h5py.File) -> List[h5py.Dataset]:
-    tzs = []
-    h5file.visititems(functools.partial(visit_key, tzs, "MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value"))
-    return tzs
 
 
 def visit_item(key: str, name: str, obj: h5py.Dataset) -> h5py.Dataset:
     if key in name:
         return obj
-
 
 def get_item(h5file: h5py.File, item: H5OptionalItemValue) -> float:
     _item = h5file.visititems(functools.partial(visit_item, item.path))
@@ -104,12 +100,11 @@ def get_item(h5file: h5py.File, item: H5OptionalItemValue) -> float:
 
 
 def get_metadata(h5file: h5py.File,
-                 h5path: H5OptionalItemValue,
+                 multicalib: MultiCalib,
                  index: int) -> MetaData:
-    img = get_images(h5file)[0][index]
-    tx = get_tx(h5file)[0][index]
-    tz = get_item(h5file, h5path)
-    return MetaData(img, tx, tz)
+    return MetaData(get_images(h5file)[0][index],
+                    get_tx(h5file)[0][index],
+                    get_item(h5file, multicalib.metasources.tz))
 
 def gen_metadata(h5file: h5py.File,
                  h5path: H5OptionalItemValue) -> Iterator[MetaData]:
@@ -159,7 +154,7 @@ def optimize_with_new_images(h5file: h5py.File,
         if label in gonioref.single_geometries:
             continue
         print(label)
-        metadata = get_metadata(h5file, multicalib.h5path, idx)
+        metadata = get_metadata(h5file, multicalib, idx)
         sg = gonioref.new_geometry(label, image=metadata.img, metadata=metadata, calibrant=calibrant)
         print(sg.extract_cp(pts_per_deg=pts_per_deg))
     print("*"*50)
@@ -194,15 +189,20 @@ def calibration(json: str) -> None:
     """Do a calibration with a bunch of images"""
 
     wavelength = 4.85945727522e-11
+
     multicalib = MultiCalib(os.path.join(ROOT, "scan_3_01.nxs"),
-                            H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0),
+                            MetaDataSource("",
+                                           "",
+                                           H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),
                             [2, 5, 8], "LaB6", "xpad_flat", wavelength)
 
     multicalib2 = MultiCalib(os.path.join(ROOT, "scan_4_01.nxs"),
-                             H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0),
+                             MetaDataSource("",
+                                            "",
+                                            H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),
                              [], "LaB6", "xpad_flat", wavelength)
 
-   # save all the ref as images in order to do the calibration with
+    # save all the ref as images in order to do the calibration with
     # pyFAI-calib[2].
     save_as_edf(multicalib, PUBLISHED)
 
@@ -245,7 +245,7 @@ def calibration(json: str) -> None:
                                             rot2_expr="rot2",
                                             rot3_expr="rot3")
 
-    def pos_function(metadata: MetaData) -> Tuple[(float, float)]:
+    def pos_function(metadata: MetaData) -> Tuple[float, float]:
         """Definition of the function reading the detector position from the
         header of the image."""
         return metadata.tx, metadata.tz
@@ -270,7 +270,7 @@ def calibration(json: str) -> None:
             base = os.path.splitext(os.path.basename(multicalib.filename))[0]
 
             label = base + "_%d" % (idx,)
-            metadata = get_metadata(h5file, multicalib.h5path, idx)
+            metadata = get_metadata(h5file, multicalib, idx)
             control_points = os.path.join(PUBLISHED, base + "_%d.npt" % (idx,))
             ai = pyFAI.load(os.path.join(PUBLISHED, base + "_%d.poni" % (idx,)))
             print(ai)
@@ -324,6 +324,6 @@ def integrate(json: str) -> None:
 
 
 if __name__ == "__main__":
-    json = os.path.join(PUBLISHED, "calibration.json")
-    calibration(json)
-    integrate(json)
+    JSON = os.path.join(PUBLISHED, "calibration.json")
+    calibration(JSON)
+    integrate(JSON)
