@@ -28,7 +28,7 @@
 # print(good)
 """
 
-from typing import List, Tuple
+from typing import Iterator, List, Tuple
 
 import os
 import functools
@@ -111,6 +111,13 @@ def get_metadata(h5file: h5py.File,
     tz = get_item(h5file, h5path)
     return MetaData(img, tx, tz)
 
+def gen_metadata(h5file: h5py.File,
+                 h5path: H5OptionalItemValue) -> Iterator[MetaData]:
+    imgs = get_images(h5file)[0]
+    txs = get_tx(h5file)[0]
+    tz = get_item(h5file, h5path)
+    for idx in range(imgs.shape[0]):
+        yield MetaData(imgs[idx], txs[idx], tz)
 
 def save_as_edf(calib: MultiCalib, basedir: str) -> None:
     """Save the multi calib images into edf files in order to do the first
@@ -183,7 +190,7 @@ def get_detector(multicalib: MultiCalib) -> pyFAI.Detector:
     return pyFAI.detector_factory(multicalib.detector)
 
 
-def main() -> None:
+def calibration(json: str) -> None:
     """Do a calibration with a bunch of images"""
 
     wavelength = 4.85945727522e-11
@@ -289,11 +296,34 @@ def main() -> None:
         with h5py.File(multi.filename, mode='r') as h5file:
             optimize_with_new_images(h5file, multi, gonioref, calibrant)
 
-    for idx, sg in enumerate(gonioref.single_geometries.values()):
-        sg.geometry_refinement.set_param(gonioref.get_ai(sg.get_position()).param)
-        jupyter.display(sg=sg)
+    # for idx, sg in enumerate(gonioref.single_geometries.values()):
+    #    sg.geometry_refinement.set_param(gonioref.get_ai(sg.get_position()).param)
+    #    jupyter.display(sg=sg)
 
-    pylab.show()
+    gonioref.save(json)
+
+    # pylab.show()
+
+
+def integrate(json: str) -> None:
+    """Integrate a file with a json calibration file"""
+    filename = os.path.join(ROOT, "scan_77_01.nxs")
+    gonio = pyFAI.goniometer.Goniometer.sload(json)
+    h5path = H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)
+
+    with h5py.File(filename, mode='r') as h5file:
+        images = []
+        positions = []
+        for metadata in gen_metadata(h5file, h5path):
+            images.append(metadata.img)
+            positions.append((metadata.tx, metadata.tz))
+        mai = gonio.get_mg(positions)
+        res = mai.integrate1d(images, 10000)
+        jupyter.plot1d(res)
+        pylab.show()
+
 
 if __name__ == "__main__":
-    main()
+    json = os.path.join(PUBLISHED, "calibration.json")
+    calibration(json)
+    integrate(json)
