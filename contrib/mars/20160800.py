@@ -51,8 +51,9 @@ PUBLISHED = os.path.join(ROOT, "published-data")
 
 CALIB = os.path.join(ROOT, "scan_3_01.nxs")
 
-# H5PATH data
-H5OptionalItemValue = namedtuple('H5OptionalItemValue', ['path', 'default'])
+# H5Path data
+
+H5PathOptionalItemValue = namedtuple('H5OptionalItemValue', ['path', 'default'])
 
 MetaDataSource = namedtuple("MetaDataSource", ["img", "tx", "tz"])
 
@@ -94,7 +95,7 @@ def visit_item(key: str, name: str, obj: h5py.Dataset) -> h5py.Dataset:
     if key in name:
         return obj
 
-def get_item(h5file: h5py.File, item: H5OptionalItemValue) -> float:
+def get_item(h5file: h5py.File, item: H5PathOptionalItemValue) -> float:
     _item = h5file.visititems(functools.partial(visit_item, item.path))
     return _item.value if _item else item.default
 
@@ -107,7 +108,7 @@ def get_metadata(h5file: h5py.File,
                     get_item(h5file, multicalib.metasources.tz))
 
 def gen_metadata(h5file: h5py.File,
-                 h5path: H5OptionalItemValue) -> Iterator[MetaData]:
+                 h5path: H5PathOptionalItemValue) -> Iterator[MetaData]:
     imgs = get_images(h5file)[0]
     txs = get_tx(h5file)[0]
     tz = get_item(h5file, h5path)
@@ -193,13 +194,13 @@ def calibration(json: str) -> None:
     multicalib = MultiCalib(os.path.join(ROOT, "scan_3_01.nxs"),
                             MetaDataSource("",
                                            "",
-                                           H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),
+                                           H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),
                             [2, 5, 8], "LaB6", "xpad_flat", wavelength)
 
     multicalib2 = MultiCalib(os.path.join(ROOT, "scan_4_01.nxs"),
                              MetaDataSource("",
                                             "",
-                                            H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),
+                                            H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),
                              [], "LaB6", "xpad_flat", wavelength)
 
     # save all the ref as images in order to do the calibration with
@@ -309,7 +310,7 @@ def integrate(json: str) -> None:
     """Integrate a file with a json calibration file"""
     filename = os.path.join(ROOT, "scan_77_01.nxs")
     gonio = pyFAI.goniometer.Goniometer.sload(json)
-    h5path = H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)
+    h5path = H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)
 
     with h5py.File(filename, mode='r') as h5file:
         images = []
