@@ -52,7 +52,7 @@ PUBLISHED = os.path.join(ROOT, "published-data")
 CALIB = os.path.join(ROOT, "scan_3_01.nxs")
 
 # H5Path data
-
+H5PathContains = namedtuple("H5PathContains", "path")
 H5PathOptionalItemValue = namedtuple('H5OptionalItemValue', ['path', 'default'])
 
 MetaDataSource = namedtuple("MetaDataSource", ["img", "tx", "tz"])
@@ -73,47 +73,38 @@ def visit_attrs(acc: List[h5py.Dataset], _name: str, obj) -> None:
     return None
 
 
-def visit_key(acc: List[h5py.Dataset], key: str, name: str, obj) -> None:
-    if key in name:
-        acc.append(obj)
-    return None
-
-
 def get_images(h5file: h5py.File) -> List[h5py.Dataset]:
     acc = []  # type: List[h5py.Dataset]
     h5file.visititems(functools.partial(visit_attrs, acc))
     return acc
 
 
-def get_tx(h5file: h5py.File) -> List[h5py.Dataset]:
-    txs = []  # type: List[h5py.Dataset]
-    h5file.visititems(functools.partial(visit_key, txs, "scan_data/actuator_1_1"))
-    return txs
-
-
 def visit_item(key: str, name: str, obj: h5py.Dataset) -> h5py.Dataset:
     if key in name:
         return obj
 
-def get_item(h5file: h5py.File, item: H5PathOptionalItemValue) -> float:
-    _item = h5file.visititems(functools.partial(visit_item, item.path))
-    return _item.value if _item else item.default
+
+def get_item(h5file: h5py.File, item):
+    res = None
+    if isinstance(item, H5PathContains):
+        res = h5file.visititems(functools.partial(visit_item, item.path))
+    elif isinstance(item, H5PathOptionalItemValue):
+        _item = h5file.visititems(functools.partial(visit_item, item.path))
+        res = _item.value if _item else item.default
+    return res
 
 
 def get_metadata(h5file: h5py.File,
                  multicalib: MultiCalib,
                  index: int) -> MetaData:
     return MetaData(get_images(h5file)[0][index],
-                    get_tx(h5file)[0][index],
+                    get_item(h5file, multicalib.metasources.tx)[index],
                     get_item(h5file, multicalib.metasources.tz))
 
-def gen_metadata(h5file: h5py.File,
-                 h5path: H5PathOptionalItemValue) -> Iterator[MetaData]:
+def gen_metadata(h5file: h5py.File, multicalib: MultiCalib) -> Iterator[MetaData]:
     imgs = get_images(h5file)[0]
-    txs = get_tx(h5file)[0]
-    tz = get_item(h5file, h5path)
     for idx in range(imgs.shape[0]):
-        yield MetaData(imgs[idx], txs[idx], tz)
+        yield get_metadata(h5file, multicalib, idx)
 
 def save_as_edf(calib: MultiCalib, basedir: str) -> None:
     """Save the multi calib images into edf files in order to do the first
@@ -193,13 +184,13 @@ def calibration(json: str) -> None:
 
     multicalib = MultiCalib(os.path.join(ROOT, "scan_3_01.nxs"),
                             MetaDataSource("",
-                                           "",
+                                           H5PathContains("scan_data/actuator_1_1"),
                                            H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),
                             [2, 5, 8], "LaB6", "xpad_flat", wavelength)
 
     multicalib2 = MultiCalib(os.path.join(ROOT, "scan_4_01.nxs"),
                              MetaDataSource("",
-                                            "",
+                                            H5PathContains("scan_data/actuator_1_1"),
                                             H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),
                              [], "LaB6", "xpad_flat", wavelength)
 
@@ -310,12 +301,17 @@ def integrate(json: str) -> None:
     """Integrate a file with a json calibration file"""
     filename = os.path.join(ROOT, "scan_77_01.nxs")
     gonio = pyFAI.goniometer.Goniometer.sload(json)
-    h5path = H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)
+    wavelength = 4.85945727522e-11
+    multicalib = MultiCalib(os.path.join(ROOT, "scan_4_01.nxs"),
+                            MetaDataSource("",
+                                           H5PathContains("scan_data/actuator_1_1"),
+                                           H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),
+                            [], "LaB6", "xpad_flat", wavelength)
 
     with h5py.File(filename, mode='r') as h5file:
         images = []
         positions = []
-        for metadata in gen_metadata(h5file, h5path):
+        for metadata in gen_metadata(h5file, multicalib):
             images.append(metadata.img)
             positions.append((metadata.tx, metadata.tz))
         mai = gonio.get_mg(positions)
