@@ -28,7 +28,7 @@
 # print(good)
 """
 
-from typing import List
+from typing import List, Tuple
 
 import os
 import functools
@@ -55,7 +55,8 @@ H5OptionalItemValue = namedtuple('H5OptionalItemValue', ['path', 'default'])
 
 MetaData = namedtuple("MetaData", ["img", "tx", "tz"])
 
-MultiCalib = namedtuple("MultiCalib", ["filename", "idxs", "calibrant", "detector", "wavelength"])
+MultiCalib = namedtuple("MultiCalib", ["filename", "h5path", "idxs",
+                                       "calibrant", "detector", "wavelength"])
 
 Parameter = namedtuple("Parameter", ["name", "value", "bounds"])
 
@@ -102,10 +103,12 @@ def get_item(h5file: h5py.File, item: H5OptionalItemValue) -> float:
     return _item.value if _item else item.default
 
 
-def get_metadata(h5file: h5py.File, index: int) -> MetaData:
+def get_metadata(h5file: h5py.File,
+                 h5path: H5OptionalItemValue,
+                 index: int) -> MetaData:
     img = get_images(h5file)[0][index]
     tx = get_tx(h5file)[0][index]
-    tz = get_item(h5file, H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0))
+    tz = get_item(h5file, h5path)
     return MetaData(img, tx, tz)
 
 
@@ -149,7 +152,7 @@ def optimize_with_new_images(h5file: h5py.File,
         if label in gonioref.single_geometries:
             continue
         print(label)
-        metadata = get_metadata(h5file, idx)
+        metadata = get_metadata(h5file, multicalib.h5path, idx)
         sg = gonioref.new_geometry(label, image=metadata.img, metadata=metadata, calibrant=calibrant)
         print(sg.extract_cp(pts_per_deg=pts_per_deg))
     print("*"*50)
@@ -185,9 +188,14 @@ def main() -> None:
 
     wavelength = 4.85945727522e-11
     multicalib = MultiCalib(os.path.join(ROOT, "scan_3_01.nxs"),
+                            H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0),
                             [2, 5, 8], "LaB6", "xpad_flat", wavelength)
 
-    # save all the ref as images in order to do the calibration with
+    multicalib2 = MultiCalib(os.path.join(ROOT, "scan_4_01.nxs"),
+                             H5OptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0),
+                             [], "LaB6", "xpad_flat", wavelength)
+
+   # save all the ref as images in order to do the calibration with
     # pyFAI-calib[2].
     save_as_edf(multicalib, PUBLISHED)
 
@@ -197,15 +205,17 @@ def main() -> None:
     detector = get_detector(multicalib)
 
     distance = 0.258705917299
-    poni1 = 0.132825374721
+    poni1_scale = 0.001
+    poni1_offset = 0.132825374721
+    poni2_scale = 0.0012272727272727272
+    poni2_offset = -0.9488181818181818
     rot1 = 0.00388272369359
     rot2 = -0.00942588451226
     rot3 = 7.19961198098e-07
-    poni2_scale = 0.0012272727272727272
-    poni2_offset = -0.9488181818181818
 
     parameters = [ Parameter("dist", distance, (distance, distance)),
-                   Parameter("poni1", poni1, (poni1, poni1)),
+                   Parameter("poni1_offset", poni1_offset, (0, 0.2)),
+                   Parameter("poni1_scale", poni1_scale, (0, 0.002)),
                    Parameter("poni2_offset", poni2_offset, (-1, -0.7)),
                    Parameter("poni2_scale", poni2_scale, (-1, 1)),
                    Parameter("rot1", rot1, (rot1, rot1)),
@@ -220,17 +230,18 @@ def main() -> None:
     # Let's refine poni1 and poni2 also as function of the distance:
 
     trans_function = GeometryTransformation(param_names=param_names,
+                                            pos_names = ["tx", "tz"],
                                             dist_expr="dist",
-                                            poni1_expr="poni1",
-                                            poni2_expr="pos * poni2_scale + poni2_offset",
+                                            poni1_expr="tz * poni1_scale + poni1_offset",
+                                            poni2_expr="tx * poni2_scale + poni2_offset",
                                             rot1_expr="rot1",
                                             rot2_expr="rot2",
                                             rot3_expr="rot3")
 
-    def pos_function(metadata: MetaData) -> float:
+    def pos_function(metadata: MetaData) -> Tuple[(float, float)]:
         """Definition of the function reading the detector position from the
         header of the image."""
-        return metadata.tx
+        return metadata.tx, metadata.tz
 
     gonioref = GoniometerRefinement(params,  # initial guess
                                     bounds=bounds,
@@ -252,7 +263,7 @@ def main() -> None:
             base = os.path.splitext(os.path.basename(multicalib.filename))[0]
 
             label = base + "_%d" % (idx,)
-            metadata = get_metadata(h5file, idx)
+            metadata = get_metadata(h5file, multicalib.h5path, idx)
             control_points = os.path.join(PUBLISHED, base + "_%d.npt" % (idx,))
             ai = pyFAI.load(os.path.join(PUBLISHED, base + "_%d.poni" % (idx,)))
             print(ai)
@@ -274,12 +285,15 @@ def main() -> None:
 
         gonioref.refine2()
 
-        for idx, sg in enumerate(gonioref.single_geometries.values()):
-            sg.geometry_refinement.set_param(gonioref.get_ai(sg.get_position()).param)
-            jupyter.display(sg=sg)
+    for multi in [multicalib, multicalib2]:
+        with h5py.File(multi.filename, mode='r') as h5file:
+            optimize_with_new_images(h5file, multi, gonioref, calibrant)
 
-        optimize_with_new_images(h5file, multicalib, gonioref, calibrant)
-        pylab.show()
+    for idx, sg in enumerate(gonioref.single_geometries.values()):
+        sg.geometry_refinement.set_param(gonioref.get_ai(sg.get_position()).param)
+        jupyter.display(sg=sg)
+
+    pylab.show()
 
 if __name__ == "__main__":
     main()
