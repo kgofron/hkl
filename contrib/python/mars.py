@@ -33,8 +33,10 @@ from typing import Iterator, List, NamedTuple, Text, Tuple, Union
 import os
 
 from functools import partial
+from itertools import chain
 
 import h5py
+import numpy
 import pylab
 import pyFAI
 
@@ -44,6 +46,8 @@ from numpy import ndarray
 from pyFAI.goniometer import GeometryTransformation, GoniometerRefinement
 from pyFAI.gui import jupyter
 
+from common import *
+
 
 ROOT = "/home/experiences/instrumentation/picca/jupyter/mars/20160800/"
 PUBLISHED = os.path.join(ROOT, "published-data")
@@ -51,16 +55,6 @@ PUBLISHED = os.path.join(ROOT, "published-data")
 CALIB = os.path.join(ROOT, "scan_3_01.nxs")
 
 # H5Path data constructors
-H5PathContains = NamedTuple("H5PathContains", [("path", Text)])
-
-H5PathOptionalItemValue = NamedTuple('H5OptionalItemValue', [('path', Text),
-                                                             ('default', float)])  # noqa
-H5PathWithAttribute = NamedTuple("H5PathWithAttribute", [('attribute', Text),
-                                                         ('value', bytes)])
-
-H5Path = Union[H5PathContains, H5PathOptionalItemValue, H5PathWithAttribute]
-
-
 MetaDataSource = NamedTuple("MetaDataSource", [("images", H5Path),
                                                ("tx", H5Path),
                                                ("tz", H5Path)])
@@ -69,60 +63,15 @@ MetaData = NamedTuple("MetaData", [("image", ndarray),
                                    ("tx", float),
                                    ("tz", float)])
 
-_MultiCalib = NamedTuple("_MultiCalib", [("filename", Text),
-                                         ("metasources", MetaDataSource),
-                                         ("idxs", List[int]),
-                                         ("calibrant", Text),
-                                         ("detector", Text),
-                                         ("wavelength", float)])
+_MultiCalibMarsTxTz = NamedTuple("_MultiCalibMarsTxTz",
+                                 [("filename", Text),
+                                  ("metasources", MetaDataSource),
+                                  ("idxs", List[int]),
+                                  ("calibrant", Text),
+                                  ("detector", Text),
+                                  ("wavelength", float)])
 
-Parameter = NamedTuple("Parameter", [("name", Text),
-                                     ("value", float),
-                                     ("bounds", Tuple[float, float])])
-
-
-def _v_attrs(attribute: Text, value: Text, _name: Text, obj) -> h5py.Dataset:
-    """extract all the images and accumulate them in the acc variable"""
-    if isinstance(obj, h5py.Dataset):
-        if attribute in obj.attrs and obj.attrs[attribute] == value:
-            return obj
-
-
-def _v_item(key: Text, name: Text, obj: h5py.Dataset) -> h5py.Dataset:
-    if key in name:
-        return obj
-
-
-def get_shape(h5file: h5py.File,
-              item: H5Path) -> Tuple:
-    res = None
-    if isinstance(item, H5PathContains):
-        res = h5file.visititems(partial(_v_item, item.path)).shape
-    elif isinstance(item, H5PathOptionalItemValue):
-        _item = h5file.visititems(partial(_v_item, item.path))
-        res = _item.shape if _item else (1,)
-    elif isinstance(item, H5PathWithAttribute):
-        res = h5file.visititems(partial(_v_attrs,
-                                        item.attribute, item.value)).shape
-    return res
-
-
-def get_item_at_index(h5file: h5py.File,
-                      item: H5Path,
-                      index: int) -> Union[float, ndarray]:
-    res = None
-    if isinstance(item, H5PathContains):
-        res = h5file.visititems(partial(_v_item, item.path))[index]
-    elif isinstance(item, H5PathOptionalItemValue):
-        _item = h5file.visititems(partial(_v_item, item.path))
-        res = _item.value if _item else item.default
-    elif isinstance(item, H5PathWithAttribute):
-        res = h5file.visititems(partial(_v_attrs,
-                                        item.attribute, item.value))[index]
-    return res
-
-
-class MultiCalib(_MultiCalib):
+class MultiCalibMarsTxTz(_MultiCalibMarsTxTz):
     def __len__(self) -> int:
         with h5py.File(self.filename, mode='r') as f:
             return get_shape(f, self.metasources.images)[0]
@@ -150,17 +99,17 @@ class MultiCalib(_MultiCalib):
                 yield self.__item(f, index)
 
 
-def save_as_edf(calib: MultiCalib,
+def save_as_edf(calib: MultiCalibMarsTxTz,
                 basedir: Text) -> None:
     """Save the multi calib images into edf files in order to do the first
     calibration"""
-    for idx, metadata in enumerate(calib.frames()):
+    for idx, metadata in zip(calib.idxs, calib.frames()):
         base = os.path.splitext(os.path.basename(calib.filename))[0]
         output = os.path.join(basedir, base + '_%d.edf' % (idx,))
         edfimage(metadata.image).write(output)
 
 
-def optimize_with_new_images(multicalib: MultiCalib,
+def optimize_with_new_images(multicalib: MultiCalibMarsTxTz,
                              gonioref: GoniometerRefinement,
                              calibrant: pyFAI.calibrant.Calibrant,
                              pts_per_deg: float=1) -> None:
@@ -189,26 +138,20 @@ def optimize_with_new_images(multicalib: MultiCalib,
         sg.geometry_refinement.set_param(gonioref.get_ai(sg.get_position()).param)  # noqa
         jupyter.display(sg=sg)
 
-# Extraction de l'image n°5 afin de faire la calibration avec pyFAI-calib2.
 
-# In[5]:
-
-# save this image as edf in order to generate the poni with pyFAI-calib2
-
-
-def get_wavelength(multicalib: MultiCalib) -> float:
+def get_wavelength(multicalib: MultiCalibMarsTxTz) -> float:
     """Return the wavelength"""
     return multicalib.wavelength
 
 
-def get_calibrant(multicalib: MultiCalib) -> pyFAI.calibrant.Calibrant:
+def get_calibrant(multicalib: MultiCalibMarsTxTz) -> pyFAI.calibrant.Calibrant:
     """Return the calibrant with the right wavelength"""
     calibrant = pyFAI.calibrant.get_calibrant(multicalib.calibrant)
     calibrant.wavelength = get_wavelength(multicalib)
     return calibrant
 
 
-def get_detector(multicalib: MultiCalib) -> pyFAI.Detector:
+def get_detector(multicalib: MultiCalibMarsTxTz) -> pyFAI.Detector:
     return pyFAI.detector_factory(multicalib.detector)
 
 
@@ -217,17 +160,17 @@ def calibration(json: str) -> None:
 
     wavelength = 4.85945727522e-11
 
-    multicalib = MultiCalib(os.path.join(ROOT, "scan_3_01.nxs"),
-                            MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa
-                                           H5PathContains("scan_data/actuator_1_1"),  # noqa
-                                           H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),  # noqa
-                            [2, 5, 8], "LaB6", "xpad_flat", wavelength)
+    multicalib = MultiCalibMarsTxTz(os.path.join(ROOT, "scan_3_01.nxs"),
+                                    MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa
+                                                   H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                                   H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),  # noqa
+                                    [2, 5, 8], "LaB6", "xpad_flat", wavelength)
 
-    multicalib2 = MultiCalib(os.path.join(ROOT, "scan_4_01.nxs"),
-                             MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa
-                                            H5PathContains("scan_data/actuator_1_1"),  # noqa
-                                            H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),  # noqa
-                             [], "LaB6", "xpad_flat", wavelength)
+    multicalib2 = MultiCalibMarsTxTz(os.path.join(ROOT, "scan_4_01.nxs"),
+                                     MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa
+                                                    H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                                    H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),  # noqa
+                                     [], "LaB6", "xpad_flat", wavelength)
 
     # save all the ref as images in order to do the calibration with
     # pyFAI-calib[2].
@@ -287,7 +230,7 @@ def calibration(json: str) -> None:
     print(gonioref)
 
     # Let's populate the goniometer refinement object with the known poni
-    for idx, metadata in enumerate(multicalib.frames()):
+    for idx, metadata in zip(multicalib.idxs, multicalib.frames()):
         base = os.path.splitext(os.path.basename(multicalib.filename))[0]
 
         label = base + "_%d" % (idx,)
@@ -325,28 +268,101 @@ def calibration(json: str) -> None:
     # pylab.show()
 
 
-def integrate(json: Text) -> None:
+def _integrate(json: Text, multicalib: Tuple[MultiCalibMarsTxTz, MultiCalibMarsTxTz]) -> None:
+    # do not do the computation if the .dat already exist
+    output = multicalib[0].filename + '.dat'
+    if os.path.exists(output):
+        return
+
+    THRESHOLD = 12000
     """Integrate a file with a json calibration file"""
     gonio = pyFAI.goniometer.Goniometer.sload(json)
-    wavelength = 4.85945727522e-11
-    multicalib = MultiCalib(os.path.join(ROOT, "scan_77_01.nxs"),
-                            MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa"
-                                           H5PathContains("scan_data/actuator_1_1"),  # noqa
-                                           H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),  # noqa
-                            [], "LaB6", "xpad_flat", wavelength)
 
     images = []
     positions = []
-    for metadata in multicalib.all_frames():
+    for metadata in chain(multicalib[0].all_frames(),
+                          multicalib[1].all_frames()):
         images.append(metadata.image)
         positions.append((metadata.tx, metadata.tz))
     mai = gonio.get_mg(positions)
-    res = mai.integrate1d(images, 10000)
-    jupyter.plot1d(res)
+
+    # compute the mask
+    detector = get_detector(multicalib[0])
+    mask = numpy.array(detector.mask)
+    lst_mask = []
+    for img in images:  # remove all pixels above the threshold"
+        if THRESHOLD is not None:
+            mask_t = numpy.where(img > THRESHOLD, True, False)
+            lst_mask.append(numpy.logical_or(mask, mask_t))
+        else:
+            lst_mask.append(mask)
+
+    res = mai.integrate1d(images, 10000, lst_mask=lst_mask)
+    numpy.savetxt(output, numpy.array(res).T)
+
+    #jupyter.plot1d(res)
+    #pylab.show()
+
+
+def integrate(json: Text, mcals: List[Tuple[MultiCalibMarsTxTz, MultiCalibMarsTxTz]]) -> None:
+    for mcal in mcals:
+        try:
+            print(mcal[0].filename, mcal[1].filename)
+            _integrate(json, mcal)
+        except:
+            pass
+
+def main():
+    wavelength = 4.85945727522e-11
+    lab6 = MultiCalibMarsTxTz(os.path.join(ROOT, "scan_3_01.nxs"),
+                              MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa
+                                             H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                             H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),  # noqa
+                              [2, 5, 8], "LaB6", "xpad_flat", wavelength)
+
+    lab6_2 = MultiCalibMarsTxTz(os.path.join(ROOT, "scan_4_01.nxs"),
+                                MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa
+                                               H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                               H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),  # noqa
+                                [], "LaB6", "xpad_flat", wavelength)
+
+    JSON = os.path.join(PUBLISHED, "calibration.json")
+    #calibration(JSON, [lab6, lab6_2])
+
+    # integration des echantillons
+    tz1 = [ MultiCalibMarsTxTz(os.path.join(ROOT, "scan_%d_01.nxs" % (i,)),
+                               MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa"
+                                              H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                              H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -1.0)),  # noqa
+                               [], "LaB6", "xpad_flat", wavelength)
+            for i in [77, 79, 81, 83, 85, 87, 89, 91]]
+
+
+    tz0 = [ MultiCalibMarsTxTz(os.path.join(ROOT, "scan_%d_01.nxs" % (i,)),
+                               MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa"
+                                              H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                              H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),  # noqa
+                               [], "LaB6", "xpad_flat", wavelength)
+            for i in [78, 80, 82, 84, 86, 88, 90, 92]]
+
+    tz3 = [ MultiCalibMarsTxTz(os.path.join(ROOT, "scan_%d_01.nxs" % (i,)),
+                               MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa"
+                                              H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                              H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", 0.0)),  # noqa
+                               [], "LaB6", "xpad_flat", wavelength)
+            for i in range(399, 588, 2) if i not in [523, 527, 581]]
+
+    tz5 = [ MultiCalibMarsTxTz(os.path.join(ROOT, "scan_%d_01.nxs" % (i,)),
+                               MetaDataSource(H5PathWithAttribute("interpretation", b"image"),  # noqa"
+                                              H5PathContains("scan_data/actuator_1_1"),  # noqa
+                                              H5PathOptionalItemValue("MARS/D03-1-CX0__DT__DTC_2D-MT_Tz__#1/raw_value", -5.0)),  # noqa
+                               [], "LaB6", "xpad_flat", wavelength)
+            for i in range(400, 589, 2) if i not in [524, 528, 582]]
+
+    # samples = [(lab6, lab6_2)]  + list(zip(tz1, tz0)) + list(zip(tz3, tz5))
+    samples = list(zip(tz3, tz5))
+    integrate(JSON, samples)
     pylab.show()
 
-
 if __name__ == "__main__":
-    JSON = os.path.join(PUBLISHED, "calibration.json")
-    calibration(JSON)
-    integrate(JSON)
+    main()
