@@ -1,5 +1,8 @@
 import solids;
 
+currentprojection=orthographic(1,0,0);
+currentlight=White;
+
 size(300,0);
 
 real k = 2;
@@ -67,5 +70,3 @@ draw(C1--P1, blue);
 dot("$P_2$", P2, blue);
 draw(C1--P2, blue);
 draw(Parc, blue, Arrows3());
-
-

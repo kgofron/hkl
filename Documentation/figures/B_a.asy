@@ -1,6 +1,8 @@
 import three;
 
 size(6cm);
+currentprojection=orthographic(1,0,0);
+currentlight=White;
 
 triple b1 = (1, 0, 0);
 triple b2 = (.31, .95, 0);

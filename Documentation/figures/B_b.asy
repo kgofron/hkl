@@ -1,5 +1,8 @@
 import three;
 
+currentprojection=orthographic(1,0,0);
+currentlight=White;
+
 size(6cm);
 
 triple b1 = (1, 0, 0);

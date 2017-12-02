@@ -1,5 +1,8 @@
 import solids;
 
+currentprojection=orthographic(1,0,0);
+currentlight=White;
+
 size(300,0);
 
 real k = 2;
