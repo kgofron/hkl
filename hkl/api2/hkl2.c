@@ -296,7 +296,7 @@ HklGeometryList *Trajectory_solve(struct Trajectory tconfig,
 	hkl_engine_list_init(engines, geometry, detector, sample);
 
 	while((econfig = generator_next(gen)) != NULL){
-		Engine_fprintf(stdout, *econfig);
+		/* Engine_fprintf(stdout, *econfig); */
 		HklGeometryList *geometries = Engine_solve(engines, *econfig);
 		if(NULL != geometries){
 			const HklGeometryListItem *solution;
