@@ -4,6 +4,8 @@
 .asy.pdf:
 	-@ASY@ -config "" -render=0 -f pdf -noprc -o $@ $<
 
+.gnuplot.svg:
+	-@GNUPLOT@ $<
 
 AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
 	-I$(top_srcdir) \
@@ -61,9 +63,13 @@ dist_noinst_DATA = \
 	e2k_3.png \
 	e2k_4.png \
 	qper_qpar.png \
-	$(SIRIUSFILES)
+	$(SIRIUSFILES) \
+	sirius-s.svg \
+	sirius-m.svg \
+	sirius-m-zoom.svg \
+	traj_n.svg
 
-CLEANFILES = $(SIRIUSFILES) sirius-s.svg sirius-m.svg sirius-m-zoom.svg traj_n.svg
+CLEANFILES = $(SIRIUSFILES)
 
 MAINTAINERCLEANFILES = $(dist_noinst_DATA)
 
@@ -88,7 +94,11 @@ EXTRA_DIST = \
 	e2k_2.asy \
 	e2k_3.asy \
 	e2k_4.asy \
-	qper_qpar.asy
+	qper_qpar.asy \
+	sirius-s.gnuplot \
+	sirius-m.gnuplot \
+	sirius-m-zoom.gnuplot \
+	traj_n.gnuplot
 
 # Support for GNU Flymake, in Emacs.
 
