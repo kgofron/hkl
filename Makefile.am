@@ -32,13 +32,16 @@ noinst_DATA = hkl3d.pc
 endif
 
 release:
+	git clean -xdf
 	git fetch
 	git checkout next
-	cd scripts && ./clean-all
-	git commit -a -m "pre-release"
+#cd scripts && ./clean-all
+#git commit -a -m "pre-release"
 	git checkout maint
 	git merge -m "release" next
 	./autogen.sh
+	./configure $(AM_DISTCHECK_CONFIGURE_FLAGS)
+	$(MAKE)
 	$(MAKE) distcheck
 	git tag v`./configure -V | head -n 1 | awk '{print $$3}'`
 	git checkout next
