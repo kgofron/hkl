@@ -226,7 +226,7 @@ static inline int hkl_axis_transformation_cmp_real(const HklParameter *base, con
 	const HklAxis *axis2 = container_of(p2, HklAxis, parameter);
 
 	return hkl_parameter_transformation_cmp_real(base, p2)
-	       || hkl_vector_cmp(&self->axis_v, &axis2->axis_v);
+		|| hkl_vector_cmp(&self->axis_v, &axis2->axis_v);
 }
 
 static inline HklVector hkl_axis_transformation_apply_real(const HklParameter *base,
@@ -325,10 +325,10 @@ static inline int hkl_rotation_with_origin_transformation_cmp_real(const HklPara
 	HklRotationWithOrigin *self = container_of(container_of(base, HklAxis, parameter),
 						   HklRotationWithOrigin, axis);
 	HklRotationWithOrigin *p2 = container_of(container_of(base_p2, HklAxis, parameter),
-						  HklRotationWithOrigin, axis);
+						 HklRotationWithOrigin, axis);
 
 	return hkl_axis_transformation_cmp_real(base, base_p2)
-	       || hkl_vector_cmp(&self->origin, &p2->origin);
+		|| hkl_vector_cmp(&self->origin, &p2->origin);
 }
 
 static inline HklVector hkl_rotation_with_origin_transformation_apply_real(const HklParameter *base,
@@ -404,8 +404,8 @@ static inline void hkl_translation_free_real(HklParameter *base)
 }
 
 static inline int hkl_translation_init_copy_real(HklParameter *base,
-							   const HklParameter *base_src,
-							   GError **error)
+						 const HklParameter *base_src,
+						 GError **error)
 {
 	HklTranslation *self = container_of(base, HklTranslation, parameter);
 	HklTranslation *src = container_of(base_src, HklTranslation, parameter);

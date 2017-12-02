@@ -448,7 +448,7 @@ int hkl_parameter_transformation_cmp(const HklParameter *self,
  * Returns: the transformed #HklVector
  **/
 HklVector hkl_parameter_transformation_apply(const HklParameter *self,
-					   const HklVector *v)
+					     const HklVector *v)
 {
 	return self->ops->transformation_apply(self, v);
 }
