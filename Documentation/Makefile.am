@@ -1,7 +1,5 @@
 SUBDIRS=api figures sphinx
 
-dist_man_MANS = ghkl.1
-
 AM_LDFLAGS = $(top_builddir)/hkl/libhkl.la
 
 dist_html_DATA=hkl.html

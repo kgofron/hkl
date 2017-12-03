@@ -1,5 +1,7 @@
 bin_PROGRAMS = ghkl
 
+dist_man_MANS = ghkl.1
+
 AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
