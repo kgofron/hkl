@@ -92,34 +92,3 @@ int hkl_unit_compatible(const HklUnit *unit1, const HklUnit *unit2)
 	}
 	return res;
 }
-
-/**
- * hkl_unit_factor:
- * @self:
- * @unit:
- *
- * compute the factor to convert from one @Hklunit to another one.
- * @self * factor =  @unit
- *
- * Returns: the factor of the conversion.
- **/
-double hkl_unit_factor(const HklUnit *from, const HklUnit *to)
-{
-	double res = 1.0;
-
-	if (from == NULL) {
-		if (to == NULL) {
-			res = 1.0;
-		}else{
-			res = 1.0 / to->factor;
-		}
-	}else{
-		if (to == NULL){
-			res = from->factor;
-		}else{
-			res = from->factor / to->factor;
-		}
-	}
-
-	return res;
-}

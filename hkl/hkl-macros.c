@@ -20,8 +20,7 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 #include <execinfo.h>                   // for backtrace, etc
-#include <stdio.h>                      // for fprintf, printf, stderr
-#include <stdlib.h>                     // for calloc, exit, free
+#include "hkl-macros-private.h"
 
 #ifndef _MSC_VER
 void hkl_printbt(void)
@@ -54,16 +53,3 @@ int vasprintf(char **strp, const char *fmt, va_list ap)
 	return len;
 }
 #endif
-
-void *_hkl_malloc(int size, const char *error)
-{
-	void *tmp;
-
-	tmp = calloc(1, size);
-	if(!tmp){
-		fprintf(stderr, "%s", error);
-		exit(128);
-	}
-
-	return tmp;
-}

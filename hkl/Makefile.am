@@ -81,7 +81,7 @@ libhkl_la_LIBADD = ccan/libccan.la
 libhkl_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-Wno-initializer-overrides \
-	-Wno-unused-result # \ do not activate visibility yet.
+	-Wno-unused-result \
 	-fvisibility=hidden
 
 # just compile the template diffractometer to be sure that it is valid

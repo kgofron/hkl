@@ -21,6 +21,7 @@
  */
 
 #include "hkl-macros-private.h"
+#include "hkl-geometry-private.h"
 #include "hkl-trajectory-private.h"
 
 HklTrajectoryResult * hkl_trajectory_result_new(void)

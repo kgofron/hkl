@@ -201,6 +201,8 @@ HKLAPI const HklQuaternion *hkl_parameter_quaternion_get(const HklParameter *sel
 
 HKLAPI const char *hkl_parameter_description_get(const HklParameter *self) HKL_ARG_NONNULL(1) HKL_WARN_UNUSED_RESULT;
 
+HKLAPI void hkl_parameter_fprintf(FILE *f, const HklParameter *self) HKL_ARG_NONNULL(1, 2);
+
 /************/
 /* Detector */
 /************/

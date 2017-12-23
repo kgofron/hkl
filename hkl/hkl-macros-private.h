@@ -23,6 +23,8 @@
 #define __HKL_MACROS_PRIVATE_H__
 
 #include <assert.h>                     // for assert
+#include <stdio.h>                      // for fprintf, printf, stderr
+#include <stdlib.h>                     // for calloc, exit, free
 #include "hkl.h"                        // for G_BEGIN_DECLS, etc
 
 /* specific part for the eulerian -> kappa conversion */
@@ -85,7 +87,18 @@ G_BEGIN_DECLS
 
 extern void hkl_printbt(void);
 
-void *_hkl_malloc(int size, const char *error);
+static void *_hkl_malloc(int size, const char *error)
+{
+	void *tmp;
+
+	tmp = calloc(1, size);
+	if(!tmp){
+		fprintf(stderr, "%s", error);
+		exit(128);
+	}
+
+	return tmp;
+}
 
 G_END_DECLS
 

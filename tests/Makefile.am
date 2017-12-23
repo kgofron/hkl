@@ -34,8 +34,9 @@ AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS)
 
-LDADD = $(top_builddir)/hkl/libhkl.la \
-	$(top_builddir)/hkl/api2/libhkl2.la \
+AM_LDFLAGS = -Wl,--whole-archive,$(top_builddir)/hkl/.libs/libhkl.a,--no-whole-archive
+
+LDADD = $(top_builddir)/hkl/api2/libhkl2.la \
 	$(top_builddir)/tests/tap/libtap.a \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS)

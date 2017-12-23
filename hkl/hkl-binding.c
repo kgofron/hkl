@@ -23,12 +23,13 @@
 #include <stdlib.h>                     // for malloc
 #include <string.h>                     // for NULL, strdup
 #include <sys/types.h>                  // for uint
+#include "hkl.h"                        // for HklGeometry, HklEngine, etc
+#include "hkl-binding-private.h"
 #include "hkl-factory-private.h"        // for __start_xautodata_factories, etc
 #include "hkl-geometry-private.h"       // for _HklGeometry, etc
 #include "hkl-parameter-private.h"
 #include "hkl-pseudoaxis-private.h"     // for _HklEngine, HklEngineInfo
 #include "hkl-sample-private.h"         // for _HklSampleReflection, etc
-#include "hkl.h"                        // for HklGeometry, HklEngine, etc
 #include "hkl/ccan/autodata/autodata.h"  // for autodata_get
 #include "hkl/ccan/darray/darray.h"     // for darray_foreach, darray_size
 #include "hkl/ccan/list/list.h"             // for list_for_each, list_head
