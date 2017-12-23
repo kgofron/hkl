@@ -31,10 +31,13 @@ SVGFILES=sirius-s.svg sirius-m.svg sirius-m-zoom.svg traj_n.svg
 
 $(SVGFILES): $(SIRIUSFILES)
 
-sirius.stamp: sirius
+sirius-stamp: sirius
+	@rm -f sirius-temp
+	@touch sirius-temp
 	cd $(builddir) && ./sirius
+	@mv -f sirius-temp $@
 
-$(SIRIUSFILES): sirius.stamp
+$(SIRIUSFILES): sirius-stamp
 	## Recover from the removal of $@
 	@if test -f $@; then :; else \
 		trap 'rm -rf sirius.lock sirius.stamp' 1 2 13 15; \
@@ -75,7 +78,7 @@ dist_noinst_DATA = \
 	$(SIRIUSFILES) \
 	$(SVGFILES)
 
-CLEANFILES = $(SIRIUSFILES) $(SVGFILES)
+CLEANFILES = $(SIRIUSFILES) $(SVGFILES) sirius-stamp
 
 MAINTAINERCLEANFILES = $(dist_noinst_DATA)
 
