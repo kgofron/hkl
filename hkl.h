@@ -55,7 +55,7 @@
 /* #define HKL_TAU 1 */
 
 #ifdef HKLAPI
-# undef HKLEAPI
+# undef HKLAPI
 #endif
 
 #ifdef __GNUC__
