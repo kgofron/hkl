@@ -11,7 +11,7 @@
      framework.
    - gobject-instrospection provide the binding support. Look at this
      [[https://wiki.gnome.org/action/show/Projects/GObjectIntrospection][page]] for more informations.
-   - Documentation was generated with sphinx and asymptote for the figures.
+   - Documentation was generated with org-mode and asymptote for the figures.
    - New diffractometers added
      - E4CH (eulerian 4 circles horizontal) geometry.
      - MARS beamline (SOLEIL) eulerian 4 circles vertical geometry.
@@ -22,6 +22,7 @@
    - A not yet public hkl3d library used only by the gui allow to
      compute (Bullet) and display (OpenGL) collision for model
      described using the COLLADA file format.
+   - all private symbols are now hidden.
 ** Buildsystem
    - add a --disable-hkl3d flag to avoid hkl3d library compilation.
    - replace the --enable-ghkl with a --disable-gui.
@@ -154,7 +155,7 @@
     * Diffractometers:
       - Eulerian 6 Circles.
       - kappa 4 Circles Vertical.
-    
+
     * Refactoring of the PseudoAxe part.
       - Derived PseudoAxe can be created from an already existing PseudoAxe if the Geometry conversion exist.
       - Better related PseudoAxes (ex Eulerians on a Kappa)
@@ -178,18 +179,18 @@
         - "tth" derived from the Eulerian6C.
         - "q" derived from the Eulerian6C.
         - "psi" : derived from the Eulerian 4 Circlers Vertical.
-    
+
     * Refactoring of the Modes.
       - Derived Mode can be created from an already existing Mode if the Geometry conversion exist.
       - all Eulerian 4 Circles on the kappa4C, Eulerian6c and Kappa6C diffractometers.
 
 * 2.2.0 19-06-2006
-    
+
     * Diffractometers:
       - twoC Vertical.
       - Eulerian 4 Circles Vertical.
       - Kappa 6 Circles.
-    
+
     * PseudoAxes
       - twoC
         - "th2th": omega - 2theta (domega = d2theta / 2)
@@ -200,7 +201,7 @@
         - "q2th" : omega - 2theta (domega = d2theta / 2) but q2th = 2 tau sin(theta) / lambda
         - "q" : 2 * tau * sin(theta) / lambda
         - "psi" : Rotation of the sample oaround the Q vector.
-    
+
     * Modes
       - twoC
         - "symetric" (omega = theta, 2theta = 2 * theta)
