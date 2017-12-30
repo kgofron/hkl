@@ -278,6 +278,37 @@ int hkl_is_reachable(HklEngine *engine, double wavelength, GError **error)
 	return TRUE;
 }
 
+struct HklEngineHklInternal
+{
+	HklVector ki;
+	HklVector kf;
+	HklVector Q;
+	HklVector hkl;
+};
+
+static const struct HklEngineHklInternal _hkl(const HklGeometry *geometry,
+					      const HklDetector *detector,
+					      const HklSample *sample)
+{
+	struct HklEngineHklInternal internal;
+	HklMatrix RUB;
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+
+	internal.ki = hkl_geometry_ki_get(geometry);
+
+	internal.kf  = hkl_geometry_kf_get(geometry, detector);
+
+	internal.Q = internal.kf;
+	hkl_vector_minus_vector(&internal.Q, &internal.ki);
+
+	/* R * UB */
+	hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
+	hkl_matrix_times_matrix(&RUB, &sample->UB);
+	hkl_matrix_solve(&RUB, &internal.hkl, &internal.Q);
+
+	return internal;
+}
+
 /**
  * _RUBh_minus_Q_func: (skip)
  * @x:
@@ -350,29 +381,16 @@ int hkl_mode_get_hkl_real(HklMode *self,
 			  HklSample *sample,
 			  GError **error)
 {
-	HklMatrix RUB;
-	HklVector hkl, ki, Q;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
 
 	/* update the geometry internals */
 	hkl_geometry_update(geometry);
 
-	/* R * UB */
-	hkl_quaternion_to_matrix(&sample_holder->q, &RUB);
-	hkl_matrix_times_matrix(&RUB, &sample->UB);
+	const struct HklEngineHklInternal internal = _hkl(geometry, detector, sample);
 
-	/* kf - ki = Q */
-	ki = hkl_geometry_ki_get(geometry);
-
-	Q  = hkl_geometry_kf_get(geometry, detector);
-	hkl_vector_minus_vector(&Q, &ki);
-
-	hkl_matrix_solve(&RUB, &hkl, &Q);
-
-	engine_hkl->h->_value = hkl.data[0];
-	engine_hkl->k->_value = hkl.data[1];
-	engine_hkl->l->_value = hkl.data[2];
+	engine_hkl->h->_value = internal.hkl.data[0];
+	engine_hkl->k->_value = internal.hkl.data[1];
+	engine_hkl->l->_value = internal.hkl.data[2];
 
 	return TRUE;
 }
