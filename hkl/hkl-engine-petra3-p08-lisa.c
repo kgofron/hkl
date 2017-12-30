@@ -690,4 +690,4 @@ static HklEngineList *hkl_engine_list_new_petra3_p08_lisa(const HklFactory *fact
 }
 
 /* Register the diffractometer into the factory */
-REGISTER_DIFFRACTOMETER(petra3_p08_lisa, "PETRA3 P08 LISA", HKL_GEOMETRY_PETRA3_P08_LISA_DESCRIPTION);
+/* REGISTER_DIFFRACTOMETER(petra3_p08_lisa, "PETRA3 P08 LISA", HKL_GEOMETRY_PETRA3_P08_LISA_DESCRIPTION); */
