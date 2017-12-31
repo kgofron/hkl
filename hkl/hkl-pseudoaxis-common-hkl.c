@@ -309,6 +309,42 @@ static const struct HklEngineHklInternal _hkl(const HklGeometry *geometry,
 	return internal;
 }
 
+struct HklEngineHklInternalW
+{
+	HklVector ki;
+	HklVector kf;
+	HklVector Q;
+	HklVector hkl;
+	HklVector dQ;
+};
+
+static const struct HklEngineHklInternalW _hklW(const HklGeometry *geometry,
+						const HklDetector *detector,
+						const HklSample *sample,
+						const HklVector *hkl)
+{
+	struct HklEngineHklInternalW internal;
+	HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry,
+								  sample);
+
+	internal.ki = hkl_geometry_ki_get(geometry);
+
+	internal.kf = hkl_geometry_kf_get(geometry, detector);
+
+	internal.Q = internal.kf;
+	hkl_vector_minus_vector(&internal.Q, &internal.ki);
+
+	internal.hkl = *hkl;
+	hkl_matrix_times_vector(&sample->UB, &internal.hkl);
+	/* Hkl = hkl_holder_transformation_apply(sample_holder, &Hkl); */
+	hkl_vector_rotated_quaternion(&internal.hkl, &sample_holder->q);
+
+	internal.dQ = internal.Q;
+	hkl_vector_minus_vector(&internal.dQ, &internal.hkl);
+
+	return internal;
+}
+
 /**
  * _RUBh_minus_Q_func: (skip)
  * @x:
@@ -340,36 +376,24 @@ int RUBh_minus_Q(double const x[], void *params, double f[])
 {
 	HklEngine *engine = params;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	HklVector Hkl = {
+	const HklVector Hkl = {
 		.data = {
 			engine_hkl->h->_value,
 			engine_hkl->k->_value,
 			engine_hkl->l->_value,
 		},
 	};
-	HklVector ki, dQ;
-	HklHolder *sample_holder = hkl_geometry_sample_holder_get(engine->geometry,
-								  engine->sample);
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x);
 
-	/* R * UB * h = Q */
-	/* for now the 0 holder is the sample holder. */
-	hkl_matrix_times_vector(&engine->sample->UB, &Hkl);
-	/* Hkl = hkl_holder_transformation_apply(sample_holder, &Hkl); */
-	hkl_vector_rotated_quaternion(&Hkl, &sample_holder->q);
-
-	/* kf - ki = Q */
-	ki = hkl_geometry_ki_get(engine->geometry);
-	dQ = hkl_geometry_kf_get(engine->geometry, engine->detector);
-	hkl_vector_minus_vector(&dQ, &ki);
-
-	hkl_vector_minus_vector(&dQ, &Hkl);
-
-	f[0] = dQ.data[0];
-	f[1] = dQ.data[1];
-	f[2] = dQ.data[2];
+	const struct HklEngineHklInternalW internal = _hklW(engine->geometry,
+							    engine->detector,
+							    engine->sample,
+							    &Hkl);
+	f[0] = internal.dQ.data[0];
+	f[1] = internal.dQ.data[1];
+	f[2] = internal.dQ.data[2];
 
 	return GSL_SUCCESS;
 }
