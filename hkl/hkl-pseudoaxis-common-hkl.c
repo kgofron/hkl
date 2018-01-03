@@ -254,17 +254,23 @@ static int get_last_sample_axis_idx(HklGeometry *geometry, const HklSample *samp
 	return last;
 }
 
-
-int hkl_is_reachable(HklEngine *engine, double wavelength, GError **error)
+static const HklVector reciprocal_plan(const HklEngineHkl *engine_hkl)
 {
-	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	HklVector Hkl = {
+	const HklVector hkl = {
 		.data = {
 			engine_hkl->h->_value,
 			engine_hkl->k->_value,
 			engine_hkl->l->_value,
 		},
 	};
+	return hkl;
+}
+
+
+int hkl_is_reachable(HklEngine *engine, double wavelength, GError **error)
+{
+	const HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
+	HklVector Hkl = reciprocal_plan(engine_hkl);
 
 	hkl_matrix_times_vector(&engine->sample->UB, &Hkl);
 	if (hkl_vector_norm2(&Hkl) > qmax(wavelength)){
@@ -376,13 +382,7 @@ int RUBh_minus_Q(double const x[], void *params, double f[])
 {
 	HklEngine *engine = params;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	const HklVector Hkl = {
-		.data = {
-			engine_hkl->h->_value,
-			engine_hkl->k->_value,
-			engine_hkl->l->_value,
-		},
-	};
+	const HklVector Hkl = reciprocal_plan(engine_hkl);
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x);
@@ -590,13 +590,7 @@ int _double_diffraction(double const x[], void *params, double f[])
 {
 	HklEngine *engine = params;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	const HklVector hkl1 = {
-		.data = {
-			engine_hkl->h->_value,
-			engine_hkl->k->_value,
-			engine_hkl->l->_value,
-		},
-	};
+	const HklVector hkl1 = reciprocal_plan(engine_hkl);
 	const HklVector hkl2 = {
 		.data = {
 			darray_item(engine->mode->parameters, 0)->_value,
@@ -701,13 +695,7 @@ int _psi_constant_vertical_func(gsl_vector const *x, void *params, gsl_vector *f
 
 	HklEngine *engine = params;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	const HklVector hkl = {
-		.data = {
-			engine_hkl->h->_value,
-			engine_hkl->k->_value,
-			engine_hkl->l->_value,
-		},
-	};
+	const HklVector hkl = reciprocal_plan(engine_hkl);
 	const HklVector hkl2 = {
 		.data = {
 			darray_item(engine->mode->parameters, 0)->_value,
@@ -768,13 +756,7 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 {
 	if(initialized){
 		HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-		const HklVector hkl = {
-			.data = {
-				engine_hkl->h->_value,
-				engine_hkl->k->_value,
-				engine_hkl->l->_value,
-			},
-		};
+		const HklVector hkl = reciprocal_plan(engine_hkl);
 		const HklVector hkl2 = {
 			.data = {
 				darray_item(engine->mode->parameters, 0)->_value,
