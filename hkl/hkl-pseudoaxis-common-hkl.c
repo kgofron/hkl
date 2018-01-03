@@ -553,6 +553,29 @@ int hkl_mode_set_hkl_real(HklMode *self,
 /* the double diffraction get set part */
 /***************************************/
 
+struct HklEngineHklDoubleDiffractionInternalW {
+	struct HklEngineHklInternalW hkl1W;
+	struct HklEngineHklInternalW hkl2W;
+	HklVector kf2;
+};
+
+static const struct HklEngineHklDoubleDiffractionInternalW _double_diffractionW(const HklGeometry *geometry,
+										const HklDetector *detector,
+										const HklSample *sample,
+										const HklVector *hkl1,
+										const HklVector *hkl2)
+{
+	struct HklEngineHklDoubleDiffractionInternalW res;
+
+	res.hkl1W = _hklW(geometry, detector, sample, hkl1);
+	res.hkl2W = _hklW(geometry, detector, sample, hkl2);
+
+	res.kf2 = res.hkl2W.hkl;
+	hkl_vector_add_vector(&res.kf2, &res.hkl2W.ki);
+
+	return res;
+}
+
 /**
  * double_diffraction: (skip)
  * @x:
@@ -581,28 +604,18 @@ int _double_diffraction(double const x[], void *params, double f[])
 			darray_item(engine->mode->parameters, 2)->_value,
 		},
 	};
-	HklVector kf2;
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x);
 
-	const struct HklEngineHklInternalW hkl1W = _hklW(engine->geometry,
-							 engine->detector,
-							 engine->sample,
-							 &hkl1);
-
-	/* R * UB * hlk2 = Q2 */
-	const struct HklEngineHklInternalW hkl2W = _hklW(engine->geometry,
-							 engine->detector,
-							 engine->sample,
-							 &hkl2);
-	kf2 = hkl2W.hkl;
-	hkl_vector_add_vector(&kf2, &hkl2W.ki);
-
-	f[0] = hkl1W.dQ.data[0];
-	f[1] = hkl1W.dQ.data[1];
-	f[2] = hkl1W.dQ.data[2];
-	f[3] = hkl_vector_norm2(&kf2) - hkl_vector_norm2(&hkl2W.ki); /* 2nd diffraction condition */
+	const struct HklEngineHklDoubleDiffractionInternalW internal = _double_diffractionW(engine->geometry,
+											    engine->detector,
+											    engine->sample,
+											    &hkl1, &hkl2);
+	f[0] = internal.hkl1W.dQ.data[0];
+	f[1] = internal.hkl1W.dQ.data[1];
+	f[2] = internal.hkl1W.dQ.data[2];
+	f[3] = hkl_vector_norm2(&internal.kf2) - hkl_vector_norm2(&internal.hkl2W.ki); /* 2nd diffraction condition */
 
 	return GSL_SUCCESS;
 }
@@ -631,6 +644,47 @@ int _double_diffraction_func(gsl_vector const *x, void *params, gsl_vector *f)
 /* the psi_constant_vertical get set part */
 /******************************************/
 
+struct HklEngineHklPsiConstantVerticalW {
+	struct HklEngineHklInternalW hklW;
+	struct HklEngineHklInternalW hkl2W;
+	HklVector Qn; /* Q normalized */
+	HklVector hkl; /* projection of hkl on plan Q */
+	HklVector n; /* compute n the intersection of the plan P(kf, ki) and PQn (normal Qn) */
+	double psi; /* computed psi */
+	int status;
+};
+
+static const struct HklEngineHklPsiConstantVerticalW _psi_constant_verticalW(const HklGeometry *geometry,
+									     const HklDetector *detector,
+									     const HklSample *sample,
+									     const HklVector *hkl,
+									     const HklVector *hkl2)
+{
+	struct HklEngineHklPsiConstantVerticalW res;
+
+	res.hklW = _hklW(geometry, detector, sample, hkl);
+	res.Qn = res.hklW.Q;
+	res.status = hkl_vector_normalize(&res.Qn);
+	/* if |Q| > epsilon ok */
+	if (res.status){
+		res.hkl2W = _hklW(geometry, detector, sample, hkl2);
+
+		/* project hkl on the plan of normal Q */
+		res.hkl = res.hkl2W.hkl;
+		hkl_vector_project_on_plan(&res.hkl, &res.Qn);
+
+		/* compute n the intersection of the plan P(kf, ki) and PQ (normal Q) */
+		res.n = res.hklW.kf;
+		hkl_vector_vectorial_product(&res.n, &res.hklW.ki);
+		hkl_vector_vectorial_product(&res.n, &res.Qn);
+
+		/* compute psi */
+		res.psi = hkl_vector_oriented_angle(&res.n, &res.hkl, &res.Qn);
+	}
+
+	return res;
+}
+
 /**
  * psi_constant_vertical_func: (skip)
  * @x:
@@ -645,67 +699,49 @@ int _psi_constant_vertical_func(gsl_vector const *x, void *params, gsl_vector *f
 {
 	CHECK_NAN(x->data, x->size);
 
-	HklVector Q;
 	HklEngine *engine = params;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
-	const HklVector Hkl = {
+	const HklVector hkl = {
 		.data = {
 			engine_hkl->h->_value,
 			engine_hkl->k->_value,
 			engine_hkl->l->_value,
 		},
 	};
+	const HklVector hkl2 = {
+		.data = {
+			darray_item(engine->mode->parameters, 0)->_value,
+			darray_item(engine->mode->parameters, 1)->_value,
+			darray_item(engine->mode->parameters, 2)->_value,
+		},
+	};
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x->data);
 
-	const struct HklEngineHklInternalW hklW = _hklW(engine->geometry,
-							engine->detector,
-							engine->sample,
-							&Hkl);
-	f->data[0] = hklW.dQ.data[0];
-	f->data[1] = hklW.dQ.data[1];
-	f->data[2] = hklW.dQ.data[2];
-	f->data[3] = darray_item(engine->mode->parameters, 3)->_value;
+	const struct HklEngineHklPsiConstantVerticalW internal= _psi_constant_verticalW(engine->geometry,
+											engine->detector,
+											engine->sample,
+											&hkl, &hkl2);
+	f->data[0] = internal.hklW.dQ.data[0];
+	f->data[1] = internal.hklW.dQ.data[1];
+	f->data[2] = internal.hklW.dQ.data[2];
+	f->data[3] = darray_item(engine->mode->parameters, 3)->_value; /* expected psi */
 
-	/* if |Q| > epsilon ok */
-	Q = hklW.Q;
-	if(hkl_vector_normalize(&Q)){
-		HklVector n;
-		HklVector hkl;
-		const HklVector Hkl2 = {
-			.data = {
-				darray_item(engine->mode->parameters, 0)->_value,
-				darray_item(engine->mode->parameters, 1)->_value,
-				darray_item(engine->mode->parameters, 2)->_value,
-			},
-		};
-		const struct HklEngineHklInternalW hkl2W = _hklW(engine->geometry,
-								 engine->detector,
-								 engine->sample,
-								 &Hkl2);
-		/* project hkl on the plan of normal Q */
-		hkl = hkl2W.hkl;
-		hkl_vector_project_on_plan(&hkl, &Q);
-
-		/* compute n the intersection of the plan P(kf, ki) and PQ (normal Q) */
-		n = hklW.kf;
-		hkl_vector_vectorial_product(&n, &hklW.ki);
-		hkl_vector_vectorial_product(&n, &Q);
-
+	if(internal.status){
 #ifdef DEBUG
 		fprintf(stdout, "\n");
 		hkl_geometry_fprintf(stdout, engine->geometry);
 		fprintf(stdout, "\n");
 		fprintf(stdout, "%s n : <%f, %f, %f> hkl : <%f, %f, %f> Q : <%f, %f, %f> angle : %f\n",
 			__func__,
-			n.data[0], n.data[1], n.data[2],
-			hkl.data[0], hkl.data[1], hkl.data[2],
-			Q.data[0], Q.data[1], Q.data[2],
-			hkl_vector_oriented_angle(&n, &hkl, &Q) * HKL_RADTODEG);
+			internal.n.data[0], internal.n.data[1], internal.n.data[2],
+			internal.hkl.data[0], internal.hkl.data[1], internal.hkl.data[2],
+			internal.Qn.data[0], internal.Qn.data[1], internal.Qn.data[2],
+			internal.psi * HKL_RADTODEG);
 #endif
-		if(hkl_vector_norm2(&hkl) > HKL_EPSILON)
-			f->data[3] -=  hkl_vector_oriented_angle(&n, &hkl, &Q);
+		if(hkl_vector_norm2(&internal.hkl) > HKL_EPSILON)
+			f->data[3] -=  internal.psi;
 	}
 
 	return  GSL_SUCCESS;
@@ -730,17 +766,27 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 							int initialized,
 							GError **error)
 {
-	HklVector hkl;
-	HklVector ki, kf, Q, n;
-
 	if(initialized){
-		/* kf - ki = Q */
-		ki = hkl_geometry_ki_get(geometry);
-		kf = hkl_geometry_kf_get(geometry, detector);
-		Q = kf;
-		hkl_vector_minus_vector(&Q, &ki);
+		HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
+		const HklVector hkl = {
+			.data = {
+				engine_hkl->h->_value,
+				engine_hkl->k->_value,
+				engine_hkl->l->_value,
+			},
+		};
+		const HklVector hkl2 = {
+			.data = {
+				darray_item(engine->mode->parameters, 0)->_value,
+				darray_item(engine->mode->parameters, 1)->_value,
+				darray_item(engine->mode->parameters, 2)->_value,
+			},
+		};
 
-		if (hkl_vector_is_null(&Q)){
+		const struct HklEngineHklPsiConstantVerticalW psiW = _psi_constant_verticalW(geometry, detector, sample, &hkl, &hkl2);
+
+		/* kf - ki = Q */
+		if (hkl_vector_is_null(&psiW.hklW.Q)){
 			g_set_error(error,
 				    HKL_MODE_PSI_CONSTANT_VERTICAL_ERROR,
 				    HKL_MODE_PSI_CONSTANT_VERTICAL_ERROR_INITIALIZED_SET,
@@ -748,28 +794,7 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 				    "\nplease select a non-null hkl", self->info->name);
 			return FALSE;
 		}else{
-			const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
-
-			/* needed for a problem of precision */
-			hkl_vector_normalize(&Q);
-
-			/* compute the intersection of the plan P(kf, ki) and PQ (normal Q) */
-			n = kf;
-			hkl_vector_vectorial_product(&n, &ki);
-			hkl_vector_vectorial_product(&n, &Q);
-
-			/* compute hkl in the laboratory referentiel */
-			/* the geometry was already updated in the detector compute kf */
-			hkl.data[0] = darray_item(self->parameters, 0)->_value;
-			hkl.data[1] = darray_item(self->parameters, 1)->_value;
-			hkl.data[2] = darray_item(self->parameters, 2)->_value;
-			hkl_matrix_times_vector(&sample->UB, &hkl);
-			hkl_vector_rotated_quaternion(&hkl, &sample_holder->q);
-
-			/* project hkl on the plan of normal Q */
-			hkl_vector_project_on_plan(&hkl, &Q);
-
-			if (hkl_vector_is_null(&hkl)){
+			if (hkl_vector_is_null(&psiW.hkl)){
 				g_set_error(error,
 					    HKL_MODE_PSI_CONSTANT_VERTICAL_ERROR,
 					    HKL_MODE_PSI_CONSTANT_VERTICAL_ERROR_INITIALIZED_SET,
@@ -781,7 +806,7 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 				/* compute the angle beetween hkl and n and
 				 * store in in the fourth parameter */
 				if (!hkl_parameter_value_set(darray_item(self->parameters, 3),
-							     hkl_vector_oriented_angle(&n, &hkl, &Q),
+							     psiW.psi,
 							     HKL_UNIT_DEFAULT, error))
 					return FALSE;
 			}
