@@ -576,6 +576,18 @@ static const struct HklEngineHklDoubleDiffractionInternalW _double_diffractionW(
 	return res;
 }
 
+static HklVector reciprocal_plan2(const HklMode *mode)
+{
+	const HklVector hkl2 = {
+		.data = {
+			darray_item(mode->parameters, 0)->_value,
+			darray_item(mode->parameters, 1)->_value,
+			darray_item(mode->parameters, 2)->_value,
+		},
+	};
+	return hkl2;
+}
+
 /**
  * double_diffraction: (skip)
  * @x:
@@ -591,13 +603,7 @@ int _double_diffraction(double const x[], void *params, double f[])
 	HklEngine *engine = params;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
 	const HklVector hkl1 = reciprocal_plan(engine_hkl);
-	const HklVector hkl2 = {
-		.data = {
-			darray_item(engine->mode->parameters, 0)->_value,
-			darray_item(engine->mode->parameters, 1)->_value,
-			darray_item(engine->mode->parameters, 2)->_value,
-		},
-	};
+	const HklVector hkl2 = reciprocal_plan2(engine->mode);
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x);
@@ -696,13 +702,7 @@ int _psi_constant_vertical_func(gsl_vector const *x, void *params, gsl_vector *f
 	HklEngine *engine = params;
 	HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
 	const HklVector hkl = reciprocal_plan(engine_hkl);
-	const HklVector hkl2 = {
-		.data = {
-			darray_item(engine->mode->parameters, 0)->_value,
-			darray_item(engine->mode->parameters, 1)->_value,
-			darray_item(engine->mode->parameters, 2)->_value,
-		},
-	};
+	const HklVector hkl2 = reciprocal_plan2(engine->mode);
 
 	/* update the workspace from x; */
 	set_geometry_axes(engine, x->data);
@@ -757,13 +757,7 @@ int hkl_mode_initialized_set_psi_constant_vertical_real(HklMode *self,
 	if(initialized){
 		HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
 		const HklVector hkl = reciprocal_plan(engine_hkl);
-		const HklVector hkl2 = {
-			.data = {
-				darray_item(engine->mode->parameters, 0)->_value,
-				darray_item(engine->mode->parameters, 1)->_value,
-				darray_item(engine->mode->parameters, 2)->_value,
-			},
-		};
+		const HklVector hkl2 = reciprocal_plan2(engine->mode);
 
 		const struct HklEngineHklPsiConstantVerticalW psiW = _psi_constant_verticalW(geometry, detector, sample, &hkl, &hkl2);
 
