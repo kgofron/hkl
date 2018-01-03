@@ -837,6 +837,32 @@ static double expected_emergence(const HklModeAutoHklEmergenceFixed *mode){
 	return mode->emergence->_value;
 }
 
+struct HklEngineHklEmergenceFixedW {
+	struct HklEngineHklInternalW hklW;
+	HklVector n; /* the surface orientation */
+	double emergence; /* the computed emergence */
+};
+
+struct HklEngineHklEmergenceFixedW _emergence_fixedW(const HklGeometry *geometry,
+						     const HklDetector *detector,
+						     const HklSample *sample,
+						     const HklVector *hkl,
+						     const HklVector *n)
+{
+	struct HklEngineHklEmergenceFixedW res;
+	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+
+	res.hklW = _hklW(geometry, detector, sample, hkl);
+
+	/* compute the orientation of the surface */
+	res.n = *n;
+	hkl_vector_rotated_quaternion(&res.n, &sample_holder->q);
+
+	res.emergence = _emergence(&res.n, &res.hklW.kf);
+
+	return res;
+}
+
 static int hkl_mode_hkl_emergence_fixed_initialized_set_real(HklMode *self,
 							     HklEngine *engine,
 							     HklGeometry *geometry,
@@ -846,9 +872,9 @@ static int hkl_mode_hkl_emergence_fixed_initialized_set_real(HklMode *self,
 							     GError **error)
 {
 	const HklModeAutoHklEmergenceFixed *mode = container_of(self, HklModeAutoHklEmergenceFixed, parent);
-	HklVector kf;
-	HklVector n = surface(mode);
-	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
+	const HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
+	const HklVector hkl = reciprocal_plan(engine_hkl);
+	const HklVector n = surface(mode);
 
 	/* first check the parameters */
 	if (hkl_vector_is_null(&n)){
@@ -859,13 +885,9 @@ static int hkl_mode_hkl_emergence_fixed_initialized_set_real(HklMode *self,
 		return FALSE;
 	}
 
-	/* compute the orientation of the surface */
-	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
-
-	kf = hkl_geometry_kf_get(geometry, detector);
-
 	/* compute emergence and keep it */
-	mode->emergence->_value = _emergence(&n, &kf);
+	const struct HklEngineHklEmergenceFixedW emergence_fixedW = _emergence_fixedW(geometry, detector, sample, &hkl, &n);
+	mode->emergence->_value = emergence_fixedW.emergence;
 
 	self->initialized = initialized;
 
@@ -875,26 +897,26 @@ static int hkl_mode_hkl_emergence_fixed_initialized_set_real(HklMode *self,
 
 int _emergence_fixed_func(const gsl_vector *x, void *params, gsl_vector *f)
 {
-	HklEngine *engine = params;
-	HklModeAutoHklEmergenceFixed *mode = container_of(engine->mode,
-							  HklModeAutoHklEmergenceFixed,
-							  parent);
-	HklGeometry *geometry = engine->geometry;
-	const HklDetector *detector = engine->detector;
-	const HklSample *sample = engine->sample;
-	HklVector n = surface(mode);
-	HklVector kf;
-	const HklHolder *sample_holder = hkl_geometry_sample_holder_get(geometry, sample);
-
 	CHECK_NAN(x->data, x->size);
 
-	RUBh_minus_Q(x->data, params, f->data);
+	HklEngine *engine = params;
+	const HklEngineHkl *engine_hkl = container_of(engine, HklEngineHkl, engine);
+	const HklModeAutoHklEmergenceFixed *mode = container_of(engine->mode, HklModeAutoHklEmergenceFixed, parent);
+	const HklVector hkl = reciprocal_plan(engine_hkl);
+	const HklVector n = surface(mode);
 
-	/* compute the orientation of the surface */
-	hkl_vector_rotated_quaternion(&n, &sample_holder->q);
-	kf = hkl_geometry_kf_get(geometry, detector);
+	/* update the workspace from x; */
+	set_geometry_axes(engine, x->data);
 
-	f->data[3] = expected_emergence(mode) - _emergence(&n, &kf);
+	const struct HklEngineHklEmergenceFixedW emergence_fixedW = _emergence_fixedW(engine->geometry,
+										      engine->detector,
+										      engine->sample,
+										      &hkl, &n);
+
+	f->data[0] = emergence_fixedW.hklW.dQ.data[0];
+	f->data[1] = emergence_fixedW.hklW.dQ.data[1];
+	f->data[2] = emergence_fixedW.hklW.dQ.data[2];
+	f->data[3] = expected_emergence(mode) - emergence_fixedW.emergence;
 
 	return  GSL_SUCCESS;
 }
