@@ -35,8 +35,8 @@ release:
 	git clean -xdf
 	git fetch
 	git checkout next
-#cd scripts && ./clean-all
-#git commit -a -m "pre-release"
+	cd scripts && ./clean-all
+	-git commit -a -m "pre-release"
 	git checkout maint
 	git merge -m "release" next
 	./autogen.sh
