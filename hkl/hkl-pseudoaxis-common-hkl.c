@@ -425,8 +425,6 @@ int hkl_mode_set_hkl_real(HklMode *self,
 			HklGeometry *geom = hkl_geometry_new_copy(item->geometry);
 			HklHolder *sample_holder = hkl_geometry_sample_holder_get(geom, sample);
 
-			geom = hkl_geometry_new_copy(item->geometry);
-
 			/* get the Q vector kf - ki */
 			ki = hkl_geometry_ki_get(geom);
 			q = hkl_geometry_kf_get(geom, detector);
@@ -458,8 +456,10 @@ int hkl_mode_set_hkl_real(HklMode *self,
 			/* TODO parameter list for geometry */
 			if(!hkl_parameter_value_set(&axis->parameter,
 						    hkl_parameter_value_get(&axis->parameter, HKL_UNIT_DEFAULT) + angle,
-						    HKL_UNIT_DEFAULT, error))
+						    HKL_UNIT_DEFAULT, error)){
+				hkl_geometry_free(geom);
 				return FALSE;
+			}
 			hkl_geometry_update(geom);
 #ifdef DEBUG
 			fprintf(stdout, "\n- try to add a solution by rotating Q <%f, %f, %f> around the \"%s\" axis <%f, %f, %f> of %f radian",
