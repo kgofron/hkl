@@ -130,7 +130,7 @@ int hkl_engine_pseudo_axis_values_get(HklEngine *self,
 		g_set_error(error,
 			    HKL_ENGINE_ERROR,
 			    HKL_ENGINE_ERROR_PSEUDO_AXIS_VALUES_GET,
-			    "cannot get engine pseudo axes, wrong number of parameter (%d) given, (%d) expected\n",
+			    "cannot get engine pseudo axes, wrong number of parameter (%zd) given, (%zd) expected\n",
 			    n_values, darray_size(self->info->pseudo_axes));
 		return FALSE;
 	}
@@ -178,7 +178,7 @@ HklGeometryList *hkl_engine_pseudo_axis_values_set(HklEngine *self,
 		g_set_error(error,
 			    HKL_ENGINE_ERROR,
 			    HKL_ENGINE_ERROR_PSEUDO_AXIS_VALUES_SET,
-			    "cannot set engine pseudo axes, wrong number of parameter (%d) given, (%d) expected\n",
+			    "cannot set engine pseudo axes, wrong number of parameter (%zd) given, (%zd) expected\n",
 			    n_values,  darray_size(self->info->pseudo_axes));
 		goto out;
 	}

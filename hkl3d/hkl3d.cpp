@@ -368,7 +368,7 @@ static void hkl3d_model_delete_object(Hkl3DModel *self, Hkl3DObject *object)
 
 void hkl3d_model_fprintf(FILE *f, const Hkl3DModel *self)
 {
-	fprintf(f, "config (%d):\n", self->len);
+	fprintf(f, "config (%zd):\n", self->len);
 	for(size_t i=0; i<self->len; ++i)
 		hkl3d_object_fprintf(f, self->objects[i]);
 }
@@ -457,7 +457,7 @@ static void hkl3d_config_add_model(Hkl3DConfig *self, Hkl3DModel *model)
 
 void hkl3d_config_fprintf(FILE *f, const Hkl3DConfig *self)
 {
-	fprintf(f, "models (%d):\n", self->len);
+	fprintf(f, "models (%zd):\n", self->len);
 	for(size_t i=0; i<self->len; ++i)
 		hkl3d_model_fprintf(f, self->models[i]);
 }
@@ -537,7 +537,7 @@ static void hkl3d_axis_fprintf(FILE *f, const Hkl3DAxis *self)
 	if(!f || !self)
 		return;
 
-	fprintf(f, "Axis len : %d\n", self->len);
+	fprintf(f, "Axis len : %zd\n", self->len);
 	for(size_t i=0; i<self->len; ++i)
 		hkl3d_object_fprintf(f, self->objects[i]);
 }

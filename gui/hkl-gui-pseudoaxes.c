@@ -372,13 +372,13 @@ cellrendererspin2_edited_cb (GtkCellRendererText* renderer,
 				    PSEUDO_COL_IDX, &idx,
 				    -1);
 		values[idx] = new_value;
-		hkl_engine_parameters_values_set(priv->engine, values, n_values, HKL_UNIT_USER, NULL);
-
-		/* set the store */
-		gtk_list_store_set (priv->store_mode_parameter,
-				    &iter,
-				    PSEUDO_COL_VALUE, new_value,
-				    -1);
+		if(hkl_engine_parameters_values_set(priv->engine, values, n_values, HKL_UNIT_USER, NULL)){
+			/* set the store */
+			gtk_list_store_set (priv->store_mode_parameter,
+					    &iter,
+					    PSEUDO_COL_VALUE, new_value,
+					    -1);
+		}
 	}
 }
 

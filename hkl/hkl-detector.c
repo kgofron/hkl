@@ -125,6 +125,6 @@ int hkl_detector_compute_kf(HklDetector const *self, HklGeometry *g,
  **/
 void hkl_detector_fprintf(FILE *f, const HklDetector *self)
 {
-	fprintf(f, "detector->idx: %d\n", self->idx);
+	fprintf(f, "detector->idx: %zd\n", self->idx);
 	fprintf(f, "detector->holder: %p\n", self->holder);
 }

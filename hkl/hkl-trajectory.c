@@ -116,10 +116,10 @@ void hkl_trajectory_stats_fprintf(FILE *f, const HklTrajectoryStats *self)
 	size_t *p;
 	double *v;
 
-	fprintf(f, "Number of points of the trajectory: %d\n", self->n);
+	fprintf(f, "Number of points of the trajectory: %zd\n", self->n);
 	fprintf(f, "Solutions per points:");
 	darray_foreach(p, self->nb_solutions){
-		fprintf(f, " %d", *p);
+		fprintf(f, " %zd", *p);
 	}
 	fprintf(f, "\n");
 	fprintf(f, "Axes minium:");

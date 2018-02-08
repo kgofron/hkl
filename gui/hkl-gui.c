@@ -785,7 +785,8 @@ static void
 set_up_diffractometer_model (HklGuiWindow* self)
 {
 	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
-	unsigned int i, n;
+	unsigned int i;
+	size_t n;
 	HklFactory **factories;
 
 	g_return_if_fail (self != NULL);
