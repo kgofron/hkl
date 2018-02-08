@@ -1244,7 +1244,6 @@ void hkl_geometry_list_multiply_from_range(HklGeometryList *self)
 {
 	uint i;
 	uint len = self->n_items;
-	size_t j = 0;
 	const HklGeometryListItem *item;
 
 	if(!self)
@@ -1261,6 +1260,7 @@ void hkl_geometry_list_multiply_from_range(HklGeometryList *self)
 		HklGeometry *geometry;
 		HklParameter **axis;
 		int *perm;
+		size_t j = 0;
 
 		geometry = hkl_geometry_new_copy(item->geometry);
 		perm = alloca(darray_size(geometry->axes) * sizeof(*perm));
