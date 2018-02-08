@@ -7,7 +7,7 @@
 
 #include <hkl/ccan/generator/generator.h>
 
-#define DEFAULT_STATE_SIZE	8192
+#define DEFAULT_STATE_SIZE	(8192*4)
 #define STATE_ALIGN		ALIGNOF(struct generator_)
 
 static size_t generator_metasize(size_t retsize)
