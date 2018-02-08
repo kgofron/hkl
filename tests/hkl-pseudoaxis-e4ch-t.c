@@ -384,7 +384,6 @@ static void petra3_p01(void)
 	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 4, 1, 1, 4, 30, mode);
 	solutions = Trajectory_solve(tconfig1, gconfig, sample, TRUE);
 	res &= DIAG(NULL != solutions);
-	hkl_geometry_list_fprintf(stdout, solutions);
 	hkl_geometry_list_free(solutions);
 
 	ok(res == TRUE, __func__);
