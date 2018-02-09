@@ -193,14 +193,13 @@ static void q(void)
 
 		res &= DIAG(hkl_engine_current_mode_set(engine, *mode, NULL));
 		for(q=-1.; q<1.; q += 0.1){
-			HklGeometryList *geometries;
+			HklGeometryList *geometries = NULL;
 
 			geometries = hkl_engine_set_values_v(engine, q, NULL);
-			if(geometries){
+			if(NULL != geometries){
 				const HklGeometryListItem *item;
 
 				HKL_GEOMETRY_LIST_FOREACH(item, geometries){
-					hkl_engine_set_values_v(engine, 0.);
 					hkl_geometry_set(geometry,
 							 hkl_geometry_list_item_geometry_get(item));
 					res &= DIAG(check_pseudoaxes_v(engine, q));

@@ -203,6 +203,7 @@ static void get_value_closest(void)
 								       axis2),
 		  HKL_EPSILON, __func__);
 
+	hkl_parameter_free(axis2);
 	hkl_parameter_free(axis1);
 }
 
