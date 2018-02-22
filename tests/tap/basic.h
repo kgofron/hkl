@@ -124,24 +124,24 @@ void diag_file_remove(const char *file)
 
 /* Allocate memory, reporting a fatal error with bail on failure. */
 void *bcalloc(size_t, size_t)
-	__attribute__((__alloc_size__(1, 2), __malloc__, __warn_unused_result__));
+__attribute__((__alloc_size__(1, 2), __malloc__, __warn_unused_result__));
 void *bmalloc(size_t)
-	__attribute__((__alloc_size__(1), __malloc__, __warn_unused_result__));
+__attribute__((__alloc_size__(1), __malloc__, __warn_unused_result__));
 void *breallocarray(void *, size_t, size_t)
-	__attribute__((__alloc_size__(2, 3), __malloc__, __warn_unused_result__));
+__attribute__((__alloc_size__(2, 3), __malloc__, __warn_unused_result__));
 void *brealloc(void *, size_t)
-	__attribute__((__alloc_size__(2), __malloc__, __warn_unused_result__));
+__attribute__((__alloc_size__(2), __malloc__, __warn_unused_result__));
 char *bstrdup(const char *)
-	__attribute__((__malloc__, __nonnull__, __warn_unused_result__));
+__attribute__((__malloc__, __nonnull__, __warn_unused_result__));
 char *bstrndup(const char *, size_t)
-	__attribute__((__malloc__, __nonnull__, __warn_unused_result__));
+__attribute__((__malloc__, __nonnull__, __warn_unused_result__));
 
 /*
  * Find a test file under BUILD or SOURCE, returning the full path.  The
  * returned path should be freed with test_file_path_free().
  */
 char *test_file_path(const char *file)
-	__attribute__((__malloc__, __nonnull__, __warn_unused_result__));
+__attribute__((__malloc__, __nonnull__, __warn_unused_result__));
 void test_file_path_free(char *path);
 
 /*
@@ -149,7 +149,7 @@ void test_file_path_free(char *path);
  * returned path should be freed with test_tmpdir_free.
  */
 char *test_tmpdir(void)
-	__attribute__((__malloc__, __warn_unused_result__));
+__attribute__((__malloc__, __warn_unused_result__));
 void test_tmpdir_free(char *path);
 
 /*
@@ -164,7 +164,7 @@ void test_tmpdir_free(char *path);
  */
 typedef void (*test_cleanup_func)(int, int);
 void test_cleanup_register(test_cleanup_func)
-	__attribute__((__nonnull__));
+__attribute__((__nonnull__));
 
 END_DECLS
 
