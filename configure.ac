@@ -226,6 +226,7 @@ AC_CONFIG_FILES([Makefile
 		 data/Makefile
 		 contrib/Makefile
 		 contrib/sixs/Makefile
+		 contrib/petra3/Makefile
 ])
 
 AC_OUTPUT

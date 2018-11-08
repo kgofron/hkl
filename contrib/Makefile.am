@@ -1,1 +1,1 @@
-SUBDIRS = sixs
+SUBDIRS = sixs petra3
