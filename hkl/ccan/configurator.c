@@ -382,7 +382,7 @@ static struct test tests[] = {
 	  "	void *cq = (void *)(~((ptrdiff_t)cp));\n"
 	  "	if ((p == cp) && (q == cq))\n"
 	  "		worked = 1;\n"
-	  "	setcontext(&b);\n"
+	  "	swapcontext(&a, &b);\n"
 	  "}\n"
 	  "int main(void) {\n"
 	  "	void *ap = &worked;\n"
