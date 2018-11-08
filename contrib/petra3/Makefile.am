@@ -16,3 +16,10 @@ LDADD = \
 	$(GSL_LIBS)
 
 noinst_PROGRAMS = hkl_calculations
+
+# Support for GNU Flymake, in Emacs.
+check-syntax: AM_CFLAGS += -fsyntax-only -pipe
+check-syntax:
+	test -z "$(CHK_SOURCES)" || $(COMPILE) $(CHK_SOURCES)
+
+.PHONY: check-syntax
