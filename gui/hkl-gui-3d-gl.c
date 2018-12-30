@@ -429,7 +429,6 @@ static inline void gl_draw_objects(G3DGLRenderOptions *options,
 	GSList *olist;
 	int i;
 	G3DObject *object;
-	gboolean dont_render;
 	gboolean init = TRUE;
 
 	olist = objects;
@@ -437,8 +436,6 @@ static inline void gl_draw_objects(G3DGLRenderOptions *options,
 	{
 		object = (G3DObject *)olist->data;
 		olist = olist->next;
-
-		dont_render = FALSE;
 
 		/* don't render invisible objects */
 		if(object->hide) continue;
