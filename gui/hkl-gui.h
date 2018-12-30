@@ -28,25 +28,6 @@
 #include "hkl-gui-pseudoaxes.h"
 
 #define HKL_GUI_TYPE_WINDOW (hkl_gui_window_get_type ())
-#define HKL_GUI_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), HKL_GUI_TYPE_WINDOW, HklGuiWindow))
-#define HKL_GUI_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), HKL_GUI_TYPE_WINDOW, HklGuiWindowClass))
-#define HKL_GUI_IS_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HKL_GUI_TYPE_WINDOW))
-#define HKL_GUI_IS_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HKL_GUI_TYPE_WINDOW))
-#define HKL_GUI_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), HKL_GUI_TYPE_WINDOW, HklGuiWindowClass))
-
-typedef struct _HklGuiWindow HklGuiWindow;
-typedef struct _HklGuiWindowClass HklGuiWindowClass;
-typedef struct _HklGuiWindowPrivate HklGuiWindowPrivate;
-
-struct _HklGuiWindow {
-	GObject parent_instance;
-	HklGuiWindowPrivate * priv;
-};
-
-struct _HklGuiWindowClass {
-	GObjectClass parent_class;
-};
-
-GType hkl_gui_window_get_type (void) G_GNUC_CONST;
+G_DECLARE_FINAL_TYPE (HklGuiWindow, hkl_gui_window, HKL_GUI, WINDOW, GObject)
 
 HklGuiWindow* hkl_gui_window_new (void);

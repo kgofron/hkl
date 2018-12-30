@@ -30,17 +30,6 @@
 
 G_BEGIN_DECLS
 
-#define HKL_GUI_TYPE_ENGINE            (hkl_gui_engine_get_type ())
-#define HKL_GUI_ENGINE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HKL_GUI_TYPE_ENGINE, HklGuiEngine))
-#define HKL_GUI_ENGINE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), HKL_GUI_TYPE_ENGINE, HklGuiEngineClass))
-#define HKL_GUI_IS_ENGINE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HKL_GUI_TYPE_ENGINE))
-#define HKL_GUI_IS_ENGINE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HKL_GUI_TYPE_ENGINE))
-#define HKL_GUI_ENGINE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HKL_GUI_TYPE_ENGINE, HklGuiEngineClass))
-
-typedef struct _HklGuiEngine HklGuiEngine;
-typedef struct _HklGuiEngineClass HklGuiEngineClass;
-typedef struct _HklGuiEnginePrivate HklGuiEnginePrivate;
-
 typedef enum  {
 	MODE_COL_NAME = 0,
 	MODE_COL_NUM_COLS
@@ -53,18 +42,8 @@ typedef enum  {
 	PSEUDO_COL_NUM_COLS
 } PseudoCol;
 
-struct _HklGuiEngine {
-	GObject parent_instance;
-
-	/*< private >*/
-	HklGuiEnginePrivate * priv;
-};
-
-struct _HklGuiEngineClass {
-	GObjectClass parent_class;
-};
-
-GType hkl_gui_engine_get_type (void) G_GNUC_CONST;
+#define HKL_GUI_TYPE_ENGINE (hkl_gui_engine_get_type ())
+G_DECLARE_FINAL_TYPE (HklGuiEngine, hkl_gui_engine, HKL_GUI, ENGINE, GObject)
 
 HklGuiEngine* hkl_gui_engine_new (HklEngine* engine);
 

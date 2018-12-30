@@ -27,19 +27,8 @@
 G_BEGIN_DECLS
 
 /* HklGui3D */
-
-#define HKL_GUI_TYPE_3D            (hkl_gui_3d_get_type ())
-#define HKL_GUI_3D(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), HKL_GUI_TYPE_3D, HklGui3D))
-#define HKL_GUI_3D_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), HKL_GUI_TYPE_3D, HklGui3DClass))
-#define HKL_GUI_IS_3D(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HKL_GUI_TYPE_3D))
-#define HKL_GUI_IS_3D_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HKL_GUI_TYPE_3D))
-#define HKL_GUI_3D_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HKL_GUI_TYPE_3D, HklGuiEngineClass))
-
-typedef struct _HklGui3D HklGui3D;
-typedef struct _HklGui3DClass HklGui3DClass;
-typedef struct _HklGui3DPrivate HklGui3DPrivate;
-
-GType hkl_gui_3d_get_type (void) G_GNUC_CONST;
+#define HKL_GUI_TYPE_3D (hkl_gui_3d_get_type ())
+G_DECLARE_FINAL_TYPE (HklGui3D, hkl_gui_3d, HKL_GUI, 3D, GObject)
 
 HklGui3D *hkl_gui_3d_new (const char *filename, HklGeometry *geometry);
 

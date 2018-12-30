@@ -40,17 +40,6 @@
 #endif
 #include "hkl-gui-pseudoaxes.h"
 
-#define HKL_GUI_TYPE_WINDOW (hkl_gui_window_get_type ())
-#define HKL_GUI_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), HKL_GUI_TYPE_WINDOW, HklGuiWindow))
-#define HKL_GUI_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), HKL_GUI_TYPE_WINDOW, HklGuiWindowClass))
-#define HKL_GUI_IS_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HKL_GUI_TYPE_WINDOW))
-#define HKL_GUI_IS_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HKL_GUI_TYPE_WINDOW))
-#define HKL_GUI_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), HKL_GUI_TYPE_WINDOW, HklGuiWindowClass))
-
-#define EMBED_BREAKPOINT  asm volatile ("int3;")
-
-G_DEFINE_TYPE (HklGuiWindow, hkl_gui_window, G_TYPE_OBJECT);
-
 typedef enum  {
 	REFLECTION_COL_INDEX = 0,
 	REFLECTION_COL_H,
@@ -208,6 +197,8 @@ diffractometer_set_solution(struct diffractometer_t *self,
 /* HklGuiWindow */
 /****************/
 
+typedef struct _HklGuiWindowPrivate HklGuiWindowPrivate;
+
 struct _HklGuiWindowPrivate {
 	GtkBuilder* builder;
 	GtkLabel* label_UB11;
@@ -307,6 +298,15 @@ struct _HklGuiWindowPrivate {
 	HklSample *sample; /* unowned */
 	HklLattice *reciprocal;
 };
+
+
+struct _HklGuiWindow {
+	GObject parent_instance;
+	HklGuiWindowPrivate * priv;
+};
+
+
+G_DEFINE_TYPE_WITH_PRIVATE (HklGuiWindow, hkl_gui_window, G_TYPE_OBJECT);
 
 #define HKL_GUI_WINDOW_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), HKL_GUI_TYPE_WINDOW, HklGuiWindowPrivate))
 
@@ -2329,8 +2329,6 @@ static void
 hkl_gui_window_class_init (HklGuiWindowClass *class)
 {
 	GObjectClass *gobject_class = G_OBJECT_CLASS (class);
-
-	g_type_class_add_private (class, sizeof (HklGuiWindowPrivate));
 
 	/* virtual method */
 	gobject_class->finalize = finalize;

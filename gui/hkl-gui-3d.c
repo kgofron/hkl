@@ -71,18 +71,7 @@ enum {
 
 static NEEDED guint signals[N_SIGNALS] = { 0 };
 
-
-struct _HklGui3D {
-	GObject parent_instance;
-
-	/*< private >*/
-	HklGui3DPrivate * priv;
-};
-
-struct _HklGui3DClass {
-	GObjectClass parent_class;
-
-};
+typedef struct _HklGui3DPrivate HklGui3DPrivate;
 
 struct _HklGui3DPrivate {
 	/* Properties */
@@ -115,7 +104,12 @@ struct _HklGui3DPrivate {
 	gboolean aabb;
 };
 
-G_DEFINE_TYPE (HklGui3D, hkl_gui_3d, G_TYPE_OBJECT);
+struct _HklGui3D {
+	GObject parent_instance;
+	HklGui3DPrivate * priv;
+};
+
+G_DEFINE_TYPE_WITH_PRIVATE (HklGui3D, hkl_gui_3d, G_TYPE_OBJECT);
 
 #define HKL_GUI_3D_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), HKL_GUI_TYPE_3D, HklGui3DPrivate))
 
@@ -1042,8 +1036,6 @@ static void
 hkl_gui_3d_class_init (HklGui3DClass *class)
 {
 	GObjectClass *gobject_class = G_OBJECT_CLASS (class);
-
-	g_type_class_add_private (class, sizeof (HklGui3DPrivate));
 
 	/* virtual method */
 	gobject_class->finalize = finalize;

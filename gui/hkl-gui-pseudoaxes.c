@@ -29,8 +29,6 @@
 #include <float.h>
 #include <math.h>
 
-G_DEFINE_TYPE (HklGuiEngine, hkl_gui_engine, G_TYPE_OBJECT);
-
 enum {
 	PROP_0,
 
@@ -51,6 +49,8 @@ enum {
 
 static guint signals[N_SIGNALS] = { 0 };
 
+typedef struct _HklGuiEnginePrivate HklGuiEnginePrivate;
+
 struct _HklGuiEnginePrivate {
 	/* Properties */
 	HklEngine* engine;
@@ -68,6 +68,16 @@ struct _HklGuiEnginePrivate {
 	GtkListStore* store_pseudo;
 	GtkListStore* store_mode_parameter;
 };
+
+struct _HklGuiEngine {
+	GObject parent_instance;
+
+	/*< private >*/
+	HklGuiEnginePrivate * priv;
+};
+
+G_DEFINE_TYPE_WITH_PRIVATE (HklGuiEngine, hkl_gui_engine, G_TYPE_OBJECT);
+
 
 #define HKL_GUI_ENGINE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), HKL_GUI_TYPE_ENGINE, HklGuiEnginePrivate))
 
@@ -385,8 +395,6 @@ cellrendererspin2_edited_cb (GtkCellRendererText* renderer,
 static void hkl_gui_engine_class_init (HklGuiEngineClass * class)
 {
 	GObjectClass *gobject_class = G_OBJECT_CLASS (class);
-
-	g_type_class_add_private (class, sizeof (HklGuiEnginePrivate));
 
 	/* virtual methods */
 	gobject_class->finalize = finalize;
