@@ -46,8 +46,10 @@
 	} while(0)
 
 /* use for the printf format methods took from glib */
-#define G_GNUC_PRINTF( format_idx, arg_idx )				\
-	__attribute__((__format__ (__printf__, format_idx, arg_idx)))
+#if !defined(G_GNUC_PRINTF)
+# define G_GNUC_PRINTF( format_idx, arg_idx )				\
+	 __attribute__((__format__ (__printf__, format_idx, arg_idx)))
+#endif
 
 /* use for the hkl_list */
 #define alloc_nr(x) (((x)+16)*3/2)
