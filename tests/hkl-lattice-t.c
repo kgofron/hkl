@@ -51,13 +51,13 @@
 	}while(0);
 \
 #define SET_LATTICE(_lattice, _a, _b, _c, _alpha, _beta, _gamma) do{	\
-								 SET_PARAM(_lattice, a, _a);						\
-								 SET_PARAM(_lattice, b, _b);						\
-								 SET_PARAM(_lattice, c, _c);						\
-								 SET_PARAM(_lattice, alpha, _alpha);					\
-								 SET_PARAM(_lattice, beta, _beta);					\
-								 SET_PARAM(_lattice, gamma, _gamma);					\
-								 }while(0);
+	SET_PARAM(_lattice, a, _a);						\
+	SET_PARAM(_lattice, b, _b);						\
+	SET_PARAM(_lattice, c, _c);						\
+	SET_PARAM(_lattice, alpha, _alpha);					\
+	SET_PARAM(_lattice, beta, _beta);					\
+	SET_PARAM(_lattice, gamma, _gamma);					\
+}while(0);
 
 static void new(void)
 {

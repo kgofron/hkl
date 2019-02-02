@@ -42,15 +42,15 @@ extern void hkl_trajectory_add_geometry(HklTrajectoryResult *self, const HklGeom
 typedef darray(double) darray_double;
 typedef darray(size_t) darray_sizet;
 
-		       typedef struct _HklTrajectoryStats HklTrajectoryStats;
+typedef struct _HklTrajectoryStats HklTrajectoryStats;
 
-		       struct _HklTrajectoryStats {
-			       size_t n;
-			       darray_sizet nb_solutions;
-			       darray_double axes_min;
-			       darray_double axes_max;
-			       darray_double axes_range;
-		       };
+struct _HklTrajectoryStats {
+	size_t n;
+	darray_sizet nb_solutions;
+	darray_double axes_min;
+	darray_double axes_max;
+	darray_double axes_range;
+};
 
 extern HklTrajectoryStats *hkl_trajectory_stats_new(int n);
 

@@ -30,7 +30,7 @@ G_BEGIN_DECLS
 #define HKL_GUI_TYPE_3D (hkl_gui_3d_get_type ())
 G_DECLARE_FINAL_TYPE (HklGui3D, hkl_gui_3d, HKL_GUI, 3D, GObject)
 
-HklGui3D *hkl_gui_3d_new (const char *filename, HklGeometry *geometry);
+	HklGui3D *hkl_gui_3d_new (const char *filename, HklGeometry *geometry);
 
 void hkl_gui_3d_is_colliding(HklGui3D *self);
 

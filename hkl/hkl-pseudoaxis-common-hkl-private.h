@@ -143,7 +143,7 @@ static const HklFunction psi_constant_vertical_func = {
 			.description = "expected angle between the reference and the diffraction plans", \
 			}
 
-static const HklParameter constant_omega_parameters[] = { CONSTANT_PARAMETER(omega) };
+	static const HklParameter constant_omega_parameters[] = { CONSTANT_PARAMETER(omega) };
 static const HklParameter constant_chi_parameters[] = { CONSTANT_PARAMETER(chi) };
 static const HklParameter constant_phi_parameters[] = { CONSTANT_PARAMETER(phi) };
 
