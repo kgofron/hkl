@@ -129,7 +129,7 @@ static void xy_save_as_dat(XY *xy, const char *filename)
 	fclose(f);
 }
 
-int main(void)
+int main_1(void)
 {
 	uint i;
 	HklGeometryList *solutions;
@@ -203,6 +203,48 @@ int main(void)
 
 	xy_save_as_dat(&plot, "traj_n.dat");
 	xy_free(&plot);
+
+	return 0;
+}
+
+int main_2(void)
+{
+	uint i;
+	HklGeometryList *solutions;
+	XY plot;
+
+	xy_init(&plot);
+
+	static struct Sample gaas = {
+		.name = "GaAs",
+		.lattice = Cubic(5.6533),
+		.ux = -90.1 * HKL_DEGTORAD,
+		.uy = -0.33 * HKL_DEGTORAD,
+		.uz = 11.1 * HKL_DEGTORAD,
+	};
+
+	static struct Geometry gconfig =	\
+		SoleilSiriusKappa(1.553,
+				  0.00892, 65.84862, 135.42159, 100.249, -0.26559, 66.64474);
+
+	/* Trajectory */
+	struct Mode mode = ModeHklBissectorVertical;
+	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 4, 0, 0, 2, 100, mode);
+	/* move between each step */
+	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
+	GeometryList_save_as_dat("m3-100.dat", tconfig1, solutions);
+	hkl_geometry_list_free(solutions);
+
+	xy_free(&plot);
+
+	return 0;
+}
+
+
+main(void)
+{
+	main_1();
+	main_2();
 
 	return 0;
 }
