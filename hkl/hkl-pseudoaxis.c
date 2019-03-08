@@ -649,9 +649,7 @@ void hkl_engine_fprintf(FILE *f, const HklEngine *self)
  **/
 void hkl_engine_list_free(HklEngineList *self)
 {
-	hkl_engine_list_clear(self);
-	hkl_geometry_list_free(self->geometries);
-	free(self);
+	self->ops->free(self);
 }
 
 /**

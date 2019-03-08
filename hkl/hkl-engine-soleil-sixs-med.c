@@ -552,3 +552,157 @@ static HklEngineList *hkl_engine_list_new_soleil_sixs_med_2_3(const HklFactory *
 }
 
 REGISTER_DIFFRACTOMETER(soleil_sixs_med_2_3, "SOLEIL SIXS MED2+3", HKL_GEOMETRY_TYPE_SOLEIL_SIXS_MED_2_3_DESCRIPTION);
+
+
+/**************************/
+/* SOLEIL SIXS MED 2+3 v2 */
+/**************************/
+
+static HklMode* mu_fixed_2_3_v2()
+{
+	static const char *axes_r[] = {MU, OMEGA, GAMMA, DELTA, ETA_A};
+	static const char* axes_w[] = {OMEGA, GAMMA, DELTA};
+	static const HklFunction *functions[] = {&RUBh_minus_Q_func};
+	static const HklModeAutoInfo info = {
+		HKL_MODE_AUTO_INFO("mu_fixed", axes_r, axes_w, functions),
+	};
+
+	return hkl_mode_auto_new(&info,
+				 &hkl_full_mode_operations,
+				 TRUE);
+}
+
+static HklMode* gamma_fixed_2_3_v2()
+{
+	static const char *axes_r[] = {MU, OMEGA, GAMMA, DELTA, ETA_A};
+	static const char* axes_w[] = {MU, OMEGA, DELTA};
+	static const HklFunction *functions[] = {&RUBh_minus_Q_func};
+	static const HklModeAutoInfo info = {
+		HKL_MODE_AUTO_INFO("gamma_fixed", axes_r, axes_w, functions),
+	};
+
+	return hkl_mode_auto_new(&info,
+				 &hkl_full_mode_operations,
+				 TRUE);
+}
+
+static HklMode *emergence_fixed_2_3_v2()
+{
+	static const char* axes_r[] = {MU, OMEGA, GAMMA, DELTA, ETA_A};
+	static const char* axes_w[] = {MU, OMEGA, GAMMA, DELTA};
+	static const HklFunction* functions[] = {&emergence_fixed_func};
+	static const HklParameter parameters[] = {
+		HKL_MODE_HKL_EMERGENCE_FIXED_PARAMETERS_DEFAULTS(0, 1, 0, 0),
+	};
+	static const HklModeAutoInfo info = {
+		HKL_MODE_AUTO_INFO_WITH_PARAMS("emergence_fixed", axes_r, axes_w,
+					       functions, parameters),
+	};
+
+	return hkl_mode_hkl_emergence_fixed_new(&info);
+}
+
+
+static HklEngine *hkl_engine_soleil_sixs_med_2_3_v2_hkl_new(HklEngineList *engines)
+{
+	HklEngine *self;
+	HklMode *default_mode;
+
+	self = hkl_engine_hkl_new(engines);
+
+	default_mode = mu_fixed_2_3_v2();
+	hkl_engine_add_mode(self, default_mode);
+	hkl_engine_mode_set(self, default_mode);
+
+	hkl_engine_add_mode(self, gamma_fixed_2_3_v2());
+	hkl_engine_add_mode(self, emergence_fixed_2_3_v2());
+
+	return self;
+}
+
+
+#define HKL_GEOMETRY_TYPE_SOLEIL_SIXS_MED_2_3_V2_DESCRIPTION		\
+	"+ xrays source fix allong the :math:`\\vec{x}` direction (1, 0, 0)\n" \
+	"+ 2 axes for the sample\n"					\
+	"\n"								\
+	"  + **" MU "** : rotation around the :math:`\\vec{z}` direction (0, 0, 1)\n" \
+	"  + **" OMEGA "** : rotating around the :math:`-\\vec{y}` direction (0, -1, 0)\n" \
+	"\n"								\
+	"+ 3 axis for the detector\n"					\
+	"\n"								\
+	"  + **" GAMMA "** : rotation around the :math:`\\vec{z}` direction (0, 0, 1)\n" \
+	"  + **" DELTA "** : rotation around the :math:`-\\vec{y}` direction (0, -1, 0)\n" \
+	"  + **" ETA_A "** : rotation around the :math:`-\\vec{x}` direction (-1, 0, 0)\n"
+
+static const char* hkl_geometry_soleil_sixs_med_2_3_v2_axes[] = {MU, OMEGA, GAMMA, DELTA, ETA_A};
+
+static HklGeometry *hkl_geometry_new_soleil_sixs_med_2_3_v2(const HklFactory *factory)
+{
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
+	HklHolder *h;
+
+	h = hkl_geometry_add_holder(self);
+	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, OMEGA, 0, -1, 0, &hkl_unit_angle_deg);
+
+	h = hkl_geometry_add_holder(self);
+	hkl_holder_add_rotation(h, GAMMA, 0, 0, 1, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, DELTA, 0, -1, 0, &hkl_unit_angle_deg);
+	hkl_holder_add_rotation(h, ETA_A, -1, 0, 0, &hkl_unit_angle_deg);
+
+	return self;
+}
+
+static inline int hkl_engine_list_post_engine_set_med_2_3_v2_real(HklEngineList *self)
+{
+	int res = TRUE;
+	int eta_a_rotation = darray_item(self->parameters, 0)->_value;
+
+	if(!self || !self->geometries)
+		goto out;
+
+	if(eta_a_rotation == 1){
+		uint i = 0;
+		uint len = self->geometries->n_items;
+		HklGeometryListItem *item;
+
+		/*
+		 * warning this method change the self->len so we need to save it
+		 * before using the recursive perm_r calls
+		 */
+		for(i=0, item=list_top(&self->geometries->items, HklGeometryListItem, list);
+		    i<len;
+		    ++i, item=list_next(&self->geometries->items, item, list))
+			hkl_geometry_list_multiply_soleil_sixs_med_2_3(self->geometries, item);
+	}
+out:
+	return res;
+}
+
+static HklEngineList *hkl_engine_list_new_soleil_sixs_med_2_3_v2(const HklFactory *factory)
+{
+	static const HklParameter eta_a_rotation = {
+		HKL_PARAMETER_DEFAULTS, .name = "eta_a_rotation",
+		._value = 0,
+		.description = "rotation of the detector (zaxis-like)",
+		.range = { .min=0, .max=1 },
+	};
+	static const HklParameter *parameters[] = { &eta_a_rotation };
+	static const HklEngineListInfo info = {HKL_ENGINE_LIST_INFO(parameters)};
+	static const HklEngineListOperations ops = {
+		HKL_ENGINE_LIST_OPERATIONS_DEFAULTS,
+		.post_engine_set=hkl_engine_list_post_engine_set_med_2_3_v2_real,
+	};
+	HklEngineList *self = hkl_engine_list_new_with_info(&info, &ops);
+
+	hkl_engine_soleil_sixs_med_2_3_v2_hkl_new(self);
+	hkl_engine_q2_new(self);
+	hkl_engine_qper_qpar_new(self);
+	hkl_engine_tth2_new(self);
+	hkl_engine_soleil_sixs_med_2_2_incidence_new(self);
+	hkl_engine_soleil_sixs_med_2_2_emergence_new(self);
+
+	return self;
+}
+
+REGISTER_DIFFRACTOMETER(soleil_sixs_med_2_3_v2, "SOLEIL SIXS MED2+3 v2", HKL_GEOMETRY_TYPE_SOLEIL_SIXS_MED_2_3_V2_DESCRIPTION);

@@ -43,6 +43,7 @@ typedef struct _HklMode HklMode;
 typedef struct _HklEngineInfo HklEngineInfo;
 typedef struct _HklEngineOperations HklEngineOperations;
 typedef struct _HklEngineListInfo HklEngineListInfo;
+typedef struct _HklEngineListOperations HklEngineListOperations;
 
 typedef darray(HklMode *) darray_mode;
 
@@ -274,16 +275,26 @@ struct _HklEngine
 
 
 struct _HklEngineListInfo {
-	const darray_const_parameter parameters;
+	const darray(const HklParameter *) parameters;
 };
 
 #define HKL_ENGINE_LIST_INFO_DEFAULTS .parameters = darray_new()
 #define HKL_ENGINE_LIST_INFO(_parameters) .parameters = DARRAY(_parameters)
 
+struct _HklEngineListOperations
+{
+	void (* free)(HklEngineList *self);
+	int (* post_engine_set)(HklEngineList *self);
+};
+
+#define HKL_ENGINE_LIST_OPERATIONS_DEFAULTS .free=hkl_engine_list_free_real, \
+		.post_engine_set=hkl_engine_list_post_engine_set_real
+
 struct _HklEngineList
 {
 	_darray(HklEngine *); /* must be the first memeber */
 	const HklEngineListInfo *info;
+	const HklEngineListOperations *ops;
 	HklGeometryList *geometries;
 	HklGeometry *geometry;
 	HklDetector *detector;
@@ -553,6 +564,19 @@ static inline int hkl_engine_get(HklEngine *self, GError **error)
 
 
 /**
+ * hkl_engine_list_post_process_free: (skip)
+ * @self: the #HklEngineList to modify
+ *
+ * apply a post set method.
+ **/
+static int hkl_engine_list_post_engine_set(HklEngineList *self)
+{
+	return self->ops->post_engine_set(self);
+}
+
+
+
+/**
  * hkl_engine_set: (skip)
  * @self: the HklEngine
  * @error: return location for a GError, or NULL
@@ -587,6 +611,7 @@ static inline int hkl_engine_set(HklEngine *self, GError **error)
 	hkl_assert(error == NULL || *error == NULL);
 
 	hkl_geometry_list_multiply(self->engines->geometries);
+	hkl_engine_list_post_engine_set(self->engines);
 	hkl_geometry_list_multiply_from_range(self->engines->geometries);
 	hkl_geometry_list_remove_invalid(self->engines->geometries);
 	hkl_geometry_list_sort(self->engines->geometries, self->engines->geometry);
@@ -619,71 +644,6 @@ typedef enum {
 	HKL_ENGINE_LIST_ERROR_PSEUDO_AXIS_GET_BY_NAME, /* can not set this geometry */
 } HklEngineListError;
 
-
-/**
- * hkl_engine_list_new_with_info: (skip)
- * @info: the info part of the HklEngineList
- *
- * default constructor with info part
- *
- * Returns:
- **/
-static inline HklEngineList *hkl_engine_list_new_with_info(const HklEngineListInfo *info)
-{
-	HklEngineList *self = NULL;
-	const HklParameter *parameter;
-
-	self = HKL_MALLOC(HklEngineList);
-
-	/* This code needs _darray to be at start of HklEngineList */
-	BUILD_ASSERT(offsetof(HklEngineList, item) == 0);
-	darray_init(*self);
-
-	self->info = info;
-	self->geometries = hkl_geometry_list_new();
-
-	self->geometry = NULL;
-	self->detector = NULL;
-	self->sample = NULL;
-
-	darray_init(self->pseudo_axes);
-
-	darray_init(self->parameters);
-	darray_foreach(parameter, info->parameters){
-		darray_append(self->parameters, hkl_parameter_new_copy(parameter));
-	};
-
-	return self;
-}
-
-/**
- * hkl_engine_list_new: (skip)
- *
- * default constructor
- *
- * Returns:
- **/
-static inline HklEngineList *hkl_engine_list_new(void)
-{
-	static const HklEngineListInfo info = {HKL_ENGINE_LIST_INFO_DEFAULTS};
-
-	return hkl_engine_list_new_with_info(&info);
-}
-
-
-/**
- * hkl_engine_list_new_copy: (skip)
- * @self:
- *
- * dummy copy constructor for the binding
- *
- * Returns: (transfer none): NULL all the time the structure is non-copyable
- **/
-static inline const HklEngineList *hkl_engine_list_new_copy(UNUSED const HklEngineList *self)
-{
-	return NULL;
-}
-
 /**
  * hkl_engine_list_clear: (skip)
  * @self: the engine list to clear
@@ -711,6 +671,97 @@ static inline void hkl_engine_list_clear(HklEngineList *self)
 	darray_free(self->parameters);
 }
 
+/**
+ * hkl_engine_list_free_real: (skip)
+ * @self: the #HklEngineList to destroy
+ *
+ * destructor
+ **/
+static inline void hkl_engine_list_free_real(HklEngineList *self)
+{
+	hkl_engine_list_clear(self);
+	hkl_geometry_list_free(self->geometries);
+	free(self);
+}
+
+/**
+ * hkl_engine_list_post_process_real: (skip)
+ * @self: the #HklEngineList to destroy
+ *
+ * destructor
+ **/
+static inline int hkl_engine_list_post_engine_set_real(HklEngineList *self)
+{
+	return FALSE;
+}
+
+/**
+ * hkl_engine_list_new_with_info: (skip)
+ * @info: the info part of the HklEngineList
+ *
+ * default constructor with info part
+ *
+ * Returns:
+ **/
+static inline HklEngineList *hkl_engine_list_new_with_info(const HklEngineListInfo *info,
+							   const HklEngineListOperations *ops)
+{
+	HklEngineList *self = NULL;
+	const HklParameter **parameter;
+
+	self = HKL_MALLOC(HklEngineList);
+
+	/* This code needs _darray to be at start of HklEngineList */
+	BUILD_ASSERT(offsetof(HklEngineList, item) == 0);
+	darray_init(*self);
+
+	self->info = info;
+	self->ops = ops;
+
+	self->geometries = hkl_geometry_list_new();
+
+	self->geometry = NULL;
+	self->detector = NULL;
+	self->sample = NULL;
+
+	darray_init(self->pseudo_axes);
+
+	darray_init(self->parameters);
+	darray_foreach(parameter, info->parameters){
+		darray_append(self->parameters, hkl_parameter_new_copy(*parameter));
+	};
+
+	return self;
+}
+
+/**
+ * hkl_engine_list_new: (skip)
+ *
+ * default constructor
+ *
+ * Returns:
+ **/
+static inline HklEngineList *hkl_engine_list_new(void)
+{
+	static const HklEngineListInfo info = {HKL_ENGINE_LIST_INFO_DEFAULTS};
+	static const HklEngineListOperations ops = {HKL_ENGINE_LIST_OPERATIONS_DEFAULTS};
+
+	return hkl_engine_list_new_with_info(&info, &ops);
+}
+
+
+/**
+ * hkl_engine_list_new_copy: (skip)
+ * @self:
+ *
+ * dummy copy constructor for the binding
+ *
+ * Returns: (transfer none): NULL all the time the structure is non-copyable
+ **/
+static inline const HklEngineList *hkl_engine_list_new_copy(UNUSED const HklEngineList *self)
+{
+	return NULL;
+}
 
 G_END_DECLS
 
