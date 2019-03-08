@@ -254,6 +254,7 @@ extern HklVector hkl_parameter_transformation_apply(const HklParameter *self,
 /********************/
 
 typedef darray(HklParameter *) darray_parameter;
+typedef darray(const HklParameter) darray_const_parameter;
 
 G_END_DECLS
 

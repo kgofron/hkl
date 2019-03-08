@@ -42,6 +42,7 @@ typedef struct _HklModeInfo HklModeInfo;
 typedef struct _HklMode HklMode;
 typedef struct _HklEngineInfo HklEngineInfo;
 typedef struct _HklEngineOperations HklEngineOperations;
+typedef struct _HklEngineListInfo HklEngineListInfo;
 
 typedef darray(HklMode *) darray_mode;
 
@@ -272,16 +273,24 @@ struct _HklEngine
 };
 
 
+struct _HklEngineListInfo {
+	const darray_const_parameter parameters;
+};
+
+#define HKL_ENGINE_LIST_INFO_DEFAULTS .parameters = darray_new()
+#define HKL_ENGINE_LIST_INFO(_parameters) .parameters = DARRAY(_parameters)
+
 struct _HklEngineList
 {
-	_darray(HklEngine *);
+	_darray(HklEngine *); /* must be the first memeber */
+	const HklEngineListInfo *info;
 	HklGeometryList *geometries;
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
 	darray_parameter pseudo_axes;
+	darray_parameter parameters;
 };
-
 
 #define HKL_ENGINE_ERROR hkl_engine_error_quark ()
 
@@ -612,20 +621,25 @@ typedef enum {
 
 
 /**
- * hkl_engine_list_new: (skip)
+ * hkl_engine_list_new_with_info: (skip)
+ * @info: the info part of the HklEngineList
  *
- * default constructor
+ * default constructor with info part
  *
  * Returns:
  **/
-static inline HklEngineList *hkl_engine_list_new(void)
+static inline HklEngineList *hkl_engine_list_new_with_info(const HklEngineListInfo *info)
 {
 	HklEngineList *self = NULL;
+	const HklParameter *parameter;
 
 	self = HKL_MALLOC(HklEngineList);
 
+	/* This code needs _darray to be at start of HklEngineList */
+	BUILD_ASSERT(offsetof(HklEngineList, item) == 0);
 	darray_init(*self);
 
+	self->info = info;
 	self->geometries = hkl_geometry_list_new();
 
 	self->geometry = NULL;
@@ -634,7 +648,26 @@ static inline HklEngineList *hkl_engine_list_new(void)
 
 	darray_init(self->pseudo_axes);
 
+	darray_init(self->parameters);
+	darray_foreach(parameter, info->parameters){
+		darray_append(self->parameters, hkl_parameter_new_copy(parameter));
+	};
+
 	return self;
+}
+
+/**
+ * hkl_engine_list_new: (skip)
+ *
+ * default constructor
+ *
+ * Returns:
+ **/
+static inline HklEngineList *hkl_engine_list_new(void)
+{
+	static const HklEngineListInfo info = {HKL_ENGINE_LIST_INFO_DEFAULTS};
+
+	return hkl_engine_list_new_with_info(&info);
 }
 
 
@@ -671,6 +704,11 @@ static inline void hkl_engine_list_clear(HklEngineList *self)
 		hkl_parameter_free(*parameter);
 	}
 	darray_free(self->pseudo_axes);
+
+	darray_foreach(parameter, self->parameters){
+		hkl_parameter_free(*parameter);
+	}
+	darray_free(self->parameters);
 }
 
 
