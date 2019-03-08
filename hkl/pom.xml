@@ -71,7 +71,7 @@
                            <includePath>${project.basedir}</includePath>
                            <includePath>${project.basedir}</includePath>
                            <includePath>${project.basedir}/..</includePath>
-                           <includePath>${project.basedir}/../ica/rhel4/</includePath>
+                           <includePath>${project.basedir}/../ica/centos6/</includePath>
                        </includePaths>
                        <options>
                            <option>-std=gnu99</option>
