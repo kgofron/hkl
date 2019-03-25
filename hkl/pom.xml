@@ -61,6 +61,7 @@
                        <excludes>
                            <exclude>hkl-types.c</exclude>
                            <exclude>ccan/configurator.c</exclude>
+			   <exclude>hkl/api2/hkl2.c</exclude>
                        </excludes>
                        <defines>
                            <define>LOGGING</define>
