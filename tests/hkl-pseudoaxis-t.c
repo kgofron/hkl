@@ -437,7 +437,7 @@ static void axis_names(void)
 }
 
 
-static int _parameters(HklEngine *engine, UNUSED HklEngineList *engine_list, UNUSED unsigned int n)
+static int _mode_parameters(HklEngine *engine, UNUSED HklEngineList *engine_list, UNUSED unsigned int n)
 {
 	static const char *bad = "__bad_parameter_name__";
 	int res = TRUE;
@@ -490,9 +490,9 @@ static int _parameters(HklEngine *engine, UNUSED HklEngineList *engine_list, UNU
 	return res;
 }
 
-static void parameters(void)
+static void mode_parameters(void)
 {
-	ok(TRUE == TEST_FOREACH_MODE(1, _parameters), __func__);
+	ok(TRUE == TEST_FOREACH_MODE(1, _mode_parameters), __func__);
 }
 
 static int _depends(HklEngine *engine, UNUSED HklEngineList *engine_list, UNUSED unsigned int n)
@@ -550,7 +550,7 @@ int main(int argc, char** argv)
 	initialized();
 	modes();
 	axis_names();
-	parameters();
+	mode_parameters();
 	depends();
 
 	return 0;
