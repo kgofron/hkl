@@ -56,6 +56,9 @@ static const HklFactory *getFactory(struct Geometry geometry)
 	case GEOMETRY_SOLEIL_SIXS_MED_2_3:
 		self = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
 		break;
+	case GEOMETRY_SOLEIL_SIXS_MED_2_3_v2:
+		self = hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
+		break;
 	case GEOMETRY_ZAXIS:
 		self = hkl_factory_get_by_name("ZAXIS", NULL);
 		break;
@@ -94,6 +97,7 @@ HklGeometry *newGeometry(struct Geometry geometry)
 	case GEOMETRY_K6C: NEW_GEOMETRY(k6c); break;
 	case GEOMETRY_SOLEIL_SIRIUS_KAPPA: NEW_GEOMETRY(soleil_sirius_kappa); break;
 	case GEOMETRY_SOLEIL_SIXS_MED_2_3: NEW_GEOMETRY(soleil_sixs_med_2_3); break;
+	case GEOMETRY_SOLEIL_SIXS_MED_2_3_v2: NEW_GEOMETRY(soleil_sixs_med_2_3_v2); break;
 	case GEOMETRY_ZAXIS: NEW_GEOMETRY(zaxis); break;
 	}
 	return self;

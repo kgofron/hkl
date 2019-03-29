@@ -780,6 +780,139 @@ int hkl_engine_list_get(HklEngineList *self)
 }
 
 /**
+ * hkl_engine_list_parameters_names_get:
+ * @self: the this ptr
+ *
+ * Return value: (type gpointer): All the parameters of #HklEngineList.
+ **/
+const darray_string *hkl_engine_list_parameters_names_get(const HklEngineList *self)
+{
+	return &self->parameters_names;
+}
+
+/**
+ * hkl_engine_list_parameters_values_get: (skip)
+ * @self: the this ptr
+ * @values: (array length=n_values): the values to get
+ * @n_values: the size of the values array.
+ * @unit_type: the unit type (default or user) of the returned value
+ *
+ * Get the engine parameters values
+ **/
+void hkl_engine_list_parameters_values_get(const HklEngineList *self,
+					   double values[], size_t n_values,
+					   HklUnitEnum unit_type)
+{
+	g_return_if_fail (n_values == darray_size(self->parameters));
+
+	for(size_t i=0; i<n_values; ++i)
+		values[i] = hkl_parameter_value_get(darray_item(self->parameters, i),
+						    unit_type);
+}
+
+/**
+ * hkl_engine_list_parameters_values_set:
+ * @self: the this ptr
+ * @values: (array length=n_values): the values to set
+ * @n_values: the size of the values array.
+ * @unit_type: the unit type (default or user) of the returned value
+ * @error: return location for a GError, or NULL
+ *
+ * Set the engine parameters values
+ *
+ * return value: TRUE if succeded or FALSE otherwise.
+ **/
+int hkl_engine_list_parameters_values_set(HklEngineList *self,
+					  double values[], size_t n_values,
+					  HklUnitEnum unit_type, GError **error)
+{
+	hkl_error (error == NULL || *error == NULL || n_values == darray_size(self->parameters));
+
+	for(size_t i=0; i<n_values; ++i){
+		if(!hkl_parameter_value_set(darray_item(self->parameters, i),
+					    values[i], unit_type, error)){
+			g_assert (error == NULL || *error != NULL);
+			return FALSE;
+		}
+	}
+	g_assert (error == NULL || *error == NULL);
+
+	return TRUE;
+}
+
+/**
+ * hkl_engine_list_parameter_get:
+ * @self: the this ptr
+ * @name: the name of the expected parameter
+ * @error: return location for a GError, or NULL
+ *
+ * get the #HklParameter with the given @name.
+ *
+ * Returns: (allow-none): return the parameter or NULL if the engine
+ *                        does not contain this parameter.
+ **/
+const HklParameter *hkl_engine_list_parameter_get(const HklEngineList *self,
+						  const char *name,
+						  GError **error)
+{
+	HklParameter **parameter;
+
+	hkl_error (error == NULL || *error == NULL);
+
+	darray_foreach(parameter, self->parameters)
+		if(!strcmp((*parameter)->name, name))
+			return *parameter;
+
+	g_set_error(error,
+		    HKL_ENGINE_LIST_ERROR,
+		    HKL_ENGINE_LIST_ERROR_PARAMETER_GET,
+		    "this engine list does not contain this parameter \"%s\"\n",
+		    name);
+
+	return NULL;
+}
+
+/**
+ * hkl_engine_list_parameter_set:
+ * @self: the this ptr
+ * @name: the name of the parameter to set.
+ * @parameter: the parameter to set.
+ * @error: return location for a GError, or NULL
+ *
+ * set a parameter of the #HklEngine
+ * TODO add an error
+ *
+ * return value: TRUE if succeded or FALSE otherwise.
+ **/
+int hkl_engine_list_parameter_set(HklEngineList *self,
+				  const char *name,
+				  const HklParameter *parameter,
+				  GError **error)
+{
+	HklParameter **p;
+
+	hkl_error (error == NULL || *error == NULL);
+
+	darray_foreach(p, self->parameters)
+		if(!strcmp(name, (*p)->name)){
+			const char *old_name = (*p)->name;
+			hkl_parameter_init_copy(*p, parameter, NULL);
+			/* we do not check if the name is identical so force the right name */
+			/* TODO rethink this HklParameter assignement */
+			(*p)->name = old_name;
+			return TRUE;
+		}
+
+	g_set_error(error,
+		    HKL_ENGINE_ERROR,
+		    HKL_ENGINE_LIST_ERROR_PARAMETER_SET,
+		    "this engine list does not contain this parameter \"%s\"\n",
+		    parameter->name);
+
+	return FALSE;
+}
+
+/**
  * hkl_engine_list_fprintf: (skip)
  * @f: the File
  * @self: the list

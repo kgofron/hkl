@@ -92,6 +92,13 @@ HKLAPI double *hkl_engine_pseudo_axis_values_get_binding(const HklEngine *self,
 
 HKLAPI GSList* hkl_engine_list_engines_get_as_gslist(HklEngineList *self);
 
+HKLAPI const char **hkl_engine_list_parameters_names_get_binding(const HklEngineList *self,
+								 size_t *length) HKL_ARG_NONNULL(1, 2);
+
+HKLAPI double *hkl_engine_list_parameters_values_get_binding(const HklEngineList *self,
+							     guint *len,
+							     HklUnitEnum unit_type) HKL_ARG_NONNULL(1, 2);
+
 /*************/
 /* HklSample */
 /*************/

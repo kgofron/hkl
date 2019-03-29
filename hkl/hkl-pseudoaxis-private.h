@@ -301,6 +301,7 @@ struct _HklEngineList
 	HklSample *sample;
 	darray_parameter pseudo_axes;
 	darray_parameter parameters;
+	darray_string parameters_names;
 };
 
 #define HKL_ENGINE_ERROR hkl_engine_error_quark ()
@@ -642,6 +643,8 @@ static inline GQuark hkl_engine_list_error_quark (void)
 typedef enum {
 	HKL_ENGINE_LIST_ERROR_ENGINE_GET_BY_NAME, /* can not set this geometry */
 	HKL_ENGINE_LIST_ERROR_PSEUDO_AXIS_GET_BY_NAME, /* can not set this geometry */
+	HKL_ENGINE_LIST_ERROR_PARAMETER_GET, /* can not get the parameter */
+	HKL_ENGINE_LIST_ERROR_PARAMETER_SET, /* can not set the parameter */
 } HklEngineListError;
 
 /**
@@ -669,6 +672,7 @@ static inline void hkl_engine_list_clear(HklEngineList *self)
 		hkl_parameter_free(*parameter);
 	}
 	darray_free(self->parameters);
+	darray_free(self->parameters_names);
 }
 
 /**
@@ -727,8 +731,10 @@ static inline HklEngineList *hkl_engine_list_new_with_info(const HklEngineListIn
 	darray_init(self->pseudo_axes);
 
 	darray_init(self->parameters);
+	darray_init(self->parameters_names);
 	darray_foreach(parameter, info->parameters){
 		darray_append(self->parameters, hkl_parameter_new_copy(*parameter));
+		darray_append(self->parameters_names, (*parameter)->name);
 	};
 
 	return self;

@@ -572,6 +572,23 @@ HKLAPI void hkl_engine_list_init(HklEngineList *self,
 
 HKLAPI int hkl_engine_list_get(HklEngineList *self) HKL_ARG_NONNULL(1);
 
+HKLAPI const darray_string *hkl_engine_list_parameters_names_get(const HklEngineList *self) HKL_ARG_NONNULL(1) HKL_WARN_UNUSED_RESULT;
+
+HKLAPI const HklParameter *hkl_engine_list_parameter_get(const HklEngineList *self, const char *name,
+							 GError **error) HKL_ARG_NONNULL(1, 2) HKL_WARN_UNUSED_RESULT;
+
+HKLAPI int hkl_engine_list_parameter_set(HklEngineList *self,
+					 const char *name, const HklParameter *parameter,
+					 GError **error) HKL_ARG_NONNULL(1, 2, 3) HKL_WARN_UNUSED_RESULT;
+
+HKLAPI void hkl_engine_list_parameters_values_get(const HklEngineList *self,
+						  double values[], size_t n_values,
+						  HklUnitEnum unit_type) HKL_ARG_NONNULL(1, 2);
+
+HKLAPI int hkl_engine_list_parameters_values_set(HklEngineList *self,
+						 double values[], size_t n_values,
+						 HklUnitEnum unit_type, GError **error) HKL_ARG_NONNULL(1, 2) HKL_WARN_UNUSED_RESULT;
+
 HKLAPI void hkl_engine_list_fprintf(FILE *f,
 				    const HklEngineList *self) HKL_ARG_NONNULL(1, 2);
 

@@ -121,7 +121,7 @@ double *hkl_geometry_axis_values_get_binding(const HklGeometry *self, guint *len
 	uint i = 0;
 	HklParameter **axis;
 
-	if(!self || !len || darray_size(self->axes) == 0)
+	if(darray_size(self->axes) == 0)
 		return NULL;
 
 	*len = darray_size(self->axes);
@@ -269,7 +269,7 @@ double *hkl_engine_parameters_values_get_binding(const HklEngine *self, guint *l
 	uint i = 0;
 	HklParameter **parameter;
 
-	if(!self || !len || !self->mode || darray_size(self->mode->parameters) == 0)
+	if(!self->mode || darray_size(self->mode->parameters) == 0)
 		return NULL;
 
 	*len = darray_size(self->mode->parameters);
@@ -328,6 +328,52 @@ GSList* hkl_engine_list_engines_get_as_gslist(HklEngineList *self)
 	}
 
 	return list;
+}
+
+/*****************/
+/* HklEngineList */
+/*****************/
+
+/**
+ * hkl_engine_list_parameters_names_get_binding: (rename-to hkl_engine_list_parameters_names_get)
+ * @self: the this ptr
+ * @length: (out caller-allocates): return the length of the returned array.
+ *
+ * Return value: (array length=length) (transfer none): All the modes supported by the #HklEngineList
+ **/
+const char **hkl_engine_list_parameters_names_get_binding(const HklEngineList *self, size_t *length)
+{
+	*length = darray_size(self->parameters_names);
+	return &darray_item(self->parameters_names, 0);
+}
+
+/**
+ * hkl_engine_list_parameters_values_get_binding: (rename-to hkl_engine_list_parameters_values_get)
+ * @self: the this ptr
+ * @len: (out caller-allocates): the length of the returned array
+ * @unit_type: the unit type (default or user) of the returned value
+ *
+ * Return value: (array length=len) (transfer container): list of parameters values,
+ *          free the list with free when done.
+ **/
+double *hkl_engine_list_parameters_values_get_binding(const HklEngineList *self, guint *len,
+						      HklUnitEnum unit_type)
+{
+	double *values;
+	uint i = 0;
+	HklParameter **parameter;
+
+	if(darray_size(self->parameters) == 0)
+		return NULL;
+
+	*len = darray_size(self->parameters);
+	values = malloc(*len * sizeof(*values));
+
+	darray_foreach(parameter, self->parameters){
+		values[i++] = hkl_parameter_value_get(*parameter, unit_type);
+	}
+
+	return values;
 }
 
 /*************/

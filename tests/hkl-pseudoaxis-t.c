@@ -103,6 +103,61 @@ static void factories(void)
 	ok(res == TRUE, "factories");
 }
 
+static void parameters(void)
+{
+	int res = TRUE;
+	size_t i, n;
+	HklEngineList *engines;
+	HklFactory **factories;
+	const darray_string *parameters_names;
+
+	factories = hkl_factory_get_all(&n);
+	for(i=0;i<n; i++){
+		size_t size;
+		double values[1];
+
+		engines = hkl_factory_create_new_engine_list(factories[i]);
+
+		/* check parameters names */
+		parameters_names = hkl_engine_list_parameters_names_get(engines);
+		size = darray_size(*parameters_names);
+		if(!strcmp("SOLEIL SIXS MED2+3 v2", hkl_factory_name_get(factories[i]))){
+			const HklParameter *p;
+
+			/* get */
+			res &= DIAG(size == 1);
+			p = hkl_engine_list_parameter_get(engines, "eta_a_rotation", NULL);
+			res &= DIAG(p != NULL);
+
+			/* set */
+			res &= DIAG(hkl_engine_list_parameter_set(engines, "eta_a_rotation", p, NULL));
+
+			/* values_get */
+			hkl_engine_list_parameters_values_get(engines,
+							      values, ARRAY_SIZE(values),
+							      HKL_UNIT_USER);
+			res &= DIAG(values[0] == 0.0);
+
+			/* values set */
+			values[0] = 1.0;
+			res &= DIAG(hkl_engine_list_parameters_values_set(engines,
+									  values, ARRAY_SIZE(values),
+									  HKL_UNIT_USER, NULL));
+			hkl_engine_list_parameters_values_get(engines,
+							      values, ARRAY_SIZE(values),
+							      HKL_UNIT_USER);
+			res &= DIAG(values[0] == 1.0);
+		} else {
+			res &= DIAG(size == 0);
+		}
+
+		hkl_engine_list_free(engines);
+	}
+
+	ok(res == TRUE, "parameters");
+}
+
+
 static int _get(HklEngine *engine, HklEngineList *engine_list, UNUSED unsigned int n)
 {
 	uint i;
@@ -342,6 +397,7 @@ static void initialized(void)
 HKLAPI int hkl_engine_initialized_set(HklEngine *self, int initialized,
 				      GError **error) HKL_ARG_NONNULL(1) HKL_WARN_UNUSED_RESULT;
 
+
 static int _modes(HklEngine *engine, UNUSED HklEngineList *engine_list, UNUSED unsigned int n)
 {
 	static const char *bad = "__bad_mode_name__";
@@ -535,7 +591,7 @@ int main(int argc, char** argv)
 {
 	double n;
 
-	plan(10);
+	plan(11);
 
 	if (argc > 1)
 		n = atoi(argv[1]);
@@ -543,6 +599,7 @@ int main(int argc, char** argv)
 		n = 10;
 
 	factories();
+	parameters();
 	get();
 	set(n);
 	pseudo_axis_get();

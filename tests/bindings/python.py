@@ -252,6 +252,27 @@ class TestAPI(unittest.TestCase):
             dependencies = engine.dependencies_get()
             self.assertTrue(dependencies & Hkl.EngineDependencies.AXES)
 
+    def test_engine_list_api(self):
+        factories = Hkl.factories()
+        for key, factory in factories.iteritems():
+            engines = factory.create_new_engine_list()
+
+            # check the parameters
+            names = engines.parameters_names_get()
+            self.assertTrue(type(names) is list)
+            [self.assertTrue(type(_) is str) for _ in names]
+
+            # get/set the parameters
+            for name in names:
+                p = engines.parameter_get(name)
+                self.assertTrue(type(p) is Hkl.Parameter)
+                engines.parameter_set(name, p)
+
+            # check that we can get/set the parameters values
+            values = engines.parameters_values_get(Hkl.UnitEnum.USER)
+            [self.assertTrue(type(_) is float) for _ in values]
+            engines.parameters_values_set(values, Hkl.UnitEnum.USER)
+
     @unittest.skip("for testing figures")
     def test_doc_example(self):
         # execfile("../../Documentation/sphinx/source/bindings/python.py")

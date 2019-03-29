@@ -508,6 +508,16 @@
           output += level(2, "+ \"*" + axis + "*\": rotation around the *" + repr(axis_v) + "* axis\n")
 
       output += "*** Engines: \n"
+      parameters = engines.parameters_names_get()
+      if len(parameters) != 0:
+          output += level(3, "* Global parameters:\n")
+          for parameter in parameters:
+              output += "\n"
+              p = engines.parameter_get(parameter)
+              description = p.description_get()
+              value = p.value_get(Hkl.UnitEnum.USER)
+              output += level(4, "+ \"*" + parameter + "*\" [" + str(value) + "]: " + description + "\n")
+
       for engine in engines.engines_get():
           output += "**** \"*" + engine.name_get() + "*\":\n\n"
           output += level(3, "* pseudo axes:\n")
@@ -871,6 +881,44 @@ git clone git://repo.or.cz/hkl.git
     rewritten in order to be much more efficent using the manifold
     informations. Now we iterate on =Hkl3DObject= object only once
     (n) complexity instead of (n²) with the previous one.
+*** DONE Added "SOLEIL SIXS MED2+3 v2" geometry <2019-03-29 Fri>
+    This diffractometer contain a global HklEngineList parameter in
+    order to activate or not the rotation of the Detector. A new
+    public API was added in order to deal with these parameters.
+#+BEGIN_SRC c
+  const darray_string *hkl_engine_list_parameters_names_get(const HklEngineList *self);
+
+  const HklParameter *hkl_engine_list_parameter_get(const HklEngineList *self, const char *name,
+                                                    GError **error);
+
+  int hkl_engine_list_parameter_set(HklEngineList *self,
+                                    const char *name, const HklParameter *parameter,
+                                    GError **error);
+
+  void hkl_engine_list_parameters_values_get(const HklEngineList *self,
+                                             double values[], size_t n_values,
+                                             HklUnitEnum unit_type);
+
+  int hkl_engine_list_parameters_values_set(HklEngineList *self,
+                                            double values[], size_t n_values,
+                                            HklUnitEnum unit_type, GError **error);
+#+END_SRC
+
+And also available via the Python binding.
+
+#+BEGIN_SRC python :export code
+  engines = factory.create_new_engine_list()
+
+  # get parameters names
+  names = engines.parameters_names_get()
+
+  # get the parameters values
+  values = engines.parameters_values_get(Hkl.UnitEnum.USER)
+
+  # set the parameters values
+  engines.parameters_values_set(values, Hkl.UnitEnum.USER)
+#+END_SRC
+
 ** 5.0.0.2080 <2016-04-27 mer.>
 *** DONE =HklEngine= <2016-01-20 mer.>
     emergence_fixed for the SOLEIL SIX MED 2+2 geometry.
