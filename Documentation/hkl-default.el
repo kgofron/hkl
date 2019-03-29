@@ -1,6 +1,6 @@
 ;;; hkl-default.el --- Hkl specific emacsen startup code.
 
-;; Copyright (C) 2003-2018 Synchrotron SOLEIL
+;; Copyright (C) 2003-2019 Synchrotron SOLEIL
 ;;                         L'Orme des Merisiers Saint-Aubin
 ;;                         BP 48 91192 GIF-sur-YVETTE CEDEX
 
