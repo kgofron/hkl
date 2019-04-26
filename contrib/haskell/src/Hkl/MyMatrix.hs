@@ -5,6 +5,7 @@ module Hkl.MyMatrix
        , toEulerians
        ) where
 
+import Prelude hiding ((<>))
 import Numeric.LinearAlgebra (Matrix, atIndex, fromLists, inv, (<>))
 import Numeric.Units.Dimensional.Prelude (Angle, (*~), radian)
 

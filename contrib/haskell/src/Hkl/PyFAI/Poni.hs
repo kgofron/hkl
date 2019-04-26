@@ -23,6 +23,7 @@ module Hkl.PyFAI.Poni
        , fromAxisAndAngle
        ) where
 
+import Prelude hiding ((<>))
 import Control.Applicative ((<$>), (<|>), (<*>), (*>), (<*), many, optional, pure)
 import Data.Attoparsec.Text (Parser, (<?>), endOfLine, isEndOfLine, many1, double, string, takeTill)
 import Data.Text (Text, append, intercalate, pack)

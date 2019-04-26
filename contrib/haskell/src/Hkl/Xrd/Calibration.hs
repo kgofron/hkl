@@ -11,6 +11,7 @@ module Hkl.Xrd.Calibration
        , extractEdf
        ) where
 
+import Prelude hiding ((<>))
 import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Char8 (pack)

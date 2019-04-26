@@ -77,7 +77,7 @@ foreign import ccall unsafe "hkl.h hkl_quaternion_to_matrix_binding"
   c_hkl_quaternion_to_matrix_binding :: Ptr HklQuaternion
                                      -> IO (Ptr HklMatrix)
 
-foreign import ccall unsafe "hkl.h &hkl_quaternion_free"
+foreign import ccall unsafe "hkl.h &free"
   c_hkl_quaternion_free :: FunPtr (Ptr HklQuaternion -> IO ())
 
 foreign import ccall unsafe "hkl.h &hkl_matrix_free"

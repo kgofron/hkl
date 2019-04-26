@@ -31,11 +31,11 @@ withDetector d func = do
   withForeignPtr fptr func
 
 newDetector :: Detector a -> IO (ForeignPtr HklDetector)
-newDetector ZeroD = c_hkl_detector_new 0 >>= newForeignPtr c_hkl_detector_free
+newDetector ZeroD = c_hkl_detector_factory_new 0 >>= newForeignPtr c_hkl_detector_free
 newDetector _ = error "Can not use 2D detector with the hkl library"
 
-foreign import ccall unsafe "hkl.h hkl_detector_new"
-  c_hkl_detector_new:: CInt -> IO (Ptr HklDetector)
+foreign import ccall unsafe "hkl.h hkl_detector_factory_new"
+  c_hkl_detector_factory_new:: CInt -> IO (Ptr HklDetector)
 
 foreign import ccall unsafe "hkl.h &hkl_detector_free"
   c_hkl_detector_free :: FunPtr (Ptr HklDetector -> IO ())

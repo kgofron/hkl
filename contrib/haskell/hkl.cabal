@@ -26,7 +26,7 @@ Flag useHMatrixGsl
 executable ghkl
   main-is:             src/ghkl.hs
   build-depends:       attoparsec
-                     , base >= 4.6 && < 4.10
+                     , base >= 4.6
                      , containers >= 0.5 && < 0.6
                      , dimensional >= 0.10
                      , filepath >= 1.3.0
@@ -48,7 +48,7 @@ executable ghkl
 executable xrd
   main-is:             src/xrd.hs
   build-depends:       attoparsec
-                     , base >= 4.6 && < 4.10
+                     , base >= 4.6
                      , containers >= 0.5 && < 0.6
                      , dimensional >= 0.10
                      , filepath >= 1.3.0
@@ -70,7 +70,7 @@ executable xrd
 
 executable hkl3d
   main-is:             src/hkl3d.hs
-  build-depends:       base >= 4.6 && < 4.10
+  build-depends:       base >= 4.6
                      , containers >= 0.5 && < 0.6
                      , dimensional >= 0.10
                      , filepath >= 1.3.0
@@ -152,7 +152,7 @@ library
                      , RecordWildCards
   build-depends:       async
                      , attoparsec
-                     , base >= 4.6 && < 4.10
+                     , base >= 4.6
                      , bytestring >= 0.10.0.2
                      , containers >= 0.5 && < 0.6
                      , dimensional >= 0.10
@@ -182,7 +182,7 @@ library
   build-tools:         hsc2hs
   default-language:    Haskell2010
   pkgconfig-depends:   hkl
-  ghc-options:         -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Wmissing-import-lists -O2
+  ghc-options:         -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -O2
   -- ghc-options:         -fno-warn-incomplete-patterns
   -- ghc-options:         -Werror
   ghc-prof-options:    -fprof-auto-top
