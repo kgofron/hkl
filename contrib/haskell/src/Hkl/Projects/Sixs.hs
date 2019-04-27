@@ -8,8 +8,12 @@ module Hkl.Projects.Sixs
 import Control.Applicative ((<$>), (<*>))
 #endif
 
+import Data.Array.Repa (Array)
+import Data.Array.Repa.Index (DIM2)
+import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.ByteString.Char8 (pack)
 import Data.Vector.Storable (concat, head)
+import Data.Word (Word16)
 import Control.Exception (bracket)
 import Control.Monad (forM_)
 import Numeric.LinearAlgebra (Matrix)
@@ -28,6 +32,7 @@ import Hkl ( DataItem ( DataItemH5 )
            , Source(Source)
            , check_ndims
            , closeDataset
+           , get_image
            , get_position
            , get_ub
            , lenH5Dataspace
@@ -65,7 +70,10 @@ data DataFrame
       Int -- n
       Geometry -- geometry
       (Matrix Double) -- ub
-    deriving (Show)
+      (Array F DIM2 Word16) -- image
+
+instance Show DataFrame where
+  show (DataFrame i g m _) = show i ++ show g ++ show m
 
 withDataframeH5 :: File -> DataFrameHklH5Path -> (DataFrameHklH5 -> IO r) -> IO r
 withDataframeH5 h5file dfp = bracket (hkl_h5_open h5file dfp) hkl_h5_close
@@ -104,12 +112,13 @@ hkl_h5_close (DataFrameHklH5 i m o d g u w t) = do
   closeDataset t
 
 getDataFrame' ::  DataFrameHklH5 -> Int -> IO DataFrame
-getDataFrame' (DataFrameHklH5 _ m o d g u w _) i = do
+getDataFrame' (DataFrameHklH5 im m o d g u w _) i = do
   mu <- get_position m i
   omega <- get_position o i
   delta <- get_position d i
   gamma <- get_position g i
   wavelength <- get_position w 0
+  image <- get_image im i
   ub <- get_ub u
   let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
   let source = Source (Data.Vector.Storable.head wavelength *~ nano meter)

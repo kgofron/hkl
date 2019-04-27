@@ -8,6 +8,7 @@ module Hkl.H5
     , check_ndims
     , closeDataset
     , closeFile
+    , get_image
     , get_position
     , get_position_new
     , get_ub
@@ -53,11 +54,14 @@ import Bindings.HDF5.Raw ( HErr_t(HErr_t)
                          , h5l_iterate
                          )
 import Control.Exception (bracket)
-import Data.Array.Repa (Shape, listOfShape)
+import Data.Array.Repa (Array, Shape, listOfShape, shapeOfList)
+import Data.Array.Repa.Index (DIM2)
+import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr)
 import Data.ByteString.Char8 ( pack )
 import Data.IORef ( newIORef, readIORef, writeIORef )
 import Data.Vector.Storable (Vector, freeze)
-import Data.Vector.Storable.Mutable (replicate)
+import Data.Vector.Storable.Mutable (MVector(..), replicate)
+import Data.Word (Word16)
 import Foreign.StablePtr ( castPtrToStablePtr
                          , castStablePtrToPtr
                          , deRefStablePtr
@@ -89,6 +93,19 @@ check_ndims d expected = do
 
 toHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
 toHyperslab s = [(HSize (fromIntegral n), Just (HSize 1), HSize 1, Just (HSize 1)) | n <- listOfShape s]
+
+get_image :: Dataset -> Int -> IO (Array F DIM2 Word16)
+get_image d n = withDataspace d $ \dataspace -> do
+      let start = HSize (fromIntegral n)
+          stride = Just (HSize 1)
+          count = HSize 1
+          block = Just (HSize 1)
+      selectHyperslab dataspace Set [(start, stride, count, block)]
+      withDataspace' $ \memspace -> do
+        data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate 1 (0 :: Word16)
+        readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
+        return $ fromForeignPtr (shapeOfList [1, 1]) fp
+
 
 get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
 get_position_new dataset s =
