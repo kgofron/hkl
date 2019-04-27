@@ -24,7 +24,7 @@ published = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/2017/Run2B/TPHercules
 -- | Calibration part
 
 mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
-mkNxs' d idx h = mkNxs f' e h
+mkNxs' d idx = mkNxs f' e
   where
      f ∷ FilePath → Int → (FilePath, NxEntry)
      f d' i' = (d' </> printf "scan_%d.nxs" i', printf "scan_%d" i')
@@ -111,11 +111,11 @@ mkXRDSample n ps = XRDSample n
 
 samples :: [XRDSample]
 samples = map (uncurry mkXRDSample)
-          [ ("CeO2",            [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [91 :: Int])  ])
-          , ("zgso4_room",      [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [96 :: Int]) ])
-          , ("zgso4_450C",      [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [192 :: Int]) ])
-          , ("zgso4_heating",   [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [100..190 :: Int]) ])
-          , ("zgso4_cooling",   [ ((project </> "2017" </> "Run2" </> "2017-03-21"), [199..214 :: Int]) ])
+          [ ("CeO2",            [ (project </> "2017" </> "Run2" </> "2017-03-21", [91 :: Int])  ])
+          , ("zgso4_room",      [ (project </> "2017" </> "Run2" </> "2017-03-21", [96 :: Int]) ])
+          , ("zgso4_450C",      [ (project </> "2017" </> "Run2" </> "2017-03-21", [192 :: Int]) ])
+          , ("zgso4_heating",   [ (project </> "2017" </> "Run2" </> "2017-03-21", [100..190 :: Int]) ])
+          , ("zgso4_cooling",   [ (project </> "2017" </> "Run2" </> "2017-03-21", [199..214 :: Int]) ])
           ]
 
 -- | Main

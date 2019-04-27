@@ -3,12 +3,12 @@ module Main where
 import Hkl.Projects
 
 main :: IO ()
-main = do
+main = charlier
   -- irdrx
   -- martinetto'
   -- melle
   -- d2am
-  charlier
+  -- charlier
   -- laure
   -- hercules
   -- hamon

@@ -10,7 +10,6 @@ module Hkl.Xrd.ZeroD
        , XrdZeroDParams(..)
        ) where
 
-import Data.List (intercalate)
 import Data.Text (unlines, pack)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
@@ -37,7 +36,7 @@ import Hkl.Types ( AbsDirPath, SampleName, WaveLength )
 
 -- | Types
 
-data XrdZeroDSource  = XrdZeroDSourceNxs (Nxs XrdZeroD) deriving (Show)
+newtype XrdZeroDSource  = XrdZeroDSourceNxs (Nxs XrdZeroD) deriving (Show)
 
 data XrdZeroDSample = XrdZeroDSample SampleName AbsDirPath [XrdZeroDSource] deriving (Show)
 
@@ -50,7 +49,7 @@ data XrdZeroDFrame = XrdMeshFrame WaveLength Pose deriving (Show)
 edf ∷ AbsDirPath → FilePath → Int → FilePath
 edf o n i = o </> f
   where
-    f = (takeFileName n) ++ printf "_%02d.edf" i
+    f = takeFileName n ++ printf "_%02d.edf" i
 
 scriptExtractEdf ∷ AbsDirPath → [XrdZeroDSource] → Script Py2
 scriptExtractEdf o es = Py2Script (content, scriptPath)
@@ -89,7 +88,7 @@ scriptPyFAICalib o e@(XrdZeroDSourceNxs (Nxs n _)) d c = ScriptSh (content, scri
     content = Data.Text.unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
-                                 , "pyFAI-calib " ++ intercalate " " args
+                                 , "pyFAI-calib " ++ unwords args
                                  ]
 
     args = [ toPyFAICalibArg (readWavelength e)
@@ -98,7 +97,7 @@ scriptPyFAICalib o e@(XrdZeroDSourceNxs (Nxs n _)) d c = ScriptSh (content, scri
            , toPyFAICalibArg (edf o n i) ]
 
     scriptPath ∷ FilePath
-    scriptPath = o </> (takeFileName n) ++ printf "_%02d.sh" i
+    scriptPath = o </> takeFileName n ++ printf "_%02d.sh" i
 
     i ∷ Int
     i = 0
@@ -111,7 +110,6 @@ instance ExtractEdf (XrdZeroDCalibration a) where
     let script = scriptExtractEdf o es
     ExitSuccess ← run script False
     mapM_ go es
-    return ()
     where
       go e = scriptSave $ scriptPyFAICalib o e d c
 

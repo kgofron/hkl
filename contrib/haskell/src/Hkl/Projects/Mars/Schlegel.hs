@@ -4,9 +4,7 @@
 module Hkl.Projects.Mars.Schlegel
        ( schlegel ) where
 
-import Numeric.LinearAlgebra (ident)
 import System.FilePath ((</>))
-import Text.Printf (printf)
 
 import Prelude hiding (concat, lookup, readFile, writeFile)
 

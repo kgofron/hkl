@@ -45,7 +45,7 @@ h5path nxentry =
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
 mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
-mkNxs' d idx h = mkNxs f' e h
+mkNxs' d idx = mkNxs f' e
   where
      f ∷ FilePath → Int → (FilePath, NxEntry)
      f d' i' = (d' </> printf "scan_%d.nxs" i', printf "scan_%d" (i' - 1))
@@ -117,51 +117,45 @@ mkXRDSample n ps = XRDSample n
 
 
 air ∷ XRDSample
-air = mkXRDSample "air" [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [198 :: Int]) ]
+air = mkXRDSample "air" [ (project </> "2017" </> "Run1" </> "2017-02-17", [198 :: Int]) ]
 
 samples :: [XRDSample]
 samples = air : map (uncurry mkXRDSample)
-          [ ("CeO2",               [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [45 :: Int])  ])
-          , ("kapton",             [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [197 :: Int]) ])
-          , ("chlorite",           [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [53 :: Int])  ])
-          , ("dMnO2",              [ ((project </> "2017" </> "Run1" </> "2017-02-16"), [135 :: Int]) ])
-          , ("bulk_L2",            [ ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"), [315..316 :: Int]) ])
-          , ("L1-H_3",             [ ((project </> "2017" </> "Run1" </> "2017-02-15"), concat [ [62..63 :: Int]
-                                                                                               , [65..70 :: Int]
-                                                                                               , [74, 75 :: Int]
-                                                                                               ])
-                                   , ((project </> "2017" </> "Run1" </> "2017-02-16"), [76..89 :: Int])
+          [ ("CeO2",               [ (project </> "2017" </> "Run1" </> "2017-02-15", [45 :: Int])  ])
+          , ("kapton",             [ (project </> "2017" </> "Run1" </> "2017-02-17", [197 :: Int]) ])
+          , ("chlorite",           [ (project </> "2017" </> "Run1" </> "2017-02-15", [53 :: Int])  ])
+          , ("dMnO2",              [ (project </> "2017" </> "Run1" </> "2017-02-16", [135 :: Int]) ])
+          , ("bulk_L2",            [ (project </> "2017" </> "Shutdown1-2" </> "2017-02-19", [315..316 :: Int]) ])
+          , ("L1-H_3",             [ (project </> "2017" </> "Run1" </> "2017-02-15", concat [ [62..63 :: Int]
+                                                                                             , [65..70 :: Int]
+                                                                                             , [74, 75 :: Int]
+                                                                                             ])
+                                   , (project </> "2017" </> "Run1" </> "2017-02-16", [76..89 :: Int])
                                    ])
-          , ("L1-H_4",             [ ((project </> "2017" </> "Run1" </> "2017-02-15"), [71..73 :: Int])
-                                   , ((project </> "2017" </> "Run1" </> "2017-02-16"), concat [ [90..94 :: Int]
-                                                                                               , [96..103 :: Int]
-                                                                                               , [119..127 :: Int]
-                                                                                               ])
+          , ("L1-H_4",             [ (project </> "2017" </> "Run1" </> "2017-02-15", [71..73 :: Int])
+                                   , (project </> "2017" </> "Run1" </> "2017-02-16", concat [ [90..94 :: Int]
+                                                                                             , [96..103 :: Int]
+                                                                                             , [119..127 :: Int]
+                                                                                             ])
                                    ])
-          , ("L1-H_5",             [ ((project </> "2017" </> "Run1" </> "2017-02-16"), [104..118 :: Int]) ])
-          , ("L1-Patine_1",        [ ((project </> "2017" </> "Run1" </> "2017-02-16"), [136..151 :: Int])
-                                   , ((project </> "2017" </> "Run1" </> "2017-02-17"), concat [ [152..184 :: Int]
-                                                                                               , [186 :: Int]
-                                                                                               ])
+          , ("L1-H_5",             [ (project </> "2017" </> "Run1" </> "2017-02-16", [104..118 :: Int]) ])
+          , ("L1-Patine_1",        [ (project </> "2017" </> "Run1" </> "2017-02-16", [136..151 :: Int])
+                                   , (project </> "2017" </> "Run1" </> "2017-02-17", [152..184 :: Int] ++ [186 :: Int])
                                    ])
-          , ("L1-Patine_2",        [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [187..196 :: Int]) ])
-          , ("L2-H_1",             [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [199..213 :: Int]) ])
-          , ("L2-H_2",             [ ((project </> "2017" </> "Run1" </> "2017-02-17"), [214..220 :: Int])
-                                   , ((project </> "2017" </> "Run1" </> "2017-02-18"), concat [ [221..228 :: Int]
-                                                                                               , [259..262 :: Int]
-                                                                                               ])
+          , ("L1-Patine_2",        [ (project </> "2017" </> "Run1" </> "2017-02-17", [187..196 :: Int]) ])
+          , ("L2-H_1",             [ (project </> "2017" </> "Run1" </> "2017-02-17", [199..213 :: Int]) ])
+          , ("L2-H_2",             [ (project </> "2017" </> "Run1" </> "2017-02-17", [214..220 :: Int])
+                                   , (project </> "2017" </> "Run1" </> "2017-02-18", [221..228 :: Int] ++ [259..262 :: Int])
                                    ])
-          , ("L2-H_3",             [ ((project </> "2017" </> "Run1" </> "2017-02-18"), [229..248 :: Int]) ])
-          , ("L2-PatineFoncee",    [ ((project </> "2017" </> "Run1" </> "2017-02-18"), [249..258 :: Int]) ])
-          , ("L2-PatineFonceeNew", [ ((project </> "2017" </> "Run1" </> "2017-02-18"), concat [ [263, 264, 266, 267 :: Int]
-                                                                                               , [269..273 :: Int]])
+          , ("L2-H_3",             [ (project </> "2017" </> "Run1" </> "2017-02-18", [229..248 :: Int]) ])
+          , ("L2-PatineFoncee",    [ (project </> "2017" </> "Run1" </> "2017-02-18", [249..258 :: Int]) ])
+          , ("L2-PatineFonceeNew", [ (project </> "2017" </> "Run1" </> "2017-02-18", [263, 264, 266, 267 :: Int] ++ [269..273 :: Int]) ])
+          , ("L2-patineLabo_1",    [ (project </> "2017" </> "Shutdown1-2" </> "2017-02-19", [295..313 :: Int])  ])
+          , ("L2-PatineClaire_1",  [ (project </> "2017" </> "Shutdown1-2" </> "2017-02-19", [317..324 :: Int])
+                                   , (project </> "2017" </> "Shutdown1-2" </> "2017-02-20", [325..356 :: Int])
                                    ])
-          , ("L2-patineLabo_1",    [ ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"),[295..313 :: Int])  ])
-          , ("L2-PatineClaire_1",  [ ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"), [317..324 :: Int])
-                                   , ((project </> "2017" </> "Shutdown1-2" </> "2017-02-20"), [325..356 :: Int])
-                                   ])
-          , ("L3-patine_1",        [ ((project </> "2017" </> "Run1" </> "2017-02-19"), [274..293 :: Int])
-                                   , ((project </> "2017" </> "Shutdown1-2" </> "2017-02-19"), [294, 295 :: Int])
+          , ("L3-patine_1",        [ (project </> "2017" </> "Run1" </> "2017-02-19", [274..293 :: Int])
+                                   , (project </> "2017" </> "Shutdown1-2" </> "2017-02-19", [294, 295 :: Int])
                                    ])
           ]
 

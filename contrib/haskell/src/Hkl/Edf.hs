@@ -34,24 +34,24 @@ class ExtractEdf a where
   extractEdf ∷ a → IO ()
 
 
-edf'LambdaP :: Parser (Length Double)
-edf'LambdaP = do
+edfLambdaP :: Parser (Length Double)
+edfLambdaP = do
   _ <- manyTill anyChar (try $ string "Lambda = ")
   value <- double
   pure $ value *~ nano meter
 
-edf'MotorsP :: Parser [(Text, Double)]
-edf'MotorsP = do
+edfMotorsP :: Parser [(Text, Double)]
+edfMotorsP = do
   _ <- manyTill anyChar (try $ string "motor_pos = ")
   vs <- many1 (skipSpace *> double)
   _ <- manyTill anyChar (try $ string "motor_mne = ")
-  ns <- takeTill (\c -> c == ';')
+  ns <- takeTill (== ';')
   return $ zip (Data.Text.words ns) vs
 
 edfP :: Parser Edf
 edfP = Edf
-       <$> edf'LambdaP
-       <*> edf'MotorsP
+       <$> edfLambdaP
+       <*> edfMotorsP
          <?> "edfP"
 
 edfFromFile :: FilePath -> IO Edf
@@ -61,9 +61,3 @@ edfFromFile filename = do
   return $ case parseOnly edfP (decodeUtf8 header) of
     Left _     -> error $ "Can not parse the " ++ filename ++ " edf file"
     Right a -> a
-
--- main :: IO ()
--- main = do
---   edf <- edfFromFile "/home/picca/test.edf"
---   print edf
---   return ()

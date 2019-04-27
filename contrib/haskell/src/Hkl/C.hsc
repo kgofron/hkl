@@ -13,7 +13,7 @@ module Hkl.C
 
 import Prelude hiding (min, max)
 
-import Control.Monad (forever)
+import Control.Monad ((>=>), forever)
 import Control.Monad.Trans.State.Strict
 import Foreign ( ForeignPtr
                , FunPtr
@@ -49,7 +49,7 @@ solve' engine (Engine _ ps _) = do
       >>= newForeignPtr c_hkl_geometry_list_free
 
 solve :: Geometry -> Detector a -> Sample b -> Engine -> IO [Geometry]
-solve g@(Geometry f _ _ _) d s e@(Engine name _ _) = do
+solve g@(Geometry f _ _ _) d s e@(Engine name _ _) =
   withSample s $ \sample ->
       withDetector d $ \detector ->
           withGeometry g $ \geometry ->
@@ -69,14 +69,14 @@ solveTraj g@(Geometry f _ _ _) d s es = do
                 withCString name $ \cname -> do
                   c_hkl_engine_list_init engines geometry detector sample
                   engine <- c_hkl_engine_list_engine_get_by_name engines cname nullPtr
-                  mapM (\e -> solve' engine e >>= getSolution0) es
+                  mapM (solve' engine >=> getSolution0) es
 
 -- Pipe
 
-data Diffractometer = Diffractometer { difEngineList :: (ForeignPtr HklEngineList)
-                                     , difGeometry :: (ForeignPtr Geometry)
-                                     , difDetector :: (ForeignPtr HklDetector)
-                                     , difSample :: (ForeignPtr HklSample)
+data Diffractometer = Diffractometer { difEngineList :: ForeignPtr HklEngineList
+                                     , difGeometry :: ForeignPtr Geometry
+                                     , difDetector :: ForeignPtr HklDetector
+                                     , difSample :: ForeignPtr HklSample
                                      }
                     deriving (Show)
 
@@ -144,7 +144,7 @@ foreign import ccall unsafe "hkl.h &hkl_geometry_list_free"
   c_hkl_geometry_list_free :: FunPtr (Ptr HklGeometryList -> IO ())
 
 compute :: Geometry -> Detector a -> Sample b -> IO [Engine]
-compute g@(Geometry f _ _ _) d s = do
+compute g@(Geometry f _ _ _) d s =
   withSample s $ \sample ->
       withDetector d $ \detector ->
           withGeometry g $ \geometry ->

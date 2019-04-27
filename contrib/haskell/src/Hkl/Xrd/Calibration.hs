@@ -15,7 +15,7 @@ import Prelude hiding ((<>))
 import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Char8 (pack)
-import Data.List (foldl', intercalate)
+import Data.List (foldl')
 import Data.Text (unlines, pack)
 import Data.Vector.Storable
   ( Vector
@@ -181,7 +181,7 @@ readWavelength e =
 
 
 readXRDCalibrationEntry :: Detector a -> XRDCalibrationEntry -> IO (NptExt a)
-readXRDCalibrationEntry d e@(XRDCalibrationEntryNxs _ _ _) =
+readXRDCalibrationEntry d e@XRDCalibrationEntryNxs{} =
   withH5File f $ \h5file -> NptExt
                             <$> nptFromFile (xrdCalibrationEntryNxs'NptPath e)
                             <*> getPoseNxs h5file p idx
@@ -295,7 +295,7 @@ calibrate (XRDCalibration _ _ d _ es) p = do
 edf ∷ AbsDirPath → FilePath → Int → FilePath
 edf o n i = o </> f
   where
-    f = (takeFileName n) ++ printf "_%02d.edf" i
+    f = takeFileName n ++ printf "_%02d.edf" i
 
 scriptExtractEdf ∷ AbsDirPath → [XRDCalibrationEntry] → Script Py2
 scriptExtractEdf o es = Py2Script (content, scriptPath)
@@ -330,7 +330,7 @@ scriptPyFAICalib o e d c w = ScriptSh (content, scriptPath)
     content = Data.Text.unlines $
               map Data.Text.pack [ "#!/usr/bin/env sh"
                                  , ""
-                                 , "pyFAI-calib " ++ intercalate " " args
+                                 , "pyFAI-calib " ++ unwords args
                                  ]
 
     args = [ toPyFAICalibArg w
@@ -341,7 +341,7 @@ scriptPyFAICalib o e d c w = ScriptSh (content, scriptPath)
     (XRDCalibrationEntryNxs (Nxs n _) i _) = e
 
     scriptPath ∷ FilePath
-    scriptPath = o </> (takeFileName n) ++ printf "_%02d.sh" i
+    scriptPath = o </> takeFileName n ++ printf "_%02d.sh" i
 
 
 instance ExtractEdf (XRDCalibration a) where
@@ -349,7 +349,6 @@ instance ExtractEdf (XRDCalibration a) where
     let script = scriptExtractEdf o es
     ExitSuccess ← run script False
     mapM_ go es
-    return ()
     where
       go e = do
         w ← readWavelength e

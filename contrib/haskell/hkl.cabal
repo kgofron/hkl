@@ -19,10 +19,6 @@ Data-Files:          data/ghkl3.ui
                    , data/pseudo3.ui
                    , data/3d3.ui
 
-Flag useHMatrixGsl
-  Description: Enable the HmatrixGSL package
-  Default:     False
-
 executable ghkl
   main-is:             src/ghkl.hs
   build-depends:       attoparsec
@@ -32,14 +28,12 @@ executable ghkl
                      , filepath >= 1.3.0
                      , Glob >= 0.7.5
                      , hkl
-                     , hmatrix >= 0.15
                      , monad-loops >= 0.4.2
                      , pipes >= 4.1.2
                      , text
                      , transformers >= 0.3
                      , vector >= 0.10.0.1
   default-language:    Haskell2010
-  pkgconfig-depends:   hkl
   build-tools:         hsc2hs
   ghc-options:         -Wall -threaded -O2
   ghc-options:         -Werror
@@ -54,7 +48,6 @@ executable xrd
                      , filepath >= 1.3.0
                      , Glob >= 0.7.5
                      , hkl
-                     , hmatrix >= 0.15
                      , monad-loops >= 0.4.2
                      , pipes >= 4.1.2
                      , text
@@ -62,7 +55,6 @@ executable xrd
                      , vector >= 0.10.0.1
 
   default-language:    Haskell2010
-  pkgconfig-depends:   hkl
   build-tools:         hsc2hs
   ghc-options:         -Wall -threaded -O2
   ghc-options:         -Werror
@@ -75,14 +67,12 @@ executable hkl3d
                      , dimensional >= 0.10
                      , filepath >= 1.3.0
                      , hkl
-                     , hmatrix >= 0.15
                      , monad-loops >= 0.4.2
                      , pipes >= 4.1.2
                      , text
                      , transformers >= 0.3
                      , vector >= 0.10.0.1
   default-language:    Haskell2010
-  pkgconfig-depends:   hkl
   build-tools:         hsc2hs
   ghc-options:         -Wall -threaded -O2
   ghc-options:         -Werror
@@ -156,12 +146,13 @@ library
                      , bytestring >= 0.10.0.2
                      , containers >= 0.5 && < 0.6
                      , dimensional >= 0.10
-                     , directory >= 1.2.0
+                     , directory >= 1.3.0
                      , errors
                      , filepath >= 1.3.0
                      , Glob >= 0.7.5
                      , hdf5
-                     , hmatrix >= 0.15
+                     , hmatrix >= 0.17
+                     , hmatrix-gsl >= 0.17
                      , JuicyPixels >= 3.1.7
                      , mmorph >= 1.0.3
                      , monad-loops >= 0.4.2
@@ -174,9 +165,6 @@ library
                      , transformers >= 0.3
                      , unix >= 2.6.0.0
                      , vector >= 0.10.0.1
-
-  if flag(useHMatrixGsl)
-    build-depends: hmatrix-gsl >= 0.16
 
   hs-source-dirs:      src
   build-tools:         hsc2hs

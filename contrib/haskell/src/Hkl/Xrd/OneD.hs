@@ -4,7 +4,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Xrd.OneD
@@ -32,14 +31,14 @@ module Hkl.Xrd.OneD
 
 import Control.Applicative ((<$>), (<*>), pure)
 import Control.Concurrent.Async (mapConcurrently)
-import Control.Monad (forM_, forever, void, when, zipWithM_)
+import Control.Monad (forM_, forever, void, zipWithM_)
 import Control.Monad.Morph (hoist)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State.Strict (StateT, get, put)
 import Data.Array.Repa (DIM1, ix1, size)
 import Data.Attoparsec.Text (parseOnly)
 import qualified Data.List as List (lookup)
-import Data.Maybe (fromJust, fromMaybe, isJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text (unlines, pack, intercalate)
 import Data.Text.IO (readFile)
@@ -114,7 +113,7 @@ import Hkl.Utils ( hasContent )
 
 -- | Types
 
-data Threshold = Threshold Int deriving (Show)
+newtype Threshold = Threshold Int deriving (Show)
 
 instance PyVal Threshold where
   toPyVal (Threshold i) = toPyVal i
@@ -166,9 +165,9 @@ instance Frame (DataFrameH5 XrdOneD) where
     let komega = 0.0
     let kappa = 0.0
     let kphi = 0.0
-    gamma <- g `atIndex'` (ix1 0)
-    delta <- d' `atIndex'` (ix1 idx)
-    wavelength <- w `atIndex'` (ix1 0)
+    gamma <- g `atIndex'` ix1 0
+    delta <- d' `atIndex'` ix1 idx
+    wavelength <- w `atIndex'` ix1 0
     let source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
     let positions = Data.Vector.Storable.concat [mu, komega, kappa, kphi, gamma, delta]
     -- print positions
@@ -192,17 +191,17 @@ frames = do
   (Just n) <- lift $ len d
   forM_ [0..n-1] (\i' -> do
                      f <- lift $ runMaybeT $ row d i'
-                     when (isJust f) (yield (fromJust f)))
+                     forM_ f yield)
 
 frames' :: (Frame a) => [Int] -> Pipe a (DifTomoFrame DIM1) IO ()
 frames' is = do
   d <- await
   forM_ is (\i' -> do
               f <- lift $ runMaybeT $ row d i'
-              when (isJust f) (yield (fromJust f)))
+              forM_ f yield)
 
 skip :: [Int] -> DifTomoFrame sh -> Bool
-skip is' (DifTomoFrame _ i _ _ _) = notElem i is'
+skip is' (DifTomoFrame _ i _ _ _) = i `notElem` is'
 
 -- {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -228,7 +227,7 @@ dummiesForPy mt = unlines [ "# Compute the dummy values for the dynamic mask"
                           , "DELTA_DUMMY=" ++ delta_dummy
                           ]
   where
-    dummy = maybe "None" (\_ → "4294967296") mt -- TODO the default value depends on the number od bits per pixels.
+    dummy = maybe "None" (const "4294967296") mt -- TODO the default value depends on the number od bits per pixels.
     delta_dummy = maybe "None" (\(Threshold t) → show (4294967296 - t)) mt
 
 getScanDir ∷ AbsDirPath → FilePath → FilePath
@@ -355,7 +354,7 @@ savePonies g = forever $ do
   f <- await
   let filename = g (difTomoFrameIdx f)
   let (PoniExt p _) = difTomoFramePoniExt f
-  lift $ filename `hasContent` (poniToText p)
+  lift $ filename `hasContent` poniToText p
   yield $ DifTomoFrame' { difTomoFrame'DifTomoFrame = f
                         , difTomoFrame'PoniPath = filename
                         }
@@ -481,12 +480,12 @@ substract' p s1@(XRDSample name _ _) s2 = do
       return ()
 
 substract ∷  XrdOneDParams a → XRDSample → [XRDSample] → IO ()
-substract p s ss = mapM_ (substract' p s) ss
+substract p s = mapM_ (substract' p s)
 
 -- | PyFAI MultiGeometry
 
 integrateMulti ∷ XrdOneDParams a → [XRDSample] → IO ()
-integrateMulti p samples = mapM_ (integrateMulti' p) samples
+integrateMulti p = mapM_ (integrateMulti' p)
 
 integrateMulti' ∷ XrdOneDParams a → XRDSample → IO ()
 integrateMulti' p (XRDSample _ output nxss) = mapM_ (integrateMulti'' p output) nxss
@@ -519,7 +518,7 @@ integrateMulti'' p output (XrdNxs b _ mt _ (XrdSourceEdf fs)) = do
       go (XrdOneDParams ref _ _) f o = do
         m <- getPoseEdf f
         let (PoniExt p' _) = move ref m
-        o `hasContent` (poniToText p')
+        o `hasContent` poniToText p'
 
 createMultiPy ∷ XrdOneDParams a → DIM1 → Maybe Threshold → FilePath → DifTomoFrame' sh → [(Int, FilePath)] → (Script Py2, FilePath)
 createMultiPy (XrdOneDParams _ mflat _) b mt scriptPath (DifTomoFrame' f _) idxPonies = (Py2Script (content, scriptPath), output)
@@ -620,7 +619,7 @@ saveMulti' p b mt = forever $ do
   let directory = takeDirectory poniPath
   let filename = directory </> "multi.py"
   let (script, _) = createMultiPy p b mt filename f' idxPonies
-  ExitSuccess ← lift . lift $ if (difTomoFrameEOF f) then (run script True) else return ExitSuccess
+  ExitSuccess ← lift . lift $ if difTomoFrameEOF f then run script True else return ExitSuccess
   lift $ put $! (idxPonies ++ [(idx, poniPath)])
 
 saveMultiGeometry ∷ XrdOneDParams a → DIM1 → Maybe Threshold → Consumer (DifTomoFrame' sh) IO r
@@ -664,4 +663,4 @@ substractMulti' p s1@(XRDSample name _ _) s2 = do
       return ()
 
 substractMulti ∷  XrdOneDParams a → XRDSample → [XRDSample] → IO ()
-substractMulti p s ss = mapM_ (substractMulti' p s) ss
+substractMulti p s = mapM_ (substractMulti' p s)

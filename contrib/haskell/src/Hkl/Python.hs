@@ -15,16 +15,16 @@ instance PyVal a ⇒ PyVal (Maybe a) where
   toPyVal Nothing  = "None"
 
 instance PyVal String where
-  toPyVal s = show s
+  toPyVal = show
 
 instance PyVal [String] where
   toPyVal vs = "[" ++ intercalate ",\n" (map toPyVal vs) ++ "]"
 
 instance PyVal Int where
-  toPyVal i = show i
+  toPyVal = show
 
 instance PyVal [Int] where
   toPyVal is = "[" ++ intercalate ",\n" (map toPyVal is) ++ "]"
 
 instance PyVal Double where
-  toPyVal d = show d
+  toPyVal = show

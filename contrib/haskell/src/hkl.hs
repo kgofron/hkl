@@ -32,8 +32,7 @@ disp = putStr . dispf 3
 data Command
     = Ca Double Double Double -- ca command
 
-data Options
-    = Options Command
+newtype Options = Options Command
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

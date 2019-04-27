@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
@@ -16,7 +15,7 @@ import Control.Monad (when)
 import Data.Bits ((.|.))
 import Data.Text (Text)
 import Data.Text.IO (writeFile)
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, withCurrentDirectory)
 import System.Exit ( ExitCode ( ExitSuccess ) )
 import System.FilePath ( (<.>), takeDirectory)
 import System.Posix.Files (accessModes, groupModes, ownerModes, setFileMode)
@@ -24,20 +23,6 @@ import System.Posix.Types (FileMode)
 import System.Process ( rawSystem ) -- callProcess for futur
 
 import Paths_hkl (getDataFileName)
-
-#if MIN_VERSION_directory(1, 3, 0)
-import System.Directory (withCurrentDirectory)
-#else
-import Control.Exception.Base (bracket)
-import System.Directory (getCurrentDirectory, setCurrentDirectory)
-withCurrentDirectory :: FilePath  -- ^ Directory to execute in
-                     -> IO a      -- ^ Action to be executed
-                     -> IO a
-withCurrentDirectory dir action =
-  bracket getCurrentDirectory setCurrentDirectory $ \ _ -> do
-    setCurrentDirectory dir
-    action
-#endif
 
 type Profile = Bool
 
@@ -64,7 +49,7 @@ scriptSave (ScriptSh (c, f)) = scriptSave' c f (ownerModes .|. groupModes)
 
 scriptRun' ∷ FilePath → String → [String] → Bool → IO ExitCode
 scriptRun' f prog args d
-    | d == True = withCurrentDirectory directory go
+    | d = withCurrentDirectory directory go
     | otherwise = go
   where
       go :: IO ExitCode
@@ -96,7 +81,7 @@ scriptRun (Py2Script (_, p)) d = do
 
       args :: [String]
       args
-        | p' == True = ["-m" , "cProfile", "-o", stats, p]
+        | p' = ["-m" , "cProfile", "-o", stats, p]
         | otherwise = [p]
 scriptRun (ScriptGnuplot (_, p)) d = scriptRun' p "gnuplot" [p] d
 scriptRun (ScriptSh (_, p)) d = scriptRun' p p [] d

@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Types ( AbsDirPath
@@ -70,7 +69,7 @@ data Sample a
 
 type WaveLength = Length Double
 
-data Source = Source WaveLength deriving (Show)
+newtype Source = Source WaveLength deriving (Show)
 
 -- | Trajectory
 

@@ -23,12 +23,12 @@ flip (PoniExt ps mym1) = PoniExt p mym1
     p = map poniEntryFlip ps
 
 set ∷ PoniExt
-    → (Length Double) -- ^ distance
-    → (Length Double) -- ^ poni1
-    → (Length Double) -- ^ poni2
-    → (Angle Double) -- ^ rot1
-    → (Angle Double) -- ^ rot2
-    → (Angle Double) -- ^ rot3
+    → Length Double -- ^ distance
+    → Length Double -- ^ poni1
+    → Length Double -- ^ poni2
+    → Angle Double -- ^ rot1
+    → Angle Double -- ^ rot2
+    → Angle Double -- ^ rot3
     → PoniExt
 set (PoniExt ps _) d p1 p2 r1 r2 r3 = PoniExt p pose
   where

@@ -160,7 +160,7 @@ xrdMeshPy'' ∷ Maybe (Flat a)
             → H5Path -- meshy path
             → FilePath -- ponipath
             → DIM1 -- bins
-            → (Maybe Threshold) -- threshold
+            → Maybe Threshold -- threshold
             → WaveLength -- wavelength
             → FilePath -- output h5
             → FilePath -- script name
@@ -235,7 +235,7 @@ xrdMeshPy' ∷ XrdMeshParams a
            → XrdMeshSource -- data source
            → FilePath -- ponipath
            → DIM1 -- bins
-           → (Maybe Threshold) -- threshold
+           → Maybe Threshold -- threshold
            → WaveLength -- wavelength
            → FilePath -- output h5
            → FilePath -- script name
@@ -250,7 +250,7 @@ xrdMeshPy' (XrdMeshParams _ mflat m) (XrdMeshSourceNxsFly nxss) p b mt w o scrip
     fs ∷ [FilePath]
     fs = [f | (Nxs f _) ← nxss]
 
-    (Nxs _ h5path):_ = nxss
+    Nxs _ h5path:_ = nxss
 
     (XrdMeshFlyH5Path (DataItemH5 i _) (DataItemH5 x _) (DataItemH5 y _) _ _ _) = h5path
 

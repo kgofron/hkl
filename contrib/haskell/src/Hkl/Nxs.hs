@@ -57,29 +57,29 @@ data XrdMesh
 data XrdZeroD
 
 data DataFrameH5Path a where
-  XrdFlatH5Path ∷ (DataItem H5) -- ^ image
+  XrdFlatH5Path ∷ DataItem H5 -- ^ image
                 → DataFrameH5Path XrdFlat
-  XrdOneDH5Path ∷ (DataItem H5) -- ^ image
-                → (DataItem H5) -- ^ gamma
-                → (DataItem H5) -- ^ delta
-                → (DataItem H5) -- ^ wavelength
+  XrdOneDH5Path ∷ DataItem H5 -- ^ image
+                → DataItem H5 -- ^ gamma
+                → DataItem H5 -- ^ delta
+                → DataItem H5 -- ^ wavelength
                 → DataFrameH5Path XrdOneD
-  XrdMeshH5Path ∷ (DataItem H5) -- ^ Image
-                → (DataItem H5) -- ^ meshx
-                → (DataItem H5) -- ^ meshy
-                → (DataItem H5) -- ^ gamma
-                → (DataItem H5) -- ^ delta
-                → (DataItem H5) -- ^ wavelength
+  XrdMeshH5Path ∷ DataItem H5 -- ^ Image
+                → DataItem H5 -- ^ meshx
+                → DataItem H5 -- ^ meshy
+                → DataItem H5 -- ^ gamma
+                → DataItem H5 -- ^ delta
+                → DataItem H5 -- ^ wavelength
                 → DataFrameH5Path XrdMesh
-  XrdMeshFlyH5Path ∷ (DataItem H5) -- ^ Image
-                   → (DataItem H5) -- ^ meshx
-                   → (DataItem H5) -- ^ meshy
-                   → (DataItem Double) -- ^ gamma
-                   → (DataItem Double) -- ^ delta
-                   → (DataItem Double) -- ^ wavelength
+  XrdMeshFlyH5Path ∷ DataItem H5 -- ^ Image
+                   → DataItem H5 -- ^ meshx
+                   → DataItem H5 -- ^ meshy
+                   → DataItem Double -- ^ gamma
+                   → DataItem Double -- ^ delta
+                   → DataItem Double -- ^ wavelength
                    → DataFrameH5Path XrdMesh
-  XrdZeroDH5Path ∷ (DataItem H5) -- ^ image
-                 → (DataItem Double) -- ^ wavelength
+  XrdZeroDH5Path ∷ DataItem H5 -- ^ image
+                 → DataItem Double -- ^ wavelength
                  → DataFrameH5Path XrdZeroD -- used to integrate one static image
 
 deriving instance Show (DataFrameH5Path a)
@@ -90,39 +90,39 @@ data Nxs a where
 deriving instance Show (Nxs a)
 
 data DataFrameH5 a where
-  XrdFlatH5 ∷ (Nxs XrdFlat) -- Nexus Source file
+  XrdFlatH5 ∷ Nxs XrdFlat -- Nexus Source file
             → File -- h5file handler
-            → (DataSource H5) --images
+            → DataSource H5 --images
             → DataFrameH5 XrdFlat
-  DataFrameH5 ∷ (Nxs XrdOneD) -- Nexus file
+  DataFrameH5 ∷ Nxs XrdOneD -- Nexus file
               → File -- h5file handler
-              → (DataSource H5) -- gamma
-              → (DataSource H5) -- delta
-              → (DataSource H5) -- wavelength
+              → DataSource H5 -- gamma
+              → DataSource H5 -- delta
+              → DataSource H5 -- wavelength
               → PoniGenerator -- ponie generator
               → DataFrameH5 XrdOneD
-  XrdMeshH5 ∷ (Nxs XrdMesh) -- NexusFile Source File
+  XrdMeshH5 ∷ Nxs XrdMesh -- NexusFile Source File
             → File -- h5file handler
-            → (DataSource H5) -- image
-            → (DataSource H5) -- meshx
-            → (DataSource H5) -- meshy
-            → (DataSource H5) -- gamma
-            → (DataSource H5) -- delta
-            → (DataSource H5) -- wavelength
+            → DataSource H5 -- image
+            → DataSource H5 -- meshx
+            → DataSource H5 -- meshy
+            → DataSource H5 -- gamma
+            → DataSource H5 -- delta
+            → DataSource H5 -- wavelength
             → DataFrameH5 XrdMesh
-  XrdMeshFlyH5 ∷ (Nxs XrdMesh) -- NexusFile Source File
+  XrdMeshFlyH5 ∷ Nxs XrdMesh -- NexusFile Source File
                → File -- h5file handler
-               → (DataSource H5) -- image
-               → (DataSource H5) -- meshx
-               → (DataSource H5) -- meshy
-               → (DataSource Double) -- gamma
-               → (DataSource Double) -- delta
-               → (DataSource Double) -- wavelength
+               → DataSource H5 -- image
+               → DataSource H5 -- meshx
+               → DataSource H5 -- meshy
+               → DataSource Double -- gamma
+               → DataSource Double -- delta
+               → DataSource Double -- wavelength
                → DataFrameH5 XrdMesh
-  XrdZeroDH5 ∷ (Nxs XrdZeroD) -- NexusFile Source File
+  XrdZeroDH5 ∷ Nxs XrdZeroD -- NexusFile Source File
                → File -- h5file handler
-               → (DataSource H5) -- image
-               → (DataSource Double) -- wavelength
+               → DataSource H5 -- image
+               → DataSource Double -- wavelength
                → DataFrameH5 XrdZeroD
 
 mkNxs ∷ FilePath → NxEntry → (NxEntry → DataFrameH5Path a) → Nxs a
@@ -230,7 +230,7 @@ withDataFrameH5 nxs'@(Nxs f (XrdOneDH5Path _ g d w)) gen = Pipes.Safe.bracket (l
 instance ToTiff (Nxs XrdFlat) where
   toTiff n = withDataSource n $
              \(XrdFlatH5 _ _ (DataSourceH5 _ i)) → do
-               ([w, h], _) ← getSimpleDataspaceExtent =<< (getDatasetSpace i)
+               ([w, h], _) ← getSimpleDataspaceExtent =<< getDatasetSpace i
                ImageY16 <$> ( Image
                               <$> pure (fromIntegral w)
                               <*> pure (fromIntegral h)
