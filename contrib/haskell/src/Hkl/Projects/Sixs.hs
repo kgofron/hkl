@@ -4,22 +4,19 @@ module Hkl.Projects.Sixs
        ( main_sixs )
        where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>), (<*>))
-#endif
-
+import Control.Monad (forM_)
+import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Array.Repa (Array)
 import Data.Array.Repa.Index (DIM2)
 import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.ByteString.Char8 (pack)
 import Data.Vector.Storable (concat, head)
 import Data.Word (Word16)
-import Control.Exception (bracket)
-import Control.Monad (forM_)
 import Numeric.LinearAlgebra (Matrix)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (*~))
-import Pipes (Producer, runEffect, (>->), lift, yield)
+import Pipes (Producer, runEffect, (>->), yield)
 import Pipes.Prelude (print)
+import Pipes.Safe (MonadSafe, SafeT, bracket, runSafeT)
 import System.FilePath.Posix ((</>))
 
 import Hkl ( DataItem ( DataItemH5 )
@@ -30,14 +27,14 @@ import Hkl ( DataItem ( DataItemH5 )
            , Geometry(Geometry)
            , H5
            , Source(Source)
-           , check_ndims
            , closeDataset
+           , closeFile
            , get_image
            , get_position
            , get_ub
            , lenH5Dataspace
            , openDataset
-           , withH5File
+           , openH5
            )
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
@@ -54,17 +51,6 @@ data DataFrameHklH5Path
       (DataItem H5) -- DiffractometerType
     deriving (Show)
 
-data DataFrameHklH5
-    = DataFrameHklH5
-      Dataset -- image
-      Dataset -- mu
-      Dataset -- omega
-      Dataset -- delta
-      Dataset -- gamma
-      Dataset -- ub
-      Dataset -- wavelength
-      Dataset -- dtype
-
 data DataFrame
     = DataFrame
       Int -- n
@@ -75,59 +61,36 @@ data DataFrame
 instance Show DataFrame where
   show (DataFrame i g m _) = show i ++ show g ++ show m
 
-withDataframeH5 :: File -> DataFrameHklH5Path -> (DataFrameHklH5 -> IO r) -> IO r
-withDataframeH5 h5file dfp = bracket (hkl_h5_open h5file dfp) hkl_h5_close
+class FramesP a where
+  framesP :: FilePath -> a -> Producer DataFrame (SafeT IO) ()
 
-hkl_h5_open :: File -> DataFrameHklH5Path -> IO DataFrameHklH5
-hkl_h5_open h5file (DataFrameHklH5Path i m o d g u w t) = DataFrameHklH5
-                         <$> openDataset' h5file i
-                         <*> openDataset' h5file m
-                         <*> openDataset' h5file o
-                         <*> openDataset' h5file d
-                         <*> openDataset' h5file g
-                         <*> openDataset' h5file u
-                         <*> openDataset' h5file w
-                         <*> openDataset' h5file t
-  where
-    openDataset' :: File -> DataItem H5 -> IO Dataset
-    openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
-
-hkl_h5_is_valid :: DataFrameHklH5 -> IO Bool
-hkl_h5_is_valid (DataFrameHklH5 _ m o d g _ _ _) = do
-  True <- check_ndims m 1
-  True <- check_ndims o 1
-  True <- check_ndims d 1
-  True <- check_ndims g 1
-  return True
-
-hkl_h5_close :: DataFrameHklH5 -> IO ()
-hkl_h5_close (DataFrameHklH5 i m o d g u w t) = do
-  closeDataset i
-  closeDataset m
-  closeDataset o
-  closeDataset d
-  closeDataset g
-  closeDataset u
-  closeDataset w
-  closeDataset t
-
-getDataFrame' ::  DataFrameHklH5 -> Int -> IO DataFrame
-getDataFrame' (DataFrameHklH5 im m o d g u w _) i = do
-  mu <- get_position m i
-  omega <- get_position o i
-  delta <- get_position d i
-  gamma <- get_position g i
-  wavelength <- get_position w 0
-  image <- get_image im i
-  ub <- get_ub u
-  let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
-  let source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
-  return $ DataFrame i (Geometry Uhv source positions Nothing) ub
-
-getDataFrame :: DataFrameHklH5 -> Producer DataFrame IO ()
-getDataFrame d@(DataFrameHklH5 _ m _ _ _ _ _ _) = do
-  (Just n) <- lift $ lenH5Dataspace m
-  forM_ [0..n-1] (\i -> lift (getDataFrame' d i) >>= yield)
+instance FramesP DataFrameHklH5Path where
+  framesP fp (DataFrameHklH5Path i m o d g u w t) =
+    bracket (liftIO $ openH5 fp) (liftIO . closeFile) $ \f ->
+    withDataset f i $ \i' ->
+    withDataset f m $ \m' ->
+    withDataset f o $ \o' ->
+    withDataset f d $ \d' ->
+    withDataset f g $ \g' ->
+    withDataset f u $ \u' ->
+    withDataset f w $ \w' ->
+    withDataset f t $ \_t -> do
+      (Just n) <- liftIO $ lenH5Dataspace m'
+      forM_ [0..n-1] (\j -> yield =<< liftIO
+                       (do
+                           mu <- get_position m' j
+                           omega <- get_position o' j
+                           delta <- get_position d' j
+                           gamma <- get_position g' j
+                           wavelength <- get_position w' 0
+                           image <- get_image i' j
+                           ub <- get_ub u'
+                           let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
+                               source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
+                           pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
+    where
+      withDataset :: (MonadSafe m) => File -> DataItem H5 -> (Dataset -> m r) -> m r
+      withDataset hid (DataItemH5 name _) = bracket (liftIO $ openDataset hid (pack name) Nothing) (liftIO . closeDataset)
 
 main_sixs :: IO ()
 main_sixs = do
@@ -143,8 +106,6 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/Monochromator/wavelength" StrictDims)
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
 
-  withH5File (root </> filename) $ \h5file ->
-    withDataframeH5 h5file dataframe_h5p $ \dataframe_h5 -> do
-      True <- hkl_h5_is_valid dataframe_h5
-      runEffect $ getDataFrame dataframe_h5
-        >->  Pipes.Prelude.print
+  runSafeT $ runEffect $
+    framesP (root </> filename) dataframe_h5p
+    >-> Pipes.Prelude.print
