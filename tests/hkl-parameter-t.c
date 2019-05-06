@@ -22,6 +22,7 @@
 #include "hkl.h"
 #include <tap/basic.h>
 #include <tap/float.h>
+#include <tap/hkl-tap.h>
 
 #include "hkl-parameter-private.h"
 
@@ -88,46 +89,83 @@ static void new_copy(void)
 static void init(void)
 {
 	HklParameter *p;
+	int res = TRUE;
 
-	ok(NULL == hkl_parameter_new("", "no description", 2, 1, 3,
-				     FALSE, TRUE,
-				     &hkl_unit_angle_rad, &hkl_unit_angle_deg), __func__);
-	ok(NULL == hkl_parameter_new("", "no description", 2, 1, 3,
-				     FALSE, TRUE,
-				     &hkl_unit_angle_rad, &hkl_unit_angle_deg), __func__);
-	ok(NULL == hkl_parameter_new("", "no description", 2, 1, 3,
-				     FALSE, TRUE,
-				     &hkl_unit_angle_rad, &hkl_unit_angle_deg), __func__);
-	ok(NULL == hkl_parameter_new("toto", "no description", 2, 1, 3,
-				     FALSE, TRUE,
-				     &hkl_unit_angle_rad, &hkl_unit_angle_deg), __func__);
-	ok(NULL == hkl_parameter_new("toto", "no description", 1, 2, 3,
-				     FALSE, TRUE,
-				     &hkl_unit_angle_rad, &hkl_unit_length_nm), __func__);
+	res &= DIAG(NULL == hkl_parameter_new("", "no description", 2, NAN, 3,
+					      FALSE, TRUE,
+					      &hkl_unit_angle_rad, &hkl_unit_angle_deg));
+	res &= DIAG(NULL == hkl_parameter_new("", "no description", 2, 1, 3,
+					      FALSE, TRUE,
+					      &hkl_unit_angle_rad, &hkl_unit_angle_deg));
+	res &= DIAG(NULL == hkl_parameter_new("", "no description", 2, 1, 3,
+					      FALSE, TRUE,
+					      &hkl_unit_angle_rad, &hkl_unit_angle_deg));
+	res &= DIAG(NULL == hkl_parameter_new("toto", "no description", 2, 1, 3,
+					      FALSE, TRUE,
+					      &hkl_unit_angle_rad, &hkl_unit_angle_deg));
+	res &= DIAG(NULL == hkl_parameter_new("toto", "no description", 1, 2, 3,
+					      FALSE, TRUE,
+					      &hkl_unit_angle_rad, &hkl_unit_length_nm));
+
+	res &= DIAG(NULL == hkl_parameter_new("toto", "no description", 1, 2, 3,
+					      FALSE, TRUE,
+					      &hkl_unit_angle_rad, &hkl_unit_length_nm));
+
 	p = hkl_parameter_new("toto", "no description", 1, 2, 3,
 			      FALSE, TRUE,
 			      &hkl_unit_angle_rad, &hkl_unit_angle_deg);
-	ok(NULL != p, __func__);
+	res &= DIAG(NULL != p);
 
 	hkl_parameter_free(p);
+
+	ok(res == TRUE, __func__);
+}
+
+static void set(void)
+{
+	HklParameter *p;
+	GError *error;
+	int res = TRUE;
+
+	p = hkl_parameter_new("toto", "no description", 1, 2, 3,
+			      FALSE, TRUE,
+			      &hkl_unit_angle_rad, &hkl_unit_angle_deg);
+
+	/* can not set a parameter with a NaN value */
+	error = NULL;
+	res &= DIAG(FALSE == hkl_parameter_value_set(p, NAN, HKL_UNIT_DEFAULT, &error));
+	res &= DIAG(error != NULL);
+	g_clear_error(&error);
+
+	/* set a normal value is ok */
+	error = NULL;
+	res &= DIAG(TRUE == hkl_parameter_value_set(p, 10, HKL_UNIT_DEFAULT, &error));
+	res &= DIAG(error == NULL);
+
+	hkl_parameter_free(p);
+
+	ok(res == TRUE, __func__);
 }
 
 static void is_valid(void)
 {
 	HklParameter *p;
 	GError *error;
+	int res = TRUE;
 
 	p = hkl_parameter_new("toto", "no description", 1, 2, 3,
 			      FALSE, TRUE,
 			      &hkl_unit_angle_rad, &hkl_unit_angle_deg);
-	ok(TRUE == hkl_parameter_is_valid(p), __func__);
+	res &= DIAG(TRUE == hkl_parameter_is_valid(p));
 
-	error= NULL;
-	ok(TRUE == hkl_parameter_value_set(p, 10, HKL_UNIT_DEFAULT, &error), __func__);
-	ok(error == NULL, __func__);
-	ok(FALSE == hkl_parameter_is_valid(p), __func__);
+	error = NULL;
+	res &= DIAG(TRUE == hkl_parameter_value_set(p, 10, HKL_UNIT_DEFAULT, &error));
+	res &= DIAG(error == NULL);
+	res &= DIAG(FALSE == hkl_parameter_is_valid(p));
 
 	hkl_parameter_free(p);
+
+	ok(res == TRUE, __func__);
 }
 
 static void min_max(void)
@@ -135,6 +173,7 @@ static void min_max(void)
 	HklParameter *p;
 	double min, max;
 	GError *error;
+	int res = TRUE;
 
 	p = hkl_parameter_new("toto", "no description", 1, 2, 3,
 			      FALSE, TRUE,
@@ -143,14 +182,44 @@ static void min_max(void)
 	is_double(1, min, HKL_EPSILON, __func__);
 	is_double(3, max, HKL_EPSILON, __func__);
 
-	ok(TRUE == hkl_parameter_min_max_set(p, 1.1, 4, HKL_UNIT_DEFAULT, NULL), __func__);
+	res &= DIAG(TRUE == hkl_parameter_min_max_set(p, 1.1, 4, HKL_UNIT_DEFAULT, NULL));
 	hkl_parameter_min_max_get(p, &min, &max, HKL_UNIT_DEFAULT);
 	is_double(1.1, min, HKL_EPSILON, __func__);
 	is_double(4, max, HKL_EPSILON, __func__);
 
 	error = NULL;
-	ok(FALSE == hkl_parameter_min_max_set(p, 4, 1, HKL_UNIT_DEFAULT, &error), __func__);
-	ok(error != NULL, __func__);
+	res &= DIAG(FALSE == hkl_parameter_min_max_set(p, 4, 1, HKL_UNIT_DEFAULT, &error));
+	res &= DIAG(error != NULL);
+	g_clear_error(&error);
+
+	/* nothing should have changed */
+	hkl_parameter_min_max_get(p, &min, &max, HKL_UNIT_DEFAULT);
+	is_double(1.1, min, HKL_EPSILON, __func__);
+	is_double(4, max, HKL_EPSILON, __func__);
+
+	error = NULL;
+	res &= DIAG(FALSE == hkl_parameter_min_max_set(p, NAN, 1, HKL_UNIT_DEFAULT, &error));
+	res &= DIAG(error != NULL);
+	g_clear_error(&error);
+
+	/* nothing should have changed */
+	hkl_parameter_min_max_get(p, &min, &max, HKL_UNIT_DEFAULT);
+	is_double(1.1, min, HKL_EPSILON, __func__);
+	is_double(4, max, HKL_EPSILON, __func__);
+
+	error = NULL;
+	res &= DIAG(FALSE == hkl_parameter_min_max_set(p, 1, NAN, HKL_UNIT_DEFAULT, &error));
+	res &= DIAG(error != NULL);
+	g_clear_error(&error);
+
+	/* nothing should have changed */
+	hkl_parameter_min_max_get(p, &min, &max, HKL_UNIT_DEFAULT);
+	is_double(1.1, min, HKL_EPSILON, __func__);
+	is_double(4, max, HKL_EPSILON, __func__);
+
+	error = NULL;
+	res &= DIAG(FALSE == hkl_parameter_min_max_set(p, NAN, NAN, HKL_UNIT_DEFAULT, &error));
+	res &= DIAG(error != NULL);
 	g_clear_error(&error);
 
 	/* nothing should have changed */
@@ -178,11 +247,12 @@ static void getter(void)
 
 int main(void)
 {
-	plan(44);
+	plan(40);
 
 	new();
 	new_copy();
 	init();
+	set();
 	is_valid();
 	min_max();
 	getter();

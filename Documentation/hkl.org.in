@@ -866,6 +866,11 @@ git clone git://repo.or.cz/hkl.git
    #+END_QUOTE
 * Releases
 ** @VERSION@
+*** DONE Only finite float values are allow when setting an HklParameter value or range.
+    When using =hkl_parameter_value_set= or
+    =hkl_parameter_min_max_set= functions it is not allow to use the
+    float =NaN=, =-Inf=, =+Inf= value.
+** 5.0.0.2456 <2018-02-22 Thu>
 *** DONE add emergence on all e4c diffractometers <2017-03-16 Thu>
     The emergence pseudo axis is was added to =SOLEIL MARS= and =E4CV=
 *** DONE Fix for multiarch (headers) <2016-05-04 mer.>

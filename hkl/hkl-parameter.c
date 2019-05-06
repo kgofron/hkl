@@ -279,6 +279,26 @@ int hkl_parameter_min_max_set(HklParameter *self, double min, double max,
 
 	hkl_error (error == NULL || *error == NULL);
 
+	if(!isfinite(min)){
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_MIN_MAX_SET,
+			    "It is not possible to set the min range of %s parameter with the non-finite %f value\n",
+			    self->name, min);
+
+		return FALSE;
+	}
+
+	if(!isfinite(max)){
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_MIN_MAX_SET,
+			    "It is not possible to set the max range of %s parameter with the non-finite %f value\n",
+			    self->name, max);
+
+		return FALSE;
+	}
+
 	if (min > max){
 		g_set_error(error,
 			    HKL_PARAMETER_ERROR,

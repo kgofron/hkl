@@ -61,6 +61,7 @@ static inline GQuark hkl_parameter_error_quark (void)
 
 typedef enum {
 	HKL_PARAMETER_ERROR_MIN_MAX_SET, /* can not set the min max */
+	HKL_PARAMETER_ERROR_VALUE_SET, /* can not set the value */
 } HklParameterError;
 
 /****************/
@@ -139,6 +140,15 @@ static inline int hkl_parameter_value_set_real(HklParameter *self, double value,
 					       HklUnitEnum unit_type, GError **error)
 {
 	hkl_error (error == NULL || *error == NULL);
+
+	if (!isfinite(value)){
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_VALUE_SET,
+			    "It is forbiden to set the (%s) parameter value with the non-finite %f value\n",
+			    self->name, value);
+		return FALSE;
+	}
 
 	switch (unit_type) {
 	case HKL_UNIT_DEFAULT:
