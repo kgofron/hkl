@@ -6,7 +6,7 @@ module Hkl.Projects.Sixs
 
 import Control.Monad (forM_)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Array.Repa (Array)
+import Data.Array.Repa (Array, toList)
 import Data.Array.Repa.Index (DIM2)
 import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.ByteString.Char8 (pack)
@@ -59,7 +59,7 @@ data DataFrame
       (Array F DIM2 Word16) -- image
 
 instance Show DataFrame where
-  show (DataFrame i g m _) = show i ++ show g ++ show m
+  show (DataFrame i g m im) = show i ++ show g ++ show m -- ++ show (toList im)
 
 class FramesP a where
   framesP :: FilePath -> a -> Producer DataFrame (SafeT IO) ()

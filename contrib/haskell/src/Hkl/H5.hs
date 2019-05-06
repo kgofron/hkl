@@ -100,18 +100,21 @@ get_image d n = withDataspace d $ \dataspace -> do
           stride = Just (HSize 1)
           count = HSize 1
           block = Just (HSize 1)
-      selectHyperslab dataspace Set [(start, stride, count, block)]
-      withDataspace' $ \memspace -> do
-        data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate 1 (0 :: Word16)
+      selectHyperslab dataspace Set [ (start, Nothing, count, Nothing)
+                                    , (0, Nothing, 240, Nothing)
+                                    , (0, Nothing, 560, Nothing)
+                                    ]
+      withDataspace' [HSize 240, HSize 560] $ \memspace -> do
+        data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (240 * 560) (0 :: Word16)
         readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
-        return $ fromForeignPtr (shapeOfList [1, 1]) fp
+        return $ fromForeignPtr (shapeOfList [240, 560]) fp
 
 
 get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
 get_position_new dataset s =
     withDataspace dataset $ \dataspace -> do
       selectHyperslab dataspace Set (toHyperslab s)
-      withDataspace' $ \memspace -> do
+      withDataspace' [HSize 1] $ \memspace -> do
         data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
         readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
@@ -124,7 +127,7 @@ get_position dataset n =
       let count = HSize 1
       let block = Just (HSize 1)
       selectHyperslab dataspace Set [(start, stride, count, block)]
-      withDataspace' $ \memspace -> do
+      withDataspace' [HSize 1] $ \memspace -> do
         data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
         readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
@@ -149,10 +152,10 @@ openH5 f = openFile (pack f) [ReadOnly] Nothing
 
 -- check how to merge both methods
 
-withDataspace' :: (Dataspace -> IO r) -> IO r
-withDataspace' = bracket acquire release
+withDataspace' :: [HSize] -> (Dataspace -> IO r) -> IO r
+withDataspace' ss = bracket acquire release
   where
-    acquire = createSimpleDataspace [HSize 1]
+    acquire = createSimpleDataspace ss
     release = closeDataspace
 
 withDataspace :: Dataset -> (Dataspace -> IO r) -> IO r
