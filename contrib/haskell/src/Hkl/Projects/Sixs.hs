@@ -6,7 +6,7 @@ module Hkl.Projects.Sixs
 
 import Control.Monad (forM_)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Array.Repa (Array, toList)
+import Data.Array.Repa (Array)
 import Data.Array.Repa.Index (DIM2)
 import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.ByteString.Char8 (pack)
@@ -21,6 +21,7 @@ import System.FilePath.Posix ((</>))
 
 import Hkl ( DataItem ( DataItemH5 )
            , Dataset
+           , Detector(..)
            , ExtendDims ( ExtendDims, StrictDims )
            , Factory(Uhv)
            , File
@@ -59,13 +60,13 @@ data DataFrame
       (Array F DIM2 Word16) -- image
 
 instance Show DataFrame where
-  show (DataFrame i g m im) = show i ++ show g ++ show m -- ++ show (toList im)
+  show (DataFrame i g m _) = show i ++ show g ++ show m
 
 class FramesP a where
-  framesP :: FilePath -> a -> Producer DataFrame (SafeT IO) ()
+  framesP :: FilePath -> a -> Detector b -> Producer DataFrame (SafeT IO) ()
 
 instance FramesP DataFrameHklH5Path where
-  framesP fp (DataFrameHklH5Path i m o d g u w t) =
+  framesP fp (DataFrameHklH5Path i m o d g u w t) det =
     bracket (liftIO $ openH5 fp) (liftIO . closeFile) $ \f ->
     withDataset f i $ \i' ->
     withDataset f m $ \m' ->
@@ -83,7 +84,7 @@ instance FramesP DataFrameHklH5Path where
                            delta <- get_position d' j
                            gamma <- get_position g' j
                            wavelength <- get_position w' 0
-                           image <- get_image i' j
+                           image <- get_image det i' j
                            ub <- get_ub u'
                            let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
                                source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
@@ -107,5 +108,5 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
 
   runSafeT $ runEffect $
-    framesP (root </> filename) dataframe_h5p
+    framesP (root </> filename) dataframe_h5p ImXpadS140
     >-> Pipes.Prelude.print
