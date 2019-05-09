@@ -113,27 +113,20 @@ get_image det d n = withDataspace d $ \dataspace -> do
         readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
         return $ fromForeignPtr s fp
 
-get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
-get_position_new dataset s =
+getPosition' :: Dataset -> [(HSize, Maybe HSize, HSize, Maybe HSize)] -> IO (Vector Double)
+getPosition' dataset h =
     withDataspace dataset $ \dataspace -> do
-      selectHyperslab dataspace Set (shapeAsCoordinateToHyperslab s)
+      selectHyperslab dataspace Set h
       withDataspace' [HSize 1] $ \memspace -> do
         data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
         readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
 
+get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
+get_position_new dataset s = getPosition' dataset (shapeAsCoordinateToHyperslab s)
+
 get_position :: Dataset -> Int -> IO (Vector Double)
-get_position dataset n =
-    withDataspace dataset $ \dataspace -> do
-      let start = HSize (fromIntegral n)
-      let stride = Just (HSize 1)
-      let count = HSize 1
-      let block = Just (HSize 1)
-      selectHyperslab dataspace Set [(start, stride, count, block)]
-      withDataspace' [HSize 1] $ \memspace -> do
-        data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
-        readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
-        freeze data_out
+get_position dataset n = getPosition' dataset [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
 
 get_ub :: Dataset -> IO (Matrix Double)
 get_ub dataset = do
