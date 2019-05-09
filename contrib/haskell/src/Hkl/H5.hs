@@ -94,24 +94,29 @@ check_ndims d expected = do
   (CInt ndims) <- getSimpleDataspaceExtentNDims space_id
   return $ expected == fromEnum ndims
 
-toHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
-toHyperslab s = [(HSize (fromIntegral n), Just (HSize 1), HSize 1, Just (HSize 1)) | n <- listOfShape s]
+shapeAsCoordinateToHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
+shapeAsCoordinateToHyperslab s = [(HSize (fromIntegral n), Nothing, HSize 1, Nothing) | n <- listOfShape s]
+
+shapeAsRangeToHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
+shapeAsRangeToHyperslab s =  [(0, Nothing, HSize (fromIntegral s'), Nothing) | s' <- listOfShape s]
+
+size :: [(HSize, Maybe HSize, HSize, Maybe HSize)] -> Int
+size h = product [fromIntegral c | (_, _, c, _) <- h]
 
 get_image :: Shape sh => Detector a sh -> Dataset -> Int -> IO (Array F sh Word16)
 get_image det d n = withDataspace d $ \dataspace -> do
-      let start = HSize (fromIntegral n)
-          count = HSize 1
-          ss = listOfShape (shape det)
-      selectHyperslab dataspace Set ((start, Nothing, count, Nothing) : [(0, Nothing, HSize (fromIntegral s), Nothing) | s <- ss])
-      withDataspace' [HSize (fromIntegral s) | s <- ss] $ \memspace -> do
-        data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (product ss) (0 :: Word16)
+      let s = shape det
+          h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
+      selectHyperslab dataspace Set h
+      withDataspace' [HSize (fromIntegral s') | s' <- listOfShape s] $ \memspace -> do
+        data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (size h) (0 :: Word16)
         readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
-        return $ fromForeignPtr (shape det) fp
+        return $ fromForeignPtr s fp
 
 get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
 get_position_new dataset s =
     withDataspace dataset $ \dataspace -> do
-      selectHyperslab dataspace Set (toHyperslab s)
+      selectHyperslab dataspace Set (shapeAsCoordinateToHyperslab s)
       withDataspace' [HSize 1] $ \memspace -> do
         data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
         readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
