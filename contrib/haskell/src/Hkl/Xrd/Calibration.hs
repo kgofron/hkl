@@ -14,6 +14,7 @@ module Hkl.Xrd.Calibration
 import Prelude hiding ((<>))
 import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad.IO.Class (liftIO)
+import Data.Array.Repa.Index (DIM2)
 import Data.ByteString.Char8 (pack)
 import Data.List (foldl')
 import Data.Text (unlines, pack)
@@ -117,7 +118,7 @@ import Numeric.LinearAlgebra ((#>))
 
 data NptExt a = NptExt { nptExtNpt :: Npt
                        , nptExtPose :: Pose
-                       , nptExtDetector :: Detector a
+                       , nptExtDetector :: Detector a DIM2
                        }
               deriving (Show)
 
@@ -132,7 +133,7 @@ data XRDCalibrationEntry = XRDCalibrationEntryNxs { xrdCalibrationEntryNxs'Nxs :
 
 data XRDCalibration a = XRDCalibration { xrdCalibrationName :: SampleName
                                        , xrdCalibrationOutputDir :: AbsDirPath
-                                       , xrdCalibrationDetector ∷ Detector a
+                                       , xrdCalibrationDetector ∷ Detector a DIM2
                                        , xrdCalibrationCalibrant ∷ Calibrant
                                        , xrdCalibrationEntries :: [XRDCalibrationEntry]
                                        }
@@ -180,7 +181,7 @@ readWavelength e =
       (Nxs f p) = xrdCalibrationEntryNxs'Nxs e
 
 
-readXRDCalibrationEntry :: Detector a -> XRDCalibrationEntry -> IO (NptExt a)
+readXRDCalibrationEntry :: Detector a DIM2 -> XRDCalibrationEntry -> IO (NptExt a)
 readXRDCalibrationEntry d e@XRDCalibrationEntryNxs{} =
   withH5File f $ \h5file -> NptExt
                             <$> nptFromFile (xrdCalibrationEntryNxs'NptPath e)
@@ -204,7 +205,7 @@ readXRDCalibrationEntry d e@(XRDCalibrationEntryEdf _ _) =
 
 type NptEntry' = (Double, [Vector Double]) -- tth, detector pixels coordinates
 type Npt' = (Double, [NptEntry']) -- wavelength, [NptEntry']
-type NptExt' a = (Npt', Matrix Double, Detector a)
+type NptExt' a = (Npt', Matrix Double, Detector a DIM2)
 
 class ToGsl a where
   toGsl ∷ a → Vector Double
@@ -227,10 +228,10 @@ instance FromGsl PoniExt where
 instance ToGslFunc PoniExt where
   toGslFunc _ npts = f (preCalibrate npts)
     where
-      preCalibrate''' ∷ Detector a → NptEntry → NptEntry'
+      preCalibrate''' ∷ Detector a sh → NptEntry → NptEntry'
       preCalibrate''' detector (NptEntry _ tth _ points) = (tth /~ radian, map (coordinates detector) points)
 
-      preCalibrate'' ∷ Npt → Detector a → Npt'
+      preCalibrate'' ∷ Npt → Detector a sh → Npt'
       preCalibrate'' n detector = (nptWavelength n /~ meter, map (preCalibrate''' detector) (nptEntries n))
 
       preCalibrate' ∷ NptExt a → NptExt' a
@@ -324,7 +325,7 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
     scriptPath ∷ FilePath
     scriptPath = o </> "pre-calibration.py"
 
-scriptPyFAICalib ∷ AbsDirPath → XRDCalibrationEntry → Detector a → Calibrant → WaveLength → Script Sh
+scriptPyFAICalib ∷ AbsDirPath → XRDCalibrationEntry → Detector a sh → Calibrant → WaveLength → Script Sh
 scriptPyFAICalib o e d c w = ScriptSh (content, scriptPath)
   where
     content = Data.Text.unlines $

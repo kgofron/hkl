@@ -51,7 +51,7 @@ buildMatrix' rc cc f = do
     -- fromLists $ map (map f)
     --     $ map (\ ri -> map (\ ci -> (ri, ci)) [0 .. (cc - 1)]) [0 .. (rc - 1)]
 
-geometryDetectorRotationGet :: Geometry -> Detector a -> IO (Matrix Double)
+geometryDetectorRotationGet :: Geometry -> Detector a sh -> IO (Matrix Double)
 geometryDetectorRotationGet g d  = do
   f_geometry <- newGeometry g
   f_detector <- newDetector d

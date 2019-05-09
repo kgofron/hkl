@@ -48,7 +48,7 @@ solve' engine (Engine _ ps _) = do
       c_hkl_engine_pseudo_axis_values_set engine values n unit nullPtr
       >>= newForeignPtr c_hkl_geometry_list_free
 
-solve :: Geometry -> Detector a -> Sample b -> Engine -> IO [Geometry]
+solve :: Geometry -> Detector a sh -> Sample b -> Engine -> IO [Geometry]
 solve g@(Geometry f _ _ _) d s e@(Engine name _ _) =
   withSample s $ \sample ->
       withDetector d $ \detector ->
@@ -59,7 +59,7 @@ solve g@(Geometry f _ _ _) d s e@(Engine name _ _) =
                   engine <- c_hkl_engine_list_engine_get_by_name engines cname nullPtr
                   solve' engine e >>= peekHklGeometryList
 
-solveTraj :: Geometry -> Detector a -> Sample b -> [Engine] -> IO [Geometry]
+solveTraj :: Geometry -> Detector a sh -> Sample b -> [Engine] -> IO [Geometry]
 solveTraj g@(Geometry f _ _ _) d s es = do
   let name = engineName (head es)
   withSample s $ \sample ->
@@ -85,7 +85,7 @@ withDiffractometer d fun = do
   let f_engines = difEngineList d
   withForeignPtr f_engines fun
 
-newDiffractometer :: Geometry -> Detector a -> Sample b -> IO Diffractometer
+newDiffractometer :: Geometry -> Detector a sh -> Sample b -> IO Diffractometer
 newDiffractometer g@(Geometry f _ _ _) d s = do
   f_engines <- newEngineList f
   f_geometry <- newGeometry g
@@ -102,13 +102,13 @@ newDiffractometer g@(Geometry f _ _ _) d s = do
                               , difSample = f_sample
                               }
 
-computePipe :: Detector a -> Sample b -> Pipe Geometry [Engine] IO ()
+computePipe :: Detector a sh -> Sample b -> Pipe Geometry [Engine] IO ()
 computePipe d s = forever $ do
   g <- await
   e <- lift $ compute g d s
   yield e
 
-solveTrajPipe :: Geometry -> Detector a -> Sample b -> Pipe Engine Geometry IO ()
+solveTrajPipe :: Geometry -> Detector a sh -> Sample b -> Pipe Engine Geometry IO ()
 solveTrajPipe g d s = do
   dif <- lift $ newDiffractometer g d s
   solveTrajPipe' dif
@@ -143,7 +143,7 @@ foreign import ccall unsafe "hkl.h hkl_engine_pseudo_axis_values_set"
 foreign import ccall unsafe "hkl.h &hkl_geometry_list_free"
   c_hkl_geometry_list_free :: FunPtr (Ptr HklGeometryList -> IO ())
 
-compute :: Geometry -> Detector a -> Sample b -> IO [Engine]
+compute :: Geometry -> Detector a sh -> Sample b -> IO [Engine]
 compute g@(Geometry f _ _ _) d s =
   withSample s $ \sample ->
       withDetector d $ \detector ->

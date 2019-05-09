@@ -55,8 +55,7 @@ import Bindings.HDF5.Raw ( HErr_t(HErr_t)
                          , h5l_iterate
                          )
 import Control.Exception (bracket)
-import Data.Array.Repa (Array, Shape, listOfShape, shapeOfList)
-import Data.Array.Repa.Index (DIM2)
+import Data.Array.Repa (Array, Shape, listOfShape)
 import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr)
 import Data.ByteString.Char8 ( pack )
 import Data.IORef ( newIORef, readIORef, writeIORef )
@@ -98,21 +97,16 @@ check_ndims d expected = do
 toHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
 toHyperslab s = [(HSize (fromIntegral n), Just (HSize 1), HSize 1, Just (HSize 1)) | n <- listOfShape s]
 
-get_image :: Detector a -> Dataset -> Int -> IO (Array F DIM2 Word16)
+get_image :: Shape sh => Detector a sh -> Dataset -> Int -> IO (Array F sh Word16)
 get_image det d n = withDataspace d $ \dataspace -> do
       let start = HSize (fromIntegral n)
           count = HSize 1
-          ss = shape det
+          ss = listOfShape (shape det)
       selectHyperslab dataspace Set ((start, Nothing, count, Nothing) : [(0, Nothing, HSize (fromIntegral s), Nothing) | s <- ss])
       withDataspace' [HSize (fromIntegral s) | s <- ss] $ \memspace -> do
         data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (product ss) (0 :: Word16)
         readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
-        return $ fromForeignPtr (shapeOfList ss) fp
-    where
-      shape :: Detector a -> [Int]
-      shape ImXpadS140 = [240, 560]
-      shape Xpad32 = [960, 560]
-      shape ZeroD = [1]
+        return $ fromForeignPtr (shape det) fp
 
 get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
 get_position_new dataset s =

@@ -25,12 +25,12 @@ data HklDetector
 
 -- Detector
 
-withDetector :: Detector a -> (Ptr HklDetector -> IO b) -> IO b
+withDetector :: Detector a sh -> (Ptr HklDetector -> IO b) -> IO b
 withDetector d func = do
   fptr <- newDetector d
   withForeignPtr fptr func
 
-newDetector :: Detector a -> IO (ForeignPtr HklDetector)
+newDetector :: Detector a sh -> IO (ForeignPtr HklDetector)
 newDetector ZeroD = c_hkl_detector_factory_new 0 >>= newForeignPtr c_hkl_detector_free
 newDetector _ = error "Can not use 2D detector with the hkl library"
 

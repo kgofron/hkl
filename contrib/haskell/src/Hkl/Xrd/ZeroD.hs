@@ -10,6 +10,7 @@ module Hkl.Xrd.ZeroD
        , XrdZeroDParams(..)
        ) where
 
+import Data.Array.Repa.Index (DIM2)
 import Data.Text (unlines, pack)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (*~))
 import System.Exit ( ExitCode( ExitSuccess ) )
@@ -40,7 +41,7 @@ newtype XrdZeroDSource  = XrdZeroDSourceNxs (Nxs XrdZeroD) deriving (Show)
 
 data XrdZeroDSample = XrdZeroDSample SampleName AbsDirPath [XrdZeroDSource] deriving (Show)
 
-data XrdZeroDCalibration a = XrdZeroDCalibration XrdZeroDSample (Detector a) Calibrant deriving (Show)
+data XrdZeroDCalibration a = XrdZeroDCalibration XrdZeroDSample (Detector a DIM2) Calibrant deriving (Show)
 
 data XrdZeroDParams a = XrdZeroDParams PoniExt (Maybe (Flat a)) AIMethod deriving (Show)
 
@@ -82,7 +83,7 @@ scriptExtractEdf o es = Py2Script (content, scriptPath)
     scriptPath ∷ FilePath
     scriptPath = o </> "pre-calibration.py"
 
-scriptPyFAICalib ∷ AbsDirPath → XrdZeroDSource → Detector a → Calibrant → Script Sh
+scriptPyFAICalib ∷ AbsDirPath → XrdZeroDSource → Detector a sh → Calibrant → Script Sh
 scriptPyFAICalib o e@(XrdZeroDSourceNxs (Nxs n _)) d c = ScriptSh (content, scriptPath)
   where
     content = Data.Text.unlines $

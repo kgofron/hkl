@@ -2,6 +2,7 @@
 
 module Main where
 
+import Data.Array.Repa.Index (DIM0)
 import Data.Vector.Storable (Vector, fromList)
 import Numeric.Units.Dimensional.Prelude (nano, meter, (*~))
 import Pipes
@@ -34,7 +35,7 @@ testSirius = runEffect $ fromToPipe 6 from to
                      , Parameter "delta" (-0.0223369) (Range (-180) 180)
                      , Parameter "gamma" 30.0000299 (Range (-180) 180)])
 
-    detector ∷ Detector ZeroD
+    detector ∷ Detector ZeroD DIM0
     detector = ZeroD
 
     engine ∷ Engine

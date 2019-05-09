@@ -7,9 +7,11 @@ module Hkl.Detector
        , ImXpadS140
        , Xpad32
        , ZeroD
+       , shape
        , coordinates
        ) where
 
+import Data.Array.Repa.Index (Z(..), DIM0, DIM2, ix2)
 import Data.Vector.Storable ( Vector
                             , fromList
                             )
@@ -21,12 +23,17 @@ data ImXpadS140
 data Xpad32
 data ZeroD
 
-data Detector a where
-  ImXpadS140 :: Detector ImXpadS140
-  Xpad32 :: Detector Xpad32
-  ZeroD :: Detector ZeroD
+data Detector a sh where
+  ImXpadS140 :: Detector ImXpadS140 DIM2
+  Xpad32 :: Detector Xpad32 DIM2
+  ZeroD :: Detector ZeroD DIM0
 
-deriving instance Show (Detector a)
+deriving instance Show (Detector a sh)
+
+shape :: Detector a sh -> sh
+shape ImXpadS140 = ix2 560 240
+shape Xpad32 = ix2 560 960
+shape ZeroD = Z
 
 -- | Xpad Family
 
@@ -66,7 +73,7 @@ interp f p
 
 -- compute the coordinated at a given point
 
-coordinates :: Detector a -> NptPoint -> Vector Double
+coordinates :: Detector a sh -> NptPoint -> Vector Double
 coordinates ZeroD (NptPoint 0 0) = fromList [0, 0, 0]
 coordinates ZeroD _ = error "No coordinates in a ZeroD detecteor"
 

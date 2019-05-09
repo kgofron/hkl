@@ -43,7 +43,7 @@ newtype Pose = Pose (MyMatrix Double) deriving (Show)
 
 -- | ADetector
 
-data ADetector = forall a. ADetector (Detector a)
+data ADetector = forall a sh. ADetector (Detector a sh)
 
 instance Show ADetector where
   show (ADetector v) = show v

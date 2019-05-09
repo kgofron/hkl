@@ -19,7 +19,7 @@ class ToPyFAICalibArg a where
 instance ToPyFAICalibArg FilePath where
   toPyFAICalibArg f = f
 
-instance ToPyFAICalibArg (Detector a) where
+instance ToPyFAICalibArg (Detector a sh) where
   toPyFAICalibArg d = "-D" ++ unpack (toPyFAI d)
 
 instance ToPyFAICalibArg Calibrant where

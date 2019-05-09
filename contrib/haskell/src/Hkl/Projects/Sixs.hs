@@ -63,7 +63,7 @@ instance Show DataFrame where
   show (DataFrame i g m _) = show i ++ show g ++ show m
 
 class FramesP a where
-  framesP :: FilePath -> a -> Detector b -> Producer DataFrame (SafeT IO) ()
+  framesP :: FilePath -> a -> Detector b DIM2 -> Producer DataFrame (SafeT IO) ()
 
 instance FramesP DataFrameHklH5Path where
   framesP fp (DataFrameHklH5Path i m o d g u w t) det =

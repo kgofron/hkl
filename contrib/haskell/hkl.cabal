@@ -30,6 +30,7 @@ executable ghkl
                      , hkl
                      , monad-loops >= 0.4.2
                      , pipes >= 4.1.2
+                     , repa
                      , text
                      , transformers >= 0.3
                      , vector >= 0.10.0.1
