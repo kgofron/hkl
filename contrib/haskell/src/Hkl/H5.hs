@@ -17,6 +17,7 @@ module Hkl.H5
     , nxEntries
     , openDataset
     , openH5
+    , set_image
     , withH5File
     )
     where
@@ -40,6 +41,7 @@ import Bindings.HDF5.Dataset ( Dataset
                              , getDatasetSpace
                              , readDataset
                              , readDatasetInto
+                             , writeDataset
                              )
 import Bindings.HDF5.Dataspace ( Dataspace
                                , SelectionOperator(Set)
@@ -48,6 +50,7 @@ import Bindings.HDF5.Dataspace ( Dataspace
                                , getSimpleDataspaceExtentNDims
                                , getSimpleDataspaceExtentNPoints
                                , selectHyperslab
+                               , selectNone
                                )
 import Bindings.HDF5.Raw ( HErr_t(HErr_t)
                          , HId_t(HId_t)
@@ -56,10 +59,10 @@ import Bindings.HDF5.Raw ( HErr_t(HErr_t)
                          )
 import Control.Exception (bracket)
 import Data.Array.Repa (Array, Shape, listOfShape)
-import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr)
+import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr, toForeignPtr)
 import Data.ByteString.Char8 ( pack )
 import Data.IORef ( newIORef, readIORef, writeIORef )
-import Data.Vector.Storable (Vector, freeze)
+import Data.Vector.Storable (Vector, freeze, unsafeFromForeignPtr0)
 import Data.Vector.Storable.Mutable (MVector(..), replicate)
 import Data.Word (Word16)
 import Foreign.StablePtr ( castPtrToStablePtr
@@ -112,6 +115,19 @@ get_image det d n = withDataspace d $ \dataspace -> do
         data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (size h) (0 :: Word16)
         readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
         return $ fromForeignPtr s fp
+
+
+set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> (Array F sh Word16) -> IO ()
+set_image det d dataspace n arr =  do
+  selectNone dataspace
+  selectHyperslab dataspace Set h
+  withDataspace' [HSize (fromIntegral s') | s' <- listOfShape s] $ \memspace ->
+    writeDataset d (Just memspace) (Just dataspace) Nothing vector
+    where
+      s = shape det
+      h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
+      fptr = toForeignPtr arr
+      vector = unsafeFromForeignPtr0 fptr (size h)
 
 getPosition' :: Dataset -> [(HSize, Maybe HSize, HSize, Maybe HSize)] -> IO (Vector Double)
 getPosition' dataset h =

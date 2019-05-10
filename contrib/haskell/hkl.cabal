@@ -114,6 +114,7 @@ library
                     , Hkl.Projects.Mars.Romeden
                     , Hkl.Projects.Mars.Schlegel
                     , Hkl.Projects.Sixs
+                    , Hkl.Pipes
                     , Hkl.PyFAI
                     , Hkl.PyFAI.AzimuthalIntegrator
                     , Hkl.PyFAI.Calib

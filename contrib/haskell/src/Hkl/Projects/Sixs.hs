@@ -4,44 +4,26 @@ module Hkl.Projects.Sixs
     ( main_sixs )
         where
 
-import Bindings.HDF5.Core (HSize)
 import Bindings.HDF5.File ( AccFlags(Truncate), createFile)
-import Bindings.HDF5.Dataset (createDataset, writeDataset)
+import Bindings.HDF5.Dataset (createDataset)
 import Bindings.HDF5.Datatype.Internal (nativeTypeOf)
-import Bindings.HDF5.Dataspace (Dataspace, closeDataspace, createSimpleDataspace)
+import Bindings.HDF5.Dataspace (createSimpleDataspace)
 import Control.Monad (forM_, forever)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Array.Repa (Array)
 import Data.Array.Repa.Index (DIM2)
-import Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
+import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.ByteString.Char8 (pack)
-import Data.Vector.Storable (concat, head, unsafeFromForeignPtr0)
+import Data.Vector.Storable (concat, head)
 import Data.Word (Word16)
 import Numeric.LinearAlgebra (Matrix)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (*~))
 import Pipes (Consumer, Producer, await, runEffect, (>->), yield)
 import Pipes.Prelude (print, tee)
-import Pipes.Safe (MonadSafe, SafeT, bracket, runSafeT)
+import Pipes.Safe (SafeT, runSafeT)
 import System.FilePath.Posix ((</>))
 
-import Hkl ( DataItem ( DataItemH5 )
-           , Dataset
-           , Detector(..)
-           , ExtendDims ( ExtendDims, StrictDims )
-           , Factory(Uhv)
-           , File
-           , Geometry(Geometry)
-           , H5
-           , Source(Source)
-           , closeDataset
-           , closeFile
-           , get_image
-           , get_position
-           , get_ub
-           , lenH5Dataspace
-           , openDataset
-           , openH5
-           )
+import Hkl
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -72,15 +54,15 @@ class FramesP a where
 
 instance FramesP DataFrameHklH5Path where
   framesP fp (DataFrameHklH5Path i m o d g u w t) det =
-    bracket (liftIO $ openH5 fp) (liftIO . closeFile) $ \f ->
-    withDataset f i $ \i' ->
-    withDataset f m $ \m' ->
-    withDataset f o $ \o' ->
-    withDataset f d $ \d' ->
-    withDataset f g $ \g' ->
-    withDataset f u $ \u' ->
-    withDataset f w $ \w' ->
-    withDataset f t $ \_t -> do
+    withFileP (openH5 fp) $ \f ->
+    withDatasetP (openDataset' f i) $ \i' ->
+    withDatasetP (openDataset' f m) $ \m' ->
+    withDatasetP (openDataset' f o) $ \o' ->
+    withDatasetP (openDataset' f d) $ \d' ->
+    withDatasetP (openDataset' f g) $ \g' ->
+    withDatasetP (openDataset' f u) $ \u' ->
+    withDatasetP (openDataset' f w) $ \w' ->
+    withDatasetP (openDataset' f t) $ \_t -> do
       (Just n) <- liftIO $ lenH5Dataspace m'
       forM_ [0..n-1] (\j -> yield =<< liftIO
                        (do
@@ -94,31 +76,16 @@ instance FramesP DataFrameHklH5Path where
                            let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
                                source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
-    where
-      withDataset :: (MonadSafe m) => File -> DataItem H5 -> (Dataset -> m r) -> m r
-      withDataset hid (DataItemH5 name _) = bracket (liftIO $ openDataset hid (pack name) Nothing) (liftIO . closeDataset)
+        where
+          openDataset' :: File -> DataItem H5 -> IO Dataset
+          openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
 
-saveP :: FilePath -> DataItem H5 -> Consumer DataFrame (SafeT IO) ()
-saveP f p = bracket acquire release $ \f' ->
-            withNewDataspace [240, 560] $ \dataspace ->
-            withNewDataset f' dataspace $ \dataset -> forever $ do
+saveP :: FilePath -> DataItem H5 -> Detector a DIM2 -> Consumer DataFrame (SafeT IO) ()
+saveP f p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \f' ->
+            withDataspaceP (createSimpleDataspace [2009, 240, 560]) $ \dataspace ->
+            withDatasetP (createDataset f' (pack "imgs") (nativeTypeOf (0 :: Word16)) dataspace Nothing Nothing Nothing) $ \dataset -> forever $ do
               (DataFrame j g ub image) <- await
-              let fptr = toForeignPtr image
-                  vector = unsafeFromForeignPtr0 fptr (240 * 560)
-              liftIO $ writeDataset dataset Nothing Nothing Nothing vector
-    where
-      acquire = createFile (pack f) [Truncate] Nothing Nothing
-      release = closeFile
-
-      withNewDataspace :: MonadSafe m => [HSize] -> (Dataspace -> m r) -> m r
-      withNewDataspace s = bracket
-                           (liftIO $ createSimpleDataspace s)
-                           (liftIO . closeDataspace)
-
-      withNewDataset :: (MonadSafe m) => File -> Dataspace -> (Dataset -> m r) -> m r
-      withNewDataset f' dataspace = bracket
-                                    (liftIO $ createDataset f' (pack "imgs") (nativeTypeOf (0 :: Word16)) dataspace Nothing Nothing Nothing)
-                                    (liftIO . closeDataset)
+              liftIO $ set_image det dataset dataspace j image
 
 main_sixs :: IO ()
 main_sixs = do
@@ -137,5 +104,5 @@ main_sixs = do
 
   runSafeT $ runEffect $
     framesP (root </> filename) dataframe_h5p ImXpadS140
-    >-> Pipes.Prelude.tee  Pipes.Prelude.print
-    >-> saveP "/tmp/test.h5" outPath
+    -- >-> Pipes.Prelude.tee  Pipes.Prelude.print
+    >-> saveP "/tmp/test.h5" outPath ImXpadS140
