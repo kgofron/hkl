@@ -1,21 +1,26 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 module Hkl.Projects.Sixs
-       ( main_sixs )
-       where
+    ( main_sixs )
+        where
 
-import Control.Monad (forM_)
+import Bindings.HDF5.Core (HSize)
+import Bindings.HDF5.File ( AccFlags(Truncate), createFile)
+import Bindings.HDF5.Dataset (createDataset, writeDataset)
+import Bindings.HDF5.Datatype.Internal (nativeTypeOf)
+import Bindings.HDF5.Dataspace (Dataspace, closeDataspace, createSimpleDataspace)
+import Control.Monad (forM_, forever)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Data.Array.Repa (Array)
 import Data.Array.Repa.Index (DIM2)
-import Data.Array.Repa.Repr.ForeignPtr (F)
+import Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import Data.ByteString.Char8 (pack)
-import Data.Vector.Storable (concat, head)
+import Data.Vector.Storable (concat, head, unsafeFromForeignPtr0)
 import Data.Word (Word16)
 import Numeric.LinearAlgebra (Matrix)
 import Numeric.Units.Dimensional.Prelude (meter, nano, (*~))
-import Pipes (Producer, runEffect, (>->), yield)
-import Pipes.Prelude (print)
+import Pipes (Consumer, Producer, await, runEffect, (>->), yield)
+import Pipes.Prelude (print, tee)
 import Pipes.Safe (MonadSafe, SafeT, bracket, runSafeT)
 import System.FilePath.Posix ((</>))
 
@@ -93,11 +98,33 @@ instance FramesP DataFrameHklH5Path where
       withDataset :: (MonadSafe m) => File -> DataItem H5 -> (Dataset -> m r) -> m r
       withDataset hid (DataItemH5 name _) = bracket (liftIO $ openDataset hid (pack name) Nothing) (liftIO . closeDataset)
 
+saveP :: FilePath -> DataItem H5 -> Consumer DataFrame (SafeT IO) ()
+saveP f p = bracket acquire release $ \f' ->
+            withNewDataspace [240, 560] $ \dataspace ->
+            withNewDataset f' dataspace $ \dataset -> forever $ do
+              (DataFrame j g ub image) <- await
+              let fptr = toForeignPtr image
+                  vector = unsafeFromForeignPtr0 fptr (240 * 560)
+              liftIO $ writeDataset dataset Nothing Nothing Nothing vector
+    where
+      acquire = createFile (pack f) [Truncate] Nothing Nothing
+      release = closeFile
+
+      withNewDataspace :: MonadSafe m => [HSize] -> (Dataspace -> m r) -> m r
+      withNewDataspace s = bracket
+                           (liftIO $ createSimpleDataspace s)
+                           (liftIO . closeDataspace)
+
+      withNewDataset :: (MonadSafe m) => File -> Dataspace -> (Dataset -> m r) -> m r
+      withNewDataset f' dataspace = bracket
+                                    (liftIO $ createDataset f' (pack "imgs") (nativeTypeOf (0 :: Word16)) dataspace Nothing Nothing Nothing)
+                                    (liftIO . closeDataset)
+
 main_sixs :: IO ()
 main_sixs = do
   let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
-  let filename = "align_FLY2_omega_00045.nxs"
-  let dataframe_h5p = DataFrameHklH5Path
+      filename = "align_FLY2_omega_00045.nxs"
+      dataframe_h5p = DataFrameHklH5Path
                       (DataItemH5 "com_113934/scan_data/xpad_image" StrictDims)
                       (DataItemH5 "com_113934/scan_data/UHV_MU" ExtendDims)
                       (DataItemH5 "com_113934/scan_data/UHV_OMEGA" ExtendDims)
@@ -106,7 +133,9 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/UB" StrictDims)
                       (DataItemH5 "com_113934/SIXS/Monochromator/wavelength" StrictDims)
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
+      outPath = (DataItemH5 "imgs" StrictDims)
 
   runSafeT $ runEffect $
     framesP (root </> filename) dataframe_h5p ImXpadS140
-    >-> Pipes.Prelude.print
+    >-> Pipes.Prelude.tee  Pipes.Prelude.print
+    >-> saveP "/tmp/test.h5" outPath
