@@ -2,10 +2,13 @@
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Python
-       ( PyVal(..) )
-       where
+  ( PyVal(..)
+  , module X
+  ) where
 
 import Data.List (intercalate)
+
+import Hkl.Python.Pyfi as X
 
 class PyVal a where
   toPyVal ∷ a → String

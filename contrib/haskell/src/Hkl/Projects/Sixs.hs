@@ -102,7 +102,9 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
       outPath = (DataItemH5 "imgs" StrictDims)
 
-  runSafeT $ runEffect $
-    framesP (root </> filename) dataframe_h5p ImXpadS140
-    -- >-> Pipes.Prelude.tee  Pipes.Prelude.print
-    >-> saveP "/tmp/test.h5" outPath ImXpadS140
+  Prelude.print =<< getPixelsCoordinates "xpad_flat" 0 0 1
+
+  -- runSafeT $ runEffect $
+  --   framesP (root </> filename) dataframe_h5p ImXpadS140
+  --   >-> Pipes.Prelude.tee  Pipes.Prelude.print
+  --   >-> saveP "/tmp/test.h5" outPath ImXpadS140

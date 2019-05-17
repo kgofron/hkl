@@ -11,6 +11,7 @@ import Hkl.MyMatrix as X
 import Hkl.Nxs as X
 import Hkl.Pipes as X
 import Hkl.PyFAI as X
+import Hkl.Python as X
 import Hkl.Script as X
 import Hkl.Tiff as X
 import Hkl.Types as X

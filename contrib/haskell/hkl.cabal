@@ -135,6 +135,8 @@ library
                     , Hkl.Xrd.ZeroD
   other-modules:      Paths_hkl
                     , Hkl.Python
+                    , Hkl.Python.Pyfi
+                    , Hkl.Python.QQ
   other-extensions:    CPP
                      , ForeignFunctionInterface
                      , EmptyDataDecls
@@ -142,7 +144,8 @@ library
                      , FlexibleInstances
                      , FlexibleContexts
                      , RecordWildCards
-  build-depends:       async
+  build-depends:       aeson >=0.8
+                     , async
                      , attoparsec
                      , base >= 4.6
                      , bytestring >= 0.10.0.2
@@ -163,15 +166,19 @@ library
                      , pipes-safe >= 2.2.0
                      , process >= 1.1
                      , repa
+                     , pureMD5 >= 2.0
                      , text
                      , transformers >= 0.3
                      , unix >= 2.6.0.0
                      , vector >= 0.10.0.1
-
+                     , safe
+                     , template-haskell >=2.8
   hs-source-dirs:      src
+  c-sources:           src/Hkl/Python/cdefs.c
   build-tools:         hsc2hs
   default-language:    Haskell2010
   pkgconfig-depends:   hkl
+                     , python3
   ghc-options:         -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -O2
   -- ghc-options:         -fno-warn-incomplete-patterns
   -- ghc-options:         -Werror

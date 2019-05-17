@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Hkl.Detector
@@ -9,15 +10,18 @@ module Hkl.Detector
        , ZeroD
        , shape
        , coordinates
+       , getPixelsCoordinates
        ) where
 
-import Data.Array.Repa.Index (Z(..), DIM0, DIM2, ix2)
+import Data.Array.Repa (Array)
+import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr, toForeignPtr)
+import Data.Array.Repa.Index (Z(..), DIM0, DIM2, DIM3, ix2)
 import Data.Vector.Storable ( Vector
                             , fromList
                             )
 
 import Hkl.PyFAI.Npt ( NptPoint ( NptPoint ) )
-
+import Hkl.Python
 
 data ImXpadS140
 data Xpad32
@@ -87,3 +91,22 @@ coordinates Xpad32 (NptPoint x y) =
   fromList [ interp (xpadLineWithGap 120 3.57e-3) y
            , interp (xpadLine        80) x
            , 0]
+
+getPixelsCoordinates :: String -> Int -> Int -> Float -> IO (PyObject (Array F DIM3 Double))
+getPixelsCoordinates = defVVVVO [str|
+from numpy import array, ones
+from pyFAI.detectors import ALL_DETECTORS
+
+def export(name, ix0, iy0, sdd):
+        # works only for flat detector.
+        detector = ALL_DETECTORS[name]()
+        y, x, _ = detector.calc_cartesian_positions()
+        y0 = y[iy0, ix0]
+        x0 = x[iy0, ix0]
+        z = ones(x.shape) * -1 * sdd
+        # return converted to the hkl library coordinates
+        # x -> -y
+        # y -> z
+        # z -> -x
+        return array([-z, -(x - x0), (y - y0)])
+|]
