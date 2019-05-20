@@ -19,6 +19,7 @@ import Data.Array.Repa.Index (Z(..), DIM0, DIM2, DIM3, ix2)
 import Data.Vector.Storable ( Vector
                             , fromList
                             )
+import Safe.Partial (Partial)
 
 import Hkl.PyFAI.Npt ( NptPoint ( NptPoint ) )
 import Hkl.Python
@@ -92,8 +93,8 @@ coordinates Xpad32 (NptPoint x y) =
            , interp (xpadLine        80) x
            , 0]
 
-getPixelsCoordinates :: String -> Int -> Int -> Float -> IO (PyObject (Array F DIM3 Double))
-getPixelsCoordinates = defVVVVO [str|
+getPixelsCoordinates' :: String -> Int -> Int -> Float -> IO (PyObject (Array F DIM3 Double))
+getPixelsCoordinates' = defVVVVO [str|
 from numpy import array, ones
 from pyFAI.detectors import ALL_DETECTORS
 
@@ -110,3 +111,10 @@ def export(name, ix0, iy0, sdd):
         # z -> -x
         return array([-z, -(x - x0), (y - y0)])
 |]
+
+toPyFAIDetectorName :: Detector a DIM2 -> String
+toPyFAIDetectorName ImXpadS140 = "imxpads140"
+toPyFAIDetectorName Xpad32 = "xpad_flat"
+
+getPixelsCoordinates :: Partial => Detector a DIM2 -> Int -> Int -> Float -> IO (PyObject (Array F DIM3 Double))
+getPixelsCoordinates d = getPixelsCoordinates' (toPyFAIDetectorName d)
