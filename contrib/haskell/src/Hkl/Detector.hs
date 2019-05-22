@@ -14,7 +14,7 @@ module Hkl.Detector
        ) where
 
 import Data.Array.Repa (Array)
-import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr, toForeignPtr)
+import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.Array.Repa.Index (Z(..), DIM0, DIM2, DIM3, ix2)
 import Data.Vector.Storable ( Vector
                             , fromList
@@ -95,7 +95,7 @@ coordinates Xpad32 (NptPoint x y) =
 
 getPixelsCoordinates' :: String -> Int -> Int -> Float -> IO (PyObject (Array F DIM3 Double))
 getPixelsCoordinates' = defVVVVO [str|
-from numpy import array, ones
+from numpy import array, ascontiguousarray, ones
 from pyFAI.detectors import ALL_DETECTORS
 
 def export(name, ix0, iy0, sdd):
@@ -109,12 +109,14 @@ def export(name, ix0, iy0, sdd):
         # x -> -y
         # y -> z
         # z -> -x
-        return array([-z, -(x - x0), (y - y0)])
+        return ascontiguousarray([-z, -(x - x0), (y - y0)])
 |]
 
 toPyFAIDetectorName :: Detector a DIM2 -> String
 toPyFAIDetectorName ImXpadS140 = "imxpads140"
 toPyFAIDetectorName Xpad32 = "xpad_flat"
 
-getPixelsCoordinates :: Partial => Detector a DIM2 -> Int -> Int -> Float -> IO (PyObject (Array F DIM3 Double))
-getPixelsCoordinates d = getPixelsCoordinates' (toPyFAIDetectorName d)
+getPixelsCoordinates :: Partial => Detector a DIM2 -> Int -> Int -> Float -> IO (Array F DIM3 Double)
+getPixelsCoordinates d ix0 iy0 sdd = do
+    p <- getPixelsCoordinates' (toPyFAIDetectorName d) ix0 iy0 sdd
+    extractNumpyArray p

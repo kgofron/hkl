@@ -40,6 +40,7 @@ module Hkl.Python.Pyfi (
     PyObject,
     PythonException,
     exceptionType,
+    extractNumpyArray
     )
 where
 
@@ -47,6 +48,8 @@ import Prelude hiding (lookup)
 import Control.Exception (Exception, throw)
 import Control.Monad ((<=<), unless, when)
 import Data.Aeson (FromJSON, ToJSON, encode, eitherDecode)
+import Data.Array.Repa (Array, Shape, shapeOfList)
+import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr)
 import Data.ByteString.Lazy.Char8 (unpack, pack)
 import Data.Digest.Pure.MD5 (md5)
 import Data.IORef (IORef, newIORef, writeIORef, readIORef)
@@ -56,9 +59,11 @@ import Data.Monoid (mconcat)
 import Data.List (elemIndex)
 import Data.Typeable (Typeable)
 import Foreign (FunPtr, ForeignPtr)
-import Foreign.C (CInt(..), CString, peekCString, withCString)
-import Foreign.ForeignPtr (newForeignPtr, withForeignPtr)
+import Foreign.C (CInt(..), CIntPtr(..), CString, peekCString, withCString)
+import Foreign.ForeignPtr (castForeignPtr, mallocForeignPtrBytes, newForeignPtr, withForeignPtr)
 import Foreign.Marshal.Alloc (free)
+import Foreign.Marshal.Array (peekArray)
+import Foreign.Marshal.Utils (copyBytes)
 import Foreign.Ptr (Ptr, nullPtr)
 import Safe.Partial (Partial)
 import System.IO.Unsafe (unsafePerformIO)
@@ -212,6 +217,30 @@ newForeignPyPtr :: RawPyObject -> IO (PyObject b)
 newForeignPyPtr r = do
     finalizer <- gimmeFunc 0
     PyObject <$> newForeignPtr finalizer r
+
+foreign import ccall "get_PyArray_NBYTES" py_PyArray_NBYTES :: RawPyObject -> IO CIntPtr
+foreign import ccall "get_PyArray_BYTES" py_PyArray_BYTES :: RawPyObject -> IO (Ptr ())
+foreign import ccall "get_PyArray_NDIM" py_PyArray_NDIM :: RawPyObject -> IO CInt
+foreign import ccall "get_PyArray_DIMS" py_PyArray_DIMS :: RawPyObject -> IO (Ptr CIntPtr)
+
+extractNumpyArray :: Shape sh => PyObject a -> IO (Array F sh b)
+extractNumpyArray (PyObject fp) = do
+    arr <- withForeignPtr fp $ \p -> do
+      nbytes <- fromIntegral <$> py_PyArray_NBYTES p
+      fp' <- mallocForeignPtrBytes nbytes
+      withForeignPtr (castForeignPtr fp') $ \pout -> do
+          pin <- py_PyArray_BYTES p
+          s <- shape p
+          copyBytes pout pin nbytes
+          return $ fromForeignPtr s fp'
+    return arr
+        where
+          shape :: Shape sh => RawPyObject -> IO sh
+          shape ptr = do
+            ndim <- fromIntegral <$> py_PyArray_NDIM ptr
+            dims <- peekArray ndim =<< py_PyArray_DIMS ptr
+            return $ shapeOfList (reverse [fromIntegral d | d <- dims])
+
 
 def1 :: String -> String -> IO (PyObject b)
 def1 s argTypes = do

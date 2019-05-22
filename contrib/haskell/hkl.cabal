@@ -179,7 +179,12 @@ library
   default-language:    Haskell2010
   pkgconfig-depends:   hkl
                      , python3
-  ghc-options:         -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -O2
-  -- ghc-options:         -fno-warn-incomplete-patterns
+  ghc-options:         -O2
+  ghc-options:         -fno-warn-incomplete-patterns
   -- ghc-options:         -Werror
+  ghc-options:         -Wall
+  ghc-options:         -Wincomplete-uni-patterns
+  ghc-options:         -Wincomplete-record-updates
+  -- ghc-options:         -g -debug -dcore-lint
+
   ghc-prof-options:    -fprof-auto-top

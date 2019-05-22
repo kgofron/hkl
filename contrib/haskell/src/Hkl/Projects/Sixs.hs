@@ -10,7 +10,7 @@ import Bindings.HDF5.Datatype.Internal (nativeTypeOf)
 import Bindings.HDF5.Dataspace (createSimpleDataspace)
 import Control.Monad (forM_, forever)
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Array.Repa (Array)
+import Data.Array.Repa ( Array )
 import Data.Array.Repa.Index (DIM2)
 import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.ByteString.Char8 (pack)
@@ -102,9 +102,9 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
       outPath = (DataItemH5 "imgs" StrictDims)
 
-  Prelude.print =<< getPixelsCoordinates Xpad32 0 0 1
-
-  -- runSafeT $ runEffect $
-  --   framesP (root </> filename) dataframe_h5p ImXpadS140
-  --   >-> Pipes.Prelude.tee  Pipes.Prelude.print
-  --   >-> saveP "/tmp/test.h5" outPath ImXpadS140
+  pixels <- getPixelsCoordinates ImXpadS140 0 0 1
+  runSafeT $ runEffect $
+    framesP (root </> filename) dataframe_h5p ImXpadS140
+    -- >-> Pipes.Prelude.tee  Pipes.Prelude.print
+    >-> saveP "/tmp/test.h5" outPath ImXpadS140
+  return ()

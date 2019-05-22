@@ -2,6 +2,9 @@
 #include <Python.h>
 #include <string.h>
 
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/arrayobject.h>
+
 void print_object(PyObject* object)
 {
   PyObject_Print(object, stdout, 0);
@@ -90,4 +93,49 @@ typedef funcType * pFuncType;
 
 pFuncType gimmeFunc(int dummy) {
     return &finalizer;
+}
+
+
+npy_intp get_PyArray_NBYTES(PyArrayObject *object)
+{
+	npy_intp res = 0;
+
+	_import_array();
+	if(PyArray_Check(object))
+		res = PyArray_NBYTES(object);
+
+	return res;
+}
+
+char* get_PyArray_BYTES(PyArrayObject *object)
+{
+	char *res = NULL;
+
+	_import_array();
+	if(PyArray_Check(object))
+		res = PyArray_BYTES(object);
+
+	return res;
+}
+
+int get_PyArray_NDIM(PyArrayObject *object)
+{
+	int res = 0;
+
+	_import_array();
+	if(PyArray_Check(object))
+		res = PyArray_NDIM(object);
+
+	return res;
+}
+
+npy_intp* get_PyArray_DIMS(PyArrayObject *object)
+{
+	npy_intp* res = NULL;
+
+	_import_array();
+	if(PyArray_Check(object))
+		res = PyArray_DIMS(object);
+
+	return res;
 }
