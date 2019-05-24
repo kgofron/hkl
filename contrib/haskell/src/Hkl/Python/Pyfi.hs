@@ -41,6 +41,7 @@ module Hkl.Python.Pyfi (
     PythonException,
     exceptionType,
     extractNumpyArray
+    , matrixToPyObject
     )
 where
 
@@ -60,11 +61,11 @@ import Data.List (elemIndex)
 import Data.Typeable (Typeable)
 import Foreign (FunPtr, ForeignPtr)
 import Foreign.C (CInt(..), CIntPtr(..), CString, peekCString, withCString)
-import Foreign.ForeignPtr (castForeignPtr, mallocForeignPtrBytes, newForeignPtr, withForeignPtr)
-import Foreign.Marshal.Alloc (free)
-import Foreign.Marshal.Array (peekArray)
-import Foreign.Marshal.Utils (copyBytes)
+import Foreign.ForeignPtr (castForeignPtr, newForeignPtr, withForeignPtr)
+import Foreign.Marshal.Alloc (free, finalizerFree)
+import Foreign.Marshal.Array (peekArray, withArray)
 import Foreign.Ptr (Ptr, nullPtr)
+import Numeric.LinearAlgebra (Matrix, flatten, toList)
 import Safe.Partial (Partial)
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -218,21 +219,21 @@ newForeignPyPtr r = do
     finalizer <- gimmeFunc 0
     PyObject <$> newForeignPtr finalizer r
 
-foreign import ccall "get_PyArray_NBYTES" py_PyArray_NBYTES :: RawPyObject -> IO CIntPtr
+-- | numpy -> Repa
+
 foreign import ccall "get_PyArray_BYTES" py_PyArray_BYTES :: RawPyObject -> IO (Ptr ())
 foreign import ccall "get_PyArray_NDIM" py_PyArray_NDIM :: RawPyObject -> IO CInt
 foreign import ccall "get_PyArray_DIMS" py_PyArray_DIMS :: RawPyObject -> IO (Ptr CIntPtr)
+foreign import ccall "release_PyArray_BYTES" py_release_PyArray_BYTES :: RawPyObject -> IO ()
 
 extractNumpyArray :: Shape sh => PyObject a -> IO (Array F sh b)
 extractNumpyArray (PyObject fp) = do
     arr <- withForeignPtr fp $ \p -> do
-      nbytes <- fromIntegral <$> py_PyArray_NBYTES p
-      fp' <- mallocForeignPtrBytes nbytes
-      withForeignPtr (castForeignPtr fp') $ \pout -> do
-          pin <- py_PyArray_BYTES p
-          s <- shape p
-          copyBytes pout pin nbytes
-          return $ fromForeignPtr s fp'
+      s <- shape p
+      buf <- py_PyArray_BYTES p
+      py_release_PyArray_BYTES p
+      fp' <- newForeignPtr finalizerFree buf
+      return $ fromForeignPtr s (castForeignPtr fp')
     return arr
         where
           shape :: Shape sh => RawPyObject -> IO sh
@@ -241,6 +242,13 @@ extractNumpyArray (PyObject fp) = do
             dims <- peekArray ndim =<< py_PyArray_DIMS ptr
             return $ shapeOfList (reverse [fromIntegral d | d <- dims])
 
+-- | Matrix -> numpy
+
+foreign import ccall "matrix3x3_to_pyobject" py_matrix_to_pyobject :: Ptr Double -> IO RawPyObject
+
+matrixToPyObject :: Matrix Double -> IO (PyObject a)
+matrixToPyObject m = withArray (toList . flatten $ m) $ \buff -> do
+  newForeignPyPtr =<< py_matrix_to_pyobject buff
 
 def1 :: String -> String -> IO (PyObject b)
 def1 s argTypes = do

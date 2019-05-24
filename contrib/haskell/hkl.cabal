@@ -137,6 +137,7 @@ library
                     , Hkl.Python
                     , Hkl.Python.Pyfi
                     , Hkl.Python.QQ
+                    , Pipes.Async
   other-extensions:    CPP
                      , ForeignFunctionInterface
                      , EmptyDataDecls
@@ -159,7 +160,10 @@ library
                      , hmatrix >= 0.17
                      , hmatrix-gsl >= 0.17
                      , JuicyPixels >= 3.1.7
+                     , lifted-async
+                     , lifted-base
                      , mmorph >= 1.0.3
+                     , monad-control
                      , monad-loops >= 0.4.2
                      , monads-tf
                      , pipes >= 4.1.2
@@ -167,12 +171,14 @@ library
                      , process >= 1.1
                      , repa
                      , pureMD5 >= 2.0
-                     , text
-                     , transformers >= 0.3
-                     , unix >= 2.6.0.0
-                     , vector >= 0.10.0.1
+                     , stm
                      , safe
                      , template-haskell >=2.8
+                     , text
+                     , transformers >= 0.3
+                     , transformers-base
+                     , unix >= 2.6.0.0
+                     , vector >= 0.10.0.1
   hs-source-dirs:      src
   c-sources:           src/Hkl/Python/cdefs.c
   build-tools:         hsc2hs

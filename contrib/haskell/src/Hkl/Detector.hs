@@ -11,6 +11,8 @@ module Hkl.Detector
        , shape
        , coordinates
        , getPixelsCoordinates
+       , getPixelsCoordinates'
+       , toPyFAIDetectorName
        ) where
 
 import Data.Array.Repa (Array)
