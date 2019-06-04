@@ -96,19 +96,19 @@ instance FramesP DataFrameHklH5Path where
 
 foreign import ccall safe "computeQ" c_computeQ :: Ptr Geometry -> Ptr Double -> Int -> Double -> IO ()
 
-computeQ' :: Array F DIM3 Double -> DataFrame -> IO DataFrameQ
-computeQ' pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub _image) = do
+computeQ' :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameQ
+computeQ' d pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub _image) = do
   let k = 2 * pi / (w /~ angstrom)
       arr = copyS pixels
-      nInOut = 560 * 240
+      nInOut = size . shape $ d
   withGeometry g $ \geometry ->
       withForeignPtr (toForeignPtr arr) $ \inOut -> do
           {-# SCC "c_computeQ" #-} c_computeQ geometry inOut nInOut k
           pure $ DataFrameQ df arr
 
-computeQP :: MonadIO m => Array F DIM3 Double -> Pipe DataFrame DataFrameQ m ()
-computeQP pixels = for cat $ \a -> do
-                     b <- liftIO $ computeQ' pixels a
+computeQP :: MonadIO m =>  Detector a DIM2 -> Array F DIM3 Double -> Pipe DataFrame DataFrameQ m ()
+computeQP d pixels = for cat $ \a -> do
+                     b <- liftIO $ computeQ' d pixels a
                      yield b
 
 saveP :: FilePath -> DataItem H5 -> Detector a DIM2 -> Consumer DataFrame (SafeT IO) ()
@@ -136,7 +136,7 @@ main_sixs = do
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   runSafeT $ runEffect $
     framesP (root </> filename) dataframe_h5p ImXpadS140
-    >-> computeQP pixels
+    >-> computeQP ImXpadS140 pixels
     -- >-> Pipes.Prelude.tee  Pipes.Prelude.print
     >-> drain
     -- >-> saveP "/tmp/test.h5" outPath ImXpadS140
