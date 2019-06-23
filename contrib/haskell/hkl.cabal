@@ -81,6 +81,7 @@ executable hkl3d
 
 library
   exposed-modules:    Hkl
+                    , Hkl.Binoculars
                     , Hkl.C
                     , Hkl.C.DArray
                     , Hkl.C.Detector
