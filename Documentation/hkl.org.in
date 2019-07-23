@@ -651,7 +651,8 @@ git clone git://repo.or.cz/hkl.git
 
 *** Providing patches
 
-    you can send your patch to [[mailto:picca@synchrotron-soleil.fr][Picca Frédéric-Emmanuel]] using =git=
+    you can send your patch to [[mailto:picca@synchrotron-soleil.fr][Picca Frédéric-Emmanuel]] using =git= and
+    =git-email=.
 
     Here a minimalist example of the workflow to prepare and send
     patches for integration into the hkl library. Suppose you wan to
