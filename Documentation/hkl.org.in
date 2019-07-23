@@ -870,6 +870,11 @@ git clone git://repo.or.cz/hkl.git
     When using =hkl_parameter_value_set= or
     =hkl_parameter_min_max_set= functions it is not allow to use the
     float =NaN=, =-Inf=, =+Inf= value.
+*** DONE use python3 instead of python3 for unit tests
+    In order to prepare the removal of python2 for Debian 11, we
+    switched the unit test. The remaining part is during the build of
+    the documentation. The best would be to report a bug against emacs
+    in order to set python3 as default python interpreter.
 ** 5.0.0.2456 <2018-02-22 Thu>
 *** DONE add emergence on all e4c diffractometers <2017-03-16 Thu>
     The emergence pseudo axis is was added to =SOLEIL MARS= and =E4CV=
