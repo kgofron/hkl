@@ -297,3 +297,152 @@ void computeQ(const HklGeometry *geometry,
 	}
 	hkl_detector_free(detector);
 }
+
+/* /\* Find the minimum and maximum of an integer array *\/ */
+/* static void */
+/* minmax(const npy_intp *data, npy_intp data_len, npy_intp *mn, npy_intp *mx) */
+/* { */
+/*     npy_intp min = *data; */
+/*     npy_intp max = *data; */
+
+/*     while (--data_len) { */
+/*         const npy_intp val = *(++data); */
+/*         if (val < min) { */
+/*             min = val; */
+/*         } */
+/*         else if (val > max) { */
+/*             max = val; */
+/*         } */
+/*     } */
+
+/*     *mn = min; */
+/*     *mx = max; */
+/* } */
+
+/* /\* */
+/*  * arr_bincount is registered as bincount. */
+/*  * */
+/*  * bincount accepts one, two or three arguments. The first is an array of */
+/*  * non-negative integers The second, if present, is an array of weights, */
+/*  * which must be promotable to double. Call these arguments list and */
+/*  * weight. Both must be one-dimensional with len(weight) == len(list). If */
+/*  * weight is not present then bincount(list)[i] is the number of occurrences */
+/*  * of i in list.  If weight is present then bincount(self,list, weight)[i] */
+/*  * is the sum of all weight[j] where list [j] == i.  Self is not used. */
+/*  * The third argument, if present, is a minimum length desired for the */
+/*  * output array. */
+/*  *\/ */
+/* NPY_NO_EXPORT PyObject * */
+/* arr_bincount(PyObject *NPY_UNUSED(self), PyObject *args, PyObject *kwds) */
+/* { */
+/*     PyObject *list = NULL, *weight = Py_None, *mlength = NULL; */
+/*     PyArrayObject *lst = NULL, *ans = NULL, *wts = NULL; */
+/*     npy_intp *numbers, *ians, len, mx, mn, ans_size; */
+/*     npy_intp minlength = 0; */
+/*     npy_intp i; */
+/*     double *weights , *dans; */
+/*     static char *kwlist[] = {"list", "weights", "minlength", NULL}; */
+
+/*     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:bincount", */
+/*                 kwlist, &list, &weight, &mlength)) { */
+/*             goto fail; */
+/*     } */
+
+/*     lst = (PyArrayObject *)PyArray_ContiguousFromAny(list, NPY_INTP, 1, 1); */
+/*     if (lst == NULL) { */
+/*         goto fail; */
+/*     } */
+/*     len = PyArray_SIZE(lst); */
+
+/*     /\* */
+/*      * This if/else if can be removed by changing the argspec to O|On above, */
+/*      * once we retire the deprecation */
+/*      *\/ */
+/*     if (mlength == Py_None) { */
+/*         /\* NumPy 1.14, 2017-06-01 *\/ */
+/*         if (DEPRECATE("0 should be passed as minlength instead of None; " */
+/*                       "this will error in future.") < 0) { */
+/*             goto fail; */
+/*         } */
+/*     } */
+/*     else if (mlength != NULL) { */
+/*         minlength = PyArray_PyIntAsIntp(mlength); */
+/*         if (error_converting(minlength)) { */
+/*             goto fail; */
+/*         } */
+/*     } */
+
+/*     if (minlength < 0) { */
+/*         PyErr_SetString(PyExc_ValueError, */
+/*                         "'minlength' must not be negative"); */
+/*         goto fail; */
+/*     } */
+
+/*     /\* handle empty list *\/ */
+/*     if (len == 0) { */
+/*         ans = (PyArrayObject *)PyArray_ZEROS(1, &minlength, NPY_INTP, 0); */
+/*         if (ans == NULL){ */
+/*             goto fail; */
+/*         } */
+/*         Py_DECREF(lst); */
+/*         return (PyObject *)ans; */
+/*     } */
+
+/*     numbers = (npy_intp *)PyArray_DATA(lst); */
+/*     minmax(numbers, len, &mn, &mx); */
+/*     if (mn < 0) { */
+/*         PyErr_SetString(PyExc_ValueError, */
+/*                 "'list' argument must have no negative elements"); */
+/*         goto fail; */
+/*     } */
+/*     ans_size = mx + 1; */
+/*     if (mlength != Py_None) { */
+/*         if (ans_size < minlength) { */
+/*             ans_size = minlength; */
+/*         } */
+/*     } */
+/*     if (weight == Py_None) { */
+/*         ans = (PyArrayObject *)PyArray_ZEROS(1, &ans_size, NPY_INTP, 0); */
+/*         if (ans == NULL) { */
+/*             goto fail; */
+/*         } */
+/*         ians = (npy_intp *)PyArray_DATA(ans); */
+/*         NPY_BEGIN_ALLOW_THREADS; */
+/*         for (i = 0; i < len; i++) */
+/*             ians[numbers[i]] += 1; */
+/*         NPY_END_ALLOW_THREADS; */
+/*         Py_DECREF(lst); */
+/*     } */
+/*     else { */
+/*         wts = (PyArrayObject *)PyArray_ContiguousFromAny( */
+/*                                                 weight, NPY_DOUBLE, 1, 1); */
+/*         if (wts == NULL) { */
+/*             goto fail; */
+/*         } */
+/*         weights = (double *)PyArray_DATA(wts); */
+/*         if (PyArray_SIZE(wts) != len) { */
+/*             PyErr_SetString(PyExc_ValueError, */
+/*                     "The weights and list don't have the same length."); */
+/*             goto fail; */
+/*         } */
+/*         ans = (PyArrayObject *)PyArray_ZEROS(1, &ans_size, NPY_DOUBLE, 0); */
+/*         if (ans == NULL) { */
+/*             goto fail; */
+/*         } */
+/*         dans = (double *)PyArray_DATA(ans); */
+/*         NPY_BEGIN_ALLOW_THREADS; */
+/*         for (i = 0; i < len; i++) { */
+/*             dans[numbers[i]] += weights[i]; */
+/*         } */
+/*         NPY_END_ALLOW_THREADS; */
+/*         Py_DECREF(lst); */
+/*         Py_DECREF(wts); */
+/*     } */
+/*     return (PyObject *)ans; */
+
+/* fail: */
+/*     Py_XDECREF(lst); */
+/*     Py_XDECREF(wts); */
+/*     Py_XDECREF(ans); */
+/*     return NULL; */
+/* } */
