@@ -1,37 +1,42 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE QuasiQuotes              #-}
 module Hkl.Projects.Sixs
     ( main_sixs )
         where
 
-import Prelude hiding (mapM)
-import Bindings.HDF5.File ( AccFlags(Truncate), createFile)
-import Bindings.HDF5.Dataset (createDataset)
-import Bindings.HDF5.Datatype.Internal (nativeTypeOf)
-import Bindings.HDF5.Dataspace (createSimpleDataspace)
-import Control.Monad (forM_, forever)
-import Control.Monad.IO.Class (MonadIO(liftIO))
-import Data.Array.Repa ( Array, copyS, size )
-import Data.Array.Repa.Index ( DIM2, DIM3 )
-import Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
-import Data.ByteString.Char8 (pack)
-import Data.Vector.Storable (concat, head)
-import Data.Word (Word16)
-import Foreign.C (CInt(..))
-import Foreign.ForeignPtr ( withForeignPtr )
-import Foreign.Ptr (Ptr)
-import Numeric.LinearAlgebra (Matrix)
-import Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
-import Numeric.Units.Dimensional.NonSI (angstrom)
-import Pipes (Consumer, Pipe, Producer, await, cat, for, runEffect, (>->), yield)
-import Pipes.Async ((>&>))
-import Pipes.Prelude (drain, print, tee)
-import Pipes.Safe (SafeT, runSafeT)
-import System.FilePath.Posix ((</>))
+import           Bindings.HDF5.Dataset             (createDataset)
+import           Bindings.HDF5.Dataspace           (createSimpleDataspace)
+import           Bindings.HDF5.Datatype.Internal   (nativeTypeOf)
+import           Bindings.HDF5.File                (AccFlags (Truncate),
+                                                    createFile)
+import           Control.Monad                     (forM_, forever)
+import           Control.Monad.IO.Class            (MonadIO (liftIO))
+import           Data.Array.Repa                   (Array, copyS, extent,
+                                                    listOfShape, size)
+import           Data.Array.Repa.Index             (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
+import           Data.ByteString.Char8             (pack)
+import           Data.Vector.Storable              (concat, head)
+import           Data.Word                         (Word16)
+import           Foreign.ForeignPtr                (ForeignPtr, newForeignPtr,
+                                                    withForeignPtr)
+import           Foreign.Marshal.Array             (withArrayLen)
+import           Foreign.Ptr                       (FunPtr, Ptr)
+import           Numeric.LinearAlgebra             (Matrix)
+import           Numeric.Units.Dimensional.NonSI   (angstrom)
+import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
+import           Pipes                             (Consumer, Pipe, Producer,
+                                                    await, cat, for, runEffect,
+                                                    yield, (>->))
+import           Prelude                           hiding (mapM)
+-- import Pipes.Async ((>&>))
+import           Pipes.Prelude                     (drain, print, tee)
+import           Pipes.Safe                        (SafeT, runSafeT)
+import           System.FilePath.Posix             ((</>))
 
-import Hkl
+import           Hkl
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -56,11 +61,6 @@ data DataFrame
 
 instance Show DataFrame where
   show (DataFrame i g m _) = show i ++ show g ++ show m
-
-data DataFrameQ = DataFrameQ DataFrame (Array F DIM3 Double)
-
-instance Show DataFrameQ where
-    show (DataFrameQ df _) = show df
 
 class FramesP a where
   framesP :: FilePath -> a -> Detector b DIM2 -> Producer DataFrame (SafeT IO) ()
@@ -93,14 +93,20 @@ instance FramesP DataFrameHklH5Path where
           openDataset' :: File -> DataItem H5 -> IO Dataset
           openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
 
+-- | DataFrameQ
+
+data DataFrameQ = DataFrameQ DataFrame (Array F DIM3 Double)
+
+instance Show DataFrameQ where
+    show (DataFrameQ df _) = show df
 
 foreign import ccall safe "computeQ" c_computeQ :: Ptr Geometry -> Ptr Double -> Int -> Double -> IO ()
 
 computeQ' :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameQ
 computeQ' d pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub _image) = do
   let k = 2 * pi / (w /~ angstrom)
-      arr = copyS pixels
-      nInOut = size . shape $ d
+  let arr = copyS pixels
+  let nInOut = size . shape $ d
   withGeometry g $ \geometry ->
       withForeignPtr (toForeignPtr arr) $ \inOut -> do
           {-# SCC "c_computeQ" #-} c_computeQ geometry inOut nInOut k
@@ -110,6 +116,37 @@ computeQP :: MonadIO m =>  Detector a DIM2 -> Array F DIM3 Double -> Pipe DataFr
 computeQP d pixels = for cat $ \a -> do
                      b <- liftIO $ computeQ' d pixels a
                      yield b
+
+
+-- | DataFrameSpace
+
+data Space
+
+data DataFrameSpace = DataFrameSpace DataFrameQ (ForeignPtr Space)
+  deriving Show
+
+foreign import ccall safe "fromImage" c_fromImage :: Ptr Double -> Int -> Ptr Double -> Ptr Int -> Int -> Ptr Word16 -> Ptr Int -> Int -> IO (Ptr Space)
+foreign import ccall unsafe "&space_free" c_space_free :: FunPtr (Ptr Space -> IO ())
+
+space :: MonadIO m => DataFrameQ -> m DataFrameSpace
+space df@(DataFrameQ (DataFrame _ _ _ img) arr) = do
+  let resolutions = [0.002, 0.002, 0.002]
+  -- let labels = ["qx", "qy", "qz"]
+  let larr = listOfShape . extent $ arr
+  let limg = listOfShape . extent $ img
+  p <- liftIO $ withArrayLen resolutions $ \rl r ->
+    withForeignPtr (toForeignPtr arr) $ \c ->
+    withArrayLen larr $ \cNDims cDims ->
+    withForeignPtr (toForeignPtr img) $ \i ->
+    withArrayLen limg $ \iNDims iDims ->
+    {-# SCC "c_fromImage" #-} c_fromImage r rl c cDims cNDims i iDims iNDims
+  fp <- liftIO $ newForeignPtr c_space_free p
+  return (DataFrameSpace df fp)
+
+spaceP :: MonadIO m => Pipe DataFrameQ DataFrameSpace m ()
+spaceP = for cat $ \a -> do
+  b <- liftIO $ space a
+  yield b
 
 saveP :: FilePath -> DataItem H5 -> Detector a DIM2 -> Consumer DataFrame (SafeT IO) ()
 saveP f p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \f' ->
@@ -137,6 +174,7 @@ main_sixs = do
   runSafeT $ runEffect $
     framesP (root </> filename) dataframe_h5p ImXpadS140
     >-> computeQP ImXpadS140 pixels
+    >-> spaceP
     -- >-> Pipes.Prelude.tee  Pipes.Prelude.print
     >-> drain
     -- >-> saveP "/tmp/test.h5" outPath ImXpadS140
