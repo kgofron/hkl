@@ -11,7 +11,6 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE GADTs                    #-}
-{-# LANGUAGE QuasiQuotes              #-}
 module Hkl.Projects.Sixs
     ( main_sixs )
         where
@@ -38,10 +37,9 @@ import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
 import           Pipes                             (Consumer, Producer, await,
-                                                    hoist, yield, (>->))
+                                                    hoist, lift, yield, (>->))
 import           Prelude                           hiding (mapM)
 -- import Pipes.Async ((>&>))
-import           Pipes                             (lift)
 import           Pipes.Prelude                     (mapM, toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
 import           System.FilePath.Posix             ((</>))
@@ -170,7 +168,7 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/UB" StrictDims)
                       (DataItemH5 "com_113934/SIXS/Monochromator/wavelength" StrictDims)
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
-      outPath = (DataItemH5 "imgs" StrictDims)
+      outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   r <- runSafeT $ toListM $
