@@ -13,7 +13,7 @@ module Hkl.Binoculars
     ) where
 
 import Prelude hiding (mapM)
-import Data.Array.Repa ( Array )
+import Data.Array.Repa ( Array, map )
 import Data.Array.Repa.Index ( DIM2, DIM3 )
 import Data.Array.Repa.Repr.ForeignPtr (F)
 import Data.Text (Text)
@@ -52,8 +52,8 @@ data Axis = Axis
 
 
 
-getIndex :: Axis -> Array F DIM2 Double -> Array F DIM2 Int
-getIndex = undefined
+getIndex :: Axis -> Array r1 DIM2 Double -> Array r2 DIM2 Int
+getIndex (Axis imin imax res _label) arr = undefined
 
     -- def get_index(self, value):
     --     if isinstance(value, numbers.Number):
@@ -140,7 +140,7 @@ processImage s _coordinates _intensity _weights = s
         -- self.contributions.ravel()[:contributions.size] += contributions
 
 fromImage :: [Double] -> [Text] -> [Array F DIM2 Double]  -> Array F DIM2 Word16 -> Array F DIM2 Double -> g -> Space
-fromImage = undefined
+fromImage rs ls cs i w = undefined
 
     -- @classmethod
     -- def from_image(cls, resolutions, labels, coordinates, intensity, weights, limits=None):

@@ -1,26 +1,27 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-
-    Copyright  : Copyright (C) 2014-2019 Synchrotron Soleil
+    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+                                         L'Orme des Merisiers Saint-Aubin
+                                         BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
 
-    Maintainer : picca@synchrotron-soleil.fr
+    Maintainer : Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
     Stability  : Experimental
-    Portability: GHC only?
+    Portability: GHC only (not tested)
 -}
 
-import Numeric.LinearAlgebra (Vector, Matrix,
-                              vecdisp, disps,
-                              dispf)
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE UndecidableInstances #-}
 
-import Numeric.Units.Dimensional.Prelude (nano, meter, degree,
-                                          (*~),
-                                          (*~~), (/~~))
+import           Numeric.LinearAlgebra             (Matrix, Vector, dispf,
+                                                    disps, vecdisp)
 
-import Options.Applicative hiding ((<>))
+import           Numeric.Units.Dimensional.Prelude (degree, meter, nano, (*~),
+                                                    (*~~), (/~~))
 
-import Hkl.Lattice
-import Hkl.Diffractometer
+import           Options.Applicative               hiding ((<>))
+
+import           Hkl.Diffractometer
+import           Hkl.Lattice
 
 dispv :: Vector Double -> IO ()
 dispv = putStr . vecdisp (disps 2)

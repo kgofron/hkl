@@ -1,14 +1,23 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-
+    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+                                         L'Orme des Merisiers Saint-Aubin
+                                         BP 48 91192 GIF-sur-YVETTE CEDEX
+    License    : GPL3+
+
+    Maintainer : Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
+    Stability  : Experimental
+    Portability: GHC only (not tested)
+-}
 
 module Main where
 
-import Data.Array.Repa.Index (DIM0)
-import Data.Vector.Storable (Vector, fromList)
-import Numeric.Units.Dimensional.Prelude (nano, meter, (*~))
-import Pipes
-import qualified Pipes.Prelude as P
+import           Data.Array.Repa.Index             (DIM0)
+import           Data.Vector.Storable              (Vector, fromList)
+import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~))
+import           Pipes
+import qualified Pipes.Prelude                     as P
 
-import Hkl
+import           Hkl
 
 testSirius :: IO ()
 testSirius = runEffect $ fromToPipe 6 from to
@@ -25,7 +34,7 @@ testSirius = runEffect $ fromToPipe 6 from to
            (Parameter "uy" 0.12907 (Range (-180) 180))
            (Parameter "uz" (-159.91372) (Range (-180) 180))
 
-    geometry ∷ Geometry
+    geometry :: Geometry
     geometry = Geometry SoleilSiriusKappa (Source (0.1458637 *~ nano meter))
                (fromList [-0.5193202, 64.7853160, 133.5621380, -80.9690000, -0.0223369, 30.0000299])
                (Just [ Parameter "mu" (-0.5193202) (Range (-180) 180)
@@ -35,20 +44,20 @@ testSirius = runEffect $ fromToPipe 6 from to
                      , Parameter "delta" (-0.0223369) (Range (-180) 180)
                      , Parameter "gamma" 30.0000299 (Range (-180) 180)])
 
-    detector ∷ Detector ZeroD DIM0
+    detector :: Detector ZeroD DIM0
     detector = ZeroD
 
-    engine ∷ Engine
+    engine :: Engine
     engine = Engine "hkl" [ Parameter "h" 0.0 (Range (-1.0) 1.0)
                           , Parameter "k" 0.0 (Range (-1.0) 1.0)
                           , Parameter "l" 2.0 (Range (-1.0) 1.0)
                           ]
              (Mode "bissector_vertical" [])
 
-    from ∷ Vector Double
+    from :: Vector Double
     from = fromList [0, 0, 1]
 
-    to ∷ Vector Double
+    to :: Vector Double
     to = fromList [0, 0, 6]
 
 test :: IO ()

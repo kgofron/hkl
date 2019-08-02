@@ -49,7 +49,7 @@ import Prelude hiding (lookup)
 import Control.Exception (Exception, throw)
 import Control.Monad ((<=<), unless, when)
 import Data.Aeson (FromJSON, ToJSON, encode, eitherDecode)
-import Data.Array.Repa (Array, Shape, shapeOfList)
+import Data.Array.Repa (Array, Shape, shapeOfList, showShape)
 import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr)
 import Data.ByteString.Lazy.Char8 (unpack, pack)
 import Data.Digest.Pure.MD5 (md5)
@@ -230,6 +230,7 @@ extractNumpyArray :: Shape sh => PyObject a -> IO (Array F sh b)
 extractNumpyArray (PyObject fp) = do
     arr <- withForeignPtr fp $ \p -> do
       s <- shape p
+      -- print $ showShape s
       buf <- py_PyArray_BYTES p
       py_release_PyArray_BYTES p
       fp' <- newForeignPtr finalizerFree buf
@@ -240,7 +241,8 @@ extractNumpyArray (PyObject fp) = do
           shape ptr = do
             ndim <- fromIntegral <$> py_PyArray_NDIM ptr
             dims <- peekArray ndim =<< py_PyArray_DIMS ptr
-            return $ shapeOfList (reverse [fromIntegral d | d <- dims])
+            -- return $ shapeOfList (reverse [fromIntegral d | d <- dims])
+            return $ shapeOfList [fromIntegral d | d <- dims]
 
 -- | Matrix -> numpy
 
