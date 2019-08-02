@@ -37,16 +37,17 @@ import           Foreign.Ptr                       (FunPtr, Ptr)
 import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
-import           Pipes                             (Consumer, Pipe, Producer,
-                                                    await, cat, for, runEffect,
-                                                    yield, (>->))
+import           Pipes                             (Consumer, Producer, await,
+                                                    hoist, yield, (>->))
 import           Prelude                           hiding (mapM)
 -- import Pipes.Async ((>&>))
-import           Pipes.Prelude                     (drain, print, tee)
+import           Pipes                             (lift)
+import           Pipes.Prelude                     (mapM, toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
 import           System.FilePath.Posix             ((</>))
 
 import           Hkl
+
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -112,8 +113,8 @@ instance Show DataFrameQ where
 
 foreign import ccall safe "computeQ" c_computeQ :: Ptr Geometry -> Ptr Double -> Int -> Double -> IO ()
 
-computeQ' :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameQ
-computeQ' d pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub _image) = do
+computeQ :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameQ
+computeQ d pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub _image) = do
   let k = 2 * pi / (w /~ angstrom)
   let arr = copyS pixels
   let nInOut = size . shape $ d
@@ -121,12 +122,6 @@ computeQ' d pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub _image) = d
       withForeignPtr (toForeignPtr arr) $ \inOut -> do
           {-# SCC "c_computeQ" #-} c_computeQ geometry inOut nInOut k
           pure $ DataFrameQ df arr
-
-computeQP :: MonadIO m =>  Detector a DIM2 -> Array F DIM3 Double -> Pipe DataFrame DataFrameQ m ()
-computeQP d pixels = for cat $ \a -> do
-                     b <- liftIO $ computeQ' d pixels a
-                     yield b
-
 
 -- | DataFrameSpace
 
@@ -138,25 +133,22 @@ data DataFrameSpace = DataFrameSpace DataFrameQ (ForeignPtr Space)
 foreign import ccall safe "fromImage" c_fromImage :: Ptr Double -> Int -> Ptr Double -> Ptr Int -> Int -> Ptr Word16 -> Ptr Int -> Int -> IO (Ptr Space)
 foreign import ccall unsafe "&space_free" c_space_free :: FunPtr (Ptr Space -> IO ())
 
-space :: MonadIO m => DataFrameQ -> m DataFrameSpace
+space :: DataFrameQ -> IO DataFrameSpace
 space df@(DataFrameQ (DataFrame _ _ _ img) arr) = do
   let resolutions = [0.002, 0.002, 0.002]
   -- let labels = ["qx", "qy", "qz"]
   let larr = listOfShape . extent $ arr
   let limg = listOfShape . extent $ img
-  p <- liftIO $ withArrayLen resolutions $ \rl r ->
+  p <- withArrayLen resolutions $ \rl r ->
     withForeignPtr (toForeignPtr arr) $ \c ->
     withArrayLen larr $ \cNDims cDims ->
     withForeignPtr (toForeignPtr img) $ \i ->
     withArrayLen limg $ \iNDims iDims ->
     {-# SCC "c_fromImage" #-} c_fromImage r rl c cDims cNDims i iDims iNDims
-  fp <- liftIO $ newForeignPtr c_space_free p
+  fp <- newForeignPtr c_space_free p
   return (DataFrameSpace df fp)
 
-spaceP :: MonadIO m => Pipe DataFrameQ DataFrameSpace m ()
-spaceP = for cat $ \a -> do
-  b <- liftIO $ space a
-  yield b
+-- | Save
 
 saveP :: FilePath -> DataItem H5 -> Detector a DIM2 -> Consumer DataFrame (SafeT IO) ()
 saveP f p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \f' ->
@@ -181,11 +173,13 @@ main_sixs = do
       outPath = (DataItemH5 "imgs" StrictDims)
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
-  runSafeT $ runEffect $
+  r <- runSafeT $ toListM $
     framesP (root </> filename) dataframe_h5p ImXpadS140
-    >-> computeQP ImXpadS140 pixels
-    >-> spaceP
+    >-> hoist lift ( mapM (computeQ ImXpadS140 pixels)
+                     >-> mapM space
+                   )
     -- >-> Pipes.Prelude.tee  Pipes.Prelude.print
-    >-> drain
+    -- >-> drain
     -- >-> saveP "/tmp/test.h5" outPath ImXpadS140
+  -- Prelude.print r
   return ()
