@@ -1,7 +1,16 @@
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs                    #-}
+{-
+    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+                                         L'Orme des Merisiers Saint-Aubin
+                                         BP 48 91192 GIF-sur-YVETTE CEDEX
+    License    : GPL3+
 
+    Maintainer : Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
+    Stability  : Experimental
+    Portability: GHC only (not tested)
+-}
 module Hkl.C
        ( compute
        , computePipe
@@ -11,30 +20,27 @@ module Hkl.C
        , module X
        ) where
 
-import Prelude hiding (min, max)
+import           Prelude                          hiding (max, min)
 
-import Control.Monad ((>=>), forever)
-import Control.Monad.Trans.State.Strict
-import Foreign ( ForeignPtr
-               , FunPtr
-               , Ptr
-               , nullPtr
-               , newForeignPtr
-               , withForeignPtr
-               , withArray)
-import Foreign.C ( CInt(..), CSize(..), CString
-                 , withCString)
+import           Control.Monad                    (forever, (>=>))
+import           Control.Monad.Trans.State.Strict
+import           Foreign                          (ForeignPtr, FunPtr, Ptr,
+                                                   newForeignPtr, nullPtr,
+                                                   withArray, withForeignPtr)
+import           Foreign.C                        (CInt (..), CSize (..),
+                                                   CString, withCString)
 
-import Pipes (Pipe, await, lift, yield)
+import           Pipes                            (Pipe, await, lift, yield)
 
-import Hkl.C.Detector
-import Hkl.C.Engine
-import Hkl.C.EngineList
-import Hkl.C.Geometry as X
-import Hkl.C.GeometryList as X
-import Hkl.C.Sample
-import Hkl.Detector
-import Hkl.Types
+import           Hkl.C.Binoculars                 as X
+import           Hkl.C.Detector
+import           Hkl.C.Engine
+import           Hkl.C.EngineList
+import           Hkl.C.Geometry                   as X
+import           Hkl.C.GeometryList               as X
+import           Hkl.C.Sample
+import           Hkl.Detector
+import           Hkl.Types
 
 #include "hkl.h"
 
@@ -74,9 +80,9 @@ solveTraj g@(Geometry f _ _ _) d s es = do
 -- Pipe
 
 data Diffractometer = Diffractometer { difEngineList :: ForeignPtr HklEngineList
-                                     , difGeometry :: ForeignPtr Geometry
-                                     , difDetector :: ForeignPtr HklDetector
-                                     , difSample :: ForeignPtr HklSample
+                                     , difGeometry   :: ForeignPtr Geometry
+                                     , difDetector   :: ForeignPtr HklDetector
+                                     , difSample     :: ForeignPtr HklSample
                                      }
                     deriving (Show)
 

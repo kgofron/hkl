@@ -83,6 +83,7 @@ library
   exposed-modules:    Hkl
                     , Hkl.Binoculars
                     , Hkl.C
+                    , Hkl.C.Binoculars
                     , Hkl.C.DArray
                     , Hkl.C.Detector
                     , Hkl.C.Engine
@@ -182,6 +183,8 @@ library
                      , vector >= 0.10.0.1
   hs-source-dirs:      src
   c-sources:           src/Hkl/Python/cdefs.c
+                     , cbits/hkl-binoculars.c
+  include-dirs:        cbits/
   build-tools:         hsc2hs
   default-language:    Haskell2010
   pkgconfig-depends:   hkl

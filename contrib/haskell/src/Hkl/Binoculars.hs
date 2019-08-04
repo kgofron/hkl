@@ -1,7 +1,17 @@
-{-# LANGUAGE CPP #-}
+{-
+    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+                                         L'Orme des Merisiers Saint-Aubin
+                                         BP 48 91192 GIF-sur-YVETTE CEDEX
+    License    : GPL3+
+
+    Maintainer : Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
+    Stability  : Experimental
+    Portability: GHC only (not tested)
+-}
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE QuasiQuotes              #-}
 module Hkl.Binoculars
     ( Axis(..)
     , Axes(..)
@@ -12,12 +22,12 @@ module Hkl.Binoculars
     , processImage
     ) where
 
-import Prelude hiding (mapM)
-import Data.Array.Repa ( Array, map )
-import Data.Array.Repa.Index ( DIM2, DIM3 )
-import Data.Array.Repa.Repr.ForeignPtr (F)
-import Data.Text (Text)
-import Data.Word (Word16)
+import           Data.Array.Repa                 (Array)
+import           Data.Array.Repa.Index           (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr (F)
+import           Data.Text                       (Text)
+import           Data.Word                       (Word16)
+import           Prelude                         hiding (mapM)
 
 data Axis = Axis
   Int    -- imin     lower bound
@@ -53,7 +63,7 @@ data Axis = Axis
 
 
 getIndex :: Axis -> Array r1 DIM2 Double -> Array r2 DIM2 Int
-getIndex (Axis imin imax res _label) arr = undefined
+getIndex _ _ = undefined
 
     -- def get_index(self, value):
     --     if isinstance(value, numbers.Number):
@@ -140,7 +150,7 @@ processImage s _coordinates _intensity _weights = s
         -- self.contributions.ravel()[:contributions.size] += contributions
 
 fromImage :: [Double] -> [Text] -> [Array F DIM2 Double]  -> Array F DIM2 Word16 -> Array F DIM2 Double -> g -> Space
-fromImage rs ls cs i w = undefined
+fromImage _ _ _ _ _ = undefined
 
     -- @classmethod
     -- def from_image(cls, resolutions, labels, coordinates, intensity, weights, limits=None):
