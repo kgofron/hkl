@@ -22,6 +22,7 @@ module Hkl.C.Binoculars
 import           Data.Word             (Word16)
 import           Foreign.C.Types       (CDouble, CInt(..))
 import           Foreign.Marshal.Array (peekArray)
+import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr)
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           Foreign.Storable      (Storable (..))
 
@@ -29,7 +30,7 @@ import           Hkl.C.Geometry
 
 #include "hkl-binoculars.h"
 
-data Space = Space CInt [CInt] [CInt]
+data Space = Space CInt [CInt] [CInt] (ForeignPtr Space)
   deriving Show
 
 instance Storable Space where
@@ -40,7 +41,8 @@ instance Storable Space where
     n <- #{peek HklBinocularsSpace, ndim} ptr
     origins <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, origin} ptr)
     dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, dims} ptr)
-    return $ Space n origins dims
+    fp <- newForeignPtr c_hkl_binoculars_space_free ptr
+    return $ Space n origins dims fp
 
 
 foreign import ccall unsafe "hkl_binoculars_project_q" c_hkl_binoculars_project_q :: Ptr Geometry -> Ptr Double -> CInt -> Double -> IO (Ptr Double)
