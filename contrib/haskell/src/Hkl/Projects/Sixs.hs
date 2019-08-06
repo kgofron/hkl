@@ -8,9 +8,8 @@
     Stability  : Experimental
     Portability: GHC only (not tested)
 -}
-{-# LANGUAGE CPP                      #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE CPP   #-}
+{-# LANGUAGE GADTs #-}
 module Hkl.Projects.Sixs
     ( main_sixs )
         where
