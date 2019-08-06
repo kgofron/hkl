@@ -19,7 +19,9 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+#include <time.h>
 #include "hkl-binoculars.h"
+
 /**
  * hkl_vector_norm2: (skip)
  * @self: the #hklvector use to compute the norm2
@@ -157,6 +159,11 @@ double *hkl_binoculars_project_q(const HklGeometry *geometry,
 				 double *inout, int32_t n_inout,
 				 double k)
 {
+#ifdef DEBUG
+	struct timespec debut, fin;
+
+	clock_gettime(CLOCK_MONOTONIC, &debut);
+#endif
 	int32_t n_out = sizeof(inout) * n_inout * 3;
 	double *out = malloc(n_out);
 	double *q_x = &out[0 * n_inout];
@@ -219,8 +226,14 @@ double *hkl_binoculars_project_q(const HklGeometry *geometry,
 		q_x_max, q_y_max, q_z_max);
 	/* hkl_geometry_fprintf(stdout, geometry); */
 	fprintf(stdout, "\n");
+
+	clock_gettime(CLOCK_MONOTONIC, &fin);
+	fprintf(stdout, "projection ds: %d dn: %d\n",
+		fin.tv_sec - debut.tv_sec,
+		fin.tv_nsec - debut.tv_nsec );
 #endif
 	hkl_detector_free(detector);
+
 	return out;
 }
 
@@ -258,13 +271,10 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 
 static inline void min_max(double val, double *min, double *max, int32_t *origin, int32_t index)
 {
+	*max = (val > *max) ? val : *max;
 	if(val < *min){
 		*min = val;
 		*origin = index;
-	}else{
-		if (val > *max){
-			*max = val;
-		}
 	}
 }
 
@@ -276,6 +286,10 @@ HklBinocularsSpace *hkl_binoculars_space_from_image(const double *resolutions,
 						    const uint16_t *image,
 						    int32_t n_pixels)
 {
+	/* struct timespec debut, fin; */
+
+	/* clock_gettime(CLOCK_MONOTONIC, &debut); */
+
 	int32_t i;
 	int32_t j;
 	int32_t len = 1;
@@ -286,15 +300,20 @@ HklBinocularsSpace *hkl_binoculars_space_from_image(const double *resolutions,
 	for(i=0; i<coordinates_ndim; ++i){
 		const double *coordinate = &coordinates[i * n_pixels];
 		const double resolution = resolutions[i];
-		double vmin = *coordinates;
-		double vmax = *coordinates;
-		int32_t origin = rint(*coordinates / resolution);
+		double vmin = *coordinate;
+		double vmax = *coordinate;
+		int32_t origin = rint(*coordinate / resolution);
 
 		for(j=0; j<n_pixels; ++j){
 			double val = coordinate[j];
 			int32_t index = rint(val / resolution);
 
-			min_max(val, &vmin, &vmax, &origin, index);
+			if(val < vmin){
+				vmin = val;
+				origin = index;
+			}else
+				vmax = (val > vmax) ? val : vmax;
+
 			space->indexes[j] += index * len;
 		}
 		space->dims[i] = (vmax - vmin) / resolution + 1;
@@ -303,6 +322,11 @@ HklBinocularsSpace *hkl_binoculars_space_from_image(const double *resolutions,
 		len *=  space->dims[i];
 	}
 	/* hkl_binoculars_space_fprintf(stdout, space); */
+	/* clock_gettime(CLOCK_MONOTONIC, &fin); */
+
+	/* fprintf(stdout, "space ds: %d dn: %d\n", fin.tv_sec - debut.tv_sec, fin.tv_nsec - debut.tv_nsec ); */
+
+
 	return space;
 }
 

@@ -41,7 +41,7 @@ instance Storable Space where
     <*> peekArray 3 (#{ptr HklBinocularsSpace, origin} ptr)
     <*> peekArray 3 (#{ptr HklBinocularsSpace, dims} ptr)
 
-foreign import ccall safe "hkl_binoculars_project_q" c_hkl_binoculars_project_q :: Ptr Geometry -> Ptr Double -> CInt -> Double -> IO (Ptr Double)
+foreign import ccall unsafe "hkl_binoculars_project_q" c_hkl_binoculars_project_q :: Ptr Geometry -> Ptr Double -> CInt -> Double -> IO (Ptr Double)
 
 foreign import ccall unsafe "hkl_binoculars_space_from_image" c_hkl_binoculars_space_from_image :: Ptr CDouble -> CInt -> Ptr Double -> Ptr CInt -> CInt -> Ptr Word16 -> CInt -> IO (Ptr Space)
 
