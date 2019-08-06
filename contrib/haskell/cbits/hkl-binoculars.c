@@ -244,6 +244,7 @@ HklBinocularsSpace *space_new(int32_t n_indexes, int32_t ndim)
 	self->indexes = calloc(n_indexes, sizeof(self->indexes));
 	self->n_indexes = n_indexes;
 
+	self->resolutions = malloc(sizeof(double) * ndim);
 	self->origin = malloc(sizeof(self->origin) * ndim);
 	self->dims = malloc(sizeof(self->dims) * ndim);
 	self->ndim = ndim;
@@ -256,6 +257,7 @@ void hkl_binoculars_space_free(HklBinocularsSpace *self)
 	free(self->dims);
 	free(self->origin);
 	free(self->indexes);
+	free(self->resolutions);
 	free(self);
 }
 
@@ -266,6 +268,9 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 	fprintf(f, "self: %p\n", self);
 	fprintf(f, "indexes: %p\n", self->indexes);
 	fprintf(f, "n_indexes: %d\n", self->n_indexes);
+	fprintf(f, "resolutions: %p [", self->resolutions);
+	for(i=0; i<self->ndim;  ++i) fprintf(f, " %f", self->resolutions[i]);
+	fprintf(f, "]\n");
 	fprintf(f, "origin: %p [", self->origin);
 	for(i=0; i<self->ndim;  ++i) fprintf(f, " %d", self->origin[i]);
 	fprintf(f, "]\n");
@@ -323,6 +328,7 @@ HklBinocularsSpace *hkl_binoculars_space_from_image(const double *resolutions,
 
 			space->indexes[j] += index * len;
 		}
+		space->resolutions[i] = resolution;
 		space->dims[i] = (vmax - vmin) / resolution + 1;
 		space->origin[i] = origin;
 

@@ -30,7 +30,7 @@ import           Hkl.C.Geometry
 
 #include "hkl-binoculars.h"
 
-data Space = Space CInt [CInt] [CInt] (ForeignPtr Space)
+data Space = Space CInt [CDouble] [CInt] [CInt] (ForeignPtr Space)
   deriving Show
 
 instance Storable Space where
@@ -39,10 +39,11 @@ instance Storable Space where
   poke _ _ = undefined
   peek ptr = do
     n <- #{peek HklBinocularsSpace, ndim} ptr
+    resolutions <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, resolutions} ptr)
     origins <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, origin} ptr)
     dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, dims} ptr)
     fp <- newForeignPtr c_hkl_binoculars_space_free ptr
-    return $ Space n origins dims fp
+    return $ Space n resolutions origins dims fp
 
 
 foreign import ccall unsafe "hkl_binoculars_project_q" c_hkl_binoculars_project_q :: Ptr Geometry -> Ptr Double -> CInt -> Double -> IO (Ptr Double)

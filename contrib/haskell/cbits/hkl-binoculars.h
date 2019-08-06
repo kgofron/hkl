@@ -28,6 +28,7 @@ struct _HklBinocularsSpace
 	int *indexes;
 	int n_indexes;
 
+	double *resolutions;
 	int *origin;
 	int *dims;
 	int ndim;
