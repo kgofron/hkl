@@ -42,7 +42,7 @@ import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
 import           Pipes                             (Consumer, Producer, await,
                                                     hoist, lift, yield, (>->))
 -- import           Pipes.Async                       ((>&>))
-import           Pipes.Prelude                     (mapM, toListM)
+import           Pipes.Prelude                     (mapM, print, tee, toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
 import           Prelude                           hiding (mapM)
 import           System.FilePath.Posix             ((</>))
@@ -129,7 +129,7 @@ data DataFrameSpace = DataFrameSpace DataFrameQ Space
 
 space :: DataFrameQ -> IO DataFrameSpace
 space df@(DataFrameQ (DataFrame _ _ _ img) arr) = do
-  let resolutions = [0.002, 0.002, 0.002] :: [CDouble]
+  let resolutions = [0.0002, 0.0002, 0.0002] :: [CDouble]
   -- let labels = ["qx", "qy", "qz"]
   let larr = map toEnum $ listOfShape . extent $ arr :: [CInt]
   let npixels = toEnum . size . extent $ img :: CInt
@@ -169,13 +169,12 @@ main_sixs = do
   let _outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
-  r <- runSafeT $ toListM $
+  _r <- runSafeT $ toListM $
       framesP (root </> filename) dataframe_h5p ImXpadS140
       >-> hoist lift ( mapM (computeQ ImXpadS140 pixels)
                        >-> mapM space
                      )
-    -- >-> Pipes.Prelude.tee  Pipes.Prelude.print
-    -- >-> drain
+      >-> Pipes.Prelude.tee  Pipes.Prelude.print
     -- >-> saveP "/tmp/test.h5" outPath ImXpadS140
   -- Prelude.print r
   return ()

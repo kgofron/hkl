@@ -22,6 +22,8 @@
 #include <time.h>
 #include "hkl-binoculars.h"
 
+/* #define DEBUG 1 */
+
 /**
  * hkl_vector_norm2: (skip)
  * @self: the #hklvector use to compute the norm2
@@ -142,8 +144,6 @@ void hkl_vector_fprintf(FILE *file, const HklVector *self)
 	fprintf(file, "|%f, %f, %f|", self->data[0], self->data[1], self->data[2]);
 }
 
-/* #define DEBUG 1 */
-
 void _min_max(double val, double *min, double *max)
 {
 	if(val < *min){
@@ -261,11 +261,17 @@ void hkl_binoculars_space_free(HklBinocularsSpace *self)
 
 static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
 {
+	uint32_t i;
+
 	fprintf(f, "self: %p\n", self);
 	fprintf(f, "indexes: %p\n", self->indexes);
 	fprintf(f, "n_indexes: %d\n", self->n_indexes);
-	fprintf(f, "origin: %p\n", self->origin);
-	fprintf(f, "dims: %p\n", self->dims);
+	fprintf(f, "origin: %p [", self->origin);
+	for(i=0; i<self->ndim;  ++i) fprintf(f, " %d", self->origin[i]);
+	fprintf(f, "]\n");
+	fprintf(f, "dims: %p [", self->dims);
+	for(i=0; i<self->ndim;  ++i) fprintf(f, " %d", self->dims[i]);
+	fprintf(f, "]\n");
 	fprintf(f, "ndim: %d\n", self->ndim);
 }
 
@@ -286,10 +292,11 @@ HklBinocularsSpace *hkl_binoculars_space_from_image(const double *resolutions,
 						    const uint16_t *image,
 						    int32_t n_pixels)
 {
-	/* struct timespec debut, fin; */
+#ifdef DEBUG
+	struct timespec debut, fin;
 
-	/* clock_gettime(CLOCK_MONOTONIC, &debut); */
-
+	clock_gettime(CLOCK_MONOTONIC, &debut);
+#endif
 	int32_t i;
 	int32_t j;
 	int32_t len = 1;
@@ -321,12 +328,12 @@ HklBinocularsSpace *hkl_binoculars_space_from_image(const double *resolutions,
 
 		len *=  space->dims[i];
 	}
-	/* hkl_binoculars_space_fprintf(stdout, space); */
-	/* clock_gettime(CLOCK_MONOTONIC, &fin); */
+#ifdef DEBUG
+	hkl_binoculars_space_fprintf(stdout, space);
+	clock_gettime(CLOCK_MONOTONIC, &fin);
 
-	/* fprintf(stdout, "space ds: %d dn: %d\n", fin.tv_sec - debut.tv_sec, fin.tv_nsec - debut.tv_nsec ); */
-
-
+	fprintf(stdout, "space ds: %d dn: %d\n", fin.tv_sec - debut.tv_sec, fin.tv_nsec - debut.tv_nsec );
+#endif
 	return space;
 }
 
