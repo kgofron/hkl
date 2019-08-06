@@ -27,6 +27,7 @@ import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr,
                                                     toForeignPtr)
 import           Data.ByteString.Char8             (pack)
+import           Data.List                         (transpose)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CDouble, CInt (..))
@@ -150,6 +151,21 @@ _saveP f _p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \
               (DataFrame j _g _ub image) <- await
               liftIO $ set_image det dataset dataspace j image
 
+cubeSize :: [DataFrameSpace] -> ([CInt], [CInt])
+cubeSize df = ([minimum v | v <- transpose minimums], [maximum v | v <- transpose maximums])
+  where
+    minimums :: [[CInt]]
+    minimums = map f df
+
+    f :: DataFrameSpace -> [CInt]
+    f (DataFrameSpace _ (Space _ _ os _ _)) = os
+
+    maximums :: [[CInt]]
+    maximums = map g df
+
+    g :: DataFrameSpace -> [CInt]
+    g (DataFrameSpace _ (Space _ _ os ds _)) = [o + d | (o, d) <- zip os ds]
+
 main_sixs :: IO ()
 main_sixs = do
   -- let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
@@ -168,12 +184,13 @@ main_sixs = do
   let _outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
-  _r <- runSafeT $ toListM $
+  r <- runSafeT $ toListM $
       framesP (root </> filename) dataframe_h5p ImXpadS140
       >-> hoist lift ( mapM (computeQ ImXpadS140 pixels)
                        >-> mapM space
                      )
       >-> Pipes.Prelude.tee  Pipes.Prelude.print
     -- >-> saveP "/tmp/test.h5" outPath ImXpadS140
+  Prelude.print $ cubeSize r
   -- Prelude.print r
   return ()
