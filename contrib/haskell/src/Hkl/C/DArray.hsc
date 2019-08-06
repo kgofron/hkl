@@ -26,6 +26,7 @@ data DArray a = DArray CSize [a] deriving Show
 instance Storable (DArray CString) where
   alignment _ = #{alignment darray_string}
   sizeOf _ = #{size darray_string}
+  poke _ _ = undefined
   peek ptr = do
     n <- (#{peek darray_string, size} ptr)
     items <- #{peek darray_string ,item} ptr

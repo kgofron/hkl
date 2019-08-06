@@ -1,5 +1,15 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE CPP #-}
+{-
+    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+                                         L'Orme des Merisiers Saint-Aubin
+                                         BP 48 91192 GIF-sur-YVETTE CEDEX
+    License    : GPL3+
+
+    Maintainer : Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
+    Stability  : Experimental
+    Portability: GHC only (not tested)
+-}
 
 module Hkl.Types.Parameter
        ( Parameter(..)
@@ -21,8 +31,6 @@ import Foreign.Storable ( Storable
                         , peek
                         , poke
                         )
-
-#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
 
 unit :: CInt
 unit = 1
