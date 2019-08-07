@@ -149,20 +149,26 @@ _saveP f _p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \
               (DataFrame j _g _ub image) <- await
               liftIO $ set_image det dataset dataspace j image
 
-cubeSize :: [DataFrameSpace] -> ([CInt], [CInt])
-cubeSize df = ([minimum v | v <- transpose minimums], [maximum v | v <- transpose maximums])
+cubeSize :: [DataFrameSpace] -> ([CInt], [CInt], [CInt])
+cubeSize dfs = ( mini, maxi, zipWith (-) maxi mini)
   where
+    mini :: [CInt]
+    mini = map minimum (transpose minimums)
+
+    maxi :: [CInt]
+    maxi = map maximum (transpose maximums)
+
     minimums :: [[CInt]]
-    minimums = map f df
+    minimums = map f dfs
 
     f :: DataFrameSpace -> [CInt]
     f (DataFrameSpace _ (Space _ _ os _ _)) = os
 
     maximums :: [[CInt]]
-    maximums = map g df
+    maximums = map g dfs
 
     g :: DataFrameSpace -> [CInt]
-    g (DataFrameSpace _ (Space _ _ os ds _)) = [o + d | (o, d) <- zip os ds]
+    g (DataFrameSpace _ (Space _ _ os ds _)) = zipWith (+) os ds
 
 main_sixs :: IO ()
 main_sixs = do
