@@ -70,7 +70,7 @@ data DataFrame
       (Array F DIM2 Word16) -- image
 
 instance Show DataFrame where
-  show (DataFrame i g m _) = show i ++ show g ++ show m
+  show (DataFrame i g m _) = unwords [show i, show g, show m]
 
 class FramesP a where
   framesP :: FilePath -> a -> Detector b DIM2 -> Producer DataFrame (SafeT IO) ()
