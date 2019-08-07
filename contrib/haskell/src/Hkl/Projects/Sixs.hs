@@ -13,13 +13,13 @@
 module Hkl.Projects.Sixs
     ( main_sixs )
         where
-
 import           Bindings.HDF5.Dataset             (createDataset)
 import           Bindings.HDF5.Dataspace           (createSimpleDataspace)
 import           Bindings.HDF5.Datatype.Internal   (nativeTypeOf)
 import           Bindings.HDF5.File                (AccFlags (Truncate),
                                                     createFile)
-import           Control.Monad                     (forM_, forever)
+import           Control.Concurrent.Async          (mapConcurrently)
+import           Control.Monad                     (forM_, forever, (>=>))
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, extent, listOfShape,
                                                     size)
@@ -40,11 +40,9 @@ import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
 import           Pipes                             (Consumer, Producer, await,
-                                                    hoist, lift, yield, (>->))
--- import           Pipes.Async                       ((>&>))
-import           Pipes.Prelude                     (mapM, print, tee, toListM)
+                                                    yield)
+import           Pipes.Prelude                     (toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
-import           Prelude                           hiding (mapM)
 import           System.FilePath.Posix             ((</>))
 
 import           Hkl
@@ -184,13 +182,7 @@ main_sixs = do
   let _outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
-  r <- runSafeT $ toListM $
-      framesP (root </> filename) dataframe_h5p ImXpadS140
-      >-> hoist lift ( mapM (computeQ ImXpadS140 pixels)
-                       >-> mapM space
-                     )
-      >-> Pipes.Prelude.tee  Pipes.Prelude.print
-    -- >-> saveP "/tmp/test.h5" outPath ImXpadS140
-  Prelude.print $ cubeSize r
-  -- Prelude.print r
+  r <- runSafeT $ toListM $ framesP (root </> filename) dataframe_h5p ImXpadS140
+  r' <- mapConcurrently ((computeQ ImXpadS140 pixels) >=> space) r
+  print $ cubeSize r'
   return ()
