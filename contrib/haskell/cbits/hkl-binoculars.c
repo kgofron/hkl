@@ -144,99 +144,6 @@ void hkl_vector_fprintf(FILE *file, const HklVector *self)
 	fprintf(file, "|%f, %f, %f|", self->data[0], self->data[1], self->data[2]);
 }
 
-void _min_max(double val, double *min, double *max)
-{
-	if(val < *min){
-		*min = val;
-	}
-	if (val > *max){
-		*max = val;
-	}
-}
-
-/* the array is pre filled with the pixel coordinates */
-double *hkl_binoculars_project_q(const HklGeometry *geometry,
-				 double *inout, int32_t n_inout,
-				 double k)
-{
-#ifdef DEBUG
-	struct timespec debut, fin;
-
-	clock_gettime(CLOCK_MONOTONIC, &debut);
-#endif
-	int32_t n_out = sizeof(inout) * n_inout * 3;
-	double *out = malloc(n_out);
-	double *q_x = &out[0 * n_inout];
-	double *q_y = &out[1 * n_inout];
-	double *q_z = &out[2 * n_inout];
-	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
-	const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector);
-	const HklVector ki = {{1, 0, 0}};
-
-	memcpy(out, inout, n_out);
-
-#ifdef DEBUG
-	int32_t j;
-	double q_x_min, q_x_max;
-	double q_y_min, q_y_max;
-	double q_z_min, q_z_max;
-
-	q_x_min = q_x_max = q_x[0];
-	q_y_min = q_y_max = q_y[0];
-	q_z_min = q_z_max = q_z[0];
-
-	for(int32_t i=0; i<n_inout; ++i){
-		_min_max(q_x[i], &q_x_min, &q_x_max);
-		_min_max(q_y[i], &q_y_min, &q_y_max);
-		_min_max(q_z[i], &q_z_min, &q_z_max);
-	}
-	fprintf(stdout, "%p min: |%f %f %f| max:|%f %f %f|\n",
-		inout,
-		q_x_min, q_y_min, q_z_min,
-		q_x_max, q_y_max, q_z_max);
-	fprintf(stdout, " -- ");
-#endif
-	for(int32_t i=0;i<n_inout;++i){
-		HklVector v = {{ q_x[i],
-				 q_y[i],
-				 q_z[i]}};
-
-		hkl_vector_rotated_quaternion(&v, &q);
-		hkl_vector_normalize(&v);
-		hkl_vector_minus_vector(&v, &ki);
-		hkl_vector_times_double(&v, k);
-		q_x[i] = v.data[0];
-		q_y[i] = v.data[1];
-		q_z[i] = v.data[2];
-#ifdef DEBUG
-		if (i == 0){
-			q_x_min = q_x_max = q_x[i];
-			q_y_min = q_y_max = q_y[i];
-			q_z_min = q_z_max = q_z[i];
-		}else{
-			_min_max(q_x[i], &q_x_min, &q_x_max);
-			_min_max(q_y[i], &q_y_min, &q_y_max);
-			_min_max(q_z[i], &q_z_min, &q_z_max);
-		}
-#endif
-	}
-#ifdef DEBUG
-	fprintf(stdout, "min: |%f %f %f| max:|%f %f %f|\n",
-		q_x_min, q_y_min, q_z_min,
-		q_x_max, q_y_max, q_z_max);
-	/* hkl_geometry_fprintf(stdout, geometry); */
-	fprintf(stdout, "\n");
-
-	clock_gettime(CLOCK_MONOTONIC, &fin);
-	fprintf(stdout, "projection ds: %d dn: %d\n",
-		fin.tv_sec - debut.tv_sec,
-		fin.tv_nsec - debut.tv_nsec );
-#endif
-	hkl_detector_free(detector);
-
-	return out;
-}
-
 HklBinocularsSpace *space_new(int32_t n_indexes, int32_t ndim)
 {
 	HklBinocularsSpace *self = malloc(sizeof(*self));
@@ -280,66 +187,85 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 	fprintf(f, "ndim: %d\n", self->ndim);
 }
 
-static inline void min_max(double val, double *min, double *max, int32_t *origin, int32_t index)
+inline int32_t min(int32_t x, int32_t y)
 {
-	*max = (val > *max) ? val : *max;
-	if(val < *min){
-		*min = val;
-		*origin = index;
-	}
+	return y ^ ((x ^ y) & -(x < y));
 }
 
-HklBinocularsSpace *hkl_binoculars_space_from_image(const double *resolutions,
-						    int32_t resolutions_n,
-						    const double *coordinates,
-						    const int32_t *coordinates_dims,
-						    int32_t coordinates_ndim,
-						    const uint16_t *image,
-						    int32_t n_pixels)
+inline int32_t max(int32_t x, int32_t y)
 {
-#ifdef DEBUG
-	struct timespec debut, fin;
+	return x ^ ((x ^ y) & -(x < y));
+}
 
-	clock_gettime(CLOCK_MONOTONIC, &debut);
-#endif
+/* the array is pre filled with the pixel coordinates */
+HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
+					   double k,
+					   const uint16_t *image,
+					   int32_t n_pixels,
+					   const double *pixels_coordinates,
+					   int32_t pixels_coordinates_ndim,
+					   const int32_t *pixels_coordinates_dims,
+					   const double *resolutions,
+					   int32_t n_resolutions)
+{
 	int32_t i;
 	int32_t j;
 	int32_t len = 1;
-	/* fprintf(stdout, "coordinates_ndim: %d\n", coordinates_ndim); */
-	/* for(i=0; i<6; ++i) fprintf(stdout, "dims: %d %d %d\n", i, coordinates_dims[i], sizeof(i)); */
-	HklBinocularsSpace *space = space_new(n_pixels, coordinates_ndim);
+	int32_t n_coordinates = 3;
 
-	for(i=0; i<coordinates_ndim; ++i){
-		const double *coordinate = &coordinates[i * n_pixels];
+	int32_t indexes[n_coordinates*n_pixels];
+	int32_t *indexes_0 = &indexes[0 * n_pixels];
+	int32_t *indexes_1 = &indexes[1 * n_pixels];
+	int32_t *indexes_2 = &indexes[2 * n_pixels];
+
+	const double *q_x = &pixels_coordinates[0 * n_pixels];
+	const double *q_y = &pixels_coordinates[1 * n_pixels];
+	const double *q_z = &pixels_coordinates[2 * n_pixels];
+
+	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
+	const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector);
+	const HklVector ki = {{1, 0, 0}};
+	HklBinocularsSpace *space = space_new(n_pixels, n_coordinates);
+
+	for(i=0;i<n_pixels;++i){
+		/* compute the coordinates */
+		HklVector v = {{ q_x[i],
+				 q_y[i],
+				 q_z[i]}};
+
+		hkl_vector_rotated_quaternion(&v, &q);
+		hkl_vector_normalize(&v);
+		hkl_vector_minus_vector(&v, &ki);
+		hkl_vector_times_double(&v, k);
+
+		indexes_0[i] = rint(v.data[0] / resolutions[0]);
+		indexes_1[i] = rint(v.data[1] / resolutions[1]);
+		indexes_2[i] = rint(v.data[2] / resolutions[2]);
+	}
+
+	for(i=0; i<n_coordinates; ++i){
+		const int32_t *idx = &indexes[i * n_pixels];
 		const double resolution = resolutions[i];
-		double vmin = *coordinate;
-		double vmax = *coordinate;
-		int32_t origin = rint(*coordinate / resolution);
+		int32_t origin = idx[0];
+		int32_t last = idx[0];
 
 		for(j=0; j<n_pixels; ++j){
-			double val = coordinate[j];
-			int32_t index = rint(val / resolution);
+			uint32_t index = idx[j];
 
-			if(val < vmin){
-				vmin = val;
-				origin = index;
-			}else
-				vmax = (val > vmax) ? val : vmax;
+			origin = min(origin, index);
+			last = max(last, index);
 
 			space->indexes[j] += index * len;
 		}
 		space->resolutions[i] = resolution;
-		space->dims[i] = (vmax - vmin) / resolution + 1;
+		space->dims[i] = last - origin + 1;
 		space->origin[i] = origin;
 
 		len *=  space->dims[i];
 	}
-#ifdef DEBUG
-	hkl_binoculars_space_fprintf(stdout, space);
-	clock_gettime(CLOCK_MONOTONIC, &fin);
 
-	fprintf(stdout, "space ds: %d dn: %d\n", fin.tv_sec - debut.tv_sec, fin.tv_nsec - debut.tv_nsec );
-#endif
+	hkl_detector_free(detector);
+
 	return space;
 }
 

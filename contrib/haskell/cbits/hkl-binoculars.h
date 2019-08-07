@@ -34,15 +34,14 @@ struct _HklBinocularsSpace
 	int ndim;
 } space_t;
 
-extern double *hkl_binoculars_project_q(const HklGeometry *geometry,
-					double *inout, int n_inout,
-					double k);
-
 extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
 
-extern HklBinocularsSpace *hkl_binoculars_from_image(const double *resolutions ,
-						     int resolutions_n,
-						     const double *coordinates,
-						     const int *coordinates_dims,
-						     int coordinates_ndim,
-						     const uint16_t *image, int n_pixels);
+HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
+					   double k,
+					   const uint16_t *image,
+					   int32_t n_pixels,
+					   const double *pixels_coordinates,
+					   int32_t pixels_coordinates_ndim,
+					   const int32_t *pixels_coordinates_dims,
+					   const double *resolutions,
+					   int32_t n_resolutions);

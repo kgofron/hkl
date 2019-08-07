@@ -19,21 +19,18 @@ import           Bindings.HDF5.Datatype.Internal   (nativeTypeOf)
 import           Bindings.HDF5.File                (AccFlags (Truncate),
                                                     createFile)
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Monad                     (forM_, forever, (>=>))
+import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, extent, listOfShape,
                                                     size)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr,
-                                                    toForeignPtr)
+import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Char8             (pack)
 import           Data.List                         (transpose)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
-import           Foreign.C.Types                   (CDouble, CInt (..))
-import           Foreign.ForeignPtr                (newForeignPtr,
-                                                    withForeignPtr)
-import           Foreign.Marshal.Alloc             (finalizerFree)
+import           Foreign.C.Types                   (CInt (..))
+import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Storable                  (peek)
 import           Numeric.LinearAlgebra             (Matrix)
@@ -103,42 +100,25 @@ instance FramesP DataFrameHklH5Path where
           openDataset' :: File -> DataItem H5 -> IO Dataset
           openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
 
--- | DataFrameQ
-
-data DataFrameQ = DataFrameQ DataFrame (Array F DIM3 Double)
-
-instance Show DataFrameQ where
-    show (DataFrameQ df _) = show df
-
-computeQ :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameQ
-computeQ d pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub _image) = do
-  let k = 2 * pi / (w /~ angstrom)
-  let nPixels = size . shape $ d
-  withGeometry g $ \geometry ->
-    withForeignPtr (toForeignPtr pixels) $ \pix -> do
-      p <- {-# SCC "c_hkl_binoculars_project_q" #-} c_hkl_binoculars_project_q geometry pix (toEnum nPixels) k
-      fp <- newForeignPtr finalizerFree p
-      pure $ DataFrameQ df (fromForeignPtr (extent pixels) fp)
-
 -- | DataFrameSpace
 
-data DataFrameSpace = DataFrameSpace DataFrameQ Space
+data DataFrameSpace = DataFrameSpace DataFrame Space
   deriving Show
 
-space :: DataFrameQ -> IO DataFrameSpace
-space df@(DataFrameQ (DataFrame _ _ _ img) arr) = do
-  let resolutions = [0.0002, 0.0002, 0.0002] :: [CDouble]
-  -- let labels = ["qx", "qy", "qz"]
-  let larr = map toEnum $ listOfShape . extent $ arr :: [CInt]
-  let npixels = toEnum . size . extent $ img :: CInt
-  -- print limg
-  p <- withArrayLen resolutions $ \rl r ->
-    withForeignPtr (toForeignPtr arr) $ \c ->
-    withArrayLen larr $ \cNDims cDims ->
-    withForeignPtr (toForeignPtr img) $ \i ->
-        {-# SCC "c_hkl_binoculars_space_from_image" #-} c_hkl_binoculars_space_from_image r (toEnum rl) c cDims (toEnum cNDims) i npixels
-  s <- peek p
-  return (DataFrameSpace df s)
+space' :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameSpace
+space' detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
+  let resolutions = [0.0002, 0.0002, 0.0002] :: [Double]
+  let k = 2 * pi / (w /~ angstrom)
+  let nPixels = size . shape $ detector
+  let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
+  withGeometry g $ \geometry ->
+    withForeignPtr (toForeignPtr pixels) $ \pix ->
+    withArrayLen resolutions $ \nr r ->
+    withArrayLen pixelsDims $ \ndim dims ->
+    withForeignPtr (toForeignPtr img) $ \i -> do
+      p <- {-# SCC "c_hkl_binoculars_space_q" #-} c_hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
+      s <- peek p
+      return (DataFrameSpace df s)
 
 -- | Save
 
@@ -149,8 +129,8 @@ _saveP f _p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \
               (DataFrame j _g _ub image) <- await
               liftIO $ set_image det dataset dataspace j image
 
-cubeSize :: [DataFrameSpace] -> ([CInt], [CInt], [CInt])
-cubeSize dfs = ( mini, maxi, zipWith (-) maxi mini)
+cubeSize :: [Space] -> ([CInt], [CInt], [CInt])
+cubeSize ss = ( mini, maxi, zipWith (-) maxi mini)
   where
     mini :: [CInt]
     mini = map minimum (transpose minimums)
@@ -159,16 +139,16 @@ cubeSize dfs = ( mini, maxi, zipWith (-) maxi mini)
     maxi = map maximum (transpose maximums)
 
     minimums :: [[CInt]]
-    minimums = map f dfs
+    minimums = map f ss
 
-    f :: DataFrameSpace -> [CInt]
-    f (DataFrameSpace _ (Space _ _ os _ _)) = os
+    f :: Space -> [CInt]
+    f (Space _ _ os _ _) = os
 
     maximums :: [[CInt]]
-    maximums = map g dfs
+    maximums = map g ss
 
-    g :: DataFrameSpace -> [CInt]
-    g (DataFrameSpace _ (Space _ _ os ds _)) = zipWith (+) os ds
+    g :: Space -> [CInt]
+    g (Space _ _ os ds _) = zipWith (+) os ds
 
 main_sixs :: IO ()
 main_sixs = do
@@ -189,6 +169,7 @@ main_sixs = do
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   r <- runSafeT $ toListM $ framesP (root </> filename) dataframe_h5p ImXpadS140
-  r' <- mapConcurrently ((computeQ ImXpadS140 pixels) >=> space) r
-  print $ cubeSize r'
+  -- r' <- mapConcurrently ((computeQ ImXpadS140 pixels) >=> space) r
+  r' <- mapConcurrently (space' ImXpadS140 pixels) r
+  print $ cubeSize [s | (DataFrameSpace _ s) <- r']
   return ()

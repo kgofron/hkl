@@ -14,9 +14,8 @@
 
 module Hkl.C.Binoculars
        ( Space(..)
-       , c_hkl_binoculars_project_q
        , c_hkl_binoculars_space_free
-       , c_hkl_binoculars_space_from_image
+       , c_hkl_binoculars_space_q
        ) where
 
 import           Data.Word             (Word16)
@@ -46,8 +45,16 @@ instance Storable Space where
     return $ Space n resolutions origins dims fp
 
 
-foreign import ccall unsafe "hkl_binoculars_project_q" c_hkl_binoculars_project_q :: Ptr Geometry -> Ptr Double -> CInt -> Double -> IO (Ptr Double)
-
-foreign import ccall unsafe "hkl_binoculars_space_from_image" c_hkl_binoculars_space_from_image :: Ptr CDouble -> CInt -> Ptr Double -> Ptr CInt -> CInt -> Ptr Word16 -> CInt -> IO (Ptr Space)
-
 foreign import ccall unsafe "&hkl_binoculars_space_free" c_hkl_binoculars_space_free :: FunPtr (Ptr Space -> IO ())
+
+foreign import ccall unsafe "hkl_binoculars_space_q" \
+c_hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
+                         -> Double -- double k
+                         -> Ptr Word16 --  const uint16_t *image
+                         -> CInt -- int32_t n_pixels
+                         -> Ptr Double -- const double *pixels_coordinates
+                         -> CInt -- int32_t pixels_coordinates_ndim
+                         -> Ptr CInt --  const int32_t *pixels_coordinates_dims
+                         -> Ptr Double --  const double *resolutions
+                         -> CInt -- int32_t n_resolutions
+                         -> IO (Ptr Space)
