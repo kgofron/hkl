@@ -227,8 +227,8 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 	const HklVector ki = {{1, 0, 0}};
 	HklBinocularsSpace *space = space_new(n_pixels, n_coordinates);
 
+	/* compute the coordinates and the indexes */
 	for(i=0;i<n_pixels;++i){
-		/* compute the coordinates */
 		HklVector v = {{ q_x[i],
 				 q_y[i],
 				 q_z[i]}};
@@ -243,6 +243,7 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 		indexes_2[i] = rint(v.data[2] / resolutions[2]);
 	}
 
+	/* compress the coordinates into the space */
 	for(i=0; i<n_coordinates; ++i){
 		const int32_t *idx = &indexes[i * n_pixels];
 		const double resolution = resolutions[i];
