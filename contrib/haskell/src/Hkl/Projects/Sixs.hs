@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-
     Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -8,8 +9,6 @@
     Stability  : Experimental
     Portability: GHC only (not tested)
 -}
-{-# LANGUAGE CPP   #-}
-{-# LANGUAGE GADTs #-}
 module Hkl.Projects.Sixs
     ( main_sixs )
         where
