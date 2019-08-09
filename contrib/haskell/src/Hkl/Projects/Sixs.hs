@@ -133,22 +133,10 @@ cubeSize :: [Space] -> ([CInt], [CInt], [CInt])
 cubeSize ss = ( mini, maxi, zipWith (-) maxi mini)
   where
     mini :: [CInt]
-    mini = map minimum (transpose minimums)
+    mini = map minimum (transpose [o | (Space _ _ o _ _) <- ss])
 
     maxi :: [CInt]
-    maxi = map maximum (transpose maximums)
-
-    minimums :: [[CInt]]
-    minimums = map f ss
-
-    f :: Space -> [CInt]
-    f (Space _ _ os _ _) = os
-
-    maximums :: [[CInt]]
-    maximums = map g ss
-
-    g :: Space -> [CInt]
-    g (Space _ _ os ds _) = zipWith (+) os ds
+    maxi = map maximum (transpose [zipWith (+) o d | (Space _ _ o d _) <- ss])
 
 main_sixs :: IO ()
 main_sixs = do
