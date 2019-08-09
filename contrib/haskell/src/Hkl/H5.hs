@@ -110,7 +110,7 @@ get_image det d n = withDataspace d $ \dataspace -> do
         return $ fromForeignPtr s fp
 
 
-set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> (Array F sh Word16) -> IO ()
+set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
 set_image det d dataspace n arr =  do
   selectNone dataspace
   selectHyperslab dataspace Set h
