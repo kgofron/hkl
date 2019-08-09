@@ -1,6 +1,16 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE UnicodeSyntax            #-}
+{-
+    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+                                         L'Orme des Merisiers Saint-Aubin
+                                         BP 48 91192 GIF-sur-YVETTE CEDEX
+    License    : GPL3+
+
+    Maintainer : Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
+    Stability  : Experimental
+    Portability: GHC only (not tested)
+-}
 module Hkl.H5
     ( Dataset
     , File
@@ -22,66 +32,49 @@ module Hkl.H5
     )
     where
 
-import Bindings.HDF5.Core ( HSize(HSize)
-                          , IndexType(ByName)
-                          , IterOrder(Native)
-                          , hid
-                          , hSize
-                          , indexTypeCode
-                          , iterOrderCode
-                          )
-import Bindings.HDF5.File ( File
-                          , AccFlags(ReadOnly)
-                          , openFile
-                          , closeFile
-                          )
-import Bindings.HDF5.Dataset ( Dataset
-                             , openDataset
-                             , closeDataset
-                             , getDatasetSpace
-                             , readDataset
-                             , readDatasetInto
-                             , writeDataset
-                             )
-import Bindings.HDF5.Dataspace ( Dataspace
-                               , SelectionOperator(Set)
-                               , closeDataspace
-                               , createSimpleDataspace
-                               , getSimpleDataspaceExtentNDims
-                               , getSimpleDataspaceExtentNPoints
-                               , selectHyperslab
-                               , selectNone
-                               )
-import Bindings.HDF5.Raw ( HErr_t(HErr_t)
-                         , HId_t(HId_t)
-                         , H5L_info_t
-                         , h5l_iterate
-                         )
-import Control.Exception (bracket)
-import Data.Array.Repa (Array, Shape, listOfShape)
-import Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr, toForeignPtr)
-import Data.ByteString.Char8 ( pack )
-import Data.IORef ( newIORef, readIORef, writeIORef )
-import Data.Vector.Storable (Vector, freeze, unsafeFromForeignPtr0)
-import Data.Vector.Storable.Mutable (MVector(..), replicate)
-import Data.Word (Word16)
-import Foreign.StablePtr ( castPtrToStablePtr
-                         , castStablePtrToPtr
-                         , deRefStablePtr
-                         , freeStablePtr
-                         , newStablePtr
-                         )
-import Foreign.Ptr ( FunPtr, freeHaskellFunPtr )
-import Foreign.Ptr.Conventions ( In(In)
-                               , InOut(InOut)
-                               , castWrappedPtr
-                               , withInOut_
-                               )
-import Foreign.C.String ( CString, peekCString )
-import Foreign.C.Types (CInt(CInt))
-import Numeric.LinearAlgebra (Matrix, reshape)
+import           Bindings.HDF5.Core              (HSize (HSize),
+                                                  IndexType (ByName),
+                                                  IterOrder (Native), hSize,
+                                                  hid, indexTypeCode,
+                                                  iterOrderCode)
+import           Bindings.HDF5.Dataset           (Dataset, closeDataset,
+                                                  getDatasetSpace, openDataset,
+                                                  readDataset, readDatasetInto,
+                                                  writeDataset)
+import           Bindings.HDF5.Dataspace         (Dataspace,
+                                                  SelectionOperator (Set),
+                                                  closeDataspace,
+                                                  createSimpleDataspace,
+                                                  getSimpleDataspaceExtentNDims,
+                                                  getSimpleDataspaceExtentNPoints,
+                                                  selectHyperslab, selectNone)
+import           Bindings.HDF5.File              (AccFlags (ReadOnly), File,
+                                                  closeFile, openFile)
+import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
+                                                  HId_t (HId_t), h5l_iterate)
+import           Control.Exception               (bracket)
+import           Data.Array.Repa                 (Array, Shape, listOfShape)
+import           Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr,
+                                                  toForeignPtr)
+import           Data.ByteString.Char8           (pack)
+import           Data.IORef                      (modifyIORef', newIORef,
+                                                  readIORef)
+import           Data.Vector.Storable            (Vector, freeze,
+                                                  unsafeFromForeignPtr0)
+import           Data.Vector.Storable.Mutable    (MVector (..), replicate)
+import           Data.Word                       (Word16)
+import           Foreign.C.String                (CString, peekCString)
+import           Foreign.C.Types                 (CInt (CInt))
+import           Foreign.Ptr                     (FunPtr, freeHaskellFunPtr)
+import           Foreign.Ptr.Conventions         (In (In), InOut (InOut),
+                                                  castWrappedPtr, withInOut_)
+import           Foreign.StablePtr               (StablePtr, castPtrToStablePtr,
+                                                  castStablePtrToPtr,
+                                                  deRefStablePtr, freeStablePtr,
+                                                  newStablePtr)
+import           Numeric.LinearAlgebra           (Matrix, reshape)
 
-import Hkl.Detector
+import           Hkl.Detector
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -191,36 +184,30 @@ type H5Iterate a = HId_t -> CString -> In H5L_info_t -> InOut a -> IO HErr_t
 
 foreign import ccall "wrapper" mkOp :: H5Iterate a -> IO (FunPtr (H5Iterate a))
 
+withStablePtr :: a -> (StablePtr a -> IO b) -> IO b
+withStablePtr value = bracket (newStablePtr value) freeStablePtr
+
+withFunPtr :: H5Iterate a -> (FunPtr (H5Iterate a) -> IO b) -> IO b
+withFunPtr f = bracket (mkOp f) freeHaskellFunPtr
+
 nxEntries ∷ FilePath → IO [String]
 nxEntries f = withH5File f $ \h → do
   state <- newIORef []
-  statePtr <- newStablePtr state
-  let opData = InOut $ castStablePtrToPtr statePtr
-  let startIndex = Nothing
-  let indexType = ByName
-  let order = Native
-  iop <- mkOp callback
-  _ <- withInOut_ (maybe 0 hSize startIndex) $ \ioStartIndex ->
+  _ <- withStablePtr state $ \statePtr -> do
+    let opData = InOut $ castStablePtrToPtr statePtr
+    let startIndex = Nothing
+    let indexType = ByName
+    let order = Native
+    withFunPtr callback $ \iop ->
+      withInOut_ (maybe 0 hSize startIndex) $ \ioStartIndex ->
       h5l_iterate (hid h) (indexTypeCode indexType) (iterOrderCode order) ioStartIndex iop opData
-
-  freeHaskellFunPtr iop
-  freeStablePtr statePtr
 
   -- retrieve the final state
   readIORef state
     where
       callback ∷ H5Iterate a
-      callback _g n _i (InOut dataptr) =
-          do
-            let opData = castWrappedPtr dataptr
-            -- get the state
-            stRef <- deRefStablePtr (castPtrToStablePtr opData)
-            st <- readIORef stRef
-
-            -- compute the new state
-            name <- peekCString n
-            let newSt = st ++ [name]
-
-            -- store the new state
-            writeIORef stRef newSt
-            return $ HErr_t 0
+      callback _g n _i (InOut dataptr) = do
+        name <- peekCString n
+        stRef <- deRefStablePtr (castPtrToStablePtr . castWrappedPtr $ dataptr)
+        modifyIORef' stRef $ \st -> name : st
+        return $ HErr_t 0
