@@ -105,8 +105,8 @@ instance FramesP DataFrameHklH5Path where
 data DataFrameSpace = DataFrameSpace DataFrame Space
   deriving Show
 
-space' :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameSpace
-space' detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
+space :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameSpace
+space detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
   let resolutions = [0.0002, 0.0002, 0.0002] :: [Double]
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
@@ -169,7 +169,6 @@ main_sixs = do
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   r <- runSafeT $ toListM $ framesP (root </> filename) dataframe_h5p ImXpadS140
-  -- r' <- mapConcurrently ((computeQ ImXpadS140 pixels) >=> space) r
-  r' <- mapConcurrently (space' ImXpadS140 pixels) r
+  r' <- mapConcurrently (space ImXpadS140 pixels) r
   print $ cubeSize [s | (DataFrameSpace _ s) <- r']
   return ()
