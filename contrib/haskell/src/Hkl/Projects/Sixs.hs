@@ -98,7 +98,7 @@ instance FramesP DataFrameHklH5Path where
 
 -- | DataFrameSpace
 
-data DataFrameSpace sh = DataFrameSpace DataFrame Space
+data DataFrameSpace sh = DataFrameSpace DataFrame (Space sh)
   deriving Show
 
 space :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO (DataFrameSpace DIM3)
@@ -120,7 +120,7 @@ space detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = d
 
 mkCube :: Shape sh => [DataFrameSpace sh] -> IO (Cube sh)
 mkCube dfs = do
-  let spaces = [fp | (DataFrameSpace _ (Space _ _ _ _ fp)) <- dfs]
+  let spaces = [spaceHklPointer s | (DataFrameSpace _ s) <- dfs]
   let images = [toForeignPtr img | (DataFrameSpace (DataFrame _ _ _ img) _) <- dfs]
   let (DataFrameSpace (DataFrame _ _ _ img) _ )= Prelude.head dfs
   let nPixels = size . extent $ img
@@ -134,9 +134,9 @@ mkCube dfs = do
 -- | Save
 
 saveCube :: Shape sh => FilePath -> Cube sh -> IO ()
-saveCube f (Cube photons contributions _) = withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' -> do
-  saveRepa f' "photons" photons
-  saveRepa f' "contributions" contributions
+saveCube f c = withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' -> do
+  saveRepa f' "photons" (cubePhotons c)
+  saveRepa f' "contributions" (cubeContributions c)
 
 main_sixs :: IO ()
 main_sixs = do

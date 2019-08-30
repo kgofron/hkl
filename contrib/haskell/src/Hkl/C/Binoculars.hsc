@@ -53,38 +53,43 @@ instance Shape sh => Storable (Cube sh) where
   peek ptr = do
     n <- #{peek HklBinocularsCube, ndim} ptr :: IO CInt
     dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsCube, dims} ptr) :: IO [CInt]
+    let sh = shapeOfList (reverse (map fromEnum dims))
     fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
     fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
     fp <- newForeignPtr hkl_binoculars_cube_free ptr
-    let sh = shapeOfList (reverse (map fromEnum dims))
     return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
 
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
 hkl_binoculars_cube_new :: CInt -- number of Space
-                        -> Ptr (Ptr Space) -- spaces
+                        -> Ptr (Ptr (Space sh)) -- spaces
                         -> CInt -- int32_t n_pixels
                         -> Ptr (Ptr Word16) -- uint16_t **imgs);
                         -> IO (Ptr (Cube sh))
 
-data Space = Space CInt [CDouble] [CInt] [CInt] (ForeignPtr Space)
+data Space sh = Space { spaceShape :: sh
+                      , spaceResolution :: [CDouble]
+                      , spaceOrigin :: [CInt]
+                      , spaceHklPointer :: (ForeignPtr (Space sh))
+                      }
   deriving Show
 
-instance Storable Space where
+instance Shape sh => Storable (Space sh) where
   alignment _ = #{alignment HklBinocularsSpace}
   sizeOf _ = #{size HklBinocularsSpace}
   poke _ _ = undefined
   peek ptr = do
-    n <- #{peek HklBinocularsSpace, ndim} ptr
+    n <- #{peek HklBinocularsSpace, ndim} ptr :: IO CInt
+    dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, dims} ptr) :: IO [CInt]
+    let sh = shapeOfList (reverse (map fromEnum dims))
     resolutions <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, resolutions} ptr)
     origins <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, origin} ptr)
-    dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, dims} ptr)
     fp <- newForeignPtr hkl_binoculars_space_free ptr
-    return $ Space n resolutions origins dims fp
+    return $ Space sh resolutions origins fp
 
 
-foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_space_free" hkl_binoculars_space_free :: FunPtr (Ptr Space -> IO ())
+foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_space_free" hkl_binoculars_space_free :: FunPtr (Ptr (Space sh) -> IO ())
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q" \
 hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
@@ -96,4 +101,4 @@ hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
                        -> Ptr CInt --  const int32_t *pixels_coordinates_dims
                        -> Ptr Double --  const double *resolutions
                        -> CInt -- int32_t n_resolutions
-                       -> IO (Ptr Space)
+                       -> IO (Ptr (Space sh))
