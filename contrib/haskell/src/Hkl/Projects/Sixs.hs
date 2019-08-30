@@ -12,13 +12,10 @@
 module Hkl.Projects.Sixs
     ( main_sixs )
         where
-import           Bindings.HDF5.Dataset             (createDataset)
-import           Bindings.HDF5.Dataspace           (createSimpleDataspace)
-import           Bindings.HDF5.Datatype.Internal   (nativeTypeOf)
 import           Bindings.HDF5.File                (AccFlags (Truncate),
                                                     createFile)
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Monad                     (forM_, forever)
+import           Control.Monad                     (forM_)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, extent, listOfShape,
                                                     size)
@@ -36,8 +33,7 @@ import           Foreign.Storable                  (peek)
 import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
-import           Pipes                             (Consumer, Producer, await,
-                                                    yield)
+import           Pipes                             (Producer, yield)
 import           Pipes.Prelude                     (toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
 import           System.FilePath.Posix             ((</>))
@@ -137,18 +133,16 @@ mkCube dfs = do
 
 -- | Save
 
-_saveP :: FilePath -> DataItem H5 -> Detector a DIM2 -> Consumer DataFrame (SafeT IO) ()
-_saveP f _p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \f' ->
-            withDataspaceP (createSimpleDataspace [2009, 240, 560]) $ \dataspace ->
-            withDatasetP (createDataset f' (pack "imgs") (nativeTypeOf (0 :: Word16)) dataspace Nothing Nothing Nothing) $ \dataset -> forever $ do
-              (DataFrame j _g _ub image) <- await
-              liftIO $ set_image det dataset dataspace j image
+saveCube :: FilePath -> Cube -> IO ()
+saveCube f (Cube _ photons contributions _) = withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' -> do
+  saveRepa f' "photons" photons
+  saveRepa f' "contributions" contributions
 
 main_sixs :: IO ()
 main_sixs = do
-  -- let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
+  let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
   -- let root = "/home/picca/"
-  let root = "/home/experiences/instrumentation/picca/"
+  -- let root = "/home/experiences/instrumentation/picca/"
   let filename = "align_FLY2_omega_00045.nxs"
   let dataframe_h5p = DataFrameHklH5Path
                       (DataItemH5 "com_113934/scan_data/xpad_image" StrictDims)
@@ -159,12 +153,14 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/UB" StrictDims)
                       (DataItemH5 "com_113934/SIXS/Monochromator/wavelength" StrictDims)
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
+  let outputFilename = "test.h5"
   let _outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   r <- runSafeT $ toListM $ framesP (root </> filename) dataframe_h5p ImXpadS140
   r' <- mapConcurrently (space ImXpadS140 pixels) r
   c <- mkCube r'
+  saveCube outputFilename c
   print c
 
   return ()

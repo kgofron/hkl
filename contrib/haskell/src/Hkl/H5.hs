@@ -27,8 +27,10 @@ module Hkl.H5
     , nxEntries
     , openDataset
     , openH5
+    , saveRepa
     , set_image
     , withH5File
+    , withH5File'
     )
     where
 
@@ -38,6 +40,7 @@ import           Bindings.HDF5.Core              (HSize (HSize),
                                                   hid, indexTypeCode,
                                                   iterOrderCode)
 import           Bindings.HDF5.Dataset           (Dataset, closeDataset,
+                                                  createDataset,
                                                   getDatasetSpace, openDataset,
                                                   readDataset, readDatasetInto,
                                                   writeDataset)
@@ -48,18 +51,21 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   getSimpleDataspaceExtentNDims,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
+import           Bindings.HDF5.Datatype.Internal (NativeType, nativeTypeOf)
 import           Bindings.HDF5.File              (AccFlags (ReadOnly), File,
                                                   closeFile, openFile)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5l_iterate)
 import           Control.Exception               (bracket)
-import           Data.Array.Repa                 (Array, Shape, listOfShape)
+import           Data.Array.Repa                 (Array, Shape, extent,
+                                                  linearIndex, listOfShape,
+                                                  size)
 import           Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr,
                                                   toForeignPtr)
 import           Data.ByteString.Char8           (pack)
 import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
-import           Data.Vector.Storable            (Vector, freeze,
+import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   unsafeFromForeignPtr0)
 import           Data.Vector.Storable.Mutable    (MVector (..), replicate)
 import           Data.Word                       (Word16)
@@ -96,37 +102,43 @@ shapeAsCoordinateToHyperslab s = [(HSize (fromIntegral n), Nothing, HSize 1, Not
 shapeAsRangeToHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
 shapeAsRangeToHyperslab s =  [(0, Nothing, HSize (fromIntegral s'), Nothing) | s' <- listOfShape s]
 
-size :: [(HSize, Maybe HSize, HSize, Maybe HSize)] -> Int
-size h = product [fromIntegral c | (_, _, c, _) <- h]
+createDataspaceFromShape :: Shape sh => sh -> IO Dataspace
+createDataspaceFromShape sh = createSimpleDataspace [HSize (fromIntegral s) | s <- listOfShape sh]
+
+castToVector :: (Shape sh, Storable e) => Array F sh e -> Vector e
+castToVector arr = unsafeFromForeignPtr0 (toForeignPtr arr) (size . extent $ arr)
 
 get_image :: Shape sh => Detector a sh -> Dataset -> Int -> IO (Array F sh Word16)
-get_image det d n = withDataspace d $ \dataspace -> do
+get_image det d n = withDataspace (getDatasetSpace d) $ \dataspace -> do
       let s = shape det
           h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
       selectHyperslab dataspace Set h
-      withDataspace' [HSize (fromIntegral s') | s' <- listOfShape s] $ \memspace -> do
-        data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (size h) (0 :: Word16)
+      withDataspace (createDataspaceFromShape s) $ \memspace -> do
+        data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (size s) (0 :: Word16)
         readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
         return $ fromForeignPtr s fp
-
 
 set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
 set_image det d dataspace n arr =  do
   selectNone dataspace
   selectHyperslab dataspace Set h
-  withDataspace' [HSize (fromIntegral s') | s' <- listOfShape s] $ \memspace ->
-    writeDataset d (Just memspace) (Just dataspace) Nothing vector
+  withDataspace (createDataspaceFromShape s) $ \memspace ->
+    writeDataset d (Just memspace) (Just dataspace) Nothing (castToVector arr)
     where
       s = shape det
       h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
-      fptr = toForeignPtr arr
-      vector = unsafeFromForeignPtr0 fptr (size h)
+
+saveRepa :: (NativeType e, Shape sh, Storable e) => File -> H5Path -> Array F sh e -> IO ()
+saveRepa f path arr =
+  withDataspace (createDataspaceFromShape (extent arr)) $ \dataspace ->
+  withDataset (createDataset f (pack path) (nativeTypeOf (linearIndex arr 0)) dataspace Nothing Nothing Nothing) $ \dataset ->
+  writeDataset dataset Nothing Nothing Nothing (castToVector arr)
 
 getPosition' :: Dataset -> [(HSize, Maybe HSize, HSize, Maybe HSize)] -> IO (Vector Double)
 getPosition' dataset h =
-    withDataspace dataset $ \dataspace -> do
+    withDataspace (getDatasetSpace dataset) $ \dataspace -> do
       selectHyperslab dataspace Set h
-      withDataspace' [HSize 1] $ \memspace -> do
+      withDataspace (createSimpleDataspace [HSize 1]) $ \memspace -> do
         data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
         readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
@@ -144,11 +156,11 @@ get_ub dataset = do
 
 -- | File
 
+withH5File' :: IO File -> (File -> IO r) -> IO r
+withH5File' a = bracket a closeFile
+
 withH5File :: FilePath -> (File -> IO r) -> IO r
-withH5File fp = bracket acquire release
-    where
-      acquire = openFile (pack fp) [ReadOnly] Nothing
-      release = closeFile
+withH5File fp = withH5File' (openFile (pack fp) [ReadOnly] Nothing)
 
 openH5 ∷ FilePath → IO File
 openH5 f = openFile (pack f) [ReadOnly] Nothing
@@ -157,26 +169,21 @@ openH5 f = openFile (pack f) [ReadOnly] Nothing
 
 -- check how to merge both methods
 
-withDataspace' :: [HSize] -> (Dataspace -> IO r) -> IO r
-withDataspace' ss = bracket acquire release
-  where
-    acquire = createSimpleDataspace ss
-    release = closeDataspace
-
-withDataspace :: Dataset -> (Dataspace -> IO r) -> IO r
-withDataspace d = bracket acquire release
-  where
-    acquire = getDatasetSpace d
-    release = closeDataspace
+withDataspace :: IO Dataspace -> (Dataspace -> IO r) -> IO r
+withDataspace a = bracket a closeDataspace
 
 lenH5Dataspace :: Dataset -> IO (Maybe Int)
-lenH5Dataspace = withDataspace'' len
+lenH5Dataspace d = withDataspace (getDatasetSpace d) len
   where
-    withDataspace'' f d = withDataspace d f
     len space_id = do
       (HSize n) <- getSimpleDataspaceExtentNPoints space_id
       return $ if n < 0 then Nothing else Just (fromIntegral n)
 
+
+-- | DataSet
+
+withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
+withDataset a = bracket a closeDataset
 
 -- | WIP until I have decided what is the right way to go
 
