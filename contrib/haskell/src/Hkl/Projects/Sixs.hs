@@ -17,8 +17,8 @@ import           Bindings.HDF5.File                (AccFlags (Truncate),
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad                     (forM_)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Data.Array.Repa                   (Array, extent, listOfShape,
-                                                    size)
+import           Data.Array.Repa                   (Array, Shape, extent,
+                                                    listOfShape, size)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Char8             (pack)
@@ -98,10 +98,10 @@ instance FramesP DataFrameHklH5Path where
 
 -- | DataFrameSpace
 
-data DataFrameSpace = DataFrameSpace DataFrame Space
+data DataFrameSpace sh = DataFrameSpace DataFrame Space
   deriving Show
 
-space :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO DataFrameSpace
+space :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO (DataFrameSpace DIM3)
 space detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
   let resolutions = [0.0002, 0.0002, 0.0002] :: [Double]
   let k = 2 * pi / (w /~ angstrom)
@@ -118,7 +118,7 @@ space detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = d
 
 -- | Create the Cube
 
-mkCube :: [DataFrameSpace] -> IO Cube
+mkCube :: Shape sh => [DataFrameSpace sh] -> IO (Cube sh)
 mkCube dfs = do
   let spaces = [fp | (DataFrameSpace _ (Space _ _ _ _ fp)) <- dfs]
   let images = [toForeignPtr img | (DataFrameSpace (DataFrame _ _ _ img) _) <- dfs]
@@ -133,7 +133,7 @@ mkCube dfs = do
 
 -- | Save
 
-saveCube :: FilePath -> Cube -> IO ()
+saveCube :: Shape sh => FilePath -> Cube sh -> IO ()
 saveCube f (Cube _ photons contributions _) = withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' -> do
   saveRepa f' "photons" photons
   saveRepa f' "contributions" contributions

@@ -1,6 +1,10 @@
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE DataKinds                #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE KindSignatures           #-}
+{-# LANGUAGE TypeInType               #-}
+
 {-
     Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -20,7 +24,7 @@ module Hkl.C.Binoculars
        ) where
 
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
-import           Data.Array.Repa       (DIM3, shapeOfList, showShape, extent)
+import           Data.Array.Repa       (Shape, shapeOfList, showShape, extent)
 import           Data.Word             (Word16)
 import           Foreign.C.Types       (CDouble, CInt(..))
 import           Foreign.Marshal.Array (peekArray)
@@ -31,12 +35,12 @@ import           Hkl.C.Geometry
 
 #include "hkl-binoculars.h"
 
-data Cube = Cube CInt (Array F DIM3 CInt) (Array F DIM3 CInt) (ForeignPtr Cube)
+data Cube sh = Cube CInt (Array F sh CInt) (Array F sh CInt) (ForeignPtr (Cube sh))
 
-instance Show Cube where
+instance Shape sh => Show (Cube sh) where
   show (Cube n p c fp) = unwords [show n, showShape . extent $ p, showShape . extent $ c, show fp]
 
-instance Storable Cube where
+instance Shape sh => Storable (Cube sh) where
   alignment _ = #{alignment HklBinocularsCube}
   sizeOf _ = #{size HklBinocularsCube}
   poke _ _ = undefined
@@ -49,14 +53,14 @@ instance Storable Cube where
     let sh = shapeOfList (reverse (map fromEnum dims))
     return $ Cube n (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
 
-foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr Cube -> IO ())
+foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
 hkl_binoculars_cube_new :: CInt -- number of Space
                         -> Ptr (Ptr Space) -- spaces
                         -> CInt -- int32_t n_pixels
                         -> Ptr (Ptr Word16) -- uint16_t **imgs);
-                        -> IO (Ptr Cube)
+                        -> IO (Ptr (Cube sh))
 
 data Space = Space CInt [CDouble] [CInt] [CInt] (ForeignPtr Space)
   deriving Show
