@@ -5,6 +5,8 @@
 {-# LANGUAGE KindSignatures           #-}
 {-# LANGUAGE TypeInType               #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans     #-}
+
 {-
     Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -35,23 +37,27 @@ import           Hkl.C.Geometry
 
 #include "hkl-binoculars.h"
 
-data Cube sh = Cube CInt (Array F sh CInt) (Array F sh CInt) (ForeignPtr (Cube sh))
+data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
+                    , cubeContributions :: (Array F sh CInt)
+                    , cubeHklPointer :: (ForeignPtr (Cube sh))
+                    }
+             deriving Show
 
-instance Shape sh => Show (Cube sh) where
-  show (Cube n p c fp) = unwords [show n, showShape . extent $ p, showShape . extent $ c, show fp]
+instance Shape sh => Show (Array F sh CInt) where
+  show = showShape . extent
 
 instance Shape sh => Storable (Cube sh) where
   alignment _ = #{alignment HklBinocularsCube}
   sizeOf _ = #{size HklBinocularsCube}
   poke _ _ = undefined
   peek ptr = do
-    n <- #{peek HklBinocularsCube, ndim} ptr
+    n <- #{peek HklBinocularsCube, ndim} ptr :: IO CInt
     dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsCube, dims} ptr) :: IO [CInt]
     fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
     fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
     fp <- newForeignPtr hkl_binoculars_cube_free ptr
     let sh = shapeOfList (reverse (map fromEnum dims))
-    return $ Cube n (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
+    return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
 
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
 

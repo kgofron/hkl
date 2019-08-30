@@ -134,7 +134,7 @@ mkCube dfs = do
 -- | Save
 
 saveCube :: Shape sh => FilePath -> Cube sh -> IO ()
-saveCube f (Cube _ photons contributions _) = withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' -> do
+saveCube f (Cube photons contributions _) = withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' -> do
   saveRepa f' "photons" photons
   saveRepa f' "contributions" contributions
 
