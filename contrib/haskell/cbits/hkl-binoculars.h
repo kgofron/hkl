@@ -25,23 +25,43 @@
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
-	int *indexes;
+	int *indexes_0;
 	int n_indexes;
+	int offset_indexes;
 
 	double *resolutions;
 	int *origin;
 	int *dims;
 	int ndim;
-} space_t;
+};
 
 extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
 
-HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
-					   double k,
-					   const uint16_t *image,
-					   int32_t n_pixels,
-					   const double *pixels_coordinates,
-					   int32_t pixels_coordinates_ndim,
-					   const int32_t *pixels_coordinates_dims,
-					   const double *resolutions,
-					   int32_t n_resolutions);
+extern HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
+						  double k,
+						  const uint16_t *image,
+						  int32_t n_pixels,
+						  const double *pixels_coordinates,
+						  int32_t pixels_coordinates_ndim,
+						  const int32_t *pixels_coordinates_dims,
+						  const double *resolutions,
+						  int32_t n_resolutions);
+
+typedef  struct _HklBinocularsCube HklBinocularsCube;
+struct _HklBinocularsCube
+{
+	int ndim;
+	int *origin;
+	int *dims;
+	int *photons;
+	int *contributions;
+
+	/* internal cache */
+	int _offset;
+};
+
+extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
+
+extern HklBinocularsCube *hkl_binoculars_cube_new(int32_t n_spaces,
+						  const HklBinocularsSpace *const *spaces,
+						  int32_t n_pixels, const uint16_t **imgs);

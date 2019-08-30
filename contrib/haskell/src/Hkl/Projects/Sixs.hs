@@ -25,11 +25,12 @@ import           Data.Array.Repa                   (Array, extent, listOfShape,
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Char8             (pack)
-import           Data.List                         (transpose)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
-import           Foreign.ForeignPtr                (withForeignPtr)
+import           Foreign.ForeignPtr                (touchForeignPtr,
+                                                    withForeignPtr)
+import           Foreign.ForeignPtr.Unsafe         (unsafeForeignPtrToPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Storable                  (peek)
 import           Numeric.LinearAlgebra             (Matrix)
@@ -115,9 +116,24 @@ space detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = d
     withArrayLen resolutions $ \nr r ->
     withArrayLen pixelsDims $ \ndim dims ->
     withForeignPtr (toForeignPtr img) $ \i -> do
-      p <- {-# SCC "c_hkl_binoculars_space_q" #-} c_hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
+      p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
       return (DataFrameSpace df s)
+
+-- | Create the Cube
+
+mkCube :: [DataFrameSpace] -> IO Cube
+mkCube dfs = do
+  let spaces = [fp | (DataFrameSpace _ (Space _ _ _ _ fp)) <- dfs]
+  let images = [toForeignPtr img | (DataFrameSpace (DataFrame _ _ _ img) _) <- dfs]
+  let (DataFrameSpace (DataFrame _ _ _ img) _ )= Prelude.head dfs
+  let nPixels = size . extent $ img
+  withArrayLen (map unsafeForeignPtrToPtr spaces) $ \nSpaces' spaces' ->
+    withArrayLen (map unsafeForeignPtrToPtr images) $ \_ images' -> do
+    p <- {-# SCC "hkl_binoculars_cube_new" #-} hkl_binoculars_cube_new (toEnum nSpaces') spaces' (toEnum nPixels) images'
+    mapM_ touchForeignPtr spaces
+    mapM_ touchForeignPtr images
+    peek p
 
 -- | Save
 
@@ -127,15 +143,6 @@ _saveP f _p det = withFileP (createFile (pack f) [Truncate] Nothing Nothing) $ \
             withDatasetP (createDataset f' (pack "imgs") (nativeTypeOf (0 :: Word16)) dataspace Nothing Nothing Nothing) $ \dataset -> forever $ do
               (DataFrame j _g _ub image) <- await
               liftIO $ set_image det dataset dataspace j image
-
-cubeSize :: [Space] -> ([CInt], [CInt], [CInt])
-cubeSize ss = ( mini, maxi, zipWith (-) maxi mini)
-  where
-    mini :: [CInt]
-    mini = map minimum (transpose [o | (Space _ _ o _ _) <- ss])
-
-    maxi :: [CInt]
-    maxi = map maximum (transpose [zipWith (+) o d | (Space _ _ o d _) <- ss])
 
 main_sixs :: IO ()
 main_sixs = do
@@ -157,5 +164,7 @@ main_sixs = do
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   r <- runSafeT $ toListM $ framesP (root </> filename) dataframe_h5p ImXpadS140
   r' <- mapConcurrently (space ImXpadS140 pixels) r
-  print $ cubeSize [s | (DataFrameSpace _ s) <- r']
+  c <- mkCube r'
+  print c
+
   return ()
