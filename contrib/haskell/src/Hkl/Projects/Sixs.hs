@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-
     Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -12,8 +13,6 @@
 module Hkl.Projects.Sixs
     ( main_sixs )
         where
-import           Bindings.HDF5.File                (AccFlags (Truncate),
-                                                    createFile)
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad                     (forM_)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
@@ -39,9 +38,6 @@ import           Pipes.Safe                        (SafeT, runSafeT)
 import           System.FilePath.Posix             ((</>))
 
 import           Hkl
-
-
-{-# ANN module "HLint: ignore Use camelCase" #-}
 
 data DataFrameHklH5Path
     = DataFrameHklH5Path
@@ -131,13 +127,6 @@ mkCube dfs = do
     mapM_ touchForeignPtr images
     peek p
 
--- | Save
-
-saveCube :: Shape sh => FilePath -> Cube sh -> IO ()
-saveCube f c = withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' -> do
-  saveRepa f' "photons" (cubePhotons c)
-  saveRepa f' "contributions" (cubeContributions c)
-
 main_sixs :: IO ()
 main_sixs = do
   let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
@@ -153,14 +142,14 @@ main_sixs = do
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/UB" StrictDims)
                       (DataItemH5 "com_113934/SIXS/Monochromator/wavelength" StrictDims)
                       (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
-  let outputFilename = "test.h5"
+  let outputFilename = "test.hdf5"
   let _outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   r <- runSafeT $ toListM $ framesP (root </> filename) dataframe_h5p ImXpadS140
   r' <- mapConcurrently (space ImXpadS140 pixels) r
   c <- mkCube r'
-  saveCube outputFilename c
+  saveHdf5 outputFilename c
   print c
 
   return ()

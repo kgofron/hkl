@@ -1,6 +1,7 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs                    #-}
-{-# LANGUAGE UnicodeSyntax            #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ForeignFunctionInterface  #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE UnicodeSyntax             #-}
 {-
     Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -27,17 +28,22 @@ module Hkl.H5
     , nxEntries
     , openDataset
     , openH5
-    , saveRepa
     , set_image
     , withH5File
-    , withH5File'
+    -- new API
+    , Hdf5
+    , ToHdf5(..)
+    , hdf5
+    , group
+    , dataset
+    , saveHdf5
     )
     where
 
 import           Bindings.HDF5.Core              (HSize (HSize),
                                                   IndexType (ByName),
-                                                  IterOrder (Native), hSize,
-                                                  hid, indexTypeCode,
+                                                  IterOrder (Native), Location,
+                                                  hSize, hid, indexTypeCode,
                                                   iterOrderCode)
 import           Bindings.HDF5.Dataset           (Dataset, closeDataset,
                                                   createDataset,
@@ -52,8 +58,11 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
 import           Bindings.HDF5.Datatype.Internal (NativeType, nativeTypeOf)
-import           Bindings.HDF5.File              (AccFlags (ReadOnly), File,
-                                                  closeFile, openFile)
+import           Bindings.HDF5.File              (AccFlags (ReadOnly, Truncate),
+                                                  File, closeFile, createFile,
+                                                  openFile)
+import           Bindings.HDF5.Group             (Group, closeGroup,
+                                                  createGroup)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5l_iterate)
 import           Control.Exception               (bracket)
@@ -62,7 +71,7 @@ import           Data.Array.Repa                 (Array, Shape, extent,
                                                   size)
 import           Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr,
                                                   toForeignPtr)
-import           Data.ByteString.Char8           (pack)
+import           Data.ByteString.Char8           (ByteString, pack)
 import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
@@ -88,7 +97,6 @@ import           Hkl.Detector
 data H5
 
 type H5Path = String
-
 
 check_ndims :: Dataset -> Int -> IO Bool
 check_ndims d expected = do
@@ -128,30 +136,30 @@ set_image det d dataspace n arr =  do
       s = shape det
       h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
 
-saveRepa :: (NativeType e, Shape sh, Storable e) => File -> H5Path -> Array F sh e -> IO ()
+saveRepa :: (Location t, NativeType e, Shape sh, Storable e) => t -> ByteString -> Array F sh e -> IO ()
 saveRepa f path arr =
   withDataspace (createDataspaceFromShape (extent arr)) $ \dataspace ->
-  withDataset (createDataset f (pack path) (nativeTypeOf (linearIndex arr 0)) dataspace Nothing Nothing Nothing) $ \dataset ->
-  writeDataset dataset Nothing Nothing Nothing (castToVector arr)
+  withDataset (createDataset f path (nativeTypeOf (linearIndex arr 0)) dataspace Nothing Nothing Nothing) $ \dataset' ->
+  writeDataset dataset' Nothing Nothing Nothing (castToVector arr)
 
 getPosition' :: Dataset -> [(HSize, Maybe HSize, HSize, Maybe HSize)] -> IO (Vector Double)
-getPosition' dataset h =
-    withDataspace (getDatasetSpace dataset) $ \dataspace -> do
+getPosition' dataset' h =
+    withDataspace (getDatasetSpace dataset') $ \dataspace -> do
       selectHyperslab dataspace Set h
       withDataspace (createSimpleDataspace [HSize 1]) $ \memspace -> do
         data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
-        readDatasetInto dataset (Just memspace) (Just dataspace) Nothing data_out
+        readDatasetInto dataset' (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
 
 get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
-get_position_new dataset s = getPosition' dataset (shapeAsCoordinateToHyperslab s)
+get_position_new dataset' s = getPosition' dataset' (shapeAsCoordinateToHyperslab s)
 
 get_position :: Dataset -> Int -> IO (Vector Double)
-get_position dataset n = getPosition' dataset [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
+get_position dataset' n = getPosition' dataset' [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
 
 get_ub :: Dataset -> IO (Matrix Double)
-get_ub dataset = do
-  v <- readDataset dataset Nothing Nothing
+get_ub dataset' = do
+  v <- readDataset dataset' Nothing Nothing
   return $ reshape 3 v
 
 -- | File
@@ -164,6 +172,11 @@ withH5File fp = withH5File' (openFile (pack fp) [ReadOnly] Nothing)
 
 openH5 ∷ FilePath → IO File
 openH5 f = openFile (pack f) [ReadOnly] Nothing
+
+-- | Group
+
+withGroup :: IO Group -> (Group -> IO r) -> IO r
+withGroup a = bracket a closeGroup
 
 -- | Dataspace
 
@@ -218,3 +231,34 @@ nxEntries f = withH5File f $ \h → do
         stRef <- deRefStablePtr (castPtrToStablePtr . castWrappedPtr $ dataptr)
         modifyIORef' stRef $ \st -> name : st
         return $ HErr_t 0
+
+
+-- | Better API
+
+data Hdf5M a
+  = H5Root (Hdf5M a)
+  | H5Group ByteString [Hdf5M a]
+  | forall sh b. (NativeType b, Shape sh) => H5Dataset ByteString (Array F sh b)
+
+type Hdf5 = Hdf5M ()
+
+class ToHdf5 a where
+  toHdf5 :: a -> Hdf5
+
+hdf5 :: Hdf5 -> Hdf5
+hdf5 = H5Root
+
+group :: ByteString -> [Hdf5] -> Hdf5
+group g = H5Group g
+
+dataset :: (NativeType b, Shape sh) => ByteString -> (Array F sh b) -> Hdf5
+dataset = H5Dataset
+
+saveHdf5 :: ToHdf5 a => FilePath -> a -> IO ()
+saveHdf5 f a =  withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \f' ->
+  go f' (toHdf5 a)
+  where
+    go :: Location l => l -> Hdf5 -> IO ()
+    go l (H5Root c) = go l c
+    go l (H5Group n cs) = withGroup (createGroup l n Nothing Nothing Nothing ) $ \g -> mapM_ (go g) cs
+    go l (H5Dataset n arr) = saveRepa l n arr

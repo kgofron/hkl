@@ -4,6 +4,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE KindSignatures           #-}
 {-# LANGUAGE TypeInType               #-}
+{-# LANGUAGE OverloadedStrings        #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans     #-}
 
@@ -34,6 +35,7 @@ import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           Foreign.Storable      (Storable (..))
 import           Hkl.C.Geometry
+import           Hkl.H5
 
 #include "hkl-binoculars.h"
 
@@ -58,6 +60,11 @@ instance Shape sh => Storable (Cube sh) where
     fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
     fp <- newForeignPtr hkl_binoculars_cube_free ptr
     return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
+
+instance Shape sh => ToHdf5 (Cube sh) where
+  toHdf5 (Cube p c _) = group "binoculars" [ dataset "counts" p
+                                           , dataset "contributions" c
+                                           ]
 
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
 
