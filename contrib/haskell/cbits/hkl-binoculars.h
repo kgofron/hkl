@@ -22,6 +22,19 @@
 #include "hkl.h"
 #include "stdint.h"
 
+typedef struct _HklBinocularsAxis HklBinocularsAxis;
+struct _HklBinocularsAxis
+{
+	const char *name;
+	int index;
+	double min;
+	double max;
+	double resolution;
+	int imin;
+	int imax;
+	int size;
+};
+
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
@@ -33,6 +46,7 @@ struct _HklBinocularsSpace
 	int *origin;
 	int *dims;
 	int ndim;
+	HklBinocularsAxis *axes;
 };
 
 extern void hkl_binoculars_space_free(HklBinocularsSpace *self);

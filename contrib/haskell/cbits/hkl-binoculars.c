@@ -144,6 +144,31 @@ void hkl_vector_fprintf(FILE *file, const HklVector *self)
 	fprintf(file, "|%f, %f, %f|", self->data[0], self->data[1], self->data[2]);
 }
 
+static void hkl_binoculars_axis_init(HklBinocularsAxis *self,
+				     const char *name,
+				     int index,
+				     double min,
+				     double max,
+				     double resolution,
+				     int imin,
+				     int imax)
+{
+	self->name = name;
+	self->index = index;
+	self->min = min;
+	self->max = max;
+	self->resolution = resolution;
+	self->imin = imin;
+	self->imax = imax;
+	self->size = imax - imin + 1;
+}
+
+void hkl_binoculars_axis_fprintf(FILE *f, const HklBinocularsAxis *self)
+{
+	fprintf(f, "%s : %d min: %f max: %f res: %f size: %d",
+		self->name, self->min, self->max, self->resolution, self->size);
+}
+
 HklBinocularsSpace *space_new(int32_t n_indexes, int32_t ndim)
 {
 	HklBinocularsSpace *self = malloc(sizeof(*self));
@@ -152,16 +177,18 @@ HklBinocularsSpace *space_new(int32_t n_indexes, int32_t ndim)
 	self->n_indexes = n_indexes;
 	self->offset_indexes = 0;
 
+	self->ndim = ndim;
 	self->resolutions = malloc(sizeof(double) * ndim);
 	self->origin = malloc(sizeof(self->origin) * ndim);
 	self->dims = malloc(sizeof(self->dims) * ndim);
-	self->ndim = ndim;
+	self->axes = malloc(sizeof(*self->axes) * ndim);
 
 	return self;
 }
 
 void hkl_binoculars_space_free(HklBinocularsSpace *self)
 {
+	free(self->axes);
 	free(self->dims);
 	free(self->origin);
 	free(self->resolutions);
@@ -176,6 +203,7 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 	fprintf(f, "self: %p\n", self);
 	fprintf(f, "n_indexes: %d\n", self->n_indexes);
 	fprintf(f, "offset_indexes: %d\n", self->offset_indexes);
+	fprintf(f, "ndim: %d\n", self->ndim);
 	fprintf(f, "resolutions: %p [", self->resolutions);
 	for(i=0; i<self->ndim;  ++i) fprintf(f, " %f", self->resolutions[i]);
 	fprintf(f, "]\n");
@@ -184,8 +212,10 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 	fprintf(f, "]\n");
 	fprintf(f, "dims: %p [", self->dims);
 	for(i=0; i<self->ndim;  ++i) fprintf(f, " %d", self->dims[i]);
-	fprintf(f, "]\n");
-	fprintf(f, "ndim: %d\n", self->ndim);
+	for(i=0; i<self->ndim; ++i){
+		fprintf(f, "/n");
+		hkl_binoculars_axis_fprintf(f, &self->axes[i]);
+	}
 }
 
 inline int32_t min(int32_t x, int32_t y)
