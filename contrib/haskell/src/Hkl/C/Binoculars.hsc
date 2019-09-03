@@ -27,9 +27,11 @@ module Hkl.C.Binoculars
        ) where
 
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
-import           Data.Array.Repa       (Shape, shapeOfList, showShape, extent)
+import           Data.Array.Repa       (DIM1, Shape, shapeOfList, showShape, extent, ix1)
+import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Word             (Word16)
 import           Foreign.C.Types       (CDouble, CInt(..))
+import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_)
 import           Foreign.Ptr           (FunPtr, Ptr)
@@ -39,8 +41,27 @@ import           Hkl.H5
 
 #include "hkl-binoculars.h"
 
+data Axis = Axis ByteString (Array F DIM1 CDouble)
+
+instance Show Axis where
+  show (Axis n _) = show n
+
+instance Storable Axis where
+  alignment _ = #{alignment HklBinocularsAxis}
+  sizeOf _ = #{size HklBinocularsAxis}
+  poke _ _ = undefined
+  peek ptr = do
+    n <- packCString =<< (#{peek HklBinocularsAxis, name} ptr)
+    pArr <- hkl_binoculars_axis_array ptr
+    fpArr <- newForeignPtr finalizerFree pArr
+    return $ Axis n (fromForeignPtr (ix1 6) fpArr)
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_axis_array" \
+hkl_binoculars_axis_array :: Ptr Axis -> IO (Ptr CDouble)
+
 data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
                     , cubeContributions :: (Array F sh CInt)
+                    , cubeAxes :: [Axis]
                     , cubeHklPointer :: (ForeignPtr (Cube sh))
                     }
              deriving Show
@@ -60,8 +81,9 @@ instance Shape sh => Storable (Cube sh) where
       let sh = shapeOfList (reverse (map fromEnum dims))
       fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
       fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
+      axes <- peekArray (fromEnum n) =<< (#{peek HklBinocularsCube, axes} ptr)
       fp <- newForeignPtr hkl_binoculars_cube_free ptr
-      return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
+      return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) axes fp
 
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
 
@@ -79,9 +101,11 @@ hkl_binoculars_cube_dims :: Ptr (Cube sh)
                          -> IO ()
 
 instance Shape sh => ToHdf5 (Cube sh) where
-  toHdf5 (Cube p c _) = group "binoculars" [ dataset "counts" p
-                                           , dataset "contributions" c
-                                           ]
+  toHdf5 (Cube p c axes _) = group "binoculars"
+                             [ group "axes" [dataset n arr | (Axis n arr) <- axes]
+                             , dataset "counts" p
+                             , dataset "contributions" c
+                             ]
 
 data Space sh = Space { spaceHklPointer :: (ForeignPtr (Space sh)) }
   deriving Show

@@ -183,6 +183,19 @@ static void hkl_binoculars_axis_init(HklBinocularsAxis *self,
 	self->imax = imax;
 }
 
+double *hkl_binoculars_axis_array(const HklBinocularsAxis *self)
+{
+	double *arr = malloc(6 * sizeof(*arr));
+
+	arr[0] = self->index;
+	arr[1] = axis_min(self);
+	arr[2] = axis_max(self);
+	arr[3] = self->resolution;
+	arr[4] = self->imin;
+	arr[5] = self->imax;
+
+	return arr;
+}
 static void hkl_binoculars_axis_merge(HklBinocularsAxis *self, const HklBinocularsAxis *other)
 {
 	self->imin = min(self->imin, other->imin);
@@ -296,7 +309,7 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 			origin = min(origin, index);
 			last = max(last, index);
 		}
-		hkl_binoculars_axis_init(axis, names[i], i, origin, last, resolution);
+		hkl_binoculars_axis_init(axis, names[i], 2 - i, origin, last, resolution);
 		space->offset_indexes += origin * len;
 		len *=  axis_size(axis);
 	}

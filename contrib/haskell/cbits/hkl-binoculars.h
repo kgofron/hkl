@@ -32,6 +32,8 @@ struct _HklBinocularsAxis
 	int imax;
 };
 
+extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
+
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
