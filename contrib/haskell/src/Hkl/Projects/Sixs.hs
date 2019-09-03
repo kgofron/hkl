@@ -129,8 +129,7 @@ mkCube dfs = do
     withForeignPtrs images $ \pimages ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
     withArrayLen pimages $ \_ images' -> do
-    p <- {-# SCC "hkl_binoculars_cube_new" #-} hkl_binoculars_cube_new (toEnum nSpaces') spaces' (toEnum nPixels) images'
-    peek p
+    peek =<< {-# SCC "hkl_binoculars_cube_new" #-} hkl_binoculars_cube_new (toEnum nSpaces') spaces' (toEnum nPixels) images'
 
 main_sixs :: IO ()
 main_sixs = do
