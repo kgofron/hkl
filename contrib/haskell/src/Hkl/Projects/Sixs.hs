@@ -24,10 +24,9 @@ import           Data.ByteString.Char8             (pack)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
-import           Foreign.ForeignPtr                (touchForeignPtr,
-                                                    withForeignPtr)
-import           Foreign.ForeignPtr.Unsafe         (unsafeForeignPtrToPtr)
+import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
+import           Foreign.Ptr                       (Ptr)
 import           Foreign.Storable                  (peek)
 import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
@@ -114,17 +113,23 @@ space detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = d
 
 -- | Create the Cube
 
+withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
+withForeignPtrs []       f = f []
+withForeignPtrs (fp:fps) f =
+  withForeignPtr fp $ \p ->
+  withForeignPtrs fps $ \ps -> f (p:ps)
+
 mkCube :: Shape sh => [DataFrameSpace sh] -> IO (Cube sh)
 mkCube dfs = do
   let spaces = [spaceHklPointer s | (DataFrameSpace _ s) <- dfs]
   let images = [toForeignPtr img | (DataFrameSpace (DataFrame _ _ _ img) _) <- dfs]
   let (DataFrameSpace (DataFrame _ _ _ img) _ )= Prelude.head dfs
   let nPixels = size . extent $ img
-  withArrayLen (map unsafeForeignPtrToPtr spaces) $ \nSpaces' spaces' ->
-    withArrayLen (map unsafeForeignPtrToPtr images) $ \_ images' -> do
+  withForeignPtrs spaces $ \pspaces ->
+    withForeignPtrs images $ \pimages ->
+    withArrayLen pspaces $ \nSpaces' spaces' ->
+    withArrayLen pimages $ \_ images' -> do
     p <- {-# SCC "hkl_binoculars_cube_new" #-} hkl_binoculars_cube_new (toEnum nSpaces') spaces' (toEnum nPixels) images'
-    mapM_ touchForeignPtr spaces
-    mapM_ touchForeignPtr images
     peek p
 
 main_sixs :: IO ()
