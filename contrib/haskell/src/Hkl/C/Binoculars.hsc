@@ -30,7 +30,7 @@ import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
 import           Data.Array.Repa       (Shape, shapeOfList, showShape, extent)
 import           Data.Word             (Word16)
 import           Foreign.C.Types       (CDouble, CInt(..))
-import           Foreign.Marshal.Array (peekArray)
+import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_)
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           Foreign.Storable      (Storable (..))
@@ -54,17 +54,14 @@ instance Shape sh => Storable (Cube sh) where
   poke _ _ = undefined
   peek ptr = do
     n <- #{peek HklBinocularsCube, ndim} ptr :: IO CInt
-    dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsCube, dims} ptr) :: IO [CInt]
-    let sh = shapeOfList (reverse (map fromEnum dims))
-    fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
-    fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
-    fp <- newForeignPtr hkl_binoculars_cube_free ptr
-    return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
-
-instance Shape sh => ToHdf5 (Cube sh) where
-  toHdf5 (Cube p c _) = group "binoculars" [ dataset "counts" p
-                                           , dataset "contributions" c
-                                           ]
+    allocaArray (fromEnum n) $ \dims' -> do
+      hkl_binoculars_cube_dims ptr n dims'
+      dims <- peekArray (fromEnum n) dims'
+      let sh = shapeOfList (reverse (map fromEnum dims))
+      fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
+      fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
+      fp <- newForeignPtr hkl_binoculars_cube_free ptr
+      return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) fp
 
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
 
@@ -75,25 +72,25 @@ hkl_binoculars_cube_new :: CInt -- number of Space
                         -> Ptr (Ptr Word16) -- uint16_t **imgs);
                         -> IO (Ptr (Cube sh))
 
-data Space sh = Space { spaceShape :: sh
-                      , spaceResolution :: [CDouble]
-                      , spaceOrigin :: [CInt]
-                      , spaceHklPointer :: (ForeignPtr (Space sh))
-                      }
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_dims" \
+hkl_binoculars_cube_dims :: Ptr (Cube sh)
+                         -> CInt
+                         -> Ptr CInt
+                         -> IO ()
+
+instance Shape sh => ToHdf5 (Cube sh) where
+  toHdf5 (Cube p c _) = group "binoculars" [ dataset "counts" p
+                                           , dataset "contributions" c
+                                           ]
+
+data Space sh = Space { spaceHklPointer :: (ForeignPtr (Space sh)) }
   deriving Show
 
 instance Shape sh => Storable (Space sh) where
   alignment _ = #{alignment HklBinocularsSpace}
   sizeOf _ = #{size HklBinocularsSpace}
   poke _ _ = undefined
-  peek ptr = do
-    n <- #{peek HklBinocularsSpace, ndim} ptr :: IO CInt
-    dims <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, dims} ptr) :: IO [CInt]
-    let sh = shapeOfList (reverse (map fromEnum dims))
-    resolutions <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, resolutions} ptr)
-    origins <- peekArray (fromEnum n) =<< (#{peek HklBinocularsSpace, origin} ptr)
-    fp <- newForeignPtr hkl_binoculars_space_free ptr
-    return $ Space sh resolutions origins fp
+  peek ptr = Space <$> newForeignPtr hkl_binoculars_space_free ptr
 
 
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_space_free" hkl_binoculars_space_free :: FunPtr (Ptr (Space sh) -> IO ())

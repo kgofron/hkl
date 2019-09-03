@@ -27,12 +27,9 @@ struct _HklBinocularsAxis
 {
 	const char *name;
 	int index;
-	double min;
-	double max;
 	double resolution;
 	int imin;
 	int imax;
-	int size;
 };
 
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
@@ -41,10 +38,6 @@ struct _HklBinocularsSpace
 	int *indexes_0;
 	int n_indexes;
 	int offset_indexes;
-
-	double *resolutions;
-	int *origin;
-	int *dims;
 	int ndim;
 	HklBinocularsAxis *axes;
 };
@@ -65,8 +58,7 @@ typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube
 {
 	int ndim;
-	int *origin;
-	int *dims;
+	HklBinocularsAxis *axes;
 	int *photons;
 	int *contributions;
 
