@@ -41,6 +41,8 @@ import           Hkl.H5
 
 #include "hkl-binoculars.h"
 
+-- | Axis
+
 data Axis = Axis ByteString (Array F DIM1 CDouble)
 
 instance Show Axis where
@@ -58,6 +60,8 @@ instance Storable Axis where
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_axis_array" \
 hkl_binoculars_axis_array :: Ptr Axis -> IO (Ptr CDouble)
+
+-- | Cube
 
 data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
                     , cubeContributions :: (Array F sh CInt)
@@ -106,6 +110,8 @@ instance Shape sh => ToHdf5 (Cube sh) where
                              , dataset "counts" p
                              , dataset "contributions" c
                              ]
+
+-- | Space
 
 data Space sh = Space { spaceHklPointer :: (ForeignPtr (Space sh)) }
   deriving Show
