@@ -300,7 +300,7 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 		int32_t last = idx[0];
 
 		for(j=1; j<n_pixels; ++j){
-			uint32_t index = idx[j];
+			int32_t index = idx[j];
 
 			origin = min(origin, index);
 			last = max(last, index);
@@ -321,25 +321,25 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
 	free(self);
 }
 
-static size_t compute_offset(int32_t ndim, const HklBinocularsAxis *axes)
+static int32_t compute_offset(int32_t ndim, const HklBinocularsAxis *axes)
 {
 	int i;
 	int len = 1;
-	size_t res = 0;
+	int32_t offset = 0;
 
 	for(i=0; i<ndim; ++i){
 		const HklBinocularsAxis *axis = &axes[i];
-		res += axis->imin * len;
+		offset += axis->imin * len;
 		len *= axis_size(axis);
 	}
-	return res;
+	return offset;
 }
 
 void add_space(HklBinocularsCube *cube,
 	       const HklBinocularsSpace *space,
 	       int32_t n_pixels,
 	       const uint16_t *img,
-	       size_t offset0)
+	       int32_t offset0)
 {
 	int i;
 	int j;
@@ -347,7 +347,7 @@ void add_space(HklBinocularsCube *cube,
 	long indexes[n_pixels];
 
 	for(i=0; i<n_pixels; ++i){
-		indexes[i] = 0;
+		indexes[i] = -offset0;
 	}
 
 	for(i=0; i<cube->n_axes; ++i){
@@ -359,7 +359,7 @@ void add_space(HklBinocularsCube *cube,
 	}
 
 	for(i=0; i<n_pixels; ++i){
-		size_t w = indexes[i] - offset0;
+		size_t w = indexes[i];
 		cube->photons[w] += img[i];
 		cube->contributions[w] += 1;
 	}
