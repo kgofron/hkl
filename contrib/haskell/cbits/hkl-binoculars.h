@@ -40,7 +40,7 @@ struct _HklBinocularsSpace
 	int n_indexes_0;
 	int *indexes_0;
 	int offset_indexes;
-	int ndim;
+	int n_axes;
 	HklBinocularsAxis *axes;
 };
 

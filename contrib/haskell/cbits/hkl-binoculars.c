@@ -210,16 +210,16 @@ void hkl_binoculars_axis_fprintf(FILE *f, const HklBinocularsAxis *self)
 		self->resolution, axis_size(self));
 }
 
-HklBinocularsSpace *space_new(int32_t n_indexes_0, int32_t ndim)
+HklBinocularsSpace *space_new(int32_t n_indexes_0, int32_t n_axes)
 {
 	HklBinocularsSpace *self = malloc(sizeof(*self));
 
-	self->indexes_0 = malloc(n_indexes_0 * ndim * sizeof(*self->indexes_0));
+	self->indexes_0 = malloc(n_indexes_0 * n_axes * sizeof(*self->indexes_0));
 	self->n_indexes_0 = n_indexes_0;
 	self->offset_indexes = 0;
 
-	self->ndim = ndim;
-	self->axes = malloc(sizeof(*self->axes) * ndim);
+	self->n_axes = n_axes;
+	self->axes = malloc(sizeof(*self->axes) * n_axes);
 
 	return self;
 }
@@ -235,11 +235,11 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 {
 	uint32_t i;
 
-	fprintf(f, "'\nself: %p", self);
-	fprintf(f, "\nn_indexes_0: %d", self->n_indexes_0);
-	fprintf(f, "\noffset_indexes: %d", self->offset_indexes);
-	fprintf(f, "\nndim: %d", self->ndim);
-	for(i=0; i<self->ndim; ++i){
+	fprintf(f, "'self: %p\n", self);
+	fprintf(f, "n_indexes_0: %d\n", self->n_indexes_0);
+	fprintf(f, "offset_indexes: %d\n", self->offset_indexes);
+	fprintf(f, "n_axes: %d", self->n_axes);
+	for(i=0; i<self->n_axes; ++i){
 		fprintf(f, "\n");
 		hkl_binoculars_axis_fprintf(f, &self->axes[i]);
 	}
@@ -401,26 +401,26 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 	int j;
 	int n = 1;
 	const HklBinocularsSpace *space0 = spaces[0];
-	int ndim = space0->ndim;
+	int n_axes = space0->n_axes;
 	size_t offset0;
 	HklBinocularsCube *self = malloc(sizeof(HklBinocularsCube));
-	self->ndim = ndim;
-	self->axes = calloc(ndim, sizeof(HklBinocularsAxis));
+	self->ndim = n_axes;
+	self->axes = calloc(n_axes, sizeof(HklBinocularsAxis));
 
 	/* compute the final cube dimensions and the index offset */
-	for(i=0; i<ndim; ++i)
+	for(i=0; i<n_axes; ++i)
 		self->axes[i] = space0->axes[i];
 
 	for(i=1; i<n_spaces; ++i){
-		for(j=0; j<ndim; ++j){
+		for(j=0; j<n_axes; ++j){
 			hkl_binoculars_axis_merge(&self->axes[j],
 						  &spaces[i]->axes[j]);
 		}
 	}
-	for(i=0; i<ndim; ++i){
+	for(i=0; i<n_axes; ++i){
 		n *= axis_size(&self->axes[i]);
 	}
-	self->_offset = compute_offset(ndim, self->axes);
+	self->_offset = compute_offset(n_axes, self->axes);
 
 	/* allocated the final cube */
 	self->photons = calloc(n, sizeof(*self->photons));
