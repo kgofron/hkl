@@ -105,13 +105,13 @@ check_ndims d expected = do
   return $ expected == fromEnum ndims
 
 shapeAsCoordinateToHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
-shapeAsCoordinateToHyperslab s = [(HSize (fromIntegral n), Nothing, HSize 1, Nothing) | n <- listOfShape s]
+shapeAsCoordinateToHyperslab s = [(HSize (fromIntegral n), Nothing, HSize 1, Nothing) | n <- reverse . listOfShape $ s]
 
 shapeAsRangeToHyperslab :: Shape sh => sh -> [(HSize, Maybe HSize, HSize, Maybe HSize)]
-shapeAsRangeToHyperslab s =  [(0, Nothing, HSize (fromIntegral s'), Nothing) | s' <- listOfShape s]
+shapeAsRangeToHyperslab s =  [(0, Nothing, HSize (fromIntegral s'), Nothing) | s' <- reverse . listOfShape $ s]
 
 createDataspaceFromShape :: Shape sh => sh -> IO Dataspace
-createDataspaceFromShape sh = createSimpleDataspace [HSize (fromIntegral s) | s <- listOfShape sh]
+createDataspaceFromShape sh = createSimpleDataspace [HSize (fromIntegral s) | s <- reverse . listOfShape $ sh]
 
 castToVector :: (Shape sh, Storable e) => Array F sh e -> Vector e
 castToVector arr = unsafeFromForeignPtr0 (toForeignPtr arr) (size . extent $ arr)

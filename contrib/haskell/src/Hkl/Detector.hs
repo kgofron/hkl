@@ -38,8 +38,8 @@ data Detector a sh where
 deriving instance Show (Detector a sh)
 
 shape :: Detector a sh -> sh
-shape ImXpadS140 = ix2 560 240
-shape Xpad32 = ix2 560 960
+shape ImXpadS140 = ix2 240 560 -- y x
+shape Xpad32 = ix2 960 560
 shape ZeroD = Z
 
 -- | Xpad Family
