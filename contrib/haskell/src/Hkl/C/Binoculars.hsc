@@ -78,7 +78,7 @@ instance Shape sh => Storable (Cube sh) where
   sizeOf _ = #{size HklBinocularsCube}
   poke _ _ = undefined
   peek ptr = do
-    n <- #{peek HklBinocularsCube, ndim} ptr :: IO CInt
+    n <- #{peek HklBinocularsCube, n_axes} ptr :: IO CInt
     allocaArray (fromEnum n) $ \dims' -> do
       hkl_binoculars_cube_dims ptr n dims'
       dims <- peekArray (fromEnum n) dims'

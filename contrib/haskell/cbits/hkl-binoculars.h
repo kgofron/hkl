@@ -62,9 +62,6 @@ struct _HklBinocularsCube
 	HklBinocularsAxis *axes;
 	int *photons;
 	int *contributions;
-
-	/* internal cache */
-	int _offset;
 };
 
 extern void hkl_binoculars_cube_free(HklBinocularsCube *self);

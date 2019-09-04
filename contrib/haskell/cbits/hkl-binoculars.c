@@ -338,7 +338,8 @@ static size_t compute_offset(int32_t ndim, const HklBinocularsAxis *axes)
 void add_space(HklBinocularsCube *cube,
 	       const HklBinocularsSpace *space,
 	       int32_t n_pixels,
-	       const uint16_t *img)
+	       const uint16_t *img,
+	       size_t offset0)
 {
 	int i;
 	int j;
@@ -358,7 +359,7 @@ void add_space(HklBinocularsCube *cube,
 	}
 
 	for(i=0; i<n_pixels; ++i){
-		size_t w = indexes[i] - cube->_offset;
+		size_t w = indexes[i] - offset0;
 		cube->photons[w] += img[i];
 		cube->contributions[w] += 1;
 	}
@@ -376,7 +377,6 @@ static void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube *self)
 	}
 	fprintf(f, "photons: %p\n", self->photons);
 	fprintf(f, "contributions: %p\n", self->contributions);
-	fprintf(f, "_offset: %d\n", self->_offset);
 }
 
 void hkl_binoculars_cube_dims(const HklBinocularsCube *self, int ndim, int *dims)
@@ -386,6 +386,16 @@ void hkl_binoculars_cube_dims(const HklBinocularsCube *self, int ndim, int *dims
 	/* we need the c-order, so revert the dims */
 	for(i=0; i<ndim; ++i)
 		dims[ndim-i-1] = axis_size(&self->axes[i]);
+}
+
+static inline size_t cube_size(int n_axes, HklBinocularsAxis *axes)
+{
+	int i;
+	size_t n = 1;
+
+	for(i=0; i<n_axes; ++i)
+		n *= axis_size(&axes[i]);
+	return n;
 }
 
 HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpace *const *spaces,
@@ -411,18 +421,16 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 						  &spaces[i]->axes[j]);
 		}
 	}
-	for(i=0; i<n_axes; ++i){
-		n *= axis_size(&self->axes[i]);
-	}
-	self->_offset = compute_offset(n_axes, self->axes);
+	offset0 = compute_offset(n_axes, self->axes);
 
 	/* allocated the final cube */
+	n = cube_size(n_axes, self->axes);
 	self->photons = calloc(n, sizeof(*self->photons));
 	self->contributions = calloc(n, sizeof(*self->contributions));
 
 	/* add all the spaces */
 	for(i=0; i<n_spaces; ++i){
-		add_space(self, spaces[i], n_pixels, imgs[i]);
+		add_space(self, spaces[i], n_pixels, imgs[i], offset0);
 	}
 
 	hkl_binoculars_cube_fprintf(stdout, self);
