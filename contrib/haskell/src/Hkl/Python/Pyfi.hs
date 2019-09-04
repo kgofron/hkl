@@ -227,29 +227,25 @@ foreign import ccall "get_PyArray_DIMS" py_PyArray_DIMS :: RawPyObject -> IO (Pt
 foreign import ccall "release_PyArray_BYTES" py_release_PyArray_BYTES :: RawPyObject -> IO ()
 
 extractNumpyArray :: Shape sh => PyObject a -> IO (Array F sh b)
-extractNumpyArray (PyObject fp) = do
-    arr <- withForeignPtr fp $ \p -> do
-      s <- shape p
-      -- print $ showShape s
-      buf <- py_PyArray_BYTES p
-      py_release_PyArray_BYTES p
-      fp' <- newForeignPtr finalizerFree buf
-      return $ fromForeignPtr s (castForeignPtr fp')
-    return arr
-        where
-          shape :: Shape sh => RawPyObject -> IO sh
-          shape ptr = do
-            ndim <- fromIntegral <$> py_PyArray_NDIM ptr
-            dims <- peekArray ndim =<< py_PyArray_DIMS ptr
-            -- return $ shapeOfList (reverse [fromIntegral d | d <- dims])
-            return $ shapeOfList [fromIntegral d | d <- dims]
+extractNumpyArray (PyObject fp) = withForeignPtr fp $ \p -> do
+  s <- shape p
+  buf <- py_PyArray_BYTES p
+  py_release_PyArray_BYTES p
+  fp' <- newForeignPtr finalizerFree buf
+  return $ fromForeignPtr s (castForeignPtr fp')
+    where
+      shape :: Shape sh => RawPyObject -> IO sh
+      shape ptr = do
+        ndim <- fromIntegral <$> py_PyArray_NDIM ptr
+        dims <- peekArray ndim =<< py_PyArray_DIMS ptr
+        return $ shapeOfList [fromIntegral d | d <- dims]
 
 -- | Matrix -> numpy
 
 foreign import ccall "matrix3x3_to_pyobject" py_matrix_to_pyobject :: Ptr Double -> IO RawPyObject
 
 matrixToPyObject :: Matrix Double -> IO (PyObject a)
-matrixToPyObject m = withArray (toList . flatten $ m) $ \buff -> do
+matrixToPyObject m = withArray (toList . flatten $ m) $ \buff ->
   newForeignPyPtr =<< py_matrix_to_pyobject buff
 
 def1 :: String -> String -> IO (PyObject b)
