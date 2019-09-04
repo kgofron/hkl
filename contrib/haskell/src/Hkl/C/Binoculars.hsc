@@ -82,7 +82,7 @@ instance Shape sh => Storable (Cube sh) where
     allocaArray (fromEnum n) $ \dims' -> do
       hkl_binoculars_cube_dims ptr n dims'
       dims <- peekArray (fromEnum n) dims'
-      let sh = shapeOfList (map fromEnum dims)
+      let sh = shapeOfList (reverse (map fromEnum dims))
       fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
       fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
       axes <- peekArray (fromEnum n) =<< (#{peek HklBinocularsCube, axes} ptr)

@@ -383,9 +383,8 @@ void hkl_binoculars_cube_dims(const HklBinocularsCube *self, int ndim, int *dims
 {
 	int i;
 
-	/* we need the c-order, so revert the dims */
 	for(i=0; i<ndim; ++i)
-		dims[ndim-i-1] = axis_size(&self->axes[i]);
+		dims[i] = axis_size(&self->axes[i]);
 }
 
 static inline size_t cube_size(int n_axes, HklBinocularsAxis *axes)
