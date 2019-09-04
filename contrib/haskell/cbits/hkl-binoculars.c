@@ -210,12 +210,12 @@ void hkl_binoculars_axis_fprintf(FILE *f, const HklBinocularsAxis *self)
 		self->resolution, axis_size(self));
 }
 
-HklBinocularsSpace *space_new(int32_t n_indexes, int32_t ndim)
+HklBinocularsSpace *space_new(int32_t n_indexes_0, int32_t ndim)
 {
 	HklBinocularsSpace *self = malloc(sizeof(*self));
 
-	self->indexes_0 = malloc(n_indexes * ndim * sizeof(*self->indexes_0));
-	self->n_indexes = n_indexes;
+	self->indexes_0 = malloc(n_indexes_0 * ndim * sizeof(*self->indexes_0));
+	self->n_indexes_0 = n_indexes_0;
 	self->offset_indexes = 0;
 
 	self->ndim = ndim;
@@ -236,7 +236,7 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 	uint32_t i;
 
 	fprintf(f, "'\nself: %p", self);
-	fprintf(f, "\nn_indexes: %d", self->n_indexes);
+	fprintf(f, "\nn_indexes_0: %d", self->n_indexes_0);
 	fprintf(f, "\noffset_indexes: %d", self->offset_indexes);
 	fprintf(f, "\nndim: %d", self->ndim);
 	for(i=0; i<self->ndim; ++i){
@@ -247,7 +247,7 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 
 int32_t *space_indexes(const HklBinocularsSpace *space, int index)
 {
-	return &space->indexes_0[index * space->n_indexes];
+	return &space->indexes_0[index * space->n_indexes_0];
 }
 
 /* the array is pre filled with the pixel coordinates */

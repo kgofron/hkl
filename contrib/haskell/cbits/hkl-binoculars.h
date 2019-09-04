@@ -37,8 +37,8 @@ extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
+	int n_indexes_0;
 	int *indexes_0;
-	int n_indexes;
 	int offset_indexes;
 	int ndim;
 	HklBinocularsAxis *axes;
