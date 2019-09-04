@@ -214,10 +214,8 @@ HklBinocularsSpace *space_new(int32_t n_indexes_0, int32_t n_axes)
 {
 	HklBinocularsSpace *self = malloc(sizeof(*self));
 
-	self->indexes_0 = malloc(n_indexes_0 * n_axes * sizeof(*self->indexes_0));
 	self->n_indexes_0 = n_indexes_0;
-	self->offset_indexes = 0;
-
+	self->indexes_0 = malloc(n_indexes_0 * n_axes * sizeof(*self->indexes_0));
 	self->n_axes = n_axes;
 	self->axes = malloc(sizeof(*self->axes) * n_axes);
 
@@ -237,7 +235,6 @@ static void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self
 
 	fprintf(f, "'self: %p\n", self);
 	fprintf(f, "n_indexes_0: %d\n", self->n_indexes_0);
-	fprintf(f, "offset_indexes: %d\n", self->offset_indexes);
 	fprintf(f, "n_axes: %d", self->n_axes);
 	for(i=0; i<self->n_axes; ++i){
 		fprintf(f, "\n");
@@ -263,7 +260,6 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 {
 	int32_t i;
 	int32_t j;
-	int32_t len = 1;
 	int32_t n_coordinates = 3;
 	const char * names[] = {"Qx", "Qy", "Qz"};
 
@@ -303,15 +299,13 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 		int32_t origin = idx[0];
 		int32_t last = idx[0];
 
-		for(j=0; j<n_pixels; ++j){
+		for(j=1; j<n_pixels; ++j){
 			uint32_t index = idx[j];
 
 			origin = min(origin, index);
 			last = max(last, index);
 		}
 		hkl_binoculars_axis_init(axis, names[i], i, origin, last, resolution);
-		space->offset_indexes += origin * len;
-		len *=  axis_size(axis);
 	}
 
 	hkl_detector_free(detector);
