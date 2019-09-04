@@ -349,7 +349,7 @@ void add_space(HklBinocularsCube *cube,
 		indexes[i] = 0;
 	}
 
-	for(i=0; i<cube->ndim; ++i){
+	for(i=0; i<cube->n_axes; ++i){
 		int32_t *idx = space_indexes(space, i);
 		for(j=0; j<n_pixels; ++j){
 			indexes[j] += idx[j] * len;
@@ -369,8 +369,8 @@ static void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube *self)
 	int i;
 
 	fprintf(f, "HklBinocularsCube: %p\n", self);
-	fprintf(f, "ndim: %d", self->ndim);
-	for(i=0; i<self->ndim;  ++i){
+	fprintf(f, "n_axes: %d", self->n_axes);
+	for(i=0; i<self->n_axes;  ++i){
 		fprintf(f, "\n");
 		hkl_binoculars_axis_fprintf(f, &self->axes[i]);
 	}
@@ -398,7 +398,7 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 	int n_axes = space0->n_axes;
 	size_t offset0;
 	HklBinocularsCube *self = malloc(sizeof(HklBinocularsCube));
-	self->ndim = n_axes;
+	self->n_axes = n_axes;
 	self->axes = calloc(n_axes, sizeof(HklBinocularsAxis));
 
 	/* compute the final cube dimensions and the index offset */

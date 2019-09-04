@@ -58,7 +58,7 @@ extern HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube
 {
-	int ndim;
+	int n_axes;
 	HklBinocularsAxis *axes;
 	int *photons;
 	int *contributions;
