@@ -37,6 +37,11 @@ module Hkl.H5
     , group
     , dataset
     , saveHdf5
+    , Hdf5Path(..)
+    , hdf5p
+    , groupp
+    , datasetp
+    , withHdf5Path
     )
     where
 
@@ -62,7 +67,7 @@ import           Bindings.HDF5.File              (AccFlags (ReadOnly, Truncate),
                                                   File, closeFile, createFile,
                                                   openFile)
 import           Bindings.HDF5.Group             (Group, closeGroup,
-                                                  createGroup)
+                                                  createGroup, openGroup)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5l_iterate)
 import           Control.Exception               (bracket)
@@ -262,3 +267,26 @@ saveHdf5 f a =  withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \
     go l (H5Root c) = go l c
     go l (H5Group n cs) = withGroup (createGroup l n Nothing Nothing Nothing ) $ \g -> mapM_ (go g) cs
     go l (H5Dataset n arr) = saveRepa l n arr
+
+
+data Hdf5Path sh e
+  = H5RootPath (Hdf5Path sh e)
+  | H5GroupPath ByteString (Hdf5Path sh e)
+  | H5DatasetPath ByteString
+
+hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
+hdf5p = H5RootPath
+
+groupp :: ByteString -> Hdf5Path sh e -> Hdf5Path sh e
+groupp = H5GroupPath
+
+datasetp :: ByteString -> Hdf5Path sh e
+datasetp = H5DatasetPath
+
+withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
+withHdf5Path fn path f = withH5File fn $ \fn' -> go fn' path f
+  where
+    go :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
+    go l (H5RootPath subpath) f' = go l subpath f'
+    go l (H5GroupPath n subpath) f' = withGroup (openGroup l n Nothing) $ \g -> go g subpath f'
+    go l (H5DatasetPath n) f' = withDataset (openDataset l n Nothing) f'

@@ -18,9 +18,8 @@ import           Control.Monad                     (forM_)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, Shape, extent,
                                                     listOfShape, size)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
+import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.ByteString.Char8             (pack)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
@@ -38,18 +37,6 @@ import           System.FilePath.Posix             ((</>))
 
 import           Hkl
 
-data DataFrameHklH5Path
-    = DataFrameHklH5Path
-      (DataItem H5) -- Image
-      (DataItem H5) -- Mu
-      (DataItem H5) -- Omega
-      (DataItem H5) -- delta
-      (DataItem H5) -- gamma
-      (DataItem H5) -- UB
-      (DataItem H5) -- Wavelength
-      (DataItem H5) -- DiffractometerType
-    deriving (Show)
-
 data DataFrame
     = DataFrame
       Int -- n
@@ -63,17 +50,28 @@ instance Show DataFrame where
 class FramesP a where
   framesP :: FilePath -> a -> Detector b DIM2 -> Producer DataFrame (SafeT IO) ()
 
+data DataFrameHklH5Path
+  = DataFrameHklH5Path
+    (Hdf5Path DIM3 Word16) -- Image
+    (Hdf5Path DIM1 Double) -- Mu
+    (Hdf5Path DIM1 Double) -- Omega
+    (Hdf5Path DIM1 Double) -- Delta
+    (Hdf5Path DIM1 Double) -- Gamma
+    (Hdf5Path DIM2 Double) -- UB
+    (Hdf5Path Z Double) -- Wavelength
+    (Hdf5Path DIM1 Char) -- DiffractometerType
+
 instance FramesP DataFrameHklH5Path where
   framesP fp (DataFrameHklH5Path i m o d g u w t) det =
     withFileP (openH5 fp) $ \f ->
-    withDatasetP (openDataset' f i) $ \i' ->
-    withDatasetP (openDataset' f m) $ \m' ->
-    withDatasetP (openDataset' f o) $ \o' ->
-    withDatasetP (openDataset' f d) $ \d' ->
-    withDatasetP (openDataset' f g) $ \g' ->
-    withDatasetP (openDataset' f u) $ \u' ->
-    withDatasetP (openDataset' f w) $ \w' ->
-    withDatasetP (openDataset' f t) $ \_t -> do
+    withHdf5PathP f i $ \i' ->
+    withHdf5PathP f m $ \m' ->
+    withHdf5PathP f o $ \o' ->
+    withHdf5PathP f d $ \d' ->
+    withHdf5PathP f g $ \g' ->
+    withHdf5PathP f u $ \u' ->
+    withHdf5PathP f w $ \w' ->
+    withHdf5PathP f t $ \_t' -> do
       (Just n) <- liftIO $ lenH5Dataspace m'
       forM_ [0..n-1] (\j -> yield =<< liftIO
                        (do
@@ -87,9 +85,6 @@ instance FramesP DataFrameHklH5Path where
                            let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
                                source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
-        where
-          openDataset' :: File -> DataItem H5 -> IO Dataset
-          openDataset' hid (DataItemH5 name _) = openDataset hid (pack name) Nothing
 
 -- | DataFrameSpace
 
@@ -137,20 +132,21 @@ main_sixs = do
   -- let root = "/home/picca/"
   -- let root = "/home/experiences/instrumentation/picca/"
   let filename = "align_FLY2_omega_00045.nxs"
-  let dataframe_h5p = DataFrameHklH5Path
-                      (DataItemH5 "com_113934/scan_data/xpad_image" StrictDims)
-                      (DataItemH5 "com_113934/scan_data/UHV_MU" ExtendDims)
-                      (DataItemH5 "com_113934/scan_data/UHV_OMEGA" ExtendDims)
-                      (DataItemH5 "com_113934/scan_data/UHV_DELTA" ExtendDims)
-                      (DataItemH5 "com_113934/scan_data/UHV_GAMMA" ExtendDims)
-                      (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/UB" StrictDims)
-                      (DataItemH5 "com_113934/SIXS/Monochromator/wavelength" StrictDims)
-                      (DataItemH5 "com_113934/SIXS/I14-C-CX2__EX__DIFF-UHV__#1/type" StrictDims)
+  let h5path = DataFrameHklH5Path
+               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "xpad_image")
+               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_MU")
+               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_OMEGA")
+               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_DELTA")
+               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_GAMMA")
+               (hdf5p $ groupp "com_113934" $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
+               (hdf5p $ groupp "com_113934" $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+               (hdf5p $ groupp "com_113934" $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
+
   let outputFilename = "test.hdf5"
   let _outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
-  r <- runSafeT $ toListM $ framesP (root </> filename) dataframe_h5p ImXpadS140
+  r <- runSafeT $ toListM $ framesP (root </> filename) h5path ImXpadS140
   r' <- mapConcurrently (space ImXpadS140 pixels) r
   c <- mkCube r'
   saveHdf5 outputFilename c

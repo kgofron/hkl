@@ -282,7 +282,7 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 	int32_t i;
 	int32_t j;
 	int32_t n_coordinates = 3;
-	const char * names[] = {"Qx", "Qy", "Qz"};
+	const char * names[] = {"qx", "qy", "qz"};
 
 	const double *q_x = &pixels_coordinates[0 * n_pixels];
 	const double *q_y = &pixels_coordinates[1 * n_pixels];
