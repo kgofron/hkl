@@ -24,6 +24,10 @@
 
 /* #define DEBUG 1 */
 
+/*********************************/
+/* FROM HKL TO REMOVE AT THE END */
+/*********************************/
+
 /**
  * hkl_vector_norm2: (skip)
  * @self: the #hklvector use to compute the norm2
@@ -143,6 +147,23 @@ void hkl_vector_fprintf(FILE *file, const HklVector *self)
 {
 	fprintf(file, "|%f, %f, %f|", self->data[0], self->data[1], self->data[2]);
 }
+
+/**
+ * hkl_quaternion_conjugate:
+ * @self: the #HklQuaternion to conjugate
+ *
+ * compute the conjugate of a quaternion
+ **/
+void hkl_quaternion_conjugate(HklQuaternion *self)
+{
+	unsigned int i;
+	for (i=1;i<4;i++)
+		self->data[i] = -self->data[i];
+}
+
+/************/
+/* NEW CODE */
+/************/
 
 inline int32_t min(int32_t x, int32_t y)
 {
@@ -267,15 +288,20 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 	const double *q_y = &pixels_coordinates[1 * n_pixels];
 	const double *q_z = &pixels_coordinates[2 * n_pixels];
 
+	HklSample *sample = hkl_sample_new("test");
 	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 	const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector);
+	HklQuaternion qs_1 = hkl_geometry_sample_rotation_get(geometry, sample);
 	const HklVector ki = {{1, 0, 0}};
 	HklBinocularsSpace *space = space_new(n_pixels, n_coordinates);
 	int32_t *indexes_0 = space_indexes(space, 0);
 	int32_t *indexes_1 = space_indexes(space, 1);
 	int32_t *indexes_2 = space_indexes(space, 2);
 
-	/* compute the coordinates and the indexes */
+	hkl_quaternion_conjugate(&qs_1);
+
+	/* compute the coordinates in the last axis basis and the
+	 * indexes */
 	for(i=0;i<n_pixels;++i){
 		HklVector v = {{ q_x[i],
 				 q_y[i],
@@ -284,6 +310,7 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 		hkl_vector_rotated_quaternion(&v, &q);
 		hkl_vector_normalize(&v);
 		hkl_vector_minus_vector(&v, &ki);
+		hkl_vector_rotated_quaternion(&v, &qs_1);
 		hkl_vector_times_double(&v, k);
 
 		indexes_0[i] = rint(v.data[0] / resolutions[0]);
