@@ -28,6 +28,11 @@ withFileP = bracket' closeFile
 withGroupP :: MonadSafe m => IO Group -> (Group -> m r) -> m r
 withGroupP = bracket' closeGroup
 
+withGroupAtP :: (Location l, MonadSafe m) => l -> Int -> (Group -> m r) -> m r
+withGroupAtP l i f = do
+  es <- liftIO $ nxEntries' l
+  withGroupP (openGroup l (es !! i) Nothing) f
+
 withDatasetP :: MonadSafe m => IO Dataset -> (Dataset -> m r) -> m r
 withDatasetP = bracket' closeDataset
 
@@ -40,4 +45,5 @@ withHdf5PathP f path g = go f path g
     go ::  (MonadSafe m, Location l) => l -> Hdf5Path sh e -> (Dataset -> m r) -> m r
     go l (H5RootPath subpath) g' = go l subpath g'
     go l (H5GroupPath n subpath) g' = withGroupP (openGroup l n Nothing) $ \g'' -> go g'' subpath g'
+    go l (H5GroupAtPath i subpath) g' = withGroupAtP l i $ \g'' -> go g'' subpath g'
     go l (H5DatasetPath n) g' = withDatasetP (openDataset l n Nothing) g'

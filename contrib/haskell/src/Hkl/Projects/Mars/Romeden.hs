@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 
 module Hkl.Projects.Mars.Romeden
        ( romeden ) where
 
-import Codec.Picture ( saveTiffImage )
-import Control.Arrow ( (&&&) )
-import System.FilePath ((</>))
-import System.FilePath.Glob ( compile, globDir1 )
+import           Codec.Picture        (saveTiffImage)
+import           Control.Arrow        ((&&&))
+import           System.FilePath      ((</>))
+import           System.FilePath.Glob (compile, globDir1)
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+import           Prelude              hiding (concat, lookup, readFile,
+                                       writeFile)
 
-import Hkl
+import           Hkl
 
 -- | TODO
 -- ne pas planter lorsque l'image est manquante dans une nx entry.

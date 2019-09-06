@@ -26,6 +26,7 @@ module Hkl.H5
     , get_ub
     , lenH5Dataspace
     , nxEntries
+    , nxEntries'
     , openDataset
     , openH5
     , set_image
@@ -40,6 +41,7 @@ module Hkl.H5
     , Hdf5Path(..)
     , hdf5p
     , groupp
+    , grouppat
     , datasetp
     , withHdf5Path
     )
@@ -76,14 +78,15 @@ import           Data.Array.Repa                 (Array, Shape, extent,
                                                   size)
 import           Data.Array.Repa.Repr.ForeignPtr (F, fromForeignPtr,
                                                   toForeignPtr)
-import           Data.ByteString.Char8           (ByteString, pack)
+import           Data.ByteString.Char8           (ByteString, pack, packCString,
+                                                  unpack)
 import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   unsafeFromForeignPtr0)
 import           Data.Vector.Storable.Mutable    (MVector (..), replicate)
 import           Data.Word                       (Word16)
-import           Foreign.C.String                (CString, peekCString)
+import           Foreign.C.String                (CString)
 import           Foreign.C.Types                 (CInt (CInt))
 import           Foreign.Ptr                     (FunPtr, freeHaskellFunPtr)
 import           Foreign.Ptr.Conventions         (In (In), InOut (InOut),
@@ -183,6 +186,11 @@ openH5 f = openFile (pack f) [ReadOnly] Nothing
 withGroup :: IO Group -> (Group -> IO r) -> IO r
 withGroup a = bracket a closeGroup
 
+withGroupAt :: Location l => l -> Int -> (Group -> IO r) -> IO r
+withGroupAt l i f = do
+  es <- nxEntries' l
+  withGroup (openGroup l (es !! i) Nothing) f
+
 -- | Dataspace
 
 -- check how to merge both methods
@@ -196,7 +204,6 @@ lenH5Dataspace d = withDataspace (getDatasetSpace d) len
     len space_id = do
       (HSize n) <- getSimpleDataspaceExtentNPoints space_id
       return $ if n < 0 then Nothing else Just (fromIntegral n)
-
 
 -- | DataSet
 
@@ -216,7 +223,12 @@ withFunPtr :: H5Iterate a -> (FunPtr (H5Iterate a) -> IO b) -> IO b
 withFunPtr f = bracket (mkOp f) freeHaskellFunPtr
 
 nxEntries ∷ FilePath → IO [String]
-nxEntries f = withH5File f $ \h → do
+nxEntries f = withH5File f $ \l → do
+  es <- nxEntries' l
+  return $ map unpack es
+
+nxEntries' :: Location l => l -> IO [ByteString]
+nxEntries' l = do
   state <- newIORef []
   _ <- withStablePtr state $ \statePtr -> do
     let opData = InOut $ castStablePtrToPtr statePtr
@@ -225,18 +237,17 @@ nxEntries f = withH5File f $ \h → do
     let order = Native
     withFunPtr callback $ \iop ->
       withInOut_ (maybe 0 hSize startIndex) $ \ioStartIndex ->
-      h5l_iterate (hid h) (indexTypeCode indexType) (iterOrderCode order) ioStartIndex iop opData
+      h5l_iterate (hid l) (indexTypeCode indexType) (iterOrderCode order) ioStartIndex iop opData
 
   -- retrieve the final state
   readIORef state
     where
-      callback ∷ H5Iterate a
-      callback _g n _i (InOut dataptr) = do
-        name <- peekCString n
-        stRef <- deRefStablePtr (castPtrToStablePtr . castWrappedPtr $ dataptr)
+      callback :: H5Iterate a
+      callback _ n _ (InOut dataptr) = do
+        name <- packCString n
+        stRef <- deRefStablePtr. castPtrToStablePtr . castWrappedPtr $ dataptr
         modifyIORef' stRef $ \st -> name : st
         return $ HErr_t 0
-
 
 -- | Better API
 
@@ -272,6 +283,7 @@ saveHdf5 f a =  withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \
 data Hdf5Path sh e
   = H5RootPath (Hdf5Path sh e)
   | H5GroupPath ByteString (Hdf5Path sh e)
+  | H5GroupAtPath Int (Hdf5Path sh e)
   | H5DatasetPath ByteString
 
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
@@ -279,6 +291,9 @@ hdf5p = H5RootPath
 
 groupp :: ByteString -> Hdf5Path sh e -> Hdf5Path sh e
 groupp = H5GroupPath
+
+grouppat :: Int -> Hdf5Path sh e -> Hdf5Path sh e
+grouppat = H5GroupAtPath
 
 datasetp :: ByteString -> Hdf5Path sh e
 datasetp = H5DatasetPath
@@ -289,4 +304,5 @@ withHdf5Path fn path f = withH5File fn $ \fn' -> go fn' path f
     go :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
     go l (H5RootPath subpath) f' = go l subpath f'
     go l (H5GroupPath n subpath) f' = withGroup (openGroup l n Nothing) $ \g -> go g subpath f'
+    go l (H5GroupAtPath i subpath) f' = withGroupAt l i $ \g -> go g subpath f'
     go l (H5DatasetPath n) f' = withDataset (openDataset l n Nothing) f'

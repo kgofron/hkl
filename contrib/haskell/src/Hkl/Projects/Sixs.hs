@@ -133,17 +133,16 @@ main_sixs = do
   -- let root = "/home/experiences/instrumentation/picca/"
   let filename = "align_FLY2_omega_00045.nxs"
   let h5path = DataFrameHklH5Path
-               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "xpad_image")
-               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_MU")
-               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_OMEGA")
-               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_DELTA")
-               (hdf5p $ groupp "com_113934" $ groupp "scan_data" $ datasetp "UHV_GAMMA")
-               (hdf5p $ groupp "com_113934" $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
-               (hdf5p $ groupp "com_113934" $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-               (hdf5p $ groupp "com_113934" $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
+               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
+               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
+               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
+               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
+               (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
+               (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+               (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
 
   let outputFilename = "test.hdf5"
-  let _outPath = DataItemH5 "imgs" StrictDims
 
   pixels <- getPixelsCoordinates ImXpadS140 0 0 1
   r <- runSafeT $ toListM $ framesP (root </> filename) h5path ImXpadS140
