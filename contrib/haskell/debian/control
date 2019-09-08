@@ -1,0 +1,136 @@
+Source: haskell-hkl
+Maintainer: Debian Haskell Group <pkg-haskell-maintainers@lists.alioth.debian.org>
+Priority: optional
+Section: haskell
+Build-Depends: debhelper (>= 9),
+ haskell-devscripts-minimal | haskell-devscripts (>= 0.8),
+ cdbs,
+ ghc,
+ ghc-prof,
+ libghc-glob-dev (>= 0.7.5),
+ libghc-glob-prof (>= 0.7.5),
+ libghc-juicypixels-dev (>= 3.1.7),
+ libghc-juicypixels-prof (>= 3.1.7),
+ libghc-aeson-dev (>= 0.8),
+ libghc-aeson-prof (>= 0.8),
+ libghc-async-dev,
+ libghc-async-prof,
+ libghc-attoparsec-dev,
+ libghc-attoparsec-prof,
+ libghc-dimensional-dev (>= 0.10),
+ libghc-dimensional-prof (>= 0.10),
+ libghc-errors-dev,
+ libghc-errors-prof,
+ libghc-hdf5-dev,
+ libghc-hdf5-prof,
+ libghc-hmatrix-dev (>= 0.17),
+ libghc-hmatrix-prof (>= 0.17),
+ libghc-hmatrix-gsl-dev (>= 0.17),
+ libghc-hmatrix-gsl-prof (>= 0.17),
+ libghc-lifted-async-dev,
+ libghc-lifted-async-prof,
+ libghc-lifted-base-dev,
+ libghc-lifted-base-prof,
+ libghc-mmorph-dev (>= 1.0.3),
+ libghc-mmorph-prof (>= 1.0.3),
+ libghc-monad-control-dev,
+ libghc-monad-control-prof,
+ libghc-monad-loops-dev (>= 0.4.2),
+ libghc-monad-loops-prof (>= 0.4.2),
+ libghc-monads-tf-dev,
+ libghc-monads-tf-prof,
+ libghc-pipes-dev (>= 4.1.2),
+ libghc-pipes-prof (>= 4.1.2),
+ libghc-pipes-safe-dev (>= 2.2.0),
+ libghc-pipes-safe-prof (>= 2.2.0),
+ libghc-puremd5-dev (>= 2.0),
+ libghc-puremd5-prof (>= 2.0),
+ libghc-repa-dev,
+ libghc-repa-prof,
+ libghc-safe-dev,
+ libghc-safe-prof,
+ libghc-transformers-base-dev,
+ libghc-transformers-base-prof,
+ libghc-vector-dev (>= 0.10.0.1),
+ libghc-vector-prof (>= 0.10.0.1),
+Build-Depends-Indep: ghc-doc,
+ libghc-glob-doc,
+ libghc-juicypixels-doc,
+ libghc-aeson-doc,
+ libghc-async-doc,
+ libghc-attoparsec-doc,
+ libghc-dimensional-doc,
+ libghc-errors-doc,
+ libghc-hdf5-doc,
+ libghc-hmatrix-doc,
+ libghc-hmatrix-gsl-doc,
+ libghc-lifted-async-doc,
+ libghc-lifted-base-doc,
+ libghc-mmorph-doc,
+ libghc-monad-control-doc,
+ libghc-monad-loops-doc,
+ libghc-monads-tf-doc,
+ libghc-pipes-doc,
+ libghc-pipes-safe-doc,
+ libghc-puremd5-doc,
+ libghc-repa-doc,
+ libghc-safe-doc,
+ libghc-transformers-base-doc,
+ libghc-vector-doc,
+Standards-Version: 3.9.6
+X-Description: WARNING: No synopsis available for package hkl-0.1.0.0
+
+Package: libghc-hkl-dev
+Architecture: any
+Depends: ${haskell:Depends},
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends: ${haskell:Recommends},
+Suggests: ${haskell:Suggests},
+Conflicts: ${haskell:Conflicts},
+Provides: ${haskell:Provides},
+Description: ${haskell:ShortDescription}${haskell:ShortBlurb}
+ ${haskell:LongDescription}
+ .
+ ${haskell:Blurb}
+
+Package: libghc-hkl-prof
+Architecture: any
+Depends: ${haskell:Depends},
+ ${misc:Depends},
+Recommends: ${haskell:Recommends},
+Suggests: ${haskell:Suggests},
+Conflicts: ${haskell:Conflicts},
+Provides: ${haskell:Provides},
+Description: ${haskell:ShortDescription}${haskell:ShortBlurb}
+ ${haskell:LongDescription}
+ .
+ ${haskell:Blurb}
+
+Package: libghc-hkl-doc
+Architecture: all
+Section: doc
+Depends: ${haskell:Depends},
+ ${misc:Depends},
+Recommends: ${haskell:Recommends},
+Suggests: ${haskell:Suggests},
+Conflicts: ${haskell:Conflicts},
+Description: ${haskell:ShortDescription}${haskell:ShortBlurb}
+ ${haskell:LongDescription}
+ .
+ ${haskell:Blurb}
+
+Package: haskell-hkl-utils
+Architecture: any
+Section: misc
+Depends: ${haskell:Depends},
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends: ${haskell:Recommends},
+Suggests: ${haskell:Suggests},
+Conflicts: ${haskell:Conflicts},
+Provides: ${haskell:Provides},
+Description: ${haskell:ShortDescription}${haskell:ShortBlurb}
+ ${haskell:LongDescription}
+ .
+ ${haskell:Blurb}
