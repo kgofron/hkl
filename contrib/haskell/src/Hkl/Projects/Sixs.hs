@@ -14,7 +14,7 @@ module Hkl.Projects.Sixs
     ( main_sixs )
         where
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Monad                     (forM_)
+import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, Shape, extent,
                                                     listOfShape, size)
@@ -27,15 +27,16 @@ import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr)
 import           Foreign.Storable                  (peek)
+import           Hkl
 import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
-import           Pipes                             (Producer, yield)
+import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
+                                                    meter, (*~), (/~))
+import           Pipes                             (Pipe, await, each, yield,
+                                                    (>->))
 import           Pipes.Prelude                     (toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
-import           System.FilePath.Posix             ((</>))
-
-import           Hkl
+import           Text.Printf                       (printf)
 
 data DataFrame
     = DataFrame
@@ -48,7 +49,7 @@ instance Show DataFrame where
   show (DataFrame i g m _) = unwords [show i, show g, show m]
 
 class FramesP a where
-  framesP :: FilePath -> a -> Detector b DIM2 -> Producer DataFrame (SafeT IO) ()
+  framesP :: a -> Detector b DIM2 -> Pipe FilePath DataFrame (SafeT IO) ()
 
 data DataFrameHklH5Path
   = DataFrameHklH5Path
@@ -62,16 +63,17 @@ data DataFrameHklH5Path
     (Hdf5Path DIM1 Char) -- DiffractometerType
 
 instance FramesP DataFrameHklH5Path where
-  framesP fp (DataFrameHklH5Path i m o d g u w t) det =
+  framesP (DataFrameHklH5Path i m o d g u w t) det = forever $ do
+    fp <- await
     withFileP (openH5 fp) $ \f ->
-    withHdf5PathP f i $ \i' ->
-    withHdf5PathP f m $ \m' ->
-    withHdf5PathP f o $ \o' ->
-    withHdf5PathP f d $ \d' ->
-    withHdf5PathP f g $ \g' ->
-    withHdf5PathP f u $ \u' ->
-    withHdf5PathP f w $ \w' ->
-    withHdf5PathP f t $ \_t' -> do
+      withHdf5PathP f i $ \i' ->
+      withHdf5PathP f m $ \m' ->
+      withHdf5PathP f o $ \o' ->
+      withHdf5PathP f d $ \d' ->
+      withHdf5PathP f g $ \g' ->
+      withHdf5PathP f u $ \u' ->
+      withHdf5PathP f w $ \w' ->
+      withHdf5PathP f t $ \_t' -> do
       (Just n) <- liftIO $ lenH5Dataspace m'
       forM_ [0..n-1] (\j -> yield =<< liftIO
                        (do
@@ -83,7 +85,7 @@ instance FramesP DataFrameHklH5Path where
                            image <- get_image det i' j
                            ub <- get_ub u'
                            let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
-                               source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
+                               source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
 
 -- | DataFrameSpace
@@ -91,15 +93,16 @@ instance FramesP DataFrameHklH5Path where
 data DataFrameSpace sh = DataFrameSpace DataFrame (Space sh)
   deriving Show
 
-space :: Detector a DIM2 -> Array F DIM3 Double -> DataFrame -> IO (DataFrameSpace DIM3)
-space detector pixels df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
-  let resolutions = [0.0002, 0.0002, 0.0002] :: [Double]
+type Resolutions = [Double]
+
+space :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrame -> IO (DataFrameSpace DIM3)
+space detector pixels rs df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
   let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
   withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
-    withArrayLen resolutions $ \nr r ->
+    withArrayLen rs $ \nr r ->
     withArrayLen pixelsDims $ \ndim dims ->
     withForeignPtr (toForeignPtr img) $ \i -> do
       p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
@@ -126,29 +129,72 @@ mkCube dfs = do
     withArrayLen pimages $ \_ images' -> do
     peek =<< {-# SCC "hkl_binoculars_cube_new" #-} hkl_binoculars_cube_new (toEnum nSpaces') spaces' (toEnum nPixels) images'
 
+type Template = String
+
+data InputFn = InputFn FilePath
+             | InputRange Template Int Int
+
+
+toList :: InputFn -> [FilePath]
+toList (InputFn f)           = [f]
+toList (InputRange tmpl f t) = [printf tmpl i | i <- [f..t]]
+
+data Input = Input { filename     :: InputFn
+                   , h5path       :: DataFrameHklH5Path
+                   , output       :: FilePath
+                   , resolutions  :: [Double]
+                   , centralPixel :: (Int, Int)  -- x, y
+                   , sdd          :: (Length Float)  -- sample to detector distance
+                   , detrot       :: Angle Float
+                   }
+
+_manip1 :: Input
+_manip1 = Input { filename = InputFn "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/align_FLY2_omega_00045.nxs"
+                , h5path = DataFrameHklH5Path
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
+                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
+                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
+                , output = "test1.hdf5"
+                , resolutions = [0.0002, 0.0002, 0.0002]
+                , centralPixel = (0, 0)
+                , sdd = 1 *~ meter
+                , detrot = 90 *~ degree
+                }
+
+manip2 :: Input
+manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/2019/Run3/FeSCO_Cu111/sample2_ascan_omega_%05d.nxs" 77 93
+               , h5path = DataFrameHklH5Path
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "UB")
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "type")
+               , output = "test2.hdf5"
+               , resolutions = [0.003, 0.01, 0.003]
+               , centralPixel = (352, 112)
+               , sdd = 1.162 *~ meter
+               , detrot = 90 *~ degree
+               }
+
 main_sixs :: IO ()
 main_sixs = do
-  let root = "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/Shutdown4-5/XpadAu111/"
-  -- let root = "/home/picca/"
-  -- let root = "/home/experiences/instrumentation/picca/"
-  let filename = "align_FLY2_omega_00045.nxs"
-  let h5path = DataFrameHklH5Path
-               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
-               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
-               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
-               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
-               (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
-               (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-               (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
+  let input = manip2
 
-  let outputFilename = "test.hdf5"
-
-  pixels <- getPixelsCoordinates ImXpadS140 0 0 1
-  r <- runSafeT $ toListM $ framesP (root </> filename) h5path ImXpadS140
-  r' <- mapConcurrently (space ImXpadS140 pixels) r
+  pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
+  r <- runSafeT $ toListM $
+      each (toList $ filename input)
+      >-> framesP (h5path input) ImXpadS140
+  r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
   c <- mkCube r'
-  saveHdf5 outputFilename c
+  saveHdf5 (output input) c
   print c
 
   return ()

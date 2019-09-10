@@ -37,6 +37,7 @@ module Hkl.Python.Pyfi (
     defVVVV,
     defVVVVV,
     defVVVVO,
+    defVVVVVO,
     PyObject,
     PythonException,
     exceptionType,
@@ -106,6 +107,7 @@ foreign import ccall "Py_BuildValue" py_BuildValueObject :: CString -> RawPyObje
 foreign import ccall "Py_BuildValue" py_BuildValueObject2 :: CString -> RawPyObject -> RawPyObject -> IO RawPyObject
 foreign import ccall "Py_BuildValue" py_BuildValueObject3 :: CString -> RawPyObject -> RawPyObject -> RawPyObject -> IO RawPyObject
 foreign import ccall "Py_BuildValue" py_BuildValueObject4 :: CString -> RawPyObject -> RawPyObject -> RawPyObject -> RawPyObject -> IO RawPyObject
+foreign import ccall "Py_BuildValue" py_BuildValueObject5 :: CString -> RawPyObject -> RawPyObject -> RawPyObject -> RawPyObject -> RawPyObject -> IO RawPyObject
 foreign import ccall "PyObject_CallObject" pyObject_CallObject :: RawPyObject -> RawPyObject -> IO RawPyObject
 foreign import ccall "PyUnicode_AsUTF8" pyUnicode_AsUTF8 :: RawPyObject -> IO CString
 foreign import ccall unsafe "gimmeFunc" gimmeFunc :: CInt -> IO (FunPtr (RawPyObject -> IO ()))
@@ -298,6 +300,18 @@ def5 s argTypes (PyObject fx1) (PyObject fx2) (PyObject fx3) (PyObject fx4) = do
         ))))
     def' s p1 f
 
+def6 :: String -> String -> PyObject a1 -> PyObject a2 -> PyObject a3 -> PyObject a4 -> PyObject a5 -> IO (PyObject b)
+def6 s argTypes (PyObject fx1) (PyObject fx2) (PyObject fx3) (PyObject fx4) (PyObject fx5) = do
+  f <- getFunc s argTypes
+  p1 <- withForeignPtr fx1 $ \x1 -> (
+    withForeignPtr fx2 $ \x2 -> (
+        withForeignPtr fx3 $ \x3 -> (
+            withForeignPtr fx4 $ \x4 -> (
+                withForeignPtr fx5 $ \x5 -> (
+                    withCString "(OOOOO)" (\cs -> py_BuildValueObject5 cs x1 x2 x3 x4 x5)
+                )))))
+  def' s p1 f
+
 defO :: String -> IO (PyObject b)
 defO s  = def1 s "O"
 
@@ -459,3 +473,12 @@ defVVVVO s input1 input2 input3 input4 = do
     x3 <- toPyObject input3
     x4 <- toPyObject input4
     def5 s "VVVVO" x1 x2 x3 x4
+
+defVVVVVO :: (ToJSON a1, ToJSON a2, ToJSON a3, ToJSON a4, ToJSON a5) => String -> a1 -> a2 -> a3 -> a4 -> a5 -> IO (PyObject b)
+defVVVVVO s input1 input2 input3 input4 input5 = do
+    x1 <- toPyObject input1
+    x2 <- toPyObject input2
+    x3 <- toPyObject input3
+    x4 <- toPyObject input4
+    x5 <- toPyObject input5
+    def6 s "VVVVVO" x1 x2 x3 x4 x5
