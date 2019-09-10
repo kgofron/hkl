@@ -77,7 +77,7 @@ executable hkl3d
   build-tools:         hsc2hs
   ghc-options:         -Wall -threaded -O2 "-with-rtsopts=-N"
   ghc-options:         -Werror
-  ghc-options:         -g -debug -dcore-lint
+  ghc-options:         -g -dcore-lint
   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
 
 library
@@ -197,6 +197,6 @@ library
   ghc-options:         -Wall
   ghc-options:         -Wincomplete-uni-patterns
   ghc-options:         -Wincomplete-record-updates
-  -- ghc-options:         -g -debug -dcore-lint
+  ghc-options:         -g -dcore-lint
 
   ghc-prof-options:    -fprof-auto-top
