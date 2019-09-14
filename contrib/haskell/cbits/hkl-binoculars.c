@@ -348,15 +348,15 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
 	free(self);
 }
 
-static int32_t compute_offset(int32_t n_axes, const HklBinocularsAxis *axes)
+static int64_t compute_offset(int32_t n_axes, const HklBinocularsAxis *axes)
 {
 	int i;
-	int len = 1;
-	int32_t offset = 0;
+	int64_t len = 1;
+	int64_t offset = 0;
 
 	for(i=0; i<n_axes; ++i){
 		const HklBinocularsAxis *axis = &axes[n_axes-1-i];
-		offset += axis->imin * len;
+		offset += len * axis->imin;
 		len *= axis_size(axis);
 	}
 	return offset;
@@ -366,12 +366,12 @@ void add_space(HklBinocularsCube *cube,
 	       const HklBinocularsSpace *space,
 	       int32_t n_pixels,
 	       const uint16_t *img,
-	       int32_t offset0)
+	       int64_t offset0)
 {
 	int i;
 	int j;
-	int len = 1;
-	long indexes[n_pixels];
+	int64_t len = 1;
+	int64_t indexes[n_pixels];
 
 	for(i=0; i<n_pixels; ++i){
 		indexes[i] = -offset0;
@@ -380,7 +380,7 @@ void add_space(HklBinocularsCube *cube,
 	for(i=0; i<cube->n_axes; ++i){
 		int32_t *idx = space_indexes(space, cube->n_axes - 1 - i);
 		for(j=0; j<n_pixels; ++j){
-			indexes[j] += idx[j] * len;
+			indexes[j] += len * idx[j];
 		}
 		len *= axis_size(&cube->axes[cube->n_axes - 1 - i]);
 	}
@@ -429,10 +429,10 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 {
 	int i;
 	int j;
-	int n = 1;
+	size_t n = 1;
 	const HklBinocularsSpace *space0 = spaces[0];
 	int n_axes = space0->n_axes;
-	int32_t offset0;
+	int64_t offset0;
 	HklBinocularsCube *self = malloc(sizeof(HklBinocularsCube));
 	self->n_axes = n_axes;
 	self->axes = calloc(n_axes, sizeof(HklBinocularsAxis));
@@ -453,6 +453,8 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 	n = cube_size(n_axes, self->axes);
 	self->photons = calloc(n, sizeof(*self->photons));
 	self->contributions = calloc(n, sizeof(*self->contributions));
+
+	hkl_binoculars_cube_fprintf(stdout, self);
 
 	/* add all the spaces */
 	for(i=0; i<n_spaces; ++i){
