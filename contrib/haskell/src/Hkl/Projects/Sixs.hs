@@ -43,7 +43,7 @@ data DataFrame
       Int -- n
       Geometry -- geometry
       (Matrix Double) -- ub
-      (Array F DIM2 Word16) -- image
+      (ForeignPtr Word16) -- image
 
 instance Show DataFrame where
   show (DataFrame i g m _) = unwords [show i, show g, show m]
@@ -82,7 +82,7 @@ instance FramesP DataFrameHklH5Path where
                            delta <- get_position d' j
                            gamma <- get_position g' j
                            wavelength <- get_position w' 0
-                           image <- get_image det i' j
+                           image <- get_image' det i' j
                            ub <- get_ub u'
                            let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
                                source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
@@ -104,7 +104,7 @@ space detector pixels rs df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) 
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
     withArrayLen pixelsDims $ \ndim dims ->
-    withForeignPtr (toForeignPtr img) $ \i -> do
+    withForeignPtr img $ \i -> do
       p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
       return (DataFrameSpace df s)
@@ -117,12 +117,11 @@ withForeignPtrs (fp:fps) f =
   withForeignPtr fp $ \p ->
   withForeignPtrs fps $ \ps -> f (p:ps)
 
-mkCube :: Shape sh => [DataFrameSpace sh] -> IO (Cube sh)
-mkCube dfs = do
+mkCube :: Shape sh => Detector a DIM2 -> [DataFrameSpace sh] -> IO (Cube sh)
+mkCube detector dfs = do
   let spaces = [spaceHklPointer s | (DataFrameSpace _ s) <- dfs]
-  let images = [toForeignPtr img | (DataFrameSpace (DataFrame _ _ _ img) _) <- dfs]
-  let (DataFrameSpace (DataFrame _ _ _ img) _ )= Prelude.head dfs
-  let nPixels = size . extent $ img
+  let images = [img | (DataFrameSpace (DataFrame _ _ _ img) _) <- dfs]
+  let nPixels = size . shape $ detector
   withForeignPtrs spaces $ \pspaces ->
     withForeignPtrs images $ \pimages ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
@@ -193,7 +192,7 @@ main_sixs = do
       each (toList $ filename input)
       >-> framesP (h5path input) ImXpadS140
   r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
-  c <- mkCube r'
+  c <- mkCube ImXpadS140 r'
   saveHdf5 (output input) c
   print c
 

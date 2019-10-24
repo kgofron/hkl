@@ -78,7 +78,7 @@ executable hkl3d
   ghc-options:         -Wall -threaded -O2 "-with-rtsopts=-N"
   ghc-options:         -Werror
   ghc-options:         -g -dcore-lint
-  ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+  ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -hr -i0.1"
 
 library
   exposed-modules:    Hkl

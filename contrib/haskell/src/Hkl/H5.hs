@@ -21,6 +21,7 @@ module Hkl.H5
     , closeDataset
     , closeFile
     , get_image
+    , get_image'
     , get_position
     , get_position_new
     , get_ub
@@ -64,14 +65,19 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   getSimpleDataspaceExtentNDims,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
-import           Bindings.HDF5.Datatype.Internal (NativeType, nativeTypeOf)
+import           Bindings.HDF5.Datatype.Internal (NativeType, hdfTypeOf1,
+                                                  nativeTypeOf)
+import           Bindings.HDF5.Error             (withErrorCheck_)
 import           Bindings.HDF5.File              (AccFlags (ReadOnly, Truncate),
                                                   File, closeFile, createFile,
                                                   openFile)
 import           Bindings.HDF5.Group             (Group, closeGroup,
                                                   createGroup, openGroup)
+import           Bindings.HDF5.PropertyList.DXPL (DXPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
-                                                  HId_t (HId_t), h5l_iterate)
+                                                  HId_t (HId_t), h5d_read,
+                                                  h5l_iterate, h5p_DEFAULT,
+                                                  h5s_ALL)
 import           Control.Exception               (bracket)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   linearIndex, listOfShape,
@@ -88,9 +94,13 @@ import           Data.Vector.Storable.Mutable    (MVector (..), replicate)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
 import           Foreign.C.Types                 (CInt (CInt))
-import           Foreign.Ptr                     (FunPtr, freeHaskellFunPtr)
+import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr)
+import           Foreign.Marshal.Alloc           (finalizerFree, mallocBytes)
+import           Foreign.Ptr                     (FunPtr, Ptr,
+                                                  freeHaskellFunPtr)
 import           Foreign.Ptr.Conventions         (In (In), InOut (InOut),
-                                                  castWrappedPtr, withInOut_)
+                                                  OutArray (..), castWrappedPtr,
+                                                  withInOut_)
 import           Foreign.StablePtr               (StablePtr, castPtrToStablePtr,
                                                   castStablePtrToPtr,
                                                   deRefStablePtr, freeStablePtr,
@@ -133,6 +143,17 @@ get_image det d n = withDataspace (getDatasetSpace d) $ \dataspace -> do
         data_out@(MVector _ fp) <- Data.Vector.Storable.Mutable.replicate (size s) (0 :: Word16)
         readDatasetInto d (Just memspace) (Just dataspace) Nothing data_out
         return $ fromForeignPtr s fp
+
+get_image' :: Shape sh => Detector a sh -> Dataset -> Int -> IO (ForeignPtr Word16)
+get_image' det d n = withDataspace (getDatasetSpace d) $ \dataspace -> do
+      let s = shape det
+          h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
+      selectHyperslab dataspace Set h
+      withDataspace (createDataspaceFromShape s) $ \memspace -> do
+        p <- mallocBytes ((size s) * 2)
+        readDatasetInto' d (Just memspace) (Just dataspace) Nothing p
+        fp <- newForeignPtr finalizerFree p
+        return fp
 
 set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
 set_image det d dataspace n arr =  do
@@ -209,6 +230,16 @@ lenH5Dataspace d = withDataspace (getDatasetSpace d) len
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
+
+readDatasetInto' :: NativeType t =>
+                   Dataset ->
+                   Maybe Dataspace ->
+                   Maybe Dataspace ->
+                   Maybe DXPL ->
+                   Ptr t ->
+                   IO ()
+readDatasetInto' dset mem_space_id file_space_id plist_id buf = do
+    withErrorCheck_ $ h5d_read (hid dset) (hdfTypeOf1 buf) (maybe h5s_ALL hid mem_space_id) (maybe h5s_ALL hid file_space_id) (maybe h5p_DEFAULT hid plist_id) (OutArray buf)
 
 -- | WIP until I have decided what is the right way to go
 
