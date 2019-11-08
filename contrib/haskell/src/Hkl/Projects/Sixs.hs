@@ -90,13 +90,13 @@ instance FramesP DataFrameHklH5Path where
 
 -- | DataFrameSpace
 
-data DataFrameSpace sh = DataFrameSpace DataFrame (Space sh)
+data DataFrameSpace sh = DataFrameSpace (ForeignPtr Word16) (Space sh)
   deriving Show
 
 type Resolutions = [Double]
 
 space :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrame -> IO (DataFrameSpace DIM3)
-space detector pixels rs df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
+space detector pixels rs (DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
   let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
@@ -107,7 +107,7 @@ space detector pixels rs df@(DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) 
     withForeignPtr img $ \i -> do
       p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
-      return (DataFrameSpace df s)
+      return (DataFrameSpace img s)
 
 -- | Create the Cube
 
@@ -120,7 +120,7 @@ withForeignPtrs (fp:fps) f =
 mkCube :: Shape sh => Detector a DIM2 -> [DataFrameSpace sh] -> IO (Cube sh)
 mkCube detector dfs = do
   let spaces = [spaceHklPointer s | (DataFrameSpace _ s) <- dfs]
-  let images = [img | (DataFrameSpace (DataFrame _ _ _ img) _) <- dfs]
+  let images = [img | (DataFrameSpace img _) <- dfs]
   let nPixels = size . shape $ detector
   withForeignPtrs spaces $ \pspaces ->
     withForeignPtrs images $ \pimages ->
@@ -183,10 +183,10 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
                , detrot = 90 *~ degree
                }
 
-manip3 :: Input
-manip3 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/2018/Run3/Corentin/Al13Co4/Al13Co4_ascan_omega_%05d.nxs" 4 137
+-- manip3 :: Input
+-- manip3 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/2018/Run3/Corentin/Al13Co4/Al13Co4_ascan_omega_%05d.nxs" 4 137
 
-               }
+--                }
 
 main_sixs :: IO ()
 main_sixs = do
