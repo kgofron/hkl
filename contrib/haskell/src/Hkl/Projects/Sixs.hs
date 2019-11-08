@@ -183,6 +183,11 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
                , detrot = 90 *~ degree
                }
 
+manip3 :: Input
+manip3 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/2018/Run3/Corentin/Al13Co4/Al13Co4_ascan_omega_%05d.nxs" 4 137
+
+               }
+
 main_sixs :: IO ()
 main_sixs = do
   let input = manip2
