@@ -445,7 +445,7 @@ static const struct test base_tests[] = {
 	  NULL, NULL,
 	  "#include <ucontext.h>\n"
 	  "static int x = 0;\n"
-	  "static char stack[2048];\n"
+	  "static char stack[8092];\n"
 	  "static ucontext_t a, b;\n"
 	  "static void fn(void) {\n"
 	  "	x |= 2;\n"
@@ -468,7 +468,7 @@ static const struct test base_tests[] = {
 	  "#include <stddef.h>\n"
 	  "#include <ucontext.h>\n"
 	  "static int worked = 0;\n"
-	  "static char stack[1024];\n"
+	  "static char stack[8092];\n"
 	  "static ucontext_t a, b;\n"
 	  "static void fn(void *p, void *q) {\n"
 	  "	void *cp = &worked;\n"
