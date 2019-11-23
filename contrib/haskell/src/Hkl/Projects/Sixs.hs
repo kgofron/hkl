@@ -202,3 +202,23 @@ main_sixs = do
   print c
 
   return ()
+
+    -- {-# LANGUAGE BlockArguments #-}
+
+    -- module Main (main) where
+
+    -- import Control.Concurrent.Async.Pool
+    -- import Control.Concurrent.STM
+    -- import Data.List
+    -- import Data.Monoid
+    -- import System.Environment
+
+    -- defCount :: Int
+    -- defCount = 100
+
+    -- main :: IO ()
+    -- main = do
+    --     n <- maybe defCount read <$> (fmap fst . uncons) <$> getArgs
+    --     withTaskGroup 8 \tg -> do
+    --         reduction <- atomically $ mapReduce tg $ map (return . Sum) [1..n]
+    --         wait reduction >>= print . getSum
