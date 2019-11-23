@@ -263,12 +263,12 @@
  * The compiler will warn if any of the specified pointer args are NULL.
  *
  * Example:
- * char *my_copy2(char *buf, char *maybenull) NON_NULL_ARGS(1, 2);
+ * char *my_copy2(char *buf, char *maybenull) NON_NULL_ARGS(1);
  */
-#define NON_NULL_ARGS(index, ...) __attribute__((__nonnull__(index, __VA_ARGS__)))
+#define NON_NULL_ARGS(...) __attribute__((__nonnull__(__VA_ARGS__)))
 #else
 #define NO_NULL_ARGS
-#define NON_NULL_ARGS(index, ...)
+#define NON_NULL_ARGS(...)
 #endif
 
 
@@ -285,5 +285,20 @@
 #else
 #define LAST_ARG_NULL
 #endif
+
+#if HAVE_BUILTIN_CPU_SUPPORTS
+/**
+ * cpu_supports - test if current CPU supports the named feature.
+ *
+ * This takes a literal string, and currently only works on glibc platforms.
+ *
+ * Example:
+ * if (cpu_supports("mmx"))
+ *	printf("MMX support engaged!\n");
+ */
+#define cpu_supports(x) __builtin_cpu_supports(x)
+#else
+#define cpu_supports(x) 0
+#endif /* HAVE_BUILTIN_CPU_SUPPORTS */
 
 #endif /* CCAN_COMPILER_H */

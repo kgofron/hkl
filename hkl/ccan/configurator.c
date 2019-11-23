@@ -431,7 +431,7 @@ static const struct test base_tests[] = {
 	  "	return i + 1;\n"
 	  "}" },
 	{ "HAVE_OPENMP", "#pragma omp and -fopenmp support",
-	  "INSIDE_MAIN", NULL, NULL,
+	  "INSIDE_MAIN|EXECUTE|MAY_NOT_COMPILE", NULL, NULL,
 	  "int i;\n"
 	  "#pragma omp parallel for\n"
 	  "for(i = 0; i < 0; i++) {};\n"
@@ -445,7 +445,7 @@ static const struct test base_tests[] = {
 	  NULL, NULL,
 	  "#include <ucontext.h>\n"
 	  "static int x = 0;\n"
-	  "static char stack[8092];\n"
+	  "static char stack[2048];\n"
 	  "static ucontext_t a, b;\n"
 	  "static void fn(void) {\n"
 	  "	x |= 2;\n"
@@ -468,14 +468,14 @@ static const struct test base_tests[] = {
 	  "#include <stddef.h>\n"
 	  "#include <ucontext.h>\n"
 	  "static int worked = 0;\n"
-	  "static char stack[8092];\n"
+	  "static char stack[2048];\n"
 	  "static ucontext_t a, b;\n"
 	  "static void fn(void *p, void *q) {\n"
 	  "	void *cp = &worked;\n"
 	  "	void *cq = (void *)(~((ptrdiff_t)cp));\n"
 	  "	if ((p == cp) && (q == cq))\n"
 	  "		worked = 1;\n"
-	  "	swapcontext(&a, &b);\n"
+	  "	setcontext(&b);\n"
 	  "}\n"
 	  "int main(void) {\n"
 	  "	void *ap = &worked;\n"
@@ -487,6 +487,13 @@ static const struct test base_tests[] = {
 	  "	swapcontext(&b, &a);\n"
 	  "	return worked ? 0 : 1;\n"
 	  "}\n"
+	},
+	{ "HAVE_BUILTIN_CPU_SUPPORTS", "__builtin_cpu_supports()",
+	  "DEFINES_FUNC", NULL, NULL,
+	  "#include <stdbool.h>\n"
+	  "static bool func(void) {\n"
+	  "	return __builtin_cpu_supports(\"mmx\");\n"
+	  "}"
 	},
 };
 
@@ -888,7 +895,8 @@ static void read_tests(size_t num_tests)
 {
 	while (read_test(tests + num_tests)) {
 		num_tests++;
-		tests = realloc(tests, num_tests * sizeof(tests[0]));
+		tests = realloc(tests, (num_tests + 1) * sizeof(tests[0]));
+		tests[num_tests].name = NULL;
 	}
 }
 
