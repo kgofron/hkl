@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import math
@@ -54,7 +54,7 @@ for hh, kk, ll in zip(h, k, l):
             trajectories[i].append(values)
         engines.select_solution(first_solution)
         # print
-    except GLib.GError, err:
+    except GLib.GError as err:
         pass
 
 for i, (trajectory, title) in enumerate(zip(trajectories[1:],

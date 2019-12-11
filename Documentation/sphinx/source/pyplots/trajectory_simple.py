@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import math
@@ -56,7 +56,7 @@ for idx, hh, kk, ll in zip(range(n), h, k, l):
         # move the diffractometer to the solution
         engines.select_solution(first_solution)
         motors_positions.append(geometry.axis_values_get(Hkl.UnitEnum.USER))
-    except GLib.GError, err:
+    except GLib.GError as err:
         pass
 
 plt.subplot(1, 2, 1)
