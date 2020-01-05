@@ -35,6 +35,7 @@ module Hkl.H5
     -- new API
     , Hdf5
     , ToHdf5(..)
+    , empty
     , hdf5
     , group
     , dataset
@@ -283,7 +284,8 @@ nxEntries' l = do
 -- | Better API
 
 data Hdf5M a
-  = H5Root (Hdf5M a)
+  = H5Empty
+  | H5Root (Hdf5M a)
   | H5Group ByteString [Hdf5M a]
   | forall sh b. (NativeType b, Shape sh) => H5Dataset ByteString (Array F sh b)
 
@@ -294,6 +296,9 @@ class ToHdf5 a where
 
 hdf5 :: Hdf5 -> Hdf5
 hdf5 = H5Root
+
+empty :: Hdf5
+empty = H5Empty
 
 group :: ByteString -> [Hdf5] -> Hdf5
 group g = H5Group g
@@ -306,6 +311,7 @@ saveHdf5 f a =  withH5File' (createFile (pack f) [Truncate] Nothing Nothing) $ \
   go f' (toHdf5 a)
   where
     go :: Location l => l -> Hdf5 -> IO ()
+    go _ H5Empty = return ()
     go l (H5Root c) = go l c
     go l (H5Group n cs) = withGroup (createGroup l n Nothing Nothing Nothing ) $ \g -> mapM_ (go g) cs
     go l (H5Dataset n arr) = saveRepa l n arr

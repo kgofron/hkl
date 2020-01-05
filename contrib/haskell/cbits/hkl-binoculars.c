@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -188,6 +188,12 @@ static double axis_min(const HklBinocularsAxis *self)
 static double axis_max(const HklBinocularsAxis *self)
 {
 	return self->imax * self->resolution;
+}
+
+static void hkl_binoculars_axis_init_copy(HklBinocularsAxis *self,
+                                          const HklBinocularsAxis *src)
+{
+        *self = *src;
 }
 
 static void hkl_binoculars_axis_init(HklBinocularsAxis *self,
@@ -424,6 +430,7 @@ static inline size_t cube_size(int n_axes, HklBinocularsAxis *axes)
 	return n;
 }
 
+
 HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpace *const *spaces,
 					   int32_t n_pixels, const uint16_t **imgs)
 {
@@ -464,4 +471,35 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 	hkl_binoculars_cube_fprintf(stdout, self);
 
 	return self;
+}
+
+HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src)
+{
+	HklBinocularsCube *self = malloc(sizeof(*self));
+	int i;
+        size_t n;
+
+        self->n_axes = src->n_axes;
+	self->axes = calloc(self->n_axes, sizeof(HklBinocularsAxis));
+        for(i=0; i<self->n_axes; ++i)
+                hkl_binoculars_axis_init_copy(&self->axes[i],
+                                              &src->axes[i]);
+
+	/* allocated the final cube */
+	n = cube_size(self->n_axes, self->axes);
+	self->photons = calloc(n, sizeof(*self->photons));
+	self->contributions = calloc(n, sizeof(*self->contributions));
+
+        /* copy the data */
+        memcpy(self->photons, src->photons, n);
+        memcpy(self->contributions, src->contributions, n);
+
+        return self;
+}
+
+
+HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
+                                                 const HklBinocularsCube *cube2)
+{
+        return hkl_binoculars_cube_new_copy(cube1);
 }

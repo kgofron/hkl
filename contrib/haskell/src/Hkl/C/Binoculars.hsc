@@ -9,7 +9,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans     #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -33,12 +33,12 @@ import           Data.Word             (Word16)
 import           Foreign.C.Types       (CDouble, CInt(..))
 import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
-import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_)
+import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           Foreign.Storable      (Storable (..))
 import           Hkl.C.Geometry
 import           Hkl.H5
-
+import           System.IO.Unsafe      (unsafePerformIO)
 #include "hkl-binoculars.h"
 
 -- | Axis
@@ -68,10 +68,28 @@ data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
                     , cubeAxes :: [Axis]
                     , cubeHklPointer :: (ForeignPtr (Cube sh))
                     }
+             | EmptyCube
              deriving Show
 
 instance Shape sh => Show (Array F sh CInt) where
   show = showShape . extent
+
+instance Shape sh => Semigroup (Cube sh) where
+  (<>) EmptyCube EmptyCube = EmptyCube
+  (<>) EmptyCube b = b
+  (<>) a EmptyCube = a
+  (<>) (Cube _ _ _ fpa) (Cube _ _ _ fpb) = unsafePerformIO $ do
+    withForeignPtr fpa $ \pa ->
+      withForeignPtr fpb $ \pb ->
+      peek =<< hkl_binoculars_cube_new_merge pa pb
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_merge" \
+hkl_binoculars_cube_new_merge :: Ptr (Cube sh)
+                              -> Ptr (Cube sh)
+                              -> IO (Ptr (Cube sh))
+
+instance Shape sh => Monoid (Cube sh) where
+  mempty = EmptyCube
 
 instance Shape sh => Storable (Cube sh) where
   alignment _ = #{alignment HklBinocularsCube}
@@ -110,6 +128,7 @@ instance Shape sh => ToHdf5 (Cube sh) where
                              , dataset "counts" p
                              , dataset "contributions" c
                              ]
+  toHdf5 EmptyCube = empty
 
 -- | Space
 

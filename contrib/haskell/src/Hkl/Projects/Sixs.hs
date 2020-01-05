@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-
-    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -14,6 +14,9 @@ module Hkl.Projects.Sixs
     ( main_sixs )
         where
 import           Control.Concurrent.Async          (mapConcurrently)
+import           Control.Concurrent.Async.Pool     (mapReduce, wait,
+                                                    withTaskGroup)
+import           Control.Concurrent.STM            (atomically)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, Shape, extent,
@@ -188,37 +191,24 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
 
 --                }
 
+mkCube' :: Int -> IO (Cube Z)
+mkCube' _i = return EmptyCube
+
 main_sixs :: IO ()
 main_sixs = do
   let input = manip2
 
-  pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
-  r <- runSafeT $ toListM $
-      each (toList $ filename input)
-      >-> framesP (h5path input) ImXpadS140
-  r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
-  c <- mkCube ImXpadS140 r'
-  saveHdf5 (output input) c
-  print c
+  withTaskGroup 2 $ \tg -> do
+    reduction <- atomically $ mapReduce tg $ map mkCube' [1..10000]
+    wait reduction >>= print
+
+  -- pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
+  -- r <- runSafeT $ toListM $
+  --     each (toList $ filename input)
+  --     >-> framesP (h5path input) ImXpadS140
+  -- r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
+  -- c <- mkCube ImXpadS140 r'
+  -- saveHdf5 (output input) c
+  -- print c
 
   return ()
-
-    -- {-# LANGUAGE BlockArguments #-}
-
-    -- module Main (main) where
-
-    -- import Control.Concurrent.Async.Pool
-    -- import Control.Concurrent.STM
-    -- import Data.List
-    -- import Data.Monoid
-    -- import System.Environment
-
-    -- defCount :: Int
-    -- defCount = 100
-
-    -- main :: IO ()
-    -- main = do
-    --     n <- maybe defCount read <$> (fmap fst . uncons) <$> getArgs
-    --     withTaskGroup 8 \tg -> do
-    --         reduction <- atomically $ mapReduce tg $ map (return . Sum) [1..n]
-    --         wait reduction >>= print . getSum

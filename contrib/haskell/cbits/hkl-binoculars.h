@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -69,3 +69,6 @@ extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
 extern HklBinocularsCube *hkl_binoculars_cube_new(int32_t n_spaces,
 						  const HklBinocularsSpace *const *spaces,
 						  int32_t n_pixels, const uint16_t **imgs);
+
+extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
+                                                        const HklBinocularsCube *cube2);
