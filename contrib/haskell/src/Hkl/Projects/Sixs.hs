@@ -199,7 +199,7 @@ main_sixs = do
   let input = manip2
 
   withTaskGroup 2 $ \tg -> do
-    reduction <- atomically $ mapReduce tg $ map mkCube' [1..10000]
+    reduction <- atomically $ mapReduce tg $ map mkCube' [1..100]
     wait reduction >>= print
 
   -- pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
