@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE UnicodeSyntax             #-}
 {-
-    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -45,6 +45,7 @@ module Hkl.H5
     , groupp
     , grouppat
     , datasetp
+    , withHdf5Path'
     , withHdf5Path
     )
     where
@@ -335,11 +336,14 @@ grouppat = H5GroupAtPath
 datasetp :: ByteString -> Hdf5Path sh e
 datasetp = H5DatasetPath
 
-withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
-withHdf5Path fn path f = withH5File fn $ \fn' -> go fn' path f
+withHdf5Path' :: File -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
+withHdf5Path' fn' path f = go fn' path f
   where
     go :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
     go l (H5RootPath subpath) f' = go l subpath f'
     go l (H5GroupPath n subpath) f' = withGroup (openGroup l n Nothing) $ \g -> go g subpath f'
     go l (H5GroupAtPath i subpath) f' = withGroupAt l i $ \g -> go g subpath f'
     go l (H5DatasetPath n) f' = withDataset (openDataset l n Nothing) f'
+
+withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
+withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f

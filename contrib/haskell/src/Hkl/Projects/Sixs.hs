@@ -54,6 +54,10 @@ instance Show DataFrame where
 class FramesP a where
   framesP :: a -> Detector b DIM2 -> Pipe FilePath DataFrame (SafeT IO) ()
 
+class Frame a where
+  frame ::  a -> FilePath -> Detector b DIM2 -> Int -> IO DataFrame
+  len :: a -> FilePath -> IO Int
+
 data DataFrameHklH5Path
   = DataFrameHklH5Path
     (Hdf5Path DIM3 Word16) -- Image
@@ -90,6 +94,34 @@ instance FramesP DataFrameHklH5Path where
                            let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
                                source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
+
+instance Frame DataFrameHklH5Path where
+  len (DataFrameHklH5Path _ m _ _ _ _ _ _) fp = do
+    withH5File fp $ \f ->
+      withHdf5Path' f m $ \m' -> do
+      (Just n) <- lenH5Dataspace m'
+      return n
+
+  frame (DataFrameHklH5Path i m o d g u w t) fp det j = do
+    withH5File fp $ \f ->
+      withHdf5Path' f i $ \i' ->
+      withHdf5Path' f m $ \m' ->
+      withHdf5Path' f o $ \o' ->
+      withHdf5Path' f d $ \d' ->
+      withHdf5Path' f g $ \g' ->
+      withHdf5Path' f u $ \u' ->
+      withHdf5Path' f w $ \w' ->
+      withHdf5Path' f t $ \_t' -> do
+      mu <- get_position m' j
+      omega <- get_position o' j
+      delta <- get_position d' j
+      gamma <- get_position g' j
+      wavelength <- get_position w' 0
+      image <- get_image' det i' j
+      ub <- get_ub u'
+      let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
+          source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
+      pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image
 
 -- | DataFrameSpace
 
@@ -191,24 +223,43 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
 
 --                }
 
-mkCube' :: Int -> IO (Cube Z)
-mkCube' _i = return EmptyCube
+mkCube' :: Frame a => a -> FilePath -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Int -> IO (Cube DIM3)
+mkCube' a fp det pixels res i = do
+  df <- frame a fp det i
+  dfs <- space ImXpadS140 pixels res df
+  mkCube det [dfs]
 
-main_sixs :: IO ()
-main_sixs = do
-  let input = manip2
+main_sixs' :: IO ()
+main_sixs' =  do
+  let input = _manip1
+  let det = ImXpadS140
+
+  pixels <- getPixelsCoordinates det (centralPixel input) (sdd input) (detrot input)
 
   withTaskGroup 2 $ \tg -> do
-    reduction <- atomically $ mapReduce tg $ map mkCube' [1..100]
+    let fs = toList (filename input)
+    let fp = Prelude.head fs
+    n <- len (h5path input) fp
+    reduction <- atomically $ mapReduce tg $ map (mkCube' (h5path input) fp det pixels (resolutions input)) [1..n-1]
     wait reduction >>= print
 
-  -- pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
-  -- r <- runSafeT $ toListM $
-  --     each (toList $ filename input)
-  --     >-> framesP (h5path input) ImXpadS140
-  -- r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
-  -- c <- mkCube ImXpadS140 r'
-  -- saveHdf5 (output input) c
-  -- print c
+  return ()
+
+main_sixs'' :: IO ()
+main_sixs'' = do
+  let input = manip2
+
+  pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
+  r <- runSafeT $ toListM $
+      each (toList $ filename input)
+      >-> framesP (h5path input) ImXpadS140
+  r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
+  c <- mkCube ImXpadS140 r'
+  saveHdf5 (output input) c
+  print c
 
   return ()
+
+
+main_sixs :: IO ()
+main_sixs = main_sixs'
