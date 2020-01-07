@@ -101,6 +101,7 @@ instance Frame DataFrameHklH5Path where
       withHdf5Path' f m $ \m' -> do
       (Just n) <- lenH5Dataspace m'
       return n
+  {-# INLINE len #-}
 
   frame (DataFrameHklH5Path i m o d g u w t) fp det j = do
     withH5File fp $ \f ->
@@ -122,6 +123,7 @@ instance Frame DataFrameHklH5Path where
       let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
           source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
       pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image
+  {-# INLINE frame #-}
 
 -- | DataFrameSpace
 
@@ -194,7 +196,7 @@ _manip1 = Input { filename = InputFn "/nfs/ruche-sixs/sixs-soleil/com-sixs/2015/
                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
                 , output = "test1.hdf5"
-                , resolutions = [0.0002, 0.0002, 0.0002]
+                , resolutions = [0.002, 0.002, 0.002]
                 , centralPixel = (0, 0)
                 , sdd = 1 *~ meter
                 , detrot = 90 *~ degree
@@ -233,21 +235,22 @@ main_sixs' :: IO ()
 main_sixs' =  do
   let input = _manip1
   let det = ImXpadS140
+  let fs = toList (filename input)
+  let fp = Prelude.head fs
 
   pixels <- getPixelsCoordinates det (centralPixel input) (sdd input) (detrot input)
+  n <- len (h5path input) fp
+  let ios = map (mkCube' (h5path input) fp det pixels (resolutions input)) [1..n-1]
 
-  withTaskGroup 2 $ \tg -> do
-    let fs = toList (filename input)
-    let fp = Prelude.head fs
-    n <- len (h5path input) fp
-    reduction <- atomically $ mapReduce tg $ map (mkCube' (h5path input) fp det pixels (resolutions input)) [1..n-1]
+  withTaskGroup 24 $ \tg -> do
+    reduction <- atomically $ mapReduce tg ios
     wait reduction >>= print
 
   return ()
 
 main_sixs'' :: IO ()
 main_sixs'' = do
-  let input = manip2
+  let input = _manip1
 
   pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
   r <- runSafeT $ toListM $
@@ -255,7 +258,7 @@ main_sixs'' = do
       >-> framesP (h5path input) ImXpadS140
   r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
   c <- mkCube ImXpadS140 r'
-  saveHdf5 (output input) c
+  -- saveHdf5 (output input) c
   print c
 
   return ()

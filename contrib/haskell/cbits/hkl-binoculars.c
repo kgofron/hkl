@@ -454,14 +454,14 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 	self->photons = calloc(n, sizeof(*self->photons));
 	self->contributions = calloc(n, sizeof(*self->contributions));
 
-	hkl_binoculars_cube_fprintf(stdout, self);
+	/* hkl_binoculars_cube_fprintf(stdout, self); */
 
 	/* add all the spaces */
 	for(i=0; i<n_spaces; ++i){
 		add_space(self, spaces[i], n_pixels, imgs[i], offset0);
 	}
 
-	hkl_binoculars_cube_fprintf(stdout, self);
+	/* hkl_binoculars_cube_fprintf(stdout, self); */
 
 	return self;
 }

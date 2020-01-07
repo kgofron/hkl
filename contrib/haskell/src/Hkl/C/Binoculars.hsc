@@ -81,7 +81,7 @@ instance Shape sh => Semigroup (Cube sh) where
   (<>) (Cube _ _ _ fpa) (Cube _ _ _ fpb) = unsafePerformIO $ do
     withForeignPtr fpa $ \pa ->
       withForeignPtr fpb $ \pb ->
-      peek =<< hkl_binoculars_cube_new_merge pa pb
+      peek =<< {-# SCC "hkl_binoculars_cube_new_merge" #-} hkl_binoculars_cube_new_merge pa pb
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_merge" \
 hkl_binoculars_cube_new_merge :: Ptr (Cube sh)
