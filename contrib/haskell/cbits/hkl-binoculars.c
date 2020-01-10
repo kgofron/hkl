@@ -466,6 +466,28 @@ HklBinocularsCube *hkl_binoculars_cube_new(int n_spaces, const HklBinocularsSpac
 	return self;
 }
 
+HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
+                                                      int32_t n_pixels, const uint16_t *img)
+{
+        int i;
+        size_t n = cube_size(space->n_axes, space->axes);
+	HklBinocularsCube *self = malloc(sizeof(*self));
+	int64_t offset0 = compute_offset(space->n_axes, space->axes);
+
+	self->n_axes = space->n_axes;
+	self->axes = calloc(self->n_axes, sizeof(HklBinocularsAxis));
+	for(i=0; i<self->n_axes; ++i)
+		self->axes[i] = space->axes[i];
+
+	/* allocated the final cube */
+	self->photons = calloc(n, sizeof(*self->photons));
+	self->contributions = calloc(n, sizeof(*self->contributions));
+
+        add_space(self, space, n_pixels, img, offset0);
+
+	return self;
+}
+
 HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src)
 {
 	int i;

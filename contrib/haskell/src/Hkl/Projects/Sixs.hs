@@ -18,11 +18,13 @@ import           Control.Concurrent.Async.Pool     (mapReduce, wait,
                                                     withTaskGroup)
 import           Control.Concurrent.STM            (atomically)
 import           Control.Monad                     (forM_, forever)
+import           Control.Monad.Extra               (mconcatMapM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, Shape, extent,
                                                     listOfShape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
+import           Data.List.Extra                   (chunksOf)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
@@ -96,13 +98,14 @@ instance FramesP DataFrameHklH5Path where
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
 
 instance Frame DataFrameHklH5Path where
+  {-# INLINE len #-}
   len (DataFrameHklH5Path _ m _ _ _ _ _ _) fp = do
     withH5File fp $ \f ->
       withHdf5Path' f m $ \m' -> do
       (Just n) <- lenH5Dataspace m'
       return n
-  {-# INLINE len #-}
 
+  {-# INLINE frame #-}
   frame (DataFrameHklH5Path i m o d g u w t) fp det j = do
     withH5File fp $ \f ->
       withHdf5Path' f i $ \i' ->
@@ -123,7 +126,6 @@ instance Frame DataFrameHklH5Path where
       let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
           source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
       pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image
-  {-# INLINE frame #-}
 
 -- | DataFrameSpace
 
@@ -132,6 +134,7 @@ data DataFrameSpace sh = DataFrameSpace (ForeignPtr Word16) (Space sh)
 
 type Resolutions = [Double]
 
+{-# INLINE space #-}
 space :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrame -> IO (DataFrameSpace DIM3)
 space detector pixels rs (DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
   let k = 2 * pi / (w /~ angstrom)
@@ -225,11 +228,21 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
 
 --                }
 
-mkCube' :: Frame a => a -> FilePath -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Int -> IO (Cube DIM3)
-mkCube' a fp det pixels res i = do
+{-# INLINE mkCube' #-}
+mkCube' :: Shape sh => Detector a DIM2 -> DataFrameSpace sh -> IO (Cube' sh)
+mkCube' detector (DataFrameSpace img s) = do
+  let space = spaceHklPointer s
+  let nPixels = size . shape $ detector
+  withForeignPtr space $ \pspace ->
+    withForeignPtr img $ \pimg ->
+    peek =<< {-# SCC "hkl_binoculars_cube_new_from_space" #-} hkl_binoculars_cube_new_from_space pspace (toEnum nPixels) pimg
+
+{-# INLINE mkCube'' #-}
+mkCube'' :: Frame a => a -> FilePath -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Int -> IO (Cube' DIM3)
+mkCube'' a fp det pixels res i = do
   df <- frame a fp det i
-  dfs <- space ImXpadS140 pixels res df
-  mkCube det [dfs]
+  mkCube' det =<< space ImXpadS140 pixels res df
+
 
 main_sixs' :: IO ()
 main_sixs' =  do
@@ -240,11 +253,15 @@ main_sixs' =  do
 
   pixels <- getPixelsCoordinates det (centralPixel input) (sdd input) (detrot input)
   n <- len (h5path input) fp
-  let ios = map (mkCube' (h5path input) fp det pixels (resolutions input)) [1..n-1]
+  let ios = map (mkCube'' (h5path input) fp det pixels (resolutions input)) [1..n-1]
 
-  withTaskGroup 24 $ \tg -> do
-    reduction <- atomically $ mapReduce tg ios
-    wait reduction >>= print
+  -- withTaskGroup 24 $ \tg -> do
+  --   reduction <- atomically $ mapReduce tg ios
+  --   wait reduction >>= print
+
+  r <- mapConcurrently mconcat (chunksOf 100 ios)
+  let c = mconcat r
+  print c
 
   return ()
 

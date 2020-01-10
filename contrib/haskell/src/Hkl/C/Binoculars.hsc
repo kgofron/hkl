@@ -21,8 +21,10 @@
 
 module Hkl.C.Binoculars
        ( Cube(..)
+       , Cube'(..)
        , Space(..)
        , hkl_binoculars_cube_new
+       , hkl_binoculars_cube_new_from_space
        , hkl_binoculars_space_q
        ) where
 
@@ -61,6 +63,46 @@ instance Storable Axis where
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_axis_array" \
 hkl_binoculars_axis_array :: Ptr Axis -> IO (Ptr CDouble)
 
+-- | Cube'
+
+data Cube' sh = Cube' (ForeignPtr (Cube' sh))
+              | EmptyCube'
+              deriving Show
+
+instance Shape sh => Semigroup (Cube' sh) where
+  {-# INLINE (<>) #-}
+  EmptyCube' <> a = a
+  a <> EmptyCube' = a
+  (Cube' fpa) <> (Cube' fpb) = unsafePerformIO $ do
+    withForeignPtr fpa $ \pa ->
+      withForeignPtr fpb $ \pb ->
+      peek =<< {-# SCC "hkl_binoculars_cube_new_merge'" #-} hkl_binoculars_cube_new_merge' pa pb
+
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_merge" \
+hkl_binoculars_cube_new_merge' :: Ptr (Cube' sh)
+                               -> Ptr (Cube' sh)
+                               -> IO (Ptr (Cube' sh))
+
+
+instance Shape sh => Monoid (Cube' sh) where
+  {-# INLINE mempty #-}
+  mempty = EmptyCube'
+
+instance Shape sh => Storable (Cube' sh) where
+  alignment _ = #{alignment HklBinocularsCube}
+  sizeOf _ = #{size HklBinocularsCube}
+  poke _ _ = undefined
+  {-# INLINE peek #-}
+  peek ptr = Cube' <$> newForeignPtr hkl_binoculars_cube_free' ptr
+
+foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free' :: FunPtr (Ptr (Cube' sh) -> IO ())
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_from_space" \
+hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
+                                   -> CInt -- int32_t n_pixels
+                                   -> Ptr Word16 -- uint16_t *imgs);
+                                   -> IO (Ptr (Cube' sh))
 -- | Cube
 
 data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
@@ -95,6 +137,7 @@ instance Shape sh => Storable (Cube sh) where
   alignment _ = #{alignment HklBinocularsCube}
   sizeOf _ = #{size HklBinocularsCube}
   poke _ _ = undefined
+  {-# INLINE peek #-}
   peek ptr = do
     n <- #{peek HklBinocularsCube, n_axes} ptr :: IO CInt
     allocaArray (fromEnum n) $ \dims' -> do
