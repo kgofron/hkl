@@ -534,24 +534,25 @@ HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
 	self->photons = calloc(n, sizeof(*self->photons));
 	self->contributions = calloc(n, sizeof(*self->contributions));
 
-        size_t stride0 = 1;
-        size_t stride1 = axis_size(&self->axes[0]);
-        size_t stride2 = stride1 * axis_size(&self->axes[1]);
+        size_t stride_i = 1;
+        size_t stride_j = stride_i * axis_size(&self->axes[2]);
+        size_t stride_k = stride_j * axis_size(&self->axes[1]);
 
         /* fill the values of cube1 */
-        size_t stride0_1 = 1;
-        size_t stride1_1 = axis_size(&cube1->axes[0]);
-        size_t stride2_1 = stride1_1 * axis_size(&cube1->axes[1]);
+        size_t stride_i_1 = 1;
+        size_t stride_j_1 = stride_i_1 * axis_size(&cube1->axes[2]);
+        size_t stride_k_1 = stride_j_1 * axis_size(&cube1->axes[1]);
 
-        i_offset = cube1->axes[0].imin - self->axes[0].imin;
+        i_offset = cube1->axes[2].imin - self->axes[2].imin;
         j_offset = cube1->axes[1].imin - self->axes[1].imin;
-        k_offset = cube1->axes[2].imin - self->axes[2].imin;
+        k_offset = cube1->axes[0].imin - self->axes[0].imin;
 
-        for(k=0; k<axis_size(&cube1->axes[2]); ++k){
+
+        for(k=0; k<axis_size(&cube1->axes[0]); ++k){
                 for(j=0; j<axis_size(&cube1->axes[1]); ++j){
-                        for(i=0; i<axis_size(&cube1->axes[0]); ++i){
-                                size_t w = (i + i_offset) * stride0 + (j + j_offset) * stride1 + (k + k_offset) * stride2;
-                                size_t w1 = i * stride0_1 + j * stride1_1 + k * stride2_1;
+                        for(i=0; i<axis_size(&cube1->axes[2]); ++i){
+                                size_t w = (i + i_offset) * stride_i + (j + j_offset) * stride_j + (k + k_offset) * stride_k;
+                                size_t w1 = i * stride_i_1 + j * stride_j_1 + k * stride_k_1;
 
                                 self->photons[w] += cube1->photons[w1];
                                 self->contributions[w] += cube1->contributions[w1];
@@ -560,19 +561,19 @@ HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
         }
 
         /* add values of cube2 */
-        size_t stride0_2 = 1;
-        size_t stride1_2 = axis_size(&cube2->axes[0]);
-        size_t stride2_2 = stride1_2 * axis_size(&cube2->axes[1]);
+        size_t stride_i_2 = 1;
+        size_t stride_j_2 = stride_i_2 * axis_size(&cube2->axes[2]);
+        size_t stride_k_2 = stride_j_2 * axis_size(&cube2->axes[1]);
 
-        i_offset = cube2->axes[0].imin - self->axes[0].imin;
+        i_offset = cube2->axes[2].imin - self->axes[2].imin;
         j_offset = cube2->axes[1].imin - self->axes[1].imin;
-        k_offset = cube2->axes[2].imin - self->axes[2].imin;
+        k_offset = cube2->axes[0].imin - self->axes[0].imin;
 
-        for(k=0; k<axis_size(&cube2->axes[2]); ++k){
+        for(k=0; k<axis_size(&cube2->axes[0]); ++k){
                 for(j=0; j<axis_size(&cube2->axes[1]); ++j){
-                        for(i=0; i<axis_size(&cube2->axes[0]); ++i){
-                                size_t w = (i + i_offset) * stride0 + (j + j_offset) * stride1 + (k + k_offset) * stride2;
-                                size_t w2 = i * stride0_2 + j * stride1_2 + k * stride2_2;
+                        for(i=0; i<axis_size(&cube2->axes[2]); ++i){
+                                size_t w = (i + i_offset) * stride_i + (j + j_offset) * stride_j + (k + k_offset) * stride_k;
+                                size_t w2 = i * stride_i_2 + j * stride_j_2 + k * stride_k_2;
 
                                 self->photons[w] += cube2->photons[w2];
                                 self->contributions[w] += cube2->contributions[w2];
