@@ -24,8 +24,10 @@ module Hkl.C.Binoculars
        , Cube'(..)
        , Space(..)
        , hkl_binoculars_cube_new
+       , hkl_binoculars_cube_new'
        , hkl_binoculars_cube_new_from_space
        , hkl_binoculars_space_q
+       , toCube
        ) where
 
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
@@ -103,6 +105,14 @@ hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
                                    -> CInt -- int32_t n_pixels
                                    -> Ptr Word16 -- uint16_t *imgs);
                                    -> IO (Ptr (Cube' sh))
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
+hkl_binoculars_cube_new' :: CInt -- number of Space
+                         -> Ptr (Ptr (Space sh)) -- spaces
+                         -> CInt -- int32_t n_pixels
+                         -> Ptr (Ptr Word16) -- uint16_t **imgs);
+                         -> IO (Ptr (Cube' sh))
+
 -- | Cube
 
 data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
@@ -172,6 +182,15 @@ instance Shape sh => ToHdf5 (Cube sh) where
                              , dataset "contributions" c
                              ]
   toHdf5 EmptyCube = empty
+
+toCube :: Shape sh => Cube' sh -> IO (Cube sh)
+toCube EmptyCube' = pure EmptyCube
+toCube (Cube' fp) = withForeignPtr fp $ \p -> do
+  peek =<< hkl_binoculars_cube_new_copy p
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_copy" \
+hkl_binoculars_cube_new_copy :: Ptr (Cube' sh) -- src
+                             -> IO (Ptr (Cube sh))
 
 -- | Space
 

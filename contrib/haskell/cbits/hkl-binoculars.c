@@ -505,8 +505,8 @@ HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src)
 	self->contributions = malloc(n * sizeof(*self->contributions));
 
         /* copy the data */
-        memcpy(self->photons, src->photons, n);
-        memcpy(self->contributions, src->contributions, n);
+        memcpy(self->photons, src->photons, n * sizeof(*self->photons));
+        memcpy(self->contributions, src->contributions, n * sizeof(*self->contributions));
 
         return self;
 }

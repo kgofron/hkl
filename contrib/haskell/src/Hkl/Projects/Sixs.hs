@@ -14,11 +14,7 @@ module Hkl.Projects.Sixs
     ( main_sixs )
         where
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Concurrent.Async.Pool     (mapReduce, wait,
-                                                    withTaskGroup)
-import           Control.Concurrent.STM            (atomically)
 import           Control.Monad                     (forM_, forever)
-import           Control.Monad.Extra               (mconcatMapM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, Shape, extent,
                                                     listOfShape, size)
@@ -55,10 +51,6 @@ instance Show DataFrame where
 
 class FramesP a where
   framesP :: a -> Detector b DIM2 -> Pipe FilePath DataFrame (SafeT IO) ()
-
-class Frame a where
-  frame ::  a -> FilePath -> Detector b DIM2 -> Int -> IO DataFrame
-  len :: a -> FilePath -> IO Int
 
 data DataFrameHklH5Path
   = DataFrameHklH5Path
@@ -97,36 +89,6 @@ instance FramesP DataFrameHklH5Path where
                                source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
 
-instance Frame DataFrameHklH5Path where
-  {-# INLINE len #-}
-  len (DataFrameHklH5Path _ m _ _ _ _ _ _) fp = do
-    withH5File fp $ \f ->
-      withHdf5Path' f m $ \m' -> do
-      (Just n) <- lenH5Dataspace m'
-      return n
-
-  {-# INLINE frame #-}
-  frame (DataFrameHklH5Path i m o d g u w t) fp det j = do
-    withH5File fp $ \f ->
-      withHdf5Path' f i $ \i' ->
-      withHdf5Path' f m $ \m' ->
-      withHdf5Path' f o $ \o' ->
-      withHdf5Path' f d $ \d' ->
-      withHdf5Path' f g $ \g' ->
-      withHdf5Path' f u $ \u' ->
-      withHdf5Path' f w $ \w' ->
-      withHdf5Path' f t $ \_t' -> do
-      mu <- get_position m' j
-      omega <- get_position o' j
-      delta <- get_position d' j
-      gamma <- get_position g' j
-      wavelength <- get_position w' 0
-      image <- get_image' det i' j
-      ub <- get_ub u'
-      let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
-          source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
-      pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image
-
 -- | DataFrameSpace
 
 data DataFrameSpace sh = DataFrameSpace (ForeignPtr Word16) (Space sh)
@@ -157,8 +119,9 @@ withForeignPtrs (fp:fps) f =
   withForeignPtr fp $ \p ->
   withForeignPtrs fps $ \ps -> f (p:ps)
 
-mkCube :: Shape sh => Detector a DIM2 -> [DataFrameSpace sh] -> IO (Cube sh)
-mkCube detector dfs = do
+{-# INLINE mkCube' #-}
+mkCube' :: Shape sh => Detector a DIM2 -> [DataFrameSpace sh] -> IO (Cube' sh)
+mkCube' detector dfs = do
   let spaces = [spaceHklPointer s | (DataFrameSpace _ s) <- dfs]
   let images = [img | (DataFrameSpace img _) <- dfs]
   let nPixels = size . shape $ detector
@@ -166,7 +129,7 @@ mkCube detector dfs = do
     withForeignPtrs images $ \pimages ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
     withArrayLen pimages $ \_ images' -> do
-    peek =<< {-# SCC "hkl_binoculars_cube_new" #-} hkl_binoculars_cube_new (toEnum nSpaces') spaces' (toEnum nPixels) images'
+    peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces' (toEnum nPixels) images'
 
 type Template = String
 
@@ -228,58 +191,21 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
 
 --                }
 
-{-# INLINE mkCube' #-}
-mkCube' :: Shape sh => Detector a DIM2 -> DataFrameSpace sh -> IO (Cube' sh)
-mkCube' detector (DataFrameSpace img s) = do
-  let space = spaceHklPointer s
-  let nPixels = size . shape $ detector
-  withForeignPtr space $ \pspace ->
-    withForeignPtr img $ \pimg ->
-    peek =<< {-# SCC "hkl_binoculars_cube_new_from_space" #-} hkl_binoculars_cube_new_from_space pspace (toEnum nPixels) pimg
-
-{-# INLINE mkCube'' #-}
-mkCube'' :: Frame a => a -> FilePath -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Int -> IO (Cube' DIM3)
-mkCube'' a fp det pixels res i = do
-  df <- frame a fp det i
-  mkCube' det =<< space ImXpadS140 pixels res df
-
-
 main_sixs' :: IO ()
-main_sixs' =  do
-  let input = _manip1
-  let det = ImXpadS140
-  let fs = toList (filename input)
-  let fp = Prelude.head fs
-
-  pixels <- getPixelsCoordinates det (centralPixel input) (sdd input) (detrot input)
-  n <- len (h5path input) fp
-  let ios = map (mkCube'' (h5path input) fp det pixels (resolutions input)) [1..n-1]
-
-  -- withTaskGroup 24 $ \tg -> do
-  --   reduction <- atomically $ mapReduce tg ios
-  --   wait reduction >>= print
-
-  r <- mapConcurrently mconcat (chunksOf 100 ios)
-  let c = mconcat r
-  print c
-
-  return ()
-
-main_sixs'' :: IO ()
-main_sixs'' = do
-  let input = _manip1
+main_sixs' = do
+  let input = manip2
 
   pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
   r <- runSafeT $ toListM $
       each (toList $ filename input)
       >-> framesP (h5path input) ImXpadS140
   r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
-  c <- mkCube ImXpadS140 r'
-  -- saveHdf5 (output input) c
+  c' <- mconcat <$> mapConcurrently (mkCube' ImXpadS140) (chunksOf 1000 r')
+  c <- toCube c'
+  saveHdf5 (output input) c
   print c
 
   return ()
-
 
 main_sixs :: IO ()
 main_sixs = main_sixs'

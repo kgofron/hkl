@@ -70,6 +70,8 @@ extern HklBinocularsCube *hkl_binoculars_cube_new(int32_t n_spaces,
 						  const HklBinocularsSpace *const *spaces,
 						  int32_t n_pixels, const uint16_t **imgs);
 
+extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
+
 extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
                                                              int32_t n_pixels,
                                                              const uint16_t *img);
