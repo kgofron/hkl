@@ -20,7 +20,6 @@ import           Data.Array.Repa                   (Array, Shape, extent,
                                                     listOfShape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.List.Extra                   (chunksOf)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
@@ -35,9 +34,39 @@ import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
                                                     meter, (*~), (/~))
 import           Pipes                             (Pipe, await, each, yield,
                                                     (>->))
-import           Pipes.Prelude                     (toListM)
+import           Pipes.Prelude                     (mapM, toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
 import           Text.Printf                       (printf)
+
+import           Prelude                           hiding (mapM)
+
+data Chunk = Chunk FilePath Int Int
+  deriving Show
+
+chunkLen :: Chunk -> Int
+chunkLen (Chunk _ f t) = t - f
+
+splitChunk :: Chunk -> Int -> (Chunk, Chunk)
+splitChunk (Chunk fn f t) n = ((Chunk fn f n), (Chunk fn n t))
+
+chunks :: Int -> [Chunk] -> [[Chunk]]
+chunks n cs = reverse $ map reverse $ go cs [[]] 0
+  where
+    go :: [Chunk] -> [[Chunk]] -> Int -> [[Chunk]]
+    go [] _ _ = []
+    go [x@(Chunk fn f t)] (c:cs') acc =
+      if acc + chunkLen x < n
+      then (x : c) : cs'
+      else let (xp1, xp2) = splitChunk x (f + n - acc)
+           in
+             go (xp1 : []) ([] : (xp2 : c) : cs') 0
+
+    go (x@(Chunk fn f t):xs) (c:cs') acc =
+      if acc + chunkLen x < n
+      then go xs ((x : c) : cs') (acc + chunkLen x)
+      else let (xp1, xp2) = splitChunk x (f + n - acc)
+           in
+             go (xp1 : xs) ([] : (xp2 : c) : cs') 0
 
 data DataFrame
     = DataFrame
@@ -50,7 +79,8 @@ instance Show DataFrame where
   show (DataFrame i g m _) = unwords [show i, show g, show m]
 
 class FramesP a where
-  framesP :: a -> Detector b DIM2 -> Pipe FilePath DataFrame (SafeT IO) ()
+  lenP :: a -> Pipe FilePath Int (SafeT IO) ()
+  framesP :: a -> Detector b DIM2 -> Pipe Chunk DataFrame (SafeT IO) ()
 
 data DataFrameHklH5Path
   = DataFrameHklH5Path
@@ -64,8 +94,15 @@ data DataFrameHklH5Path
     (Hdf5Path DIM1 Char) -- DiffractometerType
 
 instance FramesP DataFrameHklH5Path where
-  framesP (DataFrameHklH5Path i m o d g u w t) det = forever $ do
+  lenP (DataFrameHklH5Path _ m _ _ _ _ _ _) = forever $ do
     fp <- await
+    withFileP (openH5 fp) $ \f ->
+      withHdf5PathP f m $ \m' -> do
+      (Just n) <- liftIO $ lenH5Dataspace m'
+      yield n
+
+  framesP (DataFrameHklH5Path i m o d g u w t) det = forever $ do
+    (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' ->
       withHdf5PathP f m $ \m' ->
@@ -75,8 +112,7 @@ instance FramesP DataFrameHklH5Path where
       withHdf5PathP f u $ \u' ->
       withHdf5PathP f w $ \w' ->
       withHdf5PathP f t $ \_t' -> do
-      (Just n) <- liftIO $ lenH5Dataspace m'
-      forM_ [0..n-1] (\j -> yield =<< liftIO
+      forM_ [from..to-1] (\j -> yield =<< liftIO
                        (do
                            mu <- get_position m' j
                            omega <- get_position o' j
@@ -110,6 +146,9 @@ space detector pixels rs (DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = d
       p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
       return (DataFrameSpace img s)
+
+spaceP :: (MonadIO m) => Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Pipe DataFrame (DataFrameSpace DIM3) m ()
+spaceP detector pixels rs = mapM (\r -> liftIO $ space detector pixels rs r)
 
 -- | Create the Cube
 
@@ -194,13 +233,26 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
 main_sixs' :: IO ()
 main_sixs' = do
   let input = manip2
+  let detector = ImXpadS140
 
-  pixels <- getPixelsCoordinates ImXpadS140 (centralPixel input) (sdd input) (detrot input)
-  r <- runSafeT $ toListM $
-      each (toList $ filename input)
-      >-> framesP (h5path input) ImXpadS140
-  r' <- mapConcurrently (space ImXpadS140 pixels (resolutions input)) r
-  c' <- mconcat <$> mapConcurrently (mkCube' ImXpadS140) (chunksOf 1000 r')
+  pixels <- getPixelsCoordinates detector (centralPixel input) (sdd input) (detrot input)
+
+  let fns = toList $ filename input
+  ns <- runSafeT $ toListM $
+       each fns
+       >-> lenP (h5path input)
+
+  let ntot = foldl (+) 0 ns
+  print ntot
+  let cs = [Chunk f 0 n | (f, n) <- zip fns ns]
+  let ncs = chunks 1270 cs
+
+  r' <- mapConcurrently (\cs' -> runSafeT $ toListM $
+                               each cs'
+                               >-> framesP (h5path input) detector
+                               >-> spaceP detector pixels (resolutions input)
+                       ) ncs
+  c' <- mconcat <$> mapConcurrently (mkCube' detector) r'
   c <- toCube c'
   saveHdf5 (output input) c
   print c
