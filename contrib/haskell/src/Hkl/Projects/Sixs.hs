@@ -1,5 +1,9 @@
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE GADTs              #-}
+{-# LANGUAGE MultiWayIf         #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -40,33 +44,33 @@ import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (mapM)
 
-data Chunk = Chunk FilePath Int Int
-  deriving Show
+data Chunk n a = Chunk !a !n !n
+deriving instance (Show n, Show a) => Show (Chunk n a)
 
-chunkLen :: Chunk -> Int
-chunkLen (Chunk _ f t) = t - f
+cweight :: Num n => Chunk n a -> n
+cweight (Chunk _ l h) = h - l
 
-splitChunk :: Chunk -> Int -> (Chunk, Chunk)
-splitChunk (Chunk fn f t) n = ((Chunk fn f n), (Chunk fn n t))
+csplit :: Num n => Chunk n a -> n -> (Chunk n a, Chunk n a)
+csplit (Chunk a l h) n = ( (Chunk a l (l + n)), (Chunk a (l+n) h) )
 
-chunks :: Int -> [Chunk] -> [[Chunk]]
-chunks n cs = reverse $ map reverse $ go cs [[]] 0
+chunk :: (Num n, Ord n) => n -> [Chunk n a] -> [[Chunk n a]]
+chunk target = go target target
   where
-    go :: [Chunk] -> [[Chunk]] -> Int -> [[Chunk]]
-    go [] _ _ = []
-    go [x@(Chunk fn f t)] (c:cs') acc =
-      if acc + chunkLen x < n
-      then (x : c) : cs'
-      else let (xp1, xp2) = splitChunk x (f + n - acc)
-           in
-             go (xp1 : []) ([] : (xp2 : c) : cs') 0
+    go _ _ []          = []
+    go tgt gap [x]     = golast tgt gap x
+    go tgt gap ~(x:xs) =
+      let gap' = gap - cweight x
+      in if | gap' > 0                -> cons1 x $ go tgt gap' xs
+            | gap' == 0                -> [x] : go tgt tgt xs
+            | (x1, x2) <- csplit x gap -> [x1] : go tgt tgt (x2 : xs)
 
-    go (x@(Chunk fn f t):xs) (c:cs') acc =
-      if acc + chunkLen x < n
-      then go xs ((x : c) : cs') (acc + chunkLen x)
-      else let (xp1, xp2) = splitChunk x (f + n - acc)
-           in
-             go (xp1 : xs) ([] : (xp2 : c) : cs') 0
+    cons1 !x ~(c:cs) = (x : c) : cs
+
+    golast tgt gap x =
+      if | cweight x <= gap         -> [x] : []
+         | (x1, x2) <- csplit x gap -> [x1] : golast tgt tgt x2
+
+{-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
 
 data DataFrame
     = DataFrame
@@ -80,7 +84,7 @@ instance Show DataFrame where
 
 class FramesP a where
   lenP :: a -> Pipe FilePath Int (SafeT IO) ()
-  framesP :: a -> Detector b DIM2 -> Pipe Chunk DataFrame (SafeT IO) ()
+  framesP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrame (SafeT IO) ()
 
 data DataFrameHklH5Path
   = DataFrameHklH5Path
@@ -245,7 +249,7 @@ main_sixs' = do
   let ntot = foldl (+) 0 ns
   print ntot
   let cs = [Chunk f 0 n | (f, n) <- zip fns ns]
-  let ncs = chunks 1270 cs
+  let ncs = chunk 1270 cs
 
   r' <- mapConcurrently (\cs' -> runSafeT $ toListM $
                                each cs'
