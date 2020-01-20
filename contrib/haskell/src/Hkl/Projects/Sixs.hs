@@ -24,6 +24,8 @@ import           Data.Array.Repa                   (Array, Shape, extent,
                                                     listOfShape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
+import           Data.IORef                        (IORef, modifyIORef',
+                                                    newIORef, readIORef)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
@@ -37,8 +39,8 @@ import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
                                                     meter, (*~), (/~))
-import           Pipes                             (Pipe, await, each, yield,
-                                                    (>->))
+import           Pipes                             (Consumer, Pipe, await, each,
+                                                    yield, (>->))
 import           Pipes.Prelude                     (mapM, toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
 import           Text.Printf                       (printf)
@@ -175,6 +177,12 @@ mkCube' detector dfs = do
     withArrayLen pimages $ \_ images' -> do
     peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces' (toEnum nPixels) images'
 
+mkCube'P :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
+mkCube'P det ref = forever $ do
+  s <- await
+  c2 <- liftIO $ mkCube' det [s]
+  liftIO $ modifyIORef' ref ((<>) c2)
+
 type Template = String
 
 data InputFn = InputFn FilePath
@@ -256,12 +264,17 @@ main_sixs' = do
   pixels <- getPixelsCoordinates detector (centralPixel input) (sdd input) (detrot input)
 
   jobs <- mkJobs input
-  r' <- mapConcurrently (\job -> runSafeT $ toListM $
+  r' <- mapConcurrently (\job -> do
+                           s <- newIORef EmptyCube'
+                           _ <- runSafeT $ toListM $
                                each job
                                >-> framesP (h5path input) detector
                                >-> spaceP detector pixels (resolutions input)
+                               >-> mkCube'P detector s
+                           readIORef s
                        ) jobs
-  c' <- mconcat <$> mapConcurrently (mkCube' detector) r'
+  let c' = mconcat r'
+  -- c' <- mconcat <$> mapConcurrently (mkCube' detector) r'
   c <- toCube c'
   saveHdf5 (output input) c
   print c
