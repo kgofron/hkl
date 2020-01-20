@@ -31,6 +31,7 @@ import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr)
 import           Foreign.Storable                  (peek)
+import           GHC.Conc                          (getNumCapabilities)
 import           Hkl
 import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
@@ -234,6 +235,19 @@ manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/201
 
 --                }
 
+mkJobs' :: Int -> [FilePath] -> [Int] -> [[Chunk Int FilePath]]
+mkJobs' n fns ts = chunk n [Chunk f 0 t | (f, t) <- zip fns ts]
+
+mkJobs :: Input -> IO [[Chunk Int FilePath]]
+mkJobs i = do
+  let fns = toList $ filename i
+  ns <- runSafeT $ toListM $
+       each fns
+       >-> lenP (h5path i)
+  c <- getNumCapabilities
+  let ntot = foldl (+) 0 ns
+  return $ mkJobs' (quot ntot c) fns ns
+
 main_sixs' :: IO ()
 main_sixs' = do
   let input = manip2
@@ -241,21 +255,12 @@ main_sixs' = do
 
   pixels <- getPixelsCoordinates detector (centralPixel input) (sdd input) (detrot input)
 
-  let fns = toList $ filename input
-  ns <- runSafeT $ toListM $
-       each fns
-       >-> lenP (h5path input)
-
-  let ntot = foldl (+) 0 ns
-  print ntot
-  let cs = [Chunk f 0 n | (f, n) <- zip fns ns]
-  let ncs = chunk 1270 cs
-
-  r' <- mapConcurrently (\cs' -> runSafeT $ toListM $
-                               each cs'
+  jobs <- mkJobs input
+  r' <- mapConcurrently (\job -> runSafeT $ toListM $
+                               each job
                                >-> framesP (h5path input) detector
                                >-> spaceP detector pixels (resolutions input)
-                       ) ncs
+                       ) jobs
   c' <- mconcat <$> mapConcurrently (mkCube' detector) r'
   c <- toCube c'
   saveHdf5 (output input) c
