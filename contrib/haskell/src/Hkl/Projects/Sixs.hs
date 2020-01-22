@@ -15,7 +15,7 @@
     Portability: GHC only (not tested)
 -}
 module Hkl.Projects.Sixs
-    ( main_sixs )
+    ( mainSixs )
         where
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad                     (forM_, forever)
@@ -54,7 +54,7 @@ cweight :: Num n => Chunk n a -> n
 cweight (Chunk _ l h) = h - l
 
 csplit :: Num n => Chunk n a -> n -> (Chunk n a, Chunk n a)
-csplit (Chunk a l h) n = ( (Chunk a l (l + n)), (Chunk a (l+n) h) )
+csplit (Chunk a l h) n = (Chunk a l (l + n), Chunk a (l+n) h)
 
 chunk :: (Num n, Ord n) => n -> [Chunk n a] -> [[Chunk n a]]
 chunk target = go target target
@@ -70,7 +70,7 @@ chunk target = go target target
     cons1 !x ~(c:cs) = (x : c) : cs
 
     golast tgt gap x =
-      if | cweight x <= gap         -> [x] : []
+      if | cweight x <= gap         -> [[x]]
          | (x1, x2) <- csplit x gap -> [x1] : golast tgt tgt x2
 
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
@@ -118,7 +118,7 @@ instance FramesP DataFrameHklH5Path where
       withHdf5PathP f g $ \g' ->
       withHdf5PathP f u $ \u' ->
       withHdf5PathP f w $ \w' ->
-      withHdf5PathP f t $ \_t' -> do
+      withHdf5PathP f t $ \_t' ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
                        (do
                            mu <- get_position m' j
@@ -155,7 +155,7 @@ space detector pixels rs (DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = d
       return (DataFrameSpace img s)
 
 spaceP :: (MonadIO m) => Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Pipe DataFrame (DataFrameSpace DIM3) m ()
-spaceP detector pixels rs = mapM (\r -> liftIO $ space detector pixels rs r)
+spaceP detector pixels rs = mapM (liftIO . space detector pixels rs)
 
 -- | Create the Cube
 
@@ -174,14 +174,14 @@ mkCube' detector dfs = do
   withForeignPtrs spaces $ \pspaces ->
     withForeignPtrs images $ \pimages ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
-    withArrayLen pimages $ \_ images' -> do
+    withArrayLen pimages $ \_ images' ->
     peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces' (toEnum nPixels) images'
 
 mkCube'P :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
 mkCube'P det ref = forever $ do
   s <- await
   c2 <- liftIO $ mkCube' det [s]
-  liftIO $ modifyIORef' ref ((<>) c2)
+  liftIO $ modifyIORef' ref (c2 <>)
 
 type Template = String
 
@@ -198,7 +198,7 @@ data Input = Input { filename     :: InputFn
                    , output       :: FilePath
                    , resolutions  :: [Double]
                    , centralPixel :: (Int, Int)  -- x, y
-                   , sdd          :: (Length Float)  -- sample to detector distance
+                   , sdd          :: Length Float  -- sample to detector distance
                    , detrot       :: Angle Float
                    }
 
@@ -253,11 +253,11 @@ mkJobs i = do
        each fns
        >-> lenP (h5path i)
   c <- getNumCapabilities
-  let ntot = foldl (+) 0 ns
+  let ntot = sum ns
   return $ mkJobs' (quot ntot c) fns ns
 
-main_sixs' :: IO ()
-main_sixs' = do
+mainSixs :: IO ()
+mainSixs = do
   let input = manip2
   let detector = ImXpadS140
 
@@ -280,6 +280,3 @@ main_sixs' = do
   print c
 
   return ()
-
-main_sixs :: IO ()
-main_sixs = main_sixs'

@@ -1,8 +1,8 @@
-import Hkl.Projects
+import           Hkl.Projects
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
 main :: IO ()
 -- main = main_calibration
 -- main = main_diffabs
-main = main_sixs
+main = mainSixs
