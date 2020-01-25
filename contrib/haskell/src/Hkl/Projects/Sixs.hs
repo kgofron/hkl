@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns       #-}
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE MultiWayIf         #-}
 {-# LANGUAGE OverloadedStrings  #-}
@@ -18,6 +17,7 @@ module Hkl.Projects.Sixs
     ( mainSixs )
         where
 import           Control.Concurrent.Async          (mapConcurrently)
+import           Control.Exception                 (bracket)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, Shape, extent,
@@ -67,7 +67,7 @@ chunk target = go target target
             | gap' == 0                -> [x] : go tgt tgt xs
             | (x1, x2) <- csplit x gap -> [x1] : go tgt tgt (x2 : xs)
 
-    cons1 !x ~(c:cs) = (x : c) : cs
+    cons1 x cs = (x : Prelude.head cs) : tail cs
 
     golast tgt gap x =
       if | cweight x <= gap         -> [[x]]
@@ -256,6 +256,9 @@ mkJobs i = do
   let ntot = sum ns
   return $ mkJobs' (quot ntot c) fns ns
 
+withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO (Cube' sh)) -> IO (Cube' sh)
+withCubeAccumulator = bracket (newIORef EmptyCube') pure
+
 mainSixs :: IO ()
 mainSixs = do
   let input = manip2
@@ -264,8 +267,7 @@ mainSixs = do
   pixels <- getPixelsCoordinates detector (centralPixel input) (sdd input) (detrot input)
 
   jobs <- mkJobs input
-  r' <- mapConcurrently (\job -> do
-                           s <- newIORef EmptyCube'
+  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s -> do
                            _ <- runSafeT $ toListM $
                                each job
                                >-> framesP (h5path input) detector
@@ -274,7 +276,6 @@ mainSixs = do
                            readIORef s
                        ) jobs
   let c' = mconcat r'
-  -- c' <- mconcat <$> mapConcurrently (mkCube' detector) r'
   c <- toCube c'
   saveHdf5 (output input) c
   print c
