@@ -40,7 +40,7 @@ import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
                                                     meter, (*~), (/~))
 import           Pipes                             (Consumer, Pipe, await, each,
-                                                    yield, (>->))
+                                                    runEffect, yield, (>->))
 import           Pipes.Prelude                     (mapM, toListM)
 import           Pipes.Safe                        (SafeT, runSafeT)
 import           Text.Printf                       (printf)
@@ -256,8 +256,8 @@ mkJobs i = do
   let ntot = sum ns
   return $ mkJobs' (quot ntot c) fns ns
 
-withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO (Cube' sh)) -> IO (Cube' sh)
-withCubeAccumulator = bracket (newIORef EmptyCube') pure
+withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
+withCubeAccumulator f = bracket (newIORef EmptyCube') pure (\r -> f r >> readIORef r)
 
 mainSixs :: IO ()
 mainSixs = do
@@ -267,13 +267,12 @@ mainSixs = do
   pixels <- getPixelsCoordinates detector (centralPixel input) (sdd input) (detrot input)
 
   jobs <- mkJobs input
-  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s -> do
-                           _ <- runSafeT $ toListM $
-                               each job
-                               >-> framesP (h5path input) detector
-                               >-> spaceP detector pixels (resolutions input)
-                               >-> mkCube'P detector s
-                           readIORef s
+  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
+                           runSafeT $ runEffect $
+                           each job
+                           >-> framesP (h5path input) detector
+                           >-> spaceP detector pixels (resolutions input)
+                           >-> mkCube'P detector s
                        ) jobs
   let c' = mconcat r'
   c <- toCube c'
