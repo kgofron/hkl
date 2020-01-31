@@ -1,3 +1,8 @@
+{-# LANGUAGE GADTs              #-}
+{-# LANGUAGE MultiWayIf         #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -8,9 +13,9 @@
     Stability  : Experimental
     Portability: GHC only (not tested)
 -}
+module Main where
 
-module Hkl.Binoculars
-    ( module X ) where
+import           Hkl.Binoculars
 
-import           Hkl.Binoculars.Config as X
-import           Hkl.Binoculars.Sixs   as X
+main :: IO ()
+main = process

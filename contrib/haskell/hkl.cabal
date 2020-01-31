@@ -61,8 +61,8 @@ executable xrd
   ghc-options:         -Werror
   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
 
-executable hkl3d
-  main-is:             src/hkl3d.hs
+executable binoculars
+  main-is:             app/Binoculars.hs
   build-depends:       base >= 4.6
                      , containers >= 0.5 && < 0.6
                      , dimensional >= 0.10
@@ -83,6 +83,8 @@ executable hkl3d
 library
   exposed-modules:    Hkl
                     , Hkl.Binoculars
+                    , Hkl.Binoculars.Config
+                    , Hkl.Binoculars.Sixs
                     , Hkl.C
                     , Hkl.C.Binoculars
                     , Hkl.C.DArray
@@ -116,7 +118,6 @@ library
                     , Hkl.Projects.Mars
                     , Hkl.Projects.Mars.Romeden
                     , Hkl.Projects.Mars.Schlegel
-                    , Hkl.Projects.Sixs
                     , Hkl.Pipes
                     , Hkl.PyFAI
                     , Hkl.PyFAI.AzimuthalIntegrator

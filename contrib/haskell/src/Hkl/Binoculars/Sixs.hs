@@ -13,9 +13,9 @@
     Stability  : Experimental
     Portability: GHC only (not tested)
 -}
-module Hkl.Projects.Sixs
-    ( mainSixs )
-        where
+module Hkl.Binoculars.Sixs
+  (process) where
+
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Exception                 (bracket)
 import           Control.Monad                     (forM_, forever)
@@ -259,8 +259,8 @@ mkJobs i = do
 withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
 withCubeAccumulator f = bracket (newIORef EmptyCube') pure (\r -> f r >> readIORef r)
 
-mainSixs :: IO ()
-mainSixs = do
+process :: IO ()
+process = do
   let input = manip2
   let detector = ImXpadS140
 

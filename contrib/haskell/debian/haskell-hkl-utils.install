@@ -2,6 +2,6 @@
 ./data/ghkl3.ui usr/share/hkl/data
 ./data/gprof2dot.py usr/share/hkl/data
 ./data/pseudo3.ui usr/share/hkl/data
+dist-ghc/build/binoculars/binoculars usr/bin
 dist-ghc/build/ghkl/ghkl usr/bin
-dist-ghc/build/hkl3d/hkl3d usr/bin
 dist-ghc/build/xrd/xrd usr/bin
