@@ -75,7 +75,7 @@ number' = number . uncomment
 length :: (Num a, Read a, Fractional a, Typeable a) => Text -> Either String (Length a)
 length t = case number' t of
   (Right v) -> Right (v *~ angstrom)
-  (Left e)  -> Left (e)
+  (Left e)  -> Left e
 
 angle :: (Num a, Read a, Floating a, Typeable a) => Text -> Either String (Angle a)
 angle t = case number' t of
@@ -87,34 +87,31 @@ listWithSeparator' s p = listWithSeparator s p . uncomment
 
 parseBinocularsConfig :: IniParser BinocularsConfig
 parseBinocularsConfig = BinocularsConfig
-  <$> ( section "dispatcher" $ do
-          BinocularsDispatcher
-            <$> fieldMbOf "ncores" number'
-            <*> field "destination"
-            <*> fieldFlag "overwrite"
-      )
-  <*> ( section "input" $ do
-          BinocularsInput
-          <$> field "type"
-          <*> field "nexusdir"
-          <*> fieldOf "centralpixel" (listWithSeparator' "," number')
-          <*> fieldOf "sdd" length
-          <*> fieldMbOf "detrot" angle
-          <*> fieldMbOf "attenuationCoefficient" number'
-          <*> fieldMb "maskmatrix"
-          <*> fieldMbOf "a" length
-          <*> fieldMbOf "b" length
-          <*> fieldMbOf "c" length
-          <*> fieldMbOf "alpha" angle
-          <*> fieldMbOf "beta" angle
-          <*> fieldMbOf "gamma" angle
-          <*> fieldMbOf "ux" angle
-          <*> fieldMbOf "uy" angle
-          <*> fieldMbOf "uz" angle
-      )
-  <*> ( section "projection" $ do
-          BinocularsProjection
-            <$> field "type"
-            <*> fieldOf "resolution" (listWithSeparator' "," number')
-            -- <*> fieldMbOf "limits" (listWithSeparator' "," number')
-      )
+  <$> section "dispatcher" (BinocularsDispatcher
+                             <$> fieldMbOf "ncores" number'
+                             <*> field "destination"
+                             <*> fieldFlag "overwrite"
+                           )
+  <*> section "input" (BinocularsInput
+                        <$> field "type"
+                        <*> field "nexusdir"
+                        <*> fieldOf "centralpixel" (listWithSeparator' "," number')
+                        <*> fieldOf "sdd" length
+                        <*> fieldMbOf "detrot" angle
+                        <*> fieldMbOf "attenuationCoefficient" number'
+                        <*> fieldMb "maskmatrix"
+                        <*> fieldMbOf "a" length
+                        <*> fieldMbOf "b" length
+                        <*> fieldMbOf "c" length
+                        <*> fieldMbOf "alpha" angle
+                        <*> fieldMbOf "beta" angle
+                        <*> fieldMbOf "gamma" angle
+                        <*> fieldMbOf "ux" angle
+                        <*> fieldMbOf "uy" angle
+                        <*> fieldMbOf "uz" angle
+                      )
+  <*> section "projection" (BinocularsProjection
+                             <$> field "type"
+                             <*> fieldOf "resolution" (listWithSeparator' "," number')
+                             -- <*> fieldMbOf "limits" (listWithSeparator' "," number')
+                           )

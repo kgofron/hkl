@@ -1,8 +1,5 @@
-{-# LANGUAGE GADTs              #-}
-{-# LANGUAGE MultiWayIf         #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE StandaloneDeriving #-}
-
+{-# LANGUAGE GADTs      #-}
+{-# LANGUAGE MultiWayIf #-}
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
