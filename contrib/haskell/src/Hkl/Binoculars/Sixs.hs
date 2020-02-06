@@ -16,20 +16,32 @@
 module Hkl.Binoculars.Sixs
   (process) where
 
-import           Control.Monad                     (forM_, forever)
+import           Control.Monad                     (filterM, forM_, forever)
+import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
+import           Data.Ini.Config                   (parseIniFile)
+import           Data.Text                         (unpack)
+import           Data.Text.IO                      (readFile)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
+import           Path                              (Abs, File, Path,
+                                                    fileExtension, parseAbsDir,
+                                                    toFilePath)
+import           Path.IO                           (listDir)
 import           Pipes                             (await, yield)
 
+import           Prelude                           hiding (readFile)
+
 import           Hkl.Binoculars.Common
+import           Hkl.Binoculars.Config
 import           Hkl.C.Geometry
 import           Hkl.H5
 import           Hkl.Pipes
 import           Hkl.Types
+import           Paths_hkl
 
 data DataFrameHklH5Path
   = DataFrameHklH5Path
@@ -66,11 +78,11 @@ instance FramesP DataFrameHklH5Path where
                            mu <- get_position m' j
                            omega <- get_position o' j
                            delta <- get_position d' j
-                           gamma <- get_position g' j
+                           gamma' <- get_position g' j
                            wavelength <- get_position w' 0
                            image <- get_image' det i' j
                            ub <- get_ub u'
-                           let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma]
+                           let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma']
                                source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
 
@@ -89,8 +101,8 @@ _manip1 = Input { filename = InputFn "/home/picca/align_FLY2_omega_00045.nxs"
                 , output = "test1.hdf5"
                 , resolutions = [0.002, 0.002, 0.002]
                 , centralPixel = (0, 0)
-                , sdd = 1 *~ meter
-                , detrot = 90 *~ degree
+                , sdd' = 1 *~ meter
+                , detrot' = 90 *~ degree
                 }
 
 _manip2 :: Input DataFrameHklH5Path
@@ -107,8 +119,8 @@ _manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/20
                 , output = "test2.hdf5"
                 , resolutions = [0.003, 0.01, 0.003]
                 , centralPixel = (352, 112)
-                , sdd = 1.162 *~ meter
-                , detrot = 90 *~ degree
+                , sdd' = 1.162 *~ meter
+                , detrot' = 90 *~ degree
                 }
 
 -- manip3 :: Input
@@ -116,5 +128,45 @@ _manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/20
 
 --                }
 
+
+test :: MonadThrow m => Path Abs Path.File -> m Bool
+test p = do
+  let e = fileExtension p
+  return  $ e `elem` [".h5", ".nxs"]
+
+mkInput :: BinocularsConfig -> Int -> IO (Input DataFrameHklH5Path)
+mkInput c' n = do
+  d <- parseAbsDir $ unpack . nexusdir . input $ c'
+  (_, fs) <- listDir d
+  fs' <- filterM test fs
+  print fs'
+  return _manip1
+
+    -- # CONVENIENCE FUNCTIONS
+    -- def get_filename(self, scanno):
+    --     filename = None
+    --     if self.config.nexusdir:
+    --         dirname = self.config.nexusdir
+    --         files = [f for f in os.listdir(dirname)
+    --                  if ((str(scanno).zfill(5) in f)
+    --                      and (os.path.splitext(f)[1] in ['.hdf5', '.nxs']))
+    --                  ]
+    --         if files is not []:
+    --             filename = os.path.join(dirname, files[0])
+    --     else:
+    --         filename = self.config.nexusfile.format(scanno=str(scanno).zfill(5))  # noqa
+    --     if not os.path.exists(filename):
+    --         raise errors.ConfigError('nexus filename does not exist: {0}'.format(filename))  # noqa
+    --     return filename
+
+  -- /home/picca/align_FLY2_omega_00045.nxs
+
 process :: IO ()
-process = process' _manip1
+process = do
+  cfg <- readFile =<< getDataFileName "data/test/config_manip1.cfg"
+  let r = parseIniFile cfg parseBinocularsConfig
+  case r of
+    (Right c') -> do
+      i <- mkInput c' 45
+      process' i
+    (Left e) -> return ()

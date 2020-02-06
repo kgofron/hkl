@@ -12,6 +12,9 @@
 
 module Hkl.Binoculars.Config
     ( BinocularsConfig(..)
+    , BinocularsDispatcher(..)
+    , BinocularsInput(..)
+    , BinocularsProjection(..)
     , parseBinocularsConfig
     ) where
 
@@ -69,7 +72,7 @@ ms = "#;"
 uncomment :: Text -> Text
 uncomment = takeWhile (`notElem` ms)
 
-number' ::(Num a, Read a, Typeable a) => Text -> Either String a
+number' :: (Num a, Read a, Typeable a) => Text -> Either String a
 number' = number . uncomment
 
 length :: (Num a, Read a, Fractional a, Typeable a) => Text -> Either String (Length a)

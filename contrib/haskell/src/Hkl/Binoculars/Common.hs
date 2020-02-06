@@ -164,8 +164,8 @@ data Input a = Input { filename     :: InputFn
                      , output       :: FilePath
                      , resolutions  :: [Double]
                      , centralPixel :: (Int, Int)  -- x, y
-                     , sdd          :: Length Float  -- sample to detector distance
-                     , detrot       :: Angle Float
+                     , sdd'         :: Length Float  -- sample to detector distance
+                     , detrot'      :: Angle Float
                      }
 
 
@@ -189,7 +189,7 @@ process' :: FramesP a => Input a -> IO ()
 process' input = do
   let detector = ImXpadS140
 
-  pixels <- getPixelsCoordinates detector (centralPixel input) (sdd input) (detrot input)
+  pixels <- getPixelsCoordinates detector (centralPixel input) (sdd' input) (detrot' input)
 
   jobs <- mkJobs input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
