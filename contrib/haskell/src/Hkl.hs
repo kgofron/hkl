@@ -1,5 +1,5 @@
 {-
-    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -11,6 +11,7 @@
 
 module Hkl (module X) where
 
+import           Hkl.Binoculars as X
 import           Hkl.C          as X
 import           Hkl.DataSource as X
 import           Hkl.Detector   as X

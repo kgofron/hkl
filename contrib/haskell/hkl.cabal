@@ -83,6 +83,7 @@ executable binoculars
 library
   exposed-modules:    Hkl
                     , Hkl.Binoculars
+                    , Hkl.Binoculars.Common
                     , Hkl.Binoculars.Config
                     , Hkl.Binoculars.Sixs
                     , Hkl.C
