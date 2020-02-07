@@ -39,11 +39,8 @@ withDatasetP = bracket' closeDataset
 withDataspaceP :: MonadSafe m => IO Dataspace -> (Dataspace -> m r) -> m r
 withDataspaceP = bracket' closeDataspace
 
-withHdf5PathP :: MonadSafe m => File -> Hdf5Path sh e -> (Dataset -> m r) -> m r
-withHdf5PathP f path g = go f path g
-  where
-    go ::  (MonadSafe m, Location l) => l -> Hdf5Path sh e -> (Dataset -> m r) -> m r
-    go l (H5RootPath subpath) g' = go l subpath g'
-    go l (H5GroupPath n subpath) g' = withGroupP (openGroup l n Nothing) $ \g'' -> go g'' subpath g'
-    go l (H5GroupAtPath i subpath) g' = withGroupAtP l i $ \g'' -> go g'' subpath g'
-    go l (H5DatasetPath n) g' = withDatasetP (openDataset l n Nothing) g'
+withHdf5PathP :: (MonadSafe m, Location l) => l -> Hdf5Path sh e -> (Dataset -> m r) -> m r
+withHdf5PathP l (H5RootPath subpath) f = withHdf5PathP l subpath f
+withHdf5PathP l (H5GroupPath n subpath) f = withGroupP (openGroup l n Nothing) $ \g -> withHdf5PathP g subpath f
+withHdf5PathP l (H5GroupAtPath i subpath) f = withGroupAtP l i $ \g -> withHdf5PathP g subpath f
+withHdf5PathP l (H5DatasetPath n) f = withDatasetP (openDataset l n Nothing) f

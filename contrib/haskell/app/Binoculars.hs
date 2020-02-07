@@ -23,11 +23,11 @@ import           Options.Applicative.Types (Parser)
 import           Hkl.Binoculars
 
 
-data Options = Process !(Maybe FilePath)
+newtype Options = Process (Maybe FilePath)
   deriving Show
 
 processOptions :: Parser Options
-processOptions = Process <$> (optional $ argument str (metavar "CONFIG"))
+processOptions = Process <$> optional (argument str (metavar "CONFIG"))
 
 processCommand :: Mod CommandFields Options
 processCommand = command "process" (info processOptions (progDesc "process data's"))

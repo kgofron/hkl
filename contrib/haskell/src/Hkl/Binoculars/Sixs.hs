@@ -20,6 +20,7 @@ import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Ini.Config                   (parseIniFile)
 import           Data.List                         (isInfixOf)
+import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (pack, replace, unpack)
 import           Data.Text.IO                      (readFile)
 import           Data.Vector.Storable              (concat, head)
@@ -93,7 +94,7 @@ files :: BinocularsConfig -> IO [Path Abs File]
 files c' = do
   (_, fs) <- listDir (nexusdir . input $ c')
   fs' <- filterM isHdf5 fs
-  return $ case (inputrange . input $ c') of
+  return $ case inputrange . input $ c' of
     Just r  -> filter (isInConfigRange r) fs'
     Nothing -> fs'
     where
@@ -145,15 +146,13 @@ mkInput c' = do
   fs <- files c'
   pure $ Input { filename = InputList fs
                , h5dpath = h5dpath' (itype . input $ c')
-               , output = case (inputrange . input $ c') of
+               , output = case inputrange . input $ c' of
                             Just r  -> destination' r (destination . dispatcher $ c')
                             Nothing -> destination' (ConfigRange []) (destination . dispatcher $ c')
                , resolutions = resolution . projection $ c'
                , centralPixel = centralpixel . input $ c'
                , sdd' = sdd . input $ c'
-               , detrot' = case (detrot . input $ c') of
-                             Just d  -> d
-                             Nothing -> 0 *~ degree
+               , detrot' = fromMaybe (0 *~ degree) (detrot . input $ c')
                }
 
 process :: Maybe FilePath -> IO ()

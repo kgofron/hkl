@@ -152,10 +152,9 @@ get_image' det d n = withDataspace (getDatasetSpace d) $ \dataspace -> do
           h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
       selectHyperslab dataspace Set h
       withDataspace (createDataspaceFromShape s) $ \memspace -> do
-        p <- mallocBytes ((size s) * 2)
+        p <- mallocBytes (size s * 2)
         readDatasetInto' d (Just memspace) (Just dataspace) Nothing p
-        fp <- newForeignPtr finalizerFree p
-        return fp
+        newForeignPtr finalizerFree p
 
 set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
 set_image det d dataspace n arr =  do
@@ -240,7 +239,7 @@ readDatasetInto' :: NativeType t =>
                    Maybe DXPL ->
                    Ptr t ->
                    IO ()
-readDatasetInto' dset mem_space_id file_space_id plist_id buf = do
+readDatasetInto' dset mem_space_id file_space_id plist_id buf =
     withErrorCheck_ $ h5d_read (hid dset) (hdfTypeOf1 buf) (maybe h5s_ALL hid mem_space_id) (maybe h5s_ALL hid file_space_id) (maybe h5p_DEFAULT hid plist_id) (OutArray buf)
 
 -- | WIP until I have decided what is the right way to go
@@ -302,9 +301,9 @@ empty :: Hdf5
 empty = H5Empty
 
 group :: ByteString -> [Hdf5] -> Hdf5
-group g = H5Group g
+group = H5Group
 
-dataset :: (NativeType b, Shape sh) => ByteString -> (Array F sh b) -> Hdf5
+dataset :: (NativeType b, Shape sh) => ByteString -> Array F sh b -> Hdf5
 dataset = H5Dataset
 
 saveHdf5 :: ToHdf5 a => FilePath -> a -> IO ()
@@ -336,14 +335,11 @@ grouppat = H5GroupAtPath
 datasetp :: ByteString -> Hdf5Path sh e
 datasetp = H5DatasetPath
 
-withHdf5Path' :: File -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
-withHdf5Path' fn' path f = go fn' path f
-  where
-    go :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
-    go l (H5RootPath subpath) f' = go l subpath f'
-    go l (H5GroupPath n subpath) f' = withGroup (openGroup l n Nothing) $ \g -> go g subpath f'
-    go l (H5GroupAtPath i subpath) f' = withGroupAt l i $ \g -> go g subpath f'
-    go l (H5DatasetPath n) f' = withDataset (openDataset l n Nothing) f'
+withHdf5Path' :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
+withHdf5Path' l (H5RootPath subpath) f = withHdf5Path' l subpath f
+withHdf5Path' l (H5GroupPath n subpath) f = withGroup (openGroup l n Nothing) $ \g -> withHdf5Path' g subpath f
+withHdf5Path' l (H5GroupAtPath i subpath) f = withGroupAt l i $ \g -> withHdf5Path' g subpath f
+withHdf5Path' l (H5DatasetPath n) f = withDataset (openDataset l n Nothing) f
 
 withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
 withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f

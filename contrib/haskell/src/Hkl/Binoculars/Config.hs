@@ -1,5 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -109,7 +108,7 @@ pathAbsDir t = do
     Left e  -> Left $ show e
 
 parseRange :: (Num a, Read a, Typeable a) => Text -> Either String (ConfigRange a)
-parseRange t = case (listWithSeparator' "," number' $ t) of
+parseRange t = case listWithSeparator' "," number' t of
   Right v -> Right (ConfigRange v)
   Left e  -> Left e
 
@@ -117,7 +116,7 @@ parseDestinationTmpl :: Text -> Either String DestinationTmpl
 parseDestinationTmpl = Right . DestinationTmpl . uncomment
 
 parseCentralPixel :: Text -> Either String (Int, Int)
-parseCentralPixel t = case (listWithSeparator' "," number' $ t) of
+parseCentralPixel t = case listWithSeparator' "," number' t of
   Right v -> go v
   Left e  -> Left e
   where
