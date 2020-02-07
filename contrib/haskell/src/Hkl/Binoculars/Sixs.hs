@@ -1,8 +1,6 @@
-{-# LANGUAGE GADTs              #-}
-{-# LANGUAGE MultiWayIf         #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE StandaloneDeriving #-}
-
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE MultiWayIf        #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -21,22 +19,25 @@ import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Ini.Config                   (parseIniFile)
+import           Data.List                         (isInfixOf)
+import           Data.Text                         (pack, replace, unpack)
 import           Data.Text.IO                      (readFile)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
+import           Numeric.Units.Dimensional.Prelude (degree, (*~))
 import           Path                              (Abs, File, Path,
-                                                    fileExtension)
+                                                    fileExtension, toFilePath)
 import           Path.IO                           (listDir)
 import           Pipes                             (await, yield)
+import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (readFile)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
 import           Hkl.C.Geometry
-import           Hkl.H5
+import           Hkl.H5                            hiding (File)
 import           Hkl.Pipes
 import           Hkl.Types
 import           Paths_hkl
@@ -51,6 +52,9 @@ data DataFrameHklH5Path
     (Hdf5Path DIM2 Double) -- UB
     (Hdf5Path Z Double) -- Wavelength
     (Hdf5Path DIM1 Char) -- DiffractometerType
+
+instance Show DataFrameHklH5Path where
+  show _ = ""
 
 instance FramesP DataFrameHklH5Path where
   lenP (DataFrameHklH5Path _ m _ _ _ _ _ _) = forever $ do
@@ -85,78 +89,72 @@ instance FramesP DataFrameHklH5Path where
                            pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
 
 
-_manip1 :: Input DataFrameHklH5Path
-_manip1 = Input { filename = InputFn "/home/picca/align_FLY2_omega_00045.nxs"
-                , h5dpath = DataFrameHklH5Path
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
-                , output = "test1.hdf5"
-                , resolutions = [0.002, 0.002, 0.002]
-                , centralPixel = (0, 0)
-                , sdd' = 1 *~ meter
-                , detrot' = 90 *~ degree
-                }
-
-_manip2 :: Input DataFrameHklH5Path
-_manip2 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/2019/Run3/FeSCO_Cu111/sample2_ascan_omega_%05d.nxs" 77 93
-                , h5dpath = DataFrameHklH5Path
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "UB")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "type")
-                , output = "test2.hdf5"
-                , resolutions = [0.003, 0.01, 0.003]
-                , centralPixel = (352, 112)
-                , sdd' = 1.162 *~ meter
-                , detrot' = 90 *~ degree
-                }
-
--- manip3 :: Input
--- manip3 = Input { filename = InputRange "/nfs/ruche-sixs/sixs-soleil/com-sixs/2018/Run3/Corentin/Al13Co4/Al13Co4_ascan_omega_%05d.nxs" 4 137
-
---                }
-
-
-test :: MonadThrow m => Path Abs Path.File -> m Bool
-test p = do
-  let e = fileExtension p
-  return  $ e `elem` [".h5", ".nxs"]
-
-mkInput :: BinocularsConfig -> Int -> IO (Input DataFrameHklH5Path)
-mkInput c' _n = do
+files :: BinocularsConfig -> IO [Path Abs File]
+files c' = do
   (_, fs) <- listDir (nexusdir . input $ c')
-  fs' <- filterM test fs
-  print fs'
-  return _manip1
+  fs' <- filterM isHdf5 fs
+  return $ case (inputrange . input $ c') of
+    Just r  -> filter (isInConfigRange r) fs'
+    Nothing -> fs'
+    where
+      isHdf5 :: MonadThrow m => Path Abs File -> m Bool
+      isHdf5 p = do
+               let e = fileExtension p
+               return  $ e `elem` [".h5", ".nxs"]
 
-    -- # CONVENIENCE FUNCTIONS
-    -- def get_filename(self, scanno):
-    --     filename = None
-    --     if self.config.nexusdir:
-    --         dirname = self.config.nexusdir
-    --         files = [f for f in os.listdir(dirname)
-    --                  if ((str(scanno).zfill(5) in f)
-    --                      and (os.path.splitext(f)[1] in ['.hdf5', '.nxs']))
-    --                  ]
-    --         if files is not []:
-    --             filename = os.path.join(dirname, files[0])
-    --     else:
-    --         filename = self.config.nexusfile.format(scanno=str(scanno).zfill(5))  # noqa
-    --     if not os.path.exists(filename):
-    --         raise errors.ConfigError('nexus filename does not exist: {0}'.format(filename))  # noqa
-    --     return filename
+      matchIndex :: Path Abs File -> Int -> Bool
+      matchIndex p n = printf "%05d" n `isInfixOf` toFilePath p
 
-  -- /home/picca/align_FLY2_omega_00045.nxs
+      isInConfigRange :: ConfigRange Int -> Path Abs File -> Bool
+      isInConfigRange (ConfigRange []) _ = True
+      isInConfigRange (ConfigRange [from]) p = any (matchIndex p) [from]
+      isInConfigRange (ConfigRange [from, to]) p = any (matchIndex p) [from..to]
+      isInConfigRange (ConfigRange (from:to:_)) p = any (matchIndex p) [from..to]
+
+h5dpath' :: InputType -> DataFrameHklH5Path
+h5dpath' SixsFlyScanUhv = DataFrameHklH5Path
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
+h5dpath' SixsFlyScanUhv2 = DataFrameHklH5Path
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
+                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "UB")
+                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "type")
+
+replace' :: Int -> Int -> DestinationTmpl -> FilePath
+replace' f t = unpack . replace "{last}" (pack . show $ t) . replace "{first}" (pack . show $ f) . unDestinationTmpl
+
+destination' :: ConfigRange Int -> DestinationTmpl -> FilePath
+destination' (ConfigRange [])          = replace' 0 0
+destination' (ConfigRange [from])      = replace' from from
+destination' (ConfigRange [from, to])  = replace' from to
+destination' (ConfigRange (from:to:_)) = replace' from to
+
+mkInput :: BinocularsConfig -> IO (Input DataFrameHklH5Path)
+mkInput c' = do
+  fs <- files c'
+  pure $ Input { filename = InputList fs
+               , h5dpath = h5dpath' (itype . input $ c')
+               , output = case (inputrange . input $ c') of
+                            Just r  -> destination' r (destination . dispatcher $ c')
+                            Nothing -> destination' (ConfigRange []) (destination . dispatcher $ c')
+               , resolutions = resolution . projection $ c'
+               , centralPixel = centralpixel . input $ c'
+               , sdd' = sdd . input $ c'
+               , detrot' = case (detrot . input $ c') of
+                             Just d  -> d
+                             Nothing -> 0 *~ degree
+               }
 
 process :: IO ()
 process = do
@@ -164,6 +162,9 @@ process = do
   let r = parseIniFile cfg parseBinocularsConfig
   case r of
     Right c' -> do
-      i <- mkInput c' 45
+      print c'
+      i <- mkInput c'
+      print i
       process' i
-    Left _ -> return ()
+      return ()
+    Left e   -> print e

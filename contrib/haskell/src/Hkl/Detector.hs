@@ -97,7 +97,7 @@ coordinates Xpad32 (NptPoint x y) =
            , interp (xpadLine        80) x
            , 0]
 
-getPixelsCoordinates' :: String -> Int -> Int -> Float -> Float -> IO (PyObject (Array F DIM3 Double))
+getPixelsCoordinates' :: String -> Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
 getPixelsCoordinates' = defVVVVVO [str|
 from math import cos, sin
 from numpy import array, ascontiguousarray, copy, ones, tensordot
@@ -147,7 +147,7 @@ toPyFAIDetectorName :: Detector a DIM2 -> String
 toPyFAIDetectorName ImXpadS140 = "imxpads140"
 toPyFAIDetectorName Xpad32     = "xpad_flat"
 
-getPixelsCoordinates :: Partial => Detector a DIM2 -> (Int, Int) -> Length Float -> Angle Float -> IO (Array F DIM3 Double)
+getPixelsCoordinates :: Partial => Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
 getPixelsCoordinates d (ix0, iy0) sdd detrot = do
     p <- getPixelsCoordinates' (toPyFAIDetectorName d) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
     extractNumpyArray p

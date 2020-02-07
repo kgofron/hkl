@@ -42,6 +42,8 @@ import           GHC.Conc                          (getNumCapabilities)
 import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, (/~))
+import           Path                              (Abs, File, Path,
+                                                    fromAbsFile)
 import           Pipes                             (Consumer, Pipe, await, each,
                                                     runEffect, (>->))
 import           Pipes.Prelude                     (mapM, toListM)
@@ -53,7 +55,7 @@ import           Prelude                           hiding (mapM)
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
 import           Hkl.Detector
-import           Hkl.H5
+import           Hkl.H5                            hiding (File)
 import           Hkl.Types
 
 data Chunk n a = Chunk !a !n !n
@@ -153,20 +155,24 @@ type Template = String
 
 data InputFn = InputFn FilePath
              | InputRange Template Int Int
+             | InputList [Path Abs File]
+  deriving Show
 
 
 toList :: InputFn -> [FilePath]
 toList (InputFn f)           = [f]
 toList (InputRange tmpl f t) = [printf tmpl i | i <- [f..t]]
+toList (InputList fs)        = map fromAbsFile fs
 
 data Input a = Input { filename     :: InputFn
                      , h5dpath      :: a
                      , output       :: FilePath
                      , resolutions  :: [Double]
                      , centralPixel :: (Int, Int)  -- x, y
-                     , sdd'         :: Length Float  -- sample to detector distance
-                     , detrot'      :: Angle Float
+                     , sdd'         :: Length Double  -- sample to detector distance
+                     , detrot'      :: Angle Double
                      }
+  deriving Show
 
 
 mkJobs' :: Int -> [FilePath] -> [Int] -> [[Chunk Int FilePath]]

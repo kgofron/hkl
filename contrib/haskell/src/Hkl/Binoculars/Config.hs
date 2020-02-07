@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -15,6 +16,9 @@ module Hkl.Binoculars.Config
     , BinocularsDispatcher(..)
     , BinocularsInput(..)
     , BinocularsProjection(..)
+    , ConfigRange(..)
+    , DestinationTmpl(..)
+    , InputType(..)
     , parseBinocularsConfig
     ) where
 
@@ -24,8 +28,7 @@ import           Data.Ini.Config                   (IniParser, field, fieldFlag,
                                                     fieldMb, fieldMbOf, fieldOf,
                                                     listWithSeparator, number,
                                                     section)
-import           Data.Text                         (Text, unpack)
-import           Data.Text                         (Text, takeWhile)
+import           Data.Text                         (Text, takeWhile, unpack)
 import           Data.Typeable                     (Typeable)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree, (*~))
@@ -33,16 +36,29 @@ import           Path                              (Abs, Dir, Path, parseAbsDir)
 
 import           Prelude                           hiding (length, takeWhile)
 
+newtype ConfigRange a = ConfigRange [a]
+  deriving (Eq, Show)
+
+newtype DestinationTmpl =
+  DestinationTmpl { unDestinationTmpl :: Text }
+  deriving (Eq, Show)
+
+
 data BinocularsDispatcher =
   BinocularsDispatcher { ncore       :: Maybe Int
-                       , destination :: Text
+                       , destination :: DestinationTmpl
                        , overwrite   :: Bool
                        } deriving (Eq, Show)
 
+data InputType = SixsFlyScanUhv
+               | SixsFlyScanUhv2
+  deriving (Eq, Show)
+
 data BinocularsInput =
-  BinocularsInput { itype                  :: Text
+  BinocularsInput { itype                  :: InputType
                   , nexusdir               :: Path Abs Dir
-                  , centralpixel           :: [Int]
+                  , inputrange             :: Maybe (ConfigRange Int)
+                  , centralpixel           :: (Int, Int)
                   , sdd                    :: Length Double
                   , detrot                 :: Maybe (Angle Double)
                   , attenuationCoefficient :: Maybe Double
@@ -79,6 +95,12 @@ uncomment = takeWhile (`notElem` ms)
 number' :: (Num a, Read a, Typeable a) => Text -> Either String a
 number' = number . uncomment
 
+parseInputType :: Text -> Either String InputType
+parseInputType t
+  | t == "sixs:flyscanuhv" = Right SixsFlyScanUhv
+  | t == "sixs:flyscanuhv2" = Right SixsFlyScanUhv2
+  | otherwise = Left ("Unsupported " ++ unpack t ++ " input format")
+
 pathAbsDir :: Text -> Either String (Path Abs Dir)
 pathAbsDir t = do
   let d = runCatch $ parseAbsDir (unpack t)
@@ -86,7 +108,26 @@ pathAbsDir t = do
     Right v -> Right v
     Left e  -> Left $ show e
 
-length :: (Num a, Read a, Fractional a, Typeable a) => Text -> Either String (Length a)
+parseRange :: (Num a, Read a, Typeable a) => Text -> Either String (ConfigRange a)
+parseRange t = case (listWithSeparator' "," number' $ t) of
+  Right v -> Right (ConfigRange v)
+  Left e  -> Left e
+
+parseDestinationTmpl :: Text -> Either String DestinationTmpl
+parseDestinationTmpl = Right . DestinationTmpl . uncomment
+
+parseCentralPixel :: Text -> Either String (Int, Int)
+parseCentralPixel t = case (listWithSeparator' "," number' $ t) of
+  Right v -> go v
+  Left e  -> Left e
+  where
+      go :: [Int] -> Either String (Int, Int)
+      go []      = Left "Please provide central pixel coordinates `x`, `y`"
+      go [_]     = Left "Please provide central pixel coordinates `y`"
+      go [x, y]  = Right (x, y)
+      go (x:y:_) = Right (x, y)
+
+length :: (Num a, Fractional a, Read a, Typeable a) => Text -> Either String (Length a)
 length t = case number' t of
   (Right v) -> Right (v *~ angstrom)
   (Left e)  -> Left e
@@ -103,13 +144,14 @@ parseBinocularsConfig :: IniParser BinocularsConfig
 parseBinocularsConfig = BinocularsConfig
   <$> section "dispatcher" (BinocularsDispatcher
                              <$> fieldMbOf "ncores" number'
-                             <*> field "destination"
+                             <*> fieldOf "destination" parseDestinationTmpl
                              <*> fieldFlag "overwrite"
                            )
   <*> section "input" (BinocularsInput
-                        <$> field "type"
+                        <$> fieldOf "type" parseInputType
                         <*> fieldOf "nexusdir" pathAbsDir
-                        <*> fieldOf "centralpixel" (listWithSeparator' "," number')
+                        <*> fieldMbOf "inputrange" parseRange
+                        <*> fieldOf "centralpixel" parseCentralPixel
                         <*> fieldOf "sdd" length
                         <*> fieldMbOf "detrot" angle
                         <*> fieldMbOf "attenuationCoefficient" number'
