@@ -21,15 +21,13 @@ import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Ini.Config                   (parseIniFile)
-import           Data.Text                         (unpack)
 import           Data.Text.IO                      (readFile)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, File, Path,
-                                                    fileExtension, parseAbsDir,
-                                                    toFilePath)
+                                                    fileExtension)
 import           Path.IO                           (listDir)
 import           Pipes                             (await, yield)
 
@@ -135,9 +133,8 @@ test p = do
   return  $ e `elem` [".h5", ".nxs"]
 
 mkInput :: BinocularsConfig -> Int -> IO (Input DataFrameHklH5Path)
-mkInput c' n = do
-  d <- parseAbsDir $ unpack . nexusdir . input $ c'
-  (_, fs) <- listDir d
+mkInput c' _n = do
+  (_, fs) <- listDir (nexusdir . input $ c')
   fs' <- filterM test fs
   print fs'
   return _manip1
@@ -166,7 +163,7 @@ process = do
   cfg <- readFile =<< getDataFileName "data/test/config_manip1.cfg"
   let r = parseIniFile cfg parseBinocularsConfig
   case r of
-    (Right c') -> do
+    Right c' -> do
       i <- mkInput c' 45
       process' i
-    (Left e) -> return ()
+    Left _ -> return ()

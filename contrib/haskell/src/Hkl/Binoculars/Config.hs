@@ -18,14 +18,18 @@ module Hkl.Binoculars.Config
     , parseBinocularsConfig
     ) where
 
+
+import           Control.Monad.Catch.Pure          (runCatch)
 import           Data.Ini.Config                   (IniParser, field, fieldFlag,
                                                     fieldMb, fieldMbOf, fieldOf,
                                                     listWithSeparator, number,
                                                     section)
+import           Data.Text                         (Text, unpack)
 import           Data.Text                         (Text, takeWhile)
 import           Data.Typeable                     (Typeable)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree, (*~))
+import           Path                              (Abs, Dir, Path, parseAbsDir)
 
 import           Prelude                           hiding (length, takeWhile)
 
@@ -37,7 +41,7 @@ data BinocularsDispatcher =
 
 data BinocularsInput =
   BinocularsInput { itype                  :: Text
-                  , nexusdir               :: Text
+                  , nexusdir               :: Path Abs Dir
                   , centralpixel           :: [Int]
                   , sdd                    :: Length Double
                   , detrot                 :: Maybe (Angle Double)
@@ -75,6 +79,13 @@ uncomment = takeWhile (`notElem` ms)
 number' :: (Num a, Read a, Typeable a) => Text -> Either String a
 number' = number . uncomment
 
+pathAbsDir :: Text -> Either String (Path Abs Dir)
+pathAbsDir t = do
+  let d = runCatch $ parseAbsDir (unpack t)
+  case d of
+    Right v -> Right v
+    Left e  -> Left $ show e
+
 length :: (Num a, Read a, Fractional a, Typeable a) => Text -> Either String (Length a)
 length t = case number' t of
   (Right v) -> Right (v *~ angstrom)
@@ -97,7 +108,7 @@ parseBinocularsConfig = BinocularsConfig
                            )
   <*> section "input" (BinocularsInput
                         <$> field "type"
-                        <*> field "nexusdir"
+                        <*> fieldOf "nexusdir" pathAbsDir
                         <*> fieldOf "centralpixel" (listWithSeparator' "," number')
                         <*> fieldOf "sdd" length
                         <*> fieldMbOf "detrot" angle
