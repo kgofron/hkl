@@ -12,11 +12,11 @@
 -}
 module Main where
 
-import           Options.Applicative       (CommandFields, Mod, auto, command,
-                                            execParser, fullDesc, header,
-                                            helper, hsubparser, info, long,
-                                            option, optional, progDesc,
-                                            showDefault, (<**>))
+import           Options.Applicative       (CommandFields, Mod, argument,
+                                            command, execParser, fullDesc,
+                                            header, helper, hsubparser, info,
+                                            metavar, optional, progDesc, str,
+                                            (<**>))
 import           Options.Applicative.Types (Parser)
 
 
@@ -24,9 +24,10 @@ import           Hkl.Binoculars
 
 
 data Options = Process !(Maybe FilePath)
+  deriving Show
 
 processOptions :: Parser Options
-processOptions = Process <$> (optional $ option auto (long "config" <> showDefault))
+processOptions = Process <$> (optional $ argument str (metavar "CONFIG"))
 
 processCommand :: Mod CommandFields Options
 processCommand = command "process" (info processOptions (progDesc "process data's"))
@@ -35,11 +36,12 @@ options :: Parser Options
 options = hsubparser processCommand
 
 run :: Options -> IO ()
-run (Process _) = process
+run (Process mf) = process mf
 
 main :: IO ()
 main = do
   opts' <- execParser opts
+  print opts'
   run opts'
     where
       opts = info (options <**> helper)

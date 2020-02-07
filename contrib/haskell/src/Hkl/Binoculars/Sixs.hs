@@ -156,9 +156,11 @@ mkInput c' = do
                              Nothing -> 0 *~ degree
                }
 
-process :: IO ()
-process = do
-  cfg <- readFile =<< getDataFileName "data/test/config_manip1.cfg"
+process :: Maybe FilePath -> IO ()
+process mf = do
+  cfg <- readFile =<< case mf of
+                       Nothing -> getDataFileName "data/test/config_manip1.cfg"
+                       (Just f) -> pure f
   let r = parseIniFile cfg parseBinocularsConfig
   case r of
     Right c' -> do
