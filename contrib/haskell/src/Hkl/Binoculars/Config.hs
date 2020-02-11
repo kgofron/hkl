@@ -23,7 +23,7 @@ module Hkl.Binoculars.Config
 
 
 import           Control.Monad.Catch.Pure          (runCatch)
-import           Data.Ini.Config                   (IniParser, field, fieldFlag,
+import           Data.Ini.Config                   (IniParser, fieldFlag,
                                                     fieldMb, fieldMbOf, fieldOf,
                                                     listWithSeparator, number,
                                                     section)
@@ -73,8 +73,11 @@ data BinocularsInput =
                   , uz                     :: Maybe (Angle Double)
                   } deriving (Eq, Show)
 
+data ProjectionType = QxQyQzProjection
+  deriving (Eq, Show)
+
 data BinocularsProjection =
-  BinocularsProjection { ptype      :: Text
+  BinocularsProjection { ptype      :: ProjectionType
                        , resolution :: [Double]
                        -- , limits     :: Maybe [Double]
                        } deriving (Eq, Show)
@@ -99,6 +102,11 @@ parseInputType t
   | t == "sixs:flyscanuhv" = Right SixsFlyScanUhv
   | t == "sixs:flyscanuhv2" = Right SixsFlyScanUhv2
   | otherwise = Left ("Unsupported " ++ unpack t ++ " input format")
+
+parseProjectionType :: Text -> Either String ProjectionType
+parseProjectionType t
+  | t == "sixs:qxqyqzprojection" = Right QxQyQzProjection
+  | otherwise = Left ("Unsupported " ++ unpack t ++ " projection type")
 
 pathAbsDir :: Text -> Either String (Path Abs Dir)
 pathAbsDir t = do
@@ -166,7 +174,7 @@ parseBinocularsConfig = BinocularsConfig
                         <*> fieldMbOf "uz" angle
                       )
   <*> section "projection" (BinocularsProjection
-                             <$> field "type"
+                             <$> fieldOf "type" parseProjectionType
                              <*> fieldOf "resolution" (listWithSeparator' "," number')
                              -- <*> fieldMbOf "limits" (listWithSeparator' "," number')
                            )
