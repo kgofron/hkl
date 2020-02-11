@@ -17,7 +17,7 @@ module Hkl.Binoculars.Sixs
 import           Control.Monad                     (filterM, forM_, forever)
 import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
+import           Data.Array.Repa.Index             (DIM1, DIM3, Z)
 import           Data.Ini.Config                   (parseIniFile)
 import           Data.List                         (isInfixOf)
 import           Data.Maybe                        (fromMaybe)
@@ -43,29 +43,28 @@ import           Hkl.Pipes
 import           Hkl.Types
 import           Paths_hkl
 
-data DataFrameHklH5Path
-  = DataFrameHklH5Path
+data DataFrameQxQyQzInput
+  = DataFrameQxQyQzInput
     (Hdf5Path DIM3 Word16) -- Image
     (Hdf5Path DIM1 Double) -- Mu
     (Hdf5Path DIM1 Double) -- Omega
     (Hdf5Path DIM1 Double) -- Delta
     (Hdf5Path DIM1 Double) -- Gamma
-    (Hdf5Path DIM2 Double) -- UB
     (Hdf5Path Z Double) -- Wavelength
     (Hdf5Path DIM1 Char) -- DiffractometerType
 
-instance Show DataFrameHklH5Path where
+instance Show DataFrameQxQyQzInput where
   show _ = ""
 
-instance FramesP DataFrameHklH5Path where
-  lenP (DataFrameHklH5Path _ m _ _ _ _ _ _) = forever $ do
+instance FramesP DataFrameQxQyQzInput where
+  lenP (DataFrameQxQyQzInput _ m _ _ _ _ _) = forever $ do
     fp <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f m $ \m' -> do
       (Just n) <- liftIO $ lenH5Dataspace m'
       yield n
 
-  framesP (DataFrameHklH5Path i m o d g u w t) det = forever $ do
+  framesP (DataFrameQxQyQzInput i m o d g w t) det = forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' ->
@@ -73,7 +72,6 @@ instance FramesP DataFrameHklH5Path where
       withHdf5PathP f o $ \o' ->
       withHdf5PathP f d $ \d' ->
       withHdf5PathP f g $ \g' ->
-      withHdf5PathP f u $ \u' ->
       withHdf5PathP f w $ \w' ->
       withHdf5PathP f t $ \_t' ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
@@ -84,10 +82,9 @@ instance FramesP DataFrameHklH5Path where
                            gamma' <- get_position g' j
                            wavelength <- get_position w' 0
                            image <- get_image' det i' j
-                           ub <- get_ub u'
                            let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma']
                                source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
-                           pure $ DataFrame j (Geometry Uhv source positions Nothing) ub image))
+                           pure $ DataFrameQxQyQz j (Geometry Uhv source positions Nothing) image))
 
 
 files :: BinocularsConfig -> IO [Path Abs File]
@@ -112,23 +109,23 @@ files c' = do
       isInConfigRange (ConfigRange [from, to]) p = any (matchIndex p) [from..to]
       isInConfigRange (ConfigRange (from:to:_)) p = any (matchIndex p) [from..to]
 
-h5dpath' :: InputType -> DataFrameHklH5Path
-h5dpath' SixsFlyScanUhv = DataFrameHklH5Path
+h5dpath' :: InputType -> DataFrameQxQyQzInput
+h5dpath' SixsFlyScanUhv = DataFrameQxQyQzInput
                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
-                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
+                          -- (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
-h5dpath' SixsFlyScanUhv2 = DataFrameHklH5Path
+h5dpath' SixsFlyScanUhv2 = DataFrameQxQyQzInput
                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
-                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "UB")
+                           -- (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "UB")
                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "type")
 
@@ -141,7 +138,7 @@ destination' (ConfigRange [from])      = replace' from from
 destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
 
-mkInput :: BinocularsConfig -> IO (Input DataFrameHklH5Path)
+mkInput :: BinocularsConfig -> IO (Input DataFrameQxQyQzInput)
 mkInput c' = do
   fs <- files c'
   pure $ Input { filename = InputList fs

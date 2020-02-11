@@ -17,7 +17,7 @@ module Hkl.Binoculars.Common
   ( Input(..)
   , FramesP(..)
   , Chunk(..)
-  , DataFrame(..)
+  , DataFrameQxQyQz(..)
   , InputFn(..)
   , process'
   ) where
@@ -39,7 +39,6 @@ import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr)
 import           Foreign.Storable                  (peek)
 import           GHC.Conc                          (getNumCapabilities)
-import           Numeric.LinearAlgebra             (Matrix)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, (/~))
 import           Path                              (Abs, File, Path,
@@ -86,19 +85,16 @@ chunk target = go target target
 
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
 
-data DataFrame
-    = DataFrame
+data DataFrameQxQyQz
+    = DataFrameQxQyQz
       Int -- n
       Geometry -- geometry
-      (Matrix Double) -- ub
       (ForeignPtr Word16) -- image
-
-instance Show DataFrame where
-  show (DataFrame i g m _) = unwords [show i, show g, show m]
+    deriving Show
 
 class FramesP a where
   lenP :: a -> Pipe FilePath Int (SafeT IO) ()
-  framesP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrame (SafeT IO) ()
+  framesP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
 -- | DataFrameSpace
 
@@ -108,8 +104,8 @@ data DataFrameSpace sh = DataFrameSpace (ForeignPtr Word16) (Space sh)
 type Resolutions = [Double]
 
 {-# INLINE space #-}
-space :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrame -> IO (DataFrameSpace DIM3)
-space detector pixels rs (DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = do
+space :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
+space detector pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) img) = do
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
   let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
@@ -122,7 +118,7 @@ space detector pixels rs (DataFrame _ g@(Geometry _ (Source w) _ _) _ub img) = d
       s <- peek p
       return (DataFrameSpace img s)
 
-spaceP :: (MonadIO m) => Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Pipe DataFrame (DataFrameSpace DIM3) m ()
+spaceP :: (MonadIO m) => Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Pipe DataFrameQxQyQz (DataFrameSpace DIM3) m ()
 spaceP detector pixels rs = mapM (liftIO . space detector pixels rs)
 
 -- | Create the Cube
