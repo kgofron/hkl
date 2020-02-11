@@ -74,6 +74,7 @@ data BinocularsInput =
                   } deriving (Eq, Show)
 
 data ProjectionType = QxQyQzProjection
+                    | HklProjection
   deriving (Eq, Show)
 
 data BinocularsProjection =
@@ -106,6 +107,7 @@ parseInputType t
 parseProjectionType :: Text -> Either String ProjectionType
 parseProjectionType t
   | t == "sixs:qxqyqzprojection" = Right QxQyQzProjection
+  | t == "sixs:hklprojection" = Right HklProjection
   | otherwise = Left ("Unsupported " ++ unpack t ++ " projection type")
 
 pathAbsDir :: Text -> Either String (Path Abs Dir)
