@@ -402,7 +402,7 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 					   const double *resolutions,
 					   int32_t n_resolutions)
 {
-	int32_t i;
+	int32_t i, j;
 	const char * names[] = {"qx", "qy", "qz"};
 
 	const double *q_x = &pixels_coordinates[0 * n_pixels];
@@ -414,12 +414,9 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 	const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector);
 	HklQuaternion qs_1 = hkl_geometry_sample_rotation_get(geometry, sample);
 	const HklVector ki = {{1, 0, 0}};  /* hkl_geometry_ki_get(geometry); */
-	HklBinocularsSpace *space = space_new(n_pixels, ARRAY_SIZE(names));
-	int32_t *indexes_0 = space_indexes(space, 0);
-	int32_t *indexes_1 = space_indexes(space, 1);
-	int32_t *indexes_2 = space_indexes(space, 2);
-
 	hkl_quaternion_conjugate(&qs_1);
+
+	HklBinocularsSpace *space = space_new(n_pixels, ARRAY_SIZE(names));
 
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
@@ -434,9 +431,8 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 		hkl_vector_rotated_quaternion(&v, &qs_1);
 		hkl_vector_times_double(&v, k);
 
-		indexes_0[i] = rint(v.data[0] / resolutions[0]);
-		indexes_1[i] = rint(v.data[1] / resolutions[1]);
-		indexes_2[i] = rint(v.data[2] / resolutions[2]);
+                for(j=0; j<ARRAY_SIZE(names); ++j)
+                        space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
 	}
 
         space_update_axes(space, names, n_pixels, resolutions);
@@ -483,6 +479,7 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
 	 * indexes */
 	for(i=0;i<n_pixels;++i){
 		HklVector v = {{ h[i], k[i], l[i]}};
+
 		hkl_vector_rotated_quaternion(&v, &q_d);
 		hkl_vector_normalize(&v);
 		hkl_vector_minus_vector(&v, &ki);
