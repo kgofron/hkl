@@ -19,6 +19,7 @@ import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM3, Z)
 import           Data.Ini.Config                   (parseIniFile)
 import           Data.Text.IO                      (readFile)
+import           Data.Typeable                     (typeOf)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
@@ -46,7 +47,7 @@ data SixsQxQyQzUhv
     (Hdf5Path Z Double) -- Wavelength
 
 instance Show SixsQxQyQzUhv where
-  show _ = "SixsQxQyQzUhv"
+  show = show . typeOf
 
 instance LenP SixsQxQyQzUhv where
   lenP (SixsQxQyQzUhv _ m _ _ _ _) = forever $ do
@@ -78,9 +79,8 @@ instance FramesQxQyQzP SixsQxQyQzUhv where
                                source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
                            pure $ DataFrameQxQyQz j (Geometry Uhv source positions Nothing) image))
 
-
-h5dpath' :: InputType -> SixsQxQyQzUhv
-h5dpath' t = case t of
+h5dpathQxQyQz :: InputType -> SixsQxQyQzUhv
+h5dpathQxQyQz t = case t of
   SixsFlyScanUhv -> SixsQxQyQzUhv
                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
@@ -96,6 +96,18 @@ h5dpath' t = case t of
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
 
+data SixsHklUhv = SixsHklUhv
+  deriving Show
+
+instance LenP SixsHklUhv where
+  lenP SixsHklUhv = undefined
+
+instance FramesHklP SixsHklUhv where
+  framesHklP SixsHklUhv _det = undefined
+
+h5dpathHkl :: InputType -> SixsHklUhv
+h5dpathHkl _t = undefined
+
 process :: Maybe FilePath -> IO ()
 process mf = do
   cfg <- readFile =<< case mf of
@@ -103,10 +115,13 @@ process mf = do
                        (Just f) -> pure f
   let r = parseIniFile cfg parseBinocularsConfig
   case r of
-    Right c' -> do
-      print c'
-      i <- mkInputQxQyQz c' h5dpath'
-      print i
-      processQxQyQz i
-      return ()
+    Right c' -> case (ptype . bProjection $ c') of
+      QxQyQzProjection -> do
+        i <- mkInputQxQyQz c' h5dpathQxQyQz
+        print i
+        processQxQyQz i
+      HklProjection -> do
+        i <- mkInputHkl c' h5dpathHkl
+        print i
+        processHkl i
     Left e   -> print e

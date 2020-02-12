@@ -1,6 +1,6 @@
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs                    #-}
 
 module Hkl.C.Sample
        ( HklSample
@@ -8,18 +8,14 @@ module Hkl.C.Sample
        , withSample
        ) where
 
-import Control.Monad (void)
-import Foreign ( ForeignPtr
-               , FunPtr
-               , Ptr
-               , nullPtr
-               , newForeignPtr
-               , withForeignPtr)
-import Foreign.C (CInt(..), CString, withCString)
-import Foreign.Storable
+import           Control.Monad    (void)
+import           Foreign          (ForeignPtr, FunPtr, Ptr, newForeignPtr,
+                                   nullPtr, withForeignPtr)
+import           Foreign.C        (CInt (..), CString, withCString)
+import           Foreign.Storable
 
-import Hkl.C.Lattice
-import Hkl.Types
+import           Hkl.C.Lattice
+import           Hkl.Types
 
 #include "hkl.h"
 

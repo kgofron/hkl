@@ -16,12 +16,14 @@
 -}
 module Hkl.Binoculars.Projections
   ( DataFrameQxQyQz(..)
+  , FramesHklP(..)
   , FramesQxQyQzP(..)
   , InputQxQyQz(..)
   , LenP(..)
+  , mkInputHkl
   , mkInputQxQyQz
-  , processQxQyQz
   , processHkl
+  , processQxQyQz
   ) where
 
 import           Control.Concurrent.Async          (mapConcurrently)
@@ -143,7 +145,7 @@ data InputHkl a b =
            , centralPixel :: (Int, Int)  -- x, y
            , sdd'         :: Length Double  -- sample to detector distance
            , detrot'      :: Angle Double
-           , sample'      :: Sample b
+           , sample'      :: Maybe (Sample Triclinic)
            }
   deriving Show
 
@@ -152,7 +154,7 @@ data DataFrameHkl a
       Int -- n
       Geometry -- geometry
       (ForeignPtr Word16) -- image
-      (Sample a) -- sample
+      (Sample Triclinic) -- sample
       (Array F DIM2 Double) -- ub
 
 instance Show (DataFrameHkl a) where
@@ -162,13 +164,13 @@ class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: Sample a -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> (DataFrameHkl b) -> IO (DataFrameSpace DIM3)
-spaceHkl samp detector pixels rs (DataFrameHkl _ g@(Geometry _ (Source w) _ _) img _sampl _ub) = do
+spaceHkl :: Maybe (Sample Triclinic) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> (DataFrameHkl b) -> IO (DataFrameSpace DIM3)
+spaceHkl msampl detector pixels rs (DataFrameHkl _ g@(Geometry _ (Source w) _ _) img sampl _ub) = do
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
   let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
   withGeometry g $ \geometry ->
-    withSample samp $ \sample ->
+    withSample (fromMaybe sampl msampl) $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
     withArrayLen pixelsDims $ \ndim dims ->
@@ -179,6 +181,21 @@ spaceHkl samp detector pixels rs (DataFrameHkl _ g@(Geometry _ (Source w) _ _) i
 
 mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
 mkJobsHkl (InputHkl fn h5d _ _ _ _ _ _) = mkJobs fn h5d
+
+mkInputHkl :: FramesHklP a => BinocularsConfig -> (InputType -> a) -> IO (InputHkl a b)
+mkInputHkl c' f = do
+  fs <- files c'
+  pure $ InputHkl { filename = InputList fs
+                  , h5dpath = f (itype . bInput $ c')
+                  , output = case inputrange . bInput $ c' of
+                               Just r  -> destination' r (destination . bDispatcher $ c')
+                               Nothing -> destination' (ConfigRange []) (destination . bDispatcher $ c')
+                  , resolutions = resolution . bProjection $ c'
+                  , centralPixel = centralpixel . bInput $ c'
+                  , sdd' = sdd . bInput $ c'
+                  , detrot' = fromMaybe (0 *~ degree) (detrot . bInput $ c')
+                  , sample' = sample'' (bInput c')
+                  }
 
 processHkl :: FramesHklP a => InputHkl a b -> IO ()
 processHkl input@(InputHkl _ h5d o res cen d r sample) = do

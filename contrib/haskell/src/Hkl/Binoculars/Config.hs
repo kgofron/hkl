@@ -18,9 +18,11 @@ module Hkl.Binoculars.Config
     , ConfigRange(..)
     , DestinationTmpl(..)
     , InputType(..)
+    , ProjectionType(..)
     , destination'
     , files
     , parseBinocularsConfig
+    , sample''
     ) where
 
 
@@ -37,7 +39,8 @@ import           Data.Text                         (Text, pack, replace,
 import           Data.Typeable                     (Typeable)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, DLength, Length,
-                                                    Unit, degree, meter, (*~))
+                                                    Unit, degree, meter, radian,
+                                                    (*~), (/~))
 import           Path                              (Abs, Dir, File, Path,
                                                     fileExtension, parseAbsDir,
                                                     toFilePath)
@@ -45,6 +48,8 @@ import           Path.IO                           (listDir)
 import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (length, takeWhile)
+
+import           Hkl.Types
 
 newtype ConfigRange a = ConfigRange [a]
   deriving (Eq, Show)
@@ -223,3 +228,15 @@ destination' (ConfigRange [])          = replace' 0 0
 destination' (ConfigRange [from])      = replace' from from
 destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
+
+sample'' :: BinocularsInput -> Maybe (Sample Triclinic)
+sample'' i = do
+  ux' <- ux i
+  uy' <- uy i
+  uz' <- uz i
+  Sample
+    <$> pure "test"
+    <*> (Triclinic <$> a i <*> b i <*> c i <*> alpha i <*> beta i <*> gamma i)
+    <*> pure (Parameter "ux" (ux' /~ radian) (Range 0 0))
+    <*> pure (Parameter "uy" (uy' /~ radian) (Range 0 0))
+    <*> pure (Parameter "uz" (uz' /~ radian) (Range 0 0))
