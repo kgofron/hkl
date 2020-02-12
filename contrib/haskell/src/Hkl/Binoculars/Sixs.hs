@@ -56,7 +56,7 @@ data SixsQxQyQzUhv
 instance Show SixsQxQyQzUhv where
   show _ = "SixsQxQyQzUhv"
 
-instance FramesQxQyQzP SixsQxQyQzUhv where
+instance LenP SixsQxQyQzUhv where
   lenP (SixsQxQyQzUhv _ m _ _ _ _) = forever $ do
     fp <- await
     withFileP (openH5 fp) $ \f ->
@@ -64,6 +64,7 @@ instance FramesQxQyQzP SixsQxQyQzUhv where
       (Just n) <- liftIO $ lenH5Dataspace m'
       yield n
 
+instance FramesQxQyQzP SixsQxQyQzUhv where
   framesQxQyQzP (SixsQxQyQzUhv i m o d g w) det = forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->

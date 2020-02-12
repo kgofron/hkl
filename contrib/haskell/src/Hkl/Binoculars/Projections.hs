@@ -15,10 +15,12 @@
     Portability: GHC only (not tested)
 -}
 module Hkl.Binoculars.Projections
-  ( FramesQxQyQzP(..)
-  , DataFrameQxQyQz(..)
+  ( DataFrameQxQyQz(..)
+  , FramesQxQyQzP(..)
   , InputQxQyQz(..)
+  , LenP(..)
   , processQxQyQz
+  , processHkl
   ) where
 
 import           Control.Concurrent.Async          (mapConcurrently)
@@ -32,15 +34,12 @@ import           Foreign.C.Types                   (CInt (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Storable                  (peek)
-import           GHC.Conc                          (getNumCapabilities)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, (/~))
-import           Path                              (fromAbsFile)
 import           Pipes                             (Pipe, each, runEffect,
                                                     (>->))
-import           Pipes.Prelude                     (mapM, toListM)
+import           Pipes.Prelude                     (mapM)
 import           Pipes.Safe                        (SafeT, runSafeT)
-import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (mapM)
 
@@ -74,8 +73,7 @@ data DataFrameQxQyQz
       (ForeignPtr Word16) -- image
     deriving Show
 
-class FramesQxQyQzP a where
-  lenP :: a -> Pipe FilePath Int (SafeT IO) ()
+class LenP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
 {-# INLINE spaceQxQyQz #-}
@@ -93,21 +91,8 @@ spaceQxQyQz detector pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) 
       s <- peek p
       return (DataFrameSpace img s)
 
-toList :: InputFn -> [FilePath]
-toList (InputFn f)           = [f]
-toList (InputRange tmpl f t) = [printf tmpl i | i <- [f..t]]
-toList (InputList fs)        = map fromAbsFile fs
-
-mkJobs' :: Int -> [FilePath] -> [Int] -> [[Chunk Int FilePath]]
-mkJobs' n fns ts = chunk n [Chunk f 0 t | (f, t) <- zip fns ts]
-
-mkJobs :: FramesQxQyQzP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
-mkJobs (InputQxQyQz fn h5d _ _ _ _ _) = do
-  let fns = toList fn
-  ns <- runSafeT $ toListM $ each fns >-> lenP h5d
-  c <- getNumCapabilities
-  let ntot = sum ns
-  return $ mkJobs' (quot ntot c) fns ns
+mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
+mkJobsQxQyQz (InputQxQyQz fn h5d _ _ _ _ _) = mkJobs fn h5d
 
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
 processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
@@ -115,7 +100,7 @@ processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
 
   pixels <- getPixelsCoordinates detector cen d r
 
-  jobs <- mkJobs input
+  jobs <- mkJobsQxQyQz input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
                            runSafeT $ runEffect $
                            each job
@@ -132,7 +117,7 @@ processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
 
 -- | Hkl
 
-data InputHkl a =
+data InputHkl a b =
   InputHkl { filename     :: InputFn
            , h5dpath      :: a
            , output       :: FilePath
@@ -140,23 +125,27 @@ data InputHkl a =
            , centralPixel :: (Int, Int)  -- x, y
            , sdd'         :: Length Double  -- sample to detector distance
            , detrot'      :: Angle Double
+           , sample'      :: Sample b
            }
   deriving Show
 
-data DataFrameHkl
+data DataFrameHkl a
     = DataFrameHkl
-      DataFrameQxQyQz
+      Int -- n
+      Geometry -- geometry
+      (ForeignPtr Word16) -- image
+      (Sample a) -- sample
       (Array F DIM2 Double) -- ub
 
-instance Show DataFrameHkl where
-  show (DataFrameHkl q _) = show q
+instance Show (DataFrameHkl a) where
+  show (DataFrameHkl q _ _ _ _) = show q
 
-class FramesHklP a where
-  framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameHkl (SafeT IO) ()
+class LenP a => FramesHklP a where
+  framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: Sample a -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameHkl -> IO (DataFrameSpace DIM3)
-spaceHkl samp detector pixels rs (DataFrameHkl (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) img) ub) = do
+spaceHkl :: Sample a -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> (DataFrameHkl b) -> IO (DataFrameSpace DIM3)
+spaceHkl samp detector pixels rs (DataFrameHkl _ g@(Geometry _ (Source w) _ _) img _sampl _ub) = do
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
   let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
@@ -169,3 +158,27 @@ spaceHkl samp detector pixels rs (DataFrameHkl (DataFrameQxQyQz _ g@(Geometry _ 
       p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_hkl geometry sample k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
       return (DataFrameSpace img s)
+
+mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
+mkJobsHkl (InputHkl fn h5d _ _ _ _ _ _) = mkJobs fn h5d
+
+processHkl :: FramesHklP a => InputHkl a b -> IO ()
+processHkl input@(InputHkl _ h5d o res cen d r sample) = do
+  let detector = ImXpadS140
+
+  pixels <- getPixelsCoordinates detector cen d r
+
+  jobs <- mkJobsHkl input
+  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
+                           runSafeT $ runEffect $
+                           each job
+                           >-> framesHklP h5d detector
+                           >-> mapM (liftIO . spaceHkl sample detector pixels res)
+                           >-> mkCube'P detector s
+                       ) jobs
+  let c' = mconcat r'
+  c <- toCube c'
+  saveHdf5 o c
+  print c
+
+  return ()

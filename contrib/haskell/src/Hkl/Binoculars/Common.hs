@@ -17,9 +17,11 @@ module Hkl.Binoculars.Common
   ( Chunk(..)
   , InputFn(..)
   , DataFrameSpace(..)
+  , LenP(..)
   , chunk
   , withCubeAccumulator
   , mkCube'P
+  , mkJobs
   ) where
 
 import           Control.Exception      (bracket)
@@ -34,8 +36,12 @@ import           Foreign.ForeignPtr     (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array  (withArrayLen)
 import           Foreign.Ptr            (Ptr)
 import           Foreign.Storable       (peek)
-import           Path                   (Abs, File, Path)
-import           Pipes                  (Consumer, await)
+import           GHC.Conc               (getNumCapabilities)
+import           Path                   (Abs, File, Path, fromAbsFile)
+import           Pipes                  (Consumer, Pipe, await, each, (>->))
+import           Pipes.Prelude          (toListM)
+import           Pipes.Safe             (SafeT, runSafeT)
+import           Text.Printf            (printf)
 
 import           Hkl.C.Binoculars
 import           Hkl.Detector
@@ -67,6 +73,25 @@ chunk target = go target target
          | (x1, x2) <- csplit x gap -> [x1] : golast tgt tgt x2
 
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
+
+class LenP a where
+  lenP :: a -> Pipe FilePath Int (SafeT IO) ()
+
+toList :: InputFn -> [FilePath]
+toList (InputFn f)           = [f]
+toList (InputRange tmpl f t) = [printf tmpl i | i <- [f..t]]
+toList (InputList fs)        = map fromAbsFile fs
+
+mkJobs' :: Int -> [FilePath] -> [Int] -> [[Chunk Int FilePath]]
+mkJobs' n fns ts = chunk n [Chunk f 0 t | (f, t) <- zip fns ts]
+
+mkJobs :: LenP a => InputFn -> a -> IO [[Chunk Int FilePath]]
+mkJobs fn h5d = do
+  let fns = toList fn
+  ns <- runSafeT $ toListM $ each fns >-> lenP h5d
+  c <- getNumCapabilities
+  let ntot = sum ns
+  return $ mkJobs' (quot ntot c) fns ns
 
 -- | DataFrameSpace
 
