@@ -199,6 +199,8 @@ library
   c-sources:           src/Hkl/Python/cdefs.c
                      , cbits/hkl-binoculars.c
   include-dirs:        cbits/
+                     , ../../
+                     , ../../hkl/
   cc-options:          -g -Wall
   build-tools:         hsc2hs
   default-language:    Haskell2010

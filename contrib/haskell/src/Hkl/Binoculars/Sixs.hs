@@ -137,16 +137,16 @@ destination' (ConfigRange (from:to:_)) = replace' from to
 mkInput :: BinocularsConfig -> IO (InputQxQyQz SixsQxQyQzUhv)
 mkInput c' = do
   fs <- files c'
-  pure $ Input { filename = InputList fs
-               , h5dpath = h5dpath' (itype . input $ c')
-               , output = case inputrange . input $ c' of
-                            Just r  -> destination' r (destination . dispatcher $ c')
-                            Nothing -> destination' (ConfigRange []) (destination . dispatcher $ c')
-               , resolutions = resolution . projection $ c'
-               , centralPixel = centralpixel . input $ c'
-               , sdd' = sdd . input $ c'
-               , detrot' = fromMaybe (0 *~ degree) (detrot . input $ c')
-               }
+  pure $ InputQxQyQz { filename = InputList fs
+                     , h5dpath = h5dpath' (itype . input $ c')
+                     , output = case inputrange . input $ c' of
+                                  Just r  -> destination' r (destination . dispatcher $ c')
+                                  Nothing -> destination' (ConfigRange []) (destination . dispatcher $ c')
+                     , resolutions = resolution . projection $ c'
+                     , centralPixel = centralpixel . input $ c'
+                     , sdd' = sdd . input $ c'
+                     , detrot' = fromMaybe (0 *~ degree) (detrot . input $ c')
+                     }
 
 process :: Maybe FilePath -> IO ()
 process mf = do

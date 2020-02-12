@@ -27,6 +27,7 @@ module Hkl.C.Binoculars
        , hkl_binoculars_cube_new'
        , hkl_binoculars_cube_new_from_space
        , hkl_binoculars_space_q
+       , hkl_binoculars_space_hkl
        , toCube
        ) where
 
@@ -40,10 +41,13 @@ import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           Foreign.Storable      (Storable (..))
-import           Hkl.C.Geometry
-import           Hkl.H5
 import           System.IO.Unsafe      (unsafePerformIO)
-#include "hkl-binoculars.h"
+
+import           Hkl.C.Geometry
+import           Hkl.C.Sample
+import           Hkl.H5
+
+  #include "hkl-binoculars.h"
 
 -- | Axis
 
@@ -217,3 +221,16 @@ hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
                        -> Ptr Double --  const double *resolutions
                        -> CInt -- int32_t n_resolutions
                        -> IO (Ptr (Space sh))
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl" \
+hkl_binoculars_space_hkl :: Ptr Geometry -- const HklGeometry *geometry
+                         -> Ptr HklSample -- const HklSample *sample
+                         -> Double -- double k
+                         -> Ptr Word16 --  const uint16_t *image
+                         -> CInt -- int32_t n_pixels
+                         -> Ptr Double -- const double *pixels_coordinates
+                         -> CInt -- int32_t pixels_coordinates_ndim
+                         -> Ptr CInt --  const int32_t *pixels_coordinates_dims
+                         -> Ptr Double --  const double *resolutions
+                         -> CInt -- int32_t n_resolutions
+                         -> IO (Ptr (Space sh))

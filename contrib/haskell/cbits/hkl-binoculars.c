@@ -21,6 +21,8 @@
  */
 #include <time.h>
 #include "hkl-binoculars.h"
+#include "ccan/array_size/array_size.h"
+#include "hkl-matrix-private.h"
 
 /* #define DEBUG 1 */
 
@@ -161,9 +163,104 @@ void hkl_quaternion_conjugate(HklQuaternion *self)
 		self->data[i] = -self->data[i];
 }
 
+/**
+ * hkl_matrix_det:
+ * @self: the #HklMatrix use to compute the determinant
+ *
+ * compute the determinant of an #HklMatrix
+ *
+ * Returns: the determinant of the self #HklMatrix
+ * Todo: test
+ **/
+double hkl_matrix_det(const HklMatrix *self)
+{
+	double det;
+	double const (*M)[3] = self->data;
+
+	det  =  M[0][0] * (M[1][1] * M[2][2] - M[2][1] * M[1][2]);
+	det += -M[0][1] * (M[1][0] * M[2][2] - M[2][0] * M[1][2]);
+	det +=  M[0][2] * (M[1][0] * M[2][1] - M[2][0] * M[1][1]);
+
+	return det;
+}
+
+/**
+ * hkl_matrix_times_vector:
+ * @self: the #HklMatrix use to multiply the #HklVector
+ * @v: the #HklVector multiply by the #HklMatrix
+ *
+ * multiply an #HklVector by an #HklMatrix
+ **/
+void hkl_matrix_times_vector(const HklMatrix *self, HklVector *v)
+{
+	HklVector tmp;
+	double *Tmp;
+	double *V = v->data;
+	double const (*M)[3] = self->data;
+
+	tmp = *v;
+	Tmp = tmp.data;
+
+	V[0] = Tmp[0]*M[0][0] + Tmp[1]*M[0][1] + Tmp[2]*M[0][2];
+	V[1] = Tmp[0]*M[1][0] + Tmp[1]*M[1][1] + Tmp[2]*M[1][2];
+	V[2] = Tmp[0]*M[2][0] + Tmp[1]*M[2][1] + Tmp[2]*M[2][2];
+}
+
 /************/
 /* NEW CODE */
 /************/
+
+/**
+ * hkl_matrix_div_double: (skip)
+ * @self: the #HklMatrix to divide.
+ * @d: constant use to divide the #HklMatrix
+ *
+ * divide an #HklMatrix by a constant.
+ **/
+void hkl_matrix_div_double(HklMatrix *self, double d)
+{
+	unsigned int i;
+        unsigned int j;
+
+	for (i=0;i<3;i++)
+                for(j=0; j<3; ++j)
+                        self->data[i][j] /= d;
+}
+
+/**
+ * hkl_matrix_inv:
+ * @self: The #HklMatrix of the system
+ *
+ * Returns: -1 if the HklMatrix can not be inverted, 0 otherwise.
+ * Todo: test
+ **/
+int hkl_matrix_inv(const HklMatrix *self, HklMatrix *inv)
+{
+	double det;
+
+	double const (*M)[3] = self->data;
+        double (*Inv)[3] = inv->data;
+
+	det = hkl_matrix_det(self);
+	if (fabs(det) < HKL_EPSILON)
+		return -1;
+	else {
+                Inv[0][0] = M[1][1]*M[2][2] - M[1][2]*M[2][1];
+                Inv[0][1] = - (M[0][1]*M[2][2] - M[0][2]*M[2][1]);
+                Inv[0][2] = M[0][1]*M[1][2] - M[0][2]*M[1][1];
+
+                Inv[1][0] = - (M[1][0]*M[2][2] - M[1][2]*M[2][0]);
+		Inv[1][1] =  M[0][0]*M[2][2] - M[0][2]*M[2][0];
+		Inv[1][2] = - (M[0][0]*M[1][2] - M[0][2]*M[1][0]);
+
+		Inv[2][0] = M[1][0]*M[2][1] - M[1][1]*M[2][0];
+		Inv[2][1] = - (M[0][0]*M[2][1] - M[0][1]*M[2][0]);
+		Inv[2][2] = M[0][0]*M[1][1] - M[0][1]*M[1][0];
+
+		hkl_matrix_div_double(inv, det);
+	}
+	return 0;
+}
 
 inline int32_t min(int32_t x, int32_t y)
 {
@@ -263,9 +360,35 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
 	}
 }
 
-int32_t *space_indexes(const HklBinocularsSpace *space, int index)
+static inline int32_t *space_indexes(const HklBinocularsSpace *space, int index)
 {
 	return &space->indexes_0[index * space->n_indexes_0];
+}
+
+static inline void space_update_axes(HklBinocularsSpace *space,
+                                     const char *names[],
+                                     int32_t n_pixels,
+                                     const double resolutions[])
+{
+        int32_t i;
+        int32_t j;
+
+	/* compress the coordinates into the space */
+	for(i=0; i<space->n_axes; ++i){
+		const int32_t *idx = space_indexes(space, i);
+		const double resolution = resolutions[i];
+		HklBinocularsAxis *axis = &space->axes[i];
+		int32_t origin = idx[0];
+		int32_t last = idx[0];
+
+		for(j=1; j<n_pixels; ++j){
+			int32_t index = idx[j];
+
+			origin = min(origin, index);
+			last = max(last, index);
+		}
+		hkl_binoculars_axis_init(axis, names[i], i, origin, last, resolution);
+	}
 }
 
 /* the array is pre filled with the pixel coordinates */
@@ -280,8 +403,6 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 					   int32_t n_resolutions)
 {
 	int32_t i;
-	int32_t j;
-	int32_t n_coordinates = 3;
 	const char * names[] = {"qx", "qy", "qz"};
 
 	const double *q_x = &pixels_coordinates[0 * n_pixels];
@@ -292,8 +413,8 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 	const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector);
 	HklQuaternion qs_1 = hkl_geometry_sample_rotation_get(geometry, sample);
-	const HklVector ki = {{1, 0, 0}};
-	HklBinocularsSpace *space = space_new(n_pixels, n_coordinates);
+	const HklVector ki = {{1, 0, 0}};  /* hkl_geometry_ki_get(geometry); */
+	HklBinocularsSpace *space = space_new(n_pixels, ARRAY_SIZE(names));
 	int32_t *indexes_0 = space_indexes(space, 0);
 	int32_t *indexes_1 = space_indexes(space, 1);
 	int32_t *indexes_2 = space_indexes(space, 2);
@@ -318,22 +439,61 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 		indexes_2[i] = rint(v.data[2] / resolutions[2]);
 	}
 
-	/* compress the coordinates into the space */
-	for(i=0; i<n_coordinates; ++i){
-		const int32_t *idx = space_indexes(space, i);
-		const double resolution = resolutions[i];
-		HklBinocularsAxis *axis = &space->axes[i];
-		int32_t origin = idx[0];
-		int32_t last = idx[0];
+        space_update_axes(space, names, n_pixels, resolutions);
 
-		for(j=1; j<n_pixels; ++j){
-			int32_t index = idx[j];
+	hkl_detector_free(detector);
+        hkl_sample_free(sample);
 
-			origin = min(origin, index);
-			last = max(last, index);
-		}
-		hkl_binoculars_axis_init(axis, names[i], i, origin, last, resolution);
+	return space;
+}
+
+/* the array is pre filled with the pixel coordinates */
+HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
+                                             const HklSample *sample,
+                                             double K,
+                                             const uint16_t *image,
+                                             int32_t n_pixels,
+                                             const double *pixels_coordinates,
+                                             int32_t pixels_coordinates_ndim,
+                                             const int32_t *pixels_coordinates_dims,
+                                             const double *resolutions,
+                                             int32_t n_resolutions)
+{
+	int32_t i, j;
+	const char * names[] = {"h", "k", "l"};
+
+        const double *h = &pixels_coordinates[0 * n_pixels];
+	const double *k = &pixels_coordinates[1 * n_pixels];
+	const double *l = &pixels_coordinates[2 * n_pixels];
+
+	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
+	const HklQuaternion q_d = hkl_geometry_detector_rotation_get(geometry, detector);
+	HklQuaternion qs = hkl_geometry_sample_rotation_get(geometry, sample);
+	const HklVector ki = {{1, 0, 0}};  /* hkl_geometry_ki_get(geometry); */
+        const HklMatrix *UB = hkl_sample_UB_get(sample);
+        HklMatrix RUB;
+        HklMatrix RUB_1;
+        hkl_quaternion_to_matrix(&qs, &RUB);
+	hkl_matrix_times_matrix(&RUB, UB);
+        hkl_matrix_inv(&RUB, &RUB_1);
+
+	HklBinocularsSpace *space = space_new(n_pixels, ARRAY_SIZE(names));
+
+	/* compute the coordinates in the last axis basis and the
+	 * indexes */
+	for(i=0;i<n_pixels;++i){
+		HklVector v = {{ h[i], k[i], l[i]}};
+		hkl_vector_rotated_quaternion(&v, &q_d);
+		hkl_vector_normalize(&v);
+		hkl_vector_minus_vector(&v, &ki);
+		hkl_vector_times_double(&v, K);
+                hkl_matrix_times_vector(&RUB_1, &v);
+
+                for(j=0; j<ARRAY_SIZE(names); ++j)
+                        space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
 	}
+
+        space_update_axes(space, names, n_pixels, resolutions);
 
 	hkl_detector_free(detector);
 
