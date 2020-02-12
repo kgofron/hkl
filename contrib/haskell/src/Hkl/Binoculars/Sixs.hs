@@ -44,28 +44,27 @@ import           Hkl.Pipes
 import           Hkl.Types
 import           Paths_hkl
 
-data DataFrameQxQyQzInput
-  = DataFrameQxQyQzInput
+data SixsQxQyQzUhv
+  = SixsQxQyQzUhv
     (Hdf5Path DIM3 Word16) -- Image
     (Hdf5Path DIM1 Double) -- Mu
     (Hdf5Path DIM1 Double) -- Omega
     (Hdf5Path DIM1 Double) -- Delta
     (Hdf5Path DIM1 Double) -- Gamma
     (Hdf5Path Z Double) -- Wavelength
-    (Hdf5Path DIM1 Char) -- DiffractometerType
 
-instance Show DataFrameQxQyQzInput where
-  show _ = ""
+instance Show SixsQxQyQzUhv where
+  show _ = "SixsQxQyQzUhv"
 
-instance FramesQxQyQzP DataFrameQxQyQzInput where
-  lenP (DataFrameQxQyQzInput _ m _ _ _ _ _) = forever $ do
+instance FramesQxQyQzP SixsQxQyQzUhv where
+  lenP (SixsQxQyQzUhv _ m _ _ _ _) = forever $ do
     fp <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f m $ \m' -> do
       (Just n) <- liftIO $ lenH5Dataspace m'
       yield n
 
-  framesQxQyQzP (DataFrameQxQyQzInput i m o d g w t) det = forever $ do
+  framesQxQyQzP (SixsQxQyQzUhv i m o d g w) det = forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' ->
@@ -74,7 +73,6 @@ instance FramesQxQyQzP DataFrameQxQyQzInput where
       withHdf5PathP f d $ \d' ->
       withHdf5PathP f g $ \g' ->
       withHdf5PathP f w $ \w' ->
-      withHdf5PathP f t $ \_t' ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
                        (do
                            mu <- get_position m' j
@@ -110,25 +108,22 @@ files c' = do
       isInConfigRange (ConfigRange [from, to]) p = any (matchIndex p) [from..to]
       isInConfigRange (ConfigRange (from:to:_)) p = any (matchIndex p) [from..to]
 
-h5dpath' :: InputType -> DataFrameQxQyQzInput
-h5dpath' SixsFlyScanUhv = DataFrameQxQyQzInput
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
-                          -- (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1/" $ datasetp "UB")
-                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "type")
-h5dpath' SixsFlyScanUhv2 = DataFrameQxQyQzInput
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
-                           -- (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "UB")
-                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx2-ex-diff-uhv" $ datasetp "type")
+h5dpath' :: InputType -> SixsQxQyQzUhv
+h5dpath' t = case t of
+  SixsFlyScanUhv -> SixsQxQyQzUhv
+                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
+                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
+                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
+                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
+                   (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+  SixsFlyScanUhv2 -> SixsQxQyQzUhv
+                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
+                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
+                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
+                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
+                    (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
 
 replace' :: Int -> Int -> DestinationTmpl -> FilePath
 replace' f t = unpack . replace "{last}" (pack . show $ t) . replace "{first}" (pack . show $ f) . unDestinationTmpl
@@ -139,7 +134,7 @@ destination' (ConfigRange [from])      = replace' from from
 destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
 
-mkInput :: BinocularsConfig -> IO (InputQxQyQz DataFrameQxQyQzInput)
+mkInput :: BinocularsConfig -> IO (InputQxQyQz SixsQxQyQzUhv)
 mkInput c' = do
   fs <- files c'
   pure $ Input { filename = InputList fs
