@@ -86,6 +86,7 @@ library
                     , Hkl.Binoculars
                     , Hkl.Binoculars.Common
                     , Hkl.Binoculars.Config
+                    , Hkl.Binoculars.Projections
                     , Hkl.Binoculars.Sixs
                     , Hkl.C
                     , Hkl.C.Binoculars

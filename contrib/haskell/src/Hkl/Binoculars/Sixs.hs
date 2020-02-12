@@ -37,6 +37,7 @@ import           Prelude                           hiding (readFile)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
+import           Hkl.Binoculars.Projections
 import           Hkl.C.Geometry
 import           Hkl.H5                            hiding (File)
 import           Hkl.Pipes
@@ -56,7 +57,7 @@ data DataFrameQxQyQzInput
 instance Show DataFrameQxQyQzInput where
   show _ = ""
 
-instance FramesP DataFrameQxQyQzInput where
+instance FramesQxQyQzP DataFrameQxQyQzInput where
   lenP (DataFrameQxQyQzInput _ m _ _ _ _ _) = forever $ do
     fp <- await
     withFileP (openH5 fp) $ \f ->
@@ -64,7 +65,7 @@ instance FramesP DataFrameQxQyQzInput where
       (Just n) <- liftIO $ lenH5Dataspace m'
       yield n
 
-  framesP (DataFrameQxQyQzInput i m o d g w t) det = forever $ do
+  framesQxQyQzP (DataFrameQxQyQzInput i m o d g w t) det = forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' ->
@@ -138,7 +139,7 @@ destination' (ConfigRange [from])      = replace' from from
 destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
 
-mkInput :: BinocularsConfig -> IO (Input DataFrameQxQyQzInput)
+mkInput :: BinocularsConfig -> IO (InputQxQyQz DataFrameQxQyQzInput)
 mkInput c' = do
   fs <- files c'
   pure $ Input { filename = InputList fs
@@ -163,6 +164,6 @@ process mf = do
       print c'
       i <- mkInput c'
       print i
-      process' i
+      processQxQyQz i
       return ()
     Left e   -> print e
