@@ -19,6 +19,7 @@ module Hkl.Binoculars.Projections
   , FramesQxQyQzP(..)
   , InputQxQyQz(..)
   , LenP(..)
+  , mkInputQxQyQz
   , processQxQyQz
   , processHkl
   ) where
@@ -29,13 +30,15 @@ import           Data.Array.Repa                   (Array, extent, listOfShape,
                                                     size)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
+import           Data.Maybe                        (fromMaybe)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Storable                  (peek)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, (/~))
+import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree, (*~),
+                                                    (/~))
 import           Pipes                             (Pipe, each, runEffect,
                                                     (>->))
 import           Pipes.Prelude                     (mapM)
@@ -44,6 +47,7 @@ import           Pipes.Safe                        (SafeT, runSafeT)
 import           Prelude                           hiding (mapM)
 
 import           Hkl.Binoculars.Common
+import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
 import           Hkl.C.Sample
@@ -94,6 +98,20 @@ spaceQxQyQz detector pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) 
 mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
 mkJobsQxQyQz (InputQxQyQz fn h5d _ _ _ _ _) = mkJobs fn h5d
 
+mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> (InputType -> a) -> IO (InputQxQyQz a)
+mkInputQxQyQz c' f = do
+  fs <- files c'
+  pure $ InputQxQyQz { filename = InputList fs
+                     , h5dpath = f (itype . bInput $ c')
+                     , output = case inputrange . bInput $ c' of
+                                  Just r  -> destination' r (destination . bDispatcher $ c')
+                                  Nothing -> destination' (ConfigRange []) (destination . bDispatcher $ c')
+                     , resolutions = resolution . bProjection $ c'
+                     , centralPixel = centralpixel . bInput $ c'
+                     , sdd' = sdd . bInput $ c'
+                     , detrot' = fromMaybe (0 *~ degree) (detrot . bInput $ c')
+                     }
+
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
 processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
   let detector = ImXpadS140
@@ -109,9 +127,9 @@ processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
                            >-> mkCube'P detector s
                        ) jobs
   let c' = mconcat r'
-  c <- toCube c'
-  saveHdf5 o c
-  print c
+  c'' <- toCube c'
+  saveHdf5 o c''
+  print c''
 
   return ()
 
@@ -177,8 +195,8 @@ processHkl input@(InputHkl _ h5d o res cen d r sample) = do
                            >-> mkCube'P detector s
                        ) jobs
   let c' = mconcat r'
-  c <- toCube c'
-  saveHdf5 o c
-  print c
+  c'' <- toCube c'
+  saveHdf5 o c''
+  print c''
 
   return ()

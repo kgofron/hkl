@@ -18,21 +18,31 @@ module Hkl.Binoculars.Config
     , ConfigRange(..)
     , DestinationTmpl(..)
     , InputType(..)
+    , destination'
+    , files
     , parseBinocularsConfig
     ) where
 
 
+import           Control.Monad                     (filterM)
+import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Data.Ini.Config                   (IniParser, fieldFlag,
                                                     fieldMb, fieldMbOf, fieldOf,
                                                     listWithSeparator, number,
                                                     section)
-import           Data.Text                         (Text, takeWhile, unpack)
+import           Data.List                         (isInfixOf)
+import           Data.Text                         (Text, pack, replace,
+                                                    takeWhile, unpack)
 import           Data.Typeable                     (Typeable)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, DLength, Length,
                                                     Unit, degree, meter, (*~))
-import           Path                              (Abs, Dir, Path, parseAbsDir)
+import           Path                              (Abs, Dir, File, Path,
+                                                    fileExtension, parseAbsDir,
+                                                    toFilePath)
+import           Path.IO                           (listDir)
+import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (length, takeWhile)
 
@@ -85,9 +95,9 @@ data BinocularsProjection =
                        } deriving (Eq, Show)
 
 data BinocularsConfig =
-  BinocularsConfig { dispatcher :: BinocularsDispatcher
-                   , input      :: BinocularsInput
-                   , projection :: BinocularsProjection
+  BinocularsConfig { bDispatcher :: BinocularsDispatcher
+                   , bInput      :: BinocularsInput
+                   , bProjection :: BinocularsProjection
                    } deriving (Eq, Show)
 
 ms :: String
@@ -181,3 +191,35 @@ parseBinocularsConfig = BinocularsConfig
                              <*> fieldOf "resolution" (listWithSeparator' "," number')
                              -- <*> fieldMbOf "limits" (listWithSeparator' "," number')
                            )
+
+files :: BinocularsConfig -> IO [Path Abs File]
+files c' = do
+  (_, fs) <- listDir (nexusdir . bInput $ c')
+  fs' <- filterM isHdf5 fs
+  return $ case inputrange . bInput $ c' of
+    Just r  -> filter (isInConfigRange r) fs'
+    Nothing -> fs'
+    where
+      isHdf5 :: MonadThrow m => Path Abs File -> m Bool
+      isHdf5 p = do
+               let e = fileExtension p
+               return  $ e `elem` [".h5", ".nxs"]
+
+      matchIndex :: Path Abs File -> Int -> Bool
+      matchIndex p n = printf "%05d" n `isInfixOf` toFilePath p
+
+      isInConfigRange :: ConfigRange Int -> Path Abs File -> Bool
+      isInConfigRange (ConfigRange []) _ = True
+      isInConfigRange (ConfigRange [from]) p = any (matchIndex p) [from]
+      isInConfigRange (ConfigRange [from, to]) p = any (matchIndex p) [from..to]
+      isInConfigRange (ConfigRange (from:to:_)) p = any (matchIndex p) [from..to]
+
+
+replace' :: Int -> Int -> DestinationTmpl -> FilePath
+replace' f t = unpack . replace "{last}" (pack . show $ t) . replace "{first}" (pack . show $ f) . unDestinationTmpl
+
+destination' :: ConfigRange Int -> DestinationTmpl -> FilePath
+destination' (ConfigRange [])          = replace' 0 0
+destination' (ConfigRange [from])      = replace' from from
+destination' (ConfigRange [from, to])  = replace' from to
+destination' (ConfigRange (from:to:_)) = replace' from to

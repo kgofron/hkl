@@ -14,24 +14,16 @@
 module Hkl.Binoculars.Sixs
   (process) where
 
-import           Control.Monad                     (filterM, forM_, forever)
-import           Control.Monad.Catch               (MonadThrow)
+import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM3, Z)
 import           Data.Ini.Config                   (parseIniFile)
-import           Data.List                         (isInfixOf)
-import           Data.Maybe                        (fromMaybe)
-import           Data.Text                         (pack, replace, unpack)
 import           Data.Text.IO                      (readFile)
 import           Data.Vector.Storable              (concat, head)
 import           Data.Word                         (Word16)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (degree, (*~))
-import           Path                              (Abs, File, Path,
-                                                    fileExtension, toFilePath)
-import           Path.IO                           (listDir)
+import           Numeric.Units.Dimensional.Prelude ((*~))
 import           Pipes                             (await, yield)
-import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (readFile)
 
@@ -87,28 +79,6 @@ instance FramesQxQyQzP SixsQxQyQzUhv where
                            pure $ DataFrameQxQyQz j (Geometry Uhv source positions Nothing) image))
 
 
-files :: BinocularsConfig -> IO [Path Abs File]
-files c' = do
-  (_, fs) <- listDir (nexusdir . input $ c')
-  fs' <- filterM isHdf5 fs
-  return $ case inputrange . input $ c' of
-    Just r  -> filter (isInConfigRange r) fs'
-    Nothing -> fs'
-    where
-      isHdf5 :: MonadThrow m => Path Abs File -> m Bool
-      isHdf5 p = do
-               let e = fileExtension p
-               return  $ e `elem` [".h5", ".nxs"]
-
-      matchIndex :: Path Abs File -> Int -> Bool
-      matchIndex p n = printf "%05d" n `isInfixOf` toFilePath p
-
-      isInConfigRange :: ConfigRange Int -> Path Abs File -> Bool
-      isInConfigRange (ConfigRange []) _ = True
-      isInConfigRange (ConfigRange [from]) p = any (matchIndex p) [from]
-      isInConfigRange (ConfigRange [from, to]) p = any (matchIndex p) [from..to]
-      isInConfigRange (ConfigRange (from:to:_)) p = any (matchIndex p) [from..to]
-
 h5dpath' :: InputType -> SixsQxQyQzUhv
 h5dpath' t = case t of
   SixsFlyScanUhv -> SixsQxQyQzUhv
@@ -126,29 +96,6 @@ h5dpath' t = case t of
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
 
-replace' :: Int -> Int -> DestinationTmpl -> FilePath
-replace' f t = unpack . replace "{last}" (pack . show $ t) . replace "{first}" (pack . show $ f) . unDestinationTmpl
-
-destination' :: ConfigRange Int -> DestinationTmpl -> FilePath
-destination' (ConfigRange [])          = replace' 0 0
-destination' (ConfigRange [from])      = replace' from from
-destination' (ConfigRange [from, to])  = replace' from to
-destination' (ConfigRange (from:to:_)) = replace' from to
-
-mkInput :: BinocularsConfig -> IO (InputQxQyQz SixsQxQyQzUhv)
-mkInput c' = do
-  fs <- files c'
-  pure $ InputQxQyQz { filename = InputList fs
-                     , h5dpath = h5dpath' (itype . input $ c')
-                     , output = case inputrange . input $ c' of
-                                  Just r  -> destination' r (destination . dispatcher $ c')
-                                  Nothing -> destination' (ConfigRange []) (destination . dispatcher $ c')
-                     , resolutions = resolution . projection $ c'
-                     , centralPixel = centralpixel . input $ c'
-                     , sdd' = sdd . input $ c'
-                     , detrot' = fromMaybe (0 *~ degree) (detrot . input $ c')
-                     }
-
 process :: Maybe FilePath -> IO ()
 process mf = do
   cfg <- readFile =<< case mf of
@@ -158,7 +105,7 @@ process mf = do
   case r of
     Right c' -> do
       print c'
-      i <- mkInput c'
+      i <- mkInputQxQyQz c' h5dpath'
       print i
       processQxQyQz i
       return ()
