@@ -30,7 +30,8 @@ import           Data.Ini.Config                   (IniParser, fieldFlag,
 import           Data.Text                         (Text, takeWhile, unpack)
 import           Data.Typeable                     (Typeable)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree, (*~))
+import           Numeric.Units.Dimensional.Prelude (Angle, DLength, Length,
+                                                    Unit, degree, meter, (*~))
 import           Path                              (Abs, Dir, Path, parseAbsDir)
 
 import           Prelude                           hiding (length, takeWhile)
@@ -136,9 +137,9 @@ parseCentralPixel t = case listWithSeparator' "," number' t of
       go [x, y]  = Right (x, y)
       go (x:y:_) = Right (x, y)
 
-length :: (Num a, Fractional a, Read a, Typeable a) => Text -> Either String (Length a)
-length t = case number' t of
-  (Right v) -> Right (v *~ angstrom)
+length :: (Num a, Fractional a, Read a, Typeable a) => Unit m DLength a -> Text -> Either String (Length a)
+length u t = case number' t of
+  (Right v) -> Right (v *~ u)
   (Left e)  -> Left e
 
 angle :: (Num a, Read a, Floating a, Typeable a) => Text -> Either String (Angle a)
@@ -161,13 +162,13 @@ parseBinocularsConfig = BinocularsConfig
                         <*> fieldOf "nexusdir" pathAbsDir
                         <*> fieldMbOf "inputrange" parseRange
                         <*> fieldOf "centralpixel" parseCentralPixel
-                        <*> fieldOf "sdd" length
+                        <*> fieldOf "sdd" (length meter)
                         <*> fieldMbOf "detrot" angle
                         <*> fieldMbOf "attenuationCoefficient" number'
                         <*> fieldMb "maskmatrix"
-                        <*> fieldMbOf "a" length
-                        <*> fieldMbOf "b" length
-                        <*> fieldMbOf "c" length
+                        <*> fieldMbOf "a" (length angstrom)
+                        <*> fieldMbOf "b" (length angstrom)
+                        <*> fieldMbOf "c" (length angstrom)
                         <*> fieldMbOf "alpha" angle
                         <*> fieldMbOf "beta" angle
                         <*> fieldMbOf "gamma" angle
