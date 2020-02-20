@@ -3,7 +3,7 @@
 ACLOCAL_AMFLAGS = -I m4
 AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection --enable-hkl3d
 
-SUBDIRS = hkl
+SUBDIRS = hkl binoculars
 if HKL3D
 SUBDIRS += hkl3d data
 endif

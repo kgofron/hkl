@@ -19,6 +19,10 @@ Data-Files:          data/ghkl3.ui
                    , data/pseudo3.ui
                    , data/3d3.ui
 
+Flag useHklDev
+     Description: Use the current devel hkl library in the source tree
+     Default: True
+
 executable ghkl
   main-is:             src/ghkl.hs
   build-depends:       attoparsec
@@ -197,15 +201,22 @@ library
                      , vector >= 0.10.0.1
   hs-source-dirs:      src
   c-sources:           src/Hkl/Python/cdefs.c
-                     , cbits/hkl-binoculars.c
-  include-dirs:        cbits/
-                     , ../../
-                     , ../../hkl/
   cc-options:          -g -Wall
   build-tools:         hsc2hs
   default-language:    Haskell2010
-  pkgconfig-depends:   hkl
-                     , python3
+  if flag(useHklDev)
+    include-dirs:      ../../
+                     , ../../hkl/
+                     , ../../binoculars/
+    extra-lib-dirs:    ../../binoculars/.libs/
+                     , ../../hkl/.libs/
+    extra-libraries:     hkl-binoculars
+                       , hkl
+    pkgconfig-depends:   glib-2.0
+  else
+    pkgconfig-depends:   hkl
+
+  pkgconfig-depends:   python3
   ghc-options:         -O2
   ghc-options:         -fno-warn-incomplete-patterns
   -- ghc-options:         -Werror

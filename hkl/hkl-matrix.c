@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -451,4 +451,56 @@ int hkl_matrix_is_null(const HklMatrix *self)
 			if ( fabs(self->data[i][j]) > HKL_EPSILON )
 				return FALSE;
 	return TRUE;
+}
+
+/**
+ * hkl_matrix_div_double: (skip)
+ * @self: the #HklMatrix to divide.
+ * @d: constant use to divide the #HklMatrix
+ *
+ * divide an #HklMatrix by a constant.
+ **/
+void hkl_matrix_div_double(HklMatrix *self, double d)
+{
+	unsigned int i;
+        unsigned int j;
+
+	for (i=0;i<3;i++)
+                for(j=0; j<3; ++j)
+                        self->data[i][j] /= d;
+}
+
+/**
+ * hkl_matrix_inv:
+ * @self: The #HklMatrix of the system
+ *
+ * Returns: -1 if the HklMatrix can not be inverted, 0 otherwise.
+ * Todo: test
+ **/
+int hkl_matrix_inv(const HklMatrix *self, HklMatrix *inv)
+{
+	double det;
+
+	double const (*M)[3] = self->data;
+        double (*Inv)[3] = inv->data;
+
+	det = hkl_matrix_det(self);
+	if (fabs(det) < HKL_EPSILON)
+		return -1;
+	else {
+                Inv[0][0] = M[1][1]*M[2][2] - M[1][2]*M[2][1];
+                Inv[0][1] = - (M[0][1]*M[2][2] - M[0][2]*M[2][1]);
+                Inv[0][2] = M[0][1]*M[1][2] - M[0][2]*M[1][1];
+
+                Inv[1][0] = - (M[1][0]*M[2][2] - M[1][2]*M[2][0]);
+		Inv[1][1] =  M[0][0]*M[2][2] - M[0][2]*M[2][0];
+		Inv[1][2] = - (M[0][0]*M[1][2] - M[0][2]*M[1][0]);
+
+		Inv[2][0] = M[1][0]*M[2][1] - M[1][1]*M[2][0];
+		Inv[2][1] = - (M[0][0]*M[2][1] - M[0][1]*M[2][0]);
+		Inv[2][2] = M[0][0]*M[1][1] - M[0][1]*M[1][0];
+
+		hkl_matrix_div_double(inv, det);
+	}
+	return 0;
 }
