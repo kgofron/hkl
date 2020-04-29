@@ -1,7 +1,7 @@
 /* Simple tool to create config.h.
  * Would be much easier with ccan modules, but deliberately standalone.
  *
- * Copyright 2011 Rusty Russell <rusty@rustcorp.com.au>.  MIT license.
+ * Copyright 2011, 2020 Rusty Russell <rusty@rustcorp.com.au>.  MIT license.
  *
  * c12r_err, c12r_errx functions copied from ccan/err/err.c
  * Copyright Rusty Russell <rusty@rustcorp.com.au>. CC0 (Public domain) License.

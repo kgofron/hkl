@@ -44,7 +44,6 @@ import           Foreign.Storable      (Storable (..))
 import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Hkl.C.Geometry
-import           Hkl.C.Sample
 import           Hkl.H5
 
   #include "hkl-binoculars.h"
@@ -224,7 +223,7 @@ hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl" \
 hkl_binoculars_space_hkl :: Ptr Geometry -- const HklGeometry *geometry
-                         -> Ptr HklSample -- const HklSample *sample
+                         -> Ptr HklMatrix -- const HklMatrix *ub
                          -> Double -- double k
                          -> Ptr Word16 --  const uint16_t *image
                          -> CInt -- int32_t n_pixels

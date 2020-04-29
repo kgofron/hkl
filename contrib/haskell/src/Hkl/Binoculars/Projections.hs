@@ -145,7 +145,7 @@ data InputHkl a b =
            , centralPixel :: (Int, Int)  -- x, y
            , sdd'         :: Length Double  -- sample to detector distance
            , detrot'      :: Angle Double
-           , sample'      :: Maybe (Sample Triclinic)
+           , config       :: BinocularsConfig
            }
   deriving Show
 
@@ -154,23 +154,22 @@ data DataFrameHkl a
       Int -- n
       Geometry -- geometry
       (ForeignPtr Word16) -- image
-      (Sample Triclinic) -- sample
       (Array F DIM2 Double) -- ub
 
 instance Show (DataFrameHkl a) where
-  show (DataFrameHkl q _ _ _ _) = show q
+  show (DataFrameHkl q _ _ _) = show q
 
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: Maybe (Sample Triclinic) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> (DataFrameHkl b) -> IO (DataFrameSpace DIM3)
-spaceHkl msampl detector pixels rs (DataFrameHkl _ g@(Geometry _ (Source w) _ _) img sampl _ub) = do
+spaceHkl msampl detector pixels rs (DataFrameHkl _ g@(Geometry _ (Source w) _ _) img _ub) = do
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
   let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
   withGeometry g $ \geometry ->
-    withSample (fromMaybe sampl msampl) $ \sample ->
+    withMatrix (fromMaybe sampl msampl) $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
     withArrayLen pixelsDims $ \ndim dims ->
@@ -194,7 +193,7 @@ mkInputHkl c' f = do
                   , centralPixel = centralpixel . bInput $ c'
                   , sdd' = sdd . bInput $ c'
                   , detrot' = fromMaybe (0 *~ degree) (detrot . bInput $ c')
-                  , sample' = sample'' (bInput c')
+                  , config = c'
                   }
 
 processHkl :: FramesHklP a => InputHkl a b -> IO ()
