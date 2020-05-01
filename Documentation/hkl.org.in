@@ -4,7 +4,7 @@
 #+LANGUAGE: en
 #+STYLE: <style>table.center {margin-left:auto; margin- right:auto;}</style>
 #+HTML_HEAD: <link href="css/style.css" rel="stylesheet" type="text/css" />
-#+HTML_MATHJAX:  path:"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"
+#+HTML_MATHJAX:  path:@MATHJAX_PATH@
 
 * Introduction
   The purpose of the library is to factorize single crystal

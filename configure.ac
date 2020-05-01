@@ -144,6 +144,16 @@ AM_COND_IF([HKL_DOC],
 	    AC_PATH_PROG([GNUPLOT], [gnuplot], [echo])
 	   ])
 
+dnl *** mathkjax ***
+AC_ARG_WITH([mathjax],
+            [AC_HELP_STRING([--with-mathjax],
+                            [use mathjax (default is "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML")])],
+            [use_mathjax=$withval],
+            [use_mathjax="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"])
+
+MATHJAX_PATH=$use_mathjax
+AC_SUBST(MATHJAX_PATH)
+
 dnl *** gtk-doc ***
 GTK_DOC_CHECK([1.9],[--flavour no-tmpl])
 
