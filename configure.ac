@@ -119,6 +119,16 @@ AC_DEFUN([OPTION_DEFAULT_ON], [dnl
     m4_bpatsubst([enable_$1], [[^0-9a-z]], [_])=yes])dnl
 ])dnl
 
+dnl ****************
+dnl *** analyzer ***
+dnl ****************
+
+OPTION_DEFAULT_OFF([analyzer], [enable gcc-10 -fanalyzer])
+AM_CONDITIONAL([ANALYZER], [test x$enable_analyzer != xno])
+AM_COND_IF([ANALYZER],
+        AX_CHECK_COMPILE_FLAG([-fanalyzer], [CFLAGS="$CFLAGS -fanalyzer"], [], [])
+)
+
 dnl ***************
 dnl *** logging ***
 dnl ***************
