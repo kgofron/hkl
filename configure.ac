@@ -156,8 +156,7 @@ AM_COND_IF([HKL_DOC],
 
 dnl *** mathkjax ***
 AC_ARG_WITH([mathjax],
-            [AC_HELP_STRING([--with-mathjax],
-                            [use mathjax (default is "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML")])],
+            [AS_HELP_STRING([--with-mathjax],[use mathjax (default is "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML")])],
             [use_mathjax=$withval],
             [use_mathjax="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"])
 
