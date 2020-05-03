@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -89,22 +89,9 @@ G_BEGIN_DECLS
 
 extern void hkl_printbt(void);
 
-static void *_hkl_malloc(int size, const char *error)
-{
-	void *tmp;
-
-	tmp = calloc(1, size);
-	if(!tmp){
-		fprintf(stderr, "%s", error);
-		exit(128);
-	}
-
-	return tmp;
-}
-
 G_END_DECLS
 
 /* malloc method */
-#define HKL_MALLOC(type) (type *)_hkl_malloc(sizeof(type), "Can not allocate memory for a " #type)
+#define HKL_MALLOC(type) g_new0(type, 1)
 
 #endif
