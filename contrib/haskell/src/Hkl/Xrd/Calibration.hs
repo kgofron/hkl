@@ -20,8 +20,6 @@ import Data.List (foldl')
 import Data.Text (unlines, pack)
 import Data.Vector.Storable
   ( Vector
-  , head
-  , concat
   , fromList
   , slice
   , toList
@@ -160,8 +158,8 @@ getPoseNxs f (XrdOneDH5Path _ g d w) i' = runSafeT $
       gamma <- get_position g' 0
       delta <- get_position d' i'
       wavelength <- get_position w' 0
-      let source = Source (Data.Vector.Storable.head wavelength *~ nano meter)
-      let positions = Data.Vector.Storable.concat [mu, komega, kappa, kphi, gamma, delta]
+      let source = Source (wavelength *~ nano meter)
+      let positions = Data.Vector.Storable.fromList [mu, komega, kappa, kphi, gamma, delta]
       let geometry = Geometry K6c source positions Nothing
       let detector = ZeroD
       m <- geometryDetectorRotationGet geometry detector
@@ -172,7 +170,7 @@ getWavelength ∷ File → DataFrameH5Path XrdOneD → IO WaveLength
 getWavelength f (XrdOneDH5Path _ _ _ w) = runSafeT $
     withDataItem f w $ \w' -> liftIO $ do
       wavelength <- get_position w' 0
-      return $ Data.Vector.Storable.head wavelength *~ nano meter
+      return $ wavelength *~ nano meter
 
 readWavelength :: XRDCalibrationEntry -> IO WaveLength
 readWavelength e =

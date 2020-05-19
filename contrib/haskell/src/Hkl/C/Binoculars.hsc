@@ -32,7 +32,7 @@ module Hkl.C.Binoculars
        ) where
 
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
-import           Data.Array.Repa       (DIM1, Shape, shapeOfList, showShape, extent, ix1)
+import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, showShape, extent, ix1)
 import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Word             (Word16)
 import           Foreign.C.Types       (CDouble, CInt(..))
@@ -44,6 +44,7 @@ import           Foreign.Storable      (Storable (..))
 import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Hkl.C.Geometry
+import           Hkl.C.Sample
 import           Hkl.H5
 
   #include "hkl-binoculars.h"
@@ -219,11 +220,11 @@ hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
                        -> Ptr CInt --  const int32_t *pixels_coordinates_dims
                        -> Ptr Double --  const double *resolutions
                        -> CInt -- int32_t n_resolutions
-                       -> IO (Ptr (Space sh))
+                       -> IO (Ptr (Space DIM3))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl" \
 hkl_binoculars_space_hkl :: Ptr Geometry -- const HklGeometry *geometry
-                         -> Ptr HklMatrix -- const HklMatrix *ub
+                         -> Ptr HklSample -- const HklSample *sample
                          -> Double -- double k
                          -> Ptr Word16 --  const uint16_t *image
                          -> CInt -- int32_t n_pixels
@@ -232,4 +233,4 @@ hkl_binoculars_space_hkl :: Ptr Geometry -- const HklGeometry *geometry
                          -> Ptr CInt --  const int32_t *pixels_coordinates_dims
                          -> Ptr Double --  const double *resolutions
                          -> CInt -- int32_t n_resolutions
-                         -> IO (Ptr (Space sh))
+                         -> IO (Ptr (Space DIM3))

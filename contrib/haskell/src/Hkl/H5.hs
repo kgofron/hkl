@@ -91,7 +91,7 @@ import           Data.ByteString.Char8           (ByteString, pack, packCString,
 import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
-                                                  unsafeFromForeignPtr0)
+                                                  head, unsafeFromForeignPtr0)
 import           Data.Vector.Storable.Mutable    (MVector (..), replicate)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
@@ -110,6 +110,8 @@ import           Foreign.StablePtr               (StablePtr, castPtrToStablePtr,
 import           Numeric.LinearAlgebra           (Matrix, reshape)
 
 import           Hkl.Detector
+
+import           Prelude                         hiding (head)
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
@@ -184,8 +186,10 @@ getPosition' dataset' h =
 get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
 get_position_new dataset' s = getPosition' dataset' (shapeAsCoordinateToHyperslab s)
 
-get_position :: Dataset -> Int -> IO (Vector Double)
-get_position dataset' n = getPosition' dataset' [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
+get_position :: Dataset -> Int -> IO Double
+get_position dataset' n = do
+  v <- getPosition' dataset' [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
+  return $ head v
 
 get_ub :: Dataset -> IO (Matrix Double)
 get_ub dataset' = do
@@ -322,6 +326,7 @@ data Hdf5Path sh e
   | H5GroupPath ByteString (Hdf5Path sh e)
   | H5GroupAtPath Int (Hdf5Path sh e)
   | H5DatasetPath ByteString
+    deriving Show
 
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
 hdf5p = H5RootPath

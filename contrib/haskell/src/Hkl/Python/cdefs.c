@@ -70,17 +70,15 @@ char* checkError() {
 
 void execInModule(const char* payload, const char* moduleName) {
     PyObject *evalModule;
-    PyObject *evalDict;
-    PyObject *evalVal;
     evalModule = PyImport_AddModule(moduleName);
     PyObject *globals = PyModule_GetDict(evalModule);
     PyDict_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
-    PyObject *locals = Py_BuildValue("{}");
-    PyObject *result = PyRun_StringFlags(payload,
-                                         Py_file_input,
-                                         globals,
-                                         globals,
-                                         NULL);
+    Py_BuildValue("{}");
+    PyRun_StringFlags(payload,
+                      Py_file_input,
+                      globals,
+                      globals,
+                      NULL);
 
     if ( PyErr_Occurred() ) {PyErr_Print();PyErr_Clear();}
     return;
@@ -152,7 +150,6 @@ PyObject* matrix3x3_to_pyobject(double *data)
 	int nd = 2;
 	npy_intp dims[] = {3, 3};
 	int typenum = NPY_DOUBLE;
-	npy_intp nbytes = 0;
 
 	_import_array();
 	PyObject *obj = PyArray_SimpleNew(nd, dims, typenum);

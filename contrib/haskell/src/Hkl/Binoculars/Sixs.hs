@@ -14,17 +14,20 @@
 module Hkl.Binoculars.Sixs
   (process) where
 
+import           Bindings.HDF5.Core                (Location)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM3, Z)
 import           Data.Ini.Config                   (parseIniFile)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (typeOf)
-import           Data.Vector.Storable              (concat, head)
+import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude ((*~))
+import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
+                                                    (*~))
 import           Pipes                             (await, yield)
+import           Pipes.Safe                        (MonadSafe)
 
 import           Prelude                           hiding (readFile)
 
@@ -36,6 +39,9 @@ import           Hkl.H5                            hiding (File)
 import           Hkl.Pipes
 import           Hkl.Types
 import           Paths_hkl
+
+
+-- | FramesQxQyQzP
 
 data SixsQxQyQzUhv
   = SixsQxQyQzUhv
@@ -54,8 +60,10 @@ instance LenP SixsQxQyQzUhv where
     fp <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f m $ \m' -> do
-      (Just n) <- liftIO $ lenH5Dataspace m'
-      yield n
+      mn <- liftIO $ lenH5Dataspace m'
+      case mn of
+        (Just n) -> yield n
+        Nothing  -> error "can not extract length"
 
 instance FramesQxQyQzP SixsQxQyQzUhv where
   framesQxQyQzP (SixsQxQyQzUhv i m o d g w) det = forever $ do
@@ -75,8 +83,8 @@ instance FramesQxQyQzP SixsQxQyQzUhv where
                            gamma' <- get_position g' j
                            wavelength <- get_position w' 0
                            image <- get_image' det i' j
-                           let positions = Data.Vector.Storable.concat [mu, omega, delta, gamma']
-                               source = Source (Data.Vector.Storable.head wavelength *~ angstrom)
+                           let positions = Data.Vector.Storable.fromList [mu, omega, delta, gamma']
+                               source = Source (wavelength *~ angstrom)
                            pure $ DataFrameQxQyQz j (Geometry Uhv source positions Nothing) image))
 
 h5dpathQxQyQz :: InputType -> SixsQxQyQzUhv
@@ -96,16 +104,123 @@ h5dpathQxQyQz t = case t of
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
 
-data SixsHklUhv = SixsHklUhv
+
+-- | FramesHklP
+
+data UhvPath = UhvPath
+    (Hdf5Path DIM1 Double) -- Mu
+    (Hdf5Path DIM1 Double) -- Omega
+    (Hdf5Path DIM1 Double) -- Delta
+    (Hdf5Path DIM1 Double) -- Gamma
+    (Hdf5Path Z Double) -- Wavelength
+    deriving Show
+
+withUhvPathP :: (MonadSafe m, Location l) => l -> UhvPath -> ((Int -> IO Geometry) -> m r) -> m r
+withUhvPathP f (UhvPath m o d g w) gg =
+      withHdf5PathP f m $ \m' ->
+      withHdf5PathP f o $ \o' ->
+      withHdf5PathP f d $ \d'->
+      withHdf5PathP f g $ \g' ->
+      withHdf5PathP f w $ \w' -> gg (\j -> do
+                                      mu <- get_position m' j
+                                      omega <- get_position o' j
+                                      delta <- get_position d' j
+                                      gamma' <- get_position g' j
+                                      wavelength <- get_position w' 0
+                                      let positions = Data.Vector.Storable.fromList [mu, omega, delta, gamma']
+                                      let source = Source (wavelength *~ angstrom)
+                                      pure $ Geometry Uhv source positions Nothing)
+
+
+data SamplePath = SamplePath
+    (Hdf5Path Z Double) -- a
+    (Hdf5Path Z Double) -- b
+    (Hdf5Path Z Double) -- c
+    (Hdf5Path Z Double) -- alpha
+    (Hdf5Path Z Double) -- beta
+    (Hdf5Path Z Double) -- gamma
+    (Hdf5Path Z Double) -- ux
+    (Hdf5Path Z Double) -- uy
+    (Hdf5Path Z Double) -- yz
+    deriving Show
+
+getValueWithUnit :: Dataset -> Int -> Unit m d Double -> IO (Quantity d Double)
+getValueWithUnit d j u = do
+  v <- get_position d j
+  return $ v *~ u
+
+getValueWithTrans :: Dataset -> Int -> (Double -> Double) -> IO Double
+getValueWithTrans d j f = do
+  v <- get_position d j
+  return $ f v
+
+deg2rad :: Double -> Double
+deg2rad v = v / 180.0 * pi
+
+withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> ((Int -> IO (Sample Triclinic)) -> m r) -> m  r
+withSamplePathP f (SamplePath a' b' c' alpha' beta' gamma' ux' uy' uz') g =
+    withHdf5PathP f a' $ \a'' ->
+    withHdf5PathP f b' $ \b'' ->
+    withHdf5PathP f c' $ \c'' ->
+    withHdf5PathP f alpha' $ \alpha'' ->
+    withHdf5PathP f beta' $ \beta'' ->
+    withHdf5PathP f gamma' $ \gamma'' ->
+    withHdf5PathP f ux' $ \ux'' ->
+    withHdf5PathP f uy' $ \uy'' ->
+    withHdf5PathP f uz' $ \uz'' ->
+        g (\_ -> Sample
+                <$> pure "test"
+                <*> (Triclinic
+                    <$> getValueWithUnit a'' 0 angstrom
+                    <*> getValueWithUnit b'' 0 angstrom
+                    <*> getValueWithUnit c'' 0 angstrom
+                    <*> getValueWithUnit alpha'' 0 degree
+                    <*> getValueWithUnit beta'' 0 degree
+                    <*> getValueWithUnit gamma'' 0 degree)
+                <*> (Parameter
+                    <$> pure "ux"
+                    <*> getValueWithTrans ux'' 0 deg2rad
+                    <*> pure (Range 0 0))
+                <*> (Parameter
+                    <$> pure "uy"
+                    <*> getValueWithTrans uy'' 0 deg2rad
+                    <*> pure (Range 0 0))
+                <*> (Parameter
+                    <$> pure "uz"
+                    <*> getValueWithTrans uz'' 0 deg2rad
+                    <*> pure (Range 0 0)))
+
+data SixsHklUhvPath = SixsHklUhvPath
+    (Hdf5Path DIM3 Word16) -- Image
+    UhvPath -- diffractometer
+    SamplePath -- sample
   deriving Show
 
-instance LenP SixsHklUhv where
-  lenP SixsHklUhv = undefined
+instance LenP SixsHklUhvPath where
+  lenP (SixsHklUhvPath p _ _) = forever $ do
+    fp <- await
+    withFileP (openH5 fp) $ \f ->
+      withHdf5PathP f p $ \d -> do
+      mn <- liftIO $ lenH5Dataspace d
+      case mn of
+        (Just n) -> yield n
+        Nothing  -> error "Cannot extract frame lenght from the file"
 
-instance FramesHklP SixsHklUhv where
-  framesHklP SixsHklUhv _det = undefined
+instance FramesHklP SixsHklUhvPath where
+  framesHklP (SixsHklUhvPath imgs dif samp) det = forever $ do
+    (Chunk fp from to) <- await
+    withFileP (openH5 fp) $ \f ->
+      withHdf5PathP f imgs $ \dimgs ->
+      withUhvPathP f dif $ \getDiffractometer ->
+      withSamplePathP f samp $ \getSample ->
+      forM_ [from..to-1] (\j -> yield =<< liftIO
+                               (DataFrameHkl
+                                <$> pure j
+                                <*> get_image' det dimgs j
+                                <*> getDiffractometer j
+                                <*> getSample j))
 
-h5dpathHkl :: InputType -> SixsHklUhv
+h5dpathHkl :: InputType -> SixsHklUhvPath
 h5dpathHkl _t = undefined
 
 process :: Maybe FilePath -> IO ()

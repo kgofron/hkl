@@ -1,10 +1,10 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE Rank2Types            #-}
+{-# LANGUAGE UnicodeSyntax         #-}
 
 module Hkl.Xrd.OneD
        ( XrdOneD
@@ -29,82 +29,61 @@ module Hkl.Xrd.OneD
        , dummiesForPy
        ) where
 
-import Control.Applicative ((<$>), (<*>), pure)
-import Control.Concurrent.Async (mapConcurrently)
-import Control.Monad (forM_, forever, void, zipWithM_)
-import Control.Monad.Morph (hoist)
-import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
-import Control.Monad.Trans.State.Strict (StateT, get, put)
-import Data.Array.Repa (DIM1, ix1, size)
-import Data.Attoparsec.Text (parseOnly)
-import qualified Data.List as List (lookup)
-import Data.Maybe (fromJust, fromMaybe)
-import Data.Text (Text)
-import qualified Data.Text as Text (unlines, pack, intercalate)
-import Data.Text.IO (readFile)
-import Data.Vector.Storable (concat, head)
-import Numeric.LinearAlgebra (fromList)
-import Numeric.Units.Dimensional.Prelude (meter, nano, (/~), (*~))
-import System.Exit ( ExitCode( ExitSuccess ) )
-import System.FilePath ((<.>), (</>), dropExtension, replaceExtension, takeFileName, takeDirectory)
-import Text.Printf ( printf )
+import           Control.Applicative               (pure, (<$>), (<*>))
+import           Control.Concurrent.Async          (mapConcurrently)
+import           Control.Monad                     (forM_, forever, void,
+                                                    zipWithM_)
+import           Control.Monad.Morph               (hoist)
+import           Control.Monad.Trans.Maybe         (MaybeT, runMaybeT)
+import           Control.Monad.Trans.State.Strict  (StateT, get, put)
+import           Data.Array.Repa                   (DIM1, ix1, size)
+import           Data.Attoparsec.Text              (parseOnly)
+import qualified Data.List                         as List (lookup)
+import           Data.Maybe                        (fromJust, fromMaybe)
+import           Data.Text                         (Text)
+import qualified Data.Text                         as Text (intercalate, pack,
+                                                            unlines)
+import           Data.Text.IO                      (readFile)
+import           Data.Vector.Storable              (concat, head)
+import           Numeric.LinearAlgebra             (fromList)
+import           Numeric.Units.Dimensional.Prelude (meter, nano, (*~), (/~))
+import           Pipes                             (Consumer, Pipe, await, lift,
+                                                    runEffect, yield, (>->))
+import           Pipes.Lift                        (evalStateP)
+import           Pipes.Prelude                     (drain, filter, toListM)
+import           Pipes.Safe                        (runSafeT)
+import           System.Exit                       (ExitCode (ExitSuccess))
+import           System.FilePath                   (dropExtension,
+                                                    replaceExtension,
+                                                    takeDirectory, takeFileName,
+                                                    (<.>), (</>))
+import           Text.Printf                       (printf)
 
-import Pipes
-    ( Consumer
-    , Pipe
-    , lift
-    , (>->)
-    , runEffect
-    , await
-    , yield
-    )
-import Pipes.Lift ( evalStateP )
-import Pipes.Prelude ( drain, filter, toListM )
-import Pipes.Safe ( runSafeT )
-
-import Hkl.C ( Factory ( K6c )
-             , Geometry ( Geometry )
-             , geometryDetectorRotationGet
-             )
-import Hkl.DataSource ( DataItem ( DataItemH5 )
-                      , DataSource( DataSourceH5 )
-                      , atIndex'
-                      )
-import Hkl.Detector ( Detector ( ZeroD ) )
-import Hkl.Edf ( Edf ( Edf )
-               , edfFromFile
-               )
-import Hkl.Flat ( Flat )
-import Hkl.H5 ( lenH5Dataspace )
-import Hkl.PyFAI ( AIMethod, Poni
-                 , PoniExt ( PoniExt )
-                 , PoniPath
-                 , Pose ( Pose )
-                 , move
-                 , poniP
-                 , poniToText
-                 )
-import Hkl.Python ( PyVal
-                  , toPyVal
-                  )
-import Hkl.MyMatrix ( Basis ( HklB )
-                    , MyMatrix ( MyMatrix )
-                    )
-import Hkl.Nxs ( DataFrameH5 ( DataFrameH5 )
-               , Nxs ( Nxs )
-               , XrdOneD
-               , DataFrameH5Path ( XrdOneDH5Path )
-               , withDataFrameH5
-               )
-import Hkl.Script ( Gnuplot, Py2
-                  , Script ( ScriptGnuplot, Py2Script )
-                  , run
-                  , scriptSave
-                  )
-import Hkl.Types ( AbsDirPath, SampleName
-                 , Source ( Source )
-                 )
-import Hkl.Utils ( hasContent )
+import           Hkl.C                             (Factory (K6c),
+                                                    Geometry (Geometry),
+                                                    geometryDetectorRotationGet)
+import           Hkl.DataSource                    (DataItem (DataItemH5),
+                                                    DataSource (DataSourceH5),
+                                                    atIndex')
+import           Hkl.Detector                      (Detector (ZeroD))
+import           Hkl.Edf                           (Edf (Edf), edfFromFile)
+import           Hkl.Flat                          (Flat)
+import           Hkl.H5                            (lenH5Dataspace)
+import           Hkl.MyMatrix                      (Basis (HklB),
+                                                    MyMatrix (MyMatrix))
+import           Hkl.Nxs                           (DataFrameH5 (DataFrameH5), DataFrameH5Path (XrdOneDH5Path),
+                                                    Nxs (Nxs), XrdOneD,
+                                                    withDataFrameH5)
+import           Hkl.PyFAI                         (AIMethod, Poni,
+                                                    PoniExt (PoniExt), PoniPath,
+                                                    Pose (Pose), move, poniP,
+                                                    poniToText)
+import           Hkl.Python                        (PyVal, toPyVal)
+import           Hkl.Script                        (Gnuplot, Py2, Script (Py2Script, ScriptGnuplot),
+                                                    run, scriptSave)
+import           Hkl.Types                         (AbsDirPath, SampleName,
+                                                    Source (Source))
+import           Hkl.Utils                         (hasContent)
 
 -- | TODO
 -- * When we skip the last frame there is problem.
@@ -144,11 +123,11 @@ data XRDSample = XRDSample SampleName AbsDirPath [XrdNxs] -- ^ nxss
 data XrdOneDParams a = XrdOneDParams PoniExt (Maybe (Flat a)) AIMethod
 
 data DifTomoFrame sh =
-  DifTomoFrame { difTomoFrameNxs :: Nxs XrdOneD-- ^ nexus of the current frame
-               , difTomoFrameIdx :: Int -- ^ index of the current frame
-               , difTomoFrameEOF :: Bool -- ^ is it the eof of the stream
+  DifTomoFrame { difTomoFrameNxs      :: Nxs XrdOneD-- ^ nexus of the current frame
+               , difTomoFrameIdx      :: Int -- ^ index of the current frame
+               , difTomoFrameEOF      :: Bool -- ^ is it the eof of the stream
                , difTomoFrameGeometry :: Geometry -- ^ diffractometer geometry
-               , difTomoFramePoniExt :: PoniExt -- ^ the ref poniext
+               , difTomoFramePoniExt  :: PoniExt -- ^ the ref poniext
                } deriving (Show)
 
 class Frame t where
@@ -188,10 +167,12 @@ instance Frame (DataFrameH5 XrdOneD) where
 frames :: (Frame a) => Pipe a (DifTomoFrame DIM1) IO ()
 frames = do
   d <- await
-  (Just n) <- lift $ len d
-  forM_ [0..n-1] (\i' -> do
-                     f <- lift $ runMaybeT $ row d i'
-                     forM_ f yield)
+  mn <- lift $ len d
+  case mn of
+    (Just n) -> forM_ [0..n-1] (\i' -> do
+                                 f <- lift $ runMaybeT $ row d i'
+                                 forM_ f yield)
+    Nothing -> error "Cannot extract frame length"
 
 frames' :: (Frame a) => [Int] -> Pipe a (DifTomoFrame DIM1) IO ()
 frames' is = do
@@ -369,11 +350,13 @@ savePy p b mt = forever $ do
   f@(DifTomoFrame' _difTomoFrame poniPath) <- await
   let scriptPath = poniPath `replaceExtension`"py"
   let (script, dataPath) = createPy p b mt scriptPath f
-  ExitSuccess <- lift $ run script True
-  yield $ DifTomoFrame'' { difTomoFrame''DifTomoFrame' = f
-                         , difTomoFrame''PySCript = script
-                         , difTomoFrame''DataPath = dataPath
-                         }
+  status <- lift $ run script True
+  case status of
+    ExitSuccess -> yield $ DifTomoFrame'' { difTomoFrame''DifTomoFrame' = f
+                                         , difTomoFrame''PySCript = script
+                                         , difTomoFrame''DataPath = dataPath
+                                         }
+    _ -> error "Script execution failed"
 
 data DifTomoFrame''' sh = DifTomoFrame''' { difTomoFrame'''DifTomoFrame'' ∷ DifTomoFrame'' sh
                                           , difTomoFrame'''GnuplotScript ∷ Script Gnuplot
@@ -619,8 +602,10 @@ saveMulti' p b mt = forever $ do
   let directory = takeDirectory poniPath
   let filename = directory </> "multi.py"
   let (script, _) = createMultiPy p b mt filename f' idxPonies
-  ExitSuccess ← lift . lift $ if difTomoFrameEOF f then run script True else return ExitSuccess
-  lift $ put $! (idxPonies ++ [(idx, poniPath)])
+  status ← lift . lift $ if difTomoFrameEOF f then run script True else return ExitSuccess
+  case status of
+    ExitSuccess -> lift $ put $! (idxPonies ++ [(idx, poniPath)])
+    _           -> error "Script execution failed"
 
 saveMultiGeometry ∷ XrdOneDParams a → DIM1 → Maybe Threshold → Consumer (DifTomoFrame' sh) IO r
 saveMultiGeometry p b mt = evalStateP [] (saveMulti' p b mt)

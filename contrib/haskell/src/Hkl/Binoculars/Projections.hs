@@ -15,7 +15,8 @@
     Portability: GHC only (not tested)
 -}
 module Hkl.Binoculars.Projections
-  ( DataFrameQxQyQz(..)
+  ( DataFrameHkl(..)
+  , DataFrameQxQyQz(..)
   , FramesHklP(..)
   , FramesQxQyQzP(..)
   , InputQxQyQz(..)
@@ -135,7 +136,7 @@ processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
 
   return ()
 
--- | Hkl
+-- | Hkl Projection
 
 data InputHkl a b =
   InputHkl { filename     :: InputFn
@@ -151,10 +152,11 @@ data InputHkl a b =
 
 data DataFrameHkl a
     = DataFrameHkl
-      Int -- n
-      Geometry -- geometry
+      Int -- position in the stream
       (ForeignPtr Word16) -- image
-      (Array F DIM2 Double) -- ub
+      Geometry -- geometry
+      (Sample Triclinic) --  the sample part
+      -- (Array F DIM2 Double) -- ub
 
 instance Show (DataFrameHkl a) where
   show (DataFrameHkl q _ _ _) = show q
@@ -162,19 +164,23 @@ instance Show (DataFrameHkl a) where
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
+updateSampleWithConfig :: BinocularsConfig -> Sample Triclinic -> Sample Triclinic
+updateSampleWithConfig = undefined
+
 {-# INLINE spaceHkl #-}
-spaceHkl :: Maybe (Sample Triclinic) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> (DataFrameHkl b) -> IO (DataFrameSpace DIM3)
-spaceHkl msampl detector pixels rs (DataFrameHkl _ g@(Geometry _ (Source w) _ _) img _ub) = do
+spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> (DataFrameHkl b) -> IO (DataFrameSpace DIM3)
+spaceHkl config' detector pixels rs (DataFrameHkl _ img g@(Geometry _ (Source w) _ _) samp) = do
   let k = 2 * pi / (w /~ angstrom)
   let nPixels = size . shape $ detector
   let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
+  let sample' = updateSampleWithConfig config' samp
   withGeometry g $ \geometry ->
-    withMatrix (fromMaybe sampl msampl) $ \sample ->
+    withSample sample' $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
     withArrayLen pixelsDims $ \ndim dims ->
     withForeignPtr img $ \i -> do
-      p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_hkl geometry sample k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
+      p <- {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl geometry sample k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
       return (DataFrameSpace img s)
 
@@ -197,7 +203,7 @@ mkInputHkl c' f = do
                   }
 
 processHkl :: FramesHklP a => InputHkl a b -> IO ()
-processHkl input@(InputHkl _ h5d o res cen d r sample) = do
+processHkl input@(InputHkl _ h5d o res cen d r config') = do
   let detector = ImXpadS140
 
   pixels <- getPixelsCoordinates detector cen d r
@@ -207,7 +213,7 @@ processHkl input@(InputHkl _ h5d o res cen d r sample) = do
                            runSafeT $ runEffect $
                            each job
                            >-> framesHklP h5d detector
-                           >-> mapM (liftIO . spaceHkl sample detector pixels res)
+                           >-> mapM (liftIO . spaceHkl config' detector pixels res)
                            >-> mkCube'P detector s
                        ) jobs
   let c' = mconcat r'
