@@ -1,8 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiWayIf            #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE StandaloneDeriving    #-}
 
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
@@ -38,6 +36,7 @@ import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CInt (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
+import           Foreign.Ptr                       (Ptr)
 import           Foreign.Storable                  (peek)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree, (*~),
@@ -57,6 +56,22 @@ import           Hkl.C.Sample
 import           Hkl.Detector
 import           Hkl.H5                            hiding (File)
 import           Hkl.Types
+
+
+-- | Common
+
+withK :: WaveLength -> (Double -> IO r) -> IO r
+withK w f = f (2 * pi / (w /~ angstrom))
+
+withNPixels :: Detector a DIM2 -> (CInt -> IO r) -> IO r
+withNPixels d f = f (toEnum . size . shape $ d)
+
+withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CInt -> IO r) -> IO r
+withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
+
+saveCube :: FilePath -> [Cube' DIM3] -> IO ()
+saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
+
 
 -- | QxQyQz Projection
 
@@ -85,16 +100,15 @@ class LenP a => FramesQxQyQzP a where
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz detector pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) img) = do
-  let k = 2 * pi / (w /~ angstrom)
-  let nPixels = size . shape $ detector
-  let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
-  withGeometry g $ \geometry ->
+spaceQxQyQz detector pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) img) =
+  withK w $ \k ->
+    withNPixels detector $ \nPixels ->
+    withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
-    withArrayLen pixelsDims $ \ndim dims ->
+    withPixelsDims pixels $ \ndim dims ->
     withForeignPtr img $ \i -> do
-      p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
+      p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry k i nPixels pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
       return (DataFrameSpace img s)
 
@@ -129,12 +143,7 @@ processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
                            >-> mapM (liftIO . spaceQxQyQz detector pixels res)
                            >-> mkCube'P detector s
                        ) jobs
-  let c' = mconcat r'
-  c'' <- toCube c'
-  saveHdf5 o c''
-  print c''
-
-  return ()
+  saveCube o r'
 
 -- | Hkl Projection
 
@@ -168,19 +177,18 @@ updateSampleWithConfig :: BinocularsConfig -> Sample Triclinic -> Sample Triclin
 updateSampleWithConfig = undefined
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> (DataFrameHkl b) -> IO (DataFrameSpace DIM3)
+spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
 spaceHkl config' detector pixels rs (DataFrameHkl _ img g@(Geometry _ (Source w) _ _) samp) = do
-  let k = 2 * pi / (w /~ angstrom)
-  let nPixels = size . shape $ detector
-  let pixelsDims = map toEnum $ listOfShape . extent $ pixels :: [CInt]
   let sample' = updateSampleWithConfig config' samp
-  withGeometry g $ \geometry ->
+  withK w $ \k ->
+    withNPixels detector $ \nPixels ->
+    withGeometry g $ \geometry ->
     withSample sample' $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
-    withArrayLen pixelsDims $ \ndim dims ->
+    withPixelsDims pixels $ \ndim dims ->
     withForeignPtr img $ \i -> do
-      p <- {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl geometry sample k i (toEnum nPixels) pix (toEnum ndim) dims r (toEnum nr)
+      p <- {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl geometry sample k i nPixels pix (toEnum ndim) dims r (toEnum nr)
       s <- peek p
       return (DataFrameSpace img s)
 
@@ -216,9 +224,4 @@ processHkl input@(InputHkl _ h5d o res cen d r config') = do
                            >-> mapM (liftIO . spaceHkl config' detector pixels res)
                            >-> mkCube'P detector s
                        ) jobs
-  let c' = mconcat r'
-  c'' <- toCube c'
-  saveHdf5 o c''
-  print c''
-
-  return ()
+  saveCube o r'

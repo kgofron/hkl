@@ -210,7 +210,7 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 
 /* the array is pre filled with the pixel coordinates */
 HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
-                                             const HklMatrix *ub,
+                                             const HklSample *sample,
                                              double K,
                                              const uint16_t *image,
                                              int32_t n_pixels,
@@ -227,7 +227,6 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
 	const double *k = &pixels_coordinates[1 * n_pixels];
 	const double *l = &pixels_coordinates[2 * n_pixels];
 
-	HklSample *sample = hkl_sample_new("test");
 	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
 	const HklQuaternion q_d = hkl_geometry_detector_rotation_get(geometry, detector);
 	HklQuaternion qs = hkl_geometry_sample_rotation_get(geometry, sample);
@@ -235,7 +234,7 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
         HklMatrix RUB;
         HklMatrix RUB_1;
         hkl_quaternion_to_matrix(&qs, &RUB);
-	hkl_matrix_times_matrix(&RUB, ub);
+	hkl_matrix_times_matrix(&RUB, hkl_sample_UB_get(sample));
         hkl_matrix_inv(&RUB, &RUB_1);
 
 	HklBinocularsSpace *space = space_new(n_pixels, ARRAY_SIZE(names));

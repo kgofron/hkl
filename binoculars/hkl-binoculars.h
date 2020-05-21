@@ -56,7 +56,7 @@ extern HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 						  int32_t n_resolutions);
 
 extern HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
-                                                    const HklMatrix *ub,
+                                                    const HklSample *sample,
                                                     double k,
                                                     const uint16_t *image,
                                                     int32_t n_pixels,
