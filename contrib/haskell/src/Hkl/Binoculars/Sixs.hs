@@ -219,13 +219,13 @@ process mf = do
                        (Just f) -> pure f
   let r = parseIniFile cfg parseBinocularsConfig
   case r of
-    Right c' -> case (ptype . bProjection $ c') of
+    Right c -> case binocularsProjectionPtype . binocularsConfigProjection $ c of
       QxQyQzProjection -> do
-        i <- mkInputQxQyQz c' h5dpathQxQyQz
+        i <- mkInputQxQyQz c h5dpathQxQyQz
         print i
         processQxQyQz i
       HklProjection -> do
-        i <- mkInputHkl c' h5dpathHkl
+        i <- mkInputHkl c h5dpathHkl
         print i
         processHkl i
     Left e   -> print e

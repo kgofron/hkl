@@ -72,7 +72,6 @@ withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 saveCube :: FilePath -> [Cube' DIM3] -> IO ()
 saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
 
-
 -- | QxQyQz Projection
 
 type Resolutions = [Double]
@@ -116,17 +115,17 @@ mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
 mkJobsQxQyQz (InputQxQyQz fn h5d _ _ _ _ _) = mkJobs fn h5d
 
 mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> (InputType -> a) -> IO (InputQxQyQz a)
-mkInputQxQyQz c' f = do
-  fs <- files c'
+mkInputQxQyQz c@(BinocularsConfig d i p) f = do
+  fs <- files c
   pure $ InputQxQyQz { filename = InputList fs
-                     , h5dpath = f (itype . bInput $ c')
-                     , output = case inputrange . bInput $ c' of
-                                  Just r  -> destination' r (destination . bDispatcher $ c')
-                                  Nothing -> destination' (ConfigRange []) (destination . bDispatcher $ c')
-                     , resolutions = resolution . bProjection $ c'
-                     , centralPixel = centralpixel . bInput $ c'
-                     , sdd' = sdd . bInput $ c'
-                     , detrot' = fromMaybe (0 *~ degree) (detrot . bInput $ c')
+                     , h5dpath = f (binocularsInputItype i)
+                     , output = case binocularsInputInputrange i of
+                                  Just r  -> destination' r (binocularsDispatcherDestination d)
+                                  Nothing -> destination' (ConfigRange []) (binocularsDispatcherDestination d)
+                     , resolutions = binocularsProjectionResolution p
+                     , centralPixel = binocularsInputCentralpixel i
+                     , sdd' = binocularsInputSdd i
+                     , detrot' = fromMaybe (0 *~ degree) ( binocularsInputDetrot i)
                      }
 
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
@@ -173,13 +172,10 @@ instance Show (DataFrameHkl a) where
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
-updateSampleWithConfig :: BinocularsConfig -> Sample Triclinic -> Sample Triclinic
-updateSampleWithConfig = undefined
-
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
 spaceHkl config' detector pixels rs (DataFrameHkl _ img g@(Geometry _ (Source w) _ _) samp) = do
-  let sample' = updateSampleWithConfig config' samp
+  let sample' = overloadSampleWithConfig config' samp
   withK w $ \k ->
     withNPixels detector $ \nPixels ->
     withGeometry g $ \geometry ->
@@ -196,18 +192,18 @@ mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
 mkJobsHkl (InputHkl fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
 mkInputHkl :: FramesHklP a => BinocularsConfig -> (InputType -> a) -> IO (InputHkl a b)
-mkInputHkl c' f = do
-  fs <- files c'
+mkInputHkl c@(BinocularsConfig d i p) f = do
+  fs <- files c
   pure $ InputHkl { filename = InputList fs
-                  , h5dpath = f (itype . bInput $ c')
-                  , output = case inputrange . bInput $ c' of
-                               Just r  -> destination' r (destination . bDispatcher $ c')
-                               Nothing -> destination' (ConfigRange []) (destination . bDispatcher $ c')
-                  , resolutions = resolution . bProjection $ c'
-                  , centralPixel = centralpixel . bInput $ c'
-                  , sdd' = sdd . bInput $ c'
-                  , detrot' = fromMaybe (0 *~ degree) (detrot . bInput $ c')
-                  , config = c'
+                  , h5dpath = f (binocularsInputItype i)
+                  , output = destination'
+                             (fromMaybe (ConfigRange []) (binocularsInputInputrange i))
+                             (binocularsDispatcherDestination d)
+                  , resolutions = binocularsProjectionResolution p
+                  , centralPixel = binocularsInputCentralpixel i
+                  , sdd' = binocularsInputSdd i
+                  , detrot' = fromMaybe (0 *~ degree) (binocularsInputDetrot i)
+                  , config = c
                   }
 
 processHkl :: FramesHklP a => InputHkl a b -> IO ()

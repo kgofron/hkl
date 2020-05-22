@@ -57,12 +57,12 @@ data Engine
 -- | Sample
 
 data Sample a
-  = Sample
-    String -- ^ name of the sample
-    (Lattice a) -- ^ the lattice of the sample
-    Parameter -- ^ ux
-    Parameter -- ^ uy
-    Parameter -- ^ uz
+    = Sample { sampleName    :: SampleName
+             , sampleLattice :: Lattice a
+             , sampleUx      :: Parameter
+             , sampleUy      :: Parameter
+             , sampleUz      :: Parameter
+             }
   deriving (Show)
 
 -- | Source

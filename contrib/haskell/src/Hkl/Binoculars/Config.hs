@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
@@ -22,7 +23,7 @@ module Hkl.Binoculars.Config
     , destination'
     , files
     , parseBinocularsConfig
-    , sample''
+    , overloadSampleWithConfig
     ) where
 
 
@@ -34,13 +35,14 @@ import           Data.Ini.Config                   (IniParser, fieldFlag,
                                                     listWithSeparator, number,
                                                     section)
 import           Data.List                         (isInfixOf)
+import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, pack, replace,
                                                     takeWhile, unpack)
 import           Data.Typeable                     (Typeable)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, DLength, Length,
-                                                    Unit, degree, meter, radian,
-                                                    (*~), (/~))
+                                                    Unit, degree, meter, (*~),
+                                                    (/~))
 import           Path                              (Abs, Dir, File, Path,
                                                     fileExtension, parseAbsDir,
                                                     toFilePath)
@@ -60,9 +62,9 @@ newtype DestinationTmpl =
 
 
 data BinocularsDispatcher =
-  BinocularsDispatcher { ncore       :: Maybe Int
-                       , destination :: DestinationTmpl
-                       , overwrite   :: Bool
+  BinocularsDispatcher { binocularsDispatcherNcore       :: Maybe Int
+                       , binocularsDispatcherDestination :: DestinationTmpl
+                       , binocularsDispatcherOverwrite   :: Bool
                        } deriving (Eq, Show)
 
 data InputType = SixsFlyScanUhv
@@ -70,23 +72,23 @@ data InputType = SixsFlyScanUhv
   deriving (Eq, Show)
 
 data BinocularsInput =
-  BinocularsInput { itype                  :: InputType
-                  , nexusdir               :: Path Abs Dir
-                  , inputrange             :: Maybe (ConfigRange Int)
-                  , centralpixel           :: (Int, Int)
-                  , sdd                    :: Length Double
-                  , detrot                 :: Maybe (Angle Double)
-                  , attenuationCoefficient :: Maybe Double
-                  , maskmatrix             :: Maybe Text
-                  , a                      :: Maybe (Length Double)
-                  , b                      :: Maybe (Length Double)
-                  , c                      :: Maybe (Length Double)
-                  , alpha                  :: Maybe (Angle Double)
-                  , beta                   :: Maybe (Angle Double)
-                  , gamma                  :: Maybe (Angle Double)
-                  , ux                     :: Maybe (Angle Double)
-                  , uy                     :: Maybe (Angle Double)
-                  , uz                     :: Maybe (Angle Double)
+  BinocularsInput { binocularsInputItype                  :: InputType
+                  , binocularsInputNexusdir               :: Path Abs Dir
+                  , binocularsInputInputrange             :: Maybe (ConfigRange Int)
+                  , binocularsInputCentralpixel           :: (Int, Int)
+                  , binocularsInputSdd                    :: Length Double
+                  , binocularsInputDetrot                 :: Maybe (Angle Double)
+                  , binocularsInputAttenuationCoefficient :: Maybe Double
+                  , binocularsInputMaskmatrix             :: Maybe Text
+                  , binocularsInputA                      :: Maybe (Length Double)
+                  , binocularsInputB                      :: Maybe (Length Double)
+                  , binocularsInputC                      :: Maybe (Length Double)
+                  , binocularsInputAlpha                  :: Maybe (Angle Double)
+                  , binocularsInputBeta                   :: Maybe (Angle Double)
+                  , binocularsInputGamma                  :: Maybe (Angle Double)
+                  , binocularsInputUx                     :: Maybe (Angle Double)
+                  , binocularsInputUy                     :: Maybe (Angle Double)
+                  , binocularsInputUz                     :: Maybe (Angle Double)
                   } deriving (Eq, Show)
 
 data ProjectionType = QxQyQzProjection
@@ -94,15 +96,15 @@ data ProjectionType = QxQyQzProjection
   deriving (Eq, Show)
 
 data BinocularsProjection =
-  BinocularsProjection { ptype      :: ProjectionType
-                       , resolution :: [Double]
+  BinocularsProjection { binocularsProjectionPtype      :: ProjectionType
+                       , binocularsProjectionResolution :: [Double]
                        -- , limits     :: Maybe [Double]
                        } deriving (Eq, Show)
 
 data BinocularsConfig =
-  BinocularsConfig { bDispatcher :: BinocularsDispatcher
-                   , bInput      :: BinocularsInput
-                   , bProjection :: BinocularsProjection
+  BinocularsConfig { binocularsConfigDispatcher :: BinocularsDispatcher
+                   , binocularsConfigInput      :: BinocularsInput
+                   , binocularsConfigProjection :: BinocularsProjection
                    } deriving (Eq, Show)
 
 ms :: String
@@ -199,9 +201,9 @@ parseBinocularsConfig = BinocularsConfig
 
 files :: BinocularsConfig -> IO [Path Abs File]
 files c' = do
-  (_, fs) <- listDir (nexusdir . bInput $ c')
+  (_, fs) <- listDir (binocularsInputNexusdir . binocularsConfigInput $ c')
   fs' <- filterM isHdf5 fs
-  return $ case inputrange . bInput $ c' of
+  return $ case binocularsInputInputrange . binocularsConfigInput $ c' of
     Just r  -> filter (isInConfigRange r) fs'
     Nothing -> fs'
     where
@@ -229,14 +231,23 @@ destination' (ConfigRange [from])      = replace' from from
 destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
 
-sample'' :: BinocularsInput -> Maybe (Sample Triclinic)
-sample'' i = do
-  ux' <- ux i
-  uy' <- uy i
-  uz' <- uz i
-  Sample
-    <$> pure "test"
-    <*> (Triclinic <$> a i <*> b i <*> c i <*> alpha i <*> beta i <*> gamma i)
-    <*> pure (Parameter "ux" (ux' /~ radian) (Range 0 0))
-    <*> pure (Parameter "uy" (uy' /~ radian) (Range 0 0))
-    <*> pure (Parameter "uz" (uz' /~ radian) (Range 0 0))
+overloadSampleWithConfig :: BinocularsConfig -> Sample Triclinic -> Sample Triclinic
+overloadSampleWithConfig (BinocularsConfig _ i _) (Sample
+                            name
+                            (Triclinic a b c alpha beta gamma)
+                            ux uy uz) =
+    Sample name nlat nux nuy nuz
+        where
+          nlat = Triclinic
+                 (fromMaybe a (binocularsInputA i))
+                 (fromMaybe b (binocularsInputB i))
+                 (fromMaybe c (binocularsInputC i))
+                 (fromMaybe alpha (binocularsInputAlpha i))
+                 (fromMaybe beta (binocularsInputBeta i))
+                 (fromMaybe gamma (binocularsInputGamma i))
+
+          go :: Parameter -> Maybe Double -> Parameter
+          go (Parameter n v r) nv = Parameter n (fromMaybe v nv) r
+          nux = go ux (fmap (/~ degree) (binocularsInputUx i))
+          nuy = go uy (fmap (/~ degree) (binocularsInputUy i))
+          nuz = go uz (fmap (/~ degree) (binocularsInputUz i))
