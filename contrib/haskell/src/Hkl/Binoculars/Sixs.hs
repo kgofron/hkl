@@ -52,15 +52,12 @@ withUhvPathP f (UhvPath m o d g w) gg =
     withHdf5PathP f o $ \o' ->
     withHdf5PathP f d $ \d'->
     withHdf5PathP f g $ \g' ->
-    withHdf5PathP f w $ \w' -> gg (\j -> do
-                                    mu <- get_position m' j
-                                    omega <- get_position o' j
-                                    delta <- get_position d' j
-                                    gamma <- get_position g' j
-                                    wavelength <- getValueWithUnit w' 0 angstrom
-                                    let positions = Data.Vector.Storable.fromList [mu, omega, delta, gamma]
-                                    let source = Source wavelength
-                                    pure $ Geometry Uhv source positions Nothing)
+    withHdf5PathP f w $ \w' ->
+        gg (\j -> Geometry
+                 <$> pure Uhv
+                 <*> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <*> (fromList <$> mapM (`get_position` j) [m', o', d', g'])
+                 <*> pure Nothing)
 
 -- | FramesQxQyQzP
 
