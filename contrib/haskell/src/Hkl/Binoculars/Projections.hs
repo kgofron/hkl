@@ -115,17 +115,17 @@ mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
 mkJobsQxQyQz (InputQxQyQz fn h5d _ _ _ _ _) = mkJobs fn h5d
 
 mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> (InputType -> a) -> IO (InputQxQyQz a)
-mkInputQxQyQz c@(BinocularsConfig d i p) f = do
+mkInputQxQyQz c f = do
   fs <- files c
   pure $ InputQxQyQz { filename = InputList fs
-                     , h5dpath = f (binocularsInputItype i)
-                     , output = case binocularsInputInputrange i of
-                                  Just r  -> destination' r (binocularsDispatcherDestination d)
-                                  Nothing -> destination' (ConfigRange []) (binocularsDispatcherDestination d)
-                     , resolutions = binocularsProjectionResolution p
-                     , centralPixel = binocularsInputCentralpixel i
-                     , sdd' = binocularsInputSdd i
-                     , detrot' = fromMaybe (0 *~ degree) ( binocularsInputDetrot i)
+                     , h5dpath = f (_binocularsInputItype c)
+                     , output = case _binocularsInputInputrange c of
+                                  Just r  -> destination' r (_binocularsDispatcherDestination c)
+                                  Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
+                     , resolutions = _binocularsProjectionResolution c
+                     , centralPixel = _binocularsInputCentralpixel c
+                     , sdd' = _binocularsInputSdd c
+                     , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
                      }
 
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
@@ -192,17 +192,17 @@ mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
 mkJobsHkl (InputHkl fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
 mkInputHkl :: FramesHklP a => BinocularsConfig -> (InputType -> a) -> IO (InputHkl a b)
-mkInputHkl c@(BinocularsConfig d i p) f = do
+mkInputHkl c f = do
   fs <- files c
   pure $ InputHkl { filename = InputList fs
-                  , h5dpath = f (binocularsInputItype i)
+                  , h5dpath = f (_binocularsInputItype c)
                   , output = destination'
-                             (fromMaybe (ConfigRange []) (binocularsInputInputrange i))
-                             (binocularsDispatcherDestination d)
-                  , resolutions = binocularsProjectionResolution p
-                  , centralPixel = binocularsInputCentralpixel i
-                  , sdd' = binocularsInputSdd i
-                  , detrot' = fromMaybe (0 *~ degree) (binocularsInputDetrot i)
+                             (fromMaybe (ConfigRange []) (_binocularsInputInputrange c))
+                             (_binocularsDispatcherDestination c)
+                  , resolutions = _binocularsProjectionResolution c
+                  , centralPixel = _binocularsInputCentralpixel c
+                  , sdd' = _binocularsInputSdd c
+                  , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
                   , config = c
                   }
 

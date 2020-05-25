@@ -1,5 +1,8 @@
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -13,99 +16,119 @@
 
 module Hkl.Binoculars.Config
     ( BinocularsConfig(..)
-    , BinocularsDispatcher(..)
-    , BinocularsInput(..)
-    , BinocularsProjection(..)
     , ConfigRange(..)
     , DestinationTmpl(..)
     , InputType(..)
     , ProjectionType(..)
     , destination'
     , files
-    , parseBinocularsConfig
+    , getConfig
     , overloadSampleWithConfig
     ) where
 
 
+import           Control.Lens                      (makeLenses, (^.))
 import           Control.Monad                     (filterM)
 import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.Catch.Pure          (runCatch)
-import           Data.Ini.Config                   (IniParser, fieldFlag,
-                                                    fieldMb, fieldMbOf, fieldOf,
-                                                    listWithSeparator, number,
-                                                    section)
+import           Data.Either.Extra                 (mapLeft, mapRight)
+import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
+                                                    bool, field, getIniValue,
+                                                    ini, listWithSeparator,
+                                                    number, parseIni, section,
+                                                    text, (.=), (.=?))
 import           Data.List                         (isInfixOf)
 import           Data.Maybe                        (fromMaybe)
-import           Data.Text                         (Text, pack, replace,
+import           Data.Text                         (Text, breakOn, drop, length,
+                                                    pack, replace, strip,
                                                     takeWhile, unpack)
+import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Typeable)
+import           GHC.Exts                          (IsList)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Angle, DLength, Length,
+import           Numeric.Units.Dimensional.Prelude (Angle, Length, Quantity,
                                                     Unit, degree, meter, (*~),
                                                     (/~))
 import           Path                              (Abs, Dir, File, Path,
-                                                    fileExtension, parseAbsDir,
-                                                    toFilePath)
+                                                    fileExtension, mkAbsDir,
+                                                    parseAbsDir, toFilePath)
 import           Path.IO                           (listDir)
 import           Text.Printf                       (printf)
 
-import           Prelude                           hiding (length, takeWhile)
+import           Prelude                           hiding (drop, length,
+                                                    readFile, takeWhile)
 
 import           Hkl.Types
+import           Paths_hkl
 
-newtype ConfigRange a = ConfigRange [a]
-  deriving (Eq, Show)
 
 newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
   deriving (Eq, Show)
 
-
-data BinocularsDispatcher =
-  BinocularsDispatcher { binocularsDispatcherNcore       :: Maybe Int
-                       , binocularsDispatcherDestination :: DestinationTmpl
-                       , binocularsDispatcherOverwrite   :: Bool
-                       } deriving (Eq, Show)
-
 data InputType = SixsFlyScanUhv
                | SixsFlyScanUhv2
   deriving (Eq, Show)
 
-data BinocularsInput =
-  BinocularsInput { binocularsInputItype                  :: InputType
-                  , binocularsInputNexusdir               :: Path Abs Dir
-                  , binocularsInputInputrange             :: Maybe (ConfigRange Int)
-                  , binocularsInputCentralpixel           :: (Int, Int)
-                  , binocularsInputSdd                    :: Length Double
-                  , binocularsInputDetrot                 :: Maybe (Angle Double)
-                  , binocularsInputAttenuationCoefficient :: Maybe Double
-                  , binocularsInputMaskmatrix             :: Maybe Text
-                  , binocularsInputA                      :: Maybe (Length Double)
-                  , binocularsInputB                      :: Maybe (Length Double)
-                  , binocularsInputC                      :: Maybe (Length Double)
-                  , binocularsInputAlpha                  :: Maybe (Angle Double)
-                  , binocularsInputBeta                   :: Maybe (Angle Double)
-                  , binocularsInputGamma                  :: Maybe (Angle Double)
-                  , binocularsInputUx                     :: Maybe (Angle Double)
-                  , binocularsInputUy                     :: Maybe (Angle Double)
-                  , binocularsInputUz                     :: Maybe (Angle Double)
-                  } deriving (Eq, Show)
+newtype ConfigRange a = ConfigRange [a]
+  deriving (Eq, Show, IsList)
 
 data ProjectionType = QxQyQzProjection
                     | HklProjection
   deriving (Eq, Show)
 
-data BinocularsProjection =
-  BinocularsProjection { binocularsProjectionPtype      :: ProjectionType
-                       , binocularsProjectionResolution :: [Double]
-                       -- , limits     :: Maybe [Double]
-                       } deriving (Eq, Show)
+data BinocularsConfig = BinocularsConfig
+  { _binocularsDispatcherNcore             :: Maybe Int
+  , _binocularsDispatcherDestination       :: DestinationTmpl
+  , _binocularsDispatcherOverwrite         :: Bool
+  , _binocularsInputItype                  :: InputType
+  , _binocularsInputNexusdir               :: Path Abs Dir
+  , _binocularsInputInputrange             :: Maybe (ConfigRange Int)
+  , _binocularsInputCentralpixel           :: (Int, Int)
+  , _binocularsInputSdd                    :: Length Double
+  , _binocularsInputDetrot                 :: Maybe (Angle Double)
+  , _binocularsInputAttenuationCoefficient :: Maybe Double
+  , _binocularsInputMaskmatrix             :: Maybe Text
+  , _binocularsInputA                      :: Maybe (Length Double)
+  , _binocularsInputB                      :: Maybe (Length Double)
+  , _binocularsInputC                      :: Maybe (Length Double)
+  , _binocularsInputAlpha                  :: Maybe (Angle Double)
+  , _binocularsInputBeta                   :: Maybe (Angle Double)
+  , _binocularsInputGamma                  :: Maybe (Angle Double)
+  , _binocularsInputUx                     :: Maybe (Angle Double)
+  , _binocularsInputUy                     :: Maybe (Angle Double)
+  , _binocularsInputUz                     :: Maybe (Angle Double)
+  , _binocularsProjectionPtype             :: ProjectionType
+  , _binocularsProjectionResolution        :: [Double]
+  } deriving (Eq, Show)
 
-data BinocularsConfig =
-  BinocularsConfig { binocularsConfigDispatcher :: BinocularsDispatcher
-                   , binocularsConfigInput      :: BinocularsInput
-                   , binocularsConfigProjection :: BinocularsProjection
-                   } deriving (Eq, Show)
+makeLenses ''BinocularsConfig
+
+binocularsConfigDefault :: BinocularsConfig
+binocularsConfigDefault = BinocularsConfig
+  { _binocularsDispatcherNcore = Nothing
+  , _binocularsDispatcherDestination = DestinationTmpl "."
+  , _binocularsDispatcherOverwrite = False
+  , _binocularsInputItype = SixsFlyScanUhv
+  , _binocularsInputNexusdir = $(mkAbsDir "/")
+  , _binocularsInputInputrange = Nothing
+  , _binocularsInputCentralpixel = (0, 0)
+  , _binocularsInputSdd = 1 *~ meter
+  , _binocularsInputDetrot = Nothing
+  , _binocularsInputAttenuationCoefficient = Nothing
+  , _binocularsInputMaskmatrix = Nothing
+  , _binocularsInputA = Nothing
+  , _binocularsInputB = Nothing
+  , _binocularsInputC = Nothing
+  , _binocularsInputAlpha = Nothing
+  , _binocularsInputBeta = Nothing
+  , _binocularsInputGamma = Nothing
+  , _binocularsInputUx = Nothing
+  , _binocularsInputUy = Nothing
+  , _binocularsInputUz = Nothing
+  , _binocularsProjectionPtype = QxQyQzProjection
+  , _binocularsProjectionResolution = [0.01, 0.01, 0.01]
+  }
 
 ms :: String
 ms = "#;"
@@ -113,97 +136,111 @@ ms = "#;"
 uncomment :: Text -> Text
 uncomment = takeWhile (`notElem` ms)
 
-number' :: (Num a, Read a, Typeable a) => Text -> Either String a
-number' = number . uncomment
+number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
+number' = number { fvParse = fvParse number . uncomment}
 
-parseInputType :: Text -> Either String InputType
-parseInputType t
-  | t == "sixs:flyscanuhv" = Right SixsFlyScanUhv
-  | t == "sixs:flyscanuhv2" = Right SixsFlyScanUhv2
-  | otherwise = Left ("Unsupported " ++ unpack t ++ " input format")
+destinationTmpl :: FieldValue DestinationTmpl
+destinationTmpl = FieldValue { fvParse = parse, fvEmit = emit }
+    where
+      parse :: Text -> Either String DestinationTmpl
+      parse = Right . DestinationTmpl . uncomment
 
-parseProjectionType :: Text -> Either String ProjectionType
-parseProjectionType t
-  | t == "sixs:qxqyqzprojection" = Right QxQyQzProjection
-  | t == "sixs:hklprojection" = Right HklProjection
-  | otherwise = Left ("Unsupported " ++ unpack t ++ " projection type")
+      emit :: DestinationTmpl -> Text
+      emit (DestinationTmpl t) = t
 
-pathAbsDir :: Text -> Either String (Path Abs Dir)
-pathAbsDir t = do
-  let d = runCatch $ parseAbsDir (unpack t)
-  case d of
-    Right v -> Right v
-    Left e  -> Left $ show e
+binocularsConfigSpec :: IniSpec BinocularsConfig ()
+binocularsConfigSpec = do
+  section "dispatcher" $ do
+    binocularsDispatcherNcore .=? field "ncores" number'
+    binocularsDispatcherDestination .= field "destination" destinationTmpl
+    binocularsDispatcherOverwrite .= field "overwrite" bool
+  section "input" $ do
+    binocularsInputItype .= field "type" inputType
+    binocularsInputNexusdir .= field "nexusdir" pathAbsDir
+    binocularsInputInputrange .=? field "inputrange" configRange
+    binocularsInputCentralpixel .= field "centralpixel" centralPixel
+    binocularsInputSdd .= field "sdd" (numberUnit meter)
+    binocularsInputDetrot .=? field "detrot" (numberUnit degree)
+    binocularsInputAttenuationCoefficient .=? field "attenuationCoefficient" number'
+    binocularsInputMaskmatrix .=? field "maskmatrix" text
+    binocularsInputA .=? field "a" (numberUnit angstrom)
+    binocularsInputB .=? field "b" (numberUnit angstrom)
+    binocularsInputC .=? field "c" (numberUnit angstrom)
+    binocularsInputAlpha  .=?field "alpha" (numberUnit degree)
+    binocularsInputBeta  .=? field "beta" (numberUnit degree)
+    binocularsInputGamma .=? field "gamma" (numberUnit degree)
+    binocularsInputUx .=? field "ux" (numberUnit degree)
+    binocularsInputUy .=? field "uy" (numberUnit degree)
+    binocularsInputUz .=? field "uz" (numberUnit degree)
+  section "projection" $ do
+    binocularsProjectionPtype .= field "type" projectionType
+    binocularsProjectionResolution .= field "resolution" (listWithSeparator "," number')
 
-parseRange :: (Num a, Read a, Typeable a) => Text -> Either String (ConfigRange a)
-parseRange t = case listWithSeparator' "," number' t of
-  Right v -> Right (ConfigRange v)
-  Left e  -> Left e
+inputType :: FieldValue InputType
+inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
+    where
+      parse :: Text -> Either String InputType
+      parse t
+          | t == "sixs:flyscanuhv" = Right SixsFlyScanUhv
+          | t == "sixs:flyscanuhv2" = Right SixsFlyScanUhv2
+          | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
-parseDestinationTmpl :: Text -> Either String DestinationTmpl
-parseDestinationTmpl = Right . DestinationTmpl . uncomment
+      emit :: InputType -> Text
+      emit SixsFlyScanUhv  = "sixs:flyscanuhv"
+      emit SixsFlyScanUhv2 = "sixs:flyscanuhv2"
 
-parseCentralPixel :: Text -> Either String (Int, Int)
-parseCentralPixel t = case listWithSeparator' "," number' t of
-  Right v -> go v
-  Left e  -> Left e
+projectionType :: FieldValue ProjectionType
+projectionType = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
   where
-      go :: [Int] -> Either String (Int, Int)
-      go []      = Left "Please provide central pixel coordinates `x`, `y`"
-      go [_]     = Left "Please provide central pixel coordinates `y`"
-      go [x, y]  = Right (x, y)
-      go (x:y:_) = Right (x, y)
+    parse ::  Text -> Either String ProjectionType
+    parse t
+      | t == "sixs:qxqyqzprojection" = Right QxQyQzProjection
+      | t == "sixs:hklprojection" = Right HklProjection
+      | otherwise = Left ("Unsupported " ++ unpack t ++ " projection type")
 
-length :: (Num a, Fractional a, Read a, Typeable a) => Unit m DLength a -> Text -> Either String (Length a)
-length u t = case number' t of
-  (Right v) -> Right (v *~ u)
-  (Left e)  -> Left e
+    emit :: ProjectionType -> Text
+    emit QxQyQzProjection = "sixs:qxqyqzprojection"
+    emit HklProjection    = "sixs:hklprojection"
 
-angle :: (Num a, Read a, Floating a, Typeable a) => Text -> Either String (Angle a)
-angle t = case number' t of
-  (Right v) -> Right (v *~ degree)
-  (Left e)  -> Left e
+pathAbsDir :: FieldValue (Path Abs Dir)
+pathAbsDir = FieldValue
+  { fvParse = \t -> mapLeft show (runCatch . parseAbsDir . unpack $ t)
+  , fvEmit = pack . show
+  }
 
-listWithSeparator' :: Text -> (Text -> Either String a) -> Text -> Either String [a]
-listWithSeparator' s p = listWithSeparator s p . uncomment
+configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
+configRange = listWithSeparator "," number'
 
-parseBinocularsConfig :: IniParser BinocularsConfig
-parseBinocularsConfig = BinocularsConfig
-  <$> section "dispatcher" (BinocularsDispatcher
-                             <$> fieldMbOf "ncores" number'
-                             <*> fieldOf "destination" parseDestinationTmpl
-                             <*> fieldFlag "overwrite"
-                           )
-  <*> section "input" (BinocularsInput
-                        <$> fieldOf "type" parseInputType
-                        <*> fieldOf "nexusdir" pathAbsDir
-                        <*> fieldMbOf "inputrange" parseRange
-                        <*> fieldOf "centralpixel" parseCentralPixel
-                        <*> fieldOf "sdd" (length meter)
-                        <*> fieldMbOf "detrot" angle
-                        <*> fieldMbOf "attenuationCoefficient" number'
-                        <*> fieldMb "maskmatrix"
-                        <*> fieldMbOf "a" (length angstrom)
-                        <*> fieldMbOf "b" (length angstrom)
-                        <*> fieldMbOf "c" (length angstrom)
-                        <*> fieldMbOf "alpha" angle
-                        <*> fieldMbOf "beta" angle
-                        <*> fieldMbOf "gamma" angle
-                        <*> fieldMbOf "ux" angle
-                        <*> fieldMbOf "uy" angle
-                        <*> fieldMbOf "uz" angle
-                      )
-  <*> section "projection" (BinocularsProjection
-                             <$> fieldOf "type" parseProjectionType
-                             <*> fieldOf "resolution" (listWithSeparator' "," number')
-                             -- <*> fieldMbOf "limits" (listWithSeparator' "," number')
-                           )
+centralPixel :: FieldValue (Int, Int)
+centralPixel = pairWithSeparator' number' "," number'
+
+-- | Represents a field whose value is a pair of two other values
+-- separated by a given string, whose individual values are described
+-- by two different 'FieldValue' values.
+pairWithSeparator' :: FieldValue l -> Text -> FieldValue r -> FieldValue (l, r)
+pairWithSeparator' left sep right = FieldValue
+  { fvParse = \ t ->
+      let (leftChunk, rightChunk) = breakOn sep t
+      in do
+        x <- fvParse left leftChunk
+        y <- fvParse right (drop (length sep) rightChunk)
+        return (x, y)
+  , fvEmit = \ (x, y) -> fvEmit left x <> sep <> fvEmit right y
+  }
+
+numberUnit :: (Num a, Fractional a, Read a, Show a, Typeable a) =>
+             Unit m d a -> FieldValue (Quantity d a)
+numberUnit u = FieldValue
+  { fvParse = mapRight (*~ u) . fvParse number'
+  , fvEmit = pack . show . (/~ u)
+  }
+
 
 files :: BinocularsConfig -> IO [Path Abs File]
-files c' = do
-  (_, fs) <- listDir (binocularsInputNexusdir . binocularsConfigInput $ c')
+files c = do
+  (_, fs) <- listDir (c ^. binocularsInputNexusdir)
   fs' <- filterM isHdf5 fs
-  return $ case binocularsInputInputrange . binocularsConfigInput $ c' of
+  return $ case c ^. binocularsInputInputrange of
     Just r  -> filter (isInConfigRange r) fs'
     Nothing -> fs'
     where
@@ -232,22 +269,31 @@ destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
 
 overloadSampleWithConfig :: BinocularsConfig -> Sample Triclinic -> Sample Triclinic
-overloadSampleWithConfig (BinocularsConfig _ i _) (Sample
-                            name
-                            (Triclinic a b c alpha beta gamma)
-                            ux uy uz) =
+overloadSampleWithConfig conf (Sample
+                               name
+                               (Triclinic a b c alpha beta gamma)
+                               ux uy uz) =
     Sample name nlat nux nuy nuz
         where
           nlat = Triclinic
-                 (fromMaybe a (binocularsInputA i))
-                 (fromMaybe b (binocularsInputB i))
-                 (fromMaybe c (binocularsInputC i))
-                 (fromMaybe alpha (binocularsInputAlpha i))
-                 (fromMaybe beta (binocularsInputBeta i))
-                 (fromMaybe gamma (binocularsInputGamma i))
+                 (fromMaybe a (_binocularsInputA conf))
+                 (fromMaybe b (_binocularsInputB conf))
+                 (fromMaybe c (_binocularsInputC conf))
+                 (fromMaybe alpha (_binocularsInputAlpha conf))
+                 (fromMaybe beta (_binocularsInputBeta conf))
+                 (fromMaybe gamma (_binocularsInputGamma conf))
 
           go :: Parameter -> Maybe Double -> Parameter
           go (Parameter n v r) nv = Parameter n (fromMaybe v nv) r
-          nux = go ux (fmap (/~ degree) (binocularsInputUx i))
-          nuy = go uy (fmap (/~ degree) (binocularsInputUy i))
-          nuz = go uz (fmap (/~ degree) (binocularsInputUz i))
+
+          nux = go ux (fmap (/~ degree) (_binocularsInputUx conf))
+          nuy = go uy (fmap (/~ degree) (_binocularsInputUy conf))
+          nuz = go uz (fmap (/~ degree) (_binocularsInputUz conf))
+
+getConfig :: Maybe FilePath -> IO (Either String BinocularsConfig)
+getConfig mf = do
+  cfg <- readFile =<< case mf of
+                       Nothing -> getDataFileName "data/test/config_manip1.cfg"
+                       (Just f) -> pure f
+  let r = parseIni cfg (ini binocularsConfigDefault binocularsConfigSpec)
+  return $ mapRight getIniValue r

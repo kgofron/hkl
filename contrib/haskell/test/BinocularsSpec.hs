@@ -5,25 +5,26 @@ module BinocularsSpec
   where
 
 
-import           Data.Either     (isRight)
-import           Data.Ini.Config (parseIniFile)
-import           Data.Text.IO    (readFile)
+import           Control.Monad  (forM_)
+import           Data.Either    (isRight)
+import           Data.Text.IO   (readFile)
 import           Test.Hspec
 
 import           Hkl.Binoculars
 import           Paths_hkl
 
-import           Prelude         hiding (readFile)
+import           Prelude        hiding (readFile)
+
 
 spec :: Spec
 spec = do
   describe "parseBinocularsConfig" $ do
-    it "parse data/test/config_hkl_facet.cfg" $ do
-      cfg <- readFile =<< getDataFileName "data/test/config_hkl_facet.cfg"
-      let r = parseIniFile cfg parseBinocularsConfig
-      isRight r `shouldBe` True
-
-    it "parse data/test/config_map.txt" $ do
-      cfg <- readFile =<< getDataFileName "data/test/config_map.txt"
-      let r = parseIniFile cfg parseBinocularsConfig
-      isRight r `shouldBe` True
+         forM_ [ "data/test/config_hkl_facet.cfg"
+               , "data/test/config_map.txt"
+               ] $ \f -> it f $ do
+           cfg <- getConfig =<< Just <$> getDataFileName f
+           case cfg of
+             (Right c) -> True `shouldBe` True
+             (Left e) -> do
+                      print e
+                      False `shouldBe` True

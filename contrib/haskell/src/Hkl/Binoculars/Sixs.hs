@@ -18,8 +18,6 @@ import           Bindings.HDF5.Core                (Location)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM1, DIM3, Z)
-import           Data.Ini.Config                   (parseIniFile)
-import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (typeOf)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
@@ -29,8 +27,6 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
 import           Pipes                             (await, yield)
 import           Pipes.Safe                        (MonadSafe)
 
-import           Prelude                           hiding (readFile)
-
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections
@@ -38,7 +34,6 @@ import           Hkl.C.Geometry
 import           Hkl.H5                            hiding (File)
 import           Hkl.Pipes
 import           Hkl.Types
-import           Paths_hkl
 
 
 -- | Uhv Diffractometer
@@ -214,18 +209,15 @@ h5dpathHkl _t = undefined
 
 process :: Maybe FilePath -> IO ()
 process mf = do
-  cfg <- readFile =<< case mf of
-                       Nothing -> getDataFileName "data/test/config_manip1.cfg"
-                       (Just f) -> pure f
-  let r = parseIniFile cfg parseBinocularsConfig
-  case r of
-    Right c -> case binocularsProjectionPtype . binocularsConfigProjection $ c of
-      QxQyQzProjection -> do
-        i <- mkInputQxQyQz c h5dpathQxQyQz
-        print i
-        processQxQyQz i
-      HklProjection -> do
-        i <- mkInputHkl c h5dpathHkl
-        print i
-        processHkl i
+  conf <- getConfig mf
+  case conf of
+    Right c -> case _binocularsProjectionPtype c of
+                QxQyQzProjection -> do
+                  i <- mkInputQxQyQz c h5dpathQxQyQz
+                  print i
+                  processQxQyQz i
+                HklProjection -> do
+                  i <- mkInputHkl c h5dpathHkl
+                  print i
+                  processHkl i
     Left e   -> print e
