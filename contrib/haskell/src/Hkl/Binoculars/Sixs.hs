@@ -64,16 +64,16 @@ withUhvPathP f (UhvPath m o d g w) gg =
 
 -- | FramesQxQyQzP
 
-data SixsQxQyQzUhv
-  = SixsQxQyQzUhv
+data SixsQxQyQzUhvPath
+  = SixsQxQyQzUhvPath
     (Hdf5Path DIM3 Word16) -- Image
     UhvPath -- diffractometer
 
-instance Show SixsQxQyQzUhv where
+instance Show SixsQxQyQzUhvPath where
   show = show . typeOf
 
-instance LenP SixsQxQyQzUhv where
-  lenP (SixsQxQyQzUhv i _) = forever $ do
+instance LenP SixsQxQyQzUhvPath where
+  lenP (SixsQxQyQzUhvPath i _) = forever $ do
     fp <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' -> do
@@ -82,8 +82,8 @@ instance LenP SixsQxQyQzUhv where
         (Just n) -> yield n
         Nothing  -> error "can not extract length"
 
-instance FramesQxQyQzP SixsQxQyQzUhv where
-  framesQxQyQzP (SixsQxQyQzUhv i dif) det = forever $ do
+instance FramesQxQyQzP SixsQxQyQzUhvPath where
+  framesQxQyQzP (SixsQxQyQzUhvPath i dif) det = forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' ->
@@ -94,9 +94,9 @@ instance FramesQxQyQzP SixsQxQyQzUhv where
                            <*> getDiffractometer j
                            <*> get_image' det i' j))
 
-h5dpathQxQyQz :: InputType -> SixsQxQyQzUhv
+h5dpathQxQyQz :: InputType -> SixsQxQyQzUhvPath
 h5dpathQxQyQz t = case t of
-  SixsFlyScanUhv -> SixsQxQyQzUhv
+  SixsFlyScanUhv -> SixsQxQyQzUhvPath
                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                    (UhvPath
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
@@ -104,7 +104,7 @@ h5dpathQxQyQz t = case t of
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength"))
-  SixsFlyScanUhv2 -> SixsQxQyQzUhv
+  SixsFlyScanUhv2 -> SixsQxQyQzUhvPath
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                     (UhvPath
                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
@@ -133,45 +133,37 @@ getValueWithUnit d j u = do
   v <- get_position d j
   return $ v *~ u
 
-getValueWithTrans :: Dataset -> Int -> (Double -> Double) -> IO Double
-getValueWithTrans d j f = do
-  v <- get_position d j
-  return $ f v
-
-deg2rad :: Double -> Double
-deg2rad v = v / 180.0 * pi
-
 withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> (IO (Sample Triclinic) -> m r) -> m r
-withSamplePathP f (SamplePath a' b' c' alpha' beta' gamma' ux' uy' uz') g =
-    withHdf5PathP f a' $ \a'' ->
-    withHdf5PathP f b' $ \b'' ->
-    withHdf5PathP f c' $ \c'' ->
-    withHdf5PathP f alpha' $ \alpha'' ->
-    withHdf5PathP f beta' $ \beta'' ->
-    withHdf5PathP f gamma' $ \gamma'' ->
-    withHdf5PathP f ux' $ \ux'' ->
-    withHdf5PathP f uy' $ \uy'' ->
-    withHdf5PathP f uz' $ \uz'' ->
+withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
+    withHdf5PathP f a $ \a' ->
+    withHdf5PathP f b $ \b' ->
+    withHdf5PathP f c $ \c' ->
+    withHdf5PathP f alpha $ \alpha' ->
+    withHdf5PathP f beta $ \beta' ->
+    withHdf5PathP f gamma $ \gamma' ->
+    withHdf5PathP f ux $ \ux' ->
+    withHdf5PathP f uy $ \uy' ->
+    withHdf5PathP f uz $ \uz' ->
         g (Sample
            <$> pure "test"
            <*> (Triclinic
-                <$> getValueWithUnit a'' 0 angstrom
-                <*> getValueWithUnit b'' 0 angstrom
-                <*> getValueWithUnit c'' 0 angstrom
-                <*> getValueWithUnit alpha'' 0 degree
-                <*> getValueWithUnit beta'' 0 degree
-                <*> getValueWithUnit gamma'' 0 degree)
+                <$> getValueWithUnit a' 0 angstrom
+                <*> getValueWithUnit b' 0 angstrom
+                <*> getValueWithUnit c' 0 angstrom
+                <*> getValueWithUnit alpha' 0 degree
+                <*> getValueWithUnit beta' 0 degree
+                <*> getValueWithUnit gamma' 0 degree)
            <*> (Parameter
                 <$> pure "ux"
-                <*> getValueWithTrans ux'' 0 deg2rad
+                <*> get_position ux' 0
                 <*> pure (Range 0 0))
            <*> (Parameter
                 <$> pure "uy"
-                <*> getValueWithTrans uy'' 0 deg2rad
+                <*> get_position uy' 0
                 <*> pure (Range 0 0))
            <*> (Parameter
                 <$> pure "uz"
-                <*> getValueWithTrans uz'' 0 deg2rad
+                <*> get_position uz' 0
                 <*> pure (Range 0 0)))
 
 data SixsHklUhvPath = SixsHklUhvPath
