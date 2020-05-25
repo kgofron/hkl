@@ -48,19 +48,19 @@ data UhvPath = UhvPath
 
 withUhvPathP :: (MonadSafe m, Location l) => l -> UhvPath -> ((Int -> IO Geometry) -> m r) -> m r
 withUhvPathP f (UhvPath m o d g w) gg =
-      withHdf5PathP f m $ \m' ->
-      withHdf5PathP f o $ \o' ->
-      withHdf5PathP f d $ \d'->
-      withHdf5PathP f g $ \g' ->
-      withHdf5PathP f w $ \w' -> gg (\j -> do
-                                      mu <- get_position m' j
-                                      omega <- get_position o' j
-                                      delta <- get_position d' j
-                                      gamma' <- get_position g' j
-                                      wavelength <- getValueWithUnit w' 0 angstrom
-                                      let positions = Data.Vector.Storable.fromList [mu, omega, delta, gamma']
-                                      let source = Source wavelength
-                                      pure $ Geometry Uhv source positions Nothing)
+    withHdf5PathP f m $ \m' ->
+    withHdf5PathP f o $ \o' ->
+    withHdf5PathP f d $ \d'->
+    withHdf5PathP f g $ \g' ->
+    withHdf5PathP f w $ \w' -> gg (\j -> do
+                                    mu <- get_position m' j
+                                    omega <- get_position o' j
+                                    delta <- get_position d' j
+                                    gamma <- get_position g' j
+                                    wavelength <- getValueWithUnit w' 0 angstrom
+                                    let positions = Data.Vector.Storable.fromList [mu, omega, delta, gamma]
+                                    let source = Source wavelength
+                                    pure $ Geometry Uhv source positions Nothing)
 
 -- | FramesQxQyQzP
 
@@ -205,7 +205,36 @@ instance FramesHklP SixsHklUhvPath where
                                 <*> sample))
 
 h5dpathHkl :: InputType -> SixsHklUhvPath
-h5dpathHkl _t = undefined
+h5dpathHkl t =
+    let uhvSamplePath = SamplePath
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "A")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "B")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "C")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "alpha")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "beta")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "gamma")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Ux")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Uy")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Uz")
+    in case t of
+         SixsFlyScanUhv -> SixsHklUhvPath
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                          (UhvPath
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
+                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength"))
+                          uhvSamplePath
+         SixsFlyScanUhv2 -> SixsHklUhvPath
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                           (UhvPath
+                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
+                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
+                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
+                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
+                           uhvSamplePath
 
 process :: Maybe FilePath -> IO ()
 process mf = do
