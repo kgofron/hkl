@@ -1,5 +1,5 @@
 {-
-    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -22,7 +22,7 @@ import           Hkl
 testSirius :: IO ()
 testSirius = runEffect $ fromToPipe 6 from to
              >-> enginesTrajectoryPipe engine
-             >-> solveTrajPipe geometry detector gaAs
+             >-> solveTrajPipe geometry det gaAs
              >-> P.tee P.print
              >-> P.drain
              -- >-> computePipe detector gaAs
@@ -44,8 +44,8 @@ testSirius = runEffect $ fromToPipe 6 from to
                      , Parameter "delta" (-0.0223369) (Range (-180) 180)
                      , Parameter "gamma" 30.0000299 (Range (-180) 180)])
 
-    detector :: Detector ZeroD DIM0
-    detector = ZeroD
+    det :: Detector ZeroD DIM0
+    det = ZeroD
 
     engine :: Engine
     engine = Engine "hkl" [ Parameter "h" 0.0 (Range (-1.0) 1.0)
@@ -76,10 +76,10 @@ test = do
                        , Parameter "omega" (-160.0013) (Range (-180) 180)
                        , Parameter "delta" 21.1381 (Range (-180) 180)
                        , Parameter "gamma" 0.5194 (Range (-180) 180)])
-  let detector = ZeroD
+  let det = ZeroD
 
   -- compute the pseudo axes values
-  pseudoAxes <- compute geometry detector sample
+  pseudoAxes <- compute geometry det sample
   print pseudoAxes
 
   -- solve a pseudo axis problem for the given engine
@@ -89,7 +89,7 @@ test = do
                             ]
                (Mode "zaxis" [])
 
-  print =<< solve geometry detector sample engine
+  print =<< solve geometry det sample engine
 
     -- let from = fromList [0, 0, 1 :: Double]
     -- let to = fromList [0, 1, 1 :: Double]

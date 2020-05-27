@@ -9,18 +9,19 @@ module Hkl.Detector
        , ImXpadS140
        , Xpad32
        , ZeroD
-       , shape
        , coordinates
+       , getDetectorDefaultMask
        , getPixelsCoordinates
-       , getPixelsCoordinates'
-       , toPyFAIDetectorName
+       , shape
        ) where
 
 import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM0, DIM2, DIM3, Z (..),
                                                     ix2)
 import           Data.Array.Repa.Repr.ForeignPtr   (F)
+import           Data.Text                         (Text, unpack)
 import           Data.Vector.Storable              (Vector, fromList)
+import           Data.Word                         (Word8)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
                                                     radian, (/~))
 import           Safe.Partial                      (Partial)
@@ -149,5 +150,30 @@ toPyFAIDetectorName Xpad32     = "xpad_flat"
 
 getPixelsCoordinates :: Partial => Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
 getPixelsCoordinates d (ix0, iy0) sdd detrot = do
-    p <- getPixelsCoordinates' (toPyFAIDetectorName d) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
-    extractNumpyArray p
+    arr <- getPixelsCoordinates' (toPyFAIDetectorName d) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
+    extractNumpyArray arr
+
+
+getDetectorDefaultMask' :: String -> String -> IO (PyObject (Array F DIM2 Word8))
+getDetectorDefaultMask' = defVVO [str|
+from numpy import ascontiguousarray, bool, copy, load
+from pyFAI.detectors import ALL_DETECTORS
+
+def export(name, fnmask):
+    detector = ALL_DETECTORS[name]()
+    if fnmask != ""
+        mask = numpy.bitwise_or(detector.mask.astype(bool),
+                                load(fnmask, dtype=bool))
+    else:
+        mask = detector.mask.astype(bool)
+
+    return copy(ascontiguousarray(mask))
+|]
+
+getDetectorDefaultMask :: Detector a DIM2 -> Maybe Text -> IO (Array F DIM2 Word8)
+getDetectorDefaultMask d mfn = do
+  let fn = case mfn of
+             (Just fn') -> unpack fn'
+             Nothing    -> ""
+  arr <- getDetectorDefaultMask' (toPyFAIDetectorName d) fn
+  extractNumpyArray arr

@@ -111,6 +111,7 @@ library
                     , Hkl.Lattice
                     , Hkl.MyMatrix
                     , Hkl.Nxs
+                    , Hkl.Orphan
                     , Hkl.Projects
                     , Hkl.Projects.D2AM
                     , Hkl.Projects.D2AM.XRD

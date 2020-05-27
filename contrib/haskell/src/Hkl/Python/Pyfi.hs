@@ -3,45 +3,45 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Hkl.Python.Pyfi (
-    module X,
-    defO,
-    defV,
-    defOO,
-    defOV,
-    defVO,
-    defVV,
-    defOOO,
-    defOOV,
-    defOVO,
-    defOVV,
-    defVOO,
-    defVOV,
-    defVVO,
-    defVVV,
-    defOOOO,
-    defOOOV,
-    defOOVO,
-    defOOVV,
-    defOVOO,
-    defOVOV,
-    defOVVO,
-    defOVVV,
-    defVOOO,
-    defVOOV,
-    defVOVO,
-    defVOVV,
-    defVVOO,
-    defVVOV,
-    defVVVO,
-    defVVVV,
-    defVVVVV,
-    defVVVVO,
-    defVVVVVO,
-    PyObject,
-    PythonException,
-    exceptionType,
-    extractNumpyArray
+module Hkl.Python.Pyfi
+    ( module X
+    , defO
+    , defV
+    , defOO
+    , defOV
+    , defVO
+    , defVV
+    , defOOO
+    , defOOV
+    , defOVO
+    , defOVV
+    , defVOO
+    , defVOV
+    , defVVO
+    , defVVV
+    , defOOOO
+    , defOOOV
+    , defOOVO
+    , defOOVV
+    , defOVOO
+    , defOVOV
+    , defOVVO
+    , defOVVV
+    , defVOOO
+    , defVOOV
+    , defVOVO
+    , defVOVV
+    , defVVOO
+    , defVVOV
+    , defVVVO
+    , defVVVV
+    , defVVVVV
+    , defVVVVO
+    , defVVVVVO
+    , PyObject
+    , PythonException
+    , exceptionType
+    , extractNumpyArray
     , matrixToPyObject
     )
 where

@@ -32,7 +32,7 @@ import           Data.Array.Repa                   (Array, extent, listOfShape,
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.Maybe                        (fromMaybe)
-import           Data.Word                         (Word16)
+import           Data.Word                         (Word16, Word8)
 import           Foreign.C.Types                   (CInt (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
@@ -55,8 +55,8 @@ import           Hkl.C.Geometry
 import           Hkl.C.Sample
 import           Hkl.Detector
 import           Hkl.H5                            hiding (File)
+import           Hkl.Orphan                        ()
 import           Hkl.Types
-
 
 -- | Common
 
@@ -76,14 +76,16 @@ saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
 
 type Resolutions = [Double]
 
-data InputQxQyQz a =
-  InputQxQyQz { filename     :: InputFn
+data InputQxQyQz a b =
+  InputQxQyQz { detector     :: Detector b DIM2
+              , filename     :: InputFn
               , h5dpath      :: a
               , output       :: FilePath
               , resolutions  :: [Double]
               , centralPixel :: (Int, Int)  -- x, y
               , sdd'         :: Length Double  -- sample to detector distance
               , detrot'      :: Angle Double
+              , mask         :: Array F DIM2 Word8
               }
   deriving Show
 
@@ -99,9 +101,9 @@ class LenP a => FramesQxQyQzP a where
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz detector pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) img) =
+spaceQxQyQz det pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) img) =
   withK w $ \k ->
-    withNPixels detector $ \nPixels ->
+    withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
@@ -111,43 +113,45 @@ spaceQxQyQz detector pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) 
       s <- peek p
       return (DataFrameSpace img s)
 
-mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
-mkJobsQxQyQz (InputQxQyQz fn h5d _ _ _ _ _) = mkJobs fn h5d
+mkJobsQxQyQz :: LenP a => InputQxQyQz a b -> IO [[Chunk Int FilePath]]
+mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> (InputType -> a) -> IO (InputQxQyQz a)
-mkInputQxQyQz c f = do
+mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> Detector b DIM2 -> (InputType -> a) -> IO (InputQxQyQz a b)
+mkInputQxQyQz c d f = do
   fs <- files c
-  pure $ InputQxQyQz { filename = InputList fs
-                     , h5dpath = f (_binocularsInputItype c)
-                     , output = case _binocularsInputInputrange c of
-                                  Just r  -> destination' r (_binocularsDispatcherDestination c)
-                                  Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
-                     , resolutions = _binocularsProjectionResolution c
-                     , centralPixel = _binocularsInputCentralpixel c
-                     , sdd' = _binocularsInputSdd c
-                     , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
-                     }
+  mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
+  pure $ InputQxQyQz
+           { detector = d
+           , filename = InputList fs
+           , h5dpath = f (_binocularsInputItype c)
+           , output = case _binocularsInputInputrange c of
+                        Just r  -> destination' r (_binocularsDispatcherDestination c)
+                        Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
+           , resolutions = _binocularsProjectionResolution c
+           , centralPixel = _binocularsInputCentralpixel c
+           , sdd' = _binocularsInputSdd c
+           , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
+           , mask = mask'
+           }
 
-processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
-processQxQyQz input@(InputQxQyQz _ h5d o res cen d r) = do
-  let detector = ImXpadS140
-
-  pixels <- getPixelsCoordinates detector cen d r
-
+processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a b -> IO ()
+processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r _) = do
+  pixels <- getPixelsCoordinates det cen d r
   jobs <- mkJobsQxQyQz input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
                            runSafeT $ runEffect $
                            each job
-                           >-> framesQxQyQzP h5d detector
-                           >-> mapM (liftIO . spaceQxQyQz detector pixels res)
-                           >-> mkCube'P detector s
+                           >-> framesQxQyQzP h5d det
+                           >-> mapM (liftIO . spaceQxQyQz det pixels res)
+                           >-> mkCube'P det s
                        ) jobs
   saveCube o r'
 
 -- | Hkl Projection
 
 data InputHkl a b =
-  InputHkl { filename     :: InputFn
+  InputHkl { detector     :: Detector b DIM2
+           , filename     :: InputFn
            , h5dpath      :: a
            , output       :: FilePath
            , resolutions  :: [Double]
@@ -155,6 +159,7 @@ data InputHkl a b =
            , sdd'         :: Length Double  -- sample to detector distance
            , detrot'      :: Angle Double
            , config       :: BinocularsConfig
+           , mask         :: Array F DIM2 Word8
            }
   deriving Show
 
@@ -174,10 +179,10 @@ class LenP a => FramesHklP a where
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' detector pixels rs (DataFrameHkl _ img g@(Geometry _ (Source w) _ _) samp) = do
+spaceHkl config' det pixels rs (DataFrameHkl _ img g@(Geometry _ (Source w) _ _) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withK w $ \k ->
-    withNPixels detector $ \nPixels ->
+    withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withSample sample' $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -189,35 +194,39 @@ spaceHkl config' detector pixels rs (DataFrameHkl _ img g@(Geometry _ (Source w)
       return (DataFrameSpace img s)
 
 mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
-mkJobsHkl (InputHkl fn h5d _ _ _ _ _ _) = mkJobs fn h5d
+mkJobsHkl (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputHkl :: FramesHklP a => BinocularsConfig -> (InputType -> a) -> IO (InputHkl a b)
-mkInputHkl c f = do
+mkInputHkl :: FramesHklP a => BinocularsConfig -> Detector b DIM2 -> (InputType -> a) -> IO (InputHkl a b)
+mkInputHkl c d f = do
   fs <- files c
-  pure $ InputHkl { filename = InputList fs
-                  , h5dpath = f (_binocularsInputItype c)
-                  , output = destination'
-                             (fromMaybe (ConfigRange []) (_binocularsInputInputrange c))
-                             (_binocularsDispatcherDestination c)
-                  , resolutions = _binocularsProjectionResolution c
-                  , centralPixel = _binocularsInputCentralpixel c
-                  , sdd' = _binocularsInputSdd c
-                  , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
-                  , config = c
-                  }
+  mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
+  pure $ InputHkl
+           { detector = d
+           , filename = InputList fs
+           , h5dpath = f (_binocularsInputItype c)
+           , output = destination'
+                      (fromMaybe (ConfigRange []) (_binocularsInputInputrange c))
+                      (_binocularsDispatcherDestination c)
+           , resolutions = _binocularsProjectionResolution c
+           , centralPixel = _binocularsInputCentralpixel c
+           , sdd' = _binocularsInputSdd c
+           , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
+           , config = c
+           , mask = mask'
+           }
 
 processHkl :: FramesHklP a => InputHkl a b -> IO ()
-processHkl input@(InputHkl _ h5d o res cen d r config') = do
-  let detector = ImXpadS140
+processHkl input@(InputHkl _ _ h5d o res cen d r config' _) = do
+  let det = ImXpadS140
 
-  pixels <- getPixelsCoordinates detector cen d r
+  pixels <- getPixelsCoordinates det cen d r
 
   jobs <- mkJobsHkl input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
                            runSafeT $ runEffect $
                            each job
-                           >-> framesHklP h5d detector
-                           >-> mapM (liftIO . spaceHkl config' detector pixels res)
-                           >-> mkCube'P detector s
+                           >-> framesHklP h5d det
+                           >-> mapM (liftIO . spaceHkl config' det pixels res)
+                           >-> mkCube'P det s
                        ) jobs
   saveCube o r'

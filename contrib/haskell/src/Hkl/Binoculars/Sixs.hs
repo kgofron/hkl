@@ -31,6 +31,7 @@ import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Geometry
+import           Hkl.Detector
 import           Hkl.H5                            hiding (File)
 import           Hkl.Pipes
 import           Hkl.Types
@@ -231,11 +232,11 @@ process mf = do
   case conf of
     Right c -> case _binocularsProjectionPtype c of
                 QxQyQzProjection -> do
-                  i <- mkInputQxQyQz c h5dpathQxQyQz
+                  i <- mkInputQxQyQz c ImXpadS140 h5dpathQxQyQz
                   print i
                   processQxQyQz i
                 HklProjection -> do
-                  i <- mkInputHkl c h5dpathHkl
+                  i <- mkInputHkl c ImXpadS140 h5dpathHkl
                   print i
                   processHkl i
     Left e   -> print e
