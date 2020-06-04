@@ -348,3 +348,6 @@ withHdf5Path' l (H5DatasetPath n) f = withDataset (openDataset l n Nothing) f
 
 withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
 withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f
+
+-- TODO
+-- http://book.realworldhaskell.org/read/io-case-study-a-library-for-searching-the-filesystem.html
