@@ -17,10 +17,12 @@ module Hkl.Binoculars.Sixs
 import           Bindings.HDF5.Core                (Location)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Data.Array.Repa.Index             (DIM1, DIM3, Z)
+import           Control.Monad.Trans.Cont          (cont, runCont)
+import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Typeable                     (typeOf)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
+import           Foreign.ForeignPtr                (ForeignPtr)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
                                                     (*~))
@@ -37,41 +39,49 @@ import           Hkl.Pipes
 import           Hkl.Types
 
 
--- | Uhv Diffractometer
 
-data UhvPath = UhvPath
-    (Hdf5Path DIM1 Double) -- Mu
-    (Hdf5Path DIM1 Double) -- Omega
-    (Hdf5Path DIM1 Double) -- Delta
-    (Hdf5Path DIM1 Double) -- Gamma
-    (Hdf5Path Z Double) -- Wavelength
-    deriving Show
+-- DetectorPath
 
-withUhvPathP :: (MonadSafe m, Location l) => l -> UhvPath -> ((Int -> IO Geometry) -> m r) -> m r
-withUhvPathP f (UhvPath m o d g w) gg =
-    withHdf5PathP f m $ \m' ->
-    withHdf5PathP f o $ \o' ->
-    withHdf5PathP f d $ \d'->
-    withHdf5PathP f g $ \g' ->
+data DetectorPath = DetectorPath
+    { detectorPathImage    :: Hdf5Path DIM3 Word16
+    } deriving Show
+
+withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO (ForeignPtr Word16)) -> m r) -> m r
+withDetectorPathP f det (DetectorPath p) g =
+    withHdf5PathP f p $ \p' -> g (\j -> get_image' det p' j)
+
+-- GeometryParth
+
+data GeometryPath = GeometryPath
+    { geometryPathWavelength :: Hdf5Path Z Double
+    , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+    } deriving Show
+
+nest :: [(r -> a) -> a] -> ([r] -> a) -> a
+nest xs = runCont (mapM cont xs)
+
+withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([Dataset] -> m a) -> m a
+withAxesPathP f dpaths = nest (map (withHdf5PathP f) dpaths)
+
+withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
+withGeometryPathP f (GeometryPath w as) gg =
     withHdf5PathP f w $ \w' ->
+    withAxesPathP f as $ \as' ->
         gg (\j -> Geometry
                  <$> pure Uhv
                  <*> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> mapM (`get_position` j) [m', o', d', g'])
+                 <*> (fromList <$> mapM (`get_position` j) as')
                  <*> pure Nothing)
 
 -- | FramesQxQyQzP
 
-data SixsQxQyQzUhvPath
-  = SixsQxQyQzUhvPath
-    (Hdf5Path DIM3 Word16) -- Image
-    UhvPath -- diffractometer
+data QxQyQzPath = QxQyQzPath DetectorPath GeometryPath
 
-instance Show SixsQxQyQzUhvPath where
+instance Show QxQyQzPath where
   show = show . typeOf
 
-instance LenP SixsQxQyQzUhvPath where
-  lenP (SixsQxQyQzUhvPath i _) = forever $ do
+instance LenP QxQyQzPath where
+  lenP (QxQyQzPath (DetectorPath i) _) = forever $ do
     fp <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' -> do
@@ -80,36 +90,62 @@ instance LenP SixsQxQyQzUhvPath where
         (Just n) -> yield n
         Nothing  -> error "can not extract length"
 
-instance FramesQxQyQzP SixsQxQyQzUhvPath where
-  framesQxQyQzP (SixsQxQyQzUhvPath i dif) det = forever $ do
+instance FramesQxQyQzP QxQyQzPath where
+  framesQxQyQzP (QxQyQzPath d dif) det = forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
-      withHdf5PathP f i $ \i' ->
-      withUhvPathP f dif $ \getDiffractometer ->
+      withDetectorPathP f det d $ \getImage ->
+      withGeometryPathP f dif $ \getDiffractometer ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
                           (DataFrameQxQyQz
                            <$> pure j
                            <*> getDiffractometer j
-                           <*> get_image' det i' j))
+                           <*> getImage j))
 
-h5dpathQxQyQz :: InputType -> SixsQxQyQzUhvPath
-h5dpathQxQyQz t = case t of
-  SixsFlyScanUhv -> SixsQxQyQzUhvPath
-                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                   (UhvPath
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
-                    (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength"))
-  SixsFlyScanUhv2 -> SixsQxQyQzUhvPath
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                    (UhvPath
-                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
-                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
-                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
-                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
+h5dpathQxQyQz :: BinocularsConfig -> Maybe QxQyQzPath
+h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
+  SixsFlyScanUhv -> QxQyQzPath
+                   (DetectorPath
+                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                   (GeometryPath
+                    (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                    [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
+                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
+                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
+                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
+                    ])
+  SixsFlyScanUhv2 -> QxQyQzPath
+                    (DetectorPath
+                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                    (GeometryPath
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                     [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                     ])
+  SixsSbsMedV -> QxQyQzPath
+                (DetectorPath
+                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                (GeometryPath
+                 (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                 [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                 ])
+  CristalK6C -> QxQyQzPath
+               (DetectorPath
+                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
+               (GeometryPath
+                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "wavelength")
+                [ hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position"
+                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position"
+                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position"
+                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1"
+                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position"
+                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"
+                ])
 
 
 -- | FramesHklP
@@ -164,38 +200,43 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
                 <*> get_position uz' 0
                 <*> pure (Range 0 0)))
 
-data SixsHklUhvPath = SixsHklUhvPath
-    (Hdf5Path DIM3 Word16) -- Image
-    UhvPath -- diffractometer
-    SamplePath -- sample
+data HklPath = HklPath QxQyQzPath SamplePath
+             | HklPathFromQxQyQz QxQyQzPath (Sample Triclinic)
+
   deriving Show
 
-instance LenP SixsHklUhvPath where
-  lenP (SixsHklUhvPath p _ _) = forever $ do
-    fp <- await
-    withFileP (openH5 fp) $ \f ->
-      withHdf5PathP f p $ \d -> do
-      mn <- liftIO $ lenH5Dataspace d
-      case mn of
-        (Just n) -> yield n
-        Nothing  -> error "Cannot extract frame lenght from the file"
+instance LenP HklPath where
+  lenP (HklPath p _)           = lenP p
+  lenP (HklPathFromQxQyQz p _) = lenP p
 
-instance FramesHklP SixsHklUhvPath where
-  framesHklP (SixsHklUhvPath imgs dif samp) det = forever $ do
+instance FramesHklP HklPath where
+  framesHklP (HklPath (QxQyQzPath imgs dif) samp) det = forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
-      withHdf5PathP f imgs $ \dimgs ->
-      withUhvPathP f dif $ \getDiffractometer ->
+      withDetectorPathP f det imgs $ \getImage ->
+      withGeometryPathP f dif $ \getDiffractometer ->
       withSamplePathP f samp $ \sample ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
                                (DataFrameHkl
                                 <$> pure j
-                                <*> get_image' det dimgs j
+                                <*> getImage j
                                 <*> getDiffractometer j
                                 <*> sample))
+  framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif) sample) det =
+      forever $ do
+        (Chunk fp from to) <- await
+        withFileP (openH5 fp) $ \f ->
+            withDetectorPathP f det imgs $ \getImage ->
+            withGeometryPathP f dif $ \getDiffractometer ->
+            forM_ [from..to-1] (\j -> yield =<< liftIO
+                                     (DataFrameHkl
+                                     <$> pure j
+                                     <*> getImage j
+                                     <*> getDiffractometer j
+                                     <*> pure sample))
 
-h5dpathHkl :: InputType -> SixsHklUhvPath
-h5dpathHkl t =
+h5dpathHkl :: BinocularsConfig -> Maybe HklPath
+h5dpathHkl c =
     let uhvSamplePath = SamplePath
                      (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "A")
                      (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "B")
@@ -206,26 +247,38 @@ h5dpathHkl t =
                      (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Ux")
                      (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Uy")
                      (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Uz")
-    in case t of
-         SixsFlyScanUhv -> SixsHklUhvPath
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                          (UhvPath
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA")
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
-                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength"))
-                          uhvSamplePath
-         SixsFlyScanUhv2 -> SixsHklUhvPath
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                           (UhvPath
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
-                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
-                           uhvSamplePath
+        medVSamplePath = SamplePath
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "A")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "B")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "C")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "alpha")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "beta")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "gamma")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "Ux")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "Uy")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-MEDV__#1" $ datasetp "Uz")
+    in case h5dpathQxQyQz c of
+         (Just qxqyqz) -> case _binocularsInputItype c of
+                           SixsFlyScanUhv -> Just (HklPath qxqyqz uhvSamplePath)
+                           SixsFlyScanUhv2 -> Just (HklPath qxqyqz uhvSamplePath)
+                           SixsSbsMedV -> undefined
+                           CristalK6C -> fmap (HklPathFromQxQyQz qxqyqz) (sampleConfig c)
+         Nothing -> Nothing
 
+         -- SixsSbsMedV -> HklPath
+         --               hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")  -- xpad
+         --               (GeometryPath
+         --                hdf5p -- TODO wavelength
+         --                [ hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch" -- beta
+         --                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")
+         --                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")
+         --                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")
+         --                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")
+         --                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")
+         --                ])
+         --               medVSamplePath
+         --               -- "attenuation": DatasetPathWithAttribute("long_name", b"i14-c-c00/ex/roic/att"),
+         --               -- "timestamp": HItem("sensors_timestamps", True),
 process :: Maybe FilePath -> IO ()
 process mf = do
   conf <- getConfig mf

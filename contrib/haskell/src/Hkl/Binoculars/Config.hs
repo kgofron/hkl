@@ -24,6 +24,8 @@ module Hkl.Binoculars.Config
     , files
     , getConfig
     , overloadSampleWithConfig
+    , sampleConfig
+    , new
     ) where
 
 
@@ -36,13 +38,14 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
                                                     number, parseIni, section,
-                                                    text, (.=), (.=?))
+                                                    serializeIni, text, (.=),
+                                                    (.=?))
 import           Data.List                         (isInfixOf)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, breakOn, drop, length,
                                                     pack, replace, strip,
                                                     takeWhile, unpack)
-import           Data.Text.IO                      (readFile)
+import           Data.Text.IO                      (putStr, readFile)
 import           Data.Typeable                     (Typeable)
 import           GHC.Exts                          (IsList)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
@@ -50,12 +53,13 @@ import           Numeric.Units.Dimensional.Prelude (Angle, Length, Quantity,
                                                     Unit, degree, meter, (*~),
                                                     (/~))
 import           Path                              (Abs, Dir, File, Path,
-                                                    fileExtension, mkAbsDir,
-                                                    parseAbsDir, toFilePath)
-import           Path.IO                           (listDir)
+                                                    fileExtension, fromAbsDir,
+                                                    mkAbsDir, parseAbsDir,
+                                                    toFilePath)
+import           Path.IO                           (getCurrentDir, listDir)
 import           Text.Printf                       (printf)
 
-import           Prelude                           hiding (drop, length,
+import           Prelude                           hiding (drop, length, putStr,
                                                     readFile, takeWhile)
 
 import           Hkl.Types
@@ -68,6 +72,8 @@ newtype DestinationTmpl =
 
 data InputType = SixsFlyScanUhv
                | SixsFlyScanUhv2
+               | SixsSbsMedV
+               | CristalK6C
   deriving (Eq, Show)
 
 newtype ConfigRange a = ConfigRange [a]
@@ -183,29 +189,35 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
       parse t
           | t == "sixs:flyscanuhv" = Right SixsFlyScanUhv
           | t == "sixs:flyscanuhv2" = Right SixsFlyScanUhv2
+          | t == "sixs:sbsmedv" = Right SixsSbsMedV
+          | t == "cristal:k6c" = Right CristalK6C
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: InputType -> Text
       emit SixsFlyScanUhv  = "sixs:flyscanuhv"
       emit SixsFlyScanUhv2 = "sixs:flyscanuhv2"
+      emit SixsSbsMedV     = "sixs:sbsmedv"
+      emit CristalK6C      = "cristal:k6c"
 
 projectionType :: FieldValue ProjectionType
 projectionType = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
   where
     parse ::  Text -> Either String ProjectionType
     parse t
+      | t == "hklprojection" = Right HklProjection
+      | t == "qxqyqzprojection" = Right QxQyQzProjection
       | t == "sixs:qxqyqzprojection" = Right QxQyQzProjection
       | t == "sixs:hklprojection" = Right HklProjection
       | otherwise = Left ("Unsupported " ++ unpack t ++ " projection type")
 
     emit :: ProjectionType -> Text
-    emit QxQyQzProjection = "sixs:qxqyqzprojection"
-    emit HklProjection    = "sixs:hklprojection"
+    emit QxQyQzProjection = "qxqyqzprojection"
+    emit HklProjection    = "hklprojection"
 
 pathAbsDir :: FieldValue (Path Abs Dir)
 pathAbsDir = FieldValue
   { fvParse = \t -> mapLeft show (runCatch . parseAbsDir . unpack $ t)
-  , fvEmit = pack . show
+  , fvEmit = pack . fromAbsDir
   }
 
 configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
@@ -268,6 +280,22 @@ destination' (ConfigRange [from])      = replace' from from
 destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
 
+sampleConfig ::  BinocularsConfig -> Maybe (Sample Triclinic)
+sampleConfig cf = do
+  a <- _binocularsInputA cf
+  b <- _binocularsInputB cf
+  c <- _binocularsInputC cf
+  alpha <- _binocularsInputAlpha cf
+  beta <- _binocularsInputBeta cf
+  gamma <- _binocularsInputGamma cf
+  ux <- _binocularsInputUx cf
+  uy <- _binocularsInputUy cf
+  uz <- _binocularsInputUz cf
+  let pux = Parameter "ux" (ux /~ degree) (Range 0  360)
+  let puy = Parameter "uy" (uy /~ degree) (Range 0  360)
+  let puz = Parameter "uz" (uz /~ degree) (Range 0  360)
+  return $ Sample "triclinic" (Triclinic a b c alpha beta gamma) pux puy puz
+
 overloadSampleWithConfig :: BinocularsConfig -> Sample Triclinic -> Sample Triclinic
 overloadSampleWithConfig conf (Sample
                                name
@@ -297,3 +325,11 @@ getConfig mf = do
                        (Just f) -> pure f
   let r = parseIni cfg (ini binocularsConfigDefault binocularsConfigSpec)
   return $ mapRight getIniValue r
+
+new :: Maybe FilePath -> IO ()
+new mf = do
+  cwd <- case mf of
+          (Just f) -> parseAbsDir f
+          Nothing  -> getCurrentDir
+  let conf = binocularsConfigDefault {_binocularsInputNexusdir = cwd}
+  putStr $ serializeIni (ini conf binocularsConfigSpec)

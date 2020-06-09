@@ -31,19 +31,22 @@ import           Hkl.Python
 
 data ImXpadS140
 data Xpad32
+data XpadFlatCorrected
 data ZeroD
 
 data Detector a sh where
   ImXpadS140 :: Detector ImXpadS140 DIM2
   Xpad32 :: Detector Xpad32 DIM2
+  XpadFlatCorrected :: Detector XpadFlatCorrected DIM2
   ZeroD :: Detector ZeroD DIM0
 
 deriving instance Show (Detector a sh)
 
 shape :: Detector a sh -> sh
-shape ImXpadS140 = ix2 240 560 -- y x
-shape Xpad32     = ix2 960 560
-shape ZeroD      = Z
+shape ImXpadS140        = ix2 240 560 -- y x
+shape Xpad32            = ix2 960 560
+shape XpadFlatCorrected = ix2 1154 576
+shape ZeroD             = Z
 
 -- | Xpad Family
 
@@ -98,6 +101,11 @@ coordinates Xpad32 (NptPoint x y) =
            , interp (xpadLine        80) x
            , 0]
 
+coordinates XpadFlatCorrected (NptPoint x y) =
+    fromList [ y * 130e-6
+             , x * 130e-6
+             , 0]
+
 getPixelsCoordinates' :: String -> Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
 getPixelsCoordinates' = defVVVVVO [str|
 from math import cos, sin
@@ -145,8 +153,9 @@ def export(name, ix0, iy0, sdd, rot):
 |]
 
 toPyFAIDetectorName :: Detector a DIM2 -> String
-toPyFAIDetectorName ImXpadS140 = "imxpads140"
-toPyFAIDetectorName Xpad32     = "xpad_flat"
+toPyFAIDetectorName ImXpadS140        = "imxpads140"
+toPyFAIDetectorName Xpad32            = "xpad_flat"
+toPyFAIDetectorName XpadFlatCorrected = undefined
 
 getPixelsCoordinates :: Partial => Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
 getPixelsCoordinates d (ix0, iy0) sdd detrot = do
@@ -161,7 +170,7 @@ from pyFAI.detectors import ALL_DETECTORS
 
 def export(name, fnmask):
     detector = ALL_DETECTORS[name]()
-    if fnmask != ""
+    if fnmask != "":
         mask = numpy.bitwise_or(detector.mask.astype(bool),
                                 load(fnmask, dtype=bool))
     else:

@@ -116,23 +116,25 @@ spaceQxQyQz det pixels rs (DataFrameQxQyQz _ g@(Geometry _ (Source w) _ _) img) 
 mkJobsQxQyQz :: LenP a => InputQxQyQz a b -> IO [[Chunk Int FilePath]]
 mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> Detector b DIM2 -> (InputType -> a) -> IO (InputQxQyQz a b)
+mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> Detector b DIM2 -> (BinocularsConfig -> Maybe a) -> IO (InputQxQyQz a b)
 mkInputQxQyQz c d f = do
   fs <- files c
   mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
-  pure $ InputQxQyQz
-           { detector = d
-           , filename = InputList fs
-           , h5dpath = f (_binocularsInputItype c)
-           , output = case _binocularsInputInputrange c of
-                        Just r  -> destination' r (_binocularsDispatcherDestination c)
-                        Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
-           , resolutions = _binocularsProjectionResolution c
-           , centralPixel = _binocularsInputCentralpixel c
-           , sdd' = _binocularsInputSdd c
-           , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
-           , mask = mask'
-           }
+  case f c of
+    (Just h5dpath') -> pure $ InputQxQyQz
+                      { detector = d
+                      , filename = InputList fs
+                      , h5dpath = h5dpath'
+                      , output = case _binocularsInputInputrange c of
+                                   Just r  -> destination' r (_binocularsDispatcherDestination c)
+                                   Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
+                      , resolutions = _binocularsProjectionResolution c
+                      , centralPixel = _binocularsInputCentralpixel c
+                      , sdd' = _binocularsInputSdd c
+                      , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
+                      , mask = mask'
+                      }
+    Nothing -> error "TODO"
 
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a b -> IO ()
 processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r _) = do
@@ -196,29 +198,29 @@ spaceHkl config' det pixels rs (DataFrameHkl _ img g@(Geometry _ (Source w) _ _)
 mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
 mkJobsHkl (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputHkl :: FramesHklP a => BinocularsConfig -> Detector b DIM2 -> (InputType -> a) -> IO (InputHkl a b)
+mkInputHkl :: FramesHklP a => BinocularsConfig -> Detector b DIM2 -> (BinocularsConfig -> Maybe a) -> IO (InputHkl a b)
 mkInputHkl c d f = do
   fs <- files c
   mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
-  pure $ InputHkl
-           { detector = d
-           , filename = InputList fs
-           , h5dpath = f (_binocularsInputItype c)
-           , output = destination'
-                      (fromMaybe (ConfigRange []) (_binocularsInputInputrange c))
-                      (_binocularsDispatcherDestination c)
-           , resolutions = _binocularsProjectionResolution c
-           , centralPixel = _binocularsInputCentralpixel c
-           , sdd' = _binocularsInputSdd c
-           , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
-           , config = c
-           , mask = mask'
-           }
+  case f c of
+    (Just h5dpath') -> pure $ InputHkl
+                      { detector = d
+                      , filename = InputList fs
+                      , h5dpath = h5dpath'
+                      , output = destination'
+                                 (fromMaybe (ConfigRange []) (_binocularsInputInputrange c))
+                                 (_binocularsDispatcherDestination c)
+                      , resolutions = _binocularsProjectionResolution c
+                      , centralPixel = _binocularsInputCentralpixel c
+                      , sdd' = _binocularsInputSdd c
+                      , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
+                      , config = c
+                      , mask = mask'
+                      }
+    Nothing -> error "TODO"
 
 processHkl :: FramesHklP a => InputHkl a b -> IO ()
-processHkl input@(InputHkl _ _ h5d o res cen d r config' _) = do
-  let det = ImXpadS140
-
+processHkl input@(InputHkl det _ h5d o res cen d r config' _) = do
   pixels <- getPixelsCoordinates det cen d r
 
   jobs <- mkJobsHkl input
