@@ -38,8 +38,6 @@ import           Hkl.H5                            hiding (File)
 import           Hkl.Pipes
 import           Hkl.Types
 
-
-
 -- DetectorPath
 
 data DetectorPath = DetectorPath
@@ -215,13 +213,13 @@ instance FramesHklP HklPath where
     withFileP (openH5 fp) $ \f ->
       withDetectorPathP f det imgs $ \getImage ->
       withGeometryPathP f dif $ \getDiffractometer ->
-      withSamplePathP f samp $ \sample ->
+      withSamplePathP f samp $ \getSample ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
                                (DataFrameHkl
                                 <$> pure j
                                 <*> getImage j
                                 <*> getDiffractometer j
-                                <*> sample))
+                                <*> getSample))
   framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif) sample) det =
       forever $ do
         (Chunk fp from to) <- await
