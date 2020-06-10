@@ -1,0 +1,170 @@
+#+TITLE: Binoculars documentation!
+#+AUTHOR: Picca Frédéric-Emmanuel
+#+EMAIL: picca at synchrotron dash soleil dot fr
+#+LANGUAGE: en
+#+STYLE: <style>table.center {margin-left:auto; margin- right:auto;}</style>
+#+HTML_HEAD: <link href="css/style.css" rel="stylesheet" type="text/css" />
+#+HTML_MATHJAX:  path:@MATHJAX_PATH@
+#+LaTeX_HEADER: \usepackage{minted}
+#+LaTeX_HEADER: \usemintedstyle{tango}
+
+* Quick-Start
+  #+BEGIN_SRC sh
+    binoculars new <dir-to-datas> > config.txt
+    binoculars process config.txt <n>
+  #+END_SRC
+
+** 1st Step: Générate a config file
+   #+BEGIN_SRC sh
+   binoculars new <dir-to-datas>
+   #+END_SRC
+
+   This should generate this
+
+   #+BEGIN_SRC conf
+     [dispatcher]
+     # ncores =
+     destination = .
+     overwrite = false
+     [input]
+     type = sixs:flyscanuhv
+     nexusdir = /home/picca/hkl/contrib/haskell/
+     # inputrange =
+     centralpixel = 0,0
+     sdd = 1.0
+     # detrot =
+     # attenuationCoefficient =
+     # maskmatrix =
+     # a =
+     # b =
+     # c =
+     # alpha =
+     # beta =
+     # gamma =
+     # ux =
+     # uy =
+     # uz =
+     [projection]
+     type = qxqyqzprojection
+     resolution = 1.0e-2,1.0e-2,1.0e-2
+   #+END_SRC
+
+   Then you just need to fill the void with the right informations,
+   before running the process.
+
+* Configuration
+** Select the detector
+*** by path
+    For now the path to the detector images is hardcoded in the binoculars code.
+    Something like this
+
+    #+BEGIN_SRC haskell
+      h5dpathQxQyQz :: BinocularsConfig -> Maybe QxQyQzPath
+      h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
+        SixsFlyScanUhv -> QxQyQzPath
+                         (DetectorPath
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                         (GeometryPath
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                          [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
+                          ])
+    #+END_SRC
+
+    It means, the detector images are stored in a hdf5 file (=hdf5p=),
+    you then select the group numbered 0 (=grouppat 0=), followed by a
+    group named =scan_data= (=groupp "scan_data"=), and eventually a
+    dataset named ="xpad_image"= (="datasetp "xpad_image"=).
+
+    there is no ambiguity on the data path. but we do not know the
+    type of the detector. The type is important since it allow to
+    retrive the geometric informations from =pyFAI=
+
+    We can guess it using the dataset shape, but this guess can be
+    wrong due to the presence of multiple detectors with the same
+    shape in the file. This was never the case on the SIXS beamline,
+    their two detectors, the =XpadS140= and the =Eiger1M= do not have
+    the same shape.
+
+    At some point we should have the detector type informations in the
+    NeXuS files. Should we discuss with Nexus or Lima guyes ?
+
+    For now and because we do not have this information, we guess the
+    detector type using different strategies.
+
+    Here using an attribute with the control system Tango name of the
+    Device used to save the data's
+
+    #+BEGIN_SRC python
+      class SBSMedVFixDetector(SBSMedV):
+          HPATH = {
+              "image": DatasetPathWithAttribute("long_name", b"i14-c-c00/dt/eiger.1/image"),
+              "beta": DatasetPathContains("i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch"),
+              "mu": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/mu"
+              ),
+              "omega": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/omega"
+              ),
+              "gamma": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/gamma"
+              ),
+              "delta": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/delta"
+              ),
+              "etaa": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/etaa"
+              ),
+              "attenuation": DatasetPathWithAttribute("long_name", b"i14-c-c00/ex/roic/att"),
+              "timestamp": HItem("sensors_timestamps", True),
+          }
+    #+END_SRC
+
+    We create a different input in order to change the data source for
+    the image.
+
+    #+BEGIN_SRC python
+      class SBSMedV(FlyScanUHV):
+          HPATH = {
+              "image": DatasetPathWithAttribute("long_name", b"i14-c-c00/dt/xpad.1/image"),
+              "beta": DatasetPathContains("i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch"),
+              "mu": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/mu"
+              ),
+              "omega": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/omega"
+              ),
+              "gamma": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/gamma"
+              ),
+              "delta": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/delta"
+              ),
+              "etaa": DatasetPathWithAttribute(
+                  "long_name", b"i14-c-cx1/ex/med-v-dif-group.1/etaa"
+              ),
+              "attenuation": DatasetPathWithAttribute("long_name", b"i14-c-c00/ex/roic/att"),
+              "timestamp": HItem("sensors_timestamps", True),
+          }
+    #+END_SRC
+
+*** by type
+    You juts need to select in the configuration a type of Detector,
+    then binoculars will makes its best to find a dataset in the nexus
+    files which is compatible with the requested detector.
+
+    the match is for now (binoculars python version) on the dataset
+    shape.
+
+** TODO by path
+   - [ ] Add the detector type in the config file
+   - [ ] Add detector identifier in the Nexus files to deambiguate the
+     detector type.
+   - [ ] Associate the detector type to the datapath.
+   - [ ] How to connect this info to the pyFAI detector database.
+   - [ ] It would be great if this database could be C based in order
+     to be available for more users than just Python developers. We
+     should have at least the detector name, the physical
+     characterisation, the geometry of the detector.
