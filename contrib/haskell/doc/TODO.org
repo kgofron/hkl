@@ -80,13 +80,13 @@
 
     there is no ambiguity on the data path. but we do not know the
     type of the detector. The type is important since it allow to
-    retrive the geometric informations from =pyFAI=
+    retrieve the geometric informations from =pyFAI=
 
     We can guess it using the dataset shape, but this guess can be
     wrong due to the presence of multiple detectors with the same
     shape in the file. This was never the case on the SIXS beamline,
-    their two detectors, the =XpadS140= and the =Eiger1M= do not have
-    the same shape.
+    because both detectors, the =XpadS140= and the =Eiger1M=, have
+    different shape.
 
     At some point we should have the detector type informations in the
     NeXuS files. Should we discuss with Nexus or Lima guyes ?
@@ -94,8 +94,8 @@
     For now and because we do not have this information, we guess the
     detector type using different strategies.
 
-    Here using an attribute with the control system Tango name of the
-    Device used to save the data's
+    1st, using an attribute with the Tango Control System name of the
+    Device used to save the detector's datas.
 
     #+BEGIN_SRC python
       class SBSMedVFixDetector(SBSMedV):
@@ -123,7 +123,7 @@
     #+END_SRC
 
     We create a different input in order to change the data source for
-    the image.
+    the image. Here we just change for the =Xpad= detector.
 
     #+BEGIN_SRC python
       class SBSMedV(FlyScanUHV):
@@ -151,13 +151,15 @@
     #+END_SRC
 
 *** by type
-    You juts need to select in the configuration a type of Detector,
-    then binoculars will makes its best to find a dataset in the nexus
+    You just need to select in the configuration a type of Detector,
+    then binoculars will makes its best to find a dataset in the NeXuS
     files which is compatible with the requested detector.
 
     the match is for now (binoculars python version) on the dataset
     shape.
 
+    If more than one path are available for the requested detector,
+    the user need to select the right path in the config file.
 ** TODO by path
    - [ ] Add the detector type in the config file
    - [ ] Add detector identifier in the Nexus files to deambiguate the
