@@ -23,6 +23,10 @@ Flag useHklDev
      Description: Use the current devel hkl library in the source tree
      Default: True
 
+Flag usePythonEmbed
+     Description: Use the python3-embed.pc file instead of python3.pc
+     Default: False
+
 executable ghkl
   main-is:             src/ghkl.hs
   build-depends:       attoparsec
@@ -214,7 +218,10 @@ library
   else
     pkgconfig-depends:   hkl
 
-  pkgconfig-depends:   python3-embed
+  if flag(usePythonEmbed)
+    pkgconfig-depends:   python3-embed
+  else
+    pkgconfig-depends:   python3
   ghc-options:         -O2
   ghc-options:         -fno-warn-incomplete-patterns
   -- ghc-options:         -Werror

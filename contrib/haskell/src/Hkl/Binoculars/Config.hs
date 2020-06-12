@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -33,7 +34,10 @@ import           Control.Lens                      (makeLenses, (^.))
 import           Control.Monad                     (filterM)
 import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.Catch.Pure          (runCatch)
+#if MIN_VERSION_extra(1, 6, 9)
+#else
 import           Data.Either.Extra                 (mapLeft, mapRight)
+#endif
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -65,6 +69,24 @@ import           Prelude                           hiding (drop, length, putStr,
 import           Hkl.Types
 import           Paths_hkl
 
+
+#if MIN_VERSION_extra(1, 6, 9)
+-- | The 'mapLeft' function takes a function and applies it to an Either value
+-- iff the value takes the form @'Left' _@.
+--
+-- > mapLeft show (Left 1) == Left "1"
+-- > mapLeft show (Right True) == Right True
+mapLeft :: (a -> c) -> Either a b -> Either c b
+mapLeft f = either (Left . f) Right
+
+-- | The 'mapRight' function takes a function and applies it to an Either value
+-- iff the value takes the form @'Right' _@.
+--
+-- > mapRight show (Left 1) == Left 1
+-- > mapRight show (Right True) == Right "True"
+mapRight :: (b -> c) -> Either a b -> Either a c
+mapRight = fmap
+#endif
 
 newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
