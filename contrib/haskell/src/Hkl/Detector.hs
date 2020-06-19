@@ -1,11 +1,13 @@
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE GADTs              #-}
-{-# LANGUAGE QuasiQuotes        #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE QuasiQuotes               #-}
+{-# LANGUAGE StandaloneDeriving        #-}
 
 module Hkl.Detector
        ( Detector(..)
+       , SomeDetector(..)
        , ImXpadS140
        , Xpad32
        , ZeroD
@@ -41,6 +43,14 @@ data Detector a sh where
   ZeroD :: Detector ZeroD DIM0
 
 deriving instance Show (Detector a sh)
+
+-- | SomeDetector
+
+data SomeDetector = forall a sh. SomeDetector (Detector a sh)
+
+instance Show SomeDetector where
+  show (SomeDetector v) = show v
+
 
 shape :: Detector a sh -> sh
 shape ImXpadS140        = ix2 240 560 -- y x

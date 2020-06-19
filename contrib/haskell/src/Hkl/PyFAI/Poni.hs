@@ -1,6 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE UnicodeSyntax             #-}
 
 module Hkl.PyFAI.Poni
        ( Pose(..)
@@ -22,18 +22,25 @@ module Hkl.PyFAI.Poni
        , fromAxisAndAngle
        ) where
 
-import Prelude hiding ((<>))
-import Control.Applicative ((<$>), (<|>), (<*>), (*>), (<*), many, optional, pure)
-import Data.Attoparsec.Text (Parser, (<?>), endOfLine, isEndOfLine, many1, double, string, takeTill)
-import Data.Text (Text, append, intercalate, pack)
-import Data.Vector.Storable (Vector, fromList)
-import Numeric.LinearAlgebra (Matrix, (<>), atIndex, fromLists, ident, scalar, tr)
-import Numeric.Units.Dimensional.Prelude (Angle, Length, (+), (*~), (/~), (/~~), one, meter, radian, degree)
+import           Control.Applicative               (many, optional, pure, (*>),
+                                                    (<$>), (<*), (<*>), (<|>))
+import           Data.Attoparsec.Text              (Parser, double, endOfLine,
+                                                    isEndOfLine, many1, string,
+                                                    takeTill, (<?>))
+import           Data.Text                         (Text, append, intercalate,
+                                                    pack)
+import           Data.Vector.Storable              (Vector, fromList)
+import           Numeric.LinearAlgebra             (Matrix, atIndex, fromLists,
+                                                    ident, scalar, tr, (<>))
+import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
+                                                    meter, one, radian, (*~),
+                                                    (+), (/~), (/~~))
+import           Prelude                           hiding ((<>))
 
-import Hkl.Detector
-import Hkl.MyMatrix
-import Hkl.PyFAI.Detector
-import Hkl.Types
+import           Hkl.Detector
+import           Hkl.MyMatrix
+import           Hkl.PyFAI.Detector
+import           Hkl.Types
 
 type PoniPath = FilePath
 
@@ -41,29 +48,19 @@ type PoniPath = FilePath
 
 newtype Pose = Pose (MyMatrix Double) deriving (Show)
 
--- | ADetector
-
-data ADetector = forall a sh. ADetector (Detector a sh)
-
-instance Show ADetector where
-  show (ADetector v) = show v
-
-instance ToPyFAI ADetector where
-  toPyFAI (ADetector v) = toPyFAI v
-
 -- | Poni
 
-data PoniEntry = PoniEntry { poniEntryHeader :: [Text]
-                           , poniEntryDetector :: Maybe ADetector -- ^ Detector Name
+data PoniEntry = PoniEntry { poniEntryHeader     :: [Text]
+                           , poniEntryDetector   :: Maybe SomeDetector -- ^ Detector Name
                            , poniEntryPixelSize1 :: Length Double -- ^ pixels size 1
                            , poniEntryPixelSize2 :: Length Double -- ^ pixels size 1
-                           , poniEntryDistance :: Length Double -- ^ pixels size 2
-                           , poniEntryPoni1 :: Length Double -- ^ poni1
-                           , poniEntryPoni2 :: Length Double -- ^ poni2
-                           , poniEntryRot1 :: Angle Double -- ^ rot1
-                           , poniEntryRot2 :: Angle Double -- ^ rot2
-                           , poniEntryRot3 :: Angle Double -- ^ rot3
-                           , poniEntrySpline :: Maybe Text -- ^ spline file
+                           , poniEntryDistance   :: Length Double -- ^ pixels size 2
+                           , poniEntryPoni1      :: Length Double -- ^ poni1
+                           , poniEntryPoni2      :: Length Double -- ^ poni2
+                           , poniEntryRot1       :: Angle Double -- ^ rot1
+                           , poniEntryRot2       :: Angle Double -- ^ rot2
+                           , poniEntryRot3       :: Angle Double -- ^ rot3
+                           , poniEntrySpline     :: Maybe Text -- ^ spline file
                            , poniEntryWavelength :: WaveLength -- ^ wavelength
                            }
                deriving (Show)
@@ -73,8 +70,8 @@ type Poni = [PoniEntry]
 class ToPoni a where
   toPoni ∷ a → Text
 
-instance ToPoni ADetector where
-  toPoni (ADetector v) = toPyFAI v
+instance ToPoni SomeDetector where
+  toPoni (SomeDetector v) = toPyFAI v
 
 instance ToPoni Double where
   toPoni v = pack $ show v
@@ -106,8 +103,8 @@ detectorP d = do
   _ ← "Detector: " *> string (toPyFAI d) <* endOfLine
   pure d
 
-aDetectorP ∷ Parser ADetector
-aDetectorP = (ADetector <$> detectorP Xpad32) <|> (ADetector <$> detectorP ImXpadS140)
+aDetectorP ∷ Parser SomeDetector
+aDetectorP = (SomeDetector <$> detectorP Xpad32) <|> (SomeDetector <$> detectorP ImXpadS140)
 
 poniEntryP :: Parser PoniEntry
 poniEntryP = PoniEntry
