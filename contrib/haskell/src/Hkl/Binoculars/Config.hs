@@ -66,6 +66,7 @@ import           Text.Printf                       (printf)
 import           Prelude                           hiding (drop, length, putStr,
                                                     readFile, takeWhile)
 
+import           Hkl.Detector
 import           Hkl.Types
 import           Paths_hkl
 
@@ -112,6 +113,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputItype                  :: InputType
   , _binocularsInputNexusdir               :: Path Abs Dir
   , _binocularsInputInputrange             :: Maybe (ConfigRange Int)
+  , _binocularsInputDetector               :: Maybe SomeDetector
   , _binocularsInputCentralpixel           :: (Int, Int)
   , _binocularsInputSdd                    :: Length Double
   , _binocularsInputDetrot                 :: Maybe (Angle Double)
@@ -140,6 +142,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsInputItype = SixsFlyScanUhv
   , _binocularsInputNexusdir = $(mkAbsDir "/")
   , _binocularsInputInputrange = Nothing
+  , _binocularsInputDetector = Just (SomeDetector ImXpadS140)
   , _binocularsInputCentralpixel = (0, 0)
   , _binocularsInputSdd = 1 *~ meter
   , _binocularsInputDetrot = Nothing
@@ -186,6 +189,7 @@ binocularsConfigSpec = do
     binocularsInputItype .= field "type" inputType
     binocularsInputNexusdir .= field "nexusdir" pathAbsDir
     binocularsInputInputrange .=? field "inputrange" configRange
+    binocularsInputDetector .=? field "detector" someDetector
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
     binocularsInputSdd .= field "sdd" (numberUnit meter)
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
@@ -244,6 +248,17 @@ pathAbsDir = FieldValue
 
 configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
 configRange = listWithSeparator "," number'
+
+someDetector :: FieldValue SomeDetector
+someDetector = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+    where
+      parse :: Text -> Either String SomeDetector
+      parse t
+          | t == pack (show Xpad32) = Right (SomeDetector Xpad32)
+          | otherwise = Left  ("Unsupported " ++ unpack t ++ " detector type")
+
+      emit ::  SomeDetector -> Text
+      emit = pack . show
 
 centralPixel :: FieldValue (Int, Int)
 centralPixel = pairWithSeparator' number' "," number'

@@ -1,3 +1,4 @@
+{-# LANGUAGE EmptyDataDeriving         #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
@@ -10,6 +11,7 @@ module Hkl.Detector
        , SomeDetector(..)
        , ImXpadS140
        , Xpad32
+       , XpadFlatCorrected
        , ZeroD
        , coordinates
        , getDetectorDefaultMask
@@ -31,10 +33,10 @@ import           Safe.Partial                      (Partial)
 import           Hkl.PyFAI.Npt                     (NptPoint (NptPoint))
 import           Hkl.Python
 
-data ImXpadS140
-data Xpad32
-data XpadFlatCorrected
-data ZeroD
+data ImXpadS140 deriving (Eq, Show)
+data Xpad32 deriving (Eq, Show)
+data XpadFlatCorrected deriving (Eq, Show)
+data ZeroD deriving (Eq, Show)
 
 data Detector a sh where
   ImXpadS140 :: Detector ImXpadS140 DIM2
@@ -51,6 +53,8 @@ data SomeDetector = forall a sh. SomeDetector (Detector a sh)
 instance Show SomeDetector where
   show (SomeDetector v) = show v
 
+instance Eq SomeDetector where
+    (==) a b = show a == show b
 
 shape :: Detector a sh -> sh
 shape ImXpadS140        = ix2 240 560 -- y x
