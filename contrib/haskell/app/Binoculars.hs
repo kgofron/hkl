@@ -24,7 +24,8 @@ import           Hkl.Binoculars
 
 
 data Options = Process (Maybe FilePath)
-             | New (Maybe FilePath)
+             | CfgNew (Maybe FilePath)
+             | CfgUpdate FilePath
   deriving Show
 
 processOptions :: Parser Options
@@ -33,18 +34,25 @@ processOptions = Process <$> optional (argument str (metavar "CONFIG"))
 processCommand :: Mod CommandFields Options
 processCommand = command "process" (info processOptions (progDesc "process data's"))
 
-newOption :: Parser Options
-newOption = New <$> optional (argument str (metavar "CONFIG"))
+cfgNewOption :: Parser Options
+cfgNewOption = CfgNew <$> optional (argument str (metavar "CONFIG"))
 
-newCommand :: Mod CommandFields Options
-newCommand = command "new" (info newOption (progDesc "new config files"))
+cfgNewCommand :: Mod CommandFields Options
+cfgNewCommand = command "cfg-new" (info cfgNewOption (progDesc "new config files"))
+
+cfgUpdateOption :: Parser Options
+cfgUpdateOption = CfgUpdate <$> (argument str (metavar "CONFIG"))
+
+cfgUpdateCommand :: Mod CommandFields Options
+cfgUpdateCommand = command "cfg-update" (info cfgUpdateOption (progDesc "update config files"))
 
 options :: Parser Options
-options = hsubparser (processCommand <> newCommand)
+options = hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand)
 
 run :: Options -> IO ()
-run (Process mf) = process mf
-run (New mf)     = new mf
+run (Process mf)  = process mf
+run (CfgNew mf)   = new mf
+run (CfgUpdate f) = update f
 
 main :: IO ()
 main = do

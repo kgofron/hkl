@@ -24,9 +24,10 @@ module Hkl.Binoculars.Config
     , destination'
     , files
     , getConfig
+    , new
     , overloadSampleWithConfig
     , sampleConfig
-    , new
+    , update
     ) where
 
 
@@ -58,8 +59,7 @@ import           Numeric.Units.Dimensional.Prelude (Angle, Length, Quantity,
                                                     (/~))
 import           Path                              (Abs, Dir, File, Path,
                                                     fileExtension, fromAbsDir,
-                                                    mkAbsDir, parseAbsDir,
-                                                    toFilePath)
+                                                    parseAbsDir, toFilePath)
 import           Path.IO                           (getCurrentDir, listDir)
 import           Text.Printf                       (printf)
 
@@ -111,7 +111,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsDispatcherDestination       :: DestinationTmpl
   , _binocularsDispatcherOverwrite         :: Bool
   , _binocularsInputItype                  :: InputType
-  , _binocularsInputNexusdir               :: Path Abs Dir
+  , _binocularsInputNexusdir               :: Maybe (Path Abs Dir)
   , _binocularsInputInputrange             :: Maybe (ConfigRange Int)
   , _binocularsInputDetector               :: Maybe SomeDetector
   , _binocularsInputCentralpixel           :: (Int, Int)
@@ -140,7 +140,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsDispatcherDestination = DestinationTmpl "."
   , _binocularsDispatcherOverwrite = False
   , _binocularsInputItype = SixsFlyScanUhv
-  , _binocularsInputNexusdir = $(mkAbsDir "/")
+  , _binocularsInputNexusdir = Nothing
   , _binocularsInputInputrange = Nothing
   , _binocularsInputDetector = Just (SomeDetector ImXpadS140)
   , _binocularsInputCentralpixel = (0, 0)
@@ -187,7 +187,7 @@ binocularsConfigSpec = do
     binocularsDispatcherOverwrite .= field "overwrite" bool
   section "input" $ do
     binocularsInputItype .= field "type" inputType
-    binocularsInputNexusdir .= field "nexusdir" pathAbsDir
+    binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
     binocularsInputInputrange .=? field "inputrange" configRange
     binocularsInputDetector .=? field "detector" someDetector
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
@@ -287,7 +287,9 @@ numberUnit u = FieldValue
 
 files :: BinocularsConfig -> IO [Path Abs File]
 files c = do
-  (_, fs) <- listDir (c ^. binocularsInputNexusdir)
+  (_, fs) <- listDir =<< case c ^. binocularsInputNexusdir of
+                          Nothing  -> getCurrentDir
+                          (Just d) -> pure d
   fs' <- filterM isHdf5 fs
   return $ case c ^. binocularsInputInputrange of
     Just r  -> filter (isInConfigRange r) fs'
@@ -368,5 +370,13 @@ new mf = do
   cwd <- case mf of
           (Just f) -> parseAbsDir f
           Nothing  -> getCurrentDir
-  let conf = binocularsConfigDefault {_binocularsInputNexusdir = cwd}
+  let conf = binocularsConfigDefault {_binocularsInputNexusdir = Just cwd}
   putStr $ serializeIni (ini conf binocularsConfigSpec)
+
+update :: FilePath -> IO ()
+update f = do
+  cfg <- readFile f
+  let eini = parseIni cfg (ini binocularsConfigDefault binocularsConfigSpec)
+  putStr $ case eini of
+             Left s  -> pack s
+             Right v -> serializeIni (ini (getIniValue v) binocularsConfigSpec)
