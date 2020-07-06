@@ -1,17 +1,18 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.Projects.Diffabs.Charlier
        ( charlier ) where
 
-import Data.Array.Repa (DIM1, ix1)
-import Numeric.LinearAlgebra (ident)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+import           Data.Array.Repa       (DIM1, ix1)
+import           Numeric.LinearAlgebra (ident)
+import           System.FilePath       ((</>))
+import           Text.Printf           (printf)
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+import           Prelude               hiding (concat, lookup, readFile,
+                                        writeFile)
 
-import Hkl
+import           Hkl
 
 -- | TODO
 -- ⋅ gerer le dummy correctement en focntion du type de données des images uint32, int16
@@ -48,7 +49,7 @@ h5path' nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleCalibration :: XRDCalibration Xpad32
+sampleCalibration :: XRDCalibration PyFAI
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published' </> "calibration"
                                    , xrdCalibrationDetector = Xpad32

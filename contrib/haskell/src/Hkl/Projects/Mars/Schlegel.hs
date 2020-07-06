@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 
 module Hkl.Projects.Mars.Schlegel
        ( schlegel ) where
 
-import System.FilePath ((</>))
+import           System.FilePath ((</>))
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+import           Prelude         hiding (concat, lookup, readFile, writeFile)
 
-import Hkl
+import           Hkl
 
 -- | TODO
 -- * check if the
@@ -32,7 +32,7 @@ h5path nxentry =
     image ∷ H5Path
     image = "scan_data/data_01"
 
-sampleCalibration ∷ XrdZeroDCalibration Xpad32
+sampleCalibration ∷ XrdZeroDCalibration PyFAI
 sampleCalibration = XrdZeroDCalibration (XrdZeroDSample name outputdir entries) Xpad32 LaB6
     where
       name ∷ String

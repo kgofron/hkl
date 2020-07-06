@@ -9,9 +9,7 @@
 module Hkl.Detector
        ( Detector(..)
        , SomeDetector(..)
-       , ImXpadS140
-       , Xpad32
-       , XpadFlatCorrected
+       , PyFAI
        , ZeroD
        , coordinates
        , getDetectorDefaultMask
@@ -33,18 +31,17 @@ import           Safe.Partial                      (Partial)
 import           Hkl.PyFAI.Npt                     (NptPoint (NptPoint))
 import           Hkl.Python
 
-data ImXpadS140 deriving (Eq, Show)
-data Xpad32 deriving (Eq, Show)
-data XpadFlatCorrected deriving (Eq, Show)
+data PyFAI deriving (Eq, Show)
 data ZeroD deriving (Eq, Show)
 
 data Detector a sh where
-  ImXpadS140 :: Detector ImXpadS140 DIM2
-  Xpad32 :: Detector Xpad32 DIM2
-  XpadFlatCorrected :: Detector XpadFlatCorrected DIM2
+  ImXpadS140 :: Detector PyFAI DIM2
+  Xpad32 :: Detector PyFAI DIM2
+  XpadFlatCorrected :: Detector PyFAI DIM2
   ZeroD :: Detector ZeroD DIM0
 
 deriving instance Show (Detector a sh)
+deriving instance Eq (Detector a sh)
 
 -- | SomeDetector
 

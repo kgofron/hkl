@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.Projects.Diffabs.Martinetto
@@ -6,14 +6,15 @@ module Hkl.Projects.Diffabs.Martinetto
        , martinetto'
        ) where
 
-import Data.Array.Repa (DIM1, ix1)
-import Numeric.LinearAlgebra (ident)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+import           Data.Array.Repa       (DIM1, ix1)
+import           Numeric.LinearAlgebra (ident)
+import           System.FilePath       ((</>))
+import           Text.Printf           (printf)
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+import           Prelude               hiding (concat, lookup, readFile,
+                                        writeFile)
 
-import Hkl
+import           Hkl
 
 -- | Samples
 
@@ -39,7 +40,7 @@ h5path' nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleCalibration :: XRDCalibration Xpad32
+sampleCalibration :: XRDCalibration PyFAI
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration"
                                    , xrdCalibrationDetector = Xpad32

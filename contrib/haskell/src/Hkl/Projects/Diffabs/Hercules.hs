@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 
 module Hkl.Projects.Diffabs.Hercules
        ( hercules ) where
 
-import Data.Array.Repa (DIM1, ix1)
-import Numeric.Units.Dimensional.Prelude ((*~), centi, degree, meter)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+import           Data.Array.Repa                   (DIM1, ix1)
+import           Numeric.Units.Dimensional.Prelude (centi, degree, meter, (*~))
+import           System.FilePath                   ((</>))
+import           Text.Printf                       (printf)
 
-import Prelude hiding (lookup, readFile, writeFile)
+import           Prelude                           hiding (lookup, readFile,
+                                                    writeFile)
 
-import Hkl
+import           Hkl
 
 -- | Samples
 
@@ -55,7 +56,7 @@ sampleRef = XRDRef "reference"
              15 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
-sampleCalibration ∷ XRDCalibration ImXpadS140
+sampleCalibration ∷ XRDCalibration PyFAI
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration"
                                    , xrdCalibrationDetector =  ImXpadS140

@@ -1,21 +1,21 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 
 module Hkl.Projects.Diffabs.Melle
        ( melle ) where
 
 -- import Control.Concurrent (setNumCapabilities)
 -- import Control.Concurrent.Async (mapConcurrently)
-import Data.Array.Repa (DIM1, ix1)
+import           Data.Array.Repa (DIM1, ix1)
 -- import Data.Char (toUpper)
 -- import Numeric.LinearAlgebra (ident)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+import           System.FilePath ((</>))
+import           Text.Printf     (printf)
 
 -- import Prelude hiding (concat, lookup, readFile, writeFile)
 
-import Hkl
+import           Hkl
 
 published ∷ FilePath
 published = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/Reguer/USERSexperiences/melle"
@@ -94,7 +94,7 @@ h5path2 nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleCalibration2 :: XRDCalibration Xpad32
+sampleCalibration2 :: XRDCalibration PyFAI
 sampleCalibration2 = XRDCalibration { xrdCalibrationName = "calibration2"
                                     , xrdCalibrationOutputDir = published </> "calibration2"
                                     , xrdCalibrationDetector = Xpad32
@@ -272,7 +272,7 @@ session4 = do
         delta = "scan_data/actuator_1_1"
         wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-    sampleCalibration :: XRDCalibration Xpad32
+    sampleCalibration :: XRDCalibration PyFAI
     sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                        , xrdCalibrationOutputDir = published' </> "xrd" </> "calibration" -- TODO pourquoi ce output
                                        , xrdCalibrationDetector = Xpad32

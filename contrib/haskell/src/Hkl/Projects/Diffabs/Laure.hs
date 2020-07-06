@@ -1,18 +1,18 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 
 module Hkl.Projects.Diffabs.Laure
        ( laure ) where
 
-import Data.Array.Repa (DIM1, ix1)
-import Numeric.LinearAlgebra (ident)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+import           Data.Array.Repa       (DIM1, ix1)
+import           Numeric.LinearAlgebra (ident)
+import           System.FilePath       ((</>))
+import           Text.Printf           (printf)
 
-import Prelude hiding (lookup, readFile, writeFile)
+import           Prelude               hiding (lookup, readFile, writeFile)
 
-import Hkl
+import           Hkl
 
 -- | TODO
 -- * Livre 45 p159
@@ -62,7 +62,7 @@ sampleRef = XRDRef "reference"
              10 -- BEWARE only the 6th poni was generated with the right Xpad_flat geometry.
             )
 
-sampleCalibration ∷ XRDCalibration ImXpadS140
+sampleCalibration ∷ XRDCalibration PyFAI
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration"
                                    , xrdCalibrationDetector = ImXpadS140

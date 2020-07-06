@@ -1,17 +1,18 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.Projects.Diffabs.Hamon
        ( hamon ) where
 
-import Data.Array.Repa (DIM1, ix1)
-import Numeric.LinearAlgebra (ident)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+import           Data.Array.Repa       (DIM1, ix1)
+import           Numeric.LinearAlgebra (ident)
+import           System.FilePath       ((</>))
+import           Text.Printf           (printf)
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+import           Prelude               hiding (concat, lookup, readFile,
+                                        writeFile)
 
-import Hkl
+import           Hkl
 
 -- | TODO
 -- * take into account a non-centered sample.
@@ -50,7 +51,7 @@ h5path' nxentry =
           delta = "scan_data/actuator_1_1"
           wavelength = "D13-1-C03__OP__MONO__#1/wavelength"
 
-sampleCalibration :: XRDCalibration Xpad32
+sampleCalibration :: XRDCalibration PyFAI
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "xrd" </> "calibration" -- TODO pourquoi ce output
                                    , xrdCalibrationDetector = Xpad32

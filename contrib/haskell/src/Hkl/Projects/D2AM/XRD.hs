@@ -1,21 +1,22 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.Projects.D2AM.XRD
        ( d2am ) where
 
-import Data.Array.Repa (DIM1, ix1)
+import           Data.Array.Repa       (DIM1, ix1)
 -- import Data.Char (toUpper)
-import Numeric.LinearAlgebra (ident)
-import System.FilePath ((</>))
-import Text.Printf (printf)
+import           Numeric.LinearAlgebra (ident)
+import           System.FilePath       ((</>))
+import           Text.Printf           (printf)
 
-import Prelude hiding (concat, lookup, readFile, writeFile)
+import           Prelude               hiding (concat, lookup, readFile,
+                                        writeFile)
 
-import Hkl.MyMatrix
-import Hkl.PyFAI
-import Hkl.Xrd
-import Hkl.Detector
+import           Hkl.Detector
+import           Hkl.MyMatrix
+import           Hkl.PyFAI
+import           Hkl.Xrd
 
 -- | Samples
 
@@ -34,7 +35,7 @@ sampleRef =  XRDRef "reference"
              (project </> "16Dec08D5_0268-rsz.poni")
             )
 
-sampleCalibration :: XRDCalibration Xpad32
+sampleCalibration :: XRDCalibration PyFAI
 sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
                                    , xrdCalibrationOutputDir = published </> "calibration" -- TODO pourquoi ce output
                                    , xrdCalibrationDetector = Xpad32

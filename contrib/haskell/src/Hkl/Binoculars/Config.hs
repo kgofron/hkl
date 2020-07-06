@@ -39,6 +39,7 @@ import           Control.Monad.Catch.Pure          (runCatch)
 #else
 import           Data.Either.Extra                 (mapLeft, mapRight)
 #endif
+import           Data.Array.Repa.Index             (DIM2)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -113,7 +114,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputItype                  :: InputType
   , _binocularsInputNexusdir               :: Maybe (Path Abs Dir)
   , _binocularsInputInputrange             :: Maybe (ConfigRange Int)
-  , _binocularsInputDetector               :: Maybe SomeDetector
+  , _binocularsInputDetector               :: Maybe (Detector PyFAI DIM2)
   , _binocularsInputCentralpixel           :: (Int, Int)
   , _binocularsInputSdd                    :: Length Double
   , _binocularsInputDetrot                 :: Maybe (Angle Double)
@@ -142,7 +143,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsInputItype = SixsFlyScanUhv
   , _binocularsInputNexusdir = Nothing
   , _binocularsInputInputrange = Nothing
-  , _binocularsInputDetector = Just (SomeDetector ImXpadS140)
+  , _binocularsInputDetector = Just ImXpadS140
   , _binocularsInputCentralpixel = (0, 0)
   , _binocularsInputSdd = 1 *~ meter
   , _binocularsInputDetrot = Nothing
@@ -189,7 +190,7 @@ binocularsConfigSpec = do
     binocularsInputItype .= field "type" inputType
     binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
     binocularsInputInputrange .=? field "inputrange" configRange
-    binocularsInputDetector .=? field "detector" someDetector
+    binocularsInputDetector .=? field "detector" detector
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
     binocularsInputSdd .= field "sdd" (numberUnit meter)
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
@@ -249,15 +250,16 @@ pathAbsDir = FieldValue
 configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
 configRange = listWithSeparator "," number'
 
-someDetector :: FieldValue SomeDetector
-someDetector = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+detector :: FieldValue (Detector PyFAI DIM2)
+detector = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
     where
-      parse :: Text -> Either String SomeDetector
+      parse :: Text -> Either String (Detector PyFAI DIM2)
       parse t
-          | t == pack (show Xpad32) = Right (SomeDetector Xpad32)
+          | t == pack (show Xpad32) = Right Xpad32
+          | t == pack (show ImXpadS140) = Right ImXpadS140
           | otherwise = Left  ("Unsupported " ++ unpack t ++ " detector type")
 
-      emit ::  SomeDetector -> Text
+      emit ::  Detector PyFAI DIM2 -> Text
       emit = pack . show
 
 centralPixel :: FieldValue (Int, Int)
