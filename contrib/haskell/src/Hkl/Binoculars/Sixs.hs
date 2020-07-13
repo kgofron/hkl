@@ -50,10 +50,20 @@ withDetectorPathP f det (DetectorPath p) g =
 
 -- GeometryParth
 
-data GeometryPath = GeometryPath
-    { geometryPathWavelength :: Hdf5Path Z Double
-    , geometryPathAxes       :: [Hdf5Path DIM1 Double]
-    } deriving Show
+data GeometryPath
+  = GeometryPathUhv { geometryPathWavelength :: Hdf5Path Z Double
+                    , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                    }
+  | GeometryPathCristalK6C { geometryPathWavelength :: Hdf5Path Z Double
+                           , geometryPathMu         :: Hdf5Path DIM1 Double
+                           , geometryPathKomega     :: Hdf5Path DIM1 Double
+                           , geometryPathKappa      :: Hdf5Path DIM1 Double
+                           , geometryPathKphi       :: Hdf5Path DIM1 Double
+                           , geometryPathGamma      :: Hdf5Path DIM1 Double
+                           , geometryPathDelta      :: Hdf5Path DIM1 Double
+                           }
+
+                  deriving Show
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (mapM cont xs)
@@ -62,7 +72,7 @@ withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([D
 withAxesPathP f dpaths = nest (map (withHdf5PathP f) dpaths)
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
-withGeometryPathP f (GeometryPath w as) gg =
+withGeometryPathP f (GeometryPathUhv w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry
@@ -70,6 +80,27 @@ withGeometryPathP f (GeometryPath w as) gg =
                  <*> (Source <$> getValueWithUnit w' 0 angstrom)
                  <*> (fromList <$> mapM (`get_position` j) as')
                  <*> pure Nothing)
+withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
+    withHdf5PathP f w $ \w' ->
+    withHdf5PathP f m $ \mu' ->
+    withHdf5PathP f ko $ \komega' ->
+    withHdf5PathP f ka $ \kappa' ->
+    withHdf5PathP f kp $ \kphi' ->
+    withHdf5PathP f g $ \gamma' ->
+    withHdf5PathP f d $ \delta' -> do
+      wavelength <- liftIO $ getValueWithUnit w' 0 angstrom
+      mu <- liftIO $ get_position mu' 0
+      komega <- liftIO $ get_position komega' 0
+      kappa <- liftIO $ get_position kappa' 0
+      gamma <- liftIO $ get_position gamma' 0
+      delta <- liftIO $ get_position delta' 0
+      gg (\j -> do
+            kphi <- get_position kphi' j
+            return (Geometry
+                    K6c
+                    (Source wavelength)
+                    (fromList [mu, komega, kappa, kphi, gamma, delta])
+                    Nothing))
 
 -- | FramesQxQyQzP
 
@@ -105,7 +136,7 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
   SixsFlyScanUhv -> QxQyQzPath
                    (DetectorPath
                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                   (GeometryPath
+                   (GeometryPathUhv
                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
                     [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
@@ -115,7 +146,7 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
   SixsFlyScanUhv2 -> QxQyQzPath
                     (DetectorPath
                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                    (GeometryPath
+                    (GeometryPathUhv
                      (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
                      [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
@@ -125,7 +156,7 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
   SixsSbsMedV -> QxQyQzPath
                 (DetectorPath
                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                (GeometryPath
+                (GeometryPathUhv
                  (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
                  [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
@@ -135,15 +166,14 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
   CristalK6C -> QxQyQzPath
                (DetectorPath
                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
-               (GeometryPath
+               (GeometryPathCristalK6C
                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "wavelength")
-                [ hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position"
-                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position"
-                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position"
-                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1"
-                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position"
-                , hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"
-                ])
+                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position")
+                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position")
+                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position")
+                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
+                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
+                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
 
 
 -- | FramesHklP
