@@ -8,9 +8,7 @@ module Hkl.Pipes
     where
 
 import           Bindings.HDF5.Core      (Location)
-import           Bindings.HDF5.Dataset   (Dataset, closeDataset, openDataset)
 import           Bindings.HDF5.Dataspace (Dataspace, closeDataspace)
-import           Bindings.HDF5.File      (File, closeFile)
 import           Bindings.HDF5.Group     (Group, closeGroup, openGroup)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
 import           Pipes.Safe              (MonadSafe, bracket)
