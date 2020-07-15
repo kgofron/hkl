@@ -26,6 +26,7 @@ module Hkl.H5
     , get_position_new
     , get_ub
     , lenH5Dataspace
+    , datasetShape
     , nxEntries
     , nxEntries'
     , openDataset
@@ -64,6 +65,7 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   SelectionOperator (Set),
                                                   closeDataspace,
                                                   createSimpleDataspace,
+                                                  getSimpleDataspaceExtent,
                                                   getSimpleDataspaceExtentNDims,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
@@ -230,6 +232,9 @@ lenH5Dataspace d = withDataspace (getDatasetSpace d) len
     len space_id = do
       (HSize n) <- getSimpleDataspaceExtentNPoints space_id
       return $ if n < 0 then Nothing else Just (fromIntegral n)
+
+datasetShape :: Dataset -> IO ([HSize], [Maybe HSize])
+datasetShape d = withDataspace (getDatasetSpace d) getSimpleDataspaceExtent
 
 -- | DataSet
 

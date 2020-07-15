@@ -19,6 +19,7 @@ import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
+import           Data.Maybe                        (fromMaybe)
 import           Data.Typeable                     (typeOf)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
@@ -114,9 +115,9 @@ instance LenP QxQyQzPath where
     fp <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' -> do
-      mn <- liftIO $ lenH5Dataspace i'
-      case mn of
-        (Just n) -> yield n
+      (_, ss) <- liftIO $ datasetShape i'
+      case head ss of
+        (Just n) -> yield (fromIntegral n)
         Nothing  -> error "can not extract length"
 
 instance FramesQxQyQzP QxQyQzPath where
@@ -167,7 +168,7 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
                (DetectorPath
                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
                (GeometryPathCristalK6C
-                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "wavelength")
+                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda")
                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position")
                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position")
                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position")
@@ -311,13 +312,15 @@ process :: Maybe FilePath -> IO ()
 process mf = do
   conf <- getConfig mf
   case conf of
-    Right c -> case _binocularsProjectionPtype c of
-                QxQyQzProjection -> do
-                  i <- mkInputQxQyQz c ImXpadS140 h5dpathQxQyQz
-                  print i
-                  processQxQyQz i
-                HklProjection -> do
-                  i <- mkInputHkl c ImXpadS140 h5dpathHkl
-                  print i
-                  processHkl i
+    Right c -> do
+               let d = fromMaybe ImXpadS140 (_binocularsInputDetector c)
+               case _binocularsProjectionPtype c of
+                 QxQyQzProjection -> do
+                   i <- mkInputQxQyQz c d h5dpathQxQyQz
+                   print i
+                   processQxQyQz i
+                 HklProjection -> do
+                   i <- mkInputHkl c d h5dpathHkl
+                   print i
+                   processHkl i
     Left e   -> print e
