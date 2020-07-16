@@ -172,9 +172,7 @@ data DataFrameHkl a
       Geometry -- geometry
       (Sample Triclinic) --  the sample part
       -- (Array F DIM2 Double) -- ub
-
-instance Show (DataFrameHkl a) where
-  show (DataFrameHkl q _ _ _) = show q
+      deriving Show
 
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()

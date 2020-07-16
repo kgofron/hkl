@@ -25,6 +25,7 @@
 #include "hkl-geometry-private.h"
 #include "hkl-matrix-private.h"
 #include "hkl-quaternion-private.h"
+#include "hkl-sample-private.h"
 #include "hkl-vector-private.h"
 
 inline int32_t min(int32_t x, int32_t y)
@@ -257,7 +258,6 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
         space_update_axes(space, names, n_pixels, resolutions);
 
 	hkl_detector_free(detector);
-        hkl_sample_free(sample);
 
 	return space;
 }
