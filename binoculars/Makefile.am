@@ -9,7 +9,7 @@ AM_CFLAGS = \
 AM_LDFLAGS = -version-info 0:0:0 \
 	$(GLIB_LIBS)
 
-noinst_LTLIBRARIES = libhkl-binoculars.la
+lib_LTLIBRARIES = libhkl-binoculars.la
 libhkl_binoculars_la_SOURCES = \
 	hkl-binoculars.c \
 	$(top_builddir)/hkl/hkl-axis.c \
