@@ -230,6 +230,7 @@ AC_CONFIG_FILES([Makefile
 		 hkl/api2/Makefile
 		 hkl/ccan/Makefile
 		 hkl.pc
+                 hkl-binoculars.pc
 		 hkl3d/Makefile
 		 hkl3d.pc
 		 tests/Makefile

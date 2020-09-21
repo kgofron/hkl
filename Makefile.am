@@ -18,13 +18,13 @@ if CONTRIB
 SUBDIRS += contrib
 endif
 
-EXTRA_DIST = hkl.pc.in hkl3d.pc.in
+EXTRA_DIST = hkl.pc.in hkl-binoculars.pc.in hkl3d.pc.in
 
 installed_mainheaderdir = $(includedir)/hkl-@VMAJ@
 dist_installed_mainheader_DATA = hkl.h
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = hkl.pc
+pkgconfig_DATA = hkl.pc hkl-binoculars.pc
 
 if HKL3D
 #for not do not install

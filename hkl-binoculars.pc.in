@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: hkl-binoculars
+Description: Library for multi dimensional detector Diffraction computation
+Version: @VERSION@
+URL: http://repo.or.cz/w/hkl.git
+Requires: hkl
+Libs: -L${libdir} -lhkl-binoculars
+Libs.private: -lm
+Cflags: -I${includedir}/hkl-@VMAJ@

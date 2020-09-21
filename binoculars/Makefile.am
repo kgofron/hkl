@@ -25,7 +25,8 @@ libhkl_binoculars_la_SOURCES = \
 	$(top_builddir)/hkl/hkl-unit.c \
 	$(top_builddir)/hkl/hkl-vector.c
 
-noinst_HEADERS = hkl-binoculars.h
+installed_mainheaderdir = $(includedir)/hkl-@VMAJ@
+dist_installed_mainheader_DATA = hkl-binoculars.h
 
 # Support for GNU Flymake, in Emacs.
 check-syntax: AM_CFLAGS += -fsyntax-only -pipe
