@@ -69,7 +69,7 @@ executable xrd
   ghc-options:         -Werror
   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
 
-executable binoculars
+executable binoculars-ng
   main-is:             app/Binoculars.hs
   build-depends:       base >= 4.6
                      , containers >= 0.5 && < 0.7
