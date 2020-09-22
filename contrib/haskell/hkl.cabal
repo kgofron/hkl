@@ -21,7 +21,7 @@ Data-Files:          data/ghkl3.ui
 
 Flag useHklDev
      Description: Use the current devel hkl library in the source tree
-     Default: True
+     Default: False
 
 Flag usePythonEmbed
      Description: Use the python3-embed.pc file instead of python3.pc
@@ -217,6 +217,7 @@ library
     pkgconfig-depends:   glib-2.0
   else
     pkgconfig-depends:   hkl
+    pkgconfig-depends:   hkl-binoculars
 
   if flag(usePythonEmbed)
     pkgconfig-depends:   python3-embed

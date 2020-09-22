@@ -299,7 +299,7 @@ files c = do
     where
       isHdf5 :: MonadThrow m => Path Abs File -> m Bool
       isHdf5 p = do
-               e <- fileExtension p
+               let e = fileExtension p
                return  $ e `elem` [".h5", ".nxs"]
 
       matchIndex :: Path Abs File -> Int -> Bool
