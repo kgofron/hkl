@@ -27,47 +27,47 @@ Flag usePythonEmbed
      Description: Use the python3-embed.pc file instead of python3.pc
      Default: False
 
-executable ghkl
-  main-is:             src/ghkl.hs
-  build-depends:       attoparsec
-                     , base >= 4.6
-                     , containers >= 0.5 && < 0.7
-                     , dimensional >= 0.10
-                     , filepath >= 1.3.0
-                     , Glob >= 0.7.5
-                     , hkl
-                     , monad-loops >= 0.4.2
-                     , pipes >= 4.1.2
-                     , repa
-                     , text
-                     , transformers >= 0.3
-                     , vector >= 0.10.0.1
-  default-language:    Haskell2010
-  build-tools:         hsc2hs
-  ghc-options:         -Wall -threaded -O2
-  ghc-options:         -Werror
-  ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+-- executable ghkl
+--   main-is:             src/ghkl.hs
+--   build-depends:       attoparsec
+--                      , base >= 4.6
+--                      , containers >= 0.5 && < 0.7
+--                      , dimensional >= 0.10
+--                      , filepath >= 1.3.0
+--                      , Glob >= 0.7.5
+--                      , hkl
+--                      , monad-loops >= 0.4.2
+--                      , pipes >= 4.1.2
+--                      , repa
+--                      , text
+--                      , transformers >= 0.3
+--                      , vector >= 0.10.0.1
+--   default-language:    Haskell2010
+--   build-tools:         hsc2hs
+--   ghc-options:         -Wall -threaded -O2
+--   ghc-options:         -Werror
+--   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
 
-executable xrd
-  main-is:             src/xrd.hs
-  build-depends:       attoparsec
-                     , base >= 4.6
-                     , containers >= 0.5 && < 0.7
-                     , dimensional >= 0.10
-                     , filepath >= 1.3.0
-                     , Glob >= 0.7.5
-                     , hkl
-                     , monad-loops >= 0.4.2
-                     , pipes >= 4.1.2
-                     , text
-                     , transformers >= 0.3
-                     , vector >= 0.10.0.1
+-- executable xrd
+--   main-is:             src/xrd.hs
+--   build-depends:       attoparsec
+--                      , base >= 4.6
+--                      , containers >= 0.5 && < 0.7
+--                      , dimensional >= 0.10
+--                      , filepath >= 1.3.0
+--                      , Glob >= 0.7.5
+--                      , hkl
+--                      , monad-loops >= 0.4.2
+--                      , pipes >= 4.1.2
+--                      , text
+--                      , transformers >= 0.3
+--                      , vector >= 0.10.0.1
 
-  default-language:    Haskell2010
-  build-tools:         hsc2hs
-  ghc-options:         -Wall -threaded -O2
-  ghc-options:         -Werror
-  ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+--   default-language:    Haskell2010
+--   build-tools:         hsc2hs
+--   ghc-options:         -Wall -threaded -O2
+--   ghc-options:         -Werror
+--   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
 
 executable binoculars-ng
   main-is:             app/Binoculars.hs
