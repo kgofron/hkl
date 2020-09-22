@@ -15,9 +15,9 @@ import           Prelude               hiding (concat, lookup, readFile,
 import           Hkl
 
 -- | TODO
--- * take into account a non-centered sample.
--- * find a way to use integrateMulti with a small amount of memory.
--- * better mask for each detector.
+--  take into account a non-centered sample.
+--  find a way to use integrateMulti with a small amount of memory.
+--  better mask for each detector.
 
 -- | Samples
 

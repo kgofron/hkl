@@ -55,7 +55,7 @@ data XrdMeshSource  = XrdMeshSourceNxs (Nxs XrdMesh)
 
 data XrdMesh' = XrdMesh DIM1 DIM1 (Maybe Threshold) XrdMeshSource deriving (Show)
 
-data XrdMeshSample = XrdMeshSample SampleName AbsDirPath [XrdMesh'] deriving (Show) -- ^ nxss
+data XrdMeshSample = XrdMeshSample SampleName AbsDirPath [XrdMesh'] deriving (Show) --  nxss
 
 data XrdMeshParams a = XrdMeshParams PoniExt (Maybe (Flat a)) AIMethod
 

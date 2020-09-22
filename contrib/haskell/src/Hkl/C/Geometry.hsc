@@ -62,10 +62,10 @@ factoryFromString s
 -- | Geometry
 
 data Geometry = Geometry
-                Factory -- ^ the type of diffractometer
-                Source -- ^ source
-                (Vector Double) -- ^ axes position
-                (Maybe [Parameter]) -- ^ axes configuration
+                Factory --  the type of diffractometer
+                Source --  source
+                (Vector Double) --  axes position
+                (Maybe [Parameter]) --  axes configuration
               deriving (Show)
 
 
@@ -85,8 +85,8 @@ newFactory :: Factory -> IO (Ptr HklFactory)
 newFactory f = withCString (show f) $ \cname -> c_hkl_factory_get_by_name cname nullPtr
 
 foreign import ccall unsafe "hkl.h hkl_factory_get_by_name"
-  c_hkl_factory_get_by_name :: CString  -- ^ name
-                            -> Ptr () -- ^ GError (null for now)
+  c_hkl_factory_get_by_name :: CString  --  name
+                            -> Ptr () --  GError (null for now)
                             -> IO (Ptr HklFactory)
 -- Geometry
 
@@ -99,7 +99,7 @@ foreign import ccall unsafe "hkl.h hkl_geometry_wavelength_set"
   c_hkl_geometry_wavelength_set :: Ptr Geometry -- geometry
                                 -> CDouble -- wavelength
                                 -> CInt -- unit
-                                -> Ptr () -- *gerror
+                                -> Ptr () -- gerror
                                 -> IO () -- IO CInt but for now do not deal with the errors
 
 pokeSource :: Ptr Geometry -> Source -> IO ()

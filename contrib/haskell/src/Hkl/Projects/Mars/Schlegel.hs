@@ -11,9 +11,9 @@ import           Prelude         hiding (concat, lookup, readFile, writeFile)
 import           Hkl
 
 -- | TODO
--- * check if the
--- * find a way to use integrateMulti with a small amount of memory.
--- * better mask for each detector.
+--  check if the
+--  find a way to use integrateMulti with a small amount of memory.
+--  better mask for each detector.
 
 -- | Samples
 

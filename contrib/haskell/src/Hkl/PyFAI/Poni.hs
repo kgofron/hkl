@@ -51,17 +51,17 @@ newtype Pose = Pose (MyMatrix Double) deriving (Show)
 -- | Poni
 
 data PoniEntry = PoniEntry { poniEntryHeader     :: [Text]
-                           , poniEntryDetector   :: Maybe SomeDetector -- ^ Detector Name
-                           , poniEntryPixelSize1 :: Length Double -- ^ pixels size 1
-                           , poniEntryPixelSize2 :: Length Double -- ^ pixels size 1
-                           , poniEntryDistance   :: Length Double -- ^ pixels size 2
-                           , poniEntryPoni1      :: Length Double -- ^ poni1
-                           , poniEntryPoni2      :: Length Double -- ^ poni2
-                           , poniEntryRot1       :: Angle Double -- ^ rot1
-                           , poniEntryRot2       :: Angle Double -- ^ rot2
-                           , poniEntryRot3       :: Angle Double -- ^ rot3
-                           , poniEntrySpline     :: Maybe Text -- ^ spline file
-                           , poniEntryWavelength :: WaveLength -- ^ wavelength
+                           , poniEntryDetector   :: Maybe SomeDetector --  Detector Name
+                           , poniEntryPixelSize1 :: Length Double --  pixels size 1
+                           , poniEntryPixelSize2 :: Length Double --  pixels size 1
+                           , poniEntryDistance   :: Length Double --  pixels size 2
+                           , poniEntryPoni1      :: Length Double --  poni1
+                           , poniEntryPoni2      :: Length Double --  poni2
+                           , poniEntryRot1       :: Angle Double --  rot1
+                           , poniEntryRot2       :: Angle Double --  rot2
+                           , poniEntryRot3       :: Angle Double --  rot3
+                           , poniEntrySpline     :: Maybe Text --  spline file
+                           , poniEntryWavelength :: WaveLength --  wavelength
                            }
                deriving (Show)
 
@@ -208,12 +208,12 @@ poniEntryMove mym1 mym2 e = e { poniEntryRot1 = new_rot1
     (MyMatrix _ m1) = changeBase mym1 PyFAIB
     (MyMatrix _ m2) = changeBase mym2 PyFAIB
 
-poniEntrySet ∷ Length Double -- ^ distance
-             → Length Double -- ^ poni1
-             → Length Double -- ^ poni2
-             → Angle Double -- ^ rot1
-             → Angle Double -- ^ rot2
-             → Angle Double -- ^ rot3
+poniEntrySet ∷ Length Double --  distance
+             → Length Double --  poni1
+             → Length Double --  poni2
+             → Angle Double --  rot1
+             → Angle Double --  rot2
+             → Angle Double --  rot3
              → PoniEntry
              → PoniEntry
 poniEntrySet d p1 p2 r1 r2 r3 p =

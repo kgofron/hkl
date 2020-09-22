@@ -43,15 +43,15 @@ beamlineUpper b = [toUpper x | x ← show b]
 
 data Mode
   = Mode
-    String -- ^ name
-    [Parameter] -- ^ parameters of the @Mode@
+    String --  name
+    [Parameter] --  parameters of the @Mode@
   deriving (Show)
 
 data Engine
   = Engine
-    String -- ^ name
-    [Parameter] -- ^ pseudo axes values of the @Engine@
-    Mode -- ^ current Mode
+    String --  name
+    [Parameter] --  pseudo axes values of the @Engine@
+    Mode --  current Mode
   deriving (Show)
 
 -- | Sample

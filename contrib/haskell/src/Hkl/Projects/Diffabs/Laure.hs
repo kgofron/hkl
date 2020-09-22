@@ -15,10 +15,10 @@ import           Prelude               hiding (lookup, readFile, writeFile)
 import           Hkl
 
 -- | TODO
--- * Livre 45 p159
--- * simplify with the list of nxs using list comprehension.
--- * add the flyscan mesh
--- * add possibility to sum a bunch of pixel coordinates from a mesh. on a mask
+--  Livre 45 p159
+--  simplify with the list of nxs using list comprehension.
+--  add the flyscan mesh
+--  add possibility to sum a bunch of pixel coordinates from a mesh. on a mask
 
 -- | Samples
 

@@ -86,9 +86,9 @@ import           Hkl.Types                         (AbsDirPath, SampleName,
 import           Hkl.Utils                         (hasContent)
 
 -- | TODO
--- * When we skip the last frame there is problem.
+--  When we skip the last frame there is problem.
 
--- * Let's add a method in order to customize the movement of the poni.
+--  Let's add a method in order to customize the movement of the poni.
 
 -- | Types
 
@@ -117,17 +117,17 @@ data XrdNxs
       XrdSource -- data source
     deriving (Show)
 
-data XRDSample = XRDSample SampleName AbsDirPath [XrdNxs] -- ^ nxss
+data XRDSample = XRDSample SampleName AbsDirPath [XrdNxs] --  nxss
                deriving (Show)
 
 data XrdOneDParams a = XrdOneDParams PoniExt (Maybe (Flat a)) AIMethod
 
 data DifTomoFrame sh =
-  DifTomoFrame { difTomoFrameNxs      :: Nxs XrdOneD-- ^ nexus of the current frame
-               , difTomoFrameIdx      :: Int -- ^ index of the current frame
-               , difTomoFrameEOF      :: Bool -- ^ is it the eof of the stream
-               , difTomoFrameGeometry :: Geometry -- ^ diffractometer geometry
-               , difTomoFramePoniExt  :: PoniExt -- ^ the ref poniext
+  DifTomoFrame { difTomoFrameNxs      :: Nxs XrdOneD--  nexus of the current frame
+               , difTomoFrameIdx      :: Int --  index of the current frame
+               , difTomoFrameEOF      :: Bool --  is it the eof of the stream
+               , difTomoFrameGeometry :: Geometry --  diffractometer geometry
+               , difTomoFramePoniExt  :: PoniExt --  the ref poniext
                } deriving (Show)
 
 class Frame t where

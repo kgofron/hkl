@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE CPP #-}
 {-
-    Copyright  : Copyright (C) 2014-2019 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -39,17 +39,17 @@ unit = 1
 
 data Range
   = Range
-    Double -- ^ minimum value
-    Double -- ^ maximum value
+    Double --  minimum value
+    Double --  maximum value
   deriving (Show)
 
 -- | Parameter
 
 data Parameter
   = Parameter
-    String -- ^ name
-    Double -- ^ value
-    Range -- ^ range
+    String --  name
+    Double --  value
+    Range --  range
   deriving (Show)
 
 instance Storable Parameter where
