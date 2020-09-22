@@ -1,6 +1,6 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs                    #-}
 
 module Hkl.C.Lattice
        ( HklLattice
@@ -8,19 +8,16 @@ module Hkl.C.Lattice
        , withLattice
        ) where
 
-import Prelude hiding (min, max)
+import           Prelude                           hiding (max, min)
 
-import Foreign ( ForeignPtr
-               , FunPtr
-               , Ptr
-               , nullPtr
-               , newForeignPtr
-               , withForeignPtr)
-import Foreign.C (CDouble(..))
+import           Foreign                           (ForeignPtr, FunPtr, Ptr,
+                                                    newForeignPtr, nullPtr,
+                                                    withForeignPtr)
+import           Foreign.C                         (CDouble (..))
 
-import Numeric.Units.Dimensional.Prelude ( meter, degree, radian, nano
-                                         , (*~), (/~))
-import Hkl.Lattice
+import           Hkl.Lattice
+import           Numeric.Units.Dimensional.Prelude (degree, meter, nano, radian,
+                                                    (*~), (/~))
 
 #include "hkl.h"
 
@@ -99,7 +96,7 @@ foreign import ccall unsafe "hkl.h hkl_lattice_new"
                     -> CDouble -- alpha
                     -> CDouble -- beta
                     -> CDouble -- gamma
-                    -> Ptr () -- *gerror
+                    -> Ptr () -- gerror
                     -> IO (Ptr HklLattice)
 
 foreign import ccall unsafe "hkl.h &hkl_lattice_free"
