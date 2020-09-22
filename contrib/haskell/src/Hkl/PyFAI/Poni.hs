@@ -44,11 +44,11 @@ import           Hkl.Types
 
 type PoniPath = FilePath
 
--- | Pose
+--  Pose
 
 newtype Pose = Pose (MyMatrix Double) deriving (Show)
 
--- | Poni
+--  Poni
 
 data PoniEntry = PoniEntry { poniEntryHeader     :: [Text]
                            , poniEntryDetector   :: Maybe SomeDetector --  Detector Name

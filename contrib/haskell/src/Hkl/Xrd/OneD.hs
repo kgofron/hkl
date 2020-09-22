@@ -85,12 +85,12 @@ import           Hkl.Types                         (AbsDirPath, SampleName,
                                                     Source (Source))
 import           Hkl.Utils                         (hasContent)
 
--- | TODO
+--  TODO
 --  When we skip the last frame there is problem.
 
 --  Let's add a method in order to customize the movement of the poni.
 
--- | Types
+--  Types
 
 newtype Threshold = Threshold Int deriving (Show)
 
@@ -200,7 +200,7 @@ skip is' (DifTomoFrame _ i _ _ _) = i `notElem` is'
 --     where
 --       extract (PoniEntry _ _ (Length poni1) _ _ _ _ _ _) = poni1
 
--- | Usual methods
+--  Usual methods
 
 dummiesForPy ∷ Maybe Threshold → String
 dummiesForPy mt = unlines [ "# Compute the dummy values for the dynamic mask"
@@ -324,7 +324,7 @@ createPy (XrdOneDParams _ mflat m) b mt scriptPath (DifTomoFrame' f poniPath) = 
       output = poniPath `replaceExtension` "dat"
       (Geometry _ (Source w) _ _) = difTomoFrameGeometry f
 
--- | Pipes
+--  Pipes
 
 data DifTomoFrame' sh = DifTomoFrame' { difTomoFrame'DifTomoFrame :: DifTomoFrame sh
                                       , difTomoFrame'PoniPath :: FilePath
@@ -465,7 +465,7 @@ substract' p s1@(XRDSample name _ _) s2 = do
 substract ∷  XrdOneDParams a → XRDSample → [XRDSample] → IO ()
 substract p s = mapM_ (substract' p s)
 
--- | PyFAI MultiGeometry
+--  PyFAI MultiGeometry
 
 integrateMulti ∷ XrdOneDParams a → [XRDSample] → IO ()
 integrateMulti p = mapM_ (integrateMulti' p)

@@ -14,7 +14,7 @@ module Hkl.Lattice ( Lattice(..)
 
 import           Numeric.Units.Dimensional.Prelude (Angle, Length)
 
--- | Lattice
+--  Lattice
 
 data Cubic
 data Tetragonal

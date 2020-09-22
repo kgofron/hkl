@@ -49,7 +49,7 @@ import           Hkl.H5
 
   #include "hkl-binoculars.h"
 
--- | Axis
+--  Axis
 
 data Axis = Axis ByteString (Array F DIM1 CDouble)
 
@@ -69,7 +69,7 @@ instance Storable Axis where
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_axis_array" \
 hkl_binoculars_axis_array :: Ptr Axis -> IO (Ptr CDouble)
 
--- | Cube'
+--  Cube'
 
 data Cube' sh = Cube' (ForeignPtr (Cube' sh))
               | EmptyCube'
@@ -117,7 +117,7 @@ hkl_binoculars_cube_new' :: CInt -- number of Space
                          -> Ptr (Ptr Word16) -- uint16_t **imgs);
                          -> IO (Ptr (Cube' sh))
 
--- | Cube
+--  Cube
 
 data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
                     , cubeContributions :: (Array F sh CInt)
@@ -196,7 +196,7 @@ foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_copy" \
 hkl_binoculars_cube_new_copy :: Ptr (Cube' sh) -- src
                              -> IO (Ptr (Cube sh))
 
--- | Space
+--  Space
 
 data Space sh = Space { spaceHklPointer :: (ForeignPtr (Space sh)) }
   deriving Show

@@ -47,7 +47,7 @@ import Hkl.Types
 import Hkl.Utils
 import Hkl.Xrd.OneD
 
--- | Types
+--  Types
 
 data XrdMeshSource  = XrdMeshSourceNxs (Nxs XrdMesh)
                     | XrdMeshSourceNxsFly [Nxs XrdMesh]

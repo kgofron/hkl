@@ -14,7 +14,7 @@ import           Prelude               hiding (concat, lookup, readFile,
 
 import           Hkl
 
--- | Samples
+--  Samples
 
 project :: FilePath
 project = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/"
@@ -133,7 +133,7 @@ fly = XrdMeshSample "scan5"
       delta = -6.2 / 180.0 * 3.14159
       wavelength = 1.54 -- TODO vérifier
 
--- | Main
+--  Main
 
 irdrx :: IO ()
 irdrx = do

@@ -33,7 +33,7 @@ import Hkl.Detector
 data HklGeometryList
 data HklGeometryListItem
 
--- | HklGeometryList
+--  HklGeometryList
 
 getSolution0 :: ForeignPtr HklGeometryList -> IO Geometry
 getSolution0 gl = withForeignPtr gl $ \solutions ->

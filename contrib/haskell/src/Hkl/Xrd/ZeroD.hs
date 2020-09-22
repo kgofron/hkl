@@ -35,7 +35,7 @@ import Hkl.Script ( Script ( Py2Script, ScriptSh )
                   )
 import Hkl.Types ( AbsDirPath, SampleName, WaveLength )
 
--- | Types
+--  Types
 
 newtype XrdZeroDSource  = XrdZeroDSourceNxs (Nxs XrdZeroD) deriving (Show)
 

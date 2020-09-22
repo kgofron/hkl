@@ -15,7 +15,7 @@ import           Pipes.Safe              (MonadSafe, bracket)
 
 import           Hkl.H5
 
--- | Deal with hdf5 object in a safe way
+--  Deal with hdf5 object in a safe way
 
 bracket' :: MonadSafe m => (a -> IO ()) -> IO a -> (a -> m r) -> m r
 bracket' r a = bracket (liftIO a) (liftIO . r)

@@ -198,7 +198,7 @@ get_ub dataset' = do
   v <- readDataset dataset' Nothing Nothing
   return $ reshape 3 v
 
--- | File
+--  File
 
 withH5File' :: IO File -> (File -> IO r) -> IO r
 withH5File' a = bracket a closeFile
@@ -209,7 +209,7 @@ withH5File fp = withH5File' (openFile (pack fp) [ReadOnly] Nothing)
 openH5 ∷ FilePath → IO File
 openH5 f = openFile (pack f) [ReadOnly] Nothing
 
--- | Group
+--  Group
 
 withGroup :: IO Group -> (Group -> IO r) -> IO r
 withGroup a = bracket a closeGroup
@@ -219,7 +219,7 @@ withGroupAt l i f = do
   es <- nxEntries' l
   withGroup (openGroup l (es !! i) Nothing) f
 
--- | Dataspace
+--  Dataspace
 
 -- check how to merge both methods
 
@@ -236,7 +236,7 @@ lenH5Dataspace d = withDataspace (getDatasetSpace d) len
 datasetShape :: Dataset -> IO ([HSize], [Maybe HSize])
 datasetShape d = withDataspace (getDatasetSpace d) getSimpleDataspaceExtent
 
--- | DataSet
+--  DataSet
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
@@ -251,7 +251,7 @@ readDatasetInto' :: NativeType t =>
 readDatasetInto' dset mem_space_id file_space_id plist_id buf =
     withErrorCheck_ $ h5d_read (hid dset) (hdfTypeOf1 buf) (maybe h5s_ALL hid mem_space_id) (maybe h5s_ALL hid file_space_id) (maybe h5p_DEFAULT hid plist_id) (OutArray buf)
 
--- | WIP until I have decided what is the right way to go
+--  WIP until I have decided what is the right way to go
 
 type H5Iterate a = HId_t -> CString -> In H5L_info_t -> InOut a -> IO HErr_t
 
@@ -290,7 +290,7 @@ nxEntries' l = do
         modifyIORef' stRef $ \st -> name : st
         return $ HErr_t 0
 
--- | Better API
+--  Better API
 
 data Hdf5M a
   = H5Empty

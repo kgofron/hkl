@@ -20,15 +20,15 @@ import           Hkl
 published ∷ FilePath
 published = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/Reguer/USERSexperiences/melle"
 
--- | TODO
+--  TODO
 
--- | MELLE / VIALAS
+--  MELLE / VIALAS
 -- Session 1 MACRO - 16-17 février 2016 (Logbook n° 42 p 169)
 -- Session 2 MICRO KB --28 mars 2016 (Logbook 42 + Logbook 43 p3)
 -- Session 3 MICRO pinhole - 22-24 juillet 2016 (Logbook 44 p33)
 -- Session 4 MACRO - septembre 2016 (Logbook 44 p63)
 
--- | Session 1
+--  Session 1
 
 -- macrofaisceau
 -- 16keV
@@ -54,7 +54,7 @@ published = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/Reguer/USERSexperienc
 -- scan_58 = ascan(delta, -4, 70, 18, 3)
 
 
--- | Session 2
+--  Session 2
 
 -- microbeam
 -- 18keV, ?= 0,6888Å
@@ -198,7 +198,7 @@ session2 = do
 
   return ()
 
--- | session 4
+--  session 4
 -- macro
 -- 18keV, ?= 0,6888Å
 -- detection : XPAD 3.2
@@ -216,7 +216,7 @@ session4 = do
 -- sont deux autres possibilité de calibration.
 -- diffabs-soleil\com-diffabs\2016\Run4\2016-09-07
 
-  -- | set the integration parameters
+  --  set the integration parameters
   let mflat = Nothing
   let params = XrdOneDParams poniextref mflat Csr
 
@@ -348,7 +348,7 @@ session4 = do
 -- 18p1kev_86
 -- ruche-diffabs\diffabs-users\99170085\2017\Run3\2017-05-14
 
--- | Samples
+--  Samples
 
 -- published :: FilePath
 -- published = project </> "published-data"

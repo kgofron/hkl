@@ -112,7 +112,7 @@ import Hkl.Xrd.OneD
 import Numeric.LinearAlgebra ((#>))
 #endif
 
--- | Calibration
+--  Calibration
 
 data NptExt a = NptExt { nptExtNpt :: Npt
                        , nptExtPose :: Pose
@@ -194,7 +194,7 @@ readXRDCalibrationEntry d e@(XRDCalibrationEntryEdf _ _) =
   <*> getPoseEdf (xrdCalibrationEntryEdf'Edf e)
   <*> pure d
 
--- | Poni Calibration
+--  Poni Calibration
 
 -- The minimized function is the quadratic difference of the
 -- theoretical tth angle and for each pixel, the computed tth angle.
@@ -289,7 +289,7 @@ calibrate (XRDCalibration _ _ d _ es) p = do
   print _p
   return $ fromGsl p solution
 
--- | Edf extraction before calibration
+--  Edf extraction before calibration
 
 edf ∷ AbsDirPath → FilePath → Int → FilePath
 edf o n i = o </> f

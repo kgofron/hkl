@@ -221,7 +221,7 @@ newForeignPyPtr r = do
     finalizer <- gimmeFunc 0
     PyObject <$> newForeignPtr finalizer r
 
--- | numpy -> Repa
+--  numpy -> Repa
 
 foreign import ccall "get_PyArray_BYTES" py_PyArray_BYTES :: RawPyObject -> IO (Ptr ())
 foreign import ccall "get_PyArray_NDIM" py_PyArray_NDIM :: RawPyObject -> IO CInt
@@ -242,7 +242,7 @@ extractNumpyArray (PyObject fp) = withForeignPtr fp $ \p -> do
         dims <- peekArray ndim =<< py_PyArray_DIMS ptr
         return $ shapeOfList [fromIntegral d | d <- dims]
 
--- | Matrix -> numpy
+--  Matrix -> numpy
 
 foreign import ccall "matrix3x3_to_pyobject" py_matrix_to_pyobject :: Ptr Double -> IO RawPyObject
 

@@ -18,7 +18,7 @@ import           Hkl.MyMatrix
 import           Hkl.PyFAI
 import           Hkl.Xrd
 
--- | Samples
+--  Samples
 
 project :: FilePath
 project = "/home/experiences/instrumentation/picca/data/d2am"
@@ -82,7 +82,7 @@ lab6 = XRDSample "test"
              entries :: XrdSource
              entries = XrdSourceEdf [entry idx | idx <- idxs]
 
--- | Main
+--  Main
 
 d2am :: IO ()
 d2am = do

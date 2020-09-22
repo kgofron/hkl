@@ -39,7 +39,7 @@ import Hkl.C.DArray
 
 #include "hkl.h"
 
--- | Factory
+--  Factory
 
 data Factory = K6c | Uhv | MedH | MedV | SoleilSiriusKappa
 
@@ -59,7 +59,7 @@ factoryFromString s
   | s == "SOLEIL SIRIUS KAPPA" = SoleilSiriusKappa
   | otherwise   = error $ "unknown diffractometer type:" ++ s
 
--- | Geometry
+--  Geometry
 
 data Geometry = Geometry
                 Factory --  the type of diffractometer

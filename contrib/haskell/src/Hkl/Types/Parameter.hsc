@@ -35,7 +35,7 @@ import Foreign.Storable ( Storable
 unit :: CInt
 unit = 1
 
--- | Range
+--  Range
 
 data Range
   = Range
@@ -43,7 +43,7 @@ data Range
     Double --  maximum value
   deriving (Show)
 
--- | Parameter
+--  Parameter
 
 data Parameter
   = Parameter

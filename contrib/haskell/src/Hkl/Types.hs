@@ -28,7 +28,7 @@ import           Numeric.Units.Dimensional.Prelude (Length)
 type AbsDirPath = FilePath
 type SampleName = String
 
--- | Beamline
+--  Beamline
 
 data Beamline = Diffabs | Sixs
 
@@ -39,7 +39,7 @@ instance Show Beamline where
 beamlineUpper ∷ Beamline → String
 beamlineUpper b = [toUpper x | x ← show b]
 
--- | Engine
+--  Engine
 
 data Mode
   = Mode
@@ -54,7 +54,7 @@ data Engine
     Mode --  current Mode
   deriving (Show)
 
--- | Sample
+--  Sample
 
 data Sample a
     = Sample { sampleName    :: SampleName
@@ -65,12 +65,12 @@ data Sample a
              }
   deriving (Show)
 
--- | Source
+--  Source
 
 type WaveLength = Length Double
 
 newtype Source = Source WaveLength deriving (Show)
 
--- | Trajectory
+--  Trajectory
 
 type Trajectory = [[Double]]

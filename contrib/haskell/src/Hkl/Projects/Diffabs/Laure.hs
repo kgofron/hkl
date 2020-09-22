@@ -14,13 +14,13 @@ import           Prelude               hiding (lookup, readFile, writeFile)
 
 import           Hkl
 
--- | TODO
+--  TODO
 --  Livre 45 p159
 --  simplify with the list of nxs using list comprehension.
 --  add the flyscan mesh
 --  add possibility to sum a bunch of pixel coordinates from a mesh. on a mask
 
--- | Samples
+--  Samples
 
 project ∷ FilePath
 project = "/nfs/ruche-diffabs/diffabs-users/20160370/"
@@ -52,7 +52,7 @@ mkNxs' d idx = mkNxs f' e
 
      (f', e) = f d idx
 
--- | Calibration part
+--  Calibration part
 
 sampleRef ∷ XRDRef
 sampleRef = XRDRef "reference"
@@ -83,7 +83,7 @@ sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
       entries ∷ [XRDCalibrationEntry]
       entries = map entry idxs
 
--- | Data treatment
+--  Data treatment
 
 bins ∷ DIM1
 bins = ix1 3000
@@ -159,15 +159,15 @@ samples = air : map (uncurry mkXRDSample)
                                    ])
           ]
 
--- | Main
+--  Main
 
 laure ∷ IO ()
 laure = do
 
-  -- | compute the flat
+  --  compute the flat
   flat' ← computeFlat flat (published </> "flat" </> "flat.npy")
 
-  -- | get a first ref poniExt
+  --  get a first ref poniExt
   p ← getPoniExtRef sampleRef
   -- flip the ref poni in order to fit the reality
   -- let poniextref = p
@@ -175,11 +175,11 @@ laure = do
   -- let poniextref = setPose (Hkl.PyFAI.PoniExt.flip p) (MyMatrix HklB (ident 3))
   print poniextref
 
-  -- | full calibration
+  --  full calibration
   poniextref' ← calibrate sampleCalibration poniextref
   print poniextref'
 
-  -- | set the integration parameters
+  --  set the integration parameters
   let mflat = Just flat'
   let aiMethod = Csr
   let params = XrdOneDParams poniextref' mflat aiMethod

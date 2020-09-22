@@ -58,7 +58,7 @@ import           Hkl.H5                            hiding (File)
 import           Hkl.Orphan                        ()
 import           Hkl.Types
 
--- | Common
+--  Common
 
 withK :: WaveLength -> (Double -> IO r) -> IO r
 withK w f = f (2 * pi / (w /~ angstrom))
@@ -72,7 +72,7 @@ withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 saveCube :: FilePath -> [Cube' DIM3] -> IO ()
 saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
 
--- | QxQyQz Projection
+--  QxQyQz Projection
 
 type Resolutions = [Double]
 
@@ -149,7 +149,7 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r _) = do
                        ) jobs
   saveCube o r'
 
--- | Hkl Projection
+--  Hkl Projection
 
 data InputHkl a b =
   InputHkl { detector     :: Detector b DIM2

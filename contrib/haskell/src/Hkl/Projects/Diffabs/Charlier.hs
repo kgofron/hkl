@@ -14,10 +14,10 @@ import           Prelude               hiding (concat, lookup, readFile,
 
 import           Hkl
 
--- | TODO
+--  TODO
 -- ⋅ gerer le dummy correctement en focntion du type de données des images uint32, int16
 -- ∘ couper la fin du spectre qui nous embète.
--- | Samples
+--  Samples
 
 project :: FilePath
 project = "/nfs/ruche-diffabs/diffabs-users/20151386/"
@@ -25,7 +25,7 @@ project = "/nfs/ruche-diffabs/diffabs-users/20151386/"
 published :: FilePath
 published = project </> "published-data" </> "xrd"
 
--- | Calibration part
+--  Calibration part
 
 project' :: FilePath
 project' = "/nfs/ruche-diffabs/diffabs-users/99160066/"
@@ -134,7 +134,7 @@ louisLePieux = XrdMeshSample "Louis le Pieux"
          ]
        ]
 
--- | Main
+--  Main
 
 charlier :: IO ()
 charlier = do

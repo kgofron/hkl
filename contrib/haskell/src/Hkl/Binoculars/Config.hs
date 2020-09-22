@@ -73,7 +73,7 @@ import           Paths_hkl
 
 
 #if MIN_VERSION_extra(1, 6, 9)
--- | The 'mapLeft' function takes a function and applies it to an Either value
+--  The 'mapLeft' function takes a function and applies it to an Either value
 -- iff the value takes the form @'Left' _@.
 --
 -- > mapLeft show (Left 1) == Left "1"
@@ -81,7 +81,7 @@ import           Paths_hkl
 mapLeft :: (a -> c) -> Either a b -> Either c b
 mapLeft f = either (Left . f) Right
 
--- | The 'mapRight' function takes a function and applies it to an Either value
+--  The 'mapRight' function takes a function and applies it to an Either value
 -- iff the value takes the form @'Right' _@.
 --
 -- > mapRight show (Left 1) == Left 1
@@ -265,7 +265,7 @@ detector = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
 centralPixel :: FieldValue (Int, Int)
 centralPixel = pairWithSeparator' number' "," number'
 
--- | Represents a field whose value is a pair of two other values
+--  Represents a field whose value is a pair of two other values
 -- separated by a given string, whose individual values are described
 -- by two different 'FieldValue' values.
 pairWithSeparator' :: FieldValue l -> Text -> FieldValue r -> FieldValue (l, r)

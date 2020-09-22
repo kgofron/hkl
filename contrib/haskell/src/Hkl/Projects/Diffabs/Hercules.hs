@@ -14,7 +14,7 @@ import           Prelude                           hiding (lookup, readFile,
 
 import           Hkl
 
--- | Samples
+--  Samples
 
 project ∷ FilePath
 project = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/"
@@ -22,7 +22,7 @@ project = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/"
 published ∷ FilePath
 published = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/2017/Run2B/TPHercules"
 
--- | Calibration part
+--  Calibration part
 
 mkNxs' ∷ FilePath → Int → (NxEntry → DataFrameH5Path a ) → Nxs a
 mkNxs' d idx = mkNxs f' e
@@ -77,7 +77,7 @@ sampleCalibration = XRDCalibration { xrdCalibrationName = "calibration"
       entries ∷ [XRDCalibrationEntry]
       entries = map entry idxs
 
--- | Data treatment
+--  Data treatment
 
 bins ∷ DIM1
 bins = ix1 3000
@@ -119,19 +119,19 @@ samples = map (uncurry mkXRDSample)
           , ("zgso4_cooling",   [ (project </> "2017" </> "Run2" </> "2017-03-21", [199..214 :: Int]) ])
           ]
 
--- | Main
+--  Main
 
 hercules ∷ IO ()
 hercules = do
 
-  -- | pre-calibrate (extract from nexus to edf in order to do the
+  --  pre-calibrate (extract from nexus to edf in order to do the
   -- calibration)
   extractEdf sampleCalibration
 
-  -- | compute the flat
+  --  compute the flat
   -- flat' ← computeFlat flat (published </> "flat" </> "flat.npy")
 
-  -- | get a first ref poniExt
+  --  get a first ref poniExt
   p ← getPoniExtRef sampleRef
   -- set the initial position of the poni (pyFAI calibration is not
   -- accurate with only one ring)
@@ -144,11 +144,11 @@ hercules = do
                    (0 *~ degree) -- rot3
   print poniextref
 
-  -- | full calibration
+  --  full calibration
   poniextref' ← calibrate sampleCalibration poniextref
   print poniextref'
 
-  -- | set the integration parameters
+  --  set the integration parameters
   let mflat = Nothing
   let aiMethod = Csr
   let params = XrdOneDParams poniextref' mflat aiMethod

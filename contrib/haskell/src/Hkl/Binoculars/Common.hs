@@ -94,12 +94,12 @@ mkJobs fn h5d = do
       c = if c' >= 2 then c' - 1 else c'
   return $ mkJobs' (quot ntot c) fns ns
 
--- | DataFrameSpace
+--  DataFrameSpace
 
 data DataFrameSpace sh = DataFrameSpace (ForeignPtr Word16) (Space sh)
   deriving Show
 
--- | Create the Cube
+--  Create the Cube
 
 withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
 withForeignPtrs []       f = f []

@@ -14,12 +14,12 @@ import           Prelude               hiding (concat, lookup, readFile,
 
 import           Hkl
 
--- | TODO
+--  TODO
 --  take into account a non-centered sample.
 --  find a way to use integrateMulti with a small amount of memory.
 --  better mask for each detector.
 
--- | Samples
+--  Samples
 
 project :: FilePath
 project = "/nfs/ruche-diffabs/diffabs-soleil/com-diffabs/"
@@ -97,11 +97,11 @@ ceo2 = XRDSample "CeO2"
          ]
        ]
 
--- | Main
+--  Main
 
 hamon :: IO ()
 hamon = do
-  -- | pre-calibrate (extract from nexus to edf in order to do the
+  --  pre-calibrate (extract from nexus to edf in order to do the
   -- calibration)
   extractEdf sampleCalibration
 
@@ -120,7 +120,7 @@ hamon = do
   -- read/write and computation
   -- integrateMesh (XrdMeshParams poniextref' mflat method) [fly]
 
-  -- | set the integration parameters
+  --  set the integration parameters
   let mflat = Nothing
   let aiMethod = Csr
   let params = XrdOneDParams poniextref' mflat aiMethod

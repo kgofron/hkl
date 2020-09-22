@@ -103,7 +103,7 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
                     (fromList [mu, komega, kappa, kphi, gamma, delta])
                     Nothing))
 
--- | FramesQxQyQzP
+--  FramesQxQyQzP
 
 data QxQyQzPath = QxQyQzPath DetectorPath GeometryPath
 
@@ -177,7 +177,7 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
 
 
--- | FramesHklP
+--  FramesHklP
 
 data SamplePath = SamplePath
     (Hdf5Path Z Double) -- a

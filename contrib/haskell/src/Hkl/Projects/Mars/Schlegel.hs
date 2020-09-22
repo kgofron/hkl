@@ -10,12 +10,12 @@ import           Prelude         hiding (concat, lookup, readFile, writeFile)
 
 import           Hkl
 
--- | TODO
+--  TODO
 --  check if the
 --  find a way to use integrateMulti with a small amount of memory.
 --  better mask for each detector.
 
--- | Samples
+--  Samples
 
 project :: FilePath
 project = "/nfs/share-temp/picca/20160800"
@@ -70,11 +70,11 @@ sampleCalibration = XrdZeroDCalibration (XrdZeroDSample name outputdir entries) 
 --          ]
 --        ]
 
--- | Main
+--  Main
 
 schlegel :: IO ()
 schlegel = do
-  -- | pre-calibrate (extract from nexus to edf in order to do the
+  -- pre-calibrate (extract from nexus to edf in order to do the
   -- calibration)
   extractEdf sampleCalibration
 
@@ -93,7 +93,7 @@ schlegel = do
   -- -- read/write and computation
   -- -- integrateMesh (XrdMeshParams poniextref' mflat method) [fly]
 
-  -- -- | set the integration parameters
+  -- --  set the integration parameters
   -- let mflat = Nothing
   -- let aiMethod = Csr
   -- let params = XrdOneDParams poniextref' mflat aiMethod

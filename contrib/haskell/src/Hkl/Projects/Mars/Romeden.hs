@@ -14,7 +14,7 @@ import           Prelude              hiding (concat, lookup, readFile,
 
 import           Hkl
 
--- | TODO
+--  TODO
 -- ne pas planter lorsque l'image est manquante dans une nx entry.
 
 project ∷ FilePath
@@ -42,7 +42,7 @@ saveAsTiff h5path' n = mapM_ (saveAsTiff' . (nxs &&& out)) =<< nxEntries n
     out ∷ FilePath → FilePath
     out nx = (project </> n) ++  nx ++ ".tiff"
 
--- | Main
+--  Main
 
 romeden ∷ IO ()
 romeden = mapM_ (saveAsTiff h5path) =<< globDir1 (compile "*.nxs") project

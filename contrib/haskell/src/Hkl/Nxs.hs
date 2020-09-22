@@ -128,7 +128,7 @@ data DataFrameH5 a where
 mkNxs ∷ FilePath → NxEntry → (NxEntry → DataFrameH5Path a) → Nxs a
 mkNxs f e h = Nxs f (h e)
 
--- | Instanciate a DataFrameH5 from a DataFrameH5Path
+--  Instanciate a DataFrameH5 from a DataFrameH5Path
 -- acquire and release the resources
 
 after ∷ DataFrameH5 a → IO ()
@@ -210,7 +210,7 @@ before nxs'@(Nxs f (XrdZeroDH5Path i w)) = do
 withDataSource :: Nxs a -> (DataFrameH5 a -> IO r) -> IO r
 withDataSource s = Control.Exception.Base.bracket (before s) after
 
--- | Pipe
+--  Pipe
 
 withDataFrameH5 :: (MonadSafe m) => Nxs XrdOneD -> PoniGenerator -> (DataFrameH5 XrdOneD -> m r) -> m r
 withDataFrameH5 nxs'@(Nxs f (XrdOneDH5Path _ g d w)) gen = Pipes.Safe.bracket (liftIO before') (liftIO . after)

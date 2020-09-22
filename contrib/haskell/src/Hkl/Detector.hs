@@ -43,7 +43,7 @@ data Detector a sh where
 deriving instance Show (Detector a sh)
 deriving instance Eq (Detector a sh)
 
--- | SomeDetector
+--  SomeDetector
 
 data SomeDetector = forall a sh. SomeDetector (Detector a sh)
 
@@ -59,14 +59,14 @@ shape Xpad32            = ix2 960 560
 shape XpadFlatCorrected = ix2 1154 576
 shape ZeroD             = Z
 
--- | Xpad Family
+--  Xpad Family
 
 type Gap = Double
 type Width = Int
 type Index = Int
 
 -- an xpad line is like this (pixel size, index)
--- | s 0 | s 1 | s 2 | ... |   5/2 s (w - 1)  || 5/2 s w   | s (w + 1) | ...
+--  s 0 | s 1 | s 2 | ... |   5/2 s (w - 1)  || 5/2 s w   | s (w + 1) | ...
 xpadLine :: Width -> Index -> Double
 xpadLine w i'
     | i' == 0        = s / 2
