@@ -20,7 +20,7 @@ spec :: Spec
 spec = do
   describe "parseBinocularsConfig" $ do
          forM_ [ "data/test/config_hkl_facet.cfg"
-               , "data/test/config_map.txt"
+               -- , "data/test/config_map.txt"
                ] $ \f -> it f $ do
            cfg <- getConfig =<< Just <$> getDataFileName f
            case cfg of
