@@ -217,7 +217,7 @@ library
     pkgconfig-depends:   glib-2.0
   else
     pkgconfig-depends:   hkl
-    pkgconfig-depends:   hkl-binoculars
+    extra-libraries:     hkl-binoculars
 
   if flag(usePythonEmbed)
     pkgconfig-depends:   python3-embed

@@ -4,13 +4,14 @@ AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
 	-DPKGDATA=\""$(pkgdatadir)"\" \
+	-fPIC -DPIC \
 	$(GLIB_CFLAGS)
 
 AM_LDFLAGS = -version-info 0:0:0 \
 	$(GLIB_LIBS)
 
-lib_LTLIBRARIES = libhkl-binoculars.la
-libhkl_binoculars_la_SOURCES = \
+lib_LIBRARIES = libhkl-binoculars.a
+libhkl_binoculars_a_SOURCES = \
 	hkl-binoculars.c \
 	$(top_builddir)/hkl/hkl-axis.c \
 	$(top_builddir)/hkl/hkl-geometry.c \
