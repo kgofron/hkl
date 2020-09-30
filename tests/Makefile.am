@@ -23,6 +23,7 @@ all_tests = \
 	hkl-pseudoaxis-e6c-t \
 	hkl-pseudoaxis-k4cv-t \
 	hkl-pseudoaxis-k6c-t \
+	hkl-pseudoaxis-soleil-nanoscopium-robot-t \
 	hkl-pseudoaxis-soleil-sirius-kappa-t \
 	hkl-pseudoaxis-soleil-sixs-med-t \
 	hkl-pseudoaxis-zaxis-t

@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -118,6 +118,11 @@ static inline void hkl_axis_randomize_real(HklParameter *self)
 {
 	hkl_parameter_randomize_real(self);
 	hkl_axis_update(container_of(self, HklAxis, parameter));
+}
+
+static inline int hkl_axis_is_permutable_real(UNUSED const HklParameter *self)
+{
+        return TRUE;
 }
 
 /*
@@ -240,6 +245,20 @@ static inline HklVector hkl_axis_transformation_apply_real(const HklParameter *b
 	return res;
 }
 
+static inline double hkl_axis_orthodromic_distance_get(const HklParameter *self,
+                                                       double value)
+{
+        double ref = self->_value;
+        double d = 0;
+
+        d = fabs(gsl_sf_angle_restrict_symm(value) - gsl_sf_angle_restrict_symm(ref));
+        /* as M_PI and -M_PI are included in the GSL restriction */
+        if (d > M_PI)
+                d = 2*M_PI - d;
+
+        return d;
+}
+
 #define HKL_PARAMETER_OPERATIONS_AXIS_DEFAULTS				\
 	HKL_PARAMETER_OPERATIONS_DEFAULTS,				\
 		.copy = hkl_axis_copy_real,				\
@@ -249,12 +268,14 @@ static inline HklVector hkl_axis_transformation_apply_real(const HklParameter *b
 		.set_value = hkl_axis_set_value_real,			\
 		.set_value_smallest_in_range = hkl_axis_set_value_smallest_in_range_real, \
 		.randomize = hkl_axis_randomize_real,			\
+                .is_permutable = hkl_axis_is_permutable_real,		\
 		.is_valid = hkl_axis_is_valid_real,			\
 		.fprintf = hkl_axis_fprintf_real,			\
 		.axis_v_get = hkl_axis_axis_v_get_real,			\
 		.quaternion_get = hkl_axis_quaternion_get_real,		\
 		.transformation_cmp = hkl_axis_transformation_cmp_real,	\
-		.transformation_apply = hkl_axis_transformation_apply_real
+		.transformation_apply = hkl_axis_transformation_apply_real, \
+                .orthodromic_distance_get = hkl_axis_orthodromic_distance_get
 
 static HklParameterOperations hkl_parameter_operations_axis = {
 	HKL_PARAMETER_OPERATIONS_AXIS_DEFAULTS,
@@ -472,9 +493,8 @@ static HklParameterOperations hkl_parameter_operations_translation =
 HklParameter *hkl_parameter_new_translation(const char *name, HklVector const *axis_v, const HklUnit *punit)
 {
 	HklTranslation translation0 = {
-		.parameter = { HKL_PARAMETER_DEFAULTS,
+		.parameter = { HKL_PARAMETER_DEFAULTS_LENGTH,
 			       .name = name,
-			       .unit = &hkl_unit_length_meter,
 			       .punit = punit,
 			       .ops = &hkl_parameter_operations_translation,
 		},

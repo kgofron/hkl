@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -203,11 +203,11 @@ static int find_first_geometry(HklEngine *self,
 #ifdef DEBUG
 		/* print the test header */
 		fprintf(stdout, "\n");
-		for(i=0; i<len; ++i)
-			fprintf(stdout, "\t f(%d)", i);
 		darray_foreach(axis, self->axes){
 			fprintf(stdout, "\t \"%s\"", (*axis)->name);
 		}
+		for(i=0; i<len; ++i)
+			fprintf(stdout, "\t f(%d)", i);
 #endif
 		/* set the geometry from the gsl_vector */
 		/* in a futur version the geometry must contain a gsl_vector */
@@ -284,6 +284,14 @@ static int test_sector(gsl_vector const *x,
 	size_t i;
 	double *f_data = f->data;
 
+#ifdef DEBUG
+	fprintf(stdout, "\n");
+	for(i=0; i<f->size; ++i)
+		fprintf(stdout, "\t%f", x->data[i]);
+		/* fprintf(stdout, "\t%f", gsl_sf_angle_restrict_symm(x->data[i]) * HKL_RADTODEG); */
+        fflush(stdout);
+#endif
+
 	function->f(x, function->params, f);
 
 	for(i=0; i<f->size; ++i)
@@ -293,14 +301,11 @@ static int test_sector(gsl_vector const *x,
 		}
 
 #ifdef DEBUG
-	fprintf(stdout, "\n");
 	for(i=0; i<f->size; ++i)
 		if(fabs(f_data[i]) < HKL_EPSILON)
 			fprintf(stdout, "\t%f *", f_data[i]);
 		else
 			fprintf(stdout, "\t%f", f_data[i]);
-	for(i=0; i<f->size; ++i)
-		fprintf(stdout, "\t%f", gsl_sf_angle_restrict_symm(x->data[i]) * HKL_RADTODEG);
 
 	if(res == FALSE)
 		fprintf(stdout, "\t FAIL");

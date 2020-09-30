@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -50,6 +50,8 @@ struct _HklParameter {
 
 #define HKL_PARAMETER_DEFAULTS .name="dummy", .description="no description", .range={.min=-DBL_MAX, .max=DBL_MAX}, ._value=0, .unit=NULL, .punit=NULL, .fit=TRUE, .changed=TRUE, .ops = &hkl_parameter_operations_defaults
 
+#define HKL_PARAMETER_DEFAULTS_LENGTH HKL_PARAMETER_DEFAULTS, .unit = &hkl_unit_length_meter, .punit = &hkl_unit_length_meter
+
 #define HKL_PARAMETER_DEFAULTS_ANGLE HKL_PARAMETER_DEFAULTS, .range={.min=-M_PI, .max=M_PI}, .unit = &hkl_unit_angle_rad, .punit = &hkl_unit_angle_deg
 
 #define HKL_PARAMETER_ERROR hkl_parameter_error_quark ()
@@ -79,6 +81,7 @@ struct _HklParameterOperations {
 					   HklUnitEnum unit_type, GError **error);
 	void                  (*set_value_smallest_in_range)(HklParameter *self);
 	void                  (*randomize)(HklParameter *self);
+        int                   (*is_permutable)(const HklParameter *self);
 	int                   (*is_valid)(const HklParameter *self);
 	int                   (*is_valid_range)(const HklParameter *self);
 	void                  (*fprintf)(FILE *f, const HklParameter *self);
@@ -86,6 +89,7 @@ struct _HklParameterOperations {
 	const HklQuaternion * (*quaternion_get)(const HklParameter *self);
 	int                   (*transformation_cmp)(const HklParameter *self, const HklParameter *p2);
 	HklVector             (*transformation_apply)(const HklParameter *self, const HklVector *v);
+        double                (*orthodromic_distance_get)(const HklParameter *self, double v);
 };
 
 #define HKL_PARAMETER_OPERATIONS_DEFAULTS				\
@@ -96,13 +100,15 @@ struct _HklParameterOperations {
 		.set_value = hkl_parameter_value_set_real,		\
 		.set_value_smallest_in_range = hkl_parameter_value_set_smallest_in_range_real, \
 		.randomize = hkl_parameter_randomize_real,		\
+                .is_permutable = hkl_parameter_is_permutable_real,      \
 		.is_valid = hkl_parameter_is_valid_real,		\
 		.is_valid_range = hkl_parameter_is_valid_real,		\
 		.fprintf = hkl_parameter_fprintf_real,			\
 		.axis_v_get = hkl_parameter_axis_v_get_real,		\
 		.quaternion_get = hkl_parameter_quaternion_get_real,	\
 		.transformation_cmp = hkl_parameter_transformation_cmp_real, \
-		.transformation_apply = hkl_parameter_transformation_apply_real
+                .transformation_apply = hkl_parameter_transformation_apply_real, \
+                .orthodromic_distance_get = hkl_parameter_orthodromic_distance_get_real
 
 static inline HklParameter *hkl_parameter_copy_real(const HklParameter *self)
 {
@@ -178,6 +184,11 @@ static inline void hkl_parameter_randomize_real(HklParameter *self)
 	}
 }
 
+static inline int hkl_parameter_is_permutable_real(UNUSED const HklParameter *self)
+{
+        return FALSE;
+}
+
 static inline int hkl_parameter_is_valid_real(const HklParameter *self)
 {
 	if(self->_value < (self->range.min - HKL_EPSILON)
@@ -228,6 +239,12 @@ static inline HklVector hkl_parameter_transformation_apply_real(UNUSED const Hkl
 	return *v;
 }
 
+static inline double hkl_parameter_orthodromic_distance_get_real(const HklParameter *self,
+                                                                 double value)
+{
+        return self->_value;
+}
+
 static NEEDED HklParameterOperations hkl_parameter_operations_defaults = {
 	HKL_PARAMETER_OPERATIONS_DEFAULTS,
 };
@@ -241,6 +258,8 @@ extern HklParameter *hkl_parameter_new(const char *name, const char *description
 
 extern int hkl_parameter_init_copy(HklParameter *self, const HklParameter *src,
 				   GError **error);
+
+extern int hkl_parameter_is_permutable(const HklParameter *self);
 
 extern double hkl_parameter_value_get_closest(const HklParameter *self,
 					      const HklParameter *ref);
@@ -258,6 +277,9 @@ extern int hkl_parameter_transformation_cmp(const HklParameter *self,
 
 extern HklVector hkl_parameter_transformation_apply(const HklParameter *self,
 						    const HklVector *v);
+
+extern double hkl_parameter_orthodromic_distance_get(const HklParameter *self,
+                                                     double value);
 
 /********************/
 /* HklParameterList */

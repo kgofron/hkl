@@ -503,47 +503,51 @@
       engines.init(geometry, detector, sample)
 
       output += "*** Axes: \n"
-      for axis in geometry.axis_names_get():
-          axis_v = geometry.axis_get(axis).axis_v_get().data
-          output += level(2, "+ \"*" + axis + "*\": rotation around the *" + repr(axis_v) + "* axis\n")
+      for axis_name in geometry.axis_names_get():
+	  axis =  geometry.axis_get(axis_name)
+	  axis_v = geometry.axis_get(axis_name).axis_v_get()
+	  if axis_v is not None:
+	      output += level(2, "+ \"*" + axis_name + "*\": rotation around the *" + repr(axis_v.data) + "* axis\n")
+	  else:
+	      output += level(2, "+ \"*" + axis_name + "*\": parameter\n")
 
       output += "*** Engines: \n"
       parameters = engines.parameters_names_get()
       if len(parameters) != 0:
-          output += level(3, "* Global parameters:\n")
-          for parameter in parameters:
-              output += "\n"
-              p = engines.parameter_get(parameter)
-              description = p.description_get()
-              value = p.value_get(Hkl.UnitEnum.USER)
-              output += level(4, "+ \"*" + parameter + "*\" [" + str(value) + "]: " + description + "\n")
+	  output += level(3, "* Global parameters:\n")
+	  for parameter in parameters:
+	      output += "\n"
+	      p = engines.parameter_get(parameter)
+	      description = p.description_get()
+	      value = p.value_get(Hkl.UnitEnum.USER)
+	      output += level(4, "+ \"*" + parameter + "*\" [" + str(value) + "]: " + description + "\n")
 
       for engine in engines.engines_get():
-          output += "**** \"*" + engine.name_get() + "*\":\n\n"
-          output += level(3, "* pseudo axes:\n")
-          for pseudo in engine.pseudo_axis_names_get():
-              p = engine.pseudo_axis_get(pseudo)
-              description = p.description_get()
-              output += level(4, "* \"*" + pseudo + "*\" : " + description + '\n\n')
-          output += "\n"
-          for mode in engine.modes_names_get():
-              output += level(3, "+ mode: \"*" + mode + "*\"\n")
-              engine.current_mode_set(mode)
-              axes_r = engine.axis_names_get(Hkl.EngineAxisNamesGet.READ)
-              axes_w = engine.axis_names_get(Hkl.EngineAxisNamesGet.WRITE)
-              output += level(4, "+ axes (read) : " + ", ".join(bold(axes_r)) + "\n")
-              output += level(4, "+ axes (write): " + ", ".join(bold(axes_w)) + "\n")
-              parameters = engine.parameters_names_get()
-              output += level(4, "+ parameters: ")
-              if parameters:
-                  output += "\n"
-                  for parameter in parameters:
-                      p = engine.parameter_get(parameter)
-                      description = p.description_get()
-                      value = p.value_get(Hkl.UnitEnum.USER)
-                      output += level(5, "+ *" + parameter + "* [" + str(value) + "]: " + description + "\n")
-              else:
-                  output += "No parameter\n"
+	  output += "**** \"*" + engine.name_get() + "*\":\n\n"
+	  output += level(3, "* pseudo axes:\n")
+	  for pseudo in engine.pseudo_axis_names_get():
+	      p = engine.pseudo_axis_get(pseudo)
+	      description = p.description_get()
+	      output += level(4, "* \"*" + pseudo + "*\" : " + description + '\n\n')
+	  output += "\n"
+	  for mode in engine.modes_names_get():
+	      output += level(3, "+ mode: \"*" + mode + "*\"\n")
+	      engine.current_mode_set(mode)
+	      axes_r = engine.axis_names_get(Hkl.EngineAxisNamesGet.READ)
+	      axes_w = engine.axis_names_get(Hkl.EngineAxisNamesGet.WRITE)
+	      output += level(4, "+ axes (read) : " + ", ".join(bold(axes_r)) + "\n")
+	      output += level(4, "+ axes (write): " + ", ".join(bold(axes_w)) + "\n")
+	      parameters = engine.parameters_names_get()
+	      output += level(4, "+ parameters: ")
+	      if parameters:
+		  output += "\n"
+		  for parameter in parameters:
+		      p = engine.parameter_get(parameter)
+		      description = p.description_get()
+		      value = p.value_get(Hkl.UnitEnum.USER)
+		      output += level(5, "+ *" + parameter + "* [" + str(value) + "]: " + description + "\n")
+	      else:
+		  output += "No parameter\n"
 
   return output
 #+END_SRC
@@ -867,6 +871,7 @@ git clone git://repo.or.cz/hkl.git
    #+END_QUOTE
 * Releases
 ** @VERSION@
+** 5.0.0.2652 <2020-10-02 Fri>
 *** DONE Only finite float values are allow when setting an HklParameter value or range.
     When using =hkl_parameter_value_set= or
     =hkl_parameter_min_max_set= functions it is not allow to use the
@@ -876,6 +881,7 @@ git clone git://repo.or.cz/hkl.git
     switched the unit test. The remaining part is during the build of
     the documentation. The best would be to report a bug against emacs
     in order to set python3 as default python interpreter.
+*** DONE Added the Soleil Nanoscopium robot setup.
 ** 5.0.0.2456 <2018-02-22 Thu>
 *** DONE add emergence on all e4c diffractometers <2017-03-16 Thu>
     The emergence pseudo axis is was added to =SOLEIL MARS= and =E4CV=

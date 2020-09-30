@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -36,6 +36,7 @@ enum geometry_e {
 	GEOMETRY_K4CH,
 	GEOMETRY_K4CV,
 	GEOMETRY_K6C,
+        GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT,
 	GEOMETRY_SOLEIL_SIRIUS_KAPPA,
 	GEOMETRY_SOLEIL_SIXS_MED_2_3,
 	GEOMETRY_SOLEIL_SIXS_MED_2_3_v2,
@@ -126,6 +127,20 @@ struct Geometry {
 			union {
 				double positions[6];
 				struct {
+					double rz;
+					double rs;
+					double rx;
+					double r;
+					double delta;
+					double gamma;
+				};
+			};
+		} soleil_nanoscopium_robot;
+		struct {
+			double wavelength;
+			union {
+				double positions[6];
+				struct {
 					double mu;
 					double komega;
 					double kappa;
@@ -195,6 +210,9 @@ struct Geometry {
 #define K6c(_w, _m, _ko, _ka, _kp, _g, _d)				\
 	{.tag=GEOMETRY_K6C,						\
 			.k6c={_w, {{_m, _ko, _ka, _kp, _g, _d}}}}
+#define SoleilNanoscopiumRobot(_w,  _rz, _rs, _rx, _r, _d, _g)		\
+	{.tag=GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT,                                      \
+			.soleil_nanoscopium_robot={_w, {{_rz, _rs, _rx, _r, _d, _g}}}}
 #define SoleilSiriusKappa(_w,  _m, _ko, _ka, _kp, _d, _g)		\
 	{.tag=GEOMETRY_SOLEIL_SIRIUS_KAPPA,				\
 			.soleil_sirius_kappa={_w, {{_m, _ko, _ka, _kp, _d, _g}}}}

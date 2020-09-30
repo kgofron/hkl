@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -174,7 +174,7 @@ static void hkl_holder_update(HklHolder *self)
 		p = darray_item(self->geometry->axes, self->config->idx[i]);
 		q = hkl_parameter_quaternion_get(p);
 		if(NULL == q)
-			break;
+			continue;
 		else
 			hkl_quaternion_times_quaternion(&self->q, q);
 	}
@@ -195,6 +195,21 @@ static HklParameter * hkl_holder_add_axis_if_not_present(const HklHolder *self, 
 	self->config->idx[self->config->len++] = idx;
 
 	return res;
+}
+
+HklParameter *hkl_holder_add_parameter(HklHolder *self,
+                                       const char *name,
+                                       const HklUnit *punit)
+{
+        HklParameter parameter = {
+                HKL_PARAMETER_DEFAULTS_LENGTH,
+                .name = name,
+                .punit = punit
+        };
+
+	int idx = hkl_geometry_add_axis(self->geometry, &parameter);
+
+	return hkl_holder_add_axis_if_not_present(self, idx);
 }
 
 HklParameter *hkl_holder_add_rotation(HklHolder *self,
@@ -760,24 +775,16 @@ double hkl_geometry_distance_orthodromic(const HklGeometry *self,
 					 const HklGeometry *ref)
 {
 	size_t i;
-	double value1, value2;
 	double distance = 0.;
 
 	if (!self || !ref)
 		return 0.;
 
 	for(i=0; i<darray_size(self->axes); ++i){
-		double d;
-
-		value1 = darray_item(self->axes, i)->_value;
-		value2 = darray_item(ref->axes, i)->_value;
-		d = fabs(gsl_sf_angle_restrict_symm(value2) - gsl_sf_angle_restrict_symm(value1));
-		/* as M_PI and -M_PI are included in the GSL restriction */
-		if (d > M_PI)
-			d = 2*M_PI - d;
-		distance += d;
+                distance += hkl_parameter_orthodromic_distance_get(
+                        darray_item(self->axes, i),
+                        darray_item(ref->axes, i)->_value);
 	}
-
 	return distance;
 }
 
@@ -1267,7 +1274,7 @@ void hkl_geometry_list_multiply_from_range(HklGeometryList *self)
 
 		/* find axes to permute and the first solution of thoses axes */
 		darray_foreach(axis, geometry->axes){
-			perm[j] = hkl_parameter_is_valid(*axis);
+			perm[j] = hkl_parameter_is_permutable(*axis);
 			/* fprintf(stdout, "%d %d\n", j, perm[j]); */
 			if (perm[j])
 				hkl_parameter_value_set_smallest_in_range(*axis);

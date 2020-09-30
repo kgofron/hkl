@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -360,6 +360,19 @@ void hkl_parameter_randomize(HklParameter *self)
 }
 
 /**
+ * hkl_parameter_is_permutable: (skip)
+ * @self:
+ *
+ * check if the #HklParameter can be use to perform permutation
+ * exemple axis rotation can avec equivalent position at different
+ * values
+ **/
+int hkl_parameter_is_permutable(const HklParameter *self)
+{
+	return self->ops->is_permutable(self);
+}
+
+/**
  * hkl_parameter_is_valid: (skip)
  * @self:
  *
@@ -471,4 +484,17 @@ HklVector hkl_parameter_transformation_apply(const HklParameter *self,
 					     const HklVector *v)
 {
 	return self->ops->transformation_apply(self, v);
+}
+
+/**
+ * hkl_parameter_orthodromic_distance_get: (skip)
+ * @self: the this ptr
+ * @value: the second #double value of the axis.
+ *
+ * Returns: the orthodromic distance of an axis between its _value and the value
+ **/
+double hkl_parameter_orthodromic_distance_get(const HklParameter *self,
+                                              double value)
+{
+	return self->ops->orthodromic_distance_get(self, value);
 }

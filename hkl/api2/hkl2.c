@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2012 Synchrotron SOLEIL
+ * Copyright (C) 2003-2012, 2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -49,6 +49,9 @@ static const HklFactory *getFactory(struct Geometry geometry)
 		break;
 	case GEOMETRY_K6C:
 		self = hkl_factory_get_by_name("K6C", NULL);
+		break;
+	case GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT:
+		self = hkl_factory_get_by_name("SOLEIL NANOSCOPIUM ROBOT", NULL);
 		break;
 	case GEOMETRY_SOLEIL_SIRIUS_KAPPA:
 		self = hkl_factory_get_by_name("SOLEIL SIRIUS KAPPA", NULL);
@@ -95,6 +98,7 @@ HklGeometry *newGeometry(struct Geometry geometry)
 	case GEOMETRY_K4CH: NEW_GEOMETRY(k4ch); break;
 	case GEOMETRY_K4CV: NEW_GEOMETRY(k4cv); break;
 	case GEOMETRY_K6C: NEW_GEOMETRY(k6c); break;
+	case GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT: NEW_GEOMETRY(soleil_nanoscopium_robot); break;
 	case GEOMETRY_SOLEIL_SIRIUS_KAPPA: NEW_GEOMETRY(soleil_sirius_kappa); break;
 	case GEOMETRY_SOLEIL_SIXS_MED_2_3: NEW_GEOMETRY(soleil_sixs_med_2_3); break;
 	case GEOMETRY_SOLEIL_SIXS_MED_2_3_v2: NEW_GEOMETRY(soleil_sixs_med_2_3_v2); break;

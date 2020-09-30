@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -146,6 +146,10 @@ struct _HklGeometryListItem
 /*************/
 /* HklHolder */
 /*************/
+
+extern HklParameter *hkl_holder_add_parameter(HklHolder *self,
+                                              char const *name,
+                                              const HklUnit *punit);
 
 extern HklParameter *hkl_holder_add_rotation(HklHolder *self,
 					     char const *name,
