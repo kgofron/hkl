@@ -871,7 +871,7 @@ git clone git://repo.or.cz/hkl.git
    #+END_QUOTE
 * Releases
 ** @VERSION@
-** 5.0.0.2652 <2020-10-02 Fri>
+** 5.0.0.2661 <2020-10-02 Fri>
 *** DONE Only finite float values are allow when setting an HklParameter value or range.
     When using =hkl_parameter_value_set= or
     =hkl_parameter_min_max_set= functions it is not allow to use the
