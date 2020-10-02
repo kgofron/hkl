@@ -288,7 +288,7 @@ static int test_sector(gsl_vector const *x,
 	fprintf(stdout, "\n");
 	for(i=0; i<f->size; ++i)
 		fprintf(stdout, "\t%f", x->data[i]);
-		/* fprintf(stdout, "\t%f", gsl_sf_angle_restrict_symm(x->data[i]) * HKL_RADTODEG); */
+	/* fprintf(stdout, "\t%f", gsl_sf_angle_restrict_symm(x->data[i]) * HKL_RADTODEG); */
         fflush(stdout);
 #endif
 

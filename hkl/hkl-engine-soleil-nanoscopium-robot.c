@@ -115,7 +115,7 @@ static HklEngine *hkl_engine_soleil_nanoscopium_robot_hkl_new(HklEngineList *eng
 	"  + **" DELTA "** : rotation around the :math:`-\\vec{y}` direction (0, -1, 0)\n" \
 	"  + **" GAMMA "** : rotation around the :math:`-\\vec{z}` direction (0, 0, -1)\n"
 
-        static const char* hkl_geometry_soleil_nanoscopium_robot_axes[] = {RZ, RS, RX, R, DELTA, GAMMA};
+static const char* hkl_geometry_soleil_nanoscopium_robot_axes[] = {RZ, RS, RX, R, DELTA, GAMMA};
 
 static HklGeometry *hkl_geometry_new_soleil_nanoscopium_robot(const HklFactory *factory)
 {
