@@ -21,7 +21,7 @@ Data-Files:          data/ghkl3.ui
 
 Flag useHklDev
      Description: Use the current devel hkl library in the source tree
-     Default: False
+     Default: True
 
 Flag usePythonEmbed
      Description: Use the python3-embed.pc file instead of python3.pc
@@ -88,6 +88,11 @@ executable binoculars-ng
   ghc-options:         -Werror
   ghc-options:         -g -dcore-lint
   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+
+  if flag(useHklDev)
+      ghc-options: -pgml gcc "-optl-Wl,--allow-multiple-definition"
+      ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
+      ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
 
 library
   exposed-modules:    Hkl
@@ -210,10 +215,6 @@ library
     include-dirs:      ../../
                      , ../../hkl/
                      , ../../binoculars/
-    extra-lib-dirs:    ../../binoculars/.libs/
-                     , ../../hkl/.libs/
-    extra-libraries:     hkl-binoculars
-                       , hkl
     pkgconfig-depends:   glib-2.0
   else
     pkgconfig-depends:   hkl
