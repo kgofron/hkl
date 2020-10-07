@@ -231,15 +231,15 @@ projectionType = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit
   where
     parse ::  Text -> Either String ProjectionType
     parse t
-      | t == "hklprojection" = Right HklProjection
-      | t == "qxqyqzprojection" = Right QxQyQzProjection
+      | t == "hkl" = Right HklProjection
+      | t == "qxqyqz" = Right QxQyQzProjection
       | t == "sixs:qxqyqzprojection" = Right QxQyQzProjection
       | t == "sixs:hklprojection" = Right HklProjection
       | otherwise = Left ("Unsupported " ++ unpack t ++ " projection type")
 
     emit :: ProjectionType -> Text
-    emit QxQyQzProjection = "qxqyqzprojection"
-    emit HklProjection    = "hklprojection"
+    emit QxQyQzProjection = "qxqyqz"
+    emit HklProjection    = "hkl"
 
 pathAbsDir :: FieldValue (Path Abs Dir)
 pathAbsDir = FieldValue
