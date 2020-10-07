@@ -212,7 +212,6 @@ foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_space_free" hkl_bi
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q" \
 hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
-                       -> Double -- double k
                        -> Ptr Word16 --  const uint16_t *image
                        -> CInt -- int32_t n_pixels
                        -> Ptr Double -- const double *pixels_coordinates
@@ -225,7 +224,6 @@ hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl" \
 hkl_binoculars_space_hkl :: Ptr Geometry -- const HklGeometry *geometry
                          -> Ptr HklSample -- const HklSample *sample
-                         -> Double -- double k
                          -> Ptr Word16 --  const uint16_t *image
                          -> CInt -- int32_t n_pixels
                          -> Ptr Double -- const double *pixels_coordinates

@@ -46,7 +46,6 @@ struct _HklBinocularsSpace
 extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
 
 extern HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
-						  double k,
 						  const uint16_t *image,
 						  int32_t n_pixels,
 						  const double *pixels_coordinates,
@@ -57,7 +56,6 @@ extern HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 
 extern HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
                                                     const HklSample *sample,
-                                                    double k,
                                                     const uint16_t *image,
                                                     int32_t n_pixels,
                                                     const double *pixels_coordinates,
