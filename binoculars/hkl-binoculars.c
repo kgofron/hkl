@@ -193,9 +193,9 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 
 		hkl_vector_rotated_quaternion(&v, &q);
 		hkl_vector_normalize(&v);
+		hkl_vector_times_double(&v, k);
 		hkl_vector_minus_vector(&v, &ki);
 		hkl_vector_rotated_quaternion(&v, &qs_1);
-		hkl_vector_times_double(&v, k);
 
                 for(j=0; j<ARRAY_SIZE(names); ++j)
                         space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
@@ -247,8 +247,8 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
 
 		hkl_vector_rotated_quaternion(&v, &q_d);
 		hkl_vector_normalize(&v);
-		hkl_vector_minus_vector(&v, &ki);
 		hkl_vector_times_double(&v, K);
+		hkl_vector_minus_vector(&v, &ki);
                 hkl_matrix_times_vector(&RUB_1, &v);
 
                 for(j=0; j<ARRAY_SIZE(names); ++j)
