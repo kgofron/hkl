@@ -113,7 +113,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsDispatcherOverwrite         :: Bool
   , _binocularsInputItype                  :: InputType
   , _binocularsInputNexusdir               :: Maybe (Path Abs Dir)
-  , _binocularsInputInputrange             :: Maybe (ConfigRange Int)
+  , _binocularsInputInputRange             :: Maybe (ConfigRange Int)
   , _binocularsInputDetector               :: Maybe (Detector PyFAI DIM2)
   , _binocularsInputCentralpixel           :: (Int, Int)
   , _binocularsInputSdd                    :: Length Double
@@ -142,7 +142,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsDispatcherOverwrite = False
   , _binocularsInputItype = SixsFlyScanUhv
   , _binocularsInputNexusdir = Nothing
-  , _binocularsInputInputrange = Nothing
+  , _binocularsInputInputRange = Nothing
   , _binocularsInputDetector = Just ImXpadS140
   , _binocularsInputCentralpixel = (0, 0)
   , _binocularsInputSdd = 1 *~ meter
@@ -189,7 +189,7 @@ binocularsConfigSpec = do
   section "input" $ do
     binocularsInputItype .= field "type" inputType
     binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
-    binocularsInputInputrange .=? field "inputrange" configRange
+    binocularsInputInputRange .=? field "inputrange" configRange
     binocularsInputDetector .=? field "detector" detector
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
     binocularsInputSdd .= field "sdd" (numberUnit meter)
@@ -294,7 +294,7 @@ files c = do
                           Nothing  -> getCurrentDir
                           (Just d) -> pure d
   fs' <- filterM isHdf5 fs
-  return $ case c ^. binocularsInputInputrange of
+  return $ case c ^. binocularsInputInputRange of
     Just r  -> filter (isInConfigRange r) fs'
     Nothing -> fs'
     where

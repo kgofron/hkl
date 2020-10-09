@@ -119,7 +119,7 @@ mkInputQxQyQz c d f = do
                       { detector = d
                       , filename = InputList fs
                       , h5dpath = h5dpath'
-                      , output = case _binocularsInputInputrange c of
+                      , output = case _binocularsInputInputRange c of
                                    Just r  -> destination' r (_binocularsDispatcherDestination c)
                                    Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
                       , resolutions = _binocularsProjectionResolution c
@@ -199,7 +199,7 @@ mkInputHkl c d f = do
                       , filename = InputList fs
                       , h5dpath = h5dpath'
                       , output = destination'
-                                 (fromMaybe (ConfigRange []) (_binocularsInputInputrange c))
+                                 (fromMaybe (ConfigRange []) (_binocularsInputInputRange c))
                                  (_binocularsDispatcherDestination c)
                       , resolutions = _binocularsProjectionResolution c
                       , centralPixel = _binocularsInputCentralpixel c
