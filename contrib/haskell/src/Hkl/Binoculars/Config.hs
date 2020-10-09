@@ -257,6 +257,7 @@ detector = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
       parse t
           | t == pack (show Xpad32) = Right Xpad32
           | t == pack (show ImXpadS140) = Right ImXpadS140
+          | t == pack (show XpadFlatCorrected) = Right XpadFlatCorrected
           | otherwise = Left  ("Unsupported " ++ unpack t ++ " detector type")
 
       emit ::  Detector PyFAI DIM2 -> Text

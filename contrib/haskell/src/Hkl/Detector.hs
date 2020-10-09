@@ -26,7 +26,6 @@ import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Word                         (Word8)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
                                                     radian, (/~))
-import           Safe.Partial                      (Partial)
 
 import           Hkl.PyFAI.Npt                     (NptPoint (NptPoint))
 import           Hkl.Python
@@ -163,16 +162,62 @@ def export(name, ix0, iy0, sdd, rot):
         return copy(ascontiguousarray(pixels))
 |]
 
+getPixelsCoordinates'XpadFlatCorrected :: Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
+getPixelsCoordinates'XpadFlatCorrected = defVVVVO [str|
+from math import cos, sin
+from numpy import array, ascontiguousarray, copy, ones, tensordot
+from pyFAI.detectors import Detector
+
+def M(theta, u):
+    """
+    :param theta: the axis value in radian
+    :type theta: float
+    :param u: the axis vector [x, y, z]
+    :type u: [float, float, float]
+    :return: the rotation matrix
+    :rtype: numpy.ndarray (3, 3)
+    """
+    c = cos(theta)
+    one_minus_c = 1 - c
+    s = sin(theta)
+    return array([[c + u[0]**2 * one_minus_c,
+                   u[0] * u[1] * one_minus_c - u[2] * s,
+                   u[0] * u[2] * one_minus_c + u[1] * s],
+                  [u[0] * u[1] * one_minus_c + u[2] * s,
+                   c + u[1]**2 * one_minus_c,
+                   u[1] * u[2] * one_minus_c - u[0] * s],
+                  [u[0] * u[2] * one_minus_c - u[1] * s,
+                   u[1] * u[2] * one_minus_c + u[0] * s,
+                   c + u[2]**2 * one_minus_c]])
+
+def export(ix0, iy0, sdd, rot):
+        # works only for flat detector.
+        detector = Detector(130e-6, 130e-6, splineFile=None, max_shape=(1154, 576))
+        y, x, _ = detector.calc_cartesian_positions()
+        y0 = y[iy0, ix0]
+        x0 = x[iy0, ix0]
+        z = ones(x.shape) * -1 * sdd
+        # return converted to the hkl library coordinates
+        # x -> -y
+        # y -> z
+        # z -> -x
+        pixels_ = array([-z, -(x - x0), (y - y0)])
+        # rotate the detector in the hkl basis
+        P = M(rot, [1, 0, 0])
+        pixels = tensordot(P, pixels_, axes=1)
+        return copy(ascontiguousarray(pixels))
+|]
+
 toPyFAIDetectorName :: Detector a DIM2 -> String
 toPyFAIDetectorName ImXpadS140        = "imxpads140"
 toPyFAIDetectorName Xpad32            = "xpad_flat"
 toPyFAIDetectorName XpadFlatCorrected = undefined
 
-getPixelsCoordinates :: Partial => Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
-getPixelsCoordinates d (ix0, iy0) sdd detrot = do
-    arr <- getPixelsCoordinates' (toPyFAIDetectorName d) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
-    extractNumpyArray arr
-
+getPixelsCoordinates :: Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
+getPixelsCoordinates XpadFlatCorrected (ix0, iy0) sdd detrot =
+  extractNumpyArray =<< getPixelsCoordinates'XpadFlatCorrected ix0 iy0 (sdd /~ meter) (detrot /~ radian)
+getPixelsCoordinates d (ix0, iy0) sdd detrot =
+  extractNumpyArray =<< getPixelsCoordinates' (toPyFAIDetectorName d) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
 
 getDetectorDefaultMask' :: String -> String -> IO (PyObject (Array F DIM2 Word8))
 getDetectorDefaultMask' = defVVO [str|
@@ -189,8 +234,32 @@ def export(name, fnmask):
 
     return copy(ascontiguousarray(mask))
 |]
+getDetectorDefaultMask'XpadFlatCorrected :: String -> IO (PyObject (Array F DIM2 Word8))
+getDetectorDefaultMask'XpadFlatCorrected = defVO [str|
+from numpy import ascontiguousarray, bool, copy, load, zeros
+from pyFAI.detectors import Detector
+
+def export(fnmask):
+    max_shape = (1154, 576)
+    detector = Detector(130e-6, 130e-6, splineFile=None, max_shape=max_shape)
+    mask = detector.mask
+    if mask is not None:
+        mask = mask.astype(bool)
+        if fnmask != "":
+            mask = numpy.bitwise_or(mask, load(fnmask, dtype=bool))
+    else:
+        mask = zeros(max_shape).astype(bool)
+
+    return copy(ascontiguousarray(mask))
+|]
 
 getDetectorDefaultMask :: Detector a DIM2 -> Maybe Text -> IO (Array F DIM2 Word8)
+getDetectorDefaultMask XpadFlatCorrected mfn = do
+  let fn = case mfn of
+             (Just fn') -> unpack fn'
+             Nothing    -> ""
+  arr <- getDetectorDefaultMask'XpadFlatCorrected fn
+  extractNumpyArray arr
 getDetectorDefaultMask d mfn = do
   let fn = case mfn of
              (Just fn') -> unpack fn'
