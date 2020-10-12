@@ -52,7 +52,8 @@ extern HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 						  size_t pixels_coordinates_ndim,
 						  const size_t *pixels_coordinates_dims,
 						  const double *resolutions,
-						  size_t n_resolutions);
+						  size_t n_resolutions,
+                                                  const uint8_t *mask);
 
 extern HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
                                                     const HklSample *sample,
@@ -62,7 +63,8 @@ extern HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
                                                     size_t pixels_coordinates_ndim,
                                                     const size_t *pixels_coordinates_dims,
                                                     const double *resolutions,
-                                                    size_t n_resolutions);
+                                                    size_t n_resolutions,
+                                                    const uint8_t *mask);
 
 typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube

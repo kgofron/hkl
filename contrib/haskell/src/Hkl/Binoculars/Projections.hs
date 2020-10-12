@@ -95,15 +95,16 @@ class LenP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
 {-# INLINE spaceQxQyQz #-}
-spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs (DataFrameQxQyQz _ g img) =
+spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
+spaceQxQyQz det pixels rs mask' (DataFrameQxQyQz _ g img) =
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
     withPixelsDims pixels $ \ndim dims ->
+    withForeignPtr (toForeignPtr mask') $ \mask'' ->
     withForeignPtr img $ \i -> do
-      p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry i nPixels pix (toEnum ndim) dims r (toEnum nr)
+      p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
       s <- peek p
       return (DataFrameSpace img s)
 
@@ -131,14 +132,14 @@ mkInputQxQyQz c d f = do
     Nothing -> error "TODO"
 
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a b -> IO ()
-processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r _) = do
+processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
   pixels <- getPixelsCoordinates det cen d r
   jobs <- mkJobsQxQyQz input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
                            runSafeT $ runEffect $
                            each job
                            >-> framesQxQyQzP h5d det
-                           >-> mapM (liftIO . spaceQxQyQz det pixels res)
+                           >-> mapM (liftIO . spaceQxQyQz det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
   saveCube o r'
@@ -172,17 +173,18 @@ class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs (DataFrameHkl _ img g samp) = do
+spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
+spaceHkl config' det pixels rs mask' (DataFrameHkl _ img g samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->
       withSample sample' $ \sample ->
       withForeignPtr (toForeignPtr pixels) $ \pix ->
       withArrayLen rs $ \nr r ->
+      withForeignPtr (toForeignPtr mask') $ \mask'' ->
       withPixelsDims pixels $ \ndim dims ->
       withForeignPtr img $ \i -> do
-        p <- {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr)
+        p <- {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
         s <- peek p
         return (DataFrameSpace img s)
 
@@ -211,7 +213,7 @@ mkInputHkl c d f = do
     Nothing -> error "TODO"
 
 processHkl :: FramesHklP a => InputHkl a b -> IO ()
-processHkl input@(InputHkl det _ h5d o res cen d r config' _) = do
+processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
 
   jobs <- mkJobsHkl input
@@ -219,7 +221,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' _) = do
                            runSafeT $ runEffect $
                            each job
                            >-> framesHklP h5d det
-                           >-> mapM (liftIO . spaceHkl config' det pixels res)
+                           >-> mapM (liftIO . spaceHkl config' det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
   saveCube o r'

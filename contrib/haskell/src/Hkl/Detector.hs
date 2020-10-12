@@ -221,22 +221,27 @@ getPixelsCoordinates d (ix0, iy0) sdd detrot =
 
 getDetectorDefaultMask' :: String -> String -> IO (PyObject (Array F DIM2 Word8))
 getDetectorDefaultMask' = defVVO [str|
-from numpy import ascontiguousarray, bool, copy, load
+import fabio
+from numpy import ascontiguousarray, bitwise_or, bool, copy, load
 from pyFAI.detectors import ALL_DETECTORS
 
 def export(name, fnmask):
     detector = ALL_DETECTORS[name]()
-    if fnmask != "":
-        mask = numpy.bitwise_or(detector.mask.astype(bool),
-                                load(fnmask, dtype=bool))
+    mask = detector.mask
+    if mask is not None:
+        mask = mask.astype(bool)
     else:
-        mask = detector.mask.astype(bool)
+        mask = zeros(detector.max_shape).astype(bool)
+    if fnmask != "":
+        mask = bitwise_or(mask,
+                          fabio.open(fnmask).data)
 
     return copy(ascontiguousarray(mask))
 |]
 getDetectorDefaultMask'XpadFlatCorrected :: String -> IO (PyObject (Array F DIM2 Word8))
 getDetectorDefaultMask'XpadFlatCorrected = defVO [str|
-from numpy import ascontiguousarray, bool, copy, load, zeros
+from numpy import ascontiguousarray, bitwise_or, bool, copy, load, zeros
+import fabio
 from pyFAI.detectors import Detector
 
 def export(fnmask):
@@ -245,10 +250,11 @@ def export(fnmask):
     mask = detector.mask
     if mask is not None:
         mask = mask.astype(bool)
-        if fnmask != "":
-            mask = numpy.bitwise_or(mask, load(fnmask, dtype=bool))
     else:
         mask = zeros(max_shape).astype(bool)
+    if fnmask != "":
+        mask = bitwise_or(mask,
+                          fabio.open(fnmask).data)
 
     return copy(ascontiguousarray(mask))
 |]

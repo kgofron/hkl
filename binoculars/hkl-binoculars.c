@@ -19,6 +19,7 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+#include <stdio.h>
 #include <time.h>
 #include "hkl-binoculars.h"
 #include "ccan/array_size/array_size.h"
@@ -27,6 +28,9 @@
 #include "hkl-quaternion-private.h"
 #include "hkl-sample-private.h"
 #include "hkl-vector-private.h"
+
+/* mark the masked pixels with this value */
+#define MASKED PTRDIFF_MAX
 
 inline ptrdiff_t min(ptrdiff_t x, ptrdiff_t y)
 {
@@ -113,9 +117,15 @@ void hkl_binoculars_space_free(HklBinocularsSpace *self)
 	free(self);
 }
 
+static inline ptrdiff_t *space_indexes(const HklBinocularsSpace *space,size_t index)
+{
+	return &space->indexes_0[index * space->n_indexes_0];
+}
+
 void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
 {
 	uint32_t i;
+        size_t masked=0;
 
 	fprintf(f, "'self: %p\n", self);
 	fprintf(f, "n_indexes_0: %ld\n", self->n_indexes_0);
@@ -124,11 +134,11 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
 		fprintf(f, "\n");
 		hkl_binoculars_axis_fprintf(f, &self->axes[i]);
 	}
-}
-
-static inline ptrdiff_t *space_indexes(const HklBinocularsSpace *space,size_t index)
-{
-	return &space->indexes_0[index * space->n_indexes_0];
+        for(i=0; i<self->n_indexes_0; ++i){
+                if(space_indexes(self, 0)[i] == MASKED)
+                        masked +=1;
+        }
+        fprintf(f, "\nmasked pixels: %ld (%f%%)", masked, (double)masked / self->n_indexes_0 * 100);
 }
 
 static inline void space_update_axes(HklBinocularsSpace *space,
@@ -138,22 +148,36 @@ static inline void space_update_axes(HklBinocularsSpace *space,
 {
         size_t i;
         size_t j;
+        size_t ji=0;
+
+        /* find the first index of non masked array. All masked pixels
+         * are marked with the value MASKED so we just need to
+         * find the index using the first axis (0) */
+        for(j=0; j<n_pixels; j++){
+                if (space_indexes(space, 0)[j] != MASKED){
+                        ji = j;
+                        break;
+                }
+        }
 
 	/* compress the coordinates into the space */
 	for(i=0; i<space->n_axes; ++i){
 		const ptrdiff_t *idx = space_indexes(space, i);
 		const double resolution = resolutions[i];
 		HklBinocularsAxis *axis = &space->axes[i];
-		ptrdiff_t origin = idx[0];
-		ptrdiff_t last = idx[0];
+                ptrdiff_t origin = idx[ji];
+                ptrdiff_t last = idx[ji];
 
-		for(j=1; j<n_pixels; ++j){
+                /* continue */
+		for(j=ji+1; j<n_pixels; ++j){
 			ptrdiff_t index = idx[j];
 
-			origin = min(origin, index);
-			last = max(last, index);
+                        if (index != MASKED){
+                                origin = min(origin, index);
+                                last = max(last, index);
+                        }
 		}
-		hkl_binoculars_axis_init(axis, names[i], i, origin, last, resolution);
+                hkl_binoculars_axis_init(axis, names[i], i, origin, last, resolution);
 	}
 }
 
@@ -165,7 +189,8 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 					   size_t pixels_coordinates_ndim,
 					   const size_t *pixels_coordinates_dims,
 					   const double *resolutions,
-					   size_t n_resolutions)
+					   size_t n_resolutions,
+                                           const uint8_t *masked)
 {
 	size_t i, j;
 	const char * names[] = {"qx", "qy", "qz"};
@@ -187,18 +212,23 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
 	for(i=0;i<n_pixels;++i){
-		HklVector v = {{ q_x[i],
-				 q_y[i],
-				 q_z[i]}};
+                if(0 == masked[i]){
+                        HklVector v = {{ q_x[i],
+                                         q_y[i],
+                                         q_z[i]}};
 
-		hkl_vector_rotated_quaternion(&v, &q);
-		hkl_vector_normalize(&v);
-		hkl_vector_times_double(&v, k);
-		hkl_vector_minus_vector(&v, &ki);
-		hkl_vector_rotated_quaternion(&v, &qs_1);
+                        hkl_vector_rotated_quaternion(&v, &q);
+                        hkl_vector_normalize(&v);
+                        hkl_vector_times_double(&v, k);
+                        hkl_vector_minus_vector(&v, &ki);
+                        hkl_vector_rotated_quaternion(&v, &qs_1);
 
-                for(j=0; j<ARRAY_SIZE(names); ++j)
-                        space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
+                        for(j=0; j<ARRAY_SIZE(names); ++j)
+                                space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
+                } else {
+                        for(j=0; j<ARRAY_SIZE(names); ++j)
+                                space_indexes(space, j)[i] = MASKED;
+                }
 	}
 
         space_update_axes(space, names, n_pixels, resolutions);
@@ -218,7 +248,8 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
                                              size_t pixels_coordinates_ndim,
                                              const size_t *pixels_coordinates_dims,
                                              const double *resolutions,
-                                             size_t n_resolutions)
+                                             size_t n_resolutions,
+                                             const uint8_t *masked)
 {
 	size_t i, j;
 	const char * names[] = {"h", "k", "l"};
@@ -243,16 +274,21 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
 	for(i=0;i<n_pixels;++i){
-		HklVector v = {{ h[i], k[i], l[i]}};
+                if(0 == masked[i]){
+                        HklVector v = {{h[i], k[i], l[i]}};
 
-		hkl_vector_rotated_quaternion(&v, &q_d);
-		hkl_vector_normalize(&v);
-		hkl_vector_times_double(&v, K);
-		hkl_vector_minus_vector(&v, &ki);
-                hkl_matrix_times_vector(&RUB_1, &v);
+                        hkl_vector_rotated_quaternion(&v, &q_d);
+                        hkl_vector_normalize(&v);
+                        hkl_vector_times_double(&v, K);
+                        hkl_vector_minus_vector(&v, &ki);
+                        hkl_matrix_times_vector(&RUB_1, &v);
 
-                for(j=0; j<ARRAY_SIZE(names); ++j)
-                        space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
+                        for(j=0; j<ARRAY_SIZE(names); ++j)
+                                space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
+                } else {
+                        for(j=0; j<ARRAY_SIZE(names); ++j)
+                                space_indexes(space, j)[i] = MASKED;
+                }
 	}
 
         space_update_axes(space, names, n_pixels, resolutions);
@@ -345,15 +381,20 @@ void add_space(HklBinocularsCube *cube,
 	for(i=0; i<cube->n_axes; ++i){
 		ptrdiff_t *idx = space_indexes(space, cube->n_axes - 1 - i);
 		for(j=0; j<n_pixels; ++j){
-			indexes[j] += len * idx[j];
+                        if (idx[j] != MASKED)
+                                indexes[j] += len * idx[j];
+                        else
+                                indexes[j] = MASKED;
 		}
 		len *= axis_size(&cube->axes[cube->n_axes - 1 - i]);
 	}
 
 	for(i=0; i<n_pixels; ++i){
-		size_t w = indexes[i];
-		cube->photons[w] += img[i];
-		cube->contributions[w] += 1;
+                if (indexes[i] != MASKED){
+                        size_t w = indexes[i];
+                        cube->photons[w] += img[i];
+                        cube->contributions[w] += 1;
+                }
 	}
 }
 
@@ -404,14 +445,10 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces, const HklBinocularsS
 	/* allocated the final cube photons and contributions */
         calloc_cube(self);
 
-	/* hkl_binoculars_cube_fprintf(stdout, self); */
-
 	/* add all the spaces */
 	for(i=0; i<n_spaces; ++i){
 		add_space(self, spaces[i], n_pixels, imgs[i], offset0);
 	}
-
-	/* hkl_binoculars_cube_fprintf(stdout, self); */
 
 	return self;
 }
