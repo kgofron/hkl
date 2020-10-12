@@ -25,11 +25,11 @@
 typedef struct _HklBinocularsAxis HklBinocularsAxis;
 struct _HklBinocularsAxis
 {
-	const char *name;
-	int index;
-	double resolution;
-	int imin;
-	int imax;
+	const char *name; /* the name of the axis */
+	size_t index; /* the index of the axis of the projection used */
+	double resolution; /* the resolution of the bins */
+	ptrdiff_t imin; /* the minimum index of the axis min = imin * resolution */
+	ptrdiff_t imax; /* the maximum index of the axis max = imax * resolution */
 };
 
 extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
@@ -37,9 +37,9 @@ extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
-	int n_indexes_0;
-	int *indexes_0;
-	int n_axes;
+	size_t n_indexes_0;
+	ptrdiff_t *indexes_0;
+	size_t n_axes;
 	HklBinocularsAxis *axes;
 };
 
@@ -47,42 +47,42 @@ extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
 
 extern HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 						  const uint16_t *image,
-						  int32_t n_pixels,
+						  size_t n_pixels,
 						  const double *pixels_coordinates,
-						  int32_t pixels_coordinates_ndim,
-						  const int32_t *pixels_coordinates_dims,
+						  size_t pixels_coordinates_ndim,
+						  const size_t *pixels_coordinates_dims,
 						  const double *resolutions,
-						  int32_t n_resolutions);
+						  size_t n_resolutions);
 
 extern HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
                                                     const HklSample *sample,
                                                     const uint16_t *image,
-                                                    int32_t n_pixels,
+                                                    size_t n_pixels,
                                                     const double *pixels_coordinates,
-                                                    int32_t pixels_coordinates_ndim,
-                                                    const int32_t *pixels_coordinates_dims,
+                                                    size_t pixels_coordinates_ndim,
+                                                    const size_t *pixels_coordinates_dims,
                                                     const double *resolutions,
-                                                    int32_t n_resolutions);
+                                                    size_t n_resolutions);
 
 typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube
 {
-	int n_axes;
+	size_t n_axes;
 	HklBinocularsAxis *axes;
-	int *photons;
-	int *contributions;
+	unsigned int *photons;
+	unsigned int *contributions;
 };
 
 extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
 
-extern HklBinocularsCube *hkl_binoculars_cube_new(int32_t n_spaces,
+extern HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
 						  const HklBinocularsSpace *const *spaces,
-						  int32_t n_pixels, const uint16_t **imgs);
+						  size_t n_pixels, const uint16_t **imgs);
 
 extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
 
 extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
-                                                             int32_t n_pixels,
+                                                             size_t n_pixels,
                                                              const uint16_t *img);
 
 extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,

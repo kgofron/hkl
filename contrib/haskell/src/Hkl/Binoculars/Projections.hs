@@ -33,7 +33,7 @@ import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Word                         (Word16, Word8)
-import           Foreign.C.Types                   (CInt (..))
+import           Foreign.C.Types                   (CSize (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr)
@@ -58,10 +58,10 @@ import           Hkl.Types
 
 --  Common
 
-withNPixels :: Detector a DIM2 -> (CInt -> IO r) -> IO r
+withNPixels :: Detector a DIM2 -> (CSize -> IO r) -> IO r
 withNPixels d f = f (toEnum . size . shape $ d)
 
-withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CInt -> IO r) -> IO r
+withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CSize -> IO r) -> IO r
 withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
 saveCube :: FilePath -> [Cube' DIM3] -> IO ()

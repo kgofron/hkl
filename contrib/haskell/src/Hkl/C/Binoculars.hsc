@@ -35,7 +35,7 @@ import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
 import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, showShape, extent, ix1)
 import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Word             (Word16)
-import           Foreign.C.Types       (CDouble, CInt(..))
+import           Foreign.C.Types       (CDouble, CSize(..), CUInt(..))
 import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
@@ -106,28 +106,28 @@ foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_bin
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_from_space" \
 hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
-                                   -> CInt -- int32_t n_pixels
+                                   -> CSize -- int32_t n_pixels
                                    -> Ptr Word16 -- uint16_t *imgs);
                                    -> IO (Ptr (Cube' sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
-hkl_binoculars_cube_new' :: CInt -- number of Space
+hkl_binoculars_cube_new' :: CSize -- number of Space
                          -> Ptr (Ptr (Space sh)) -- spaces
-                         -> CInt -- int32_t n_pixels
+                         -> CSize -- int32_t n_pixels
                          -> Ptr (Ptr Word16) -- uint16_t **imgs);
                          -> IO (Ptr (Cube' sh))
 
 --  Cube
 
-data Cube sh = Cube { cubePhotons :: (Array F sh CInt)
-                    , cubeContributions :: (Array F sh CInt)
+data Cube sh = Cube { cubePhotons :: (Array F sh CUInt)
+                    , cubeContributions :: (Array F sh CUInt)
                     , cubeAxes :: [Axis]
                     , cubeHklPointer :: (ForeignPtr (Cube sh))
                     }
              | EmptyCube
              deriving Show
 
-instance Shape sh => Show (Array F sh CInt) where
+instance Shape sh => Show (Array F sh CUInt) where
   show = showShape . extent
 
 instance Shape sh => Semigroup (Cube sh) where
@@ -153,7 +153,7 @@ instance Shape sh => Storable (Cube sh) where
   poke _ _ = undefined
   {-# INLINE peek #-}
   peek ptr = do
-    n <- #{peek HklBinocularsCube, n_axes} ptr :: IO CInt
+    n <- #{peek HklBinocularsCube, n_axes} ptr :: IO CSize
     allocaArray (fromEnum n) $ \dims' -> do
       hkl_binoculars_cube_dims ptr n dims'
       dims <- peekArray (fromEnum n) dims'
@@ -167,16 +167,16 @@ instance Shape sh => Storable (Cube sh) where
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
-hkl_binoculars_cube_new :: CInt -- number of Space
+hkl_binoculars_cube_new :: CSize -- number of Space
                         -> Ptr (Ptr (Space sh)) -- spaces
-                        -> CInt -- int32_t n_pixels
+                        -> CSize -- size_t n_pixels
                         -> Ptr (Ptr Word16) -- uint16_t **imgs);
                         -> IO (Ptr (Cube sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_dims" \
 hkl_binoculars_cube_dims :: Ptr (Cube sh)
-                         -> CInt
-                         -> Ptr CInt
+                         -> CSize
+                         -> Ptr CSize
                          -> IO ()
 
 instance Shape sh => ToHdf5 (Cube sh) where
@@ -213,22 +213,22 @@ foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_space_free" hkl_bi
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q" \
 hkl_binoculars_space_q :: Ptr Geometry -- const HklGeometry *geometry
                        -> Ptr Word16 --  const uint16_t *image
-                       -> CInt -- int32_t n_pixels
+                       -> CSize -- size_t n_pixels
                        -> Ptr Double -- const double *pixels_coordinates
-                       -> CInt -- int32_t pixels_coordinates_ndim
-                       -> Ptr CInt --  const int32_t *pixels_coordinates_dims
+                       -> CSize -- int32_t pixels_coordinates_ndim
+                       -> Ptr CSize --  const int32_t *pixels_coordinates_dims
                        -> Ptr Double --  const double *resolutions
-                       -> CInt -- int32_t n_resolutions
+                       -> CSize -- size_t n_resolutions
                        -> IO (Ptr (Space DIM3))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl" \
 hkl_binoculars_space_hkl :: Ptr Geometry -- const HklGeometry *geometry
                          -> Ptr HklSample -- const HklSample *sample
                          -> Ptr Word16 --  const uint16_t *image
-                         -> CInt -- int32_t n_pixels
+                         -> CSize -- size_t n_pixels
                          -> Ptr Double -- const double *pixels_coordinates
-                         -> CInt -- int32_t pixels_coordinates_ndim
-                         -> Ptr CInt --  const int32_t *pixels_coordinates_dims
+                         -> CSize -- size_t pixels_coordinates_ndim
+                         -> Ptr CSize --  const int32_t *pixels_coordinates_dims
                          -> Ptr Double --  const double *resolutions
-                         -> CInt -- int32_t n_resolutions
+                         -> CSize -- size_t n_resolutions
                          -> IO (Ptr (Space DIM3))
