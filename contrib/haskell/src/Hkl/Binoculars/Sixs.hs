@@ -148,7 +148,7 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
                     (DetectorPath
                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
                     (GeometryPathUhv
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
                      [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"

@@ -248,7 +248,7 @@ pathAbsDir = FieldValue
   }
 
 configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
-configRange = listWithSeparator "," number'
+configRange = listWithSeparator "-" number'
 
 detector :: FieldValue (Detector PyFAI DIM2)
 detector = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }

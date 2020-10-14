@@ -90,6 +90,7 @@ mkJobs fn h5d = do
   let fns = toList fn
   ns <- runSafeT $ toListM $ each fns >-> lenP h5d
   c' <- getNumCapabilities
+  -- let c' = 1
   let ntot = sum ns
       c = if c' >= 2 then c' - 1 else c'
   return $ mkJobs' (quot ntot c) fns ns

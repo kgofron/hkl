@@ -41,10 +41,10 @@ import           Foreign.Storable                  (peek)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree, (*~))
 import           Pipes                             (Pipe, each, runEffect,
                                                     (>->))
-import           Pipes.Prelude                     (mapM)
+import           Pipes.Prelude                     (mapM, print, tee)
 import           Pipes.Safe                        (SafeT, runSafeT)
 
-import           Prelude                           hiding (mapM)
+import           Prelude                           hiding (mapM, print)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -220,6 +220,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
                            runSafeT $ runEffect $
                            each job
+                           >-> tee print
                            >-> framesHklP h5d det
                            >-> mapM (liftIO . spaceHkl config' det pixels res mask')
                            >-> mkCube'P det s

@@ -293,6 +293,7 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
 
         space_update_axes(space, names, n_pixels, resolutions);
 
+        /* hkl_binoculars_space_fprintf(stdout, space); */
 	hkl_detector_free(detector);
 
 	return space;
