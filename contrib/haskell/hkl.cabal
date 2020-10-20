@@ -84,12 +84,13 @@ executable binoculars-ng
                      , vector >= 0.10.0.1
   default-language:    Haskell2010
   build-tools:         hsc2hs
-  ghc-options:         -Wall -threaded -O2 "-with-rtsopts=-N"
+  ghc-options:         -Wall -threaded -O2
   ghc-options:         -Werror
   ghc-options:         -g -dcore-lint
-  ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+  ghc-prof-options:    -fno-prof-auto -rtsopts
 
   if flag(useHklDev)
+      pkgconfig-depends:   gobject-2.0
       ghc-options: -pgml gcc "-optl-Wl,--allow-multiple-definition"
       ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
       ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
@@ -111,6 +112,7 @@ library
                     , Hkl.C.GeometryList
                     , Hkl.C.Lattice
                     , Hkl.C.Sample
+                    , Hkl.Conduit
                     , Hkl.DataSource
                     , Hkl.Detector
                     , Hkl.Edf
@@ -170,6 +172,7 @@ library
                      , attoparsec
                      , base >= 4.6
                      , bytestring >= 0.10.0.2
+                     , conduit
                      , config-ini
                      , containers >= 0.5 && < 0.7
                      , dimensional >= 0.10
@@ -232,13 +235,13 @@ library
   ghc-options:         -Wincomplete-record-updates
   ghc-options:         -g -dcore-lint
 
-  ghc-prof-options:    -fprof-auto-top
+  ghc-prof-options:    -fno-prof-auto
 
 test-suite hkl-test
    type:               exitcode-stdio-1.0
    main-is:            Spec.hs
    hs-source-dirs:     test
-   ghc-options:        -threaded -rtsopts -with-rtsopts=-N
+   ghc-options:        -threaded -rtsopts -with-rtsopts=-N -K1k
    build-depends:      base >= 4.6
                      , config-ini
                      , hkl
