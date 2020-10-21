@@ -13,6 +13,7 @@ module Hkl (module X) where
 
 import           Hkl.Binoculars as X
 import           Hkl.C          as X
+import           Hkl.Conduit    as X
 import           Hkl.DataSource as X
 import           Hkl.Detector   as X
 import           Hkl.Engine     as X

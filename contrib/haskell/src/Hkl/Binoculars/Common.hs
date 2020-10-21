@@ -1,6 +1,5 @@
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE MultiWayIf         #-}
-{-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 {-
@@ -17,34 +16,28 @@ module Hkl.Binoculars.Common
   ( Chunk(..)
   , InputFn(..)
   , DataFrameSpace(..)
-  , LenP(..)
   , chunk
+  , mkCube'
+  , mkJobs'
+  , toList
   , withCubeAccumulator
-  , mkCube'P
-  , mkJobs
   ) where
 
-import           Control.Exception      (bracket)
-import           Control.Monad          (forever)
-import           Control.Monad.IO.Class (MonadIO (liftIO))
-import           Data.Array.Repa        (Shape, size)
-import           Data.Array.Repa.Index  (DIM2)
-import           Data.IORef             (IORef, modifyIORef', newIORef,
-                                         readIORef)
-import           Data.Word              (Word16)
-import           Foreign.ForeignPtr     (ForeignPtr, withForeignPtr)
-import           Foreign.Marshal.Array  (withArrayLen)
-import           Foreign.Ptr            (Ptr)
-import           Foreign.Storable       (peek)
-import           GHC.Conc               (getNumCapabilities)
-import           Path                   (Abs, File, Path, fromAbsFile)
-import           Pipes                  (Consumer, Pipe, await, each, (>->))
-import           Pipes.Prelude          (toListM)
-import           Pipes.Safe             (SafeT, runSafeT)
-import           Text.Printf            (printf)
+import           Control.Exception     (bracket)
+import           Data.Array.Repa       (Shape, size)
+import           Data.Array.Repa.Index (DIM2)
+import           Data.IORef            (IORef, newIORef, readIORef)
+import           Data.Word             (Word16)
+import           Foreign.ForeignPtr    (ForeignPtr, withForeignPtr)
+import           Foreign.Marshal.Array (withArrayLen)
+import           Foreign.Ptr           (Ptr)
+import           Foreign.Storable      (peek)
+import           Path                  (Abs, File, Path, fromAbsFile)
+import           Text.Printf           (printf)
 
 import           Hkl.C.Binoculars
 import           Hkl.Detector
+import           Hkl.Orphan            ()
 
 data Chunk n a = Chunk !a !n !n
 deriving instance (Show n, Show a) => Show (Chunk n a)
@@ -74,9 +67,6 @@ chunk target = go target target
 
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
 
-class LenP a where
-  lenP :: a -> Pipe FilePath Int (SafeT IO) ()
-
 toList :: InputFn -> [FilePath]
 toList (InputFn f)           = [f]
 toList (InputRange tmpl f t) = [printf tmpl i | i <- [f..t]]
@@ -84,16 +74,6 @@ toList (InputList fs)        = map fromAbsFile fs
 
 mkJobs' :: Int -> [FilePath] -> [Int] -> [[Chunk Int FilePath]]
 mkJobs' n fns ts = chunk n [Chunk f 0 t | (f, t) <- zip fns ts]
-
-mkJobs :: LenP a => InputFn -> a -> IO [[Chunk Int FilePath]]
-mkJobs fn h5d = do
-  let fns = toList fn
-  ns <- runSafeT $ toListM $ each fns >-> lenP h5d
-  c' <- getNumCapabilities
-  -- let c' = 1
-  let ntot = sum ns
-      c = if c' >= 2 then c' - 1 else c'
-  return $ mkJobs' (quot ntot c) fns ns
 
 --  DataFrameSpace
 
@@ -120,12 +100,6 @@ mkCube' detector dfs = do
     withArrayLen pimages $ \_ images' ->
     peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces' (toEnum nPixels) images'
 
-mkCube'P :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
-mkCube'P det ref = forever $ do
-  s <- await
-  c2 <- liftIO $ mkCube' det [s]
-  liftIO $ modifyIORef' ref (c2 <>)
-
 type Template = String
 
 data InputFn = InputFn FilePath
@@ -135,3 +109,6 @@ data InputFn = InputFn FilePath
 
 withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
 withCubeAccumulator f = bracket (newIORef EmptyCube') pure (\r -> f r >> readIORef r)
+
+
+-- Projections

@@ -1,9 +1,9 @@
 {-# LANGUAGE GADTs #-}
 module Hkl.Conduit
-    ( withFileP
-    , withDatasetP
-    , withDataspaceP
-    , withHdf5PathP
+    ( withFileC
+    , withDatasetC
+    , withDataspaceC
+    , withHdf5PathC
     )
     where
 
@@ -20,25 +20,25 @@ import           Hkl.H5
 bracket' :: MonadResource m => (a -> IO ()) -> IO a -> (a -> ConduitT i o m r) -> ConduitT i o m r
 bracket' r a = bracketP (liftIO a) (liftIO . r)
 
-withFileP :: MonadResource m => IO File -> (File -> ConduitT i o m r) -> ConduitT i o m r
-withFileP = bracket' closeFile
+withFileC :: MonadResource m => IO File -> (File -> ConduitT i o m r) -> ConduitT i o m r
+withFileC = bracket' closeFile
 
-withGroupP :: MonadResource m => IO Group -> (Group -> ConduitT i o m r) -> ConduitT i o m r
-withGroupP = bracket' closeGroup
+withGroupC :: MonadResource m => IO Group -> (Group -> ConduitT i o m r) -> ConduitT i o m r
+withGroupC = bracket' closeGroup
 
-withGroupAtP :: (Location l, MonadResource m) => l -> Int -> (Group -> ConduitT i o m r) -> ConduitT i o m r
-withGroupAtP l i f = do
+withGroupAtC :: (Location l, MonadResource m) => l -> Int -> (Group -> ConduitT i o m r) -> ConduitT i o m r
+withGroupAtC l i f = do
   es <- liftIO $ nxEntries' l
-  withGroupP (openGroup l (es !! i) Nothing) f
+  withGroupC (openGroup l (es !! i) Nothing) f
 
-withDatasetP :: MonadResource m => IO Dataset -> (Dataset -> ConduitT i o m r) -> ConduitT i o m r
-withDatasetP = bracket' closeDataset
+withDatasetC :: MonadResource m => IO Dataset -> (Dataset -> ConduitT i o m r) -> ConduitT i o m r
+withDatasetC = bracket' closeDataset
 
-withDataspaceP :: MonadResource m => IO Dataspace -> (Dataspace -> ConduitT i o m r) -> ConduitT i o m r
-withDataspaceP = bracket' closeDataspace
+withDataspaceC :: MonadResource m => IO Dataspace -> (Dataspace -> ConduitT i o m r) -> ConduitT i o m r
+withDataspaceC = bracket' closeDataspace
 
-withHdf5PathP :: (Location l, MonadResource m) => l -> Hdf5Path sh e -> (Dataset -> ConduitT i o m r) -> ConduitT i o m r
-withHdf5PathP l (H5RootPath subpath) f = withHdf5PathP l subpath f
-withHdf5PathP l (H5GroupPath n subpath) f = withGroupP (openGroup l n Nothing) $ \g -> withHdf5PathP g subpath f
-withHdf5PathP l (H5GroupAtPath i subpath) f = withGroupAtP l i $ \g -> withHdf5PathP g subpath f
-withHdf5PathP l (H5DatasetPath n) f = withDatasetP (openDataset l n Nothing) f
+withHdf5PathC :: (Location l, MonadResource m) => l -> Hdf5Path sh e -> (Dataset -> ConduitT i o m r) -> ConduitT i o m r
+withHdf5PathC l (H5RootPath subpath) f = withHdf5PathC l subpath f
+withHdf5PathC l (H5GroupPath n subpath) f = withGroupC (openGroup l n Nothing) $ \g -> withHdf5PathC g subpath f
+withHdf5PathC l (H5GroupAtPath i subpath) f = withGroupAtC l i $ \g -> withHdf5PathC g subpath f
+withHdf5PathC l (H5DatasetPath n) f = withDatasetC (openDataset l n Nothing) f

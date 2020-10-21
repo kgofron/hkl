@@ -13,6 +13,8 @@ module Hkl.Binoculars
     ( module X ) where
 
 import           Hkl.Binoculars.Common      as X
+import           Hkl.Binoculars.Conduit     as X
 import           Hkl.Binoculars.Config      as X
+import           Hkl.Binoculars.Pipes       as X
 import           Hkl.Binoculars.Projections as X
 import           Hkl.Binoculars.Sixs        as X

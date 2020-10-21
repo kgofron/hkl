@@ -15,36 +15,32 @@
 module Hkl.Binoculars.Projections
   ( DataFrameHkl(..)
   , DataFrameQxQyQz(..)
-  , FramesHklP(..)
-  , FramesQxQyQzP(..)
+  , DetectorPath(..)
+  , GeometryPath(..)
+  , HklPath(..)
+  , InputHkl(..)
   , InputQxQyQz(..)
-  , LenP(..)
-  , mkInputHkl
-  , mkInputQxQyQz
-  , processHkl
-  , processQxQyQz
+  , QxQyQzPath(..)
+  , SamplePath(..)
+  , saveCube
+  , spaceHkl
+  , spaceQxQyQz
   ) where
 
-import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa                   (Array, extent, listOfShape,
                                                     size)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
+import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Maybe                        (fromMaybe)
+import           Data.Typeable                     (typeOf)
 import           Data.Word                         (Word16, Word8)
 import           Foreign.C.Types                   (CSize (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr)
 import           Foreign.Storable                  (peek)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree, (*~))
-import           Pipes                             (Pipe, each, runEffect,
-                                                    (>->))
-import           Pipes.Prelude                     (mapM, print, tee)
-import           Pipes.Safe                        (SafeT, runSafeT)
+import           Numeric.Units.Dimensional.Prelude (Angle, Length)
 
-import           Prelude                           hiding (mapM, print)
+import           Prelude                           hiding (drop, mapM)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -67,7 +63,35 @@ withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 saveCube :: FilePath -> [Cube' DIM3] -> IO ()
 saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
 
+-- DetectorPath
+
+data DetectorPath = DetectorPath
+    { detectorPathImage    :: Hdf5Path DIM3 Word16
+    } deriving Show
+
+-- GeometryPath
+
+data GeometryPath
+  = GeometryPathUhv { geometryPathWavelength :: Hdf5Path Z Double
+                    , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                    }
+  | GeometryPathCristalK6C { geometryPathWavelength :: Hdf5Path Z Double
+                           , geometryPathMu         :: Hdf5Path DIM1 Double
+                           , geometryPathKomega     :: Hdf5Path DIM1 Double
+                           , geometryPathKappa      :: Hdf5Path DIM1 Double
+                           , geometryPathKphi       :: Hdf5Path DIM1 Double
+                           , geometryPathGamma      :: Hdf5Path DIM1 Double
+                           , geometryPathDelta      :: Hdf5Path DIM1 Double
+                           }
+
+                  deriving Show
+
 --  QxQyQz Projection
+
+data QxQyQzPath = QxQyQzPath DetectorPath GeometryPath
+
+instance Show QxQyQzPath where
+  show = show . typeOf
 
 type Resolutions = [Double]
 
@@ -91,9 +115,6 @@ data DataFrameQxQyQz
       (ForeignPtr Word16) -- image
     deriving Show
 
-class LenP a => FramesQxQyQzP a where
-  framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
-
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
 spaceQxQyQz det pixels rs mask' (DataFrameQxQyQz _ g img) =
@@ -108,43 +129,26 @@ spaceQxQyQz det pixels rs mask' (DataFrameQxQyQz _ g img) =
       s <- peek p
       return (DataFrameSpace img s)
 
-mkJobsQxQyQz :: LenP a => InputQxQyQz a b -> IO [[Chunk Int FilePath]]
-mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
+-- SamplePath
 
-mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> Detector b DIM2 -> (BinocularsConfig -> Maybe a) -> IO (InputQxQyQz a b)
-mkInputQxQyQz c d f = do
-  fs <- files c
-  mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
-  case f c of
-    (Just h5dpath') -> pure $ InputQxQyQz
-                      { detector = d
-                      , filename = InputList fs
-                      , h5dpath = h5dpath'
-                      , output = case _binocularsInputInputRange c of
-                                   Just r  -> destination' r (_binocularsDispatcherDestination c)
-                                   Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
-                      , resolutions = _binocularsProjectionResolution c
-                      , centralPixel = _binocularsInputCentralpixel c
-                      , sdd' = _binocularsInputSdd c
-                      , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
-                      , mask = mask'
-                      }
-    Nothing -> error "TODO"
-
-processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a b -> IO ()
-processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
-  pixels <- getPixelsCoordinates det cen d r
-  jobs <- mkJobsQxQyQz input
-  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
-                           runSafeT $ runEffect $
-                           each job
-                           >-> framesQxQyQzP h5d det
-                           >-> mapM (liftIO . spaceQxQyQz det pixels res mask')
-                           >-> mkCube'P det s
-                       ) jobs
-  saveCube o r'
+data SamplePath = SamplePath
+    (Hdf5Path Z Double) -- a
+    (Hdf5Path Z Double) -- b
+    (Hdf5Path Z Double) -- c
+    (Hdf5Path Z Double) -- alpha
+    (Hdf5Path Z Double) -- beta
+    (Hdf5Path Z Double) -- gamma
+    (Hdf5Path Z Double) -- ux
+    (Hdf5Path Z Double) -- uy
+    (Hdf5Path Z Double) -- yz
+    deriving Show
 
 --  Hkl Projection
+
+data HklPath = HklPath QxQyQzPath SamplePath
+             | HklPathFromQxQyQz QxQyQzPath (Sample Triclinic)
+
+  deriving Show
 
 data InputHkl a b =
   InputHkl { detector     :: Detector b DIM2
@@ -169,9 +173,6 @@ data DataFrameHkl a
       -- (Array F DIM2 Double) -- ub
       deriving Show
 
-class LenP a => FramesHklP a where
-  framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
-
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
 spaceHkl config' det pixels rs mask' (DataFrameHkl _ img g samp) = do
@@ -187,42 +188,3 @@ spaceHkl config' det pixels rs mask' (DataFrameHkl _ img g samp) = do
         p <- {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
         s <- peek p
         return (DataFrameSpace img s)
-
-mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
-mkJobsHkl (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
-
-mkInputHkl :: FramesHklP a => BinocularsConfig -> Detector b DIM2 -> (BinocularsConfig -> Maybe a) -> IO (InputHkl a b)
-mkInputHkl c d f = do
-  fs <- files c
-  mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
-  case f c of
-    (Just h5dpath') -> pure $ InputHkl
-                      { detector = d
-                      , filename = InputList fs
-                      , h5dpath = h5dpath'
-                      , output = destination'
-                                 (fromMaybe (ConfigRange []) (_binocularsInputInputRange c))
-                                 (_binocularsDispatcherDestination c)
-                      , resolutions = _binocularsProjectionResolution c
-                      , centralPixel = _binocularsInputCentralpixel c
-                      , sdd' = _binocularsInputSdd c
-                      , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
-                      , config = c
-                      , mask = mask'
-                      }
-    Nothing -> error "TODO"
-
-processHkl :: FramesHklP a => InputHkl a b -> IO ()
-processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
-  pixels <- getPixelsCoordinates det cen d r
-
-  jobs <- mkJobsHkl input
-  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
-                           runSafeT $ runEffect $
-                           each job
-                           >-> tee print
-                           >-> framesHklP h5d det
-                           >-> mapM (liftIO . spaceHkl config' det pixels res mask')
-                           >-> mkCube'P det s
-                       ) jobs
-  saveCube o r'
