@@ -20,6 +20,7 @@ module Hkl.H5
     , check_ndims
     , closeDataset
     , closeFile
+    , getArrayInBuffer
     , get_image
     , get_image'
     , get_position
@@ -98,7 +99,8 @@ import           Data.Vector.Storable.Mutable    (MVector (..), replicate)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
 import           Foreign.C.Types                 (CInt (CInt))
-import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr)
+import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr,
+                                                  withForeignPtr)
 import           Foreign.Marshal.Alloc           (finalizerFree, mallocBytes)
 import           Foreign.Ptr                     (FunPtr, Ptr,
                                                   freeHaskellFunPtr)
@@ -159,6 +161,16 @@ get_image' det d n = withDataspace (getDatasetSpace d) $ \dataspace -> do
         p <- mallocBytes (size s * 2)
         readDatasetInto' d (Just memspace) (Just dataspace) Nothing p
         newForeignPtr finalizerFree p
+
+getArrayInBuffer :: Shape sh => ForeignPtr Word16 -> Detector a sh -> Dataset -> Int -> IO (ForeignPtr Word16)
+getArrayInBuffer fbuf det d n = withDataspace (getDatasetSpace d) $ \dataspace -> do
+      let s = shape det
+          h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
+      selectHyperslab dataspace Set h
+      withDataspace (createDataspaceFromShape s) $ \memspace ->
+          withForeignPtr fbuf $ \buf -> do
+            _ <- readDatasetInto' d (Just memspace) (Just dataspace) Nothing buf
+            return fbuf
 
 set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
 set_image det d dataspace n arr =  do

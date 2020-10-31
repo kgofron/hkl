@@ -30,7 +30,7 @@ import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad                     (forM_)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
-import           Data.Array.Repa                   (Shape)
+import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.Conduit.Combinators          (mapM, sinkList)
 import           Data.Conduit.List                 (sourceList)
@@ -90,8 +90,10 @@ withDetectorPathC :: (MonadResource m, Location l)
                   -> DetectorPath
                   -> ((Int -> IO (ForeignPtr Word16)) -> ConduitT i o m r)
                   -> ConduitT i o m r
-withDetectorPathC f det (DetectorPath p) g =
-    withHdf5PathC f p $ \p' -> g (\j -> get_image' det p' j)
+withDetectorPathC f det (DetectorPath p) g = do
+  let n = (size . shape $ det) * 2
+  withBytesC n $ \buf ->
+      withHdf5PathC f p $ \p' -> g (\j -> getArrayInBuffer buf det p' j)
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)

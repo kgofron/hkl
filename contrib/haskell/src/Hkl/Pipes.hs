@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 module Hkl.Pipes
-    ( withFileP
+    ( withBytes
+    , withFileP
     , withDatasetP
     , withDataspaceP
     , withHdf5PathP
@@ -11,6 +12,9 @@ import           Bindings.HDF5.Core      (Location)
 import           Bindings.HDF5.Dataspace (Dataspace, closeDataspace)
 import           Bindings.HDF5.Group     (Group, closeGroup, openGroup)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
+import           Foreign.ForeignPtr      (ForeignPtr, finalizeForeignPtr,
+                                          mallocForeignPtrBytes,
+                                          touchForeignPtr)
 import           Pipes.Safe              (MonadSafe, bracket)
 
 import           Hkl.H5
@@ -19,6 +23,9 @@ import           Hkl.H5
 
 bracket' :: MonadSafe m => (a -> IO ()) -> IO a -> (a -> m r) -> m r
 bracket' r a = bracket (liftIO a) (liftIO . r)
+
+withBytes :: MonadSafe m => Int -> (ForeignPtr a -> m r) -> m r
+withBytes n = bracket' touchForeignPtr (mallocForeignPtrBytes n)
 
 withFileP :: MonadSafe m => IO File -> (File -> m r) -> m r
 withFileP = bracket' closeFile

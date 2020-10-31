@@ -32,7 +32,7 @@ import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
-import           Data.Array.Repa                   (Shape)
+import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, modifyIORef')
 import           Data.Maybe                        (fromMaybe)
@@ -173,8 +173,10 @@ mkCube'P det ref = forever $ do
 -- Instances
 
 withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO (ForeignPtr Word16)) -> m r) -> m r
-withDetectorPathP f det (DetectorPath p) g =
-    withHdf5PathP f p $ \p' -> g (\j -> get_image' det p' j)
+withDetectorPathP f det (DetectorPath p) g = do
+  let n = (size . shape $ det) * 2
+  withBytes n $ \buf ->
+      withHdf5PathP f p $ \p' -> g (\j -> getArrayInBuffer buf det p' j)
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)

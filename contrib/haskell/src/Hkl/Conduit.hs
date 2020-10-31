@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 module Hkl.Conduit
-    ( withFileC
+    ( withBytesC
+    , withFileC
     , withDatasetC
     , withDataspaceC
     , withHdf5PathC
@@ -12,6 +13,8 @@ import           Bindings.HDF5.Dataspace (Dataspace, closeDataspace)
 import           Bindings.HDF5.Group     (Group, closeGroup, openGroup)
 import           Conduit                 (ConduitT, MonadResource, bracketP)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
+import           Foreign.ForeignPtr      (ForeignPtr, finalizeForeignPtr,
+                                          mallocForeignPtrBytes)
 
 import           Hkl.H5
 
@@ -19,6 +22,9 @@ import           Hkl.H5
 
 bracket' :: MonadResource m => (a -> IO ()) -> IO a -> (a -> ConduitT i o m r) -> ConduitT i o m r
 bracket' r a = bracketP (liftIO a) (liftIO . r)
+
+withBytesC :: MonadResource m => Int -> (ForeignPtr a -> ConduitT i o m r) -> ConduitT i o m r
+withBytesC n = bracket' finalizeForeignPtr (mallocForeignPtrBytes n)
 
 withFileC :: MonadResource m => IO File -> (File -> ConduitT i o m r) -> ConduitT i o m r
 withFileC = bracket' closeFile
