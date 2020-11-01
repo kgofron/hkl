@@ -116,54 +116,19 @@ coordinates XpadFlatCorrected (NptPoint x y) =
              , x * 130e-6
              , 0]
 
-getPixelsCoordinates' :: String -> Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
-getPixelsCoordinates' = defVVVVVO [str|
-from math import cos, sin
-from numpy import array, ascontiguousarray, copy, ones, tensordot
-from pyFAI.detectors import ALL_DETECTORS
+toPyFAIDetectorName :: Detector a DIM2 -> String
+toPyFAIDetectorName ImXpadS140        = "imxpads140"
+toPyFAIDetectorName Xpad32            = "xpad_flat"
+toPyFAIDetectorName XpadFlatCorrected = undefined
 
-def M(theta, u):
-    """
-    :param theta: the axis value in radian
-    :type theta: float
-    :param u: the axis vector [x, y, z]
-    :type u: [float, float, float]
-    :return: the rotation matrix
-    :rtype: numpy.ndarray (3, 3)
-    """
-    c = cos(theta)
-    one_minus_c = 1 - c
-    s = sin(theta)
-    return array([[c + u[0]**2 * one_minus_c,
-                   u[0] * u[1] * one_minus_c - u[2] * s,
-                   u[0] * u[2] * one_minus_c + u[1] * s],
-                  [u[0] * u[1] * one_minus_c + u[2] * s,
-                   c + u[1]**2 * one_minus_c,
-                   u[1] * u[2] * one_minus_c - u[0] * s],
-                  [u[0] * u[2] * one_minus_c - u[1] * s,
-                   u[1] * u[2] * one_minus_c + u[0] * s,
-                   c + u[2]**2 * one_minus_c]])
-
-def export(name, ix0, iy0, sdd, rot):
-        # works only for flat detector.
-        detector = ALL_DETECTORS[name]()
-        y, x, _ = detector.calc_cartesian_positions()
-        y0 = y[iy0, ix0]
-        x0 = x[iy0, ix0]
-        z = ones(x.shape) * -1 * sdd
-        # return converted to the hkl library coordinates
-        # x -> -y
-        # y -> z
-        # z -> -x
-        pixels_ = array([-z, -(x - x0), (y - y0)])
-        # rotate the detector in the hkl basis
-        P = M(rot, [1, 0, 0])
-        pixels = tensordot(P, pixels_, axes=1)
-        return copy(ascontiguousarray(pixels))
-|]
-
-getPixelsCoordinates'XpadFlatCorrected :: Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
-getPixelsCoordinates'XpadFlatCorrected = defVVVVO [str|
+getPixelsCoordinates :: Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
+getPixelsCoordinates det (ix0, iy0) sdd detrot = do
+  extractNumpyArray =<< case det of
+                          XpadFlatCorrected -> xpadFlatCorrectedCoordinates ix0 iy0 (sdd /~ meter) (detrot /~ radian)
+                          _ -> pyfaiCoordinates (toPyFAIDetectorName det) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
+      where
+        xpadFlatCorrectedCoordinates :: Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
+        xpadFlatCorrectedCoordinates = defVVVVO [str|
 from math import cos, sin
 from numpy import array, ascontiguousarray, copy, ones, tensordot
 from pyFAI.detectors import Detector
@@ -208,38 +173,64 @@ def export(ix0, iy0, sdd, rot):
         return copy(ascontiguousarray(pixels))
 |]
 
-toPyFAIDetectorName :: Detector a DIM2 -> String
-toPyFAIDetectorName ImXpadS140        = "imxpads140"
-toPyFAIDetectorName Xpad32            = "xpad_flat"
-toPyFAIDetectorName XpadFlatCorrected = undefined
 
-getPixelsCoordinates :: Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
-getPixelsCoordinates XpadFlatCorrected (ix0, iy0) sdd detrot =
-  extractNumpyArray =<< getPixelsCoordinates'XpadFlatCorrected ix0 iy0 (sdd /~ meter) (detrot /~ radian)
-getPixelsCoordinates d (ix0, iy0) sdd detrot =
-  extractNumpyArray =<< getPixelsCoordinates' (toPyFAIDetectorName d) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
-
-getDetectorDefaultMask' :: String -> String -> IO (PyObject (Array F DIM2 Word8))
-getDetectorDefaultMask' = defVVO [str|
-import fabio
-from numpy import ascontiguousarray, bitwise_or, bool, copy, load
+        pyfaiCoordinates :: String -> Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
+        pyfaiCoordinates = defVVVVVO [str|
+from math import cos, sin
+from numpy import array, ascontiguousarray, copy, ones, tensordot
 from pyFAI.detectors import ALL_DETECTORS
 
-def export(name, fnmask):
-    detector = ALL_DETECTORS[name]()
-    mask = detector.mask
-    if mask is not None:
-        mask = mask.astype(bool)
-    else:
-        mask = zeros(detector.max_shape).astype(bool)
-    if fnmask != "":
-        mask = bitwise_or(mask,
-                          fabio.open(fnmask).data)
+def M(theta, u):
+    """
+    :param theta: the axis value in radian
+    :type theta: float
+    :param u: the axis vector [x, y, z]
+    :type u: [float, float, float]
+    :return: the rotation matrix
+    :rtype: numpy.ndarray (3, 3)
+    """
+    c = cos(theta)
+    one_minus_c = 1 - c
+    s = sin(theta)
+    return array([[c + u[0]**2 * one_minus_c,
+                   u[0] * u[1] * one_minus_c - u[2] * s,
+                   u[0] * u[2] * one_minus_c + u[1] * s],
+                  [u[0] * u[1] * one_minus_c + u[2] * s,
+                   c + u[1]**2 * one_minus_c,
+                   u[1] * u[2] * one_minus_c - u[0] * s],
+                  [u[0] * u[2] * one_minus_c - u[1] * s,
+                   u[1] * u[2] * one_minus_c + u[0] * s,
+                   c + u[2]**2 * one_minus_c]])
 
-    return copy(ascontiguousarray(mask))
+def export(name, ix0, iy0, sdd, rot):
+        # works only for flat detector.
+        detector = ALL_DETECTORS[name]()
+        y, x, _ = detector.calc_cartesian_positions()
+        y0 = y[iy0, ix0]
+        x0 = x[iy0, ix0]
+        z = ones(x.shape) * -1 * sdd
+        # return converted to the hkl library coordinates
+        # x -> -y
+        # y -> z
+        # z -> -x
+        pixels_ = array([-z, -(x - x0), (y - y0)])
+        # rotate the detector in the hkl basis
+        P = M(rot, [1, 0, 0])
+        pixels = tensordot(P, pixels_, axes=1)
+        return copy(ascontiguousarray(pixels))
 |]
-getDetectorDefaultMask'XpadFlatCorrected :: String -> IO (PyObject (Array F DIM2 Word8))
-getDetectorDefaultMask'XpadFlatCorrected = defVO [str|
+
+getDetectorDefaultMask :: Detector a DIM2 -> Maybe Text -> IO (Array F DIM2 Word8)
+getDetectorDefaultMask det mfn = do
+  let fn = case mfn of
+             (Just fn') -> unpack fn'
+             Nothing    -> ""
+  extractNumpyArray =<< case det of
+                          XpadFlatCorrected -> xpadFlatCorrectedMask fn
+                          _                 -> pyfaiMask (toPyFAIDetectorName det) fn
+      where
+        xpadFlatCorrectedMask :: String -> IO (PyObject (Array F DIM2 Word8))
+        xpadFlatCorrectedMask = defVO [str|
 from numpy import ascontiguousarray, bitwise_or, bool, copy, load, zeros
 import fabio
 from pyFAI.detectors import Detector
@@ -259,16 +250,22 @@ def export(fnmask):
     return copy(ascontiguousarray(mask))
 |]
 
-getDetectorDefaultMask :: Detector a DIM2 -> Maybe Text -> IO (Array F DIM2 Word8)
-getDetectorDefaultMask XpadFlatCorrected mfn = do
-  let fn = case mfn of
-             (Just fn') -> unpack fn'
-             Nothing    -> ""
-  arr <- getDetectorDefaultMask'XpadFlatCorrected fn
-  extractNumpyArray arr
-getDetectorDefaultMask d mfn = do
-  let fn = case mfn of
-             (Just fn') -> unpack fn'
-             Nothing    -> ""
-  arr <- getDetectorDefaultMask' (toPyFAIDetectorName d) fn
-  extractNumpyArray arr
+        pyfaiMask :: String -> String -> IO (PyObject (Array F DIM2 Word8))
+        pyfaiMask = defVVO [str|
+import fabio
+from numpy import ascontiguousarray, bitwise_or, bool, copy, load
+from pyFAI.detectors import ALL_DETECTORS
+
+def export(name, fnmask):
+    detector = ALL_DETECTORS[name]()
+    mask = detector.mask
+    if mask is not None:
+        mask = mask.astype(bool)
+    else:
+        mask = zeros(detector.max_shape).astype(bool)
+    if fnmask != "":
+        mask = bitwise_or(mask,
+                          fabio.open(fnmask).data)
+
+    return copy(ascontiguousarray(mask))
+|]
