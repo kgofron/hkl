@@ -98,7 +98,7 @@ void hkl_binoculars_axis_fprintf(FILE *f, const HklBinocularsAxis *self)
 		self->resolution, axis_size(self));
 }
 
-HklBinocularsSpace *space_new(size_t n_indexes_0, size_t n_axes)
+HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0, size_t n_axes)
 {
 	HklBinocularsSpace *self = malloc(sizeof(*self));
 
@@ -182,18 +182,21 @@ static inline void space_update_axes(HklBinocularsSpace *space,
 }
 
 /* the array is pre filled with the pixel coordinates */
-HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
-					   const uint16_t *image,
-					   size_t n_pixels,
-					   const double *pixels_coordinates,
-					   size_t pixels_coordinates_ndim,
-					   const size_t *pixels_coordinates_dims,
-					   const double *resolutions,
-					   size_t n_resolutions,
-                                           const uint8_t *masked)
+void hkl_binoculars_space_q(HklBinocularsSpace *space,
+                            const HklGeometry *geometry,
+                            const uint16_t *image,
+                            size_t n_pixels,
+                            const double *pixels_coordinates,
+                            size_t pixels_coordinates_ndim,
+                            const size_t *pixels_coordinates_dims,
+                            const double *resolutions,
+                            size_t n_resolutions,
+                            const uint8_t *masked)
 {
 	size_t i, j;
 	const char * names[] = {"qx", "qy", "qz"};
+
+        assert(ARRAY_SIZE(names) == space->n_axes && n_pixels == space->n_indexes_0);
 
 	const double *q_x = &pixels_coordinates[0 * n_pixels];
 	const double *q_y = &pixels_coordinates[1 * n_pixels];
@@ -206,8 +209,6 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 	const HklVector ki = hkl_geometry_ki_get(geometry);
         double k = hkl_vector_norm2(&ki);
 	hkl_quaternion_conjugate(&qs_1);
-
-	HklBinocularsSpace *space = space_new(n_pixels, ARRAY_SIZE(names));
 
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
@@ -235,24 +236,25 @@ HklBinocularsSpace *hkl_binoculars_space_q(const HklGeometry *geometry,
 
 	hkl_detector_free(detector);
         hkl_sample_free(sample);
-
-	return space;
 }
 
 /* the array is pre filled with the pixel coordinates */
-HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
-                                             const HklSample *sample,
-                                             const uint16_t *image,
-                                             size_t n_pixels,
-                                             const double *pixels_coordinates,
-                                             size_t pixels_coordinates_ndim,
-                                             const size_t *pixels_coordinates_dims,
-                                             const double *resolutions,
-                                             size_t n_resolutions,
-                                             const uint8_t *masked)
+void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
+                              const HklGeometry *geometry,
+                              const HklSample *sample,
+                              const uint16_t *image,
+                              size_t n_pixels,
+                              const double *pixels_coordinates,
+                              size_t pixels_coordinates_ndim,
+                              const size_t *pixels_coordinates_dims,
+                              const double *resolutions,
+                              size_t n_resolutions,
+                              const uint8_t *masked)
 {
 	size_t i, j;
 	const char * names[] = {"h", "k", "l"};
+
+        assert(ARRAY_SIZE(names) == space->n_axes && n_pixels == space->n_indexes_0);
 
         const double *h = &pixels_coordinates[0 * n_pixels];
 	const double *k = &pixels_coordinates[1 * n_pixels];
@@ -268,8 +270,6 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
         hkl_quaternion_to_matrix(&qs, &RUB);
 	hkl_matrix_times_matrix(&RUB, hkl_sample_UB_get(sample));
         hkl_matrix_inv(&RUB, &RUB_1);
-
-	HklBinocularsSpace *space = space_new(n_pixels, ARRAY_SIZE(names));
 
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
@@ -295,8 +295,6 @@ HklBinocularsSpace *hkl_binoculars_space_hkl(const HklGeometry *geometry,
 
         /* hkl_binoculars_space_fprintf(stdout, space); */
 	hkl_detector_free(detector);
-
-	return space;
 }
 
 static inline HklBinocularsCube *empty_cube(size_t n_axes)

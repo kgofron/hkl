@@ -37,7 +37,6 @@ import           Foreign.C.Types                   (CSize (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr)
-import           Foreign.Storable                  (peek)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length)
 
 import           Prelude                           hiding (drop, mapM)
@@ -116,18 +115,18 @@ data DataFrameQxQyQz
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
-spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mask' (DataFrameQxQyQz _ g img) =
+spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
+spaceQxQyQz det pixels rs mask' space (DataFrameQxQyQz _ g img) =
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
     withPixelsDims pixels $ \ndim dims ->
     withForeignPtr (toForeignPtr mask') $ \mask'' ->
-    withForeignPtr img $ \i -> do
-      p <- {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q geometry i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
-      s <- peek p
-      return (DataFrameSpace img s)
+    withForeignPtr img $ \i ->
+    withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+      {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q pSpace geometry i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
+      return (DataFrameSpace img space)
 
 -- SamplePath
 
@@ -174,8 +173,8 @@ data DataFrameHkl a
       deriving Show
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mask' (DataFrameHkl _ img g samp) = do
+spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
+spaceHkl config' det pixels rs mask' space (DataFrameHkl _ img g samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->
@@ -184,7 +183,7 @@ spaceHkl config' det pixels rs mask' (DataFrameHkl _ img g samp) = do
       withArrayLen rs $ \nr r ->
       withForeignPtr (toForeignPtr mask') $ \mask'' ->
       withPixelsDims pixels $ \ndim dims ->
-      withForeignPtr img $ \i -> do
-        p <- {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
-        s <- peek p
-        return (DataFrameSpace img s)
+      withForeignPtr img $ \i ->
+      withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+        {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl pSpace geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
+        return (DataFrameSpace img space)

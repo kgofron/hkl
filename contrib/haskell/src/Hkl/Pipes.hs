@@ -12,8 +12,7 @@ import           Bindings.HDF5.Core      (Location)
 import           Bindings.HDF5.Dataspace (Dataspace, closeDataspace)
 import           Bindings.HDF5.Group     (Group, closeGroup, openGroup)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
-import           Foreign.ForeignPtr      (ForeignPtr, finalizeForeignPtr,
-                                          mallocForeignPtrBytes,
+import           Foreign.ForeignPtr      (ForeignPtr, mallocForeignPtrBytes,
                                           touchForeignPtr)
 import           Pipes.Safe              (MonadSafe, bracket)
 

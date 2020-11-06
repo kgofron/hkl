@@ -24,15 +24,15 @@ module Hkl.Binoculars.Conduit
 
 import           Bindings.HDF5.Core                (Location)
 import           Conduit                           (ConduitT, MonadResource,
-                                                    Void, await, runConduitRes,
-                                                    yield, (.|))
+                                                    Void, await, bracketP,
+                                                    runConduitRes, yield, (.|))
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad                     (forM_)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
-import           Data.Conduit.Combinators          (mapM, sinkList)
+import           Data.Conduit.Combinators          (sinkList)
 import           Data.Conduit.List                 (sourceList)
 import           Data.IORef                        (IORef, modifyIORef')
 import           Data.Vector.Storable              (fromList)
@@ -83,6 +83,27 @@ mkCube'C det ref = loop
           loop
 
 -- Instances
+withSpaceC :: (MonadResource m, Shape sh)
+             => Detector a DIM2
+           -> Int
+           -> (Space sh -> ConduitT i o m r)
+           -> ConduitT i o m r
+withSpaceC d n = bracketP (liftIO $ newSpace d n) (const $ return ())
+
+projectC :: (MonadResource m, Shape sh)
+       => Detector a DIM2
+     -> Int
+     -> (Space sh -> DataFrameHkl a -> IO (DataFrameSpace sh))
+     -> ConduitT (DataFrameHkl a) (DataFrameSpace sh) m ()
+projectC d n f = withSpaceC d n $ \s -> loop s
+    where
+      loop s = do
+        mdf <- await
+        case mdf of
+          Nothing   -> return ()
+          (Just df) -> do
+                   yield =<< (liftIO $ f s df)
+                   loop s
 
 withDetectorPathC :: (MonadResource m, Location l)
                   => l
@@ -268,7 +289,6 @@ instance FramesHklC HklPath where
                                    <*> pure sample))
             loop
 
-
 processHklC :: FramesHklC a => InputHkl a b -> IO ()
 processHklC input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
@@ -280,7 +300,7 @@ processHklC input@(InputHkl det _ h5d o res cen d r config' mask') = do
                            -- .| Data.Conduit.Combinators.print
                            .| framesHklC h5d det
                            -- .| Data.Conduit.Combinators.print
-                           .| Data.Conduit.Combinators.mapM (liftIO . spaceHkl config' det pixels res mask')
+                           .| projectC det 3 (spaceHkl config' det pixels res mask')
                            .| mkCube'C det s
                        ) jobs
   Prelude.print r'

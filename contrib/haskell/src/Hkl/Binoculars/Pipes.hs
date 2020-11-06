@@ -45,8 +45,10 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
                                                     (*~))
 import           Pipes                             (Consumer, Pipe, await, each,
                                                     runEffect, yield, (>->))
-import           Pipes.Prelude                     (mapM, print, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, SafeT, runSafeT)
+import           Pipes.Prelude                     (drain, mapM, print, tee,
+                                                    toListM)
+import           Pipes.Safe                        (MonadSafe, SafeT, bracket,
+                                                    runSafeT)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -76,6 +78,23 @@ mkJobs fn h5d = do
   let ntot = sum ns
       c = if c' >= 2 then c' - 1 else c'
   return $ mkJobs' (quot ntot c) fns ns
+
+
+-- Project
+
+withSpace :: (MonadSafe m, Shape sh)
+            => Detector a DIM2 -> Int -> (Space sh -> m r) -> m r
+withSpace d n = bracket (liftIO $ newSpace d n) pure
+
+project :: (MonadSafe m, Shape sh)
+          => Detector a DIM2
+        -> Int
+        -> (Space sh -> b -> IO (DataFrameSpace sh))
+        -> Pipe b (DataFrameSpace sh) m ()
+project d n f = withSpace d n $ \s -> forever $ do
+               df <- await
+               yield =<< (liftIO $ f s df)
+
 
 -- QxQyQz
 
@@ -113,7 +132,7 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
                            runSafeT $ runEffect $
                            each job
                            >-> framesQxQyQzP h5d det
-                           >-> Pipes.Prelude.mapM (liftIO . spaceQxQyQz det pixels res mask')
+                           >-> project det 3 (spaceQxQyQz det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
   saveCube o r'
@@ -157,7 +176,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
                            each job
                            >-> tee Pipes.Prelude.print
                            >-> framesHklP h5d det
-                           >-> Pipes.Prelude.mapM (liftIO . spaceHkl config' det pixels res mask')
+                           >-> project det 3 (spaceHkl config' det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
   saveCube o r'
@@ -174,7 +193,7 @@ mkCube'P det ref = forever $ do
 
 withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO (ForeignPtr Word16)) -> m r) -> m r
 withDetectorPathP f det (DetectorPath p) g = do
-  let n = (size . shape $ det) * 2
+  let n = (size . shape $ det) * 2  -- hardcoded size
   withBytes n $ \buf ->
       withHdf5PathP f p $ \p' -> g (\j -> getArrayInBuffer buf det p' j)
 
