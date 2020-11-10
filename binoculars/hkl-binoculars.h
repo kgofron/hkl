@@ -32,15 +32,16 @@ struct _HklBinocularsAxis
 	ptrdiff_t imax; /* the maximum index of the axis max = imax * resolution */
 };
 
+typedef darray(HklBinocularsAxis) darray_axis;
 extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
+
 
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
+        darray_axis axes;
 	size_t n_indexes_0;
 	ptrdiff_t *indexes_0;
-	size_t n_axes;
-	HklBinocularsAxis *axes;
 };
 
 extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
@@ -74,8 +75,7 @@ extern void hkl_binoculars_space_hkl(HklBinocularsSpace *self,
 typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube
 {
-	size_t n_axes;
-	HklBinocularsAxis *axes;
+        darray_axis axes;
 	unsigned int *photons;
 	unsigned int *contributions;
 };

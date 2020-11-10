@@ -36,11 +36,11 @@ import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
 import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, showShape, extent, ix1, size)
 import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Word             (Word16, Word8)
-import           Foreign.C.Types       (CDouble, CSize(..), CUInt(..))
+import           Foreign.C.Types       (CDouble, CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
-import           Foreign.Ptr           (FunPtr, Ptr)
+import           Foreign.Ptr           (FunPtr, Ptr, plusPtr)
 import           Foreign.Storable      (Storable (..))
 import           System.IO.Unsafe      (unsafePerformIO)
 
@@ -53,20 +53,30 @@ import           Hkl.H5
 
 --  Axis
 
-data Axis = Axis ByteString (Array F DIM1 CDouble)
+instance Show (Array F DIM1 CDouble) where
+    show _ = ""
 
-instance Show Axis where
-  show (Axis n _) = show n
+data Axis = Axis { name :: ByteString
+                 , index :: CSize
+                 , resolution :: CDouble
+                 , imin :: CPtrdiff
+                 , imax :: CPtrdiff
+                 , arr :: Array F DIM1 CDouble
+                 } deriving Show
 
 instance Storable Axis where
   alignment _ = #{alignment HklBinocularsAxis}
   sizeOf _ = #{size HklBinocularsAxis}
   poke _ _ = undefined
-  peek ptr = do
-    n <- packCString =<< (#{peek HklBinocularsAxis, name} ptr)
-    pArr <- hkl_binoculars_axis_array ptr
-    fpArr <- newForeignPtr finalizerFree pArr
-    return $ Axis n (fromForeignPtr (ix1 6) fpArr)
+  peek ptr = Axis
+             <$> (packCString =<< (#{peek HklBinocularsAxis, name} ptr))
+             <*> #{peek HklBinocularsAxis, index} ptr
+             <*> #{peek HklBinocularsAxis, resolution} ptr
+             <*> #{peek HklBinocularsAxis, imin} ptr
+             <*> #{peek HklBinocularsAxis, imax} ptr
+             <*> (fromForeignPtr (ix1 6)
+                 <$> (newForeignPtr finalizerFree =<< hkl_binoculars_axis_array ptr))
+
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_axis_array" \
 hkl_binoculars_axis_array :: Ptr Axis -> IO (Ptr CDouble)
@@ -155,14 +165,15 @@ instance Shape sh => Storable (Cube sh) where
   poke _ _ = undefined
   {-# INLINE peek #-}
   peek ptr = do
-    n <- #{peek HklBinocularsCube, n_axes} ptr :: IO CSize
+    let paxes = #{ptr HklBinocularsCube, axes} ptr
+    n <- #{peek darray_axis, size} paxes
     allocaArray (fromEnum n) $ \dims' -> do
       hkl_binoculars_cube_dims ptr n dims'
       dims <- peekArray (fromEnum n) dims'
       let sh = shapeOfList (reverse (map fromEnum dims))
       fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
       fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
-      axes <- peekArray (fromEnum n) =<< (#{peek HklBinocularsCube, axes} ptr)
+      axes <- peekArray (fromEnum n) =<< (#{peek darray_axis, item} paxes)
       fp <- newForeignPtr hkl_binoculars_cube_free ptr
       return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) axes fp
 
@@ -183,7 +194,7 @@ hkl_binoculars_cube_dims :: Ptr (Cube sh)
 
 instance Shape sh => ToHdf5 (Cube sh) where
   toHdf5 (Cube p c axes _) = group "binoculars"
-                             [ group "axes" [dataset n arr | (Axis n arr) <- axes]
+                             [ group "axes" [dataset (name axis) (arr axis) | axis <- axes]
                              , dataset "counts" p
                              , dataset "contributions" c
                              ]
