@@ -22,6 +22,9 @@
 #include "hkl.h"
 #include "stdint.h"
 
+
+/* Axis */
+
 typedef struct _HklBinocularsAxis HklBinocularsAxis;
 struct _HklBinocularsAxis
 {
@@ -33,15 +36,20 @@ struct _HklBinocularsAxis
 };
 
 typedef darray(HklBinocularsAxis) darray_axis;
+
 extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 
+
+/* Space */
+
+typedef darray(ptrdiff_t*) darray_ptrdiff;
 
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
         darray_axis axes;
-	size_t n_indexes_0;
-	ptrdiff_t *indexes_0;
+        size_t n_indexes_0;
+        darray_ptrdiff indexes_0;
 };
 
 extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
@@ -71,6 +79,8 @@ extern void hkl_binoculars_space_hkl(HklBinocularsSpace *self,
                                      const double *resolutions,
                                      size_t n_resolutions,
                                      const uint8_t *mask);
+
+/* Cube */
 
 typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube

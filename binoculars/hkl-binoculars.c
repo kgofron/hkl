@@ -118,10 +118,17 @@ void hkl_binoculars_axis_fprintf(FILE *f, const HklBinocularsAxis *self)
 
 HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0, size_t n_axes)
 {
+        size_t i;
 	HklBinocularsSpace *self = malloc(sizeof(*self));
 
 	self->n_indexes_0 = n_indexes_0;
-	self->indexes_0 = malloc(n_indexes_0 * n_axes * sizeof(*self->indexes_0));
+
+        darray_init(self->indexes_0);
+        for(i=0; i<n_axes; ++i){
+                darray_append(self->indexes_0,
+                              /* BEWARE sizeof should have the same type than darray_ptrdiff elements */
+                              malloc(n_indexes_0 * sizeof(ptrdiff_t)));
+        }
         darray_init(self->axes);
         darray_resize(self->axes, n_axes);
 
@@ -130,14 +137,13 @@ HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0, size_t n_axes)
 
 void hkl_binoculars_space_free(HklBinocularsSpace *self)
 {
-	darray_free(self->axes);
-	free(self->indexes_0);
-	free(self);
-}
+        ptrdiff_t **index;
 
-static inline ptrdiff_t *space_indexes(const HklBinocularsSpace *space,size_t index)
-{
-	return &space->indexes_0[index * space->n_indexes_0];
+	darray_free(self->axes);
+        darray_foreach(index, self->indexes_0){
+                free(*index);
+        }
+	free(self);
 }
 
 void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
@@ -154,7 +160,7 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
 		hkl_binoculars_axis_fprintf(f, axis);
 	}
         for(i=0; i<self->n_indexes_0; ++i){
-                if(space_indexes(self, 0)[i] == MASKED)
+                if(darray_item(self->indexes_0, 0)[i] == MASKED)
                         masked +=1;
         }
         fprintf(f, "\nmasked pixels: %ld (%f%%)", masked, (double)masked / self->n_indexes_0 * 100);
@@ -173,7 +179,7 @@ static inline void space_update_axes(HklBinocularsSpace *space,
          * are marked with the value MASKED so we just need to
          * find the index using the first axis (0) */
         for(j=0; j<n_pixels; j++){
-                if (space_indexes(space, 0)[j] != MASKED){
+                if (darray_item(space->indexes_0, 0)[j] != MASKED){
                         ji = j;
                         break;
                 }
@@ -181,7 +187,7 @@ static inline void space_update_axes(HklBinocularsSpace *space,
 
 	/* compress the coordinates into the space */
 	for(i=0; i<darray_size(space->axes); ++i){
-		const ptrdiff_t *idx = space_indexes(space, i);
+		const ptrdiff_t *idx = darray_item(space->indexes_0, i);
 		const double resolution = resolutions[i];
 		HklBinocularsAxis *axis = &darray_item(space->axes, i);
                 ptrdiff_t origin = idx[ji];
@@ -244,10 +250,10 @@ void hkl_binoculars_space_q(HklBinocularsSpace *space,
                         hkl_vector_rotated_quaternion(&v, &qs_1);
 
                         for(j=0; j<ARRAY_SIZE(names); ++j)
-                                space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
+                                darray_item(space->indexes_0, j)[i] = rint(v.data[j] / resolutions[j]);
                 } else {
                         for(j=0; j<ARRAY_SIZE(names); ++j)
-                                space_indexes(space, j)[i] = MASKED;
+                                darray_item(space->indexes_0, j)[i] = MASKED;
                 }
 	}
 
@@ -303,10 +309,10 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
                         hkl_matrix_times_vector(&RUB_1, &v);
 
                         for(j=0; j<ARRAY_SIZE(names); ++j)
-                                space_indexes(space, j)[i] = rint(v.data[j] / resolutions[j]);
+                                darray_item(space->indexes_0, j)[i] = rint(v.data[j] / resolutions[j]);
                 } else {
                         for(j=0; j<ARRAY_SIZE(names); ++j)
-                                space_indexes(space, j)[i] = MASKED;
+                                darray_item(space->indexes_0, j)[i] = MASKED;
                 }
 	}
 
@@ -408,7 +414,7 @@ void add_space(HklBinocularsCube *cube,
 
 	for(i=0; i<n_axes; ++i){
                 size_t _i = n_axes - 1 - i;
-		ptrdiff_t *idx = space_indexes(space, _i);
+		ptrdiff_t *idx = darray_item(space->indexes_0, _i);
 		for(j=0; j<n_pixels; ++j){
                         if (idx[j] != MASKED)
                                 indexes[j] += len * idx[j];
