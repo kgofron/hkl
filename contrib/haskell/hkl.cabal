@@ -84,10 +84,16 @@ executable binoculars-ng
                      , vector >= 0.10.0.1
   default-language:    Haskell2010
   build-tools:         hsc2hs
-  ghc-options:         -Wall -threaded -O2
+
+  ghc-options:         -O2
+  ghc-options:         -Wall
   ghc-options:         -Werror
-  ghc-options:         -g -dcore-lint
-  ghc-prof-options:    -fno-prof-auto -rtsopts
+  ghc-options:         -rtsopts
+  ghc-options:         -g
+  ghc-options:         -dcore-lint
+  ghc-options:         -debug
+
+  ghc-prof-options:    -fno-prof-auto
 
   if flag(useHklDev)
       pkgconfig-depends:   gobject-2.0
@@ -220,24 +226,31 @@ library
     include-dirs:      ../../
                      , ../../hkl/
                      , ../../binoculars/
+                     , /usr/include/python3.9
+    extra-libraries:     python3.9
     pkgconfig-depends:   glib-2.0
   else
     pkgconfig-depends:   hkl
     extra-libraries:     hkl-binoculars
 
-  if flag(usePythonEmbed)
-    pkgconfig-depends:   python3-embed
-  else
-    pkgconfig-depends:   python3
+  -- if flag(usePythonEmbed)
+  --   pkgconfig-depends:   python3-embed
+  -- else
+  --   pkgconfig-depends:   python3
+
   ghc-options:         -O2
-  ghc-options:         -fno-warn-incomplete-patterns
-  -- ghc-options:         -Werror
   ghc-options:         -Wall
+  -- ghc-options:         -Werror
   ghc-options:         -Wincomplete-uni-patterns
   ghc-options:         -Wincomplete-record-updates
-  ghc-options:         -g -dcore-lint
+  ghc-options:         -fno-warn-incomplete-patterns
+
+  ghc-options:         -g
+  ghc-options:         -dcore-lint
+  ghc-options:         -debug
 
   ghc-prof-options:    -fno-prof-auto
+  ghc-prof-options:    -rtsopts
 
 test-suite hkl-test
    type:               exitcode-stdio-1.0
