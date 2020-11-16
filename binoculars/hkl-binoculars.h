@@ -22,6 +22,16 @@
 #include "hkl.h"
 #include "stdint.h"
 
+/* 2D detectors */
+
+extern double *hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected(void);
+
+extern uint8_t * hkl_binoculars_detector_2d_mask_xpad_flat_corrected(void);
+
+extern void hkl_binoculars_detector_2d_sixs_calibration(double *arr,
+                                                        int width, int height,
+                                                        int ix0, int iy0, double sdd,
+                                                        double detrot);
 
 /* Axis */
 
