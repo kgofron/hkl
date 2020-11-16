@@ -49,7 +49,7 @@ import           Hkl.C.Geometry
 import           Hkl.C.Sample
 import           Hkl.H5
 
-  #include "hkl-binoculars.h"
+#include "hkl-binoculars.h"
 
 --  Axis
 
