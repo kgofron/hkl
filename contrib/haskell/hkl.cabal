@@ -89,6 +89,7 @@ executable binoculars-ng
   ghc-options:         -Wall
   ghc-options:         -Werror
   ghc-options:         -rtsopts
+  ghc-options:         -threaded
   ghc-options:         -g
   ghc-options:         -dcore-lint
   ghc-options:         -debug
