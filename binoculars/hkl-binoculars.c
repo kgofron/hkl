@@ -143,6 +143,7 @@ void hkl_binoculars_space_free(HklBinocularsSpace *self)
         darray_foreach(index, self->indexes_0){
                 free(*index);
         }
+        darray_free(self->indexes_0);
 	free(self);
 }
 
