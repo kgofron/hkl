@@ -27,6 +27,11 @@
 
 /* detectors */
 
+static inline void imxpad_s140_size(int *width, int *height)
+{
+        *width = 560;
+        *height = 240;
+}
 
 static inline void xpad_flat_corrected_size(int *width, int *height)
 {
@@ -36,25 +41,107 @@ static inline void xpad_flat_corrected_size(int *width, int *height)
 
 /* coordinates */
 
+static inline double *malloc_coordinates_for_2d(int width, int height)
+{
+        double *arr = malloc(3 * height * width * sizeof(double));
+
+        /* x set to zero for all 2d detectors */
+        memset(arr, 0, height * width * sizeof(*arr));
+
+        return arr;
+}
+
+static inline void y_z(double *arr, int width, int height,
+                       double **y, double **z)
+{
+        *y = &arr[width * height];
+        *z = &arr[2 * width * height];
+
+}
+
 static inline double *coordinates_rectangular(int width, int height,
                                               double pixel_w, double pixel_h)
 {
         int i;
         int j;
-        double *arr = malloc(width * height * 3 * sizeof(*arr));
-        double *x = &arr[0];
-        double *y = &arr[width * height];
-        double *z = &arr[2 * width * height];
+        double *arr = malloc_coordinates_for_2d(width, height);
+        double *y, *z;
+
+        y_z(arr, width, height, &y, &z);
 
         for(j=0; j<height; ++j){
                 for(i=0; i<width; ++i){
                         int w = i + j * width;
 
-                        /* in the hkl coordinates */
-                        x[w] = 0.0;
                         y[w] = - (i + 0.5) * pixel_w;
                         z[w] = (j + 0.5) * pixel_h;
                 }
+        }
+
+        return arr;
+}
+
+static inline double imxpad_line(int i, int chip, double s)
+{
+        div_t q = div(i, chip);
+
+        if (i == 0){
+                return s / 2;
+        }
+        if (i == 1){
+                return s * 3.0 / 2.0;
+        }
+        if (q.rem == 0){
+                return s * (i + 3 * q.quot - 0.25);
+        }
+        if (q.rem <= (chip - 2)) {
+                return s * (i + 3 * q.quot + 0.5);
+        }
+        if (q.rem <= (chip - 1)) {
+                return s * (i + 3 * q.quot + 2.5);
+        }
+        return NAN;
+}
+
+static inline void replicate_line(double *arr, int len, int n)
+{
+        for(int i=1; i<n; ++i){
+                memcpy(&arr[i*len], arr, len * sizeof(*arr));
+        }
+}
+
+
+static inline void fill_line(double *line, int width, double val)
+{
+        for(int i=0; i<width; ++i)
+                line[i] = val;
+}
+
+double *hkl_binoculars_detector_2d_imxpad_s140(void)
+{
+        int i;
+        int width;
+        int height;
+        double *arr, *y, *z;
+        double s = 1.3e-6;
+        double chip_w = 80;
+        double chip_h = 120;
+
+        imxpad_s140_size(&width, &height);
+        arr = malloc_coordinates_for_2d(width, height);
+
+        y_z(arr, width, height, &y, &z);
+
+        /* y */
+        for(i=0; i<width; ++i){
+                y[i] = - imxpad_line(i, chip_w, s);
+        }
+        replicate_line(y, width, height);
+
+        /* z */
+        for(i=0; i<height; ++i){
+                fill_line(&z[i * width], width,
+                          imxpad_line(i, chip_h, s));
         }
 
         return arr;
