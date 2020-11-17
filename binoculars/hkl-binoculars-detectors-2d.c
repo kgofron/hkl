@@ -25,63 +25,73 @@
 #include "hkl-vector-private.h"
 
 
+/**********/
+/* macros */
+/**********/
+
+#define shape_size(shape) (shape).width * (shape).height
+#define item_offset(shape, i, j) i + j * (shape).width
+
+#define detector_width(detector) (detector).shape.width
+#define detector_height(detector) (detector).shape.height
+#define detector_size(detector) shape_size((detector).shape)
+#define detector_row(arr, detector, i) &arr[(i) * detector_width((detector))]
+
+#define pixel_offset(detector, i, j) item_offset((detector).shape, i, j)
+
+#define row_replicate(row, width, n) do{                                \
+                for(int i=1; i<(n); ++i){                               \
+                        memcpy(&(row)[i * (width)], (row), (width) * sizeof(*(row))); \
+                }                                                       \
+        } while(0)
+
+#define row_fill(row, width, val) do{             \
+                for(int i=0; i<(width); ++i){     \
+                        (row)[i] = (val);         \
+                }                                 \
+        } while(0)
+
+#define malloc_detector_coordinates(arr, detector) do{                  \
+                (arr) = malloc(3 * detector_size(detector) * sizeof(*(arr))); \
+                /* x set to zero for all 2d detectors */                \
+                memset((arr), 0, detector_size(detector) * sizeof(*(arr))); \
+        } while (0)
+
+#define x_coordinates(arr, detector) &arr[0 * detector_size(detector)]
+#define y_coordinates(arr, detector) &arr[1 * detector_size(detector)]
+#define z_coordinates(arr, detector) &arr[2 * detector_size(detector)]
+
+#define calloc_detector_mask(arr, detector) do{                         \
+                arr = calloc(detector_size(detector), sizeof(uint8_t)); \
+        } while(0)
+
+/*************/
 /* detectors */
+/*************/
 
-static inline void imxpad_s140_size(int *width, int *height)
-{
-        *width = 560;
-        *height = 240;
-}
+struct shape_t {
+        int width;
+        int height;
+};
 
-static inline void xpad_flat_corrected_size(int *width, int *height)
-{
-        *width = 576;
-        *height = 1154;
-}
+struct rectangular_t {
+        struct shape_t shape;
+        double pixel_w;
+        double pixel_h;
+};
 
+static struct rectangular_t xpad_flat_corrected = {{576, 1154}, 1.3e-6, 1.3e-6};
+
+static struct imxpad_s140_t {
+        struct shape_t shape;
+} imxpad_s140 = {{560, 240}};
+
+
+/***************/
 /* coordinates */
+/***************/
 
-static inline double *malloc_coordinates_for_2d(int width, int height)
-{
-        double *arr = malloc(3 * height * width * sizeof(double));
-
-        /* x set to zero for all 2d detectors */
-        memset(arr, 0, height * width * sizeof(*arr));
-
-        return arr;
-}
-
-static inline void y_z(double *arr, int width, int height,
-                       double **y, double **z)
-{
-        *y = &arr[width * height];
-        *z = &arr[2 * width * height];
-
-}
-
-static inline double *coordinates_rectangular(int width, int height,
-                                              double pixel_w, double pixel_h)
-{
-        int i;
-        int j;
-        double *arr = malloc_coordinates_for_2d(width, height);
-        double *y, *z;
-
-        y_z(arr, width, height, &y, &z);
-
-        for(j=0; j<height; ++j){
-                for(i=0; i<width; ++i){
-                        int w = i + j * width;
-
-                        y[w] = - (i + 0.5) * pixel_w;
-                        z[w] = (j + 0.5) * pixel_h;
-                }
-        }
-
-        return arr;
-}
-
-static inline double imxpad_line(int i, int chip, double s)
+static inline double imxpad_pixel_position(int i, int chip, double s)
 {
         div_t q = div(i, chip);
 
@@ -103,123 +113,118 @@ static inline double imxpad_line(int i, int chip, double s)
         return NAN;
 }
 
-#define row_replicate(row, width, n) do{                                \
-                for(int i=1; i<(n); ++i){                               \
-                        memcpy(&(row)[i * (width)], (row), (width) * sizeof(*(row))); \
-                }                                                       \
-        } while(0)
-
-
-#define row_fill(row, width, val) do{             \
-                for(int i=0; i<(width); ++i){     \
-                        (row)[i] = (val);         \
-                }                                 \
-        } while(0)
-
 double *hkl_binoculars_detector_2d_imxpad_s140(void)
 {
         int i;
-        int width;
-        int height;
-        double *arr, *y, *z;
+        int width = detector_width(imxpad_s140);
+        int height = detector_height(imxpad_s140);
+        double *arr, *z, *row;
         double s = 1.3e-6;
         double chip_w = 80;
         double chip_h = 120;
 
-        imxpad_s140_size(&width, &height);
-        arr = malloc_coordinates_for_2d(width, height);
-
-        y_z(arr, width, height, &y, &z);
+        malloc_detector_coordinates(arr, imxpad_s140);
 
         /* y */
+        row = y_coordinates(arr, imxpad_s140);
         for(i=0; i<width; ++i){
-                y[i] = - imxpad_line(i, chip_w, s);
+                row[i] = - imxpad_pixel_position(i, chip_w, s);
         }
-        row_replicate(y, width, height);
+        row_replicate(row, width, height);
 
         /* z */
+        z = z_coordinates(arr, imxpad_s140);
         for(i=0; i<height; ++i){
-                row_fill(&z[i * width], width,
-                         imxpad_line(i, chip_h, s));
+                row = detector_row(z, imxpad_s140, i);
+                row_fill(row, width, imxpad_pixel_position(i, chip_h, s));
         }
 
         return arr;
 }
+
+static inline double *coordinates_rectangular(struct rectangular_t detector)
+{
+        double *arr;
+        double *y, *z;
+
+        malloc_detector_coordinates(arr, detector);
+
+        y = y_coordinates(arr, detector);
+        z = z_coordinates(arr, detector);
+
+        for(int j=0; j<detector_height(detector); ++j){
+                for(int i=0; i<detector_width(detector); ++i){
+                        int w = pixel_offset(detector, i, j);
+
+                        y[w] = - (0.5 + i) * detector.pixel_w;
+                        z[w] =   (0.5 + j) * detector.pixel_h;
+                }
+        }
+
+        return arr;
+}
+
 
 double *hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected(void)
 {
-        int width;
-        int height;
-
-        xpad_flat_corrected_size(&width, &height);
-
-        return coordinates_rectangular(width, height, 1.3e-6, 1.3e-6);
+        return coordinates_rectangular(xpad_flat_corrected);
 }
 
+/*********/
 /* masks */
-
-static inline uint8_t *calloc_mask(int width, int height)
-{
-        return calloc(width * height, sizeof(uint8_t));
-
-}
+/*********/
 
 extern uint8_t *hkl_binoculars_detector_2d_mask_xpad_flat_corrected(void)
 {
-        int i;
-        int width;
-        int height;
         uint8_t *arr;
 
-        xpad_flat_corrected_size(&width, &height);
-
-        arr = calloc_mask(width, height);
+        calloc_detector_mask(arr, xpad_flat_corrected);
 
         /* now mask all the strange row */
-        for(i=118; i<=1006; i=i+148){
-                uint8_t *row = &arr[i * width];
+        for(int i=118; i<=1006; i=i+148){
+                uint8_t *row = detector_row(arr, xpad_flat_corrected, i);
 
-                row_fill(row, width, 1);
-                row_replicate(row, width, 30);
+                row_fill(row, detector_width(xpad_flat_corrected), 1);
+                row_replicate(row, detector_width(xpad_flat_corrected), 30);
         }
 
         return arr;
 }
 
+/***************/
 /* Calibration */
+/***************/
 
-static inline void hkl_binoculars_detector_2d_coordinates_translate(
-        double *arr, int width, int height,
-        double dx, double dy, double dz)
+static inline void translate_coordinates(double *arr,
+                                         struct shape_t shape,
+                                         double dx, double dy, double dz)
 {
-        int i;
-        double *x = &arr[0];
-        double *y = &arr[height * width];
-        double *z = &arr[2 * height * width];
+        double *x = &arr[0 * shape_size(shape)];
+        double *y = &arr[1 * shape_size(shape)];
+        double *z = &arr[2 * shape_size(shape)];
 
-        for(i=0; i<width*height; ++i){
+        for(int i=0; i<shape_size(shape); ++i){
                 x[i] += dx;
                 y[i] += dy;
                 z[i] += dz;
         }
 }
 
-static inline void hkl_binoculars_detector_2d_coordinates_rotate(
-        double *arr, int width, int height,
-        double angle, double axis_x, double axis_y, double axis_z)
+static inline void rotate_coordinates(double *arr,
+                                      struct shape_t shape,
+                                      double angle,
+                                      double axis_x, double axis_y, double axis_z)
 {
-        int i;
-        int n = height * width;
-        double *x = &arr[n * 0];
-        double *y = &arr[n * 1];
-        double *z = &arr[n * 2];
+        double *x = &arr[0 * shape_size(shape)];
+        double *y = &arr[1 * shape_size(shape)];
+        double *z = &arr[2 * shape_size(shape)];
 
         HklVector axis = {{axis_x, axis_y, axis_z}};
         HklQuaternion q;
 
         hkl_quaternion_init_from_angle_and_axe(&q, angle, &axis);
 
-        for(i=0; i<n; ++i){
+        for(int i=0; i<shape_size(shape); ++i){
                 HklVector v= {{x[i], y[i], z[i]}};
 
                 hkl_vector_rotated_quaternion(&v, &q);
@@ -234,10 +239,14 @@ void hkl_binoculars_detector_2d_sixs_calibration(double *arr,
                                                  int ix0, int iy0, double sdd,
                                                  double detrot)
 {
-        double dx = sdd;
-        double dy = -arr[    width * height + ix0 + iy0 *width];
-        double dz = -arr[2 * width * height + ix0 + iy0 *width];
+        struct shape_t shape = {width, height};
+        double *y = &arr[1 * shape_size(shape)];
+        double *z = &arr[2 * shape_size(shape)];
 
-        hkl_binoculars_detector_2d_coordinates_translate(arr, width, height, dx, dy, dz);
-        hkl_binoculars_detector_2d_coordinates_rotate(arr, width, height, detrot, 1, 0, 0);
+        double dx = sdd;
+        double dy = -y[item_offset(shape, ix0, iy0)];
+        double dz = -z[item_offset(shape, ix0, iy0)];
+
+        translate_coordinates(arr, shape, dx, dy, dz);
+        rotate_coordinates(arr, shape, detrot, 1, 0, 0);
 }
