@@ -103,19 +103,18 @@ static inline double imxpad_line(int i, int chip, double s)
         return NAN;
 }
 
-static inline void replicate_line(double *arr, int len, int n)
-{
-        for(int i=1; i<n; ++i){
-                memcpy(&arr[i*len], arr, len * sizeof(*arr));
-        }
-}
+#define row_replicate(row, width, n) do{                                \
+                for(int i=1; i<(n); ++i){                               \
+                        memcpy(&(row)[i * (width)], (row), (width) * sizeof(*(row))); \
+                }                                                       \
+        } while(0)
 
 
-static inline void fill_line(double *line, int width, double val)
-{
-        for(int i=0; i<width; ++i)
-                line[i] = val;
-}
+#define row_fill(row, width, val) do{             \
+                for(int i=0; i<(width); ++i){     \
+                        (row)[i] = (val);         \
+                }                                 \
+        } while(0)
 
 double *hkl_binoculars_detector_2d_imxpad_s140(void)
 {
@@ -136,12 +135,12 @@ double *hkl_binoculars_detector_2d_imxpad_s140(void)
         for(i=0; i<width; ++i){
                 y[i] = - imxpad_line(i, chip_w, s);
         }
-        replicate_line(y, width, height);
+        row_replicate(y, width, height);
 
         /* z */
         for(i=0; i<height; ++i){
-                fill_line(&z[i * width], width,
-                          imxpad_line(i, chip_h, s));
+                row_fill(&z[i * width], width,
+                         imxpad_line(i, chip_h, s));
         }
 
         return arr;
@@ -159,7 +158,7 @@ double *hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected(void)
 
 /* masks */
 
-static inline uint8_t *mask_default(int width, int height)
+static inline uint8_t *calloc_mask(int width, int height)
 {
         return calloc(width * height, sizeof(uint8_t));
 
@@ -167,23 +166,21 @@ static inline uint8_t *mask_default(int width, int height)
 
 extern uint8_t *hkl_binoculars_detector_2d_mask_xpad_flat_corrected(void)
 {
-        int i, j, k;
+        int i;
         int width;
         int height;
         uint8_t *arr;
 
         xpad_flat_corrected_size(&width, &height);
 
-        arr = mask_default(width, height);
+        arr = calloc_mask(width, height);
 
-        /* now mask all the strange pixels */
+        /* now mask all the strange row */
         for(i=118; i<=1006; i=i+148){
-                for(j=0; j<30; ++j){
-                        uint8_t *y = &arr[(i + j) * width];
-                        for(k=0; k<width; ++k)
-                                y[k] = 1;
-                }
+                uint8_t *row = &arr[i * width];
 
+                row_fill(row, width, 1);
+                row_replicate(row, width, 30);
         }
 
         return arr;
