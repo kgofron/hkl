@@ -253,7 +253,7 @@ configRange = listWithSeparator "-" number'
 detector :: FieldValue (Detector Hkl DIM2)
 detector = FieldValue
            { fvParse = parseDetector2D . strip . uncomment
-           , fvEmit = \(Detector2D _ name) -> pack name
+           , fvEmit = \(Detector2D _ name _) -> pack name
            }
 
 centralPixel :: FieldValue (Int, Int)
