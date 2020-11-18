@@ -108,6 +108,20 @@ static struct rectangular_t xpad_flat_corrected = {{576, 1154}, 1.3e-6, 1.3e-6};
 const char *name_get_imxpad_s140(void) { return "ImXpadS140"; }
 const char *name_get_xpad_flat_corrected(void) { return "XpadFlatCorrected"; }
 
+/* shape */
+
+void shape_get_imxpad_s140(int *width, int *height)
+{
+        *width = detector_width(imxpad_s140);
+        *height = detector_height(imxpad_s140);
+}
+
+void shape_get_xpad_flat_corrected(int *width, int *height)
+{
+        *width = detector_width(xpad_flat_corrected);
+        *height = detector_height(xpad_flat_corrected);
+}
+
 /* coordinates */
 
 static inline double imxpad_coordinates_pattern(int i, int chip, double s)
@@ -321,6 +335,7 @@ struct _HklBinocularsDetector2DOperations {
 	const char * (*name_get)(void);
 	double *     (*coordinates_get)(void);
 	uint8_t *    (*mask_get)(void);
+        void         (*shape_get)(int *width, int *height);
 };
 
 /*****************************/
@@ -329,13 +344,14 @@ struct _HklBinocularsDetector2DOperations {
 
 #define OPERATION(name_, detector_) .name_ = name_ ## _ ##  detector_
 
-#define DECLARE_DETECTOR_OPERATIONS(detector_)                          \
+#define DECLARE_DETECTOR_OPERATIONS(detector_)\
         {                                                               \
                 OPERATION(name_get, detector_),                         \
-                OPERATION(coordinates_get, detector_),                  \
-                OPERATION(mask_get, detector_),                         \
-                /* Add new operations here */                           \
-        }
+                        OPERATION(coordinates_get, detector_),          \
+                        OPERATION(mask_get, detector_),                 \
+                        OPERATION(shape_get, detector_),                \
+                        /* Add new operations here */                   \
+                        }
 
 static const HklBinocularsDetector2DOperations ops[] = {
         DECLARE_DETECTOR_OPERATIONS(imxpad_s140),
@@ -352,10 +368,16 @@ const char *hkl_binoculars_detector_2d_name_get(HklBinocularsDetectorEnum n){
         return ops[n].name_get();
 };
 
-double *hkl_binouclars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n){
+void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnum n,
+                                          int *width, int *height)
+{
+        ops[n].shape_get(width, height);
+}
+
+double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n){
         return ops[n].coordinates_get();
 };
 
-uint8_t *hkl_binouclars_detector_2d_mask_get(HklBinocularsDetectorEnum n){
+uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n){
         return ops[n].mask_get();
 };
