@@ -9,12 +9,16 @@
 
 module Hkl.Detector
        ( Detector(..)
-       , SomeDetector(..)
+       , Hkl
        , PyFAI
+       , SomeDetector(..)
        , ZeroD
        , coordinates
+       , defaultDetector
+       , detector2DName
        , getDetectorDefaultMask
        , getPixelsCoordinates
+       , parseDetector2D
        , shape
        ) where
 
@@ -22,22 +26,26 @@ import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM0, DIM2, DIM3, Z (..),
                                                     ix2, ix3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr)
+import           Data.List                         (elemIndex)
 import           Data.Text                         (Text, unpack)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Word                         (Word8)
+import           Foreign.C.String                  (CString, peekCString)
 import           Foreign.C.Types                   (CBool, CDouble (..),
                                                     CInt (..))
 import           Foreign.ForeignPtr                (castForeignPtr,
                                                     newForeignPtr)
-import           Foreign.Marshal.Alloc             (finalizerFree)
+import           Foreign.Marshal.Alloc             (alloca, finalizerFree)
 import           Foreign.Ptr                       (Ptr)
+import           Foreign.Storable                  (peek)
+import           GHC.IO.Unsafe                     (unsafePerformIO)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
                                                     radian, (/~))
 
 import           Hkl.PyFAI.Npt                     (NptPoint (NptPoint))
-import           Hkl.Python
 
 data PyFAI deriving (Eq, Show)
+data Hkl deriving (Eq, Show)
 data ZeroD deriving (Eq, Show)
 
 data Detector a sh where
@@ -45,9 +53,53 @@ data Detector a sh where
   Xpad32 :: Detector PyFAI DIM2
   XpadFlatCorrected :: Detector PyFAI DIM2
   ZeroD :: Detector ZeroD DIM0
+  Detector2D :: CInt -> Detector Hkl DIM2
 
 deriving instance Show (Detector a sh)
 deriving instance Eq (Detector a sh)
+
+defaultDetector ::Detector Hkl DIM2
+defaultDetector = (Detector2D 0)
+
+detector2DName :: Detector Hkl DIM2 -> String
+detector2DName (Detector2D n) =
+    unsafePerformIO $ peekCString
+        =<< hkl_binoculars_detector_2d_name_get n
+
+foreign import ccall unsafe
+ "hkl-binoculars.h hkl_binoculars_detector_2d_name_get"
+ hkl_binoculars_detector_2d_name_get :: CInt -> IO CString
+
+
+detector2DShape :: Detector Hkl DIM2 -> (Int, Int)
+detector2DShape (Detector2D n) =
+    unsafePerformIO $ alloca $ \width ->
+        alloca $ \height -> do
+          hkl_binoculars_detector_2d_shape_get n width height
+          w <- peek width
+          h <- peek height
+          return (fromEnum w, fromEnum h)
+
+foreign import ccall unsafe
+ "hkl-binoculars.h hkl_binoculars_detector_2d_shape_get"
+ hkl_binoculars_detector_2d_shape_get :: CInt -- HklBinocularsDetector2DEnum n
+                                      -> Ptr CInt -- int *width
+                                      -> Ptr CInt -- int *height
+                                      -> IO ()
+
+allDetector2D :: [String]
+allDetector2D =
+    let n = unsafePerformIO $ hkl_binoculars_detector_2d_number_of_detectors
+    in [detector2DName (Detector2D i) | i <- [0..n-1]]
+
+foreign import ccall unsafe
+  "hkl-binoculars.h hkl_binoculars_detector_2d_number_of_detectors"
+  hkl_binoculars_detector_2d_number_of_detectors :: IO CInt
+
+parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
+parseDetector2D t = case (unpack t) `elemIndex` allDetector2D of
+                      (Just n) -> Right (Detector2D (toEnum  n))
+                      Nothing  -> Left ("Unsupported " ++ unpack t ++ " detector type" ++ unwords allDetector2D)
 
 --  SomeDetector
 
@@ -64,6 +116,8 @@ shape ImXpadS140        = ix2 240 560 -- y x
 shape Xpad32            = ix2 960 560
 shape XpadFlatCorrected = ix2 1154 576
 shape ZeroD             = Z
+shape det@(Detector2D _) = let (w, h) = detector2DShape det
+                           in ix2 h w
 
 --  Xpad Family
 
@@ -123,74 +177,23 @@ coordinates XpadFlatCorrected (NptPoint x y) =
              , x * 130e-6
              , 0]
 
-toPyFAIDetectorName :: Detector a DIM2 -> String
-toPyFAIDetectorName ImXpadS140        = "imxpads140"
-toPyFAIDetectorName Xpad32            = "xpad_flat"
-toPyFAIDetectorName XpadFlatCorrected = undefined
-
-getPixelsCoordinates :: Detector a DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
-getPixelsCoordinates det (ix0, iy0) sdd detrot = do
-  case det of
-    XpadFlatCorrected -> do
-             parr <- hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected
-             hkl_binoculars_detector_2d_sixs_calibration parr 576 1154 (toEnum ix0) (toEnum iy0) (CDouble (sdd /~ meter)) (CDouble (detrot /~ radian))
-             arr <- newForeignPtr finalizerFree parr
-             return $ fromForeignPtr (ix3 3 1154 576) (castForeignPtr arr)
-    _ -> extractNumpyArray =<< pyfaiCoordinates (toPyFAIDetectorName det) ix0 iy0 (sdd /~ meter) (detrot /~ radian)
-      where
-        pyfaiCoordinates :: String -> Int -> Int -> Double -> Double -> IO (PyObject (Array F DIM3 Double))
-        pyfaiCoordinates = defVVVVVO [str|
-from math import cos, sin
-from numpy import array, ascontiguousarray, copy, ones, tensordot
-from pyFAI.detectors import ALL_DETECTORS
-
-def M(theta, u):
-    """
-    :param theta: the axis value in radian
-    :type theta: float
-    :param u: the axis vector [x, y, z]
-    :type u: [float, float, float]
-    :return: the rotation matrix
-    :rtype: numpy.ndarray (3, 3)
-    """
-    c = cos(theta)
-    one_minus_c = 1 - c
-    s = sin(theta)
-    return array([[c + u[0]**2 * one_minus_c,
-                   u[0] * u[1] * one_minus_c - u[2] * s,
-                   u[0] * u[2] * one_minus_c + u[1] * s],
-                  [u[0] * u[1] * one_minus_c + u[2] * s,
-                   c + u[1]**2 * one_minus_c,
-                   u[1] * u[2] * one_minus_c - u[0] * s],
-                  [u[0] * u[2] * one_minus_c - u[1] * s,
-                   u[1] * u[2] * one_minus_c + u[0] * s,
-                   c + u[2]**2 * one_minus_c]])
-
-def export(name, ix0, iy0, sdd, rot):
-        # works only for flat detector.
-        detector = ALL_DETECTORS[name]()
-        y, x, _ = detector.calc_cartesian_positions()
-        y0 = y[iy0, ix0]
-        x0 = x[iy0, ix0]
-        z = ones(x.shape) * -1 * sdd
-        # return converted to the hkl library coordinates
-        # x -> -y
-        # y -> z
-        # z -> -x
-        pixels_ = array([-z, -(x - x0), (y - y0)])
-        # rotate the detector in the hkl basis
-        P = M(rot, [1, 0, 0])
-        pixels = tensordot(P, pixels_, axes=1)
-        return copy(ascontiguousarray(pixels))
-|]
+getPixelsCoordinates :: Detector Hkl DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
+getPixelsCoordinates det@(Detector2D n) (ix0, iy0) sdd detrot = do
+  parr <- hkl_binoculars_detector_2d_coordinates_get n
+  let (width, height) = detector2DShape det
+  hkl_binoculars_detector_2d_sixs_calibration n parr (toEnum width) (toEnum height) (toEnum ix0) (toEnum iy0) (CDouble (sdd /~ meter)) (CDouble (detrot /~ radian))
+  arr <- newForeignPtr finalizerFree parr
+  return $ fromForeignPtr (ix3 3 height width) (castForeignPtr arr)
 
 foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected"
- hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected :: IO (Ptr CDouble)
+ "hkl-binoculars.h hkl_binoculars_detector_2d_coordinates_get"
+ hkl_binoculars_detector_2d_coordinates_get :: CInt -- HklBinocularsDetector2DEnum n
+                                            -> IO (Ptr CDouble)
 
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_sixs_calibration"
- hkl_binoculars_detector_2d_sixs_calibration :: Ptr (CDouble) -- double *arr
+ hkl_binoculars_detector_2d_sixs_calibration :: CInt -- HklBinocularsDetector2DEnum n
+                                             -> Ptr (CDouble) -- double *arr
                                              -> CInt -- int width
                                              -> CInt -- int height
                                              -> CInt -- int ix0
@@ -199,39 +202,13 @@ foreign import ccall unsafe
                                              -> CDouble -- double detrot
                                              -> IO ()
 
-
 getDetectorDefaultMask :: Detector a DIM2 -> Maybe Text -> IO (Array F DIM2 Word8)
-getDetectorDefaultMask det mfn = do
-  let fn = case mfn of
-             (Just fn') -> unpack fn'
-             Nothing    -> ""
-  case det of
-    XpadFlatCorrected -> do
-             arr <- newForeignPtr finalizerFree
-                 =<< hkl_binoculars_detector_2d_mask_xpad_flat_corrected
-             return $ fromForeignPtr (ix2 1154 575) (castForeignPtr arr)
-    _                 -> extractNumpyArray =<< pyfaiMask (toPyFAIDetectorName det) fn
-      where
-        pyfaiMask :: String -> String -> IO (PyObject (Array F DIM2 Word8))
-        pyfaiMask = defVVO [str|
-import fabio
-from numpy import ascontiguousarray, bitwise_or, bool, copy, load
-from pyFAI.detectors import ALL_DETECTORS
-
-def export(name, fnmask):
-    detector = ALL_DETECTORS[name]()
-    mask = detector.mask
-    if mask is not None:
-        mask = mask.astype(bool)
-    else:
-        mask = zeros(detector.max_shape).astype(bool)
-    if fnmask != "":
-        mask = bitwise_or(mask,
-                          fabio.open(fnmask).data)
-
-    return copy(ascontiguousarray(mask))
-|]
+getDetectorDefaultMask det@(Detector2D n)  _ = do
+  arr <- hkl_binoculars_detector_2d_mask_get n >>= newForeignPtr finalizerFree
+  let (width, height) = detector2DShape det
+  return $ fromForeignPtr (ix2 height width) (castForeignPtr arr)
 
 foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_mask_xpad_flat_corrected"
- hkl_binoculars_detector_2d_mask_xpad_flat_corrected :: IO (Ptr CBool)
+ "hkl-binoculars.h hkl_binoculars_detector_2d_mask_get"
+ hkl_binoculars_detector_2d_mask_get :: CInt -- HklBinocularsDetector2DEnum n
+                                     -> IO (Ptr CBool)

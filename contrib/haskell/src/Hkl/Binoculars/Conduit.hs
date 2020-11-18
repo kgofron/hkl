@@ -65,7 +65,7 @@ mkJobs fn h5d = do
       c = if c' >= 2 then c' - 1 else c'
   return $ mkJobs' (quot ntot c) fns ns
 
-mkJobsHklC :: LenC a => InputHkl a b -> IO [[Chunk Int FilePath]]
+mkJobsHklC :: LenC a => InputHkl a -> IO [[Chunk Int FilePath]]
 mkJobsHklC (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
 
 --  Create the Cube
@@ -289,7 +289,7 @@ instance FramesHklC HklPath where
                                    <*> pure sample))
             loop
 
-processHklC :: FramesHklC a => InputHkl a b -> IO ()
+processHklC :: FramesHklC a => InputHkl a -> IO ()
 processHklC input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
 

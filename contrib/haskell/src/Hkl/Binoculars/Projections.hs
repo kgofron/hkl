@@ -94,8 +94,8 @@ instance Show QxQyQzPath where
 
 type Resolutions = [Double]
 
-data InputQxQyQz a b =
-  InputQxQyQz { detector     :: Detector b DIM2
+data InputQxQyQz a =
+  InputQxQyQz { detector     :: Detector Hkl DIM2
               , filename     :: InputFn
               , h5dpath      :: a
               , output       :: FilePath
@@ -149,8 +149,8 @@ data HklPath = HklPath QxQyQzPath SamplePath
 
   deriving Show
 
-data InputHkl a b =
-  InputHkl { detector     :: Detector b DIM2
+data InputHkl a =
+  InputHkl { detector     :: Detector Hkl DIM2
            , filename     :: InputFn
            , h5dpath      :: a
            , output       :: FilePath

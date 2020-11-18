@@ -45,8 +45,7 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
                                                     (*~))
 import           Pipes                             (Consumer, Pipe, await, each,
                                                     runEffect, yield, (>->))
-import           Pipes.Prelude                     (drain, mapM, print, tee,
-                                                    toListM)
+import           Pipes.Prelude                     (print, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, SafeT, bracket,
                                                     runSafeT)
 
@@ -101,12 +100,13 @@ project d n f = withSpace d n $ \s -> forever $ do
 class LenP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
-mkJobsQxQyQz :: LenP a => InputQxQyQz a b -> IO [[Chunk Int FilePath]]
+mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
 mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> Detector b DIM2 -> (BinocularsConfig -> Maybe a) -> IO (InputQxQyQz a b)
-mkInputQxQyQz c d f = do
+mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> (BinocularsConfig -> Maybe a) -> IO (InputQxQyQz a)
+mkInputQxQyQz c f = do
   fs <- files c
+  let d = fromMaybe defaultDetector (_binocularsInputDetector c)
   mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
   case f c of
     (Just h5dpath') -> pure $ InputQxQyQz
@@ -124,7 +124,7 @@ mkInputQxQyQz c d f = do
                       }
     Nothing -> error "TODO"
 
-processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a b -> IO ()
+processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
 processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
   pixels <- getPixelsCoordinates det cen d r
   jobs <- mkJobsQxQyQz input
@@ -142,12 +142,13 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
-mkJobsHkl :: LenP a => InputHkl a b -> IO [[Chunk Int FilePath]]
+mkJobsHkl :: LenP a => InputHkl a -> IO [[Chunk Int FilePath]]
 mkJobsHkl (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputHkl :: FramesHklP a => BinocularsConfig -> Detector b DIM2 -> (BinocularsConfig -> Maybe a) -> IO (InputHkl a b)
-mkInputHkl c d f = do
+mkInputHkl :: FramesHklP a => BinocularsConfig -> (BinocularsConfig -> Maybe a) -> IO (InputHkl a)
+mkInputHkl c f = do
   fs <- files c
+  let d = fromMaybe defaultDetector (_binocularsInputDetector c)
   mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
   case f c of
     (Just h5dpath') -> pure $ InputHkl
@@ -166,7 +167,7 @@ mkInputHkl c d f = do
                       }
     Nothing -> error "TODO"
 
-processHkl :: FramesHklP a => InputHkl a b -> IO ()
+processHkl :: FramesHklP a => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
 

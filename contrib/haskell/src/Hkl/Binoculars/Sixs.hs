@@ -14,12 +14,9 @@
 module Hkl.Binoculars.Sixs
   (process) where
 
-import           Data.Maybe                 (fromMaybe)
-
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
-import           Hkl.Detector
 import           Hkl.H5                     hiding (File)
 
 h5dpathQxQyQz :: BinocularsConfig -> Maybe QxQyQzPath
@@ -118,14 +115,13 @@ process mf = do
   conf <- getConfig mf
   case conf of
     Right c -> do
-               let d = fromMaybe ImXpadS140 (_binocularsInputDetector c)
                case _binocularsProjectionPtype c of
                  QxQyQzProjection -> do
-                   i <- mkInputQxQyQz c d h5dpathQxQyQz
+                   i <- mkInputQxQyQz c h5dpathQxQyQz
                    print i
                    processQxQyQz i
                  HklProjection -> do
-                   i <- mkInputHkl c d h5dpathHkl
+                   i <- mkInputHkl c h5dpathHkl
                    print i
                    processHkl i
     Left e   -> print e
