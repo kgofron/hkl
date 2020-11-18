@@ -19,7 +19,6 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
-
 #include "hkl-binoculars.h"
 #include "hkl-quaternion-private.h"
 #include "hkl-vector-private.h"
@@ -28,6 +27,8 @@
 /**********/
 /* macros */
 /**********/
+
+#define wrong_detector(n) fprintf(stderr, "You requested a non existing detector %d the maximum number available is %d", n, HKL_BINOCULARS_DETECTOR_NUM_DETECTORS)
 
 #define shape_size(shape) (shape).width * (shape).height
 #define item_offset(shape, i, j) i + j * (shape).width
@@ -72,9 +73,10 @@
                 arr = calloc(detector_size(detector), sizeof(uint8_t)); \
         } while(0)
 
+
 /*************/
 /* detectors */
-/*************/
+/************/
 
 struct shape_t {
         int width;
@@ -97,9 +99,16 @@ struct imxpad_t {
 static struct imxpad_t imxpad_s140 = {{560, 240}, 80, 120, 1.3e-6};
 static struct rectangular_t xpad_flat_corrected = {{576, 1154}, 1.3e-6, 1.3e-6};
 
-/***************/
+/**************/
+/* operations */
+/**************/
+
+/* name */
+
+const char *name_get_imxpad_s140(void) { return "ImXpadS140"; }
+const char *name_get_xpad_flat_corrected(void) { return "XpadFlatCorrected"; }
+
 /* coordinates */
-/***************/
 
 static inline double imxpad_coordinates_pattern(int i, int chip, double s)
 {
@@ -123,7 +132,7 @@ static inline double imxpad_coordinates_pattern(int i, int chip, double s)
         return NAN;
 }
 
-double *hkl_binoculars_detector_2d_imxpad_s140(void)
+static inline double *coordinates_get_imxpad_s140(void)
 {
         int i;
         const struct imxpad_t imxpad = imxpad_s140;
@@ -177,17 +186,14 @@ static inline double *coordinates_rectangular(struct rectangular_t detector)
         return arr;
 }
 
-
-double *hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected(void)
+static inline double *coordinates_get_xpad_flat_corrected(void)
 {
         return coordinates_rectangular(xpad_flat_corrected);
 }
 
-/*********/
 /* masks */
-/*********/
 
-extern uint8_t *hkl_binoculars_detector_2d_mask_imxpad_s140(void)
+extern uint8_t *mask_get_imxpad_s140(void)
 {
         const struct imxpad_t imxpad = imxpad_s140;
         div_t q;
@@ -232,7 +238,7 @@ extern uint8_t *hkl_binoculars_detector_2d_mask_imxpad_s140(void)
         return arr;
 }
 
-extern uint8_t *hkl_binoculars_detector_2d_mask_xpad_flat_corrected(void)
+extern uint8_t *mask_get_xpad_flat_corrected(void)
 {
         uint8_t *arr;
 
@@ -292,7 +298,8 @@ static inline void rotate_coordinates(double *arr,
         }
 }
 
-void hkl_binoculars_detector_2d_sixs_calibration(double *arr,
+void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
+                                                 double *arr,
                                                  int width, int height,
                                                  int ix0, int iy0, double sdd,
                                                  double detrot)
@@ -308,3 +315,47 @@ void hkl_binoculars_detector_2d_sixs_calibration(double *arr,
         translate_coordinates(arr, shape, dx, dy, dz);
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
 }
+
+typedef struct _HklBinocularsDetector2DOperations HklBinocularsDetector2DOperations;
+struct _HklBinocularsDetector2DOperations {
+	const char * (*name_get)(void);
+	double *     (*coordinates_get)(void);
+	uint8_t *    (*mask_get)(void);
+};
+
+/*****************************/
+/* public API implementation */
+/*****************************/
+
+#define OPERATION(name_, detector_) .name_ = name_ ## _ ##  detector_
+
+#define DECLARE_DETECTOR_OPERATIONS(detector_)                          \
+        {                                                               \
+                OPERATION(name_get, detector_),                         \
+                OPERATION(coordinates_get, detector_),                  \
+                OPERATION(mask_get, detector_),                         \
+                /* Add new operations here */                           \
+        }
+
+static const HklBinocularsDetector2DOperations ops[] = {
+        DECLARE_DETECTOR_OPERATIONS(imxpad_s140),
+        DECLARE_DETECTOR_OPERATIONS(xpad_flat_corrected),
+        /* Add new detector here and keep the same order than HklBinocularsDetector2DEnum */
+};
+
+int hkl_binoculars_detector_2d_number_of_detectors(void)
+{
+        return HKL_BINOCULARS_DETECTOR_NUM_DETECTORS;
+}
+
+const char *hkl_binoculars_detector_2d_name_get(HklBinocularsDetectorEnum n){
+        return ops[n].name_get();
+};
+
+double *hkl_binouclars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n){
+        return ops[n].coordinates_get();
+};
+
+uint8_t *hkl_binouclars_detector_2d_mask_get(HklBinocularsDetectorEnum n){
+        return ops[n].mask_get();
+};

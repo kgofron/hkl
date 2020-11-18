@@ -22,18 +22,34 @@
 #include "hkl.h"
 #include "stdint.h"
 
+/****************/
 /* 2D detectors */
+/****************/
 
-extern double *hkl_binoculars_detector_2d_coordinates_xpad_flat_corrected(void);
+typedef enum _HklBinocularsDetectorEnum
+{
+	HKL_BINOCULARS_DETECTOR_IMXPAD_S140 = 0,
+	HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED,
+        /* Add new your detectors here */
+        HKL_BINOCULARS_DETECTOR_NUM_DETECTORS,
+} HklBinocularsDetectorEnum;
 
-extern uint8_t * hkl_binoculars_detector_2d_mask_xpad_flat_corrected(void);
+HKLAPI extern int hkl_binoculars_detector_2d_number_of_detectors(void);
 
-extern void hkl_binoculars_detector_2d_sixs_calibration(double *arr,
-                                                        int width, int height,
-                                                        int ix0, int iy0, double sdd,
-                                                        double detrot);
+HKLAPI extern const char *hkl_binoculars_detector_2d_name_get(HklBinocularsDetectorEnum n);
 
+HKLAPI extern double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n);
+
+HKLAPI extern uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n);
+
+HKLAPI extern void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
+                                                               double *arr,
+                                                               int width, int height,
+                                                               int ix0, int iy0, double sdd,
+                                                               double detrot);
+/********/
 /* Axis */
+/********/
 
 typedef struct _HklBinocularsAxis HklBinocularsAxis;
 struct _HklBinocularsAxis
@@ -47,10 +63,12 @@ struct _HklBinocularsAxis
 
 typedef darray(HklBinocularsAxis) darray_axis;
 
-extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
+HKLAPI extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 
 
+/*********/
 /* Space */
+/*********/
 
 typedef darray(ptrdiff_t*) darray_ptrdiff;
 
@@ -62,35 +80,37 @@ struct _HklBinocularsSpace
         darray_ptrdiff indexes_0;
 };
 
-extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
-                                                    size_t n_axes);
+HKLAPI extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
+                                                           size_t n_axes);
 
-extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
+HKLAPI extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
 
-extern void hkl_binoculars_space_q(HklBinocularsSpace *self,
-                                   const HklGeometry *geometry,
-                                   const uint16_t *image,
-                                   size_t n_pixels,
-                                   const double *pixels_coordinates,
-                                   size_t pixels_coordinates_ndim,
-                                   const size_t *pixels_coordinates_dims,
-                                   const double *resolutions,
-                                   size_t n_resolutions,
-                                   const uint8_t *mask);
+HKLAPI extern void hkl_binoculars_space_q(HklBinocularsSpace *self,
+                                          const HklGeometry *geometry,
+                                          const uint16_t *image,
+                                          size_t n_pixels,
+                                          const double *pixels_coordinates,
+                                          size_t pixels_coordinates_ndim,
+                                          const size_t *pixels_coordinates_dims,
+                                          const double *resolutions,
+                                          size_t n_resolutions,
+                                          const uint8_t *mask);
 
-extern void hkl_binoculars_space_hkl(HklBinocularsSpace *self,
-                                     const HklGeometry *geometry,
-                                     const HklSample *sample,
-                                     const uint16_t *image,
-                                     size_t n_pixels,
-                                     const double *pixels_coordinates,
-                                     size_t pixels_coordinates_ndim,
-                                     const size_t *pixels_coordinates_dims,
-                                     const double *resolutions,
-                                     size_t n_resolutions,
-                                     const uint8_t *mask);
+HKLAPI extern void hkl_binoculars_space_hkl(HklBinocularsSpace *self,
+                                            const HklGeometry *geometry,
+                                            const HklSample *sample,
+                                            const uint16_t *image,
+                                            size_t n_pixels,
+                                            const double *pixels_coordinates,
+                                            size_t pixels_coordinates_ndim,
+                                            const size_t *pixels_coordinates_dims,
+                                            const double *resolutions,
+                                            size_t n_resolutions,
+                                            const uint8_t *mask);
 
+/********/
 /* Cube */
+/********/
 
 typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube
@@ -100,17 +120,17 @@ struct _HklBinocularsCube
 	unsigned int *contributions;
 };
 
-extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
+HKLAPI extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
 
-extern HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
-						  const HklBinocularsSpace *const *spaces,
-						  size_t n_pixels, const uint16_t **imgs);
+HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
+                                                         const HklBinocularsSpace *const *spaces,
+                                                         size_t n_pixels, const uint16_t **imgs);
 
-extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
+HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
 
-extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
-                                                             size_t n_pixels,
-                                                             const uint16_t *img);
+HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
+                                                                    size_t n_pixels,
+                                                                    const uint16_t *img);
 
-extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
-                                                        const HklBinocularsCube *cube2);
+HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
+                                                               const HklBinocularsCube *cube2);
