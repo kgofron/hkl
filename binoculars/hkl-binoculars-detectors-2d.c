@@ -79,11 +79,10 @@ struct shape_t {
 };
 
 struct rectangular_t {
-        struct shape_t shape;
         double pixel_w;
         double pixel_h;
 };
-#define RECTANGULAR(name_, w_, h_, pw_, ph_) { .name=name_, .shape={w_, h_}, .rectangular={{w_, h_}, pw_, ph_} }
+#define RECTANGULAR(name_, w_, h_, pw_, ph_) { .name=name_, .shape={w_, h_}, .rectangular={pw_, ph_} }
 
 struct imxpad_t {
         struct shape_t shape;
@@ -169,8 +168,9 @@ static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
         return arr;
 }
 
-static inline double *coordinates_rectangular(struct rectangular_t detector)
+static inline double *coordinates_rectangular(HklBinocularsDetectorEnum n)
 {
+        const struct detector_t detector = detectors[n];
         double *arr;
         double *y, *z;
 
@@ -183,8 +183,8 @@ static inline double *coordinates_rectangular(struct rectangular_t detector)
                 for(int i=0; i<detector_width(detector); ++i){
                         int w = pixel_offset(detector, i, j);
 
-                        y[w] = - (0.5 + i) * detector.pixel_w;
-                        z[w] =   (0.5 + j) * detector.pixel_h;
+                        y[w] = - (0.5 + i) * detector.rectangular.pixel_w;
+                        z[w] =   (0.5 + j) * detector.rectangular.pixel_h;
                 }
         }
 
@@ -193,7 +193,7 @@ static inline double *coordinates_rectangular(struct rectangular_t detector)
 
 static inline double *coordinates_get_xpad_flat_corrected(HklBinocularsDetectorEnum n)
 {
-        return coordinates_rectangular(detectors[n].rectangular);
+        return coordinates_rectangular(n);
 }
 
 /* masks */
