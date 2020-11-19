@@ -37,7 +37,7 @@
 #define detector_height(detector) (detector).shape.height
 #define detector_shape(detector) (detector).shape
 #define detector_size(detector) shape_size((detector).shape)
-#define detector_row(arr, detector, i) &arr[(i) * detector_width((detector))]
+#define detector_row(arr, detector, i) &arr[(i) * (detector).shape.width]
 #define detector_col(arr, i) &arr[i]
 #define pixel_offset(detector, i, j) item_offset((detector).shape, i, j)
 
@@ -60,19 +60,14 @@
         } while(0)
 
 #define malloc_detector_coordinates(arr, detector) do{                  \
-                (arr) = malloc(3 * detector_size(detector) * sizeof(*(arr))); \
+                (arr) = malloc(3 * shape_size((detector).shape) * sizeof(*(arr))); \
                 /* x set to zero for all 2d detectors */                \
-                memset((arr), 0, detector_size(detector) * sizeof(*(arr))); \
+                memset((arr), 0,  shape_size((detector).shape) * sizeof(*(arr))); \
         } while (0)
 
 #define x_coordinates(arr, detector) &arr[0 * detector_size(detector)]
 #define y_coordinates(arr, detector) &arr[1 * detector_size(detector)]
 #define z_coordinates(arr, detector) &arr[2 * detector_size(detector)]
-
-#define calloc_detector_mask(arr, detector) do{                         \
-                arr = calloc(detector_size(detector), sizeof(uint8_t)); \
-        } while(0)
-
 
 /*************/
 /* detectors */
@@ -97,9 +92,6 @@ struct imxpad_t {
         double pixel_size;
 };
 #define IMXPAD(name_, w_, h_, cw_, ch_, ps_) { .name=name_, .shape={w_, h_}, .imxpad={{w_, h_}, cw_, ch_, ps_} }
-
-static struct imxpad_t imxpad_s140 = {{560, 240}, 80, 120, 1.3e-6};
-static struct rectangular_t xpad_flat_corrected = {{576, 1154}, 1.3e-6, 1.3e-6};
 
 struct detector_t {
         const char *name;
@@ -146,15 +138,17 @@ static inline double imxpad_coordinates_pattern(int i, int chip, double s)
 static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
 {
         int i;
-        const struct imxpad_t imxpad = imxpad_s140;
-        int width = detector_width(imxpad);
-        int height = detector_height(imxpad);
+        const struct detector_t detector = detectors[n];
+        const struct imxpad_t imxpad = detector.imxpad;
+
+        int width = detector.shape.width;
+        int height = detector.shape.height;
         double *arr, *z, *row;
 
-        malloc_detector_coordinates(arr, imxpad);
+        malloc_detector_coordinates(arr, detector);
 
         /* y */
-        row = y_coordinates(arr, imxpad);
+        row = y_coordinates(arr, detector);
         for(i=0; i<width; ++i){
                 row[i] = - imxpad_coordinates_pattern(i,
                                                       imxpad.chip_w,
@@ -163,7 +157,7 @@ static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
         replicate_row(row, imxpad.shape, height);
 
         /* z */
-        z = z_coordinates(arr, imxpad);
+        z = z_coordinates(arr, detector);
         for(i=0; i<height; ++i){
                 row = detector_row(z, imxpad, i);
                 fill_row(row, detector_shape(imxpad),
@@ -199,18 +193,16 @@ static inline double *coordinates_rectangular(struct rectangular_t detector)
 
 static inline double *coordinates_get_xpad_flat_corrected(HklBinocularsDetectorEnum n)
 {
-        return coordinates_rectangular(xpad_flat_corrected);
+        return coordinates_rectangular(detectors[n].rectangular);
 }
 
 /* masks */
 
 extern uint8_t *mask_get_imxpad_s140(HklBinocularsDetectorEnum n)
 {
-        const struct imxpad_t imxpad = imxpad_s140;
+        const struct imxpad_t imxpad = detectors[n].imxpad;
         div_t q;
-        uint8_t *arr;
-
-        calloc_detector_mask(arr, imxpad);
+        uint8_t *arr = calloc(shape_size(detectors[n].shape), sizeof(*arr));
 
         /* now mask all the strange row */
 
@@ -251,16 +243,16 @@ extern uint8_t *mask_get_imxpad_s140(HklBinocularsDetectorEnum n)
 
 extern uint8_t *mask_get_xpad_flat_corrected(HklBinocularsDetectorEnum n)
 {
-        uint8_t *arr;
+        const struct detector_t detector = detectors[n];
 
-        calloc_detector_mask(arr, xpad_flat_corrected);
+        uint8_t *arr = calloc(shape_size(detector.shape), sizeof(*arr));
 
         /* now mask all the strange row */
         for(int i=118; i<=1006; i=i+148){
-                uint8_t *row = detector_row(arr, xpad_flat_corrected, i);
+                uint8_t *row = detector_row(arr, detector, i);
 
-                fill_row(row, detector_shape(xpad_flat_corrected), 1);
-                replicate_row(row, detector_shape(xpad_flat_corrected), 30);
+                fill_row(row, detector.shape, 1);
+                replicate_row(row, detector.shape, 30);
         }
 
         return arr;
