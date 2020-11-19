@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE ForeignFunctionInterface  #-}
 {-# LANGUAGE GADTs                     #-}
-{-# LANGUAGE QuasiQuotes               #-}
 {-# LANGUAGE StandaloneDeriving        #-}
 
 module Hkl.Detector
@@ -57,16 +56,16 @@ data Detector a sh where
 deriving instance Show (Detector a sh)
 deriving instance Eq (Detector a sh)
 
+{-# NOINLINE detectors #-}
 detectors :: [Detector Hkl DIM2]
 detectors = unsafePerformIO $ do
   nd <- hkl_binoculars_detector_2d_number_of_detectors
   mapM mkDetector [0..nd-1]
        where
          mkDetector :: CInt -> IO (Detector Hkl DIM2)
-         mkDetector n = Detector2D
-                        <$> pure n
-                        <*> (peekCString =<< hkl_binoculars_detector_2d_name_get n)
-                        <*> (alloca $ \width ->
+         mkDetector n = Detector2D n
+                        <$> (peekCString =<< hkl_binoculars_detector_2d_name_get n)
+                        <*> alloca (\width ->
                                  alloca $ \height -> do
                                    hkl_binoculars_detector_2d_shape_get n width height
                                    w <- peek width
@@ -92,7 +91,7 @@ foreign import ccall unsafe
                                       -> IO ()
 
 parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
-parseDetector2D t = case find (\(Detector2D _ n _) -> n == (unpack t)) detectors of
+parseDetector2D t = case find (\(Detector2D _ n _) -> n == unpack t) detectors of
                       (Just d) -> Right d
                       Nothing  -> Left ("Unsupported '" ++ unpack t ++ "' detector, select one of -> " ++ unwords (sort [n | (Detector2D _ n _) <- detectors]))
 
@@ -153,7 +152,7 @@ interp f p
 
 coordinates :: Detector a sh -> NptPoint -> Vector Double
 coordinates ZeroD (NptPoint 0 0) = fromList [0, 0, 0]
-coordinates ZeroD _ = error "No coordinates in a ZeroD detecteor"
+coordinates ZeroD _ = error "No coordinates in a ZeroD detector"
 
 coordinates ImXpadS140 (NptPoint x y) =
   fromList [ interp (xpadLine 120) y
@@ -187,7 +186,7 @@ foreign import ccall unsafe
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_sixs_calibration"
  hkl_binoculars_detector_2d_sixs_calibration :: CInt -- HklBinocularsDetector2DEnum n
-                                             -> Ptr (CDouble) -- double *arr
+                                             -> Ptr CDouble -- double *arr
                                              -> CInt -- int width
                                              -> CInt -- int height
                                              -> CInt -- int ix0
