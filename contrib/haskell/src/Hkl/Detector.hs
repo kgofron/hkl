@@ -77,6 +77,10 @@ defaultDetector ::Detector Hkl DIM2
 defaultDetector = head detectors
 
 foreign import ccall unsafe
+  "hkl-binoculars.h hkl_binoculars_detector_2d_number_of_detectors"
+  hkl_binoculars_detector_2d_number_of_detectors :: IO CInt
+
+foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_name_get"
  hkl_binoculars_detector_2d_name_get :: CInt -> IO CString
 
@@ -86,10 +90,6 @@ foreign import ccall unsafe
                                       -> Ptr CInt -- int *width
                                       -> Ptr CInt -- int *height
                                       -> IO ()
-
-foreign import ccall unsafe
-  "hkl-binoculars.h hkl_binoculars_detector_2d_number_of_detectors"
-  hkl_binoculars_detector_2d_number_of_detectors :: IO CInt
 
 parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
 parseDetector2D t = case find (\(Detector2D _ n _) -> n == (unpack t)) detectors of
