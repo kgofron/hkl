@@ -82,14 +82,16 @@ struct rectangular_t {
         double pixel_w;
         double pixel_h;
 };
-#define RECTANGULAR(name_, w_, h_, pw_, ph_) { .name=name_, .shape={w_, h_}, .rectangular={pw_, ph_} }
+
+#define RECTANGULAR(pixel_w_, pixel_h_) .rectangular={pixel_w_, pixel_h_}
 
 struct imxpad_t {
         int chip_w;
         int chip_h;
         double pixel_size;
 };
-#define IMXPAD(name_, w_, h_, cw_, ch_, ps_) { .name=name_, .shape={w_, h_}, .imxpad={cw_, ch_, ps_} }
+
+#define IMXPAD(chip_w_, chip_h_, pixel_size_) .imxpad={chip_w_, chip_h_, pixel_size_}
 
 struct detector_t {
         const char *name;
@@ -100,9 +102,11 @@ struct detector_t {
         };
 };
 
+#define DETECTOR(name_, width_, height_, union_) {name_, .shape={width_, height_}, union_}
+
 static struct detector_t detectors[] = {
-        IMXPAD("ImXpadS140", 560, 240, 80, 120, 1.3e-6),
-        RECTANGULAR("XpadFlatCorrected", 576, 1154, 1.3e-6, 1.3e-6),
+        DETECTOR("ImXpadS140", 560, 240, IMXPAD(80, 120, 1.3e-6)),
+        DETECTOR("XpadFlatCorrected", 576, 1154, RECTANGULAR(1.3e-6, 1.3e-6)),
 };
 
 /***********************/
