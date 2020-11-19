@@ -25,7 +25,7 @@ import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             ((:.) (..), DIM0, DIM2, DIM3,
                                                     Z (..), ix2, ix3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr)
-import           Data.List                         (find)
+import           Data.List                         (find, sort)
 import           Data.Text                         (Text, unpack)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Word                         (Word8)
@@ -95,7 +95,7 @@ foreign import ccall unsafe
 parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
 parseDetector2D t = case find (\(Detector2D _ n _) -> n == (unpack t)) detectors of
                       (Just d) -> Right d
-                      Nothing  -> Left ("Unsupported '" ++ unpack t ++ "' detector, select one of -> " ++ unwords [n | (Detector2D _ n _) <- detectors])
+                      Nothing  -> Left ("Unsupported '" ++ unpack t ++ "' detector, select one of -> " ++ unwords (sort [n | (Detector2D _ n _) <- detectors]))
 
 --  SomeDetector
 
