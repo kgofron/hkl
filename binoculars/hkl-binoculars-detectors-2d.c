@@ -85,12 +85,11 @@ struct rectangular_t {
 #define RECTANGULAR(name_, w_, h_, pw_, ph_) { .name=name_, .shape={w_, h_}, .rectangular={pw_, ph_} }
 
 struct imxpad_t {
-        struct shape_t shape;
         int chip_w;
         int chip_h;
         double pixel_size;
 };
-#define IMXPAD(name_, w_, h_, cw_, ch_, ps_) { .name=name_, .shape={w_, h_}, .imxpad={{w_, h_}, cw_, ch_, ps_} }
+#define IMXPAD(name_, w_, h_, cw_, ch_, ps_) { .name=name_, .shape={w_, h_}, .imxpad={cw_, ch_, ps_} }
 
 struct detector_t {
         const char *name;
@@ -138,7 +137,6 @@ static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
 {
         int i;
         const struct detector_t detector = detectors[n];
-        const struct imxpad_t imxpad = detector.imxpad;
 
         int width = detector.shape.width;
         int height = detector.shape.height;
@@ -150,19 +148,19 @@ static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
         row = y_coordinates(arr, detector);
         for(i=0; i<width; ++i){
                 row[i] = - imxpad_coordinates_pattern(i,
-                                                      imxpad.chip_w,
-                                                      imxpad.pixel_size);
+                                                      detector.imxpad.chip_w,
+                                                      detector.imxpad.pixel_size);
         }
-        replicate_row(row, imxpad.shape, height);
+        replicate_row(row, detector.shape, height);
 
         /* z */
         z = z_coordinates(arr, detector);
         for(i=0; i<height; ++i){
-                row = detector_row(z, imxpad, i);
-                fill_row(row, detector_shape(imxpad),
+                row = detector_row(z, detector, i);
+                fill_row(row, detector_shape(detector),
                          imxpad_coordinates_pattern(i,
-                                                    imxpad.chip_h,
-                                                    imxpad.pixel_size));
+                                                    detector.imxpad.chip_h,
+                                                    detector.imxpad.pixel_size));
         }
 
         return arr;
@@ -200,41 +198,41 @@ static inline double *coordinates_get_xpad_flat_corrected(HklBinocularsDetectorE
 
 extern uint8_t *mask_get_imxpad_s140(HklBinocularsDetectorEnum n)
 {
-        const struct imxpad_t imxpad = detectors[n].imxpad;
+        const struct detector_t detector = detectors[n];
         div_t q;
         uint8_t *arr = calloc(shape_size(detectors[n].shape), sizeof(*arr));
 
         /* now mask all the strange row */
 
-        q =  div(detector_width(imxpad), imxpad.chip_w);
+        q =  div(detector_width(detector), detector.imxpad.chip_w);
         int n_chips = q.quot;
 
         for(int chip=0; chip<n_chips; ++chip){
                 if (chip != 0){
-                        uint8_t *first = detector_col(arr, chip * imxpad.chip_w);
-                        fill_column(first, imxpad.shape, 1);
+                        uint8_t *first = detector_col(arr, chip * detector.imxpad.chip_w);
+                        fill_column(first, detector.shape, 1);
                 }
 
                 if (chip != (n_chips - 1)){
-                        uint8_t *last = detector_col(arr, (chip + 1) * imxpad.chip_w - 1);
-                        fill_column(last, imxpad.shape, 1);
+                        uint8_t *last = detector_col(arr, (chip + 1) * detector.imxpad.chip_w - 1);
+                        fill_column(last, detector.shape, 1);
                 }
         }
 
-        q = div(detector_height(imxpad), imxpad.chip_h);
+        q = div(detector_height(detector), detector.imxpad.chip_h);
         int n_modules = q.quot;
 
         for(int module=0; module<n_modules; ++module){
                 if (module != 0){
-                        uint8_t *first = detector_row(arr, imxpad,
-                                                      module * imxpad.chip_h);
-                        fill_row(first, imxpad.shape, 1);
+                        uint8_t *first = detector_row(arr, detector,
+                                                      module * detector.imxpad.chip_h);
+                        fill_row(first, detector.shape, 1);
                 }
 
                 if (module != (n_modules - 1)){
-                        uint8_t *last = detector_row(arr, imxpad,
-                                                     (module + 1) * imxpad.chip_h - 1);
-                        fill_row(last, imxpad.shape, 1);
+                        uint8_t *last = detector_row(arr, detector,
+                                                     (module + 1) * detector.imxpad.chip_h - 1);
+                        fill_row(last, detector.shape, 1);
                 }
         }
 
