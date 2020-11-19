@@ -73,9 +73,8 @@ detectors = unsafePerformIO $ do
                                    h <- peek height
                                    return $ ix2 (fromEnum h) (fromEnum w))
 
--- TODO extract this from the hkl library
 defaultDetector ::Detector Hkl DIM2
-defaultDetector = (Detector2D 0 "ImXpadS140" (ix2 240 560))
+defaultDetector = head detectors
 
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_name_get"
