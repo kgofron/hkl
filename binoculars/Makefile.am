@@ -12,6 +12,8 @@ AM_LDFLAGS = -version-info 0:0:0 \
 
 lib_LIBRARIES = libhkl-binoculars.a
 libhkl_binoculars_a_SOURCES = \
+	cnpy.cpp \
+	cnpy.h \
 	hkl-binoculars.c \
 	hkl-binoculars-detectors-2d.c \
 	$(top_builddir)/hkl/hkl-axis.c \
