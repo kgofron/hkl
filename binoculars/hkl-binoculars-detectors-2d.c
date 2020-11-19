@@ -119,20 +119,6 @@ static struct detector_t detectors[] = {
 /* specific operations */
 /***********************/
 
-/* shape */
-
-void shape_get_imxpad_s140(int *width, int *height)
-{
-        *width = detector_width(imxpad_s140);
-        *height = detector_height(imxpad_s140);
-}
-
-void shape_get_xpad_flat_corrected(int *width, int *height)
-{
-        *width = detector_width(xpad_flat_corrected);
-        *height = detector_height(xpad_flat_corrected);
-}
-
 /* coordinates */
 
 static inline double imxpad_coordinates_pattern(int i, int chip, double s)
@@ -359,7 +345,6 @@ struct _HklBinocularsDetector2DOperations {
         {                                                               \
                 OPERATION(coordinates_get, detector_),                  \
                         OPERATION(mask_get, detector_),                 \
-                        OPERATION(shape_get, detector_),                \
                         /* Add new operations here */                   \
                         }
 
@@ -381,7 +366,8 @@ const char *hkl_binoculars_detector_2d_name_get(HklBinocularsDetectorEnum n){
 void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnum n,
                                           int *width, int *height)
 {
-        ops[n].shape_get(width, height);
+        *width = detectors[n].shape.width;
+        *height = detectors[n].shape.height;
 }
 
 double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n){
