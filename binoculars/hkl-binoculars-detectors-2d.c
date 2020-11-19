@@ -115,14 +115,9 @@ static struct detector_t detectors[] = {
         RECTANGULAR("XpadFlatCorrected", 576, 1154, 1.3e-6, 1.3e-6),
 };
 
-/**************/
-/* operations */
-/**************/
-
-/* name */
-
-const char *name_get_imxpad_s140(void) { return "ImXpadS140"; }
-const char *name_get_xpad_flat_corrected(void) { return "XpadFlatCorrected"; }
+/***********************/
+/* specific operations */
+/***********************/
 
 /* shape */
 
@@ -362,8 +357,7 @@ struct _HklBinocularsDetector2DOperations {
 
 #define DECLARE_DETECTOR_OPERATIONS(detector_)\
         {                                                               \
-                OPERATION(name_get, detector_),                         \
-                        OPERATION(coordinates_get, detector_),          \
+                OPERATION(coordinates_get, detector_),                  \
                         OPERATION(mask_get, detector_),                 \
                         OPERATION(shape_get, detector_),                \
                         /* Add new operations here */                   \
@@ -381,7 +375,7 @@ int hkl_binoculars_detector_2d_number_of_detectors(void)
 }
 
 const char *hkl_binoculars_detector_2d_name_get(HklBinocularsDetectorEnum n){
-        return ops[n].name_get();
+        return detectors[n].name;
 };
 
 void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnum n,
