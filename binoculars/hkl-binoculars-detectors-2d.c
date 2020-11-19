@@ -143,7 +143,7 @@ static inline double imxpad_coordinates_pattern(int i, int chip, double s)
         return NAN;
 }
 
-static inline double *coordinates_get_imxpad_s140(void)
+static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
 {
         int i;
         const struct imxpad_t imxpad = imxpad_s140;
@@ -197,14 +197,14 @@ static inline double *coordinates_rectangular(struct rectangular_t detector)
         return arr;
 }
 
-static inline double *coordinates_get_xpad_flat_corrected(void)
+static inline double *coordinates_get_xpad_flat_corrected(HklBinocularsDetectorEnum n)
 {
         return coordinates_rectangular(xpad_flat_corrected);
 }
 
 /* masks */
 
-extern uint8_t *mask_get_imxpad_s140(void)
+extern uint8_t *mask_get_imxpad_s140(HklBinocularsDetectorEnum n)
 {
         const struct imxpad_t imxpad = imxpad_s140;
         div_t q;
@@ -249,7 +249,7 @@ extern uint8_t *mask_get_imxpad_s140(void)
         return arr;
 }
 
-extern uint8_t *mask_get_xpad_flat_corrected(void)
+extern uint8_t *mask_get_xpad_flat_corrected(HklBinocularsDetectorEnum n)
 {
         uint8_t *arr;
 
@@ -329,10 +329,10 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
 
 typedef struct _HklBinocularsDetector2DOperations HklBinocularsDetector2DOperations;
 struct _HklBinocularsDetector2DOperations {
-	const char * (*name_get)(void);
-	double *     (*coordinates_get)(void);
-	uint8_t *    (*mask_get)(void);
-        void         (*shape_get)(int *width, int *height);
+	const char * (*name_get)(HklBinocularsDetectorEnum n);
+	double *     (*coordinates_get)(HklBinocularsDetectorEnum n);
+	uint8_t *    (*mask_get)(HklBinocularsDetectorEnum n);
+        void         (*shape_get)(HklBinocularsDetectorEnum n, int *width, int *height);
 };
 
 /*****************************/
@@ -371,9 +371,9 @@ void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnum n,
 }
 
 double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n){
-        return ops[n].coordinates_get();
+        return ops[n].coordinates_get(n);
 };
 
 uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n){
-        return ops[n].mask_get();
+        return ops[n].mask_get(n);
 };
