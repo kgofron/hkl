@@ -19,8 +19,13 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+#ifndef __HKL_BINOCULARS_H__
+#define __HKL_BINOCULARS_H__
+
 #include "hkl.h"
 #include "stdint.h"
+
+G_BEGIN_DECLS
 
 /****************/
 /* 2D detectors */
@@ -44,6 +49,9 @@ HKLAPI extern void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnu
 HKLAPI extern double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n);
 
 HKLAPI extern uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n);
+
+HKLAPI extern uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
+                                                            const char *filename);
 
 HKLAPI extern void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
                                                                double *arr,
@@ -137,3 +145,7 @@ HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBin
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
                                                                const HklBinocularsCube *cube2);
+
+G_END_DECLS
+
+#endif

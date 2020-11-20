@@ -20,6 +20,7 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 #include "hkl-binoculars.h"
+#include "hkl-binoculars-cnpy-private.h"
 #include "hkl-quaternion-private.h"
 #include "hkl-vector-private.h"
 
@@ -370,4 +371,21 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n){
 
 uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n){
         return ops[n].mask_get(n);
+};
+
+uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
+                                              const char *fname)
+{
+        uint8_t *arr = NULL;
+        darray_int shape;
+
+        darray_init(shape);
+        darray_append(shape, detectors[n].shape.height);
+        darray_append(shape, detectors[n].shape.width);
+
+        arr = npy_load(fname, HKL_BINOCULARS_NPY_BOOL, &shape);
+
+        darray_free(shape);
+
+        return arr;
 };

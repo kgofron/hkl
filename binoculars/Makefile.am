@@ -12,9 +12,9 @@ AM_LDFLAGS = -version-info 0:0:0 \
 
 lib_LIBRARIES = libhkl-binoculars.a
 libhkl_binoculars_a_SOURCES = \
-	cnpy.cpp \
-	cnpy.h \
 	hkl-binoculars.c \
+	hkl-binoculars-cnpy.c \
+	hkl-binoculars-cnpy-private.h \
 	hkl-binoculars-detectors-2d.c \
 	$(top_builddir)/hkl/hkl-axis.c \
 	$(top_builddir)/hkl/hkl-geometry.c \
@@ -31,6 +31,15 @@ libhkl_binoculars_a_SOURCES = \
 
 installed_mainheaderdir = $(includedir)/hkl-@VMAJ@
 dist_installed_mainheader_DATA = hkl-binoculars.h
+
+noinst_PROGRAMS = test
+test_LDADD = \
+	$(top_builddir)/hkl/libhkl.la \
+	libhkl-binoculars.a  # for build dependency
+test_LDFLAGS = \
+	$(GLIB_LIBS) \
+	$(GSL_LIBS) \
+	-Wl,--whole-archive,libhkl-binoculars.a,--no-whole-archive
 
 # Support for GNU Flymake, in Emacs.
 check-syntax: AM_CFLAGS += -fsyntax-only -pipe

@@ -21,8 +21,9 @@
  */
 #include <stdio.h>
 #include <time.h>
-#include "hkl-binoculars.h"
+
 #include "ccan/array_size/array_size.h"
+#include "hkl-binoculars.h"
 #include "hkl-geometry-private.h"
 #include "hkl-matrix-private.h"
 #include "hkl-quaternion-private.h"
@@ -239,7 +240,7 @@ void hkl_binoculars_space_q(HklBinocularsSpace *space,
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
 	for(i=0;i<n_pixels;++i){
-                if(0 == masked[i]){
+                if(NULL == masked || 0 == masked[i]){
                         HklVector v = {{ q_x[i],
                                          q_y[i],
                                          q_z[i]}};
@@ -300,7 +301,7 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
 	for(i=0;i<n_pixels;++i){
-                if(0 == masked[i]){
+                if(NULL == masked || 0 == masked[i]){
                         HklVector v = {{h[i], k[i], l[i]}};
 
                         hkl_vector_rotated_quaternion(&v, &q_d);
