@@ -9,32 +9,34 @@
 module Hkl.Detector
        ( Detector(..)
        , Hkl
+       , Mask
        , PyFAI
        , SomeDetector(..)
        , ZeroD
        , coordinates
        , defaultDetector
+       , getDetectorMask
        , getDetectorDefaultMask
        , getPixelsCoordinates
        , parseDetector2D
        , shape
        ) where
 
-import           Data.Array.Repa                   (Array)
+import           Data.Array.Repa                   (Array, Shape)
 import           Data.Array.Repa.Index             ((:.) (..), DIM0, DIM2, DIM3,
                                                     Z (..), ix2, ix3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr)
 import           Data.List                         (find, sort)
 import           Data.Text                         (Text, unpack)
 import           Data.Vector.Storable              (Vector, fromList)
-import           Data.Word                         (Word8)
-import           Foreign.C.String                  (CString, peekCString)
+import           Foreign.C.String                  (CString, peekCString,
+                                                    withCString)
 import           Foreign.C.Types                   (CBool, CDouble (..),
                                                     CInt (..))
 import           Foreign.ForeignPtr                (castForeignPtr,
                                                     newForeignPtr)
 import           Foreign.Marshal.Alloc             (alloca, finalizerFree)
-import           Foreign.Ptr                       (Ptr)
+import           Foreign.Ptr                       (Ptr, nullPtr)
 import           Foreign.Storable                  (peek)
 import           GHC.IO.Unsafe                     (unsafePerformIO)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
@@ -55,6 +57,8 @@ data Detector a sh where
 
 deriving instance Show (Detector a sh)
 deriving instance Eq (Detector a sh)
+
+type Mask = Array F DIM2 CBool
 
 {-# NOINLINE detectors #-}
 detectors :: [Detector Hkl DIM2]
@@ -195,12 +199,29 @@ foreign import ccall unsafe
                                              -> CDouble -- double detrot
                                              -> IO ()
 
-getDetectorDefaultMask :: Detector a DIM2 -> Maybe Text -> IO (Array F DIM2 Word8)
-getDetectorDefaultMask (Detector2D n _ sh)  _ = do
-  arr <- hkl_binoculars_detector_2d_mask_get n >>= newForeignPtr finalizerFree
-  return $ fromForeignPtr sh (castForeignPtr arr)
+fromPtr :: Shape sh => sh -> Ptr a -> IO (Maybe (Array F sh a))
+fromPtr sh ptr = if ptr == nullPtr
+                 then return Nothing
+                 else do
+                   arr <- newForeignPtr finalizerFree ptr
+                   return $ Just (fromForeignPtr sh (castForeignPtr arr))
+
+getDetectorDefaultMask :: Detector a DIM2 -> IO (Maybe Mask)
+getDetectorDefaultMask (Detector2D n _ sh) =
+    fromPtr sh =<< hkl_binoculars_detector_2d_mask_get n
 
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_mask_get"
  hkl_binoculars_detector_2d_mask_get :: CInt -- HklBinocularsDetector2DEnum n
                                      -> IO (Ptr CBool)
+
+getDetectorMask :: Detector a DIM2 -> Text -> IO (Maybe Mask)
+getDetectorMask (Detector2D n _ sh)  mask =
+    withCString (unpack mask) $ \cmask ->
+        fromPtr sh =<< hkl_binoculars_detector_2d_mask_load n cmask
+
+foreign import ccall unsafe
+ "hkl-binoculars.h hkl_binoculars_detector_2d_mask_load"
+ hkl_binoculars_detector_2d_mask_load :: CInt -- HklBinocularsDetector2DEnum n
+                                      -> CString
+                                      -> IO (Ptr CBool)

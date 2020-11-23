@@ -32,11 +32,11 @@ import           Data.Array.Repa                   (Array, extent, listOfShape,
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.Typeable                     (typeOf)
-import           Data.Word                         (Word16, Word8)
-import           Foreign.C.Types                   (CSize (..))
+import           Data.Word                         (Word16)
+import           Foreign.C.Types                   (CBool, CSize (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
-import           Foreign.Ptr                       (Ptr)
+import           Foreign.Ptr                       (Ptr, nullPtr)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length)
 
 import           Prelude                           hiding (drop, mapM)
@@ -61,6 +61,11 @@ withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
 saveCube :: FilePath -> [Cube' DIM3] -> IO ()
 saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
+
+withMaybeMask :: Maybe Mask -> (Ptr CBool -> IO r) -> IO r
+withMaybeMask mm f = case mm of
+                       Nothing  -> f nullPtr
+                       (Just m) -> withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
 
 -- DetectorPath
 
@@ -103,7 +108,7 @@ data InputQxQyQz a =
               , centralPixel :: (Int, Int)  -- x, y
               , sdd'         :: Length Double  -- sample to detector distance
               , detrot'      :: Angle Double
-              , mask         :: Array F DIM2 Word8
+              , mask         :: Maybe Mask
               }
   deriving Show
 
@@ -115,14 +120,14 @@ data DataFrameQxQyQz
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
-spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mask' space (DataFrameQxQyQz _ g img) =
+spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
+spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img) =
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withArrayLen rs $ \nr r ->
     withPixelsDims pixels $ \ndim dims ->
-    withForeignPtr (toForeignPtr mask') $ \mask'' ->
+    withMaybeMask mmask' $ \ mask'' ->
     withForeignPtr img $ \i ->
     withForeignPtr (spaceHklPointer space) $ \pSpace -> do
       {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q pSpace geometry i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
@@ -159,7 +164,7 @@ data InputHkl a =
            , sdd'         :: Length Double  -- sample to detector distance
            , detrot'      :: Angle Double
            , config       :: BinocularsConfig
-           , mask         :: Array F DIM2 Word8
+           , mask         :: Maybe Mask
            }
   deriving Show
 
@@ -173,15 +178,15 @@ data DataFrameHkl a
       deriving Show
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Array F DIM2 Word8 -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mask' space (DataFrameHkl _ img g samp) = do
+spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
+spaceHkl config' det pixels rs mmask' space (DataFrameHkl _ img g samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->
       withSample sample' $ \sample ->
       withForeignPtr (toForeignPtr pixels) $ \pix ->
       withArrayLen rs $ \nr r ->
-      withForeignPtr (toForeignPtr mask') $ \mask'' ->
+      withMaybeMask mmask' $ \ mask'' ->
       withPixelsDims pixels $ \ndim dims ->
       withForeignPtr img $ \i ->
       withForeignPtr (spaceHklPointer space) $ \pSpace -> do

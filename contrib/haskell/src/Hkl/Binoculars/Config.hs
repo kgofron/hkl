@@ -24,6 +24,7 @@ module Hkl.Binoculars.Config
     , destination'
     , files
     , getConfig
+    , getMask
     , new
     , overloadSampleWithConfig
     , sampleConfig
@@ -352,6 +353,11 @@ overloadSampleWithConfig conf (Sample
           nux = go ux (fmap (/~ degree) (_binocularsInputUx conf))
           nuy = go uy (fmap (/~ degree) (_binocularsInputUy conf))
           nuz = go uz (fmap (/~ degree) (_binocularsInputUz conf))
+
+getMask :: BinocularsConfig -> Detector a DIM2 -> IO (Maybe Mask)
+getMask c d = case (_binocularsInputMaskmatrix c) of
+                Nothing      -> getDetectorDefaultMask d
+                (Just fname) -> getDetectorMask d fname
 
 getConfig :: Maybe FilePath -> IO (Either String BinocularsConfig)
 getConfig mf = do

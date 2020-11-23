@@ -35,8 +35,8 @@ module Hkl.C.Binoculars
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
 import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, showShape, extent, ix1, size)
 import           Data.ByteString.Char8 (ByteString, packCString)
-import           Data.Word             (Word16, Word8)
-import           Foreign.C.Types       (CDouble, CSize(..), CUInt(..), CPtrdiff)
+import           Data.Word             (Word16)
+import           Foreign.C.Types       (CBool, CDouble, CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
@@ -244,7 +244,7 @@ hkl_binoculars_space_q :: Ptr (Space DIM3) -- HklBinocularsSpace *self
                        -> Ptr CSize --  const int32_t *pixels_coordinates_dims
                        -> Ptr Double --  const double *resolutions
                        -> CSize -- size_t n_resolutions
-                       -> Ptr Word8 -- const uint8_t *mask
+                       -> Ptr CBool -- const uint8_t *mask
                        -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl" \
@@ -258,5 +258,5 @@ hkl_binoculars_space_hkl :: Ptr (Space DIM3) -- HklBinocularsSpace *self
                          -> Ptr CSize --  const int32_t *pixels_coordinates_dims
                          -> Ptr Double --  const double *resolutions
                          -> CSize -- size_t n_resolutions
-                         -> Ptr Word8 -- const uint8_t *mask
+                         -> Ptr CBool -- const uint8_t *mask
                          -> IO ()

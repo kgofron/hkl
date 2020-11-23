@@ -107,7 +107,7 @@ mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> (BinocularsConfig -> May
 mkInputQxQyQz c f = do
   fs <- files c
   let d = fromMaybe defaultDetector (_binocularsInputDetector c)
-  mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
+  mask' <- getMask c d
   case f c of
     (Just h5dpath') -> pure $ InputQxQyQz
                       { detector = d
@@ -149,7 +149,7 @@ mkInputHkl :: FramesHklP a => BinocularsConfig -> (BinocularsConfig -> Maybe a) 
 mkInputHkl c f = do
   fs <- files c
   let d = fromMaybe defaultDetector (_binocularsInputDetector c)
-  mask' <- getDetectorDefaultMask d (_binocularsInputMaskmatrix c)
+  mask' <- getMask c d
   case f c of
     (Just h5dpath') -> pure $ InputHkl
                       { detector = d
