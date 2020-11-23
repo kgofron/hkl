@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE GADTs              #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax      #-}
 
 module Hkl.Flat
        ( Flat(..)
@@ -10,28 +10,21 @@ module Hkl.Flat
        )
        where
 
-import Data.Text ( unlines, pack )
-import System.Exit ( ExitCode( ExitSuccess ) )
-import System.FilePath.Posix ( replaceExtension )
+import           Data.Text             (pack, unlines)
+import           System.Exit           (ExitCode (ExitSuccess))
+import           System.FilePath.Posix (replaceExtension)
 
-import Hkl.DataSource ( DataItem ( DataItemH5 ) )
-import Hkl.Nxs ( Nxs ( Nxs )
-               , XrdFlat
-               , DataFrameH5Path ( XrdFlatH5Path )
-               )
-import Hkl.Python ( PyVal
-                  , toPyVal
-                  )
-import Hkl.Script ( Py2
-                  , Script ( Py2Script )
-                  , run
-                  )
+import           Hkl.DataSource        (DataItem (DataItemH5))
+import           Hkl.Nxs               (DataFrameH5Path (XrdFlatH5Path),
+                                        Nxs (Nxs), XrdFlat)
+import           Hkl.Python            (PyVal, toPyVal)
+import           Hkl.Script            (Py2, Script (Py2Script), run)
 
 data Npy
 
 data Flat a where
   FlatNpy ∷ FilePath → Flat Npy
-deriving instance (Show) (Flat a)
+deriving instance Show (Flat a)
 
 scriptPy2Flat ∷ [Nxs XrdFlat] → FilePath → Script Py2
 scriptPy2Flat ns output = Py2Script (script, scriptName)

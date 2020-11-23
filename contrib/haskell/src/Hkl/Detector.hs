@@ -22,6 +22,7 @@ module Hkl.Detector
        , shape
        ) where
 
+import           Control.Monad                     ((<=<))
 import           Data.Array.Repa                   (Array, Shape)
 import           Data.Array.Repa.Index             ((:.) (..), DIM0, DIM2, DIM3,
                                                     Z (..), ix2, ix3)
@@ -217,8 +218,8 @@ foreign import ccall unsafe
 
 getDetectorMask :: Detector a DIM2 -> Text -> IO (Maybe Mask)
 getDetectorMask (Detector2D n _ sh)  mask =
-    withCString (unpack mask) $ \cmask ->
-        fromPtr sh =<< hkl_binoculars_detector_2d_mask_load n cmask
+    withCString (unpack mask) $
+        fromPtr sh <=< hkl_binoculars_detector_2d_mask_load n
 
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_mask_load"

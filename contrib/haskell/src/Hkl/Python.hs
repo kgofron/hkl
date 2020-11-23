@@ -1,14 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 
 module Hkl.Python
-  ( PyVal(..)
-  , module X
-  ) where
+  ( PyVal(..) ) where
 
-import Data.List (intercalate)
-
-import Hkl.Python.Pyfi as X
+import           Data.List (intercalate)
 
 class PyVal a where
   toPyVal ∷ a → String
