@@ -28,7 +28,7 @@ const uint8_t VERSION_2 = 0x02;
 const uint8_t VERSION_3 = 0x03;
 
 struct pre_header_t {
-        uint8_t magic[6];
+        char magic[6];
         uint8_t major;
         uint8_t minor;
 };
@@ -173,6 +173,9 @@ static struct npy_t *parse_npy(FILE* fp,
         res = fread(&npy->pre, 1, sizeof(npy->pre), fp);
         assert(res == 8);
 
+        if(strncmp(magic, npy->pre.magic, ARRAY_SIZE(magic)))
+                goto fail_no_header;
+
         /* read the header size */
         switch (npy->pre.major) {
         case VERSION_1:
@@ -247,7 +250,10 @@ static struct npy_t *parse_npy(FILE* fp,
 
         return npy;
 fail:
-        npy_free_but_array(npy);
+        free(npy->header);
+fail_no_header:
+        free(npy);
+
         return NULL;
 }
 
