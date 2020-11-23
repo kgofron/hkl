@@ -33,7 +33,7 @@ module Hkl.C.Binoculars
        ) where
 
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
-import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, showShape, extent, ix1, size)
+import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, ix1, size)
 import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Word             (Word16)
 import           Foreign.C.Types       (CBool, CDouble, CSize(..), CUInt(..), CPtrdiff)
@@ -48,13 +48,11 @@ import           Hkl.Detector
 import           Hkl.C.Geometry
 import           Hkl.C.Sample
 import           Hkl.H5
+import           Hkl.Orphan ()
 
 #include "hkl-binoculars.h"
 
 --  Axis
-
-instance Show (Array F DIM1 CDouble) where
-    show _ = ""
 
 data Axis = Axis { name :: ByteString
                  , index :: CSize
@@ -138,9 +136,6 @@ data Cube sh = Cube { cubePhotons :: (Array F sh CUInt)
                     }
              | EmptyCube
              deriving Show
-
-instance Shape sh => Show (Array F sh CUInt) where
-  show = showShape . extent
 
 instance Shape sh => Semigroup (Cube sh) where
   (<>) EmptyCube EmptyCube = EmptyCube

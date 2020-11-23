@@ -3,8 +3,10 @@
 
 module Hkl.Orphan where
 
-import           Data.Array.Repa                 (Array)
+import           Data.Array.Repa                 (Array, Shape, extent,
+                                                  showShape)
 import           Data.Array.Repa.Repr.ForeignPtr (F)
+import           Foreign.Storable                (Storable)
 
-instance Show (Array F sh e) where
-    show _ = ""
+instance (Shape sh, Storable e) => Show (Array F sh e) where
+    show = showShape . extent
