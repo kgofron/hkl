@@ -108,6 +108,7 @@ struct detector_t {
 static struct detector_t detectors[] = {
         DETECTOR("ImXpadS140", 560, 240, IMXPAD(80, 120, 1.3e-6)),
         DETECTOR("XpadFlatCorrected", 576, 1154, RECTANGULAR(1.3e-6, 1.3e-6)),
+        DETECTOR("ImXpadS70", 560, 120, IMXPAD(80, 120, 1.3e-6)),
 };
 
 /***********************/
@@ -138,7 +139,7 @@ static inline double imxpad_coordinates_pattern(int i, int chip, double s)
         return NAN;
 }
 
-static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
+static inline double *coordinates_get_imxpad(HklBinocularsDetectorEnum n)
 {
         int i;
         const struct detector_t detector = detectors[n];
@@ -171,6 +172,7 @@ static inline double *coordinates_get_imxpad_s140(HklBinocularsDetectorEnum n)
         return arr;
 }
 
+
 static inline double *coordinates_rectangular(HklBinocularsDetectorEnum n)
 {
         const struct detector_t detector = detectors[n];
@@ -201,7 +203,7 @@ static inline double *coordinates_get_xpad_flat_corrected(HklBinocularsDetectorE
 
 /* masks */
 
-extern uint8_t *mask_get_imxpad_s140(HklBinocularsDetectorEnum n)
+extern uint8_t *mask_get_imxpad(HklBinocularsDetectorEnum n)
 {
         const struct detector_t detector = detectors[n];
         div_t q;
@@ -344,8 +346,9 @@ struct _HklBinocularsDetector2DOperations {
                         }
 
 static const HklBinocularsDetector2DOperations ops[] = {
-        DECLARE_DETECTOR_OPERATIONS(imxpad_s140),
+        DECLARE_DETECTOR_OPERATIONS(imxpad), /* s140 */
         DECLARE_DETECTOR_OPERATIONS(xpad_flat_corrected),
+        DECLARE_DETECTOR_OPERATIONS(imxpad), /* s70 */
         /* Add new detector here and keep the same order than HklBinocularsDetector2DEnum */
 };
 
