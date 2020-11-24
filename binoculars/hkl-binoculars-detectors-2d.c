@@ -34,13 +34,13 @@
 #define shape_size(shape) (shape).width * (shape).height
 #define item_offset(shape, i, j) i + j * (shape).width
 
-#define detector_width(detector) (detector).shape.width
-#define detector_height(detector) (detector).shape.height
-#define detector_shape(detector) (detector).shape
-#define detector_size(detector) shape_size((detector).shape)
-#define detector_row(arr, detector, i) &arr[(i) * (detector).shape.width]
+#define detector_width(detector) (detector)->shape.width
+#define detector_height(detector) (detector)->shape.height
+#define detector_shape(detector) (detector)->shape
+#define detector_size(detector) shape_size((detector)->shape)
+#define detector_row(arr, detector, i) &arr[(i) * (detector)->shape.width]
 #define detector_col(arr, i) &arr[i]
-#define pixel_offset(detector, i, j) item_offset((detector).shape, i, j)
+#define pixel_offset(detector, i, j) item_offset((detector)->shape, i, j)
 
 #define replicate_row(row, shape, n) do{                                \
                 for(int i=1; i<(n); ++i){                               \
@@ -61,9 +61,9 @@
         } while(0)
 
 #define malloc_detector_coordinates(arr, detector) do{                  \
-                (arr) = malloc(3 * shape_size((detector).shape) * sizeof(*(arr))); \
+                (arr) = malloc(3 * shape_size((detector)->shape) * sizeof(*(arr))); \
                 /* x set to zero for all 2d detectors */                \
-                memset((arr), 0,  shape_size((detector).shape) * sizeof(*(arr))); \
+                memset((arr), 0,  shape_size((detector)->shape) * sizeof(*(arr))); \
         } while (0)
 
 #define x_coordinates(arr, detector) &arr[0 * detector_size(detector)]
@@ -94,22 +94,25 @@ struct imxpad_t {
 
 #define IMXPAD(chip_w_, chip_h_, pixel_size_) .imxpad={chip_w_, chip_h_, pixel_size_}
 
+struct detector_ops;
+
 struct detector_t {
         const char *name;
         struct shape_t shape;
+        struct detector_ops *ops;
         union {
                 struct rectangular_t rectangular;
                 struct imxpad_t imxpad;
         };
 };
 
-#define DETECTOR(name_, width_, height_, union_) {name_, .shape={width_, height_}, union_}
+#define DETECTOR(name_, width_, height_, union_) {.name = #name_, .shape={width_, height_}, .ops= &name_ ## _ops, union_}
 
-static struct detector_t detectors[] = {
-        DETECTOR("ImXpadS140", 560, 240, IMXPAD(80, 120, 1.3e-6)),
-        DETECTOR("XpadFlatCorrected", 576, 1154, RECTANGULAR(1.3e-6, 1.3e-6)),
-        DETECTOR("ImXpadS70", 560, 120, IMXPAD(80, 120, 1.3e-6)),
+struct detector_ops {
+	double *     (*coordinates_get)(const struct detector_t *self);
+	uint8_t *    (*mask_get)(const struct detector_t *self);
 };
+
 
 /***********************/
 /* specific operations */
@@ -139,13 +142,11 @@ static inline double imxpad_coordinates_pattern(int i, int chip, double s)
         return NAN;
 }
 
-static inline double *coordinates_get_imxpad(HklBinocularsDetectorEnum n)
+static inline double *coordinates_get_imxpad(const struct detector_t *detector)
 {
         int i;
-        const struct detector_t detector = detectors[n];
-
-        int width = detector.shape.width;
-        int height = detector.shape.height;
+        int width = detector->shape.width;
+        int height = detector->shape.height;
         double *arr, *z, *row;
 
         malloc_detector_coordinates(arr, detector);
@@ -154,10 +155,10 @@ static inline double *coordinates_get_imxpad(HklBinocularsDetectorEnum n)
         row = y_coordinates(arr, detector);
         for(i=0; i<width; ++i){
                 row[i] = - imxpad_coordinates_pattern(i,
-                                                      detector.imxpad.chip_w,
-                                                      detector.imxpad.pixel_size);
+                                                      detector->imxpad.chip_w,
+                                                      detector->imxpad.pixel_size);
         }
-        replicate_row(row, detector.shape, height);
+        replicate_row(row, detector->shape, height);
 
         /* z */
         z = z_coordinates(arr, detector);
@@ -165,17 +166,15 @@ static inline double *coordinates_get_imxpad(HklBinocularsDetectorEnum n)
                 row = detector_row(z, detector, i);
                 fill_row(row, detector_shape(detector),
                          imxpad_coordinates_pattern(i,
-                                                    detector.imxpad.chip_h,
-                                                    detector.imxpad.pixel_size));
+                                                    detector->imxpad.chip_h,
+                                                    detector->imxpad.pixel_size));
         }
 
         return arr;
 }
 
-
-static inline double *coordinates_rectangular(HklBinocularsDetectorEnum n)
+static inline double *coordinates_get_rectangular(const struct detector_t *detector)
 {
-        const struct detector_t detector = detectors[n];
         double *arr;
         double *y, *z;
 
@@ -188,76 +187,68 @@ static inline double *coordinates_rectangular(HklBinocularsDetectorEnum n)
                 for(int i=0; i<detector_width(detector); ++i){
                         int w = pixel_offset(detector, i, j);
 
-                        y[w] = - (0.5 + i) * detector.rectangular.pixel_w;
-                        z[w] =   (0.5 + j) * detector.rectangular.pixel_h;
+                        y[w] = - (0.5 + i) * detector->rectangular.pixel_w;
+                        z[w] =   (0.5 + j) * detector->rectangular.pixel_h;
                 }
         }
 
         return arr;
 }
 
-static inline double *coordinates_get_xpad_flat_corrected(HklBinocularsDetectorEnum n)
-{
-        return coordinates_rectangular(n);
-}
-
 /* masks */
 
-extern uint8_t *mask_get_imxpad(HklBinocularsDetectorEnum n)
+static uint8_t *mask_get_imxpad(const struct detector_t *detector)
 {
-        const struct detector_t detector = detectors[n];
         div_t q;
-        uint8_t *arr = calloc(shape_size(detectors[n].shape), sizeof(*arr));
+        uint8_t *arr = calloc(shape_size(detector->shape), sizeof(*arr));
 
         /* now mask all the strange row */
 
-        q =  div(detector_width(detector), detector.imxpad.chip_w);
+        q =  div(detector_width(detector), detector->imxpad.chip_w);
         int n_chips = q.quot;
 
         for(int chip=0; chip<n_chips; ++chip){
                 if (chip != 0){
-                        uint8_t *first = detector_col(arr, chip * detector.imxpad.chip_w);
-                        fill_column(first, detector.shape, 1);
+                        uint8_t *first = detector_col(arr, chip * detector->imxpad.chip_w);
+                        fill_column(first, detector->shape, 1);
                 }
 
                 if (chip != (n_chips - 1)){
-                        uint8_t *last = detector_col(arr, (chip + 1) * detector.imxpad.chip_w - 1);
-                        fill_column(last, detector.shape, 1);
+                        uint8_t *last = detector_col(arr, (chip + 1) * detector->imxpad.chip_w - 1);
+                        fill_column(last, detector->shape, 1);
                 }
         }
 
-        q = div(detector_height(detector), detector.imxpad.chip_h);
+        q = div(detector_height(detector), detector->imxpad.chip_h);
         int n_modules = q.quot;
 
         for(int module=0; module<n_modules; ++module){
                 if (module != 0){
                         uint8_t *first = detector_row(arr, detector,
-                                                      module * detector.imxpad.chip_h);
-                        fill_row(first, detector.shape, 1);
+                                                      module * detector->imxpad.chip_h);
+                        fill_row(first, detector->shape, 1);
                 }
 
                 if (module != (n_modules - 1)){
                         uint8_t *last = detector_row(arr, detector,
-                                                     (module + 1) * detector.imxpad.chip_h - 1);
-                        fill_row(last, detector.shape, 1);
+                                                     (module + 1) * detector->imxpad.chip_h - 1);
+                        fill_row(last, detector->shape, 1);
                 }
         }
 
         return arr;
 }
 
-extern uint8_t *mask_get_xpad_flat_corrected(HklBinocularsDetectorEnum n)
+static uint8_t *mask_get_xpad_flat_corrected(const struct detector_t *detector)
 {
-        const struct detector_t detector = detectors[n];
-
-        uint8_t *arr = calloc(shape_size(detector.shape), sizeof(*arr));
+        uint8_t *arr = calloc(shape_size(detector->shape), sizeof(*arr));
 
         /* now mask all the strange row */
         for(int i=118; i<=1006; i=i+148){
                 uint8_t *row = detector_row(arr, detector, i);
 
-                fill_row(row, detector.shape, 1);
-                replicate_row(row, detector.shape, 30);
+                fill_row(row, detector->shape, 1);
+                replicate_row(row, detector->shape, 30);
         }
 
         return arr;
@@ -324,67 +315,81 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
 }
 
-typedef struct _HklBinocularsDetector2DOperations HklBinocularsDetector2DOperations;
-struct _HklBinocularsDetector2DOperations {
-	const char * (*name_get)(HklBinocularsDetectorEnum n);
-	double *     (*coordinates_get)(HklBinocularsDetectorEnum n);
-	uint8_t *    (*mask_get)(HklBinocularsDetectorEnum n);
-        void         (*shape_get)(HklBinocularsDetectorEnum n, int *width, int *height);
+#define DETECTOR_OPS_DEFAULT_IMXPAD \
+        .coordinates_get = coordinates_get_imxpad, \
+                .mask_get = mask_get_imxpad
+
+#define DETECTOR_OPS_DEFAULT_RECTANGULAR \
+        .coordinates_get=coordinates_get_rectangular
+
+static struct detector_ops ImXpadS70_ops = {
+        DETECTOR_OPS_DEFAULT_IMXPAD
+};
+
+static struct detector_ops ImXpadS140_ops = {
+        DETECTOR_OPS_DEFAULT_IMXPAD
+};
+
+static struct detector_ops XpadFlatCorrected_ops = {
+        DETECTOR_OPS_DEFAULT_RECTANGULAR,
+        .mask_get = mask_get_xpad_flat_corrected,
+};
+
+static struct detector_t detectors[] = {
+        DETECTOR(ImXpadS140, 560, 240, IMXPAD(80, 120, 1.3e-6)),
+        DETECTOR(XpadFlatCorrected, 576, 1154, RECTANGULAR(1.3e-6, 1.3e-6)),
+        DETECTOR(ImXpadS70, 560, 120, IMXPAD(80, 120, 1.3e-6)),
 };
 
 /*****************************/
 /* public API implementation */
 /*****************************/
 
-#define OPERATION(name_, detector_) .name_ = name_ ## _ ##  detector_
-
-#define DECLARE_DETECTOR_OPERATIONS(detector_)\
-        {                                                               \
-                OPERATION(coordinates_get, detector_),                  \
-                        OPERATION(mask_get, detector_),                 \
-                        /* Add new operations here */                   \
-                        }
-
-static const HklBinocularsDetector2DOperations ops[] = {
-        DECLARE_DETECTOR_OPERATIONS(imxpad), /* s140 */
-        DECLARE_DETECTOR_OPERATIONS(xpad_flat_corrected),
-        DECLARE_DETECTOR_OPERATIONS(imxpad), /* s70 */
-        /* Add new detector here and keep the same order than HklBinocularsDetector2DEnum */
-};
-
 int hkl_binoculars_detector_2d_number_of_detectors(void)
 {
         return HKL_BINOCULARS_DETECTOR_NUM_DETECTORS;
-}
+};
 
-const char *hkl_binoculars_detector_2d_name_get(HklBinocularsDetectorEnum n){
-        return detectors[n].name;
+const char *hkl_binoculars_detector_2d_name_get(HklBinocularsDetectorEnum n)
+{
+        const struct detector_t *detector = &detectors[n];
+
+        return detector->name;
 };
 
 void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnum n,
                                           int *width, int *height)
 {
-        *width = detectors[n].shape.width;
-        *height = detectors[n].shape.height;
+        const struct detector_t *detector = &detectors[n];
+
+        *width = detector->shape.width;
+        *height = detector->shape.height;
 }
 
-double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n){
-        return ops[n].coordinates_get(n);
+double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
+{
+        const struct detector_t *detector = &detectors[n];
+
+        return detector->ops->coordinates_get(detector);
 };
 
-uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n){
-        return ops[n].mask_get(n);
+uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
+{
+        const struct detector_t *detector = &detectors[n];
+
+        return detector->ops->mask_get(detector);
 };
 
 uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
                                               const char *fname)
 {
         uint8_t *arr = NULL;
-        darray_int shape;
+        const struct detector_t *detector = &detectors[n];
+        darray_int shape = darray_new();
 
-        darray_init(shape);
-        darray_append(shape, detectors[n].shape.height);
-        darray_append(shape, detectors[n].shape.width);
+        darray_appends(shape,
+                       detector->shape.height,
+                       detector->shape.width);
 
         arr = npy_load(fname, HKL_BINOCULARS_NPY_BOOL, &shape);
 
