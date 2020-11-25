@@ -48,10 +48,18 @@
                 }                                                       \
         } while(0)
 
-#define fill_row(row, shape, val) do{             \
+#define fill_row(row, shape, val) do{                   \
                 for(int i=0; i<(shape).width; ++i){     \
-                        (row)[i] = (val);         \
-                }                                 \
+                        (row)[i] = (val);               \
+                }                                       \
+        } while(0)
+
+#define replicate_column(col, shape, n) do{                            \
+                for(int i=0; i<shape_size(shape); i=i+(shape).width){  \
+                        for(int j=1; j<(n); ++j){                      \
+                                (col[i+j]) = col[i];                   \
+                        }                                              \
+                }                                                      \
         } while(0)
 
 #define fill_column(col, shape, val) do {                              \
@@ -79,6 +87,12 @@ struct shape_t {
         int height;
 };
 
+struct square_t {
+        double pixel_size;
+};
+
+#define SQUARE(pixel_size_) .square={.pixel_size=pixel_size_}
+
 struct rectangular_t {
         double pixel_w;
         double pixel_h;
@@ -87,23 +101,34 @@ struct rectangular_t {
 #define RECTANGULAR(pixel_w_, pixel_h_) .rectangular={pixel_w_, pixel_h_}
 
 struct imxpad_t {
+        struct square_t square;
         int chip_w;
         int chip_h;
-        double pixel_size;
 };
 
-#define IMXPAD(chip_w_, chip_h_, pixel_size_) .imxpad={chip_w_, chip_h_, pixel_size_}
+#define IMXPAD(chip_w_, chip_h_, pixel_size_) .imxpad={SQUARE(pixel_size_), chip_w_, chip_h_}
+
+struct dectris_t {
+        struct square_t square;
+        int module_width;
+        int module_height;
+        int gap_width;
+        int gap_height;
+};
+
+#define DECTRIS(module_width_, module_height_, gap_width_, gap_height_, pixel_size_) .dectris={SQUARE(pixel_size_), .module_width=module_width_, .module_height=module_height_, .gap_width=gap_width_, .gap_height=gap_height_}
 
 struct detector_ops;
 
 struct detector_t {
-        const char *name;
-        struct shape_t shape;
-        struct detector_ops *ops;
         union {
                 struct rectangular_t rectangular;
                 struct imxpad_t imxpad;
+                struct dectris_t dectris;
         };
+        const char *name;
+        struct shape_t shape;
+        struct detector_ops *ops;
 };
 
 #define DETECTOR(name_, width_, height_, union_) {.name = #name_, .shape={width_, height_}, .ops= &name_ ## _ops, union_}
@@ -156,7 +181,7 @@ static inline double *coordinates_get_imxpad(const struct detector_t *detector)
         for(i=0; i<width; ++i){
                 row[i] = - imxpad_coordinates_pattern(i,
                                                       detector->imxpad.chip_w,
-                                                      detector->imxpad.pixel_size);
+                                                      detector->imxpad.square.pixel_size);
         }
         replicate_row(row, detector->shape, height);
 
@@ -167,14 +192,16 @@ static inline double *coordinates_get_imxpad(const struct detector_t *detector)
                 fill_row(row, detector_shape(detector),
                          imxpad_coordinates_pattern(i,
                                                     detector->imxpad.chip_h,
-                                                    detector->imxpad.pixel_size));
+                                                    detector->imxpad.square.pixel_size));
         }
 
         return arr;
 }
 
-static inline double *coordinates_get_rectangular(const struct detector_t *detector)
+static inline double *coordinates_rectangle(const struct detector_t *detector,
+                                            double p_w, double p_h)
 {
+        int i;
         double *arr;
         double *y, *z;
 
@@ -183,16 +210,38 @@ static inline double *coordinates_get_rectangular(const struct detector_t *detec
         y = y_coordinates(arr, detector);
         z = z_coordinates(arr, detector);
 
-        for(int j=0; j<detector_height(detector); ++j){
-                for(int i=0; i<detector_width(detector); ++i){
-                        int w = pixel_offset(detector, i, j);
+        /* y */
+        for(i=0; i<detector->shape.width; ++i)
+                y[i] = - (0.5 + i) * p_w;
+        replicate_row(y, detector->shape, detector->shape.height);
 
-                        y[w] = - (0.5 + i) * detector->rectangular.pixel_w;
-                        z[w] =   (0.5 + j) * detector->rectangular.pixel_h;
-                }
+        /* z */
+        z = z_coordinates(arr, detector);
+        for(i=0; i<detector->shape.height; ++i){
+                double *row = detector_row(z, detector, i);
+                fill_row(row, detector->shape, (0.5 + i) * p_h);
         }
 
         return arr;
+
+}
+
+static inline double *coordinates_get_rectangular(const struct detector_t *detector)
+{
+        const struct rectangular_t *rectangular = (struct rectangular_t *) detector;
+
+        return coordinates_rectangle(detector,
+                                     rectangular->pixel_w,
+                                     rectangular->pixel_h);
+}
+
+static inline double *coordinates_get_square(const struct detector_t *detector)
+{
+        const struct square_t *square = (struct square_t *) detector;
+
+        return coordinates_rectangle(detector,
+                                     square->pixel_size,
+                                     square->pixel_size);
 }
 
 /* masks */
@@ -249,6 +298,32 @@ static uint8_t *mask_get_xpad_flat_corrected(const struct detector_t *detector)
 
                 fill_row(row, detector->shape, 1);
                 replicate_row(row, detector->shape, 30);
+        }
+
+        return arr;
+}
+
+static uint8_t *mask_get_dectris(const struct detector_t *detector)
+{
+        int i;
+        uint8_t *arr = calloc(shape_size(detector->shape), sizeof(*arr));
+
+        /* columns */
+        for(i=detector->dectris.module_width;
+            i<detector_width(detector);
+            i=i+detector->dectris.module_width + detector->dectris.gap_width){
+                uint8_t *col = detector_col(arr, i);
+                fill_column(col, detector->shape, 1);
+                replicate_column(col, detector->shape, detector->dectris.gap_width);
+        }
+
+        /* rows */
+        for(i=detector->dectris.module_height;
+            i<detector_height(detector);
+            i=i+detector->dectris.module_height + detector->dectris.gap_height){
+                uint8_t *row = detector_row(arr, detector, i);
+                fill_row(row, detector->shape, 1);
+                replicate_row(row, detector->shape, detector->dectris.gap_height);
         }
 
         return arr;
@@ -315,12 +390,19 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
 }
 
-#define DETECTOR_OPS_DEFAULT_IMXPAD \
-        .coordinates_get = coordinates_get_imxpad, \
+#define DETECTOR_OPS_DEFAULT_SQUARE                     \
+        .coordinates_get = coordinates_get_square
+
+#define DETECTOR_OPS_DEFAULT_RECTANGULAR                \
+        .coordinates_get=coordinates_get_rectangular
+
+#define DETECTOR_OPS_DEFAULT_IMXPAD                     \
+        .coordinates_get = coordinates_get_imxpad,      \
                 .mask_get = mask_get_imxpad
 
-#define DETECTOR_OPS_DEFAULT_RECTANGULAR \
-        .coordinates_get=coordinates_get_rectangular
+#define DETECTOR_OPS_DEFAULT_DECTRIS            \
+        DETECTOR_OPS_DEFAULT_SQUARE,            \
+                .mask_get = mask_get_dectris
 
 static struct detector_ops ImXpadS70_ops = {
         DETECTOR_OPS_DEFAULT_IMXPAD
@@ -335,10 +417,15 @@ static struct detector_ops XpadFlatCorrected_ops = {
         .mask_get = mask_get_xpad_flat_corrected,
 };
 
+static struct detector_ops Eiger1M_ops = {
+        DETECTOR_OPS_DEFAULT_DECTRIS
+};
+
 static struct detector_t detectors[] = {
-        DETECTOR(ImXpadS140, 560, 240, IMXPAD(80, 120, 1.3e-6)),
-        DETECTOR(XpadFlatCorrected, 576, 1154, RECTANGULAR(1.3e-6, 1.3e-6)),
-        DETECTOR(ImXpadS70, 560, 120, IMXPAD(80, 120, 1.3e-6)),
+        DETECTOR(ImXpadS140, 560, 240, IMXPAD(80, 120, 130e-6)),
+        DETECTOR(XpadFlatCorrected, 576, 1154, RECTANGULAR(1.3e-6, 130e-6)),
+        DETECTOR(ImXpadS70, 560, 120, IMXPAD(80, 120, 130e-6)),
+        DETECTOR(Eiger1M, 1030, 1065, DECTRIS(1030, 514, 10, 37, 75e-6)),
 };
 
 /*****************************/
