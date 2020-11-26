@@ -55,6 +55,9 @@ HKLAPI extern uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetector
 HKLAPI extern uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
                                                             const char *filename);
 
+HKLAPI extern void hkl_binoculars_detector_2d_mask_save(HklBinocularsDetectorEnum n,
+                                                        const char *fname);
+
 HKLAPI extern void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
                                                                double *arr,
                                                                int width, int height,

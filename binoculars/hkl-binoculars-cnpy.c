@@ -144,7 +144,7 @@ static int shape_cmp(const darray_int *sh1, const darray_int *sh2)
         return 0; /* idential */
 }
 
-static int shape_nb_elem(darray_int *shape)
+static int shape_size(const darray_int *shape)
 {
         int nb_elem = 1;
         int *val;
@@ -240,7 +240,7 @@ static struct npy_t *parse_npy(FILE* fp,
                 goto fail;
 
         /* read the array */
-        int nbytes = shape_nb_elem(&npy->shape) * npy->descr.elem_size;
+        int nbytes = shape_size(&npy->shape) * npy->descr.elem_size;
         npy->arr = malloc( nbytes );
         if(NULL == npy->arr)
                 goto fail;
@@ -274,4 +274,132 @@ void *npy_load(const char *fname,
                 fclose(fp);
         }
         return arr;
+}
+
+static inline char bigendian(void)
+{
+        int x = 1;
+        return (((char *)&x)[0]) ? '<' : '>';
+}
+
+static inline char map_type(enum HklBinocularsNpyDataType type)
+{
+        char res = 'b';
+
+        switch(type){
+        case HKL_BINOCULARS_NPY_BOOL: res = 'b';
+        }
+
+    /* if(t == typeid(float) ) return 'f'; */
+    /* if(t == typeid(double) ) return 'f'; */
+    /* if(t == typeid(long double) ) return 'f'; */
+
+    /* if(t == typeid(int) ) return 'i'; */
+    /* if(t == typeid(char) ) return 'i'; */
+    /* if(t == typeid(short) ) return 'i'; */
+    /* if(t == typeid(long) ) return 'i'; */
+    /* if(t == typeid(long long) ) return 'i'; */
+
+    /* if(t == typeid(unsigned char) ) return 'u'; */
+    /* if(t == typeid(unsigned short) ) return 'u'; */
+    /* if(t == typeid(unsigned long) ) return 'u'; */
+    /* if(t == typeid(unsigned long long) ) return 'u'; */
+    /* if(t == typeid(unsigned int) ) return 'u'; */
+
+    /* if(t == typeid(bool) ) return 'b'; */
+
+    /* if(t == typeid(std::complex<float>) ) return 'c'; */
+    /* if(t == typeid(std::complex<double>) ) return 'c'; */
+    /* if(t == typeid(std::complex<long double>) ) return 'c'; */
+
+    /* else return '?'; */
+        return res;
+}
+
+static inline int map_size(enum HklBinocularsNpyDataType type)
+{
+        int res = 1;
+
+        switch(type){
+        case HKL_BINOCULARS_NPY_BOOL: res = 1;
+        }
+        return res;
+}
+
+static inline char *create_npy_header(enum HklBinocularsNpyDataType type,
+                                      const darray_int *shape,
+                                      size_t *header_size)
+{
+        int i;
+        char *header;
+        char *dict;
+        size_t dict_size;
+        FILE *stream;
+
+        /* first compute the dict and its size */
+
+        stream = open_memstream(&dict, &dict_size);
+        fprintf(stream,"{");
+        fprintf(stream, "'descr': '%c%c%d'",
+                bigendian(), map_type(type), map_size(type));
+        fprintf(stream, ", ");
+        fprintf(stream, "'fortran_order' : False");
+        fprintf(stream, ", ");
+        fprintf(stream, "'shape': (");
+        fprintf(stream, "%d", darray_item(*shape, 0));
+        for(i=1; i<darray_size(*shape); ++i){
+                fprintf(stream, ", %d", darray_item(*shape, i));
+        }
+        fprintf(stream, ")");
+        fprintf(stream, ",");
+        fprintf(stream, "}");
+
+        fflush(stream);
+
+        /* ``len(magic string) + 2 + len(length) + HEADER_LEN`` be
+           evenly divisible by 64 for alignment purposes. */
+        size_t extra = 64 - (ARRAY_SIZE(magic) + 2 + 2 + dict_size) % 64;
+        for(i=0; i<extra - 1; ++i){
+                fprintf(stream, " ");
+        }
+        fprintf(stream, "\n");
+
+        fclose(stream);
+
+        /* create the full header */
+
+        stream = open_memstream(&header, header_size);
+        fwrite(&magic[0], sizeof(char), ARRAY_SIZE(magic), stream);
+        fprintf(stream, "%c%c", VERSION_1, 0x0);
+        uint16_t len = (uint16_t)dict_size;
+        fwrite(&len, 1, sizeof(len), stream);
+        fwrite(dict, 1, dict_size, stream);
+        fprintf(stdout, "%s", dict);
+        fflush(stream);
+        fclose(stream);
+
+        free(dict);
+
+        return header;
+}
+
+void npy_save(const char *fname,
+              const void *arr,
+              enum HklBinocularsNpyDataType type,
+              const darray_int *shape)
+{
+        FILE *f;
+        char *header;
+        size_t header_size;
+
+        header = create_npy_header(type, shape, &header_size);
+        f = fopen(fname, "wb");
+        fseek(f,0,SEEK_SET);
+        fwrite(&header[0], 1, header_size, f);
+        fprintf(stdout, "%s\n", header);
+        fseek(f,0,SEEK_END);
+        fwrite(arr, map_size(type), shape_size(shape), f);
+        fclose(f);
+
+        free(header);
 }

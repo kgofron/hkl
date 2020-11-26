@@ -50,6 +50,19 @@ static void mask_get(void)
 	ok(res == TRUE, __func__);
 }
 
+static void mask_save(void)
+{
+        int res = TRUE;
+
+        for(int i=0; i<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++i){
+                char buffer[256];
+
+                snprintf(buffer, ARRAY_SIZE(buffer), "/tmp/test_%d.npy", i);
+                hkl_binoculars_detector_2d_mask_save(i, buffer);
+        }
+	ok(res == TRUE, __func__);
+}
+
 /* TODO */
 /* static void mask_load(void) */
 /* { */
@@ -59,10 +72,11 @@ static void mask_get(void)
 
 int main(void)
 {
-	plan(2);
+	plan(3);
 
 	coordinates_get();
 	mask_get();
+        mask_save();
 
 	return 0;
 }

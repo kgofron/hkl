@@ -15,6 +15,11 @@ extern void *npy_load(const char *filename,
                       enum HklBinocularsNpyDataType,
                       const darray_int *shape);
 
+extern void npy_save(const char *fname,
+                     const void *arr,
+                     enum HklBinocularsNpyDataType type,
+                     const darray_int *shape);
+
 G_END_DECLS
 
 #endif

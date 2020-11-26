@@ -484,3 +484,20 @@ uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
 
         return arr;
 };
+
+void hkl_binoculars_detector_2d_mask_save(HklBinocularsDetectorEnum n,
+                                          const char *fname)
+{
+        uint8_t *arr = NULL;
+        const struct detector_t *detector = &detectors[n];
+        darray_int shape = darray_new();
+
+        darray_appends(shape,
+                       detector->shape.height,
+                       detector->shape.width);
+
+
+        arr = hkl_binoculars_detector_2d_mask_get(n);
+        npy_save(fname, arr, HKL_BINOCULARS_NPY_BOOL, &shape);
+        free(arr);
+}
