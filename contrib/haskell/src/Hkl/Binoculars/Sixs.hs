@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs             #-}
-{-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL

@@ -1,6 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiWayIf            #-}
 
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
@@ -69,7 +68,7 @@ withMaybeMask mm f = case mm of
 
 -- DetectorPath
 
-data DetectorPath = DetectorPath
+newtype DetectorPath = DetectorPath
     { detectorPathImage    :: Hdf5Path DIM3 Word16
     } deriving Show
 

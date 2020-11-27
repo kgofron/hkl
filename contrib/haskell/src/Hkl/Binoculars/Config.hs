@@ -355,7 +355,7 @@ overloadSampleWithConfig conf (Sample
           nuz = go uz (fmap (/~ degree) (_binocularsInputUz conf))
 
 getMask :: BinocularsConfig -> Detector a DIM2 -> IO (Maybe Mask)
-getMask c d = case (_binocularsInputMaskmatrix c) of
+getMask c d = case _binocularsInputMaskmatrix c of
                 Nothing      -> getDetectorDefaultMask d
                 (Just fname) -> getDetectorMask d fname
 

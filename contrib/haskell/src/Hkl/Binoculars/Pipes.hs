@@ -1,8 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiWayIf            #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE StandaloneDeriving    #-}
 
 {-
     Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
@@ -92,7 +90,7 @@ project :: (MonadSafe m, Shape sh)
         -> Pipe b (DataFrameSpace sh) m ()
 project d n f = withSpace d n $ \s -> forever $ do
                df <- await
-               yield =<< (liftIO $ f s df)
+               yield =<< liftIO (f s df)
 
 
 -- QxQyQz
@@ -196,7 +194,7 @@ withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> Detect
 withDetectorPathP f det (DetectorPath p) g = do
   let n = (size . shape $ det) * 2  -- hardcoded size
   withBytes n $ \buf ->
-      withHdf5PathP f p $ \p' -> g (\j -> getArrayInBuffer buf det p' j)
+      withHdf5PathP f p $ \p' -> g (getArrayInBuffer buf det p')
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
@@ -208,9 +206,8 @@ withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> 
 withGeometryPathP f (GeometryPathUhv w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry
-                 <$> pure Uhv
-                 <*> (Source <$> getValueWithUnit w' 0 angstrom)
+        gg (\j -> Geometry Uhv
+                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
                  <*> (fromList <$> Prelude.mapM (`get_position` j) as')
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
@@ -254,9 +251,8 @@ instance FramesQxQyQzP QxQyQzPath where
       withDetectorPathP f det d $ \getImage ->
       withGeometryPathP f dif $ \getDiffractometer ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
-                          (DataFrameQxQyQz
-                           <$> pure j
-                           <*> getDiffractometer j
+                          (DataFrameQxQyQz j
+                           <$> getDiffractometer j
                            <*> getImage j))
 
 -- FramesHklP
@@ -277,26 +273,22 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
     withHdf5PathP f ux $ \ux' ->
     withHdf5PathP f uy $ \uy' ->
     withHdf5PathP f uz $ \uz' ->
-        g (Sample
-           <$> pure "test"
-           <*> (Triclinic
+        g (Sample "test"
+           <$> (Triclinic
                 <$> getValueWithUnit a' 0 angstrom
                 <*> getValueWithUnit b' 0 angstrom
                 <*> getValueWithUnit c' 0 angstrom
                 <*> getValueWithUnit alpha' 0 degree
                 <*> getValueWithUnit beta' 0 degree
                 <*> getValueWithUnit gamma' 0 degree)
-           <*> (Parameter
-                <$> pure "ux"
-                <*> get_position ux' 0
+           <*> (Parameter "ux"
+                <$> get_position ux' 0
                 <*> pure (Range 0 0))
-           <*> (Parameter
-                <$> pure "uy"
-                <*> get_position uy' 0
+           <*> (Parameter "uy"
+                <$> get_position uy' 0
                 <*> pure (Range 0 0))
-           <*> (Parameter
-                <$> pure "uz"
-                <*> get_position uz' 0
+           <*> (Parameter "uz"
+                <$> get_position uz' 0
                 <*> pure (Range 0 0)))
 
 
@@ -312,9 +304,8 @@ instance FramesHklP HklPath where
       withGeometryPathP f dif $ \getDiffractometer ->
       withSamplePathP f samp $ \getSample ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
-                               (DataFrameHkl
-                                <$> pure j
-                                <*> getImage j
+                               (DataFrameHkl j
+                                <$> getImage j
                                 <*> getDiffractometer j
                                 <*> getSample))
   framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif) sample) det =
@@ -324,8 +315,7 @@ instance FramesHklP HklPath where
             withDetectorPathP f det imgs $ \getImage ->
             withGeometryPathP f dif $ \getDiffractometer ->
             forM_ [from..to-1] (\j -> yield =<< liftIO
-                                     (DataFrameHkl
-                                     <$> pure j
-                                     <*> getImage j
-                                     <*> getDiffractometer j
-                                     <*> pure sample))
+                                     (DataFrameHkl j
+                                      <$> getImage j
+                                      <*> getDiffractometer j
+                                      <*> pure sample))
