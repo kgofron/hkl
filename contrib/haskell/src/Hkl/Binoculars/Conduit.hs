@@ -132,7 +132,7 @@ withGeometryPathC :: (MonadResource m, Location l)
 withGeometryPathC f (GeometryPathUhv w as) gg =
     withHdf5PathC f w $ \w' ->
     withAxesPathC f as $ \as' ->
-        gg (\j -> Geometry Hhv
+        gg (\j -> Geometry Uhv
                  <$> (Source <$> getValueWithUnit w' 0 angstrom)
                  <*> (fromList <$> Prelude.mapM (`get_position` j) as')
                  <*> pure Nothing)
