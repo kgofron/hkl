@@ -41,11 +41,14 @@ import           GHC.Conc                          (getNumCapabilities)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
                                                     (*~))
-import           Pipes                             (Consumer, Pipe, await, each,
-                                                    runEffect, yield, (>->))
+import           Pipes                             (Consumer, Pipe, Proxy,
+                                                    await, each, runEffect,
+                                                    yield, (>->))
 import           Pipes.Prelude                     (print, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, SafeT, bracket,
-                                                    runSafeT)
+import           Pipes.Safe                        (MonadSafe, SafeT,
+                                                    SomeException, bracket,
+                                                    catchP, displayException,
+                                                    runSafeP, runSafeT)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -92,6 +95,14 @@ project d n f = withSpace d n $ \s -> forever $ do
                df <- await
                yield =<< liftIO (f s df)
 
+skipMalformed :: MonadSafe m =>
+                Proxy a' a b' b m r
+              -> Proxy a' a b' b m r
+skipMalformed p = loop
+  where
+    loop = catchP p $ \e -> do
+        liftIO $ Prelude.print $ displayException (e :: SomeException)
+        loop
 
 -- QxQyQz
 
@@ -171,7 +182,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
 
   jobs <- mkJobsHkl input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
-                           runSafeT $ runEffect $
+                           runEffect $ runSafeP $
                            each job
                            >-> tee Pipes.Prelude.print
                            >-> framesHklP h5d det
@@ -203,6 +214,15 @@ withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([D
 withAxesPathP f dpaths = nest (map (withHdf5PathP f) dpaths)
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
+withGeometryPathP f (GeometryPathMedV w as) gg =
+    withHdf5PathP f w $ \w' ->
+    withAxesPathP f as $ \as' ->
+        gg (\j -> Geometry MedV
+                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <*> (fromList <$> do
+                         vs <- Prelude.mapM (`get_position` j) as'
+                         return (0.0 : vs))
+                 <*> pure Nothing)
 withGeometryPathP f (GeometryPathUhv w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
@@ -235,7 +255,7 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
 --  FramesQxQyQzP
 
 instance LenP QxQyQzPath where
-  lenP (QxQyQzPath (DetectorPath i) _) = forever $ do
+  lenP (QxQyQzPath (DetectorPath i) _) = skipMalformed $ forever $ do
     fp <- await
     withFileP (openH5 fp) $ \f ->
       withHdf5PathP f i $ \i' -> do
@@ -245,7 +265,7 @@ instance LenP QxQyQzPath where
         Nothing  -> error "can not extract length"
 
 instance FramesQxQyQzP QxQyQzPath where
-  framesQxQyQzP (QxQyQzPath d dif) det = forever $ do
+  framesQxQyQzP (QxQyQzPath d dif) det = skipMalformed $ forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
       withDetectorPathP f det d $ \getImage ->
@@ -297,25 +317,25 @@ instance LenP HklPath where
   lenP (HklPathFromQxQyQz p _) = lenP p
 
 instance FramesHklP HklPath where
-  framesHklP (HklPath (QxQyQzPath imgs dif) samp) det = forever $ do
+  framesHklP (HklPath (QxQyQzPath imgs dif) samp) det = skipMalformed $ forever $ do
     (Chunk fp from to) <- await
     withFileP (openH5 fp) $ \f ->
       withDetectorPathP f det imgs $ \getImage ->
       withGeometryPathP f dif $ \getDiffractometer ->
       withSamplePathP f samp $ \getSample ->
+      forM_ [from..to-1] (\j ->yield =<< liftIO
+                              (DataFrameHkl j
+                               <$> getImage j
+                               <*> getDiffractometer j
+                               <*> getSample))
+
+  framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif) sample) det = skipMalformed $ forever $ do
+    (Chunk fp from to) <- await
+    withFileP (openH5 fp) $ \f ->
+      withDetectorPathP f det imgs $ \getImage ->
+      withGeometryPathP f dif $ \getDiffractometer ->
       forM_ [from..to-1] (\j -> yield =<< liftIO
                                (DataFrameHkl j
                                 <$> getImage j
                                 <*> getDiffractometer j
-                                <*> getSample))
-  framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif) sample) det =
-      forever $ do
-        (Chunk fp from to) <- await
-        withFileP (openH5 fp) $ \f ->
-            withDetectorPathP f det imgs $ \getImage ->
-            withGeometryPathP f dif $ \getDiffractometer ->
-            forM_ [from..to-1] (\j -> yield =<< liftIO
-                                     (DataFrameHkl j
-                                      <$> getImage j
-                                      <*> getDiffractometer j
-                                      <*> pure sample))
+                                <*> pure sample))

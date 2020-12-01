@@ -151,6 +151,7 @@ library
                     , Hkl.PyFAI.Poni
                     , Hkl.PyFAI.PoniExt
                     , Hkl.PyFAI.Npt
+                    , Hkl.Python
                     , Hkl.Script
                     , Hkl.Tiff
                     , Hkl.Types
@@ -228,7 +229,7 @@ library
   -- ghc-options:         -Werror
   ghc-options:         -Wincomplete-uni-patterns
   ghc-options:         -Wincomplete-record-updates
-  ghc-options:         -fno-warn-incomplete-patterns
+  -- ghc-options:         -fno-warn-incomplete-patterns
 
   ghc-options:         -g
   ghc-options:         -dcore-lint

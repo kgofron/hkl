@@ -95,7 +95,8 @@ newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
   deriving (Eq, Show)
 
-data InputType = SixsFlyScanUhv
+data InputType = SixsFlyMedV
+               | SixsFlyScanUhv
                | SixsFlyScanUhv2
                | SixsSbsMedV
                | CristalK6C
@@ -215,6 +216,7 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String InputType
       parse t
+          | t == "sixs:flymedv" = Right SixsFlyMedV
           | t == "sixs:flyscanuhv" = Right SixsFlyScanUhv
           | t == "sixs:flyscanuhv2" = Right SixsFlyScanUhv2
           | t == "sixs:sbsmedv" = Right SixsSbsMedV
@@ -222,6 +224,7 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: InputType -> Text
+      emit SixsFlyMedV     = "sixs:flymedv"
       emit SixsFlyScanUhv  = "sixs:flyscanuhv"
       emit SixsFlyScanUhv2 = "sixs:flyscanuhv2"
       emit SixsSbsMedV     = "sixs:sbsmedv"

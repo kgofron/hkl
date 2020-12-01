@@ -78,6 +78,9 @@ data GeometryPath
   = GeometryPathUhv { geometryPathWavelength :: Hdf5Path Z Double
                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
                     }
+  | GeometryPathMedV { geometryPathWavelength :: Hdf5Path Z Double
+                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                     }
   | GeometryPathCristalK6C { geometryPathWavelength :: Hdf5Path Z Double
                            , geometryPathMu         :: Hdf5Path DIM1 Double
                            , geometryPathKomega     :: Hdf5Path DIM1 Double
