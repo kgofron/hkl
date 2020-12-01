@@ -23,10 +23,6 @@ Flag useHklDev
      Description: Use the current devel hkl library in the source tree
      Default: True
 
-Flag usePythonEmbed
-     Description: Use the python3-embed.pc file instead of python3.pc
-     Default: False
-
 -- executable ghkl
 --   main-is:             src/ghkl.hs
 --   build-depends:       attoparsec
@@ -222,17 +218,10 @@ library
     include-dirs:      ../../
                      , ../../hkl/
                      , ../../binoculars/
-                     , /usr/include/python3.9
-    extra-libraries:     python3.9
     pkgconfig-depends:   glib-2.0
   else
     pkgconfig-depends:   hkl
     extra-libraries:     hkl-binoculars
-
-  -- if flag(usePythonEmbed)
-  --   pkgconfig-depends:   python3-embed
-  -- else
-  --   pkgconfig-depends:   python3
 
   ghc-options:         -O2
   ghc-options:         -Wall
