@@ -160,7 +160,7 @@ static struct npy_t *parse_npy(FILE* fp,
                                enum HklBinocularsNpyDataType type,
                                const darray_int *shape)
 {
-        struct npy_t *npy = malloc(sizeof(struct npy_t));
+        struct npy_t *npy = calloc(1, sizeof(struct npy_t));
         size_t res;
         regex_t preg;
         regmatch_t matches[4];
