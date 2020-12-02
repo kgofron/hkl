@@ -79,26 +79,18 @@ h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
 
 h5dpathHkl :: BinocularsConfig -> Maybe HklPath
 h5dpathHkl c =
-    let uhvSamplePath = SamplePath
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "A")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "B")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "C")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "alpha")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "beta")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "gamma")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Ux")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Uy")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "I14-C-CX2__EX__DIFF-UHV__#1" $ datasetp "Uz")
-        cmMedVSamplePath = SamplePath
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "A")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "B")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "C")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "alpha")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "beta")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "gamma")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "Ux")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "Uy")
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-cm-med.v" $ datasetp "Uz")
+    let sixsSample device = SamplePath
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "A")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "B")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "C")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "alpha")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "beta")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "gamma")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Ux")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uy")
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uz")
+        uhvSamplePath = sixsSample "I14-C-CX2__EX__DIFF-UHV__#1"
+        cmMedVSamplePath = sixsSample "i14-c-cx1-ex-cm-med.v"
     in case h5dpathQxQyQz c of
          (Just qxqyqz) -> case _binocularsInputItype c of
                            SixsFlyMedV -> Just (HklPath qxqyqz cmMedVSamplePath)
