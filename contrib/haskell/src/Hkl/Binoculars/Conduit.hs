@@ -129,6 +129,15 @@ withGeometryPathC :: (MonadResource m, Location l)
                   -> GeometryPath
                   -> ((Int -> IO Geometry) -> ConduitT i o m r)
                   -> ConduitT i o m r
+withGeometryPathC f (GeometryPathMedV w as) gg =
+    withHdf5PathC f w $ \w' ->
+    withAxesPathC f as $ \as' ->
+        gg (\j -> Geometry MedV
+                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <*> (fromList <$> do
+                        vs <- Prelude.mapM (`get_position` j) as'
+                        return (0.0 : vs))
+                 <*> pure Nothing)
 withGeometryPathC f (GeometryPathUhv w as) gg =
     withHdf5PathC f w $ \w' ->
     withAxesPathC f as $ \as' ->
