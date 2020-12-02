@@ -122,12 +122,13 @@ h5dpathHkl c =
          --               medVSamplePath
          --               -- "attenuation": DatasetPathWithAttribute("long_name", b"i14-c-c00/ex/roic/att"),
          --               -- "timestamp": HItem("sensors_timestamps", True),
-process :: Maybe FilePath -> IO ()
-process mf = do
+process :: Maybe FilePath -> Maybe (ConfigRange Int) -> IO ()
+process mf mr = do
   conf <- getConfig mf
   case conf of
-    Right c -> do
-               case _binocularsProjectionPtype c of
+    Right conf' -> do
+              let c = combineWithCmdLineArgs conf' mr
+              case _binocularsProjectionPtype c of
                  QxQyQzProjection -> do
                    i <- mkInputQxQyQz c h5dpathQxQyQz
                    print i

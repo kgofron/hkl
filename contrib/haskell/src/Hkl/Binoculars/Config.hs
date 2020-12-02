@@ -21,6 +21,8 @@ module Hkl.Binoculars.Config
     , DestinationTmpl(..)
     , InputType(..)
     , ProjectionType(..)
+    , configRangeP
+    , combineWithCmdLineArgs
     , destination'
     , files
     , getConfig
@@ -39,6 +41,8 @@ import           Data.Array.Repa.Index             (DIM2)
 #else
 import           Data.Either.Extra                 (mapLeft, mapRight)
 #endif
+import           Data.Attoparsec.Text              (Parser, char, decimal,
+                                                    sepBy)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -169,7 +173,7 @@ uncomment :: Text -> Text
 uncomment = takeWhile (`notElem` ms)
 
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
-number' = number { fvParse = fvParse number . uncomment}
+number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
 
 destinationTmpl :: FieldValue DestinationTmpl
 destinationTmpl = FieldValue { fvParse = parse, fvEmit = emit }
@@ -252,6 +256,9 @@ pathAbsDir = FieldValue
 configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
 configRange = listWithSeparator "-" number'
 
+configRangeP :: Integral a => Parser (ConfigRange a)
+configRangeP = ConfigRange <$> (decimal `sepBy` (char '-'))
+
 detector :: FieldValue (Detector Hkl DIM2)
 detector = FieldValue
            { fvParse = parseDetector2D . strip . uncomment
@@ -316,6 +323,11 @@ destination' (ConfigRange [])          = replace' 0 0
 destination' (ConfigRange [from])      = replace' from from
 destination' (ConfigRange [from, to])  = replace' from to
 destination' (ConfigRange (from:to:_)) = replace' from to
+
+combineWithCmdLineArgs :: BinocularsConfig -> Maybe (ConfigRange Int) -> BinocularsConfig
+combineWithCmdLineArgs c mr = case mr of
+                                Nothing  -> c
+                                (Just _) -> c{_binocularsInputInputRange = mr}
 
 sampleConfig ::  BinocularsConfig -> Maybe (Sample Triclinic)
 sampleConfig cf = do
