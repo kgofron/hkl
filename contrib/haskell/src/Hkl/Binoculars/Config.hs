@@ -33,8 +33,6 @@ module Hkl.Binoculars.Config
 
 
 import           Control.Lens                      (makeLenses, (^.))
-import           Control.Monad                     (filterM)
-import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Data.Array.Repa.Index             (DIM2)
 #if MIN_VERSION_extra(1, 6, 9)
@@ -290,15 +288,15 @@ files c = do
   (_, fs) <- listDir =<< case c ^. binocularsInputNexusdir of
                           Nothing  -> getCurrentDir
                           (Just d) -> pure d
-  fs' <- filterM isHdf5 fs
+  let fs' = filter isHdf5 fs
   return $ case c ^. binocularsInputInputRange of
     Just r  -> filter (isInConfigRange r) fs'
     Nothing -> fs'
     where
-      isHdf5 :: MonadThrow m => Path Abs File -> m Bool
-      isHdf5 p = do
-               e <- pure $ fileExtension p
-               return  $ e `elem` [".h5", ".nxs"]
+      isHdf5 :: Path Abs File -> Bool
+      isHdf5 p = case (fileExtension p) of
+                   Nothing    -> False
+                   (Just ext) -> ext `elem` [".h5", ".nxs"]
 
       matchIndex :: Path Abs File -> Int -> Bool
       matchIndex p n = printf "%05d" n `isInfixOf` toFilePath p
