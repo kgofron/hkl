@@ -35,6 +35,6 @@ dist_installed_mainheader_DATA = hkl-binoculars.h
 # Support for GNU Flymake, in Emacs.
 check-syntax: AM_CFLAGS += -fsyntax-only -pipe
 check-syntax:
-	test -z "$(CHK_SOURCES)" || $(CCOMPILE) $(CHK_SOURCES)
+	test -z "$(CHK_SOURCES)" || $(COMPILE) $(CHK_SOURCES)
 
 .PHONY: check-syntax
