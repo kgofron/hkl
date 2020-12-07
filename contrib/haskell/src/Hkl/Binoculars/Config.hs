@@ -259,7 +259,7 @@ configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
 configRange = listWithSeparator "-" number'
 
 configRangeP :: Integral a => Parser (ConfigRange a)
-configRangeP = ConfigRange <$> (decimal `sepBy` (char '-'))
+configRangeP = ConfigRange <$> (decimal `sepBy` char '-')
 
 detector :: FieldValue (Detector Hkl DIM2)
 detector = FieldValue
@@ -303,7 +303,7 @@ files c = do
     Nothing -> fs'
     where
       isHdf5 :: Path Abs File -> Bool
-      isHdf5 p = case (fileExtension p) of
+      isHdf5 p = case fileExtension p of
                    Nothing    -> False
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
 
