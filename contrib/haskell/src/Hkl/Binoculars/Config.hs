@@ -308,7 +308,7 @@ files c = do
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
 
       matchIndex :: Path Abs File -> Int -> Bool
-      matchIndex p n = printf "%05d" n `isInfixOf` toFilePath p
+      matchIndex p n = printf "%04d" n `isInfixOf` toFilePath p
 
       isInConfigRange :: ConfigRange Int -> Path Abs File -> Bool
       isInConfigRange (ConfigRange []) _ = True
