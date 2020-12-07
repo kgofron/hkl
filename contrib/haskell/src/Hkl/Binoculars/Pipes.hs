@@ -14,7 +14,6 @@
 -}
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
-  , InputFn(..)
   , DataFrameSpace(..)
   , LenP(..)
   , mkCube'P

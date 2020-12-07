@@ -35,7 +35,8 @@ module Hkl.Binoculars.Config
 
 
 import           Control.Lens                      (makeLenses, (^.))
-import           Control.Monad.Catch               (MonadThrow)
+import           Control.Monad.Catch               (Exception, MonadThrow,
+                                                    throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Array.Repa.Index             (DIM2)
@@ -94,6 +95,12 @@ mapLeft f = either (Left . f) Right
 mapRight :: (b -> c) -> Either a b -> Either a c
 mapRight = fmap
 #endif
+
+data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
+                                  | NoDataFilesInTheGivenDirectory (Path Abs Dir)
+                                  | NoFilesInRangeInTheGivenDirectory (Path Abs Dir) (ConfigRange Int)
+    deriving (Show)
+instance Exception HklBinocularsConfigException
 
 newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
@@ -292,15 +299,25 @@ numberUnit u = FieldValue
   }
 
 
-files :: BinocularsConfig -> IO [Path Abs File]
+files :: (MonadThrow m, MonadIO m) => BinocularsConfig -> m [Path Abs File]
 files c = do
-  (_, fs) <- listDir =<< case c ^. binocularsInputNexusdir of
-                          Nothing  -> getCurrentDir
-                          (Just d) -> pure d
-  let fs' = filter isHdf5 fs
-  return $ case c ^. binocularsInputInputRange of
-    Just r  -> filter (isInConfigRange r) fs'
-    Nothing -> fs'
+  dir <- case c ^. binocularsInputNexusdir of
+          Nothing  -> getCurrentDir
+          (Just d) -> pure d
+  (_, fs) <- listDir dir
+  if null fs
+  then throwM (NoFilesInTheGivenDirectory dir)
+  else do
+    let fs' = filter isHdf5 fs
+    if null fs'
+    then throwM (NoDataFilesInTheGivenDirectory dir)
+    else case c ^. binocularsInputInputRange of
+           Just r  -> do
+             let fs'' = filter (isInConfigRange r) fs'
+             if null fs''
+             then throwM (NoFilesInRangeInTheGivenDirectory dir r)
+             else return fs''
+           Nothing -> return fs'
     where
       isHdf5 :: Path Abs File -> Bool
       isHdf5 p = case fileExtension p of
