@@ -372,6 +372,7 @@ overloadSampleWithConfig conf (Sample
 getMask :: (MonadThrow m, MonadIO m) => BinocularsConfig -> Detector a DIM2 -> m (Maybe Mask)
 getMask c d = case _binocularsInputMaskmatrix c of
                 Nothing          -> return Nothing
+                (Just "default") -> Just <$> getDetectorDefaultMask d
                 (Just fname)     -> Just <$> getDetectorMask d fname
 
 getConfig :: Maybe FilePath -> IO (Either String BinocularsConfig)
