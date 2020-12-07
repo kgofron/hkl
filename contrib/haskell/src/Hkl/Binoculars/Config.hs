@@ -35,7 +35,9 @@ module Hkl.Binoculars.Config
 
 
 import           Control.Lens                      (makeLenses, (^.))
+import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.Catch.Pure          (runCatch)
+import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Array.Repa.Index             (DIM2)
 #if MIN_VERSION_extra(1, 6, 9)
 #else
@@ -367,10 +369,10 @@ overloadSampleWithConfig conf (Sample
           nuy = go uy (fmap (/~ degree) (_binocularsInputUy conf))
           nuz = go uz (fmap (/~ degree) (_binocularsInputUz conf))
 
-getMask :: BinocularsConfig -> Detector a DIM2 -> IO (Maybe Mask)
+getMask :: (MonadThrow m, MonadIO m) => BinocularsConfig -> Detector a DIM2 -> m (Maybe Mask)
 getMask c d = case _binocularsInputMaskmatrix c of
-                Nothing      -> getDetectorDefaultMask d
-                (Just fname) -> getDetectorMask d fname
+                Nothing          -> return Nothing
+                (Just fname)     -> Just <$> getDetectorMask d fname
 
 getConfig :: Maybe FilePath -> IO (Either String BinocularsConfig)
 getConfig mf = do

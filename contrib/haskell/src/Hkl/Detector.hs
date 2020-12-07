@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE ForeignFunctionInterface  #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE StandaloneDeriving        #-}
 
 module Hkl.Detector
@@ -22,13 +23,17 @@ module Hkl.Detector
        , shape
        ) where
 
+
 import           Control.Monad                     ((<=<))
+import           Control.Monad.Catch               (Exception, MonadThrow,
+                                                    throwM)
+import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Data.Array.Repa                   (Array, Shape)
 import           Data.Array.Repa.Index             ((:.) (..), DIM0, DIM2, DIM3,
                                                     Z (..), ix2, ix3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr)
 import           Data.List                         (find, sort)
-import           Data.Text                         (Text, unpack)
+import           Data.Text                         (Text, pack, unpack, unwords)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Foreign.C.String                  (CString, peekCString,
                                                     withCString)
@@ -44,6 +49,11 @@ import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
                                                     radian, (/~))
 
 import           Hkl.PyFAI.Npt                     (NptPoint (NptPoint))
+
+data HklDetectorException = MaskShapeNotcompatible Text
+                          | NoDefaultMask
+    deriving (Show)
+instance Exception HklDetectorException
 
 data PyFAI deriving (Eq, Show)
 data Hkl deriving (Eq, Show)
@@ -98,7 +108,7 @@ foreign import ccall unsafe
 parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
 parseDetector2D t = case find (\(Detector2D _ n _) -> n == unpack t) detectors of
                       (Just d) -> Right d
-                      Nothing  -> Left ("Unsupported '" ++ unpack t ++ "' detector, select one of -> " ++ unwords (sort [n | (Detector2D _ n _) <- detectors]))
+                      Nothing  -> Left ("Unsupported '" ++ unpack t ++ "' detector, select one of -> " ++ Prelude.unwords (sort [n | (Detector2D _ n _) <- detectors]))
 
 --  SomeDetector
 
@@ -200,26 +210,28 @@ foreign import ccall unsafe
                                              -> CDouble -- double detrot
                                              -> IO ()
 
-fromPtr :: Shape sh => sh -> Ptr a -> IO (Maybe (Array F sh a))
-fromPtr sh ptr = if ptr == nullPtr
-                 then return Nothing
-                 else do
-                   arr <- newForeignPtr finalizerFree ptr
-                   return $ Just (fromForeignPtr sh (castForeignPtr arr))
+fromPtr :: (MonadThrow m, MonadIO m, Shape sh) => sh -> HklDetectorException -> Ptr a -> m (Array F sh a)
+fromPtr sh err ptr =
+    if ptr == nullPtr
+    then throwM err
+    else do
+      arr <- liftIO $ newForeignPtr finalizerFree ptr
+      return $ fromForeignPtr sh (castForeignPtr arr)
 
-getDetectorDefaultMask :: Detector a DIM2 -> IO (Maybe Mask)
+getDetectorDefaultMask :: (MonadThrow m, MonadIO m) => Detector a DIM2 -> m Mask
 getDetectorDefaultMask (Detector2D n _ sh) =
-    fromPtr sh =<< hkl_binoculars_detector_2d_mask_get n
+    fromPtr sh NoDefaultMask =<< (liftIO $ hkl_binoculars_detector_2d_mask_get n)
 
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_mask_get"
  hkl_binoculars_detector_2d_mask_get :: CInt -- HklBinocularsDetector2DEnum n
                                      -> IO (Ptr CBool)
 
-getDetectorMask :: Detector a DIM2 -> Text -> IO (Maybe Mask)
-getDetectorMask (Detector2D n _ sh)  mask =
-    withCString (unpack mask) $
-        fromPtr sh <=< hkl_binoculars_detector_2d_mask_load n
+getDetectorMask :: (MonadThrow m, MonadIO m) => Detector a DIM2 -> Text -> m Mask
+getDetectorMask (Detector2D n name sh)  mask = do
+  let  err = MaskShapeNotcompatible (Data.Text.unwords [pack name, ": ", mask])
+  liftIO $ withCString (unpack mask) $
+         fromPtr sh err <=< hkl_binoculars_detector_2d_mask_load n
 
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_mask_load"
