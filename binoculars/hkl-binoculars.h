@@ -50,6 +50,9 @@ HKLAPI extern void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnu
 
 HKLAPI extern double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n);
 
+HKLAPI extern void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
+                                                               const char *fname);
+
 HKLAPI extern uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n);
 
 HKLAPI extern uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,

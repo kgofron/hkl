@@ -9,6 +9,7 @@ G_BEGIN_DECLS
 
 enum HklBinocularsNpyDataType {
         HKL_BINOCULARS_NPY_BOOL,
+        HKL_BINOCULARS_NPY_DOUBLE,
 };
 
 extern void *npy_load(const char *filename,

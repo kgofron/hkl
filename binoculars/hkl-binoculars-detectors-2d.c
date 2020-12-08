@@ -43,29 +43,29 @@
 #define pixel_offset(detector, i, j) item_offset((detector)->shape, i, j)
 
 #define replicate_row(row, shape, n) do{                                \
-                for(int i=1; i<(n); ++i){                               \
-                        memcpy(&(row)[i * (shape).width], (row), (shape).width * sizeof(*(row))); \
+                for(int i_=1; i_<(n); ++i_){                            \
+                        memcpy(&(row)[i_ * (shape).width], (row), (shape).width * sizeof(*(row))); \
                 }                                                       \
         } while(0)
 
-#define fill_row(row, shape, val) do{                   \
-                for(int i=0; i<(shape).width; ++i){     \
-                        (row)[i] = (val);               \
-                }                                       \
+#define fill_row(row, shape, val) do{                      \
+                for(int i_=0; i_<(shape).width; ++i_){     \
+                        (row)[i_] = (val);                 \
+                }                                          \
         } while(0)
 
-#define replicate_column(col, shape, n) do{                            \
-                for(int i=0; i<shape_size(shape); i=i+(shape).width){  \
-                        for(int j=1; j<(n); ++j){                      \
-                                (col[i+j]) = col[i];                   \
-                        }                                              \
-                }                                                      \
+#define replicate_column(col, shape, n) do{                             \
+                for(int i_=0; i_<shape_size(shape); i_=i_+(shape).width){ \
+                        for(int j_=1; j_<(n); ++j_){                    \
+                                (col[i_+j_]) = col[i_];                 \
+                        }                                               \
+                }                                                       \
         } while(0)
 
-#define fill_column(col, shape, val) do {                              \
-                for(int i=0; i<shape_size(shape); i=i+(shape).width){  \
-                        (col)[i] = (val);                              \
-                }                                                      \
+#define fill_column(col, shape, val) do {                               \
+                for(int i_=0; i_<shape_size(shape); i_=i_+(shape).width){ \
+                        (col)[i_] = (val);                              \
+                }                                                       \
         } while(0)
 
 #define malloc_detector_coordinates(arr, detector) do{                  \
@@ -207,10 +207,8 @@ static inline double *coordinates_rectangle(const struct detector_t *detector,
 
         malloc_detector_coordinates(arr, detector);
 
-        y = y_coordinates(arr, detector);
-        z = z_coordinates(arr, detector);
-
         /* y */
+        y = y_coordinates(arr, detector);
         for(i=0; i<detector->shape.width; ++i)
                 y[i] = - (0.5 + i) * p_w;
         replicate_row(y, detector->shape, detector->shape.height);
@@ -459,6 +457,24 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
 
         return detector->ops->coordinates_get(detector);
 };
+
+void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
+                                                 const char *fname)
+{
+        double *arr = NULL;
+        const struct detector_t *detector = &detectors[n];
+        darray_int shape = darray_new();
+
+        darray_appends(shape,
+                       3,
+                       detector->shape.height,
+                       detector->shape.width);
+
+
+        arr = hkl_binoculars_detector_2d_coordinates_get(n);
+        npy_save(fname, arr, HKL_BINOCULARS_NPY_DOUBLE, &shape);
+        free(arr);
+}
 
 uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
 {

@@ -288,6 +288,7 @@ static inline char map_type(enum HklBinocularsNpyDataType type)
 
         switch(type){
         case HKL_BINOCULARS_NPY_BOOL: res = 'b';
+        case HKL_BINOCULARS_NPY_DOUBLE: res = 'f';
         }
 
     /* if(t == typeid(float) ) return 'f'; */
@@ -322,6 +323,7 @@ static inline int map_size(enum HklBinocularsNpyDataType type)
 
         switch(type){
         case HKL_BINOCULARS_NPY_BOOL: res = 1;
+        case HKL_BINOCULARS_NPY_DOUBLE: res = 8;
         }
         return res;
 }

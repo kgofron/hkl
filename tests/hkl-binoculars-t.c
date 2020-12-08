@@ -38,6 +38,19 @@ static void coordinates_get(void)
 	ok(res == TRUE, __func__);
 }
 
+static void coordinates_save(void)
+{
+        int res = TRUE;
+
+        for(int i=0; i<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++i){
+                char buffer[256];
+
+                snprintf(buffer, ARRAY_SIZE(buffer), "/tmp/coordinates_%d.npy", i);
+                hkl_binoculars_detector_2d_coordinates_save(i, buffer);
+        }
+	ok(res == TRUE, __func__);
+}
+
 static void mask_get(void)
 {
         int res = TRUE;
@@ -57,7 +70,7 @@ static void mask_save(void)
         for(int i=0; i<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++i){
                 char buffer[256];
 
-                snprintf(buffer, ARRAY_SIZE(buffer), "/tmp/test_%d.npy", i);
+                snprintf(buffer, ARRAY_SIZE(buffer), "/tmp/mask_%d.npy", i);
                 hkl_binoculars_detector_2d_mask_save(i, buffer);
         }
 	ok(res == TRUE, __func__);
@@ -75,6 +88,7 @@ int main(void)
 	plan(3);
 
 	coordinates_get();
+        coordinates_save();
 	mask_get();
         mask_save();
 
