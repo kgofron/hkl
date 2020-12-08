@@ -320,10 +320,17 @@ files c = do
            Nothing -> return fs'
     where
       isHdf5 :: Path Abs File -> Bool
-      isHdf5 p = case fileExtension p of
+-- debian bulleyes (signature changed ???)
+#if MIN_VERSION_path(0, 7, 0)
+      isHdf5 p = case ((fileExtension p) :: Maybe [Char]) of
                    Nothing    -> False
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
-
+-- debian buster
+#else
+      isHdf5 p = case (fileExtension p) of
+                   ""  -> False
+                   ext -> ext `elem` [".h5", ".nxs"]
+#endif
       matchIndex :: Path Abs File -> Int -> Bool
       matchIndex p n = printf "%04d" n `isInfixOf` toFilePath p
 
