@@ -223,7 +223,9 @@ void hkl_binoculars_space_q(HklBinocularsSpace *space,
 	size_t i, j;
 	const char * names[] = {"qx", "qy", "qz"};
 
-        assert(ARRAY_SIZE(names) == darray_size(space->axes) && n_pixels == space->n_indexes_0);
+        assert(ARRAY_SIZE(names) == darray_size(space->axes));
+        assert(ARRAY_SIZE(names) == n_resolutions);
+        assert(n_pixels == space->n_indexes_0);
 
 	const double *q_x = &pixels_coordinates[0 * n_pixels];
 	const double *q_y = &pixels_coordinates[1 * n_pixels];
@@ -281,7 +283,9 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
 	size_t i, j;
 	const char * names[] = {"h", "k", "l"};
 
-        assert(ARRAY_SIZE(names) == darray_size(space->axes) && n_pixels == space->n_indexes_0);
+        assert(ARRAY_SIZE(names) == darray_size(space->axes));
+        assert(ARRAY_SIZE(names) == n_resolutions);
+        assert(n_pixels == space->n_indexes_0);
 
         const double *h = &pixels_coordinates[0 * n_pixels];
 	const double *k = &pixels_coordinates[1 * n_pixels];

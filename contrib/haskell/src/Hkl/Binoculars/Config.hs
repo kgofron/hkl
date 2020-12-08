@@ -27,6 +27,7 @@ module Hkl.Binoculars.Config
     , files
     , getConfig
     , getMask
+    , getResolution
     , new
     , overloadSampleWithConfig
     , sampleConfig
@@ -52,7 +53,7 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     number, parseIni, section,
                                                     serializeIni, text, (.=),
                                                     (.=?))
-import           Data.List                         (isInfixOf)
+import           Data.List                         (isInfixOf, length)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, breakOn, drop,
                                                     findIndex, length, lines,
@@ -101,6 +102,7 @@ mapRight = fmap
 data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
                                   | NoDataFilesInTheGivenDirectory (Path Abs Dir)
                                   | NoFilesInRangeInTheGivenDirectory (Path Abs Dir) (ConfigRange Int)
+                                  | ResolutionNotCompatibleWithProjectionNbOfCoordinates [Double] Int
     deriving (Show)
 instance Exception HklBinocularsConfigException
 
@@ -288,7 +290,7 @@ pairWithSeparator' left sep right = FieldValue
       let (leftChunk, rightChunk) = breakOn sep t
       in do
         x <- fvParse left leftChunk
-        y <- fvParse right (drop (length sep) rightChunk)
+        y <- fvParse right (drop (Data.Text.length sep) rightChunk)
         return (x, y)
   , fvEmit = \ (x, y) -> fvEmit left x <> sep <> fvEmit right y
   }
@@ -400,6 +402,14 @@ getMask c d = case _binocularsInputMaskmatrix c of
                 Nothing          -> return Nothing
                 (Just "default") -> Just <$> getDetectorDefaultMask d
                 (Just fname)     -> Just <$> getDetectorMask d fname
+
+getResolution :: MonadThrow m => BinocularsConfig -> Int -> m [Double]
+getResolution c n
+  | Data.List.length res == 1 = return $ replicate n (head res)
+  | Data.List.length res == n = return $ res
+  | otherwise = throwM $ (ResolutionNotCompatibleWithProjectionNbOfCoordinates res) n
+  where
+    res = _binocularsProjectionResolution c
 
 getConfig :: Maybe FilePath -> IO (Either String BinocularsConfig)
 getConfig mf = do

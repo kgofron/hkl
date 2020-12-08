@@ -76,6 +76,9 @@ mkJobs fn h5d = do
   -- let c' = 1
   let ntot = sum ns
       c = if c' >= 2 then c' - 1 else c'
+  let jobs = mkJobs' (quot ntot c) fns ns
+  Prelude.print jobs
+  Prelude.print c
   return $ mkJobs' (quot ntot c) fns ns
 
 
@@ -116,6 +119,7 @@ mkInputQxQyQz c f = do
   fs <- files c
   let d = fromMaybe defaultDetector (_binocularsInputDetector c)
   mask' <- getMask c d
+  res <- getResolution c 3
   case f c of
     (Just h5dpath') -> pure $ InputQxQyQz
                       { detector = d
@@ -124,7 +128,7 @@ mkInputQxQyQz c f = do
                       , output = case _binocularsInputInputRange c of
                                    Just r  -> destination' r (_binocularsDispatcherDestination c)
                                    Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
-                      , resolutions = _binocularsProjectionResolution c
+                      , resolutions = res
                       , centralPixel = _binocularsInputCentralpixel c
                       , sdd' = _binocularsInputSdd c
                       , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
@@ -158,6 +162,7 @@ mkInputHkl c f = do
   fs <- files c
   let d = fromMaybe defaultDetector (_binocularsInputDetector c)
   mask' <- getMask c d
+  res <- getResolution c 3
   case f c of
     (Just h5dpath') -> pure $ InputHkl
                       { detector = d
@@ -166,7 +171,7 @@ mkInputHkl c f = do
                       , output = destination'
                                  (fromMaybe (ConfigRange []) (_binocularsInputInputRange c))
                                  (_binocularsDispatcherDestination c)
-                      , resolutions = _binocularsProjectionResolution c
+                      , resolutions = res
                       , centralPixel = _binocularsInputCentralpixel c
                       , sdd' = _binocularsInputSdd c
                       , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
