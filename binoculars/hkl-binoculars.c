@@ -281,7 +281,7 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
                               const uint8_t *masked)
 {
 	size_t i, j;
-	const char * names[] = {"h", "k", "l"};
+	const char * names[] = {"H", "K", "L"};
 
         assert(ARRAY_SIZE(names) == darray_size(space->axes));
         assert(ARRAY_SIZE(names) == n_resolutions);
