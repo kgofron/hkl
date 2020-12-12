@@ -269,6 +269,21 @@ withAttenuationPathP f matt g =
           withHdf5PathP f p $ \p' -> g (\j -> Just
                                             <$> get_position p' (j + offset))
 
+withQxQyQzPath :: (MonadSafe m, Location l) =>
+                 l
+               -> Detector a DIM2
+               -> QxQyQzPath
+               -> ((Int -> IO DataFrameQxQyQz) -> m r)
+               -> m r
+withQxQyQzPath f det (QxQyQzPath d dif matt) g =
+  withDetectorPathP f det d $ \getImage ->
+  withGeometryPathP f dif $ \getDiffractometer ->
+  withAttenuationPathP f matt $ \getAttenuation ->
+  g (\j -> DataFrameQxQyQz j
+          <$> getDiffractometer j
+          <*> getImage j
+          <*> getAttenuation j)
+
 --  FramesQxQyQzP
 
 instance LenP QxQyQzPath where
@@ -285,19 +300,12 @@ instance LenP QxQyQzPath where
                                       Nothing  -> error "can not extract length"
 
 instance FramesQxQyQzP QxQyQzPath where
-    framesQxQyQzP (QxQyQzPath d dif matt) det =
+    framesQxQyQzP p det =
         skipMalformed $ forever $ do
           (Chunk fp from to) <- await
           withFileP (openH5 fp) $ \f ->
-              withDetectorPathP f det d $ \getImage ->
-              withGeometryPathP f dif $ \getDiffractometer ->
-              withAttenuationPathP f matt $ \getAttenuation ->
-              forM_ [from..to-1] (\j -> yield =<< liftIO
-                                       (DataFrameQxQyQz j
-                                       <$> getDiffractometer j
-                                       <*> getImage j
-                                       <*> getAttenuation j
-                                       ))
+            withQxQyQzPath f det p $ \getDataFrameQxQyQz ->
+            forM_ [from..to-1] (\j -> yield =<< liftIO (getDataFrameQxQyQz j))
 
 -- FramesHklP
 
@@ -341,33 +349,23 @@ instance LenP HklPath where
   lenP (HklPathFromQxQyQz p _) = lenP p
 
 instance FramesHklP HklPath where
-    framesHklP (HklPath (QxQyQzPath imgs dif matt) samp) det =
-        skipMalformed $ forever $ do
-                              (Chunk fp from to) <- await
-                              withFileP (openH5 fp) $ \f ->
-                                  withDetectorPathP f det imgs $ \getImage ->
-                                  withGeometryPathP f dif $ \getDiffractometer ->
-                                  withSamplePathP f samp $ \getSample ->
-                                  withAttenuationPathP f matt $ \getAttenuation ->
-                                  forM_ [from..to-1] (\j ->yield =<< liftIO
-                                                          (DataFrameHkl j
-                                                          <$> getImage j
-                                                          <*> getDiffractometer j
-                                                          <*> getSample
-                                                          <*> getAttenuation j
-                                                          ))
+  framesHklP (HklPath qp samp) det = skipMalformed $ forever $ do
+    (Chunk fp from to) <- await
+    withFileP (openH5 fp) $ \f ->
+      withQxQyQzPath f det qp $ \getDataFrameQxQyQz ->
+      withSamplePathP f samp $ \getSample ->
+      forM_ [from..to-1] (\j ->yield =<< liftIO
+                              (DataFrameHkl
+                               <$> getDataFrameQxQyQz j
+                               <*> getSample
+                              ))
 
-    framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif matt) sample) det =
-        skipMalformed $ forever $ do
-                              (Chunk fp from to) <- await
-                              withFileP (openH5 fp) $ \f ->
-                                  withDetectorPathP f det imgs $ \getImage ->
-                                  withGeometryPathP f dif $ \getDiffractometer ->
-                                  withAttenuationPathP f matt $ \getAttenuation ->
-                                  forM_ [from..to-1] (\j -> yield =<< liftIO
-                                                           (DataFrameHkl j
-                                                           <$> getImage j
-                                                           <*> getDiffractometer j
-                                                           <*> pure sample
-                                                           <*> getAttenuation j
-                                                           ))
+  framesHklP (HklPathFromQxQyQz qp sample) det = skipMalformed $ forever $ do
+    (Chunk fp from to) <- await
+    withFileP (openH5 fp) $ \f ->
+      withQxQyQzPath f det qp $ \getDataFrameQxQyQz ->
+      forM_ [from..to-1] (\j ->yield =<< liftIO
+                              (DataFrameHkl
+                               <$> getDataFrameQxQyQz j
+                               <*> pure sample
+                              ))

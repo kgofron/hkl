@@ -180,6 +180,20 @@ withAttenuationPathC f matt g =
           withHdf5PathC f p $ \p' -> g (\j -> Just
                                             <$> get_position p' (j + offset))
 
+withQxQyQzPathC :: (MonadResource m, Location l) =>
+                 l
+               -> Detector a DIM2
+               -> QxQyQzPath
+               -> ((Int -> IO DataFrameQxQyQz) -> ConduitT i o m r)
+               -> ConduitT i o m r
+withQxQyQzPathC f det (QxQyQzPath d dif att) g =
+    withDetectorPathC f det d $ \getImage ->
+    withGeometryPathC f dif $ \getDiffractometer ->
+    withAttenuationPathC f att $ \getAttenuation -> g (\j ->
+                                                         DataFrameQxQyQz j
+                                                         <$> getDiffractometer j
+                                                         <*> getImage j
+                                                         <*> getAttenuation j)
 --  FramesQxQyQzP
 
 instance LenC QxQyQzPath where
@@ -207,22 +221,16 @@ class LenC a => FramesQxQyQzC a where
                 -> ConduitT (Chunk Int FilePath) DataFrameQxQyQz m ()
 
 instance FramesQxQyQzC QxQyQzPath where
-  framesQxQyQzC (QxQyQzPath d dif att) det = loop
+  framesQxQyQzC p det = loop
     where
       loop = do
         mc <- await
         case mc of
           Nothing -> return ()
           (Just (Chunk fp from to)) -> withFileC (openH5 fp) $ \f ->
-             withDetectorPathC f det d $ \getImage ->
-             withGeometryPathC f dif $ \getDiffractometer ->
-             withAttenuationPathC f att $ \getAttenuation -> do
-                                    forM_ [from..to-1] (\j -> yield =<< liftIO
-                                                             (DataFrameQxQyQz j
-                                                             <$> getDiffractometer j
-                                                             <*> getImage j
-                                                             <*> getAttenuation j))
-                                    loop
+            withQxQyQzPathC f det p $ \getDataFrameQxQyQz -> do
+            forM_ [from..to-1] (\j -> yield =<< liftIO (getDataFrameQxQyQz j))
+            loop
 
 -- FramesHklP
 
@@ -273,43 +281,37 @@ instance LenC HklPath where
   lenC (HklPathFromQxQyQz p _) = lenC p
 
 instance FramesHklC HklPath where
-  framesHklC (HklPath (QxQyQzPath imgs dif att) samp) det = loop
+  framesHklC (HklPath qp samp) det = loop
     where
       loop = do
         mc <- await
         case mc of
           Nothing -> return ()
           (Just (Chunk fp from to)) -> withFileC (openH5 fp) $ \f ->
-             withDetectorPathC f det imgs $ \getImage ->
-             withGeometryPathC f dif $ \getDiffractometer ->
-             withAttenuationPathC f att $ \getAttenuation ->
-             withSamplePathC f samp $ \getSample -> do
-                              forM_ [from..to-1] (\j -> yield =<< liftIO
-                                                       (DataFrameHkl j
-                                                       <$> getImage j
-                                                       <*> getDiffractometer j
-                                                       <*> getSample
-                                                       <*> getAttenuation j
-                                                       ))
-                              loop
-  framesHklC (HklPathFromQxQyQz (QxQyQzPath imgs dif matt) sample) det = loop
+            withQxQyQzPathC f det qp $ \getDataFrameQxQyQz ->
+            withSamplePathC f samp $ \getSample -> do
+            forM_ [from..to-1] (\j -> yield =<< liftIO
+                                 (DataFrameHkl
+                                  <$> getDataFrameQxQyQz j
+                                  <*> getSample
+                                 ))
+            loop
+
+  framesHklC (HklPathFromQxQyQz qp sample) det = loop
     where
       loop = do
         mc <- await
         case mc of
           Nothing -> return ()
           (Just (Chunk fp from to)) -> withFileC (openH5 fp) $ \f ->
-             withDetectorPathC f det imgs $ \getImage ->
-             withGeometryPathC f dif $ \getDiffractometer ->
-             withAttenuationPathC f matt $ \getAttenuation -> do
-                              forM_ [from..to-1] (\j -> yield =<< liftIO
-                                                       (DataFrameHkl j
-                                                       <$> getImage j
-                                                       <*> getDiffractometer j
-                                                       <*> pure sample
-                                                       <*> getAttenuation j
-                                                       ))
-                              loop
+            withQxQyQzPathC f det qp $ \getDataFrameQxQyQz -> do
+            forM_ [from..to-1] (\j -> yield =<< liftIO
+                                 (DataFrameHkl
+                                  <$> getDataFrameQxQyQz j
+                                  <*> pure sample
+                                 ))
+            loop
+
 
 processHklC :: FramesHklC a => InputHkl a -> IO ()
 processHklC input@(InputHkl det _ h5d o res cen d r config' mask') = do

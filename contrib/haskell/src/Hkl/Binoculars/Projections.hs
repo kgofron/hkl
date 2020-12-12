@@ -182,17 +182,12 @@ data InputHkl a =
   deriving Show
 
 data DataFrameHkl a
-    = DataFrameHkl
-      Int -- position in the stream
-      (ForeignPtr Word16) -- image
-      Geometry -- geometry
-      (Sample Triclinic) --  the sample part
-      (Maybe Double) -- attenuation
+    = DataFrameHkl DataFrameQxQyQz (Sample Triclinic)
       deriving Show
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' space (DataFrameHkl _ img g samp matt) = do
+spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ g img matt) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->
