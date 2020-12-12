@@ -41,8 +41,7 @@ import           Control.Monad.Catch               (Exception, MonadThrow,
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Array.Repa.Index             (DIM2)
-#if MIN_VERSION_extra(1, 6, 9)
-#else
+#if MIN_VERSION_extra(1, 6, 14)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 #endif
 import           Data.Attoparsec.Text              (Parser, char, decimal,
@@ -81,7 +80,10 @@ import           Hkl.Types
 import           Paths_hkl
 
 
-#if MIN_VERSION_extra(1, 6, 9)
+#if MIN_VERSION_extra(1, 6, 14)
+#else
+-- for buster
+
 --  The 'mapLeft' function takes a function and applies it to an Either value
 -- iff the value takes the form @'Left' _@.
 --
