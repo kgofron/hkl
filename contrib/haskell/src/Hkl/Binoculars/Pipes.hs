@@ -342,11 +342,10 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
            <*> (Parameter "uz"
                 <$> get_position uz' 0
                 <*> pure (Range 0 0)))
-
+withSamplePathP _ (SamplePath2 s) g = g (return s)
 
 instance LenP HklPath where
   lenP (HklPath p _)           = lenP p
-  lenP (HklPathFromQxQyQz p _) = lenP p
 
 instance FramesHklP HklPath where
   framesHklP (HklPath qp samp) det = skipMalformed $ forever $ do
@@ -358,14 +357,4 @@ instance FramesHklP HklPath where
                               (DataFrameHkl
                                <$> getDataFrameQxQyQz j
                                <*> getSample
-                              ))
-
-  framesHklP (HklPathFromQxQyQz qp sample) det = skipMalformed $ forever $ do
-    (Chunk fp from to) <- await
-    withFileP (openH5 fp) $ \f ->
-      withQxQyQzPath f det qp $ \getDataFrameQxQyQz ->
-      forM_ [from..to-1] (\j ->yield =<< liftIO
-                              (DataFrameHkl
-                               <$> getDataFrameQxQyQz j
-                               <*> pure sample
                               ))

@@ -274,11 +274,10 @@ withSamplePathC f (SamplePath a b c alpha beta gamma ux uy uz) g =
            <*> (Parameter "uz"
                 <$> get_position uz' 0
                 <*> pure (Range 0 0)))
-
+withSamplePathC _ (SamplePath2 s) g = g (return s)
 
 instance LenC HklPath where
   lenC (HklPath p _)           = lenC p
-  lenC (HklPathFromQxQyQz p _) = lenC p
 
 instance FramesHklC HklPath where
   framesHklC (HklPath qp samp) det = loop
@@ -296,22 +295,6 @@ instance FramesHklC HklPath where
                                   <*> getSample
                                  ))
             loop
-
-  framesHklC (HklPathFromQxQyQz qp sample) det = loop
-    where
-      loop = do
-        mc <- await
-        case mc of
-          Nothing -> return ()
-          (Just (Chunk fp from to)) -> withFileC (openH5 fp) $ \f ->
-            withQxQyQzPathC f det qp $ \getDataFrameQxQyQz -> do
-            forM_ [from..to-1] (\j -> yield =<< liftIO
-                                 (DataFrameHkl
-                                  <$> getDataFrameQxQyQz j
-                                  <*> pure sample
-                                 ))
-            loop
-
 
 processHklC :: FramesHklC a => InputHkl a -> IO ()
 processHklC input@(InputHkl det _ h5d o res cen d r config' mask') = do

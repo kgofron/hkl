@@ -104,13 +104,14 @@ h5dpathHkl c =
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uz")
         uhvSamplePath = sixsSample "I14-C-CX2__EX__DIFF-UHV__#1"
         cmMedVSamplePath = sixsSample "i14-c-cx1-ex-cm-med.v"
+        cristalSamplePath = SamplePath2 <$> (sampleConfig c)
     in case h5dpathQxQyQz c of
          (Just qxqyqz) -> case _binocularsInputItype c of
                            SixsFlyMedV -> Just (HklPath qxqyqz cmMedVSamplePath)
                            SixsFlyScanUhv -> Just (HklPath qxqyqz uhvSamplePath)
                            SixsFlyScanUhv2 -> Just (HklPath qxqyqz uhvSamplePath)
                            SixsSbsMedV -> undefined
-                           CristalK6C -> fmap (HklPathFromQxQyQz qxqyqz) (sampleConfig c)
+                           CristalK6C -> HklPath qxqyqz <$> cristalSamplePath
          Nothing -> Nothing
 
          -- SixsSbsMedV -> HklPath

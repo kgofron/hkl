@@ -148,24 +148,24 @@ spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img matt) =
 
 -- SamplePath
 
-data SamplePath = SamplePath
-    (Hdf5Path Z Double) -- a
-    (Hdf5Path Z Double) -- b
-    (Hdf5Path Z Double) -- c
-    (Hdf5Path Z Double) -- alpha
-    (Hdf5Path Z Double) -- beta
-    (Hdf5Path Z Double) -- gamma
-    (Hdf5Path Z Double) -- ux
-    (Hdf5Path Z Double) -- uy
-    (Hdf5Path Z Double) -- yz
+data SamplePath
+    = SamplePath
+      (Hdf5Path Z Double) -- a
+      (Hdf5Path Z Double) -- b
+      (Hdf5Path Z Double) -- c
+      (Hdf5Path Z Double) -- alpha
+      (Hdf5Path Z Double) -- beta
+      (Hdf5Path Z Double) -- gamma
+      (Hdf5Path Z Double) -- ux
+      (Hdf5Path Z Double) -- uy
+      (Hdf5Path Z Double) -- yz
+    | SamplePath2 (Sample Triclinic)
     deriving Show
 
 --  Hkl Projection
 
 data HklPath = HklPath QxQyQzPath SamplePath
-             | HklPathFromQxQyQz QxQyQzPath (Sample Triclinic)
-
-  deriving Show
+               deriving Show
 
 data InputHkl a =
   InputHkl { detector     :: Detector Hkl DIM2
