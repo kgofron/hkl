@@ -220,7 +220,7 @@ fromPtr sh err ptr =
 
 getDetectorDefaultMask :: (MonadThrow m, MonadIO m) => Detector a DIM2 -> m Mask
 getDetectorDefaultMask (Detector2D n _ sh) =
-    fromPtr sh NoDefaultMask =<< (liftIO $ hkl_binoculars_detector_2d_mask_get n)
+    fromPtr sh NoDefaultMask =<< liftIO (hkl_binoculars_detector_2d_mask_get n)
 
 foreign import ccall unsafe
  "hkl-binoculars.h hkl_binoculars_detector_2d_mask_get"
