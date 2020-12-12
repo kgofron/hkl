@@ -12,7 +12,8 @@
     Portability: GHC only (not tested)
 -}
 module Hkl.Binoculars.Projections
-  ( DataFrameHkl(..)
+  ( AttenuationPath(..)
+  , DataFrameHkl(..)
   , DataFrameQxQyQz(..)
   , DetectorPath(..)
   , GeometryPath(..)
@@ -92,9 +93,18 @@ data GeometryPath
 
                   deriving Show
 
+-- AttenuationPath
+
+data AttenuationPath
+    = AttenuationPath { attenuationPath   :: Hdf5Path DIM1 Double
+                      , attenuationOffset :: Int
+                      }
+    | NoAttenuation
+    deriving Show
+
 --  QxQyQz Projection
 
-data QxQyQzPath = QxQyQzPath DetectorPath GeometryPath
+data QxQyQzPath = QxQyQzPath DetectorPath GeometryPath AttenuationPath
 
 instance Show QxQyQzPath where
   show = show . typeOf
@@ -119,11 +129,12 @@ data DataFrameQxQyQz
       Int -- n
       Geometry -- geometry
       (ForeignPtr Word16) -- image
+      (Maybe Double) -- attenuation
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img) =
+spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img matt) =
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -176,12 +187,12 @@ data DataFrameHkl a
       (ForeignPtr Word16) -- image
       Geometry -- geometry
       (Sample Triclinic) --  the sample part
-      -- (Array F DIM2 Double) -- ub
+      (Maybe Double) -- attenuation
       deriving Show
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' space (DataFrameHkl _ img g samp) = do
+spaceHkl config' det pixels rs mmask' space (DataFrameHkl _ img g samp matt) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->

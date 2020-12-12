@@ -20,59 +20,72 @@ import           Hkl.H5                     hiding (File)
 
 h5dpathQxQyQz :: BinocularsConfig -> Maybe QxQyQzPath
 h5dpathQxQyQz c = Just $ case _binocularsInputItype c of
-  SixsFlyMedV -> QxQyQzPath
-                  (DetectorPath
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                  (GeometryPathMedV
-                   (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                    [ -- hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta" it was not saved in the file
-                      hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
-                    ])
-  SixsFlyScanUhv -> QxQyQzPath
-                   (DetectorPath
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                   (GeometryPathUhv
-                    (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-                    [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
-                    ])
-  SixsFlyScanUhv2 -> QxQyQzPath
-                    (DetectorPath
-                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                    (GeometryPathUhv
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-                     [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                     ])
-  SixsSbsMedV -> QxQyQzPath
-                (DetectorPath
-                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                (GeometryPathUhv
-                 (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                 [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                 ])
-  CristalK6C -> QxQyQzPath
-               (DetectorPath
-                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
-               (GeometryPathCristalK6C
-                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda")
-                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position")
-                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position")
-                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position")
-                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
-                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
-                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
+                           SixsFlyMedV -> QxQyQzPath
+                                         (DetectorPath
+                                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                                         (GeometryPathMedV
+                                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                                          [ -- hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta" it was not saved in the file
+                                            hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
+                                          ])
+                                         (AttenuationPath
+                                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                                          2)
+                           SixsFlyScanUhv -> QxQyQzPath
+                                            (DetectorPath
+                                             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                                            (GeometryPathUhv
+                                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                                             [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
+                                             , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
+                                             , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
+                                             , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
+                                             ])
+                                            (AttenuationPath
+                                             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                                             2)
+                           SixsFlyScanUhv2 -> QxQyQzPath
+                                             (DetectorPath
+                                              (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                                             (GeometryPathUhv
+                                              (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                                              [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                                              ])
+                                            (AttenuationPath
+                                             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                                             2)
+                           SixsSbsMedV -> QxQyQzPath
+                                         (DetectorPath
+                                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                                         (GeometryPathUhv
+                                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                                          [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                                          ])
+                                         (AttenuationPath
+                                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                                          0)
+                           CristalK6C -> QxQyQzPath
+                                        (DetectorPath
+                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
+                                        (GeometryPathCristalK6C
+                                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda")
+                                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position")
+                                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position")
+                                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position")
+                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
+                                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
+                                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
+                                        NoAttenuation
 
 
 --  FramesHklP

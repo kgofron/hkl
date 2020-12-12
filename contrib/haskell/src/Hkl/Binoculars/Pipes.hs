@@ -36,6 +36,7 @@ import           Data.Maybe                        (fromMaybe)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
 import           Foreign.ForeignPtr                (ForeignPtr)
+import           GHC.Base                          (returnIO)
 import           GHC.Conc                          (getNumCapabilities)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
@@ -256,28 +257,47 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
                     (fromList [mu, komega, kappa, kphi, gamma, delta])
                     Nothing))
 
+withAttenuationPathP :: (MonadSafe m, Location l) =>
+                       l
+                     -> AttenuationPath
+                     -> ((Int -> IO (Maybe Double)) -> m r)
+                     -> m r
+withAttenuationPathP f matt g =
+    case matt of
+      NoAttenuation -> g (const $ returnIO Nothing)
+      (AttenuationPath p offset) ->
+          withHdf5PathP f p $ \p' -> g (\j -> Just
+                                            <$> get_position p' (j + offset))
+
 --  FramesQxQyQzP
 
 instance LenP QxQyQzPath where
-  lenP (QxQyQzPath (DetectorPath i) _) = skipMalformed $ forever $ do
-    fp <- await
-    withFileP (openH5 fp) $ \f ->
-      withHdf5PathP f i $ \i' -> do
-      (_, ss) <- liftIO $ datasetShape i'
-      case head ss of
-        (Just n) -> yield (fromIntegral n)
-        Nothing  -> error "can not extract length"
+    lenP (QxQyQzPath (DetectorPath i) _ ma) =
+        skipMalformed $ forever $ do
+                           fp <- await
+                           withFileP (openH5 fp) $ \f ->
+                               withHdf5PathP f i $ \i' -> do
+                                    (_, ss) <- liftIO $ datasetShape i'
+                                    case head ss of
+                                      (Just n) -> yield $ fromIntegral n + case ma of
+                                                                            NoAttenuation           -> 0
+                                                                            (AttenuationPath _ off) -> off
+                                      Nothing  -> error "can not extract length"
 
 instance FramesQxQyQzP QxQyQzPath where
-  framesQxQyQzP (QxQyQzPath d dif) det = skipMalformed $ forever $ do
-    (Chunk fp from to) <- await
-    withFileP (openH5 fp) $ \f ->
-      withDetectorPathP f det d $ \getImage ->
-      withGeometryPathP f dif $ \getDiffractometer ->
-      forM_ [from..to-1] (\j -> yield =<< liftIO
-                          (DataFrameQxQyQz j
-                           <$> getDiffractometer j
-                           <*> getImage j))
+    framesQxQyQzP (QxQyQzPath d dif matt) det =
+        skipMalformed $ forever $ do
+          (Chunk fp from to) <- await
+          withFileP (openH5 fp) $ \f ->
+              withDetectorPathP f det d $ \getImage ->
+              withGeometryPathP f dif $ \getDiffractometer ->
+              withAttenuationPathP f matt $ \getAttenuation ->
+              forM_ [from..to-1] (\j -> yield =<< liftIO
+                                       (DataFrameQxQyQz j
+                                       <$> getDiffractometer j
+                                       <*> getImage j
+                                       <*> getAttenuation j
+                                       ))
 
 -- FramesHklP
 
@@ -321,25 +341,33 @@ instance LenP HklPath where
   lenP (HklPathFromQxQyQz p _) = lenP p
 
 instance FramesHklP HklPath where
-  framesHklP (HklPath (QxQyQzPath imgs dif) samp) det = skipMalformed $ forever $ do
-    (Chunk fp from to) <- await
-    withFileP (openH5 fp) $ \f ->
-      withDetectorPathP f det imgs $ \getImage ->
-      withGeometryPathP f dif $ \getDiffractometer ->
-      withSamplePathP f samp $ \getSample ->
-      forM_ [from..to-1] (\j ->yield =<< liftIO
-                              (DataFrameHkl j
-                               <$> getImage j
-                               <*> getDiffractometer j
-                               <*> getSample))
+    framesHklP (HklPath (QxQyQzPath imgs dif matt) samp) det =
+        skipMalformed $ forever $ do
+                              (Chunk fp from to) <- await
+                              withFileP (openH5 fp) $ \f ->
+                                  withDetectorPathP f det imgs $ \getImage ->
+                                  withGeometryPathP f dif $ \getDiffractometer ->
+                                  withSamplePathP f samp $ \getSample ->
+                                  withAttenuationPathP f matt $ \getAttenuation ->
+                                  forM_ [from..to-1] (\j ->yield =<< liftIO
+                                                          (DataFrameHkl j
+                                                          <$> getImage j
+                                                          <*> getDiffractometer j
+                                                          <*> getSample
+                                                          <*> getAttenuation j
+                                                          ))
 
-  framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif) sample) det = skipMalformed $ forever $ do
-    (Chunk fp from to) <- await
-    withFileP (openH5 fp) $ \f ->
-      withDetectorPathP f det imgs $ \getImage ->
-      withGeometryPathP f dif $ \getDiffractometer ->
-      forM_ [from..to-1] (\j -> yield =<< liftIO
-                               (DataFrameHkl j
-                                <$> getImage j
-                                <*> getDiffractometer j
-                                <*> pure sample))
+    framesHklP (HklPathFromQxQyQz (QxQyQzPath imgs dif matt) sample) det =
+        skipMalformed $ forever $ do
+                              (Chunk fp from to) <- await
+                              withFileP (openH5 fp) $ \f ->
+                                  withDetectorPathP f det imgs $ \getImage ->
+                                  withGeometryPathP f dif $ \getDiffractometer ->
+                                  withAttenuationPathP f matt $ \getAttenuation ->
+                                  forM_ [from..to-1] (\j -> yield =<< liftIO
+                                                           (DataFrameHkl j
+                                                           <$> getImage j
+                                                           <*> getDiffractometer j
+                                                           <*> pure sample
+                                                           <*> getAttenuation j
+                                                           ))
