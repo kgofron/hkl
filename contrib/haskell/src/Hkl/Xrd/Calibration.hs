@@ -1,7 +1,6 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 
 module Hkl.Xrd.Calibration
        ( NptExt(..)
@@ -11,111 +10,44 @@ module Hkl.Xrd.Calibration
        , extractEdf
        ) where
 
-import Prelude hiding ((<>))
-import Control.Applicative ((<$>), (<*>), pure)
-import Control.Monad.IO.Class (liftIO)
-import Data.Array.Repa.Index (DIM2)
-import Data.ByteString.Char8 (pack)
-import Data.List (foldl')
-import Data.Text (unlines, pack)
-import Data.Vector.Storable
-  ( Vector
-  , fromList
-  , slice
-  , toList
-  )
-import Numeric.LinearAlgebra
-  ( Matrix
-  , (<>)
-  , atIndex
-  , ident
-  )
-import Numeric.GSL.Minimization
-  ( MinimizeMethod ( NMSimplex2 )
-  , minimizeV
-  )
-import Numeric.Units.Dimensional.Prelude (meter, radian, nano, (/~), (*~))
-import Pipes.Safe ( MonadSafe
-                  , runSafeT, bracket
-                  )
-import System.Exit ( ExitCode( ExitSuccess ) )
-import System.FilePath.Posix ((</>), takeFileName)
-import Text.Printf ( printf )
+import           Control.Monad.IO.Class            (liftIO)
+import           Data.Array.Repa.Index             (DIM2)
+import           Data.ByteString.Char8             (pack)
+import           Data.List                         (foldl')
+import           Data.Text                         (pack, unlines)
+import           Data.Vector.Storable              (Vector, fromList, slice,
+                                                    toList)
+import           Numeric.GSL.Minimization          (MinimizeMethod (NMSimplex2),
+                                                    minimizeV)
+import           Numeric.LinearAlgebra             (Matrix, atIndex, ident,
+                                                    ( #> ), (<>))
+import           Numeric.Units.Dimensional.Prelude (meter, nano, radian, (*~),
+                                                    (/~))
+import           Pipes.Safe                        (MonadSafe, bracket,
+                                                    runSafeT)
+import           System.Exit                       (ExitCode (ExitSuccess))
+import           System.FilePath.Posix             (takeFileName, (</>))
+import           Text.Printf                       (printf)
 
--- import Hkl.C ( Geometry ( Geometry )
---              , Factory ( K6c )
---              , geometryDetectorRotationGet
---              )
--- import Hkl.DataSource ( DataItem ( DataItemH5 ) )
--- import Hkl.Detector ( Detector ( ZeroD )
---                     , coordinates
---                     )
--- import Hkl.Edf ( ExtractEdf()
---                , extractEdf
---                )
--- import Hkl.H5 ( Dataset, File, H5
---               , closeDataset
---               , get_position
---               , openDataset
---               , withH5File
---               )
--- import Hkl.PyFAI ( Calibrant, Npt
---                  , NptEntry ( NptEntry )
---                  , Poni
---                  , PoniExt ( PoniExt )
---                  , Pose ( Pose )
---                  , fromAxisAndAngle
---                  , nptEntries
---                  , nptFromFile
---                  , nptWavelength
---                  , poniEntryFromList
---                  , poniEntryToList
---                  , toPyFAICalibArg
---                  )
--- import Hkl.Python ( toPyVal )
--- import Hkl.MyMatrix ( Basis ( HklB, PyFAIB )
---                     , MyMatrix ( MyMatrix )
---                     , changeBase
---                     )
--- import Hkl.Nxs ( DataFrameH5Path ( XrdOneDH5Path )
---                , Nxs ( Nxs )
---                )
--- import Hkl.Script ( Py2, Sh
---                   , Script ( Py2Script, ScriptSh )
---                   , run
---                   , scriptSave
---                   )
--- import Hkl.Types ( AbsDirPath, SampleName
---                  , Source ( Source )
---                  , WaveLength )
--- import Hkl.Xrd.OneD ( XrdOneD
---                     , getPoseEdf
---                     )
+import           Prelude                           hiding ((<>))
 
-import Hkl.C
-import Hkl.DataSource
-import Hkl.Detector
-import Hkl.Edf
-import Hkl.H5
-import Hkl.PyFAI
-import Hkl.Python
-import Hkl.MyMatrix
-import Hkl.Nxs
-import Hkl.Script
-import Hkl.Types
-import Hkl.Xrd.OneD
-
-#if !MIN_VERSION_hmatrix(0, 17, 0)
-(#>) :: Matrix Double -> Vector Double -> Vector Double
-(#>) = (<>)
-#else
-import Numeric.LinearAlgebra ((#>))
-#endif
+import           Hkl.C
+import           Hkl.DataSource
+import           Hkl.Detector
+import           Hkl.Edf
+import           Hkl.H5
+import           Hkl.MyMatrix
+import           Hkl.Nxs
+import           Hkl.PyFAI
+import           Hkl.Python
+import           Hkl.Script
+import           Hkl.Types
+import           Hkl.Xrd.OneD
 
 --  Calibration
 
-data NptExt a = NptExt { nptExtNpt :: Npt
-                       , nptExtPose :: Pose
+data NptExt a = NptExt { nptExtNpt      :: Npt
+                       , nptExtPose     :: Pose
                        , nptExtDetector :: Detector a DIM2
                        }
               deriving (Show)
