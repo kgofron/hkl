@@ -265,7 +265,7 @@ withAttenuationPathP :: (MonadSafe m, Location l) =>
                      -> m r
 withAttenuationPathP f matt g =
     case matt of
-      NoAttenuation -> g (const $ returnIO Nothing)
+      NoAttenuation -> g (const $ returnIO (Just 1))
       (AttenuationPath p offset coef) ->
           withHdf5PathP f p $ \p' -> g (\j -> do
                                           v <-  get_position p' (j + offset)

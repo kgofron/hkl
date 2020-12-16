@@ -176,7 +176,7 @@ withAttenuationPathC :: (MonadResource m, Location l) =>
                      -> ConduitT i o m r
 withAttenuationPathC f matt g =
     case matt of
-      NoAttenuation -> g (const $ returnIO Nothing)
+      NoAttenuation -> g (const $ returnIO (Just 1))
       (AttenuationPath p offset coef) ->
           withHdf5PathC f p $ \p' -> g (\j -> do
                                           v <- get_position p' (j + offset)
