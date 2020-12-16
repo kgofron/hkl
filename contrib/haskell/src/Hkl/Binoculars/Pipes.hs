@@ -265,9 +265,10 @@ withAttenuationPathP :: (MonadSafe m, Location l) =>
 withAttenuationPathP f matt g =
     case matt of
       NoAttenuation -> g (const $ returnIO Nothing)
-      (AttenuationPath p offset) ->
-          withHdf5PathP f p $ \p' -> g (\j -> Just
-                                            <$> get_position p' (j + offset))
+      (AttenuationPath p offset coef) ->
+          withHdf5PathP f p $ \p' -> g (\j -> do
+                                          v <-  get_position p' (j + offset)
+                                          return $ Just (coef ** v))
 
 withQxQyQzPath :: (MonadSafe m, Location l) =>
                  l
@@ -294,9 +295,9 @@ instance LenP QxQyQzPath where
                                withHdf5PathP f i $ \i' -> do
                                     (_, ss) <- liftIO $ datasetShape i'
                                     case head ss of
-                                      (Just n) -> yield $ fromIntegral n + case ma of
+                                      (Just n) -> yield $ fromIntegral n - case ma of
                                                                             NoAttenuation           -> 0
-                                                                            (AttenuationPath _ off) -> off
+                                                                            (AttenuationPath _ off _) -> off
                                       Nothing  -> error "can not extract length"
 
 instance FramesQxQyQzP QxQyQzPath where

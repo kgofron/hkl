@@ -96,8 +96,9 @@ data GeometryPath
 -- AttenuationPath
 
 data AttenuationPath
-    = AttenuationPath { attenuationPath   :: Hdf5Path DIM1 Double
-                      , attenuationOffset :: Int
+    = AttenuationPath { attenuationPath        :: Hdf5Path DIM1 Double
+                      , attenuationOffset      :: Int
+                      , attenuationCoefficient :: Double
                       }
     | NoAttenuation
     deriving Show

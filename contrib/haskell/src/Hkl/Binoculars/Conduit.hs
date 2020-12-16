@@ -176,9 +176,10 @@ withAttenuationPathC :: (MonadResource m, Location l) =>
 withAttenuationPathC f matt g =
     case matt of
       NoAttenuation -> g (const $ returnIO Nothing)
-      (AttenuationPath p offset) ->
-          withHdf5PathC f p $ \p' -> g (\j -> Just
-                                            <$> get_position p' (j + offset))
+      (AttenuationPath p offset coef) ->
+          withHdf5PathC f p $ \p' -> g (\j -> do
+                                          v <- get_position p' (j + offset)
+                                          return $ Just (coef ** v))
 
 withQxQyQzPathC :: (MonadResource m, Location l) =>
                  l
@@ -207,9 +208,9 @@ instance LenC QxQyQzPath where
             (_, ss) <- liftIO $ datasetShape i'
             case head ss of
               (Just n) -> do
-                   yield $ fromIntegral n + case ma of
+                   yield $ fromIntegral n - case ma of
                                               NoAttenuation           -> 0
-                                              (AttenuationPath _ off) -> off
+                                              (AttenuationPath _ off _) -> off
                    loop
               Nothing  -> error "can not extract length"
 
