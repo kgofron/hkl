@@ -95,7 +95,7 @@ import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   head, unsafeFromForeignPtr0)
-import           Data.Vector.Storable.Mutable    (MVector (..), replicate)
+import           Data.Vector.Storable.Mutable    (MVector (..), new, replicate)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
 import           Foreign.C.Types                 (CInt (CInt))
@@ -188,19 +188,19 @@ saveRepa f path arr =
   withDataset (createDataset f path (nativeTypeOf (linearIndex arr 0)) dataspace Nothing Nothing Nothing) $ \dataset' ->
   writeDataset dataset' Nothing Nothing Nothing (castToVector arr)
 
-getPosition' :: Dataset -> [(HSize, Maybe HSize, HSize, Maybe HSize)] -> IO (Vector Double)
+getPosition' :: NativeType t => Dataset -> [(HSize, Maybe HSize, HSize, Maybe HSize)] -> IO (Vector t)
 getPosition' dataset' h =
     withDataspace (getDatasetSpace dataset') $ \dataspace -> do
       selectHyperslab dataspace Set h
       withDataspace (createSimpleDataspace [HSize 1]) $ \memspace -> do
-        data_out <- Data.Vector.Storable.Mutable.replicate 1 (0.0 :: Double)
+        data_out <- Data.Vector.Storable.Mutable.new 1
         readDatasetInto dataset' (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
 
 get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
 get_position_new dataset' s = getPosition' dataset' (shapeAsCoordinateToHyperslab s)
 
-get_position :: Dataset -> Int -> IO Double
+get_position :: NativeType t => Dataset -> Int -> IO t
 get_position dataset' n = do
   v <- getPosition' dataset' [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
   return $ head v

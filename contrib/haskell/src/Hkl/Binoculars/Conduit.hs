@@ -38,6 +38,7 @@ import           Data.Word                         (Word16)
 import           Foreign.ForeignPtr                (ForeignPtr)
 import           GHC.Base                          (returnIO)
 import           GHC.Conc                          (getNumCapabilities)
+import           GHC.Float                         (float2Double)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
                                                     (*~))
@@ -179,7 +180,9 @@ withAttenuationPathC f matt g =
       (AttenuationPath p offset coef) ->
           withHdf5PathC f p $ \p' -> g (\j -> do
                                           v <- get_position p' (j + offset)
-                                          return $ Just (coef ** v))
+                                          return $ if v == badAttenuation
+                                                   then Nothing
+                                                   else Just (coef ** float2Double v))
 
 withQxQyQzPathC :: (MonadResource m, Location l) =>
                  l

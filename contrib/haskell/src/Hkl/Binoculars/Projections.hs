@@ -22,6 +22,7 @@ module Hkl.Binoculars.Projections
   , InputQxQyQz(..)
   , QxQyQzPath(..)
   , SamplePath(..)
+  , badAttenuation
   , saveCube
   , spaceHkl
   , spaceQxQyQz
@@ -96,12 +97,15 @@ data GeometryPath
 -- AttenuationPath
 
 data AttenuationPath
-    = AttenuationPath { attenuationPath        :: Hdf5Path DIM1 Double
+    = AttenuationPath { attenuationPath        :: Hdf5Path DIM1 Float
                       , attenuationOffset      :: Int
                       , attenuationCoefficient :: Double
                       }
     | NoAttenuation
     deriving Show
+
+badAttenuation :: Float
+badAttenuation = -100
 
 --  QxQyQz Projection
 
