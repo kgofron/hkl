@@ -45,11 +45,13 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
 import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, each, runEffect,
                                                     yield, (>->))
-import           Pipes.Prelude                     (print, tee, toListM)
+import           Pipes.Prelude                     (filter, print, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, SafeT,
                                                     SomeException, bracket,
                                                     catchP, displayException,
                                                     runSafeP, runSafeT)
+
+import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -182,6 +184,12 @@ mkInputHkl c f = do
                       }
     Nothing -> error "TODO"
 
+toskip :: DataFrameHkl a -> Bool
+toskip (DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) =
+    case ma of
+      Nothing  -> False
+      (Just _) -> True
+
 processHkl :: FramesHklP a => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
@@ -192,6 +200,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
                            each job
                            >-> tee Pipes.Prelude.print
                            >-> framesHklP h5d det
+                           >-> filter toskip
                            >-> project det 3 (spaceHkl config' det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
