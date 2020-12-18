@@ -32,7 +32,7 @@ import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, modifyIORef')
-import           Data.Maybe                        (fromMaybe)
+import           Data.Maybe                        (fromMaybe, isJust)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
 import           Foreign.ForeignPtr                (ForeignPtr)
@@ -148,6 +148,7 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
                            runSafeT $ runEffect $
                            each job
                            >-> framesQxQyQzP h5d det
+                           >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
                            >-> project det 3 (spaceQxQyQz det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
@@ -184,12 +185,6 @@ mkInputHkl c f = do
                       }
     Nothing -> error "TODO"
 
-toskip :: DataFrameHkl a -> Bool
-toskip (DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) =
-    case ma of
-      Nothing  -> False
-      (Just _) -> True
-
 processHkl :: FramesHklP a => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
@@ -200,7 +195,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
                            each job
                            >-> tee Pipes.Prelude.print
                            >-> framesHklP h5d det
-                           >-> filter toskip
+                           >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
                            >-> project det 3 (spaceHkl config' det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
