@@ -32,6 +32,7 @@ import           Data.Array.Repa                   (Array, extent, listOfShape,
                                                     size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
+import           Data.Maybe                        (fromJust)
 import           Data.Typeable                     (typeOf)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CBool, CSize (..))
@@ -149,7 +150,7 @@ spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img matt) =
     withForeignPtr img $ \i ->
     withForeignPtr (spaceHklPointer space) $ \pSpace -> do
       {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q pSpace geometry i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
-      return (DataFrameSpace img space)
+      return (DataFrameSpace img space (fromJust matt))
 
 -- SamplePath
 
@@ -204,4 +205,4 @@ spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ g i
       withForeignPtr img $ \i ->
       withForeignPtr (spaceHklPointer space) $ \pSpace -> do
         {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl pSpace geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
-        return (DataFrameSpace img space)
+        return (DataFrameSpace img space (fromJust matt))

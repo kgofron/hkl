@@ -143,13 +143,15 @@ HKLAPI extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
                                                          const HklBinocularsSpace *const *spaces,
-                                                         size_t n_pixels, const uint16_t **imgs);
+                                                         size_t n_pixels, const uint16_t **imgs,
+                                                         size_t n_weights, const double *weights);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
                                                                     size_t n_pixels,
-                                                                    const uint16_t *img);
+                                                                    const uint16_t *img,
+                                                                    double weight);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
                                                                const HklBinocularsCube *cube2);

@@ -406,6 +406,7 @@ void add_space(HklBinocularsCube *cube,
 	       const HklBinocularsSpace *space,
 	       size_t n_pixels,
 	       const uint16_t *img,
+               double weight,
 	       ptrdiff_t offset0)
 {
 	size_t i;
@@ -433,7 +434,7 @@ void add_space(HklBinocularsCube *cube,
 	for(i=0; i<n_pixels; ++i){
                 if (indexes[i] != MASKED){
                         size_t w = indexes[i];
-                        cube->photons[w] += img[i];
+                        cube->photons[w] += rint((double)img[i] * weight);
                         cube->contributions[w] += 1;
                 }
 	}
@@ -474,9 +475,11 @@ void hkl_binoculars_cube_add_space(HklBinocularsCube *self,  const HklBinoculars
 
 HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
                                            const HklBinocularsSpace *const *spaces,
-					   size_t n_pixels,
-                                           const uint16_t **imgs)
+					   size_t n_pixels, const uint16_t **imgs,
+                                           size_t n_weights, const double *weights)
 {
+        assert(n_spaces == n_weights);
+
 	size_t i;
 	const HklBinocularsSpace *space0 = spaces[0];
 	ptrdiff_t offset0;
@@ -493,14 +496,15 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
 
 	/* add all the spaces */
 	for(i=0; i<n_spaces; ++i){
-		add_space(self, spaces[i], n_pixels, imgs[i], offset0);
+		add_space(self, spaces[i], n_pixels, imgs[i], weights[i], offset0);
 	}
 
 	return self;
 }
 
 HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
-                                                      size_t n_pixels, const uint16_t *img)
+                                                      size_t n_pixels, const uint16_t *img,
+                                                      double weight)
 {
 	ptrdiff_t offset0 = compute_offset(&space->axes);
 	HklBinocularsCube *self = empty_cube(&space->axes);
@@ -508,7 +512,7 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *
 	/* allocated the final cube */
         calloc_cube(self);
 
-        add_space(self, space, n_pixels, img, offset0);
+        add_space(self, space, n_pixels, img, weight, offset0);
 
 	return self;
 }

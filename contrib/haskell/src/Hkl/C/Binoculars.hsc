@@ -36,7 +36,7 @@ import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
 import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, ix1, size)
 import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Word             (Word16)
-import           Foreign.C.Types       (CBool, CDouble, CSize(..), CUInt(..), CPtrdiff)
+import           Foreign.C.Types       (CBool, CDouble(..), CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
@@ -117,14 +117,17 @@ foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_bin
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_from_space" \
 hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
                                    -> CSize -- int32_t n_pixels
-                                   -> Ptr Word16 -- uint16_t *imgs);
+                                   -> Ptr Word16 -- uint16_t *imgs
+                                   -> CDouble -- double weight
                                    -> IO (Ptr (Cube' sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
-hkl_binoculars_cube_new' :: CSize -- number of Space
-                         -> Ptr (Ptr (Space sh)) -- spaces
-                         -> CSize -- int32_t n_pixels
-                         -> Ptr (Ptr Word16) -- uint16_t **imgs);
+hkl_binoculars_cube_new' :: CSize -- size_t n_spaces
+                         -> Ptr (Ptr (Space sh)) -- HklBinocularsSpace **spaces
+                         -> CSize -- size_t n_pixels
+                         -> Ptr (Ptr Word16) -- uint16_t **imgs
+                         -> CSize -- size_t n_weights
+                         -> Ptr CDouble -- double *weights
                          -> IO (Ptr (Cube' sh))
 
 --  Cube
@@ -178,7 +181,9 @@ foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
 hkl_binoculars_cube_new :: CSize -- number of Space
                         -> Ptr (Ptr (Space sh)) -- spaces
                         -> CSize -- size_t n_pixels
-                        -> Ptr (Ptr Word16) -- uint16_t **imgs);
+                        -> Ptr (Ptr Word16) -- uint16_t **imgs
+                        -> CSize -- size_t n_weights
+                        -> Ptr CDouble -- weights
                         -> IO (Ptr (Cube sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_dims" \
