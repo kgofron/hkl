@@ -18,6 +18,7 @@ module Hkl.Binoculars.Projections
   , DetectorPath(..)
   , GeometryPath(..)
   , HklPath(..)
+  , HklBinocularsException(..)
   , InputHkl(..)
   , InputQxQyQz(..)
   , QxQyQzPath(..)
@@ -28,11 +29,12 @@ module Hkl.Binoculars.Projections
   , spaceQxQyQz
   ) where
 
+import           Control.Exception                 (Exception)
 import           Data.Array.Repa                   (Array, extent, listOfShape,
                                                     size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Maybe                        (fromJust)
+import           Data.Text                         (Text)
 import           Data.Typeable                     (typeOf)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CBool, CSize (..))
@@ -97,6 +99,11 @@ data GeometryPath
 
 -- AttenuationPath
 
+data HklBinocularsException
+    = WrongAttenuation Text Int Double
+    deriving (Show)
+instance Exception HklBinocularsException
+
 data AttenuationPath
     = AttenuationPath { attenuationPath        :: Hdf5Path DIM1 Float
                       , attenuationOffset      :: Int
@@ -135,12 +142,12 @@ data DataFrameQxQyQz
       Int -- n
       Geometry -- geometry
       (ForeignPtr Word16) -- image
-      (Maybe Double) -- attenuation
+      Double -- attenuation
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img matt) =
+spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img att) =
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -150,7 +157,7 @@ spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img matt) =
     withForeignPtr img $ \i ->
     withForeignPtr (spaceHklPointer space) $ \pSpace -> do
       {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q pSpace geometry i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
-      return (DataFrameSpace img space (fromJust matt))
+      return (DataFrameSpace img space att)
 
 -- SamplePath
 
@@ -193,7 +200,7 @@ data DataFrameHkl a
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ g img matt) samp) = do
+spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ g img att) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->
@@ -205,4 +212,4 @@ spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ g i
       withForeignPtr img $ \i ->
       withForeignPtr (spaceHklPointer space) $ \pSpace -> do
         {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl pSpace geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
-        return (DataFrameSpace img space (fromJust matt))
+        return (DataFrameSpace img space att)

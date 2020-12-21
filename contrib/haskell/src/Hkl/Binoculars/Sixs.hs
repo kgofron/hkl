@@ -21,7 +21,9 @@ import           Hkl.Binoculars.Projections
 import           Hkl.H5                     hiding (File)
 
 
-data HklBinocularsSixsException = MissingAttenuationCoefficient
+data HklBinocularsSixsException
+    = MissingAttenuationCoefficient
+    | MissingSampleParameters BinocularsConfig
     deriving (Show)
 
 instance Exception HklBinocularsSixsException
@@ -35,7 +37,7 @@ mkAttenuation c att = case _binocularsInputAttenuationCoefficient c of
                                         NoAttenuation -> NoAttenuation
                                         (AttenuationPath p o _) -> AttenuationPath p o coef
 
-h5dpathQxQyQz :: BinocularsConfig -> Maybe QxQyQzPath
+h5dpathQxQyQz :: MonadThrow m => BinocularsConfig -> m QxQyQzPath
 h5dpathQxQyQz c = case _binocularsInputItype c of
   SixsFlyMedV -> QxQyQzPath
                 (DetectorPath
@@ -107,8 +109,8 @@ h5dpathQxQyQz c = case _binocularsInputItype c of
 
 --  FramesHklP
 
-h5dpathHkl :: BinocularsConfig -> Maybe HklPath
-h5dpathHkl c =
+h5dpathHkl :: MonadThrow m => BinocularsConfig -> m HklPath
+h5dpathHkl c = do
     let sixsSample device = SamplePath
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "A")
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "B")
@@ -119,17 +121,19 @@ h5dpathHkl c =
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Ux")
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uy")
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uz")
-        uhvSamplePath = sixsSample "I14-C-CX2__EX__DIFF-UHV__#1"
-        cmMedVSamplePath = sixsSample "i14-c-cx1-ex-cm-med.v"
-        cristalSamplePath = SamplePath2 <$> (sampleConfig c)
-    in case h5dpathQxQyQz c of
-         (Just qxqyqz) -> case _binocularsInputItype c of
-                           SixsFlyMedV -> Just (HklPath qxqyqz cmMedVSamplePath)
-                           SixsFlyScanUhv -> Just (HklPath qxqyqz uhvSamplePath)
-                           SixsFlyScanUhv2 -> Just (HklPath qxqyqz uhvSamplePath)
-                           SixsSbsMedV -> undefined
-                           CristalK6C -> HklPath qxqyqz <$> cristalSamplePath
-         Nothing -> Nothing
+    let uhvSamplePath = sixsSample "I14-C-CX2__EX__DIFF-UHV__#1"
+    let cmMedVSamplePath = sixsSample "i14-c-cx1-ex-cm-med.v"
+    qxqyqz <- h5dpathQxQyQz c
+    case _binocularsInputItype c of
+      SixsFlyMedV     -> return $ HklPath qxqyqz cmMedVSamplePath
+      SixsFlyScanUhv  -> return $ HklPath qxqyqz uhvSamplePath
+      SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath
+      SixsSbsMedV     -> return $ HklPath qxqyqz cmMedVSamplePath
+      CristalK6C      -> do
+                 let ms = sampleConfig c
+                 case ms of
+                   (Just s) -> return (HklPath qxqyqz (SamplePath2 s))
+                   Nothing  -> throwM (MissingSampleParameters c)
 
          -- SixsSbsMedV -> HklPath
          --               hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")  -- xpad
@@ -151,6 +155,7 @@ process mf mr = do
   case conf of
     Right conf' -> do
               let c = combineWithCmdLineArgs conf' mr
+              print c
               case _binocularsProjectionPtype c of
                  QxQyQzProjection -> do
                    i <- mkInputQxQyQz c h5dpathQxQyQz

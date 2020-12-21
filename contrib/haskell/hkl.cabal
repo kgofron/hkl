@@ -103,7 +103,7 @@ library
   exposed-modules:    Hkl
                     , Hkl.Binoculars
                     , Hkl.Binoculars.Common
-                    , Hkl.Binoculars.Conduit
+                    -- , Hkl.Binoculars.Conduit
                     , Hkl.Binoculars.Config
                     , Hkl.Binoculars.Pipes
                     , Hkl.Binoculars.Projections

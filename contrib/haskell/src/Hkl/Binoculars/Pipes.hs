@@ -26,13 +26,15 @@ module Hkl.Binoculars.Pipes
 
 import           Bindings.HDF5.Core                (Location)
 import           Control.Concurrent.Async          (mapConcurrently)
+import           Control.Exception                 (throwIO)
 import           Control.Monad                     (forM_, forever)
+import           Control.Monad.Catch               (MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, modifyIORef')
-import           Data.Maybe                        (fromMaybe, isJust)
+import           Data.Maybe                        (fromMaybe)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
 import           Foreign.ForeignPtr                (ForeignPtr)
@@ -45,7 +47,7 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
 import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, each, runEffect,
                                                     yield, (>->))
-import           Pipes.Prelude                     (filter, print, tee, toListM)
+import           Pipes.Prelude                     (print, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, SafeT,
                                                     SomeException, bracket,
                                                     catchP, displayException,
@@ -118,27 +120,28 @@ class LenP a => FramesQxQyQzP a where
 mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
 mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputQxQyQz :: FramesQxQyQzP a => BinocularsConfig -> (BinocularsConfig -> Maybe a) -> IO (InputQxQyQz a)
+mkInputQxQyQz :: (MonadIO m, MonadThrow m, FramesQxQyQzP a) =>
+                BinocularsConfig
+              -> (BinocularsConfig -> m a)
+              -> m (InputQxQyQz a)
 mkInputQxQyQz c f = do
   fs <- files c
   let d = fromMaybe defaultDetector (_binocularsInputDetector c)
   mask' <- getMask c d
   res <- getResolution c 3
-  case f c of
-    (Just h5dpath') -> pure $ InputQxQyQz
-                      { detector = d
-                      , filename = InputList fs
-                      , h5dpath = h5dpath'
-                      , output = case _binocularsInputInputRange c of
-                                   Just r  -> destination' r (_binocularsDispatcherDestination c)
-                                   Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
-                      , resolutions = res
-                      , centralPixel = _binocularsInputCentralpixel c
-                      , sdd' = _binocularsInputSdd c
-                      , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
-                      , mask = mask'
-                      }
-    Nothing -> error "TODO"
+  h5dpath' <- f c
+  pure $ InputQxQyQz { detector = d
+                     , filename = InputList fs
+                     , h5dpath = h5dpath'
+                     , output = case _binocularsInputInputRange c of
+                                  Just r  -> destination' r (_binocularsDispatcherDestination c)
+                                  Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
+                     , resolutions = res
+                     , centralPixel = _binocularsInputCentralpixel c
+                     , sdd' = _binocularsInputSdd c
+                     , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
+                     , mask = mask'
+                     }
 
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
 processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
@@ -148,7 +151,7 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
                            runSafeT $ runEffect $
                            each job
                            >-> framesQxQyQzP h5d det
-                           >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                           -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
                            >-> project det 3 (spaceQxQyQz det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
@@ -195,7 +198,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
                            each job
                            >-> tee Pipes.Prelude.print
                            >-> framesHklP h5d det
-                           >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
+                           -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
                            >-> project det 3 (spaceHkl config' det pixels res mask')
                            >-> mkCube'P det s
                        ) jobs
@@ -265,17 +268,17 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
 withAttenuationPathP :: (MonadSafe m, Location l) =>
                        l
                      -> AttenuationPath
-                     -> ((Int -> IO (Maybe Double)) -> m r)
+                     -> ((Int -> IO Double) -> m r)
                      -> m r
 withAttenuationPathP f matt g =
     case matt of
-      NoAttenuation -> g (const $ returnIO (Just 1))
+      NoAttenuation -> g (const $ returnIO 1)
       (AttenuationPath p offset coef) ->
           withHdf5PathP f p $ \p' -> g (\j -> do
                                           v <-  get_position p' (j + offset)
-                                          return $ if v == badAttenuation
-                                                   then Nothing
-                                                   else Just (coef ** float2Double v))
+                                          if v == badAttenuation
+                                          then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
+                                          else return  (coef ** float2Double v))
 
 withQxQyQzPath :: (MonadSafe m, Location l) =>
                  l
@@ -283,10 +286,10 @@ withQxQyQzPath :: (MonadSafe m, Location l) =>
                -> QxQyQzPath
                -> ((Int -> IO DataFrameQxQyQz) -> m r)
                -> m r
-withQxQyQzPath f det (QxQyQzPath d dif matt) g =
+withQxQyQzPath f det (QxQyQzPath d dif att) g =
   withDetectorPathP f det d $ \getImage ->
   withGeometryPathP f dif $ \getDiffractometer ->
-  withAttenuationPathP f matt $ \getAttenuation ->
+  withAttenuationPathP f att $ \getAttenuation ->
   g (\j -> DataFrameQxQyQz j
           <$> getDiffractometer j
           <*> getImage j
