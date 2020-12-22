@@ -28,7 +28,7 @@ import           Bindings.HDF5.Core                (Location)
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Exception                 (throwIO)
 import           Control.Monad                     (forM_, forever)
-import           Control.Monad.Catch               (MonadThrow)
+import           Control.Monad.Catch               (MonadThrow, tryJust)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
@@ -310,13 +310,23 @@ instance LenP QxQyQzPath where
                                                                             (AttenuationPath _ off _) -> off
                                       Nothing  -> error "can not extract length"
 
+tryYield :: IO r -> Proxy x' x () r (SafeT IO) ()
+tryYield io = do
+  edf <- liftIO $ tryJust selectHklBinocularsException io
+  case edf of
+    Left _   -> return ()
+    Right df -> yield df
+  where
+    selectHklBinocularsException :: HklBinocularsException -> Maybe HklBinocularsException
+    selectHklBinocularsException e = Just e
+
 instance FramesQxQyQzP QxQyQzPath where
     framesQxQyQzP p det =
         skipMalformed $ forever $ do
           (Chunk fp from to) <- await
           withFileP (openH5 fp) $ \f ->
             withQxQyQzPath f det p $ \getDataFrameQxQyQz ->
-            forM_ [from..to-1] (\j -> yield =<< liftIO (getDataFrameQxQyQz j))
+            forM_ [from..to-1] (\j -> tryYield (getDataFrameQxQyQz j))
 
 -- FramesHklP
 
@@ -364,8 +374,7 @@ instance FramesHklP HklPath where
     withFileP (openH5 fp) $ \f ->
       withQxQyQzPath f det qp $ \getDataFrameQxQyQz ->
       withSamplePathP f samp $ \getSample ->
-      forM_ [from..to-1] (\j ->yield =<< liftIO
-                              (DataFrameHkl
-                               <$> getDataFrameQxQyQz j
-                               <*> getSample
-                              ))
+      forM_ [from..to-1] (\j -> tryYield ( DataFrameHkl
+                                          <$> getDataFrameQxQyQz j
+                                          <*> getSample
+                                        ))
