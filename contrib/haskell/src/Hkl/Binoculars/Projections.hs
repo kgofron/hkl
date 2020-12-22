@@ -117,7 +117,7 @@ badAttenuation = -100
 
 --  QxQyQz Projection
 
-data QxQyQzPath = QxQyQzPath DetectorPath GeometryPath AttenuationPath
+data QxQyQzPath = QxQyQzPath AttenuationPath DetectorPath GeometryPath
 
 instance Show QxQyQzPath where
   show = show . typeOf
@@ -140,14 +140,14 @@ data InputQxQyQz a =
 data DataFrameQxQyQz
     = DataFrameQxQyQz
       Int -- n
+      Double -- attenuation
       Geometry -- geometry
       (ForeignPtr Word16) -- image
-      Double -- attenuation
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ g img att) =
+spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g img) =
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -200,7 +200,7 @@ data DataFrameHkl a
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ g img att) samp) = do
+spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->

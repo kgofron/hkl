@@ -286,19 +286,20 @@ withQxQyQzPath :: (MonadSafe m, Location l) =>
                -> QxQyQzPath
                -> ((Int -> IO DataFrameQxQyQz) -> m r)
                -> m r
-withQxQyQzPath f det (QxQyQzPath d dif att) g =
+withQxQyQzPath f det (QxQyQzPath att d dif) g =
+  withAttenuationPathP f att $ \getAttenuation ->
   withDetectorPathP f det d $ \getImage ->
   withGeometryPathP f dif $ \getDiffractometer ->
-  withAttenuationPathP f att $ \getAttenuation ->
   g (\j -> DataFrameQxQyQz j
-          <$> getDiffractometer j
+          <$> getAttenuation j
+          <*> getDiffractometer j
           <*> getImage j
-          <*> getAttenuation j)
+    )
 
 --  FramesQxQyQzP
 
 instance LenP QxQyQzPath where
-    lenP (QxQyQzPath (DetectorPath i) _ ma) =
+    lenP (QxQyQzPath ma (DetectorPath i) _) =
         skipMalformed $ forever $ do
                            fp <- await
                            withFileP (openH5 fp) $ \f ->

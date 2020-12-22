@@ -40,72 +40,71 @@ mkAttenuation c att = case _binocularsInputAttenuationCoefficient c of
 h5dpathQxQyQz :: MonadThrow m => BinocularsConfig -> m QxQyQzPath
 h5dpathQxQyQz c = case _binocularsInputItype c of
   SixsFlyMedV -> QxQyQzPath
-                (DetectorPath
-                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                (GeometryPathMedV
-                 (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                  [ -- hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta" it was not saved in the file
-                    hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
-                  ])
-                <$> mkAttenuation c (AttenuationPath
-                                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
-                                     2 0)
+                  <$> mkAttenuation c (AttenuationPath
+                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                                       2 0)
+                  <*> pure (DetectorPath
+                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                  <*> pure (GeometryPathMedV
+                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                            [ -- hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta" it was not saved in the file
+                              hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                            , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                            , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                            , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                            , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
+                            ])
   SixsFlyScanUhv -> QxQyQzPath
-                   (DetectorPath
-                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                   (GeometryPathUhv
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-                     [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
-                     ])
                    <$> mkAttenuation c (AttenuationPath
                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                         2 0)
+                   <*> pure (DetectorPath
+                             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                   <*> pure (GeometryPathUhv
+                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                             [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
+                             , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
+                             , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
+                             , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
+                             ])
   SixsFlyScanUhv2 -> QxQyQzPath
-                    (DetectorPath
-                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                    (GeometryPathUhv
-                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-                     [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                     ])
                     <$> mkAttenuation c (AttenuationPath
                                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                          2 0)
+                    <*> pure (DetectorPath
+                              (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                    <*> pure (GeometryPathUhv
+                              (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                              [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                              ])
   SixsSbsMedV -> QxQyQzPath
-                (DetectorPath
-                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                (GeometryPathUhv
-                  (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                  [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                  ])
-                  <$> mkAttenuation c (AttenuationPath
-                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
-                                        0 0)
+                <$> mkAttenuation c (AttenuationPath
+                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                                      0 0)
+                <*> pure (DetectorPath
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                <*> pure (GeometryPathUhv
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
+                          [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                          ])
   CristalK6C -> QxQyQzPath
-               (DetectorPath
-                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
-               (GeometryPathCristalK6C
-                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda")
-                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position")
-                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position")
-                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position")
-                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
-                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
-                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
                <$> mkAttenuation c NoAttenuation
-
+               <*> pure (DetectorPath
+                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
+               <*> pure (GeometryPathCristalK6C
+                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda")
+                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position")
+                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position")
+                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position")
+                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
+                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
+                         (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
 
 --  FramesHklP
 
