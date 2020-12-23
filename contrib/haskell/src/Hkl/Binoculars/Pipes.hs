@@ -47,11 +47,17 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
 import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, each, runEffect,
                                                     yield, (>->))
-import           Pipes.Prelude                     (print, tee, toListM)
+import           Pipes.Prelude                     (tee, toListM)
 import           Pipes.Safe                        (MonadSafe, SafeT,
                                                     SomeException, bracket,
                                                     catchP, displayException,
                                                     runSafeP, runSafeT)
+import           System.ProgressBar                (Progress (..), ProgressBar,
+                                                    Style (..), defStyle,
+                                                    elapsedTime, incProgress,
+                                                    msg, newProgressBar,
+                                                    renderDuration,
+                                                    updateProgress)
 
 import           Prelude                           hiding (filter)
 
@@ -74,18 +80,19 @@ class LenP a where
 
 -- Jobs
 
-mkJobs :: LenP a => InputFn -> a -> IO [[Chunk Int FilePath]]
+mkJobs :: LenP a => InputFn -> a -> IO ([[Chunk Int FilePath]], ProgressBar ())
 mkJobs fn h5d = do
   let fns = concatMap (replicate 1) (toList fn)
   ns <- runSafeT $ toListM $ each fns >-> lenP h5d
   c' <- getNumCapabilities
-  -- let c' = 1
   let ntot = sum ns
       c = if c' >= 2 then c' - 1 else c'
-  let jobs = mkJobs' (quot ntot c) fns ns
-  Prelude.print jobs
-  Prelude.print c
-  return $ mkJobs' (quot ntot c) fns ns
+  pb <- newProgressBar
+       defStyle{ stylePrefix=msg "Working"
+               , stylePostfix=elapsedTime renderDuration
+               }
+       10 (Progress 0 ntot ())
+  return $ (mkJobs' (quot ntot c) fns ns, pb)
 
 
 -- Project
@@ -117,7 +124,7 @@ skipMalformed p = loop
 class LenP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
-mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO [[Chunk Int FilePath]]
+mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO ([[Chunk Int FilePath]], ProgressBar ())
 mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
 mkInputQxQyQz :: (MonadIO m, MonadThrow m, FramesQxQyQzP a) =>
@@ -146,14 +153,15 @@ mkInputQxQyQz c f = do
 processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
 processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
   pixels <- getPixelsCoordinates det cen d r
-  jobs <- mkJobsQxQyQz input
+  (jobs, pb) <- mkJobsQxQyQz input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
                            runSafeT $ runEffect $
                            each job
                            >-> framesQxQyQzP h5d det
                            -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
                            >-> project det 3 (spaceQxQyQz det pixels res mask')
-                           >-> mkCube'P det s
+                           >-> tee (mkCube'P det s)
+                           >-> progress pb
                        ) jobs
   saveCube o r'
 
@@ -162,7 +170,7 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
-mkJobsHkl :: LenP a => InputHkl a -> IO [[Chunk Int FilePath]]
+mkJobsHkl :: LenP a => InputHkl a -> IO ([[Chunk Int FilePath]], ProgressBar ())
 mkJobsHkl (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
 
 mkInputHkl :: FramesHklP a => BinocularsConfig -> (BinocularsConfig -> Maybe a) -> IO (InputHkl a)
@@ -191,18 +199,21 @@ mkInputHkl c f = do
 processHkl :: FramesHklP a => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
-
-  jobs <- mkJobsHkl input
+  (jobs, pb) <- mkJobsHkl input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
                            runEffect $ runSafeP $
                            each job
-                           >-> tee Pipes.Prelude.print
+                           -- >-> tee Pipes.Prelude.print
                            >-> framesHklP h5d det
                            -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
                            >-> project det 3 (spaceHkl config' det pixels res mask')
-                           >-> mkCube'P det s
+                           >-> tee (mkCube'P det s)
+                           >-> progress pb
                        ) jobs
+
   saveCube o r'
+
+  updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 
 --  Create the Cube
 
@@ -211,6 +222,11 @@ mkCube'P det ref = forever $ do
   s <- await
   c2 <- liftIO $ mkCube' det [s]
   liftIO $ modifyIORef' ref (c2 <>)
+
+progress :: (MonadIO m, Shape sh) => ProgressBar s -> Consumer (DataFrameSpace sh) m ()
+progress p = forever $ do
+  _ <- await
+  liftIO $ p `incProgress` 1
 
 -- Instances
 

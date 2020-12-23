@@ -164,6 +164,7 @@ library
                     , Hkl.Xrd.OneD
                     , Hkl.Xrd.ZeroD
   other-modules:      Paths_hkl
+                    , System.ProgressBar
   other-extensions:    CPP
                      , ForeignFunctionInterface
                      , EmptyDataDecls
@@ -208,11 +209,18 @@ library
                      , stm
                      , safe
                      , template-haskell >=2.8
+                     , terminal-progress-bar
                      , text
                      , transformers >= 0.3
                      , transformers-base
                      , unix >= 2.6.0.0
                      , vector >= 0.10.0.1
+
+                     -- dependencies of terminal-progress-bar
+                     , deepseq       >= 1.4.3
+                     , terminal-size >= 0.3.2
+                     , text          >= 1.2
+                     , time          >= 1.8
   hs-source-dirs:      src
   build-tools:         hsc2hs
   default-language:    Haskell2010
