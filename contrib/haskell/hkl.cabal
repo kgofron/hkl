@@ -91,8 +91,6 @@ executable binoculars-ng
   ghc-options:         -dcore-lint
   ghc-options:         -debug
 
-  ghc-prof-options:    -fno-prof-auto
-
   if flag(useHklDev)
       pkgconfig-depends:   gobject-2.0
       ghc-options: -pgml gcc "-optl-Wl,--allow-multiple-definition"
@@ -243,9 +241,6 @@ library
   ghc-options:         -g
   ghc-options:         -dcore-lint
   ghc-options:         -debug
-
-  ghc-prof-options:    -fno-prof-auto
-  ghc-prof-options:    -rtsopts
 
 test-suite hkl-test
    type:               exitcode-stdio-1.0
