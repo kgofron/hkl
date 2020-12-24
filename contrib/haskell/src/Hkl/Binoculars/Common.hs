@@ -16,11 +16,13 @@ module Hkl.Binoculars.Common
   ( Chunk(..)
   , InputFn(..)
   , DataFrameSpace(..)
+  , addSpace
   , chunk
   , mkCube'
   , mkJobs'
   , toList
   , withCubeAccumulator
+  , withCubeAccumulator'
   ) where
 
 import           Control.Exception     (bracket)
@@ -52,6 +54,7 @@ csplit (Chunk a l h) n = (Chunk a l (l + n), Chunk a (l+n) h)
 chunk :: (Num n, Ord n) => n -> [Chunk n a] -> [[Chunk n a]]
 chunk target = go target target
   where
+    go :: (Num n, Ord n) => n -> n -> [Chunk n a] -> [[Chunk n a]]
     go _ _ []          = []
     go tgt gap [x]     = golast tgt gap x
     go tgt gap ~(x:xs) =
@@ -103,6 +106,19 @@ mkCube' detector dfs = do
     withArrayLen weights $ \nWeights weights' ->
     peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces' (toEnum nPixels) images' (toEnum nWeights) weights'
 
+{-# INLINE addSpace #-}
+addSpace :: Shape sh => Detector a DIM2 -> DataFrameSpace sh -> (Cube' sh) -> IO (ForeignPtr (Cube' sh))
+addSpace d df EmptyCube' = do
+  (Cube' fp) <- mkCube' d [df]
+  return fp
+addSpace d (DataFrameSpace img s w) (Cube' fp) =
+    withForeignPtr (spaceHklPointer s) $ \spacePtr ->
+    withForeignPtr img $ \imgPtr ->
+    withForeignPtr fp $ \cPtr -> do
+      let nPixels = size . shape $ d
+      {-# SCC "hkl_binoculars_cube_add_space" #-} hkl_binoculars_cube_add_space cPtr spacePtr (toEnum nPixels) imgPtr (CDouble w)
+      return fp
+
 type Template = String
 
 data InputFn = InputFn FilePath
@@ -113,5 +129,8 @@ data InputFn = InputFn FilePath
 withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
 withCubeAccumulator f = bracket (newIORef EmptyCube') pure (\r -> f r >> readIORef r)
 
+
+withCubeAccumulator' :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
+withCubeAccumulator' f = bracket (newIORef =<< peek =<< hkl_binoculars_cube_new_empty') pure (\r -> f r >> readIORef r)
 
 -- Projections

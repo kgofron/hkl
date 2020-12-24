@@ -12,6 +12,7 @@
     Stability  : Experimental
     Portability: GHC only (not tested)
 -}
+
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
   , DataFrameSpace(..)
@@ -33,7 +34,8 @@ import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
-import           Data.IORef                        (IORef, modifyIORef')
+import           Data.IORef                        (IORef, modifyIORef',
+                                                    readIORef, writeIORef)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
@@ -197,22 +199,26 @@ processHkl :: FramesHklP a => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
   (jobs, pb) <- mkJobsHkl input
-  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
+  r' <- mapConcurrently (\job -> withCubeAccumulator' $ \c ->
                            runEffect $ runSafeP $
                            each job
                            -- >-> tee Pipes.Prelude.print
                            >-> framesHklP h5d det
                            -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
                            >-> project det 3 (spaceHkl config' det pixels res mask')
-                           >-> tee (mkCube'P det s)
+                           >-> tee (accumulateP det c)
                            >-> progress pb
                        ) jobs
-
   saveCube o r'
 
   updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 
 --  Create the Cube
+
+accumulateP :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
+accumulateP d ref =
+    forever $ do s <- await
+                 liftIO $ addSpace d s =<< readIORef ref
 
 mkCube'P :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
 mkCube'P det ref = forever $ do

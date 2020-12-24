@@ -25,7 +25,9 @@ module Hkl.C.Binoculars
        , Space(..)
        , hkl_binoculars_cube_new
        , hkl_binoculars_cube_new'
+       , hkl_binoculars_cube_new_empty'
        , hkl_binoculars_cube_new_from_space
+       , hkl_binoculars_cube_add_space
        , hkl_binoculars_space_q
        , hkl_binoculars_space_hkl
        , newSpace
@@ -121,6 +123,14 @@ hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
                                    -> CDouble -- double weight
                                    -> IO (Ptr (Cube' sh))
 
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_add_space" \
+hkl_binoculars_cube_add_space :: Ptr (Cube' sh) -- HklBinocularsCube *self
+                              -> Ptr (Space sh) -- const HklBinocularsSpace *space
+                              -> CSize -- size_t n_pixels
+                              -> Ptr Word16 -- const uint16_t *imgs
+                              -> CDouble -- double weight
+                              -> IO ()
+
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
 hkl_binoculars_cube_new' :: CSize -- size_t n_spaces
                          -> Ptr (Ptr (Space sh)) -- HklBinocularsSpace **spaces
@@ -129,6 +139,9 @@ hkl_binoculars_cube_new' :: CSize -- size_t n_spaces
                          -> CSize -- size_t n_weights
                          -> Ptr CDouble -- double *weights
                          -> IO (Ptr (Cube' sh))
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_empty" \
+hkl_binoculars_cube_new_empty' :: IO (Ptr (Cube' sh))
 
 --  Cube
 
@@ -202,7 +215,7 @@ instance Shape sh => ToHdf5 (Cube sh) where
 
 toCube :: Shape sh => Cube' sh -> IO (Cube sh)
 toCube EmptyCube' = pure EmptyCube
-toCube (Cube' fp) = withForeignPtr fp $ \p -> do
+toCube (Cube' fp') = withForeignPtr fp' $ \p -> do
   peek =<< hkl_binoculars_cube_new_copy p
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_copy" \
