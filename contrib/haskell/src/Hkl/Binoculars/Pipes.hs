@@ -87,11 +87,8 @@ mkJobs fn h5d = do
   c' <- getNumCapabilities
   let ntot = sum ns
       c = if c' >= 2 then c' - 1 else c'
-  pb <- newProgressBar
-       defStyle{ stylePrefix=msg "Working"
-               , stylePostfix=elapsedTime renderDuration
-               }
-       10 (Progress 0 ntot ())
+  pb <- newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration }
+                10 (Progress 0 ntot ())
   return $ (mkJobs' (quot ntot c) fns ns, pb)
 
 
