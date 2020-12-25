@@ -22,7 +22,6 @@ module Hkl.Binoculars.Common
   , mkJobs'
   , toList
   , withCubeAccumulator
-  , withCubeAccumulator'
   ) where
 
 import           Control.Exception     (bracket)
@@ -127,10 +126,6 @@ data InputFn = InputFn FilePath
   deriving Show
 
 withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
-withCubeAccumulator f = bracket (newIORef EmptyCube') pure (\r -> f r >> readIORef r)
-
-
-withCubeAccumulator' :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
-withCubeAccumulator' f = bracket (newIORef =<< peek =<< hkl_binoculars_cube_new_empty') pure (\r -> f r >> readIORef r)
+withCubeAccumulator f = bracket (newIORef =<< peek =<< hkl_binoculars_cube_new_empty') pure (\r -> f r >> readIORef r)
 
 -- Projections

@@ -17,7 +17,6 @@ module Hkl.Binoculars.Pipes
   ( Chunk(..)
   , DataFrameSpace(..)
   , LenP(..)
-  , mkCube'P
   , mkJobs
   , mkInputHkl
   , mkInputQxQyQz
@@ -34,8 +33,7 @@ import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
-import           Data.IORef                        (IORef, modifyIORef',
-                                                    readIORef, writeIORef)
+import           Data.IORef                        (IORef, readIORef)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16)
@@ -57,7 +55,7 @@ import           Pipes.Safe                        (MonadSafe, SafeT,
 import           System.ProgressBar                (Progress (..), ProgressBar,
                                                     Style (..), defStyle,
                                                     elapsedTime, incProgress,
-                                                    msg, newProgressBar,
+                                                    newProgressBar,
                                                     renderDuration,
                                                     updateProgress)
 
@@ -153,13 +151,13 @@ processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
 processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
   pixels <- getPixelsCoordinates det cen d r
   (jobs, pb) <- mkJobsQxQyQz input
-  r' <- mapConcurrently (\job -> withCubeAccumulator $ \s ->
+  r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
                            runSafeT $ runEffect $
                            each job
                            >-> framesQxQyQzP h5d det
                            -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
                            >-> project det 3 (spaceQxQyQz det pixels res mask')
-                           >-> tee (mkCube'P det s)
+                           >-> tee (accumulateP det c)
                            >-> progress pb
                        ) jobs
   saveCube o r'
@@ -199,7 +197,7 @@ processHkl :: FramesHklP a => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
   (jobs, pb) <- mkJobsHkl input
-  r' <- mapConcurrently (\job -> withCubeAccumulator' $ \c ->
+  r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
                            runEffect $ runSafeP $
                            each job
                            -- >-> tee Pipes.Prelude.print
@@ -219,12 +217,6 @@ accumulateP :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> C
 accumulateP d ref =
     forever $ do s <- await
                  liftIO $ addSpace d s =<< readIORef ref
-
-mkCube'P :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
-mkCube'P det ref = forever $ do
-  s <- await
-  c2 <- liftIO $ mkCube' det [s]
-  liftIO $ modifyIORef' ref (c2 <>)
 
 progress :: (MonadIO m, Shape sh) => ProgressBar s -> Consumer (DataFrameSpace sh) m ()
 progress p = forever $ do
