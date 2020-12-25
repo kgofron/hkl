@@ -126,18 +126,22 @@ static inline void merge_axes(darray_axis *axes,
                                           &darray_item(*others, i));
 }
 
-static inline int is_included(const darray_axis *axes,
-                              const darray_axis *others)
+static inline int does_not_include(const darray_axis *axes,
+                                  const darray_axis *others)
 {
         size_t i;
-        int res = 1;
+        int res = 0;
 
         if (darray_size(*axes) == darray_size(*others)){
-                for(i=0; i<darray_size(*axes); ++i)
-                        res &= hkl_binoculars_axis_contains_axis(&darray_item(*axes, i),
-                                                                 &darray_item(*others, i));
+                for(i=0; i<darray_size(*axes); ++i){
+                        if (0 == hkl_binoculars_axis_contains_axis(&darray_item(*axes, i),
+                                                                   &darray_item(*others, i))){
+                                res = 1;
+                                break;
+                        }
+                }
         } else {
-                res = 0;
+                res = 1;
         }
 
         return res;
@@ -359,6 +363,23 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
 
 /* Cube */
 
+/* this method compute the linear coordinates of the first element in
+ * the absolute coordinates of the bin */
+static inline ptrdiff_t compute_offset0(const darray_axis *axes)
+{
+	size_t i;
+	ptrdiff_t len = 1;
+	ptrdiff_t offset = 0;
+        size_t n_axes = darray_size(*axes);
+
+	for(i=0; i<n_axes; ++i){
+		const HklBinocularsAxis *axis = &darray_item(*axes, n_axes-1-i);
+		offset += len * axis->imin;
+		len *= axis_size(axis);
+	}
+	return offset;
+}
+
 static inline HklBinocularsCube *empty_cube(const darray_axis *axes)
 {
         HklBinocularsAxis *axis;
@@ -371,7 +392,7 @@ static inline HklBinocularsCube *empty_cube(const darray_axis *axes)
                         darray_append(self->axes, *axis);
                 }
         }
-
+        self->offset0 = compute_offset0(&self->axes);
         self->photons = NULL;
         self->contributions = NULL;
 
@@ -425,21 +446,6 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
 	free(self);
 }
 
-/* this method compute the linear coordinates of the first element in the absolute coordinates of the bin */
-static inline ptrdiff_t compute_offset0(const darray_axis *axes)
-{
-	size_t i;
-	ptrdiff_t len = 1;
-	ptrdiff_t offset = 0;
-        size_t n_axes = darray_size(*axes);
-
-	for(i=0; i<n_axes; ++i){
-		const HklBinocularsAxis *axis = &darray_item(*axes, n_axes-1-i);
-		offset += len * axis->imin;
-		len *= axis_size(axis);
-	}
-	return offset;
-}
 
 /* Using this method the Cube has already the right dimensions, we
  * just add the Space data into it. */
@@ -447,8 +453,7 @@ void add_space(HklBinocularsCube *cube,
 	       const HklBinocularsSpace *space,
 	       size_t n_pixels,
 	       const uint16_t *img,
-               double weight,
-	       ptrdiff_t offset0)
+               double weight)
 {
 	size_t i;
 	size_t j;
@@ -457,7 +462,7 @@ void add_space(HklBinocularsCube *cube,
         size_t n_axes = darray_size(cube->axes);
 
 	for(i=0; i<n_pixels; ++i){
-		indexes[i] = -offset0;
+		indexes[i] = -cube->offset0;
 	}
 
 	for(i=0; i<n_axes; ++i){
@@ -513,21 +518,20 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
 
 	size_t i;
 	const HklBinocularsSpace *space0 = spaces[0];
-	ptrdiff_t offset0;
 	HklBinocularsCube *self = empty_cube(&space0->axes);
 
 	/* compute the final cube dimensions and the index offset */
 	for(i=1; i<n_spaces; ++i){
                 merge_axes(&self->axes, &spaces[i]->axes);
         }
-	offset0 = compute_offset0(&self->axes);
+	self->offset0 = compute_offset0(&self->axes);
 
 	/* allocated the final cube photons and contributions */
         calloc_cube(self);
 
 	/* add all the spaces */
 	for(i=0; i<n_spaces; ++i){
-		add_space(self, spaces[i], n_pixels, imgs[i], weights[i], offset0);
+		add_space(self, spaces[i], n_pixels, imgs[i], weights[i]);
 	}
 
 	return self;
@@ -542,13 +546,12 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *
                                                       size_t n_pixels, const uint16_t *img,
                                                       double weight)
 {
-	ptrdiff_t offset0 = compute_offset0(&space->axes);
 	HklBinocularsCube *self = empty_cube(&space->axes);
 
 	/* allocated the final cube */
         calloc_cube(self);
 
-        add_space(self, space, n_pixels, img, weight, offset0);
+        add_space(self, space, n_pixels, img, weight);
 
 	return self;
 }
@@ -611,8 +614,8 @@ HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
 {
         HklBinocularsCube *self = empty_cube(&cube1->axes);
 
-        merge_axes(&self->axes, &cube2->axes); /* circonscript */
-
+        merge_axes(&self->axes, &cube2->axes);
+        self->offset0 = compute_offset0(&self->axes);
         calloc_cube(self);
 
         cube_add_cube(self, cube1);
@@ -626,10 +629,15 @@ static void switch_content(HklBinocularsCube *self,
 {
         unsigned int *ptr;
         darray_axis tmp;
+        ptrdiff_t offset0;
 
         tmp = self->axes;
         self->axes = other->axes;
         other->axes = tmp;
+
+        offset0 = self->offset0;
+        self->offset0 = other->offset0;
+        other->offset0 = offset0;
 
         ptr = self->photons;
         self->photons = other->photons;
@@ -652,23 +660,19 @@ void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
                 switch_content(self, cube);
                 hkl_binoculars_cube_free(cube);
         }else{
-                ptrdiff_t offset0;
-
                 /* check the compatibility of the cube and the space. */
-                if (!is_included(&self->axes, &space->axes)){
+                if (does_not_include(&self->axes, &space->axes)){
                         HklBinocularsCube *cube = empty_cube(&self->axes);
+
                         merge_axes(&cube->axes, &space->axes); /* circonscript */
+                        cube->offset0 = compute_offset0(&cube->axes);
                         calloc_cube(cube);
+
                         cube_add_cube(cube, self);
+
                         switch_content(self, cube);
                         hkl_binoculars_cube_free(cube);
-
-                        offset0 = compute_offset0(&self->axes);
-                        add_space(self, space, n_pixels, img, weight, offset0);
-
-                }else{
-                        offset0 = compute_offset0(&self->axes);
-                        add_space(self, space, n_pixels, img, weight, offset0);
                 }
+                add_space(self, space, n_pixels, img, weight);
         }
 }

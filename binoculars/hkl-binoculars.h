@@ -135,6 +135,7 @@ typedef  struct _HklBinocularsCube HklBinocularsCube;
 struct _HklBinocularsCube
 {
         darray_axis axes;
+        ptrdiff_t offset0;
 	unsigned int *photons;
 	unsigned int *contributions;
 };
