@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -89,14 +89,21 @@ HKLAPI extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 /* Space */
 /*********/
 
-typedef darray(ptrdiff_t*) darray_ptrdiff;
+typedef struct _HklBinocularsSpaceItem HklBinocularsSpaceItem;
+struct _HklBinocularsSpaceItem
+{
+        ptrdiff_t indexes_0[3]; /* for now hardcode the max number of axes */
+        uint32_t intensity;
+};
+
+typedef darray(HklBinocularsSpaceItem) darray_HklBinocularsSpaceItem;
 
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
 struct _HklBinocularsSpace
 {
         darray_axis axes;
-        size_t n_indexes_0;
-        darray_ptrdiff indexes_0;
+        size_t max_items;
+        darray_HklBinocularsSpaceItem items;
 };
 
 HKLAPI extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
@@ -108,6 +115,7 @@ HKLAPI extern void hkl_binoculars_space_q(HklBinocularsSpace *self,
                                           const HklGeometry *geometry,
                                           const uint16_t *image,
                                           size_t n_pixels,
+                                          double weight,
                                           const double *pixels_coordinates,
                                           size_t pixels_coordinates_ndim,
                                           const size_t *pixels_coordinates_dims,
@@ -120,6 +128,7 @@ HKLAPI extern void hkl_binoculars_space_hkl(HklBinocularsSpace *self,
                                             const HklSample *sample,
                                             const uint16_t *image,
                                             size_t n_pixels,
+                                            double weight,
                                             const double *pixels_coordinates,
                                             size_t pixels_coordinates_ndim,
                                             const size_t *pixels_coordinates_dims,
@@ -143,27 +152,21 @@ struct _HklBinocularsCube
 HKLAPI extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
-                                                         const HklBinocularsSpace *const *spaces,
-                                                         size_t n_pixels, const uint16_t **imgs,
-                                                         size_t n_weights, const double *weights);
+                                                         const HklBinocularsSpace *const *spaces);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_empty(void);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
 
-HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
-                                                                    size_t n_pixels,
-                                                                    const uint16_t *img,
-                                                                    double weight);
+HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
                                                                const HklBinocularsCube *cube2);
 
 
 HKLAPI extern void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
-                                                 const HklBinocularsSpace *space,
-                                                 size_t n_pixels, const uint16_t *imgs,
-                                                 double weight);
+                                                 const HklBinocularsSpace *space);
+
 G_END_DECLS
 
 #endif

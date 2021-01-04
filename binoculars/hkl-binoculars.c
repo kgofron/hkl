@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -150,19 +150,13 @@ static inline int does_not_include(const darray_axis *axes,
 
 /* Space */
 
-HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0, size_t n_axes)
+HklBinocularsSpace *hkl_binoculars_space_new(size_t max_items, size_t n_axes)
 {
-        size_t i;
 	HklBinocularsSpace *self = malloc(sizeof(*self));
 
-	self->n_indexes_0 = n_indexes_0;
-
-        darray_init(self->indexes_0);
-        for(i=0; i<n_axes; ++i){
-                darray_append(self->indexes_0,
-                              /* BEWARE sizeof should have the same type than darray_ptrdiff elements */
-                              malloc(n_indexes_0 * sizeof(ptrdiff_t)));
-        }
+	self->max_items = max_items;
+        darray_init(self->items);
+        darray_resize(self->items, max_items);
         darray_init(self->axes);
         darray_resize(self->axes, n_axes);
 
@@ -171,34 +165,26 @@ HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0, size_t n_axes)
 
 void hkl_binoculars_space_free(HklBinocularsSpace *self)
 {
-        ptrdiff_t **index;
-
 	darray_free(self->axes);
-        darray_foreach(index, self->indexes_0){
-                free(*index);
-        }
-        darray_free(self->indexes_0);
+        darray_free(self->items);
 	free(self);
 }
 
 void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
 {
-	uint32_t i;
-        size_t masked=0;
+        size_t masked;
         HklBinocularsAxis *axis;
 
 	fprintf(f, "\nHklBinocularsSpace: %p", self);
-	fprintf(f, "\nn_indexes_0: %ld", self->n_indexes_0);
+	fprintf(f, "\nn_indexes_0: %ld", darray_size(self->items));
 	fprintf(f, "\nn_axes: %ld", darray_size(self->axes));
         darray_foreach(axis, self->axes){
 		fprintf(f, "\n");
 		hkl_binoculars_axis_fprintf(f, axis);
 	}
-        for(i=0; i<self->n_indexes_0; ++i){
-                if(darray_item(self->indexes_0, 0)[i] == MASKED)
-                        masked +=1;
-        }
-        fprintf(f, "\nmasked pixels: %ld (%f%%)", masked, (double)masked / self->n_indexes_0 * 100);
+
+        masked = self->max_items - darray_size(self->items);
+        fprintf(f, "\nmasked pixels: %ld (%f%%)", masked, (double)masked / self->max_items * 100);
 }
 
 static inline void space_update_axes(HklBinocularsSpace *space,
@@ -207,38 +193,25 @@ static inline void space_update_axes(HklBinocularsSpace *space,
                                      const double resolutions[])
 {
         size_t i;
-        size_t j;
-        size_t ji=0;
+        HklBinocularsSpaceItem *item;
+        HklBinocularsSpaceItem minimum;
+        HklBinocularsSpaceItem maximum;
 
-        /* find the first index of non masked array. All masked pixels
-         * are marked with the value MASKED so we just need to
-         * find the index using the first axis (0) */
-        for(j=0; j<n_pixels; j++){
-                if (darray_item(space->indexes_0, 0)[j] != MASKED){
-                        ji = j;
-                        break;
+        minimum = maximum = darray_item(space->items, 0);
+
+        darray_foreach(item, space->items){
+                for(i=0; i<darray_size(space->axes); ++i){
+                        minimum.indexes_0[i] = min(minimum.indexes_0[i], item->indexes_0[i]);
+                        maximum.indexes_0[i] = max(maximum.indexes_0[i], item->indexes_0[i]);
                 }
         }
 
-	/* compress the coordinates into the space */
-	for(i=0; i<darray_size(space->axes); ++i){
-		const ptrdiff_t *idx = darray_item(space->indexes_0, i);
-		const double resolution = resolutions[i];
-		HklBinocularsAxis *axis = &darray_item(space->axes, i);
-                ptrdiff_t origin = idx[ji];
-                ptrdiff_t last = idx[ji];
-
-                /* continue */
-		for(j=ji+1; j<n_pixels; ++j){
-			ptrdiff_t index = idx[j];
-
-                        if (index != MASKED){
-                                origin = min(origin, index);
-                                last = max(last, index);
-                        }
-		}
-                hkl_binoculars_axis_init(axis, names[i], i, origin, last, resolution);
-	}
+        for(i=0; i<darray_size(space->axes); ++i){
+                HklBinocularsAxis *axis = &darray_item(space->axes, i);
+                hkl_binoculars_axis_init(axis, names[i], i,
+                                         minimum.indexes_0[i], maximum.indexes_0[i],
+                                         resolutions[i]);
+        }
 }
 
 /* the array is pre filled with the pixel coordinates */
@@ -246,6 +219,7 @@ void hkl_binoculars_space_q(HklBinocularsSpace *space,
                             const HklGeometry *geometry,
                             const uint16_t *image,
                             size_t n_pixels,
+                            double weight,
                             const double *pixels_coordinates,
                             size_t pixels_coordinates_ndim,
                             const size_t *pixels_coordinates_dims,
@@ -258,7 +232,7 @@ void hkl_binoculars_space_q(HklBinocularsSpace *space,
 
         assert(ARRAY_SIZE(names) == darray_size(space->axes));
         assert(ARRAY_SIZE(names) == n_resolutions);
-        assert(n_pixels == space->n_indexes_0);
+        assert(n_pixels == space->max_items);
 
 	const double *q_x = &pixels_coordinates[0 * n_pixels];
 	const double *q_y = &pixels_coordinates[1 * n_pixels];
@@ -274,11 +248,12 @@ void hkl_binoculars_space_q(HklBinocularsSpace *space,
 
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
+        darray_size(space->items) = 0;
+
 	for(i=0;i<n_pixels;++i){
                 if(NULL == masked || 0 == masked[i]){
-                        HklVector v = {{ q_x[i],
-                                         q_y[i],
-                                         q_z[i]}};
+                        HklBinocularsSpaceItem item;
+                        HklVector v = {{q_x[i], q_y[i], q_z[i]}};
 
                         hkl_vector_rotated_quaternion(&v, &q);
                         hkl_vector_normalize(&v);
@@ -287,10 +262,10 @@ void hkl_binoculars_space_q(HklBinocularsSpace *space,
                         hkl_vector_rotated_quaternion(&v, &qs_1);
 
                         for(j=0; j<ARRAY_SIZE(names); ++j)
-                                darray_item(space->indexes_0, j)[i] = rint(v.data[j] / resolutions[j]);
-                } else {
-                        for(j=0; j<ARRAY_SIZE(names); ++j)
-                                darray_item(space->indexes_0, j)[i] = MASKED;
+                                item.indexes_0[j] = rint(v.data[j] / resolutions[j]);
+                        item.intensity = rint((double)image[i] * weight);
+
+                        darray_append(space->items, item);
                 }
 	}
 
@@ -306,6 +281,7 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
                               const HklSample *sample,
                               const uint16_t *image,
                               size_t n_pixels,
+                              double weight,
                               const double *pixels_coordinates,
                               size_t pixels_coordinates_ndim,
                               const size_t *pixels_coordinates_dims,
@@ -318,7 +294,7 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
 
         assert(ARRAY_SIZE(names) == darray_size(space->axes));
         assert(ARRAY_SIZE(names) == n_resolutions);
-        assert(n_pixels == space->n_indexes_0);
+        assert(n_pixels == space->max_items);
 
         const double *h = &pixels_coordinates[0 * n_pixels];
 	const double *k = &pixels_coordinates[1 * n_pixels];
@@ -337,8 +313,10 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
 
 	/* compute the coordinates in the last axis basis and the
 	 * indexes */
+        darray_size(space->items) = 0;
 	for(i=0;i<n_pixels;++i){
                 if(NULL == masked || 0 == masked[i]){
+                        HklBinocularsSpaceItem item;
                         HklVector v = {{h[i], k[i], l[i]}};
 
                         hkl_vector_rotated_quaternion(&v, &q_d);
@@ -348,10 +326,10 @@ void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
                         hkl_matrix_times_vector(&RUB_1, &v);
 
                         for(j=0; j<ARRAY_SIZE(names); ++j)
-                                darray_item(space->indexes_0, j)[i] = rint(v.data[j] / resolutions[j]);
-                } else {
-                        for(j=0; j<ARRAY_SIZE(names); ++j)
-                                darray_item(space->indexes_0, j)[i] = MASKED;
+                                item.indexes_0[j] = rint(v.data[j] / resolutions[j]);
+                        item.intensity = rint((double)image[i] * weight);
+
+                        darray_append(space->items, item);
                 }
 	}
 
@@ -450,40 +428,32 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
 /* Using this method the Cube has already the right dimensions, we
  * just add the Space data into it. */
 void add_space(HklBinocularsCube *cube,
-	       const HklBinocularsSpace *space,
-	       size_t n_pixels,
-	       const uint16_t *img,
-               double weight)
+	       const HklBinocularsSpace *space)
 {
 	size_t i;
-	size_t j;
-	ptrdiff_t len = 1;
-	ptrdiff_t indexes[n_pixels];
         size_t n_axes = darray_size(cube->axes);
+	ptrdiff_t lens[n_axes];
+        HklBinocularsSpaceItem *item;
 
-	for(i=0; i<n_pixels; ++i){
-		indexes[i] = -cube->offset0;
+        /* compute the lens */
+        lens[0] = 1;
+
+	for(i=1; i<n_axes; ++i){
+                lens[i] = lens[i - 1] * axis_size(&darray_item(cube->axes, n_axes - i));
 	}
 
-	for(i=0; i<n_axes; ++i){
-                size_t _i = n_axes - 1 - i;
-		ptrdiff_t *idx = darray_item(space->indexes_0, _i);
-		for(j=0; j<n_pixels; ++j){
-                        if (idx[j] != MASKED)
-                                indexes[j] += len * idx[j];
-                        else
-                                indexes[j] = MASKED;
-		}
-		len *= axis_size(&darray_item(cube->axes, _i));
-	}
+        darray_foreach(item, space->items){
+                ptrdiff_t w = -cube->offset0;
 
-	for(i=0; i<n_pixels; ++i){
-                if (indexes[i] != MASKED){
-                        size_t w = indexes[i];
-                        cube->photons[w] += rint((double)img[i] * weight);
-                        cube->contributions[w] += 1;
+                for(i=0; i<n_axes; ++i){
+                        w += lens[i] * item->indexes_0[n_axes - 1 - i];
+                        /* fprintf(stdout, " %ld %ld", lens[i], item->indexes_0[n_axes - 1 - i]); */
                 }
-	}
+
+                /* fprintf(stdout, " w: %ld %ld\n", w, cube_size(cube)); */
+                cube->photons[w] += item->intensity;
+                cube->contributions[w] += 1;
+        }
 }
 
 void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube *self)
@@ -510,12 +480,8 @@ void hkl_binoculars_cube_dims(const HklBinocularsCube *self, size_t ndim, size_t
 }
 
 HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
-                                           const HklBinocularsSpace *const *spaces,
-					   size_t n_pixels, const uint16_t **imgs,
-                                           size_t n_weights, const double *weights)
+                                           const HklBinocularsSpace *const *spaces)
 {
-        assert(n_spaces == n_weights);
-
 	size_t i;
 	const HklBinocularsSpace *space0 = spaces[0];
 	HklBinocularsCube *self = empty_cube(&space0->axes);
@@ -531,7 +497,7 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
 
 	/* add all the spaces */
 	for(i=0; i<n_spaces; ++i){
-		add_space(self, spaces[i], n_pixels, imgs[i], weights[i]);
+		add_space(self, spaces[i]);
 	}
 
 	return self;
@@ -542,16 +508,14 @@ HklBinocularsCube *hkl_binoculars_cube_new_empty(void)
         return empty_cube(NULL);
 }
 
-HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space,
-                                                      size_t n_pixels, const uint16_t *img,
-                                                      double weight)
+HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space)
 {
 	HklBinocularsCube *self = empty_cube(&space->axes);
 
 	/* allocated the final cube */
         calloc_cube(self);
 
-        add_space(self, space, n_pixels, img, weight);
+        add_space(self, space);
 
 	return self;
 }
@@ -649,14 +613,12 @@ static void switch_content(HklBinocularsCube *self,
 }
 
 void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
-                                   const HklBinocularsSpace *space,
-                                   size_t n_pixels, const uint16_t *img,
-                                   double weight)
+                                   const HklBinocularsSpace *space)
 {
         HklBinocularsCube *cube;
 
         if(is_empty(self)){
-                cube = hkl_binoculars_cube_new_from_space(space, n_pixels, img, weight);
+                cube = hkl_binoculars_cube_new_from_space(space);
                 switch_content(self, cube);
                 hkl_binoculars_cube_free(cube);
         }else{
@@ -673,6 +635,6 @@ void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
                         switch_content(self, cube);
                         hkl_binoculars_cube_free(cube);
                 }
-                add_space(self, space, n_pixels, img, weight);
+                add_space(self, space);
         }
 }

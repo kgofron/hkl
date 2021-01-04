@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -157,7 +157,7 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
                            >-> framesQxQyQzP h5d det
                            -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
                            >-> project det 3 (spaceQxQyQz det pixels res mask')
-                           >-> tee (accumulateP det c)
+                           >-> tee (accumulateP c)
                            >-> progress pb
                        ) jobs
   saveCube o r'
@@ -204,7 +204,7 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
                            >-> framesHklP h5d det
                            -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
                            >-> project det 3 (spaceHkl config' det pixels res mask')
-                           >-> tee (accumulateP det c)
+                           >-> tee (accumulateP c)
                            >-> progress pb
                        ) jobs
   saveCube o r'
@@ -213,10 +213,10 @@ processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
 
 --  Create the Cube
 
-accumulateP :: (MonadIO m, Shape sh) => Detector a DIM2 -> IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
-accumulateP d ref =
+accumulateP :: (MonadIO m, Shape sh) => IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
+accumulateP ref =
     forever $ do s <- await
-                 liftIO $ addSpace d s =<< readIORef ref
+                 liftIO $ addSpace s =<< readIORef ref
 
 progress :: (MonadIO m, Shape sh) => ProgressBar s -> Consumer (DataFrameSpace sh) m ()
 progress p = forever $ do

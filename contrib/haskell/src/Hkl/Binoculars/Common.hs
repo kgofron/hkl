@@ -3,7 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -25,11 +25,9 @@ module Hkl.Binoculars.Common
   ) where
 
 import           Control.Exception     (bracket)
-import           Data.Array.Repa       (Shape, size)
-import           Data.Array.Repa.Index (DIM2)
+import           Data.Array.Repa       (Shape)
 import           Data.IORef            (IORef, newIORef, readIORef)
 import           Data.Word             (Word16)
-import           Foreign.C.Types       (CDouble (..))
 import           Foreign.ForeignPtr    (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array (withArrayLen)
 import           Foreign.Ptr           (Ptr)
@@ -38,7 +36,6 @@ import           Path                  (Abs, File, Path, fromAbsFile)
 import           Text.Printf           (printf)
 
 import           Hkl.C.Binoculars
-import           Hkl.Detector
 import           Hkl.Orphan            ()
 
 data Chunk n a = Chunk !a !n !n
@@ -92,30 +89,22 @@ withForeignPtrs (fp:fps) f =
   withForeignPtrs fps $ \ps -> f (p:ps)
 
 {-# INLINE mkCube' #-}
-mkCube' :: Shape sh => Detector a DIM2 -> [DataFrameSpace sh] -> IO (Cube' sh)
-mkCube' detector dfs = do
+mkCube' :: Shape sh => [DataFrameSpace sh] -> IO (Cube' sh)
+mkCube' dfs = do
   let spaces = [spaceHklPointer s | (DataFrameSpace _ s _) <- dfs]
-  let images = [img | (DataFrameSpace img _ _) <- dfs]
-  let weights = [CDouble w | (DataFrameSpace _ _ w) <- dfs]
-  let nPixels = size . shape $ detector
   withForeignPtrs spaces $ \pspaces ->
-    withForeignPtrs images $ \pimages ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
-    withArrayLen pimages $ \_ images' ->
-    withArrayLen weights $ \nWeights weights' ->
-    peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces' (toEnum nPixels) images' (toEnum nWeights) weights'
+    peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces'
 
 {-# INLINE addSpace #-}
-addSpace :: Shape sh => Detector a DIM2 -> DataFrameSpace sh -> (Cube' sh) -> IO (ForeignPtr (Cube' sh))
-addSpace d df EmptyCube' = do
-  (Cube' fp) <- mkCube' d [df]
+addSpace :: Shape sh => DataFrameSpace sh -> (Cube' sh) -> IO (ForeignPtr (Cube' sh))
+addSpace df EmptyCube' = do
+  (Cube' fp) <- mkCube' [df]
   return fp
-addSpace d (DataFrameSpace img s w) (Cube' fp) =
+addSpace (DataFrameSpace _ s _) (Cube' fp) =
     withForeignPtr (spaceHklPointer s) $ \spacePtr ->
-    withForeignPtr img $ \imgPtr ->
     withForeignPtr fp $ \cPtr -> do
-      let nPixels = size . shape $ d
-      {-# SCC "hkl_binoculars_cube_add_space" #-} hkl_binoculars_cube_add_space cPtr spacePtr (toEnum nPixels) imgPtr (CDouble w)
+      {-# SCC "hkl_binoculars_cube_add_space" #-} hkl_binoculars_cube_add_space cPtr spacePtr
       return fp
 
 type Template = String

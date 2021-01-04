@@ -2,7 +2,7 @@
 {-# LANGUAGE GADTs                 #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -37,7 +37,8 @@ import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.Text                         (Text)
 import           Data.Typeable                     (typeOf)
 import           Data.Word                         (Word16)
-import           Foreign.C.Types                   (CBool, CSize (..))
+import           Foreign.C.Types                   (CBool, CDouble (..),
+                                                    CSize (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr, nullPtr)
@@ -156,7 +157,7 @@ spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g img) =
     withMaybeMask mmask' $ \ mask'' ->
     withForeignPtr img $ \i ->
     withForeignPtr (spaceHklPointer space) $ \pSpace -> do
-      {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q pSpace geometry i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
+      {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
       return (DataFrameSpace img space att)
 
 -- SamplePath
@@ -211,5 +212,5 @@ spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att
       withPixelsDims pixels $ \ndim dims ->
       withForeignPtr img $ \i ->
       withForeignPtr (spaceHklPointer space) $ \pSpace -> do
-        {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl pSpace geometry sample i nPixels pix (toEnum ndim) dims r (toEnum nr) mask''
+        {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl pSpace geometry sample i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
         return (DataFrameSpace img space att)

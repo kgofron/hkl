@@ -9,7 +9,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans     #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -118,26 +118,16 @@ foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_bin
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_from_space" \
 hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
-                                   -> CSize -- int32_t n_pixels
-                                   -> Ptr Word16 -- uint16_t *imgs
-                                   -> CDouble -- double weight
                                    -> IO (Ptr (Cube' sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_add_space" \
 hkl_binoculars_cube_add_space :: Ptr (Cube' sh) -- HklBinocularsCube *self
                               -> Ptr (Space sh) -- const HklBinocularsSpace *space
-                              -> CSize -- size_t n_pixels
-                              -> Ptr Word16 -- const uint16_t *imgs
-                              -> CDouble -- double weight
                               -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
 hkl_binoculars_cube_new' :: CSize -- size_t n_spaces
                          -> Ptr (Ptr (Space sh)) -- HklBinocularsSpace **spaces
-                         -> CSize -- size_t n_pixels
-                         -> Ptr (Ptr Word16) -- uint16_t **imgs
-                         -> CSize -- size_t n_weights
-                         -> Ptr CDouble -- double *weights
                          -> IO (Ptr (Cube' sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_empty" \
@@ -193,10 +183,6 @@ foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_bin
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
 hkl_binoculars_cube_new :: CSize -- number of Space
                         -> Ptr (Ptr (Space sh)) -- spaces
-                        -> CSize -- size_t n_pixels
-                        -> Ptr (Ptr Word16) -- uint16_t **imgs
-                        -> CSize -- size_t n_weights
-                        -> Ptr CDouble -- weights
                         -> IO (Ptr (Cube sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_dims" \
@@ -252,6 +238,7 @@ hkl_binoculars_space_q :: Ptr (Space DIM3) -- HklBinocularsSpace *self
                        -> Ptr Geometry -- const HklGeometry *geometry
                        -> Ptr Word16 --  const uint16_t *image
                        -> CSize -- size_t n_pixels
+                       -> CDouble -- double weight
                        -> Ptr Double -- const double *pixels_coordinates
                        -> CSize -- int32_t pixels_coordinates_ndim
                        -> Ptr CSize --  const int32_t *pixels_coordinates_dims
@@ -266,6 +253,7 @@ hkl_binoculars_space_hkl :: Ptr (Space DIM3) -- HklBinocularsSpace *self
                          -> Ptr HklSample -- const HklSample *sample
                          -> Ptr Word16 --  const uint16_t *image
                          -> CSize -- size_t n_pixels
+                         -> CDouble -- double weight
                          -> Ptr Double -- const double *pixels_coordinates
                          -> CSize -- size_t pixels_coordinates_ndim
                          -> Ptr CSize --  const int32_t *pixels_coordinates_dims
