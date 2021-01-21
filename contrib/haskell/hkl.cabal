@@ -90,6 +90,9 @@ executable binoculars-ng
   ghc-options:         -g
   ghc-options:         -dcore-lint
   ghc-options:         -debug
+  ghc-options:         -ddump-to-file
+  ghc-options:         -ddump-simpl
+  ghc-options:         -ddump-stg
 
   if flag(useHklDev)
       pkgconfig-depends:   gobject-2.0
@@ -241,6 +244,9 @@ library
   ghc-options:         -g
   ghc-options:         -dcore-lint
   ghc-options:         -debug
+  ghc-options:         -ddump-to-file
+  ghc-options:         -ddump-simpl
+  ghc-options:         -ddump-stg
 
 test-suite hkl-test
    type:               exitcode-stdio-1.0
