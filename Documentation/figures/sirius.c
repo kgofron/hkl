@@ -154,7 +154,7 @@ int main_1(void)
 				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
 
 	/* Trajectory */
-	struct Mode mode = ModeHklBissectorVertical;
+	Mode mode = ModeHklBissectorVertical();
 	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11, mode);
 	struct Trajectory tconfig2 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 101, mode);
 	/* move between each step */
@@ -227,7 +227,7 @@ int main_2(void)
 				  0.00892, 65.84862, 135.42159, 100.249, -0.26559, 66.64474);
 
 	/* Trajectory */
-	struct Mode mode = ModeHklBissectorVertical;
+	Mode mode = ModeHklBissectorVertical();
 	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 4, 0, 0, 2, 100, mode);
 	/* move between each step */
 	solutions = Trajectory_solve(tconfig1, gconfig, gaas, TRUE);
