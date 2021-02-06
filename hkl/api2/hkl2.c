@@ -169,26 +169,18 @@ HklSample *newSample(struct Sample sample)
 	return self;
 }
 
-/* struct Sample cu = { */
-/* 	.name = "default", */
-/* 	.lattice = Cubic(1.54), */
-/* 	.ux = 0.0 * HKL_DEGTORAD, */
-/* 	.uy = 0.0 * HKL_DEGTORAD, */
-/* 	.uz = 0.0 * HKL_DEGTORAD, */
-/* }; */
-
 /* Mode */
 
 const char *getModeName(struct Mode mode)
 {
-	const char *name = NULL;
-
-	switch(mode.tag){
-	case MODE_HKL_BISSECTOR_VERTICAL: name = "bissector_vertical"; break;
-	case MODE_HKL_E4CH_CONSTANT_PHI: name = "constant_phi"; break;
-	}
-
-	return name;
+        match(mode){
+                of(ModeHklBissectorVertical){
+                        return "bissector_vertical";
+                }
+                of(ModeHklE4CHConstantPhi){
+                        return "constant_phi";
+                }
+	};
 }
 
 /* Engine */

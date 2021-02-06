@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -50,7 +50,7 @@ static void stability(void)
 		SoleilSiriusKappa(1.458637,
 				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
 
-	struct Mode mode = ModeHklBissectorVertical;
+	Mode mode = ModeHklBissectorVertical();
 
 	/* move between each step */
 	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 1, 0, 0, 6, 11, mode);

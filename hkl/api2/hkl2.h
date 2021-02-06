@@ -267,17 +267,11 @@ extern HklSample *newSample(struct Sample sample);
 
 /* Mode */
 
-enum mode_e {
-	MODE_HKL_BISSECTOR_VERTICAL,
-	MODE_HKL_E4CH_CONSTANT_PHI,
-};
-
-struct Mode {
-	enum mode_e tag;
-};
-
-#define ModeHklBissectorVertical { .tag=MODE_HKL_BISSECTOR_VERTICAL }
-#define ModeHklE4CHConstantPhi { .tag=MODE_HKL_E4CH_CONSTANT_PHI }
+datatype (
+        Mode,
+        (ModeHklBissectorVertical),
+        (ModeHklE4CHConstantPhi)
+        );
 
 extern const char *getModeName(struct Mode mode);
 

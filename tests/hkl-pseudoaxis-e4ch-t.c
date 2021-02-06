@@ -384,7 +384,7 @@ static void petra3_p01(void)
 	struct Geometry gconfig = E4ch(4.3687,
 				       0., 0., 6., 0.);
 
-	struct Mode mode = ModeHklE4CHConstantPhi;
+	Mode mode = ModeHklE4CHConstantPhi();
 
 	/* move between each step */
 	struct Trajectory tconfig1 = TrajectoryHklFromTo(0, 0, 4, 1, 1, 4, 30, mode);
