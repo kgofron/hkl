@@ -277,18 +277,10 @@ extern const char *getModeName(struct Mode mode);
 
 /* Engine */
 
-enum engine_e {
-	ENGINE_HKL,
-};
-
-struct Engine {
-	enum engine_e tag;
-	union {
-		struct {double h; double k; double l; struct Mode mode;} hkl;
-	};
-};
-
-#define EngineHkl(h_, k_, l_, mode_) {.tag=ENGINE_HKL, .hkl={h_, k_, l_, mode_}}
+datatype(
+        Engine,
+        (EngineHkl, double, double, double, Mode)
+        );
 
 extern void Engine_fprintf(FILE *f, struct Engine engine);
 

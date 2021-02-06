@@ -187,34 +187,28 @@ const char *getModeName(struct Mode mode)
 
 void Engine_fprintf(FILE *f, struct Engine engine)
 {
-	switch(engine.tag){
-	case ENGINE_HKL:
-	{
-		fprintf(f, "hkl: %f %f %f\n", engine.hkl.h, engine.hkl.k, engine.hkl.l);
-	}
-	break;
+        match(engine){
+                of(EngineHkl, h, k, l, _){
+                        fprintf(f, "hkl: %f %f %f\n", *h, *k, *l);
+                }
 	}
 }
 
 void Engine_header(FILE *f, const struct Engine engine)
 {
-	switch(engine.tag){
-	case ENGINE_HKL:
-	{
-		fprintf(f, "h k l");
-	}
-	break;
+        match(engine){
+                of(EngineHkl){
+                        fprintf(f, "h k l");
+                }
 	}
 }
 
 void Engine_save_as_dat(FILE *f, const struct Engine engine)
 {
-	switch(engine.tag){
-	case ENGINE_HKL:
-	{
-		fprintf(f, "%f %f %f", engine.hkl.h, engine.hkl.k, engine.hkl.l);
-	}
-	break;
+        match(engine){
+                of(EngineHkl, h, k, l, _){
+                        fprintf(f, "%f %f %f", *h, *k, *l);
+                }
 	}
 }
 
@@ -222,20 +216,18 @@ HklGeometryList *Engine_solve(HklEngineList *engines, struct Engine econfig)
 {
 	HklGeometryList *geometries = NULL;
 
-	switch(econfig.tag) {
-	case ENGINE_HKL:
-	{
-		double values[3] = {econfig.hkl.h, econfig.hkl.k, econfig.hkl.l};
-		HklEngine *engine = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
-		const char *mode_name = getModeName(econfig.hkl.mode);
-		if(hkl_engine_current_mode_set(engine, mode_name, NULL)){
+        match(econfig){
+                of(EngineHkl, h, k, l, mode){
+                        double values[3] = {*h, *k, *l};
+                        HklEngine *engine = hkl_engine_list_engine_get_by_name(engines, "hkl", NULL);
+                        const char *mode_name = getModeName(*mode);
+                        if(hkl_engine_current_mode_set(engine, mode_name, NULL)){
 
-			geometries = hkl_engine_pseudo_axis_values_set(engine,
-								       values, ARRAY_SIZE(values),
-								       HKL_UNIT_DEFAULT, NULL);
-		}
-	}
-	break;
+                                geometries = hkl_engine_pseudo_axis_values_set(engine,
+                                                                               values, ARRAY_SIZE(values),
+                                                                               HKL_UNIT_DEFAULT, NULL);
+                        }
+                }
 	}
 
 	return geometries;
