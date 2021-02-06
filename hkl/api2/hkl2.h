@@ -236,11 +236,11 @@ extern HklEngineList *newEngines(struct Geometry geometry);
 /* Lattice */
 
 datatype(
-    Lattice,
-    (Cubic, double),
-    (Hexagonal, double, double),
-    (Tetragonal, double, double)
-);
+        Lattice,
+        (Cubic, double),
+        (Hexagonal, double, double),
+        (Tetragonal, double, double)
+        );
 
 extern HklLattice *newLattice(const Lattice lattice);
 
