@@ -237,37 +237,31 @@ HklGeometryList *Engine_solve(HklEngineList *engines, struct Engine econfig)
 
 generator_def(trajectory_gen, struct Engine, struct Trajectory, tconfig)
 {
-	switch(tconfig.tag){
-	case TRAJECTORY_HKL_FROM_TO:
-	{
-		uint i;
-		double dh = (tconfig.hklfromto.h1 - tconfig.hklfromto.h0) / (tconfig.hklfromto.n);
-		double dk = (tconfig.hklfromto.k1 - tconfig.hklfromto.k0) / (tconfig.hklfromto.n);
-		double dl = (tconfig.hklfromto.l1 - tconfig.hklfromto.l0) / (tconfig.hklfromto.n);
-		for(i=0; i<tconfig.hklfromto.n + 1; ++i){
-			double h = i * dh + tconfig.hklfromto.h0;
-			double k = i * dk + tconfig.hklfromto.k0;
-			double l = i * dl + tconfig.hklfromto.l0;
+        match(tconfig){
+                of(TrajectoryHklFromTo, h0, k0, l0, h1, k1, l1, n, mode){
+                        uint i;
+                        double dh = (*h1 - *h0) / *n;
+                        double dk = (*k1 - *k0) / *n;
+                        double dl = (*l1 - *l0) / *n;
+                        for(i=0; i<*n + 1; ++i){
+                                double h = i * dh + *h0;
+                                double k = i * dk + *k0;
+                                double l = i * dl + *l0;
 
-			struct Engine econfig = EngineHkl(h, k, l, tconfig.hklfromto.mode);
-			generator_yield(econfig);
-		}
-	}
-	break;
+                                struct Engine econfig = EngineHkl(h, k, l, *mode);
+                                generator_yield(econfig);
+                        }
+                }
 	}
 }
 
 uint Trajectory_len(struct Trajectory tconfig)
 {
-	uint n = 0;
-	switch(tconfig.tag){
-	case TRAJECTORY_HKL_FROM_TO:
-	{
-		n = tconfig.hklfromto.n + 1;
-	}
-	break;
-	}
-	return n;
+        match(tconfig){
+                of(TrajectoryHklFromTo, _, _, _, _, _, _, n, _){
+                        return *n + 1;
+                }
+        }
 }
 
 HklGeometryList *Trajectory_solve(struct Trajectory tconfig,

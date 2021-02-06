@@ -282,37 +282,27 @@ datatype(
         (EngineHkl, double, double, double, Mode)
         );
 
-extern void Engine_fprintf(FILE *f, struct Engine engine);
+extern void Engine_fprintf(FILE *f, const Engine engine);
 
-extern void Engine_header(FILE *f, const struct Engine engine);
+extern void Engine_header(FILE *f, const Engine engine);
 
-extern void Engine_save_as_dat(FILE *f, const struct Engine engine);
+extern void Engine_save_as_dat(FILE *f, const Engine engine);
 
 extern HklGeometryList *Engine_solve(HklEngineList *engines,
-				     struct Engine econfig);
+				     const Engine econfig);
 
 /* HklTrajectory */
 
-enum trajectory_e {
-	TRAJECTORY_HKL_FROM_TO,
-};
+datatype(
+        Trajectory,
+        (TrajectoryHklFromTo, double, double, double, double, double, double, uint, Mode)
+        );
 
-struct Trajectory {
-	enum trajectory_e tag;
-	union {
-		struct {double h0; double k0; double l0;
-			double h1; double k1; double l1;
-			uint n; struct Mode mode;} hklfromto;
-	};
-};
+extern generator_declare(trajectory_gen, Engine, Trajectory, tconfig);
 
-#define TrajectoryHklFromTo(h0_, k0_, l0_, h1_, k1_, l1_, n_, mode_) {.tag=TRAJECTORY_HKL_FROM_TO, .hklfromto={h0_, k0_, l0_, h1_, k1_, l1_, n_, .mode=mode_}}
+extern uint Trajectory_len(const Trajectory tconfig);
 
-extern generator_declare(trajectory_gen, struct Engine, struct Trajectory, tconfig);
-
-extern uint Trajectory_len(struct Trajectory tconfig);
-
-extern HklGeometryList *Trajectory_solve(struct Trajectory tconfig,
+extern HklGeometryList *Trajectory_solve(const Trajectory tconfig,
 					 struct Geometry gconfig,
 					 struct Sample sconfig,
 					 uint move);
