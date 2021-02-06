@@ -1,5 +1,6 @@
 AM_CFLAGS = \
 	-I$(top_srcdir) \
+	-I$(top_srcdir)/hkl/api2 \
 	-I$(abs_top_srcdir)/tests \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS)

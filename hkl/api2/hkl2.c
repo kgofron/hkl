@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2012, 2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2012, 2020, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -113,39 +113,39 @@ failed:
 
 /* Lattice */
 
-HklLattice *newLattice(struct Lattice lattice)
+HklLattice *newLattice(const Lattice lattice)
 {
 	HklLattice *self = NULL;
 
-	switch (lattice.tag) {
-	case LATTICE_CUBIC:
-		self = hkl_lattice_new(lattice.cubic.a,
-				       lattice.cubic.a,
-				       lattice.cubic.a,
-				       90*HKL_DEGTORAD,
-				       90*HKL_DEGTORAD,
-				       90*HKL_DEGTORAD,
-				       NULL);
-		break;
-	case LATTICE_HEXAGONAL:
-		self = hkl_lattice_new(lattice.hexagonal.a,
-				       lattice.hexagonal.a,
-				       lattice.hexagonal.c,
-				       90*HKL_DEGTORAD,
-				       90*HKL_DEGTORAD,
-				       120*HKL_DEGTORAD,
-				       NULL);
-		break;
-	case LATTICE_TETRAGONAL:
-		self = hkl_lattice_new(lattice.tetragonal.a,
-				       lattice.tetragonal.a,
-				       lattice.tetragonal.c,
-				       90*HKL_DEGTORAD,
-				       90*HKL_DEGTORAD,
-				       90*HKL_DEGTORAD,
-				       NULL);
-		break;
-	}
+        match(lattice){
+                of(Cubic, a){
+                        self = hkl_lattice_new(*a,
+                                               *a,
+                                               *a,
+                                               90*HKL_DEGTORAD,
+                                               90*HKL_DEGTORAD,
+                                               90*HKL_DEGTORAD,
+                                               NULL);
+                }
+                of(Hexagonal, a, c){
+                        self = hkl_lattice_new(*a,
+                                               *a,
+                                               *c,
+                                               90*HKL_DEGTORAD,
+                                               90*HKL_DEGTORAD,
+                                               120*HKL_DEGTORAD,
+                                               NULL);
+                }
+                of(Tetragonal, a, c){
+                        self = hkl_lattice_new(*a,
+                                               *a,
+                                               *c,
+                                               90*HKL_DEGTORAD,
+                                               90*HKL_DEGTORAD,
+                                               90*HKL_DEGTORAD,
+                                               NULL);
+                }
+        };
 
 	return self;
 }
@@ -169,13 +169,13 @@ HklSample *newSample(struct Sample sample)
 	return self;
 }
 
-const struct Sample cu = {
-	.name = "default",
-	.lattice = Cubic(1.54),
-	.ux = 0.0 * HKL_DEGTORAD,
-	.uy = 0.0 * HKL_DEGTORAD,
-	.uz = 0.0 * HKL_DEGTORAD,
-};
+/* struct Sample cu = { */
+/* 	.name = "default", */
+/* 	.lattice = Cubic(1.54), */
+/* 	.ux = 0.0 * HKL_DEGTORAD, */
+/* 	.uy = 0.0 * HKL_DEGTORAD, */
+/* 	.uz = 0.0 * HKL_DEGTORAD, */
+/* }; */
 
 /* Mode */
 

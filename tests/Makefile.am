@@ -32,6 +32,7 @@ all_tests = \
 AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
+	-I$(top_srcdir)/hkl/api2 \
 	-I$(top_srcdir)/binoculars \
 	-I$(top_srcdir)/tests \
 	$(GLIB_CFLAGS) \

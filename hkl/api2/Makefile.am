@@ -1,4 +1,5 @@
 AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
+	-ftrack-macro-expansion=0 \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
 	$(GLIB_CFLAGS) \

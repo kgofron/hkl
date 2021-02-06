@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -37,6 +37,7 @@ static void getter(void)
 	HklDetector *detector;
 	HklSample *sample;
 	struct Geometry gconf = E4ch(1.54, 0., 0., 0., 0.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -83,6 +84,7 @@ static void degenerated(void)
 	HklDetector *detector;
 	HklSample *sample;
 	struct Geometry gconf = E4ch(1.54, 0., 0., 0., 0.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -144,6 +146,7 @@ static void psi_getter(void)
 	HklSample *sample;
 	double hkl[3];
 	struct Geometry gconf = E4ch(1.54, 30., 0., 0., 60.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -205,6 +208,7 @@ static void psi_setter(void)
 	HklSample *sample;
 	static double hkl[] = {1, 0, 0};
 	struct Geometry gconf = E4ch(1.54, 30., 0., 0., 60.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -264,6 +268,7 @@ static void q(void)
 	HklDetector *detector;
 	HklSample *sample;
 	struct Geometry gconf = E4ch(1.54, 30., 0., 0., 60.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -322,6 +327,7 @@ static void hkl_psi_constant_horizontal(void)
 	static double hkl[] = {1, 0, 1};
 	static double hkl2[] = {1, 1, 0};
 	struct Geometry gconf = E4ch(1.54, 30., 0., 0., 60.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);

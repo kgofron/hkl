@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -137,7 +137,7 @@ int main_1(void)
 
 	xy_init(&plot);
 
-	static struct Sample gaas = {
+	const struct Sample gaas = {
 		.name = "GaAs",
 		.lattice = Cubic(5.6533),
 		.ux = -90.003382 * HKL_DEGTORAD,
@@ -209,13 +209,12 @@ int main_1(void)
 
 int main_2(void)
 {
-	uint i;
 	HklGeometryList *solutions;
 	XY plot;
 
 	xy_init(&plot);
 
-	static struct Sample gaas = {
+	const struct Sample gaas = {
 		.name = "GaAs",
 		.lattice = Cubic(5.6533),
 		.ux = -90.1 * HKL_DEGTORAD,
@@ -241,7 +240,7 @@ int main_2(void)
 }
 
 
-main(void)
+int main(void)
 {
 	main_1();
 	main_2();

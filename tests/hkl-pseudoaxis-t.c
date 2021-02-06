@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -27,7 +27,6 @@
 
 #define DEBUG
 
-
 typedef int (* test_func) (HklEngine *engine, HklEngineList *engine_list, unsigned int n);
 
 static int __test(unsigned int nb_iter, test_func f, int foreach_mode)
@@ -36,6 +35,7 @@ static int __test(unsigned int nb_iter, test_func f, int foreach_mode)
 	size_t i, j, n;
 	HklGeometry *geometry = NULL;
 	HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D);
+        struct Sample cu = CU;
 	HklSample *sample = newSample(cu);
 	HklEngineList *engines;
 	int res = TRUE;

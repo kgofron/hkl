@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -24,6 +24,7 @@
 
 #include "hkl.h"
 #include "hkl/ccan/generator/generator.h"
+#include "datatype99.h"
 
 G_BEGIN_DECLS
 
@@ -234,41 +235,35 @@ extern HklEngineList *newEngines(struct Geometry geometry);
 
 /* Lattice */
 
-enum lattice_e {
-	LATTICE_CUBIC,
-	LATTICE_HEXAGONAL,
-	LATTICE_TETRAGONAL,
-};
+datatype(
+    Lattice,
+    (Cubic, double),
+    (Hexagonal, double, double),
+    (Tetragonal, double, double)
+);
 
-struct Lattice {
-	enum lattice_e tag;
-	union {
-		struct { double a; } cubic;
-		struct { double a; double c; } hexagonal;
-		struct { double a; double c; } tetragonal;
-	};
-};
-
-#define Cubic(_a) {.tag=LATTICE_CUBIC, .cubic={_a}}
-#define Hexagonal(_a, _c) {.tag=LATTICE_HEXAGONAL, .hexagonal={_a, _c}}
-#define Tetragonal(_a, _c) {.tag=LATTICE_TETRAGONAL, .tetragonal={_a, _c}}
-
-extern HklLattice *newLattice(struct Lattice lattice);
+extern HklLattice *newLattice(const Lattice lattice);
 
 /* Sample */
 
 struct Sample {
 	const char *name;
-	struct Lattice lattice;
+	Lattice lattice;
 	double ux;
 	double uy;
 	double uz;
 };
 
+#define CU (struct Sample) {                                          \
+                .name = "default",                                    \
+                        .lattice = Cubic(1.54),                       \
+                        .ux = 0.0 * HKL_DEGTORAD,                     \
+                        .uy = 0.0 * HKL_DEGTORAD,                     \
+                        .uz = 0.0 * HKL_DEGTORAD                      \
+                        }
+
+
 extern HklSample *newSample(struct Sample sample);
-
-extern const struct Sample cu;
-
 
 /* Mode */
 

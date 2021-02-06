@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -33,7 +33,7 @@ static void solution(void)
 	HklDetector *detector;
 	HklSample *sample;
 	static double hkl[] = {1, 0, 1};
-	static struct Sample sconf = {
+	struct Sample sconf = {
 		.name = "test",
 		.lattice = Cubic(5.432),
 		.ux = -90.0 * HKL_DEGTORAD,

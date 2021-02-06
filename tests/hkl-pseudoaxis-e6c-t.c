@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -67,6 +67,7 @@ static void getter(void)
 	HklDetector *detector;
 	HklSample *sample;
 	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -114,6 +115,7 @@ static void degenerated(void)
 	HklSample *sample;
 	static double hkl[] = {0, 0, 1};
 	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -177,6 +179,7 @@ static void q2(void)
 	HklDetector *detector;
 	HklSample *sample;
 	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
+        struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
