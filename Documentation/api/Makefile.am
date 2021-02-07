@@ -1,7 +1,7 @@
 # -*- mode: makefile -*-
 #
 # Makefile.am - template makefile for gtk-doc module
-# Copyright (C) 2007-2017, 2020  Stefan Sauer
+# Copyright (C) 2007-2017, 2020, 2021  Stefan Sauer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,7 +74,11 @@ EXTRA_HFILES=$(top_srcdir)/hkl.h
 
 # Header files or dirs to ignore when scanning. Use base file/dir names
 # e.g. IGNORE_HFILES=gtkdebug.h gtkintl.h private_code
-IGNORE_HFILES=
+IGNORE_HFILES=\
+	$(top_srcdir)/hkl/api2/hkl2.h \
+	$(top_srcdir)/hkl/api2/metalang99 \
+	$(top_srcdir)/hkl/api2/metalang99.h \
+	$(top_srcdir)/hkl/api2/datatype99.h
 
 # Images to copy into HTML directory.
 # e.g. HTML_IMAGES=$(top_srcdir)/gtk/stock-icons/stock_about_24.png
