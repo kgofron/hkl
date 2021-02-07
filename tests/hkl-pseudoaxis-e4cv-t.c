@@ -31,7 +31,7 @@ static void getter(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = E4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = E4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -78,7 +78,7 @@ static void degenerated(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = E4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = E4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -139,7 +139,7 @@ static void psi_getter(void)
 	HklDetector *detector;
 	HklSample *sample;
 	double hkl[3];
-	struct Geometry gconf = E4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = E4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -204,7 +204,7 @@ static void psi_setter(void)
 	HklDetector *detector;
 	HklSample *sample;
 	static double hkl[] = {1, 0, 0};
-	struct Geometry gconf = E4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = E4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -262,7 +262,7 @@ static void q(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = E4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = E4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -320,7 +320,7 @@ static void hkl_psi_constant_vertical(void)
 	HklSample *sample;
 	static double hkl[] = {1, 0, 1};
 	static double hkl2[] = {1, 1, 0};
-	struct Geometry gconf = E4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = E4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);

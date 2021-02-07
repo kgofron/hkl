@@ -40,7 +40,7 @@ static void solution(void)
 		.uy = 0.0  * HKL_DEGTORAD,
 		.uz = 0.0  * HKL_DEGTORAD,
 	};
-	struct Geometry gconf = SoleilNanoscopiumRobot(0.842, 0., 0., 0., 0., 0., 0.);
+	Geometry gconf = SoleilNanoscopiumRobot(0.842, VALUES(0., 0., 0., 0., 0., 0.));
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);

@@ -66,7 +66,7 @@ static void getter(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
+	Geometry gconf = E6c(1.54, VALUES(0., 30., 0., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -114,7 +114,7 @@ static void degenerated(void)
 	HklDetector *detector;
 	HklSample *sample;
 	static double hkl[] = {0, 0, 1};
-	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
+	Geometry gconf = E6c(1.54, VALUES(0., 30., 0., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -178,7 +178,7 @@ static void q2(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = E6c(1.54, 0., 30., 0., 0., 0., 60.);
+	Geometry gconf = E6c(1.54, VALUES(0., 30., 0., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -247,7 +247,7 @@ static void petra3(void)
 		.uy = -87.84 * HKL_DEGTORAD,
 		.uz = 157.48 * HKL_DEGTORAD,
 	};
-	struct Geometry gconf = E6c(2.033, 0., 30., 0., 0., 0., 60.);
+	Geometry gconf = E6c(2.033, VALUES(0., 30., 0., 0., 0., 60.));
 
 	geometry = newGeometry(gconf);
 	engines = newEngines(gconf);
@@ -318,7 +318,7 @@ static void petra3_2(void)
 		.uy = 0.0 * HKL_DEGTORAD,
 		.uz = -90.0 * HKL_DEGTORAD,
 	};
-	struct Geometry gconf = E6c(1.0332035, 0., 30., 0., 0., 0., 60.);
+	Geometry gconf = E6c(1.0332035, VALUES(0., 30., 0., 0., 0., 60.));
 
 	/* Wavelength 1.0332035 */
 	/* Mode       psi_constant_vertical */

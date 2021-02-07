@@ -34,7 +34,7 @@ static void degenerated(void)
 	HklDetector *detector;
 	HklSample *sample;
 	static double hkl[] = {0, 1, 0};
-	struct Geometry gconf = K4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = K4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -99,7 +99,7 @@ static void eulerians(void)
 	HklDetector *detector;
 	HklSample *sample;
 	static double eulerians[] = {0., 90 * HKL_DEGTORAD, 0.};
-	struct Geometry gconf = K4cv(1.54, 0., 0., 0., 0.);
+	Geometry gconf = K4cv(1.54, VALUES(0., 0., 0., 0.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -173,7 +173,7 @@ static void q(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = K4cv(1.54, 30., 0., 0., 60.);
+	Geometry gconf = K4cv(1.54, VALUES(30., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);

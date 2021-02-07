@@ -34,7 +34,7 @@ static void degenerated(void)
 	HklDetector *detector;
 	HklSample *sample;
 	static double hkl[] = {0, 1, 0};
-	struct Geometry gconf = K6c(1.54, 0., 0., 0., 0., 0., 0.);
+	Geometry gconf = K6c(1.54, VALUES(0., 0., 0., 0., 0., 0.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -113,7 +113,7 @@ static void eulerians(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = K6c(1.54, 0., 0., 0., 0., 0., 0.);
+	Geometry gconf = K6c(1.54, VALUES(0., 0., 0., 0., 0., 0.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -189,7 +189,7 @@ static void q2(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = K6c(1.54, 0., 30., 0., 0., 0., 60.);
+	Geometry gconf = K6c(1.54, VALUES(0., 30., 0., 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);
@@ -248,7 +248,7 @@ static void m15110(void)
 	HklGeometry *geometry;
 	HklDetector *detector;
 	HklSample *sample;
-	struct Geometry gconf = K6c(1.54, 0., 62.95, 134.75, 0., 0., 60.);
+	Geometry gconf = K6c(1.54, VALUES(0., 62.95, 134.75, 0., 0., 60.));
         struct Sample cu = CU;
 
 	geometry = newGeometry(gconf);

@@ -60,7 +60,8 @@ static void qper_qpar(void)
 		.uz = 0.0 * HKL_DEGTORAD,
 	};
 
-	struct Geometry gconfig = SoleilSixsMed2_3(1.54, 0., 0.1, 0., 0., 90., 0.);
+	Geometry gconfig = SoleilSixsMed2_3(1.54,
+                                            VALUES(0., 0.1, 0., 0., 90., 0.));
 
 	geometry = newGeometry(gconfig);
 	engines = newEngines(gconfig);
@@ -124,8 +125,8 @@ static void med_2_3(void)
 		.uz = 176.35 * HKL_DEGTORAD,
 	};
 
-	static struct Geometry gconfig = SoleilSixsMed2_3(1.54980,
-							  0, 1, -14.27, 99.62, 60.98, 0);
+	Geometry gconfig = SoleilSixsMed2_3(1.54980,
+                                            VALUES(0, 1, -14.27, 99.62, 60.98, 0));
 
 	/* Wavelength 1.54980 */
 	/* Mode       mu_fixed */
@@ -178,8 +179,8 @@ static void med_2_3_v2(void)
 		.uz = 176.35 * HKL_DEGTORAD,
 	};
 
-	static struct Geometry gconfig = SoleilSixsMed2_3_v2(1.54980,
-							     1, -14.27, 99.62, 60.98, 10);
+	Geometry gconfig = SoleilSixsMed2_3_v2(1.54980,
+                                               VALUES(1, -14.27, 99.62, 60.98, 10));
 
 	/* Wavelength 1.54980 */
 	/* Mode       mu_fixed */

@@ -30,202 +30,27 @@ G_BEGIN_DECLS
 
 /* Geometry */
 
-enum geometry_e {
-	GEOMETRY_E4CH,
-	GEOMETRY_E4CV,
-	GEOMETRY_E6C,
-	GEOMETRY_K4CH,
-	GEOMETRY_K4CV,
-	GEOMETRY_K6C,
-        GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT,
-	GEOMETRY_SOLEIL_SIRIUS_KAPPA,
-	GEOMETRY_SOLEIL_SIXS_MED_2_3,
-	GEOMETRY_SOLEIL_SIXS_MED_2_3_v2,
-	GEOMETRY_ZAXIS,
-};
+typedef struct { double data[4]; } double4;
+typedef struct { double data[5]; } double5;
+typedef struct { double data[6]; } double6;
 
-struct Geometry {
-	enum geometry_e tag;
-	union {
-		struct {
-			double wavelength;
-			union {
-				double positions[4];
-				struct {
-					double omega;
-					double chi;
-					double phi;
-					double tth;
-				};
-			};
-		} e4ch;
-		struct {
-			double wavelength;
-			union {
-				double positions[4];
-				struct {
-					double omega;
-					double chi;
-					double phi;
-					double tth;
-				};
-			};
-		} e4cv;
-		struct {
-			double wavelength;
-			union {
-				double positions[6];
-				struct {
-					double mu;
-					double komega;
-					double kappa;
-					double kphi;
-					double gamma;
-					double delta;
-				};
-			};
-		} e6c;
-		struct {
-			double wavelength;
-			union {
-				double positions[4];
-				struct {
-					double komega;
-					double kappa;
-					double kphi;
-					double tth;
-				};
-			};
-		} k4ch;
-		struct {
-			double wavelength;
-			union {
-				double positions[4];
-				struct {
-					double komega;
-					double kappa;
-					double kphi;
-					double tth;
-				};
-			};
-		} k4cv;
-		struct {
-			double wavelength;
-			union {
-				double positions[6];
-				struct {
-					double mu;
-					double komega;
-					double kappa;
-					double kphi;
-					double gamma;
-					double delta;
-				};
-			};
-		} k6c;
-		struct {
-			double wavelength;
-			union {
-				double positions[6];
-				struct {
-					double rz;
-					double rs;
-					double rx;
-					double r;
-					double delta;
-					double gamma;
-				};
-			};
-		} soleil_nanoscopium_robot;
-		struct {
-			double wavelength;
-			union {
-				double positions[6];
-				struct {
-					double mu;
-					double komega;
-					double kappa;
-					double kphi;
-					double delta;
-					double gamma;
-				};
-			};
-		} soleil_sirius_kappa;
-		struct {
-			double wavelength;
-			union {
-				double positions[6];
-				struct {
-					double beta;
-					double mu;
-					double omega;
-					double gamma;
-					double delta;
-					double eta_a;
-				};
-			};
-		} soleil_sixs_med_2_3;
-		struct {
-			double wavelength;
-			union {
-				double positions[5];
-				struct {
-					double mu;
-					double omega;
-					double gamma;
-					double delta;
-					double eta_a;
-				};
-			};
-		} soleil_sixs_med_2_3_v2;
-		struct {
-			double wavelength;
-			union {
-				double positions[4];
-				struct {
-					double mu;
-					double omega;
-					double delta;
-					double gamma;
-				};
-			};
-		} zaxis;
-	};
-};
+#define VALUES(...)                                                     \
+        ((M_catPlain(double, M_variadicsCountPlain(__VA_ARGS__))){.data = {__VA_ARGS__}})
 
-#define E4ch(_w, _o, _c, _p, _t)			\
-	{.tag=GEOMETRY_E4CH,				\
-			.e4ch={_w, {{_o, _c, _p, _t}}}}
-#define E4cv(_w, _o, _c, _p, _t)			\
-	{.tag=GEOMETRY_E4CV,				\
-			.e4cv={_w, {{_o, _c, _p, _t}}}}
-#define E6c(_w, _m, _ko, _ka, _kp, _g, _d)				\
-	{.tag=GEOMETRY_E6C,						\
-			.e6c={_w, {{_m, _ko, _ka, _kp, _g, _d}}}}
-#define K4ch(_w, _o, _c, _p, _t)			\
-	{.tag=GEOMETRY_K4CH,				\
-			.k4ch={_w, {{_o, _c, _p, _t}}}}
-#define K4cv(_w, _o, _c, _p, _t)			\
-	{.tag=GEOMETRY_K4CV,				\
-			.k4cv={_w, {{_o, _c, _p, _t}}}}
-#define K6c(_w, _m, _ko, _ka, _kp, _g, _d)				\
-	{.tag=GEOMETRY_K6C,						\
-			.k6c={_w, {{_m, _ko, _ka, _kp, _g, _d}}}}
-#define SoleilNanoscopiumRobot(_w,  _rz, _rs, _rx, _r, _d, _g)		\
-	{.tag=GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT,                                      \
-			.soleil_nanoscopium_robot={_w, {{_rz, _rs, _rx, _r, _d, _g}}}}
-#define SoleilSiriusKappa(_w,  _m, _ko, _ka, _kp, _d, _g)		\
-	{.tag=GEOMETRY_SOLEIL_SIRIUS_KAPPA,				\
-			.soleil_sirius_kappa={_w, {{_m, _ko, _ka, _kp, _d, _g}}}}
-#define SoleilSixsMed2_3(_w, _b, _m, _o, _g, _d, _e)			\
-	{.tag=GEOMETRY_SOLEIL_SIXS_MED_2_3,				\
-			.soleil_sixs_med_2_3={_w, {{_b, _m, _o, _g, _d, _e}}}}
-#define SoleilSixsMed2_3_v2(_w, _m, _o, _g, _d, _e)			\
-	{.tag=GEOMETRY_SOLEIL_SIXS_MED_2_3_v2,				\
-			.soleil_sixs_med_2_3_v2={_w, {{_m, _o, _g, _d, _e}}}}
-#define Zaxis(_w, _m, _o, _d, _g)				\
-	{.tag=GEOMETRY_ZAXIS,					\
-			.zaxis={_w, {{_m, _o, _d, _g}}}}
+datatype(
+        Geometry,
+        (E4ch, double, double4),
+        (E4cv, double, double4),
+        (E6c, double, double6),
+        (K4ch, double, double4),
+        (K4cv, double, double4),
+        (K6c, double, double6),
+        (SoleilNanoscopiumRobot, double, double6),
+        (SoleilSiriusKappa, double, double6),
+        (SoleilSixsMed2_3, double, double6),
+        (SoleilSixsMed2_3_v2, double, double5),
+        (Zaxis, double, double4)
+        );
 
 extern HklGeometry *newGeometry(struct Geometry geometry);
 

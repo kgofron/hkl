@@ -145,13 +145,13 @@ int main_1(void)
 		.uz = -159.91372 * HKL_DEGTORAD,
 	};
 
-	static struct Geometry gconfig =	\
+	Geometry gconfig =               \
 		SoleilSiriusKappa(1.458637,
-				  -0.5193202, 64.7853160, 133.5621380, -80.9690000, -0.0223369, 30.0000299);
+                                  VALUES(-0.5193202, 64.7853160, 133.5621380, -80.9690000, -0.0223369, 30.0000299));
 
-	static struct Geometry gconfig2 =	\
+	Geometry gconfig2 =              \
 		SoleilSiriusKappa(1.458637,
-				  -0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299);
+				  VALUES(-0.5193202, 64.7853160, 133.5621380, 124.9690000, -0.0223369, 30.0000299));
 
 	/* Trajectory */
 	Mode mode = ModeHklBissectorVertical();
@@ -222,9 +222,9 @@ int main_2(void)
 		.uz = 11.1 * HKL_DEGTORAD,
 	};
 
-	static struct Geometry gconfig =	\
+	Geometry gconfig =	\
 		SoleilSiriusKappa(1.553,
-				  0.00892, 65.84862, 135.42159, 100.249, -0.26559, 66.64474);
+				  VALUES(0.00892, 65.84862, 135.42159, 100.249, -0.26559, 66.64474));
 
 	/* Trajectory */
 	Mode mode = ModeHklBissectorVertical();

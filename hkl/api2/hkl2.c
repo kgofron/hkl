@@ -29,44 +29,41 @@
 
 static const HklFactory *getFactory(struct Geometry geometry)
 {
-	const HklFactory *self = NULL;
-
-	switch(geometry.tag) {
-	case GEOMETRY_E4CH:
-		self = hkl_factory_get_by_name("E4CH", NULL);
-		break;
-	case GEOMETRY_E4CV:
-		self = hkl_factory_get_by_name("E4CV", NULL);
-		break;
-	case GEOMETRY_E6C:
-		self = hkl_factory_get_by_name("E6C", NULL);
-		break;
-	case GEOMETRY_K4CH:
-		self = hkl_factory_get_by_name("K4CH", NULL);
-		break;
-	case GEOMETRY_K4CV:
-		self = hkl_factory_get_by_name("K4CV", NULL);
-		break;
-	case GEOMETRY_K6C:
-		self = hkl_factory_get_by_name("K6C", NULL);
-		break;
-	case GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT:
-		self = hkl_factory_get_by_name("SOLEIL NANOSCOPIUM ROBOT", NULL);
-		break;
-	case GEOMETRY_SOLEIL_SIRIUS_KAPPA:
-		self = hkl_factory_get_by_name("SOLEIL SIRIUS KAPPA", NULL);
-		break;
-	case GEOMETRY_SOLEIL_SIXS_MED_2_3:
-		self = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-		break;
-	case GEOMETRY_SOLEIL_SIXS_MED_2_3_v2:
-		self = hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
-		break;
-	case GEOMETRY_ZAXIS:
-		self = hkl_factory_get_by_name("ZAXIS", NULL);
-		break;
+        match(geometry){
+                of(E4ch){
+                        return hkl_factory_get_by_name("E4CH", NULL);
+                }
+                of(E4cv){
+                        return hkl_factory_get_by_name("E4CV", NULL);
+                }
+                of(E6c){
+                        return hkl_factory_get_by_name("E6C", NULL);
+                }
+                of(K4ch){
+                        return hkl_factory_get_by_name("K4CH", NULL);
+                }
+                of(K4cv){
+                        return hkl_factory_get_by_name("K4CV", NULL);
+                }
+                of(K6c){
+                        return hkl_factory_get_by_name("K6C", NULL);
+                }
+                of(SoleilNanoscopiumRobot){
+                        return hkl_factory_get_by_name("SOLEIL NANOSCOPIUM ROBOT", NULL);
+                }
+                of(SoleilSiriusKappa){
+                        return hkl_factory_get_by_name("SOLEIL SIRIUS KAPPA", NULL);
+                }
+                of(SoleilSixsMed2_3){
+                        return hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
+                }
+                of(SoleilSixsMed2_3_v2){
+                        return hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
+                }
+                of(Zaxis){
+                        return hkl_factory_get_by_name("ZAXIS", NULL);
+                }
 	}
-	return self;
 }
 
 HklEngineList *newEngines(struct Geometry geometry)
@@ -78,31 +75,31 @@ HklGeometry *newGeometry(struct Geometry geometry)
 {
 	HklGeometry *self = hkl_factory_create_new_geometry(getFactory(geometry));
 
-#define NEW_GEOMETRY(type_) do{						\
+#define NEW_GEOMETRY(_w, _values) do{                                   \
 		if(!hkl_geometry_axis_values_set(self,			\
-						 geometry.type_.positions, \
-						 ARRAY_SIZE(geometry.type_.positions), \
+						 _values->data,         \
+						 ARRAY_SIZE(_values->data), \
 						 HKL_UNIT_USER, NULL)){	\
 			goto failed;					\
 		}							\
-		if(!hkl_geometry_wavelength_set(self, geometry.type_.wavelength, \
+		if(!hkl_geometry_wavelength_set(self, _w,               \
 						HKL_UNIT_DEFAULT, NULL)){ \
 			goto failed;					\
 		}							\
 	}while(0)
 
-	switch (geometry.tag) {
-	case GEOMETRY_E4CH: NEW_GEOMETRY(e4ch); break;
-	case GEOMETRY_E4CV: NEW_GEOMETRY(e4cv); break;
-	case GEOMETRY_E6C: NEW_GEOMETRY(e6c); break;
-	case GEOMETRY_K4CH: NEW_GEOMETRY(k4ch); break;
-	case GEOMETRY_K4CV: NEW_GEOMETRY(k4cv); break;
-	case GEOMETRY_K6C: NEW_GEOMETRY(k6c); break;
-	case GEOMETRY_SOLEIL_NANOSCOPIUM_ROBOT: NEW_GEOMETRY(soleil_nanoscopium_robot); break;
-	case GEOMETRY_SOLEIL_SIRIUS_KAPPA: NEW_GEOMETRY(soleil_sirius_kappa); break;
-	case GEOMETRY_SOLEIL_SIXS_MED_2_3: NEW_GEOMETRY(soleil_sixs_med_2_3); break;
-	case GEOMETRY_SOLEIL_SIXS_MED_2_3_v2: NEW_GEOMETRY(soleil_sixs_med_2_3_v2); break;
-	case GEOMETRY_ZAXIS: NEW_GEOMETRY(zaxis); break;
+        match(geometry){
+                of(E4ch, w, values){ NEW_GEOMETRY(*w, values); }
+                of(E4cv, w, values){ NEW_GEOMETRY(*w, values); }
+                of(E6c, w, values){ NEW_GEOMETRY(*w, values); }
+                of(K4ch, w, values){ NEW_GEOMETRY(*w, values); }
+                of(K4cv, w, values){ NEW_GEOMETRY(*w, values); }
+                of(K6c, w, values){ NEW_GEOMETRY(*w, values); }
+                of(SoleilNanoscopiumRobot, w, values){ NEW_GEOMETRY(*w, values); }
+                of(SoleilSiriusKappa, w, values){ NEW_GEOMETRY(*w, values); }
+		of(SoleilSixsMed2_3, w, values){ NEW_GEOMETRY(*w, values); }
+		of(SoleilSixsMed2_3_v2, w, values){ NEW_GEOMETRY(*w, values); }
+                of(Zaxis, w, values){ NEW_GEOMETRY(*w, values); }
 	}
 	return self;
 failed:
