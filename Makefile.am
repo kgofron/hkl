@@ -1,9 +1,17 @@
+	@rm -rf $(CCAN_TMP_DEST) && mkdir -p $(CCAN_TMP_DEST)
+	@rsync -av --exclude=Makefile.am $(CCAN_LOCAL_EXTRACT)/* $(CCAN_TMP_DEST)
+	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '*.[ch]' | xargs sed -i -e 's,ccan/,hkl/ccan/,'
+	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '*.[ch]' | xargs sed -i -e 's,"config.h",<hkl/ccan/ccan_config.h>,'
+	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '_info' | xargs rm -f
+	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name 'test' | xargs rm -rf
+
+	@$(CCAN_CREATE_TREE) $(CCAN_PUBLIC_MODULES)
 ## Process this file with automake to produce Makefile.in
 
 ACLOCAL_AMFLAGS = -I m4
 AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection --enable-hkl3d
 
-SUBDIRS = hkl binoculars
+SUBDIRS = hkl binoculars third-party
 if HKL3D
 SUBDIRS += hkl3d data
 endif
@@ -148,3 +156,54 @@ ccan-update:
 	@echo purge the previous ccan directory
 	cd $(CCAN_DEST) && rm -rf licenses && find ccan -mindepth 1 -type d \! -name ".*" | xargs rm -rf
 	rsync -av $(CCAN_TMP_DEST)/* $(top_srcdir)/hkl
+
+
+## Update the metalang99 library
+
+METALANG99_LOCAL_REPO=/tmp/metalang99
+METALANG99_URL=https://github.com/Hirrolot/metalang99
+METALANG99_DEST=$(top_srcdir)/third-party
+metalang99-update:
+	@if [ -d $(METALANG99_LOCAL_REPO) ]; \
+	then \
+		cd $(METALANG99_LOCAL_REPO) && git pull; \
+	else \
+		git clone $(METALANG99_URL) $(METALANG99_LOCAL_REPO); \
+	fi
+
+	@echo Extracting all the modules
+	@rsync -av $(METALANG99_LOCAL_REPO)/include/* $(METALANG99_DEST)
+
+	@echo Generating the Makefile.am
+	@(\
+		echo "EXTRA_DIST= \\";\
+		(\
+			cd $(METALANG99_DEST) && find . -name '*.[h]'\
+				| sed -e 's,^./,\t,;$$!s,$$, \\,';\
+		);\
+	) > $(METALANG99_DEST)/Makefile.am
+
+## Update the datatype99 library
+
+DATATYPE99_LOCAL_REPO=/tmp/datatype99
+DATATYPE99_URL=https://github.com/Hirrolot/datatype99
+DATATYPE99_DEST=$(top_srcdir)/third-party
+datatype99-update:
+	@if [ -d $(DATATYPE99_LOCAL_REPO) ]; \
+	then \
+		cd $(DATATYPE99_LOCAL_REPO) && git pull; \
+	else \
+		git clone $(DATATYPE99_URL) $(DATATYPE99_LOCAL_REPO); \
+	fi
+
+	@echo Extracting all the modules
+	@rsync -av $(DATATYPE99_LOCAL_REPO)/*.h $(DATATYPE99_DEST)
+
+	@echo Generating the Makefile.am
+	@(\
+		echo "EXTRA_DIST= \\";\
+		(\
+			cd $(METALANG99_DEST) && find . -name '*.[h]'\
+				| sed -e 's,^./,\t,;$$!s,$$, \\,';\
+		);\
+	) > $(METALANG99_DEST)/Makefile.am

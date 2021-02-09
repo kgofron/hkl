@@ -6,12 +6,12 @@
 #ifndef METALANG99_LIST_H
 #define METALANG99_LIST_H
 
-#include <metalang99/aux.h>
 #include <metalang99/choice.h>
 #include <metalang99/control.h>
 #include <metalang99/logical.h>
 #include <metalang99/priv/pair.h>
 #include <metalang99/uint.h>
+#include <metalang99/util.h>
 #include <metalang99/variadics.h>
 
 // Desugaring {
@@ -106,6 +106,8 @@
  * // 1, 2, 3
  * M_list(v(1, 2, 3))
  * @endcode
+ *
+ * @note At most 63 arguments are acceptable.
  */
 #define METALANG99_list(...) METALANG99_call(METALANG99_list, __VA_ARGS__)
 
@@ -153,7 +155,7 @@
  * # Examples
  *
  * @code
- * #include <metalang99/aux.h>
+ * #include <metalang99/util.h>
  *
  * // Literally 1, 2, 3
  * M_listEvalCommaSep(M_list(v(1, 2, 3)))

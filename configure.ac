@@ -236,6 +236,7 @@ AC_CONFIG_FILES([Makefile
 		 tests/Makefile
 		 tests/bindings/Makefile
 		 tests/tap/Makefile
+                 third-party/Makefile
 		 Documentation/Makefile
 		 Documentation/hkl.org
 		 Documentation/api/Makefile
