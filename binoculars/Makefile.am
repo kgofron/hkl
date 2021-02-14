@@ -3,7 +3,9 @@
 AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
+	-I$(top_srcdir)/third-party \
 	-DPKGDATA=\""$(pkgdatadir)"\" \
+	-ftrack-macro-expansion=0 \
 	-fPIC -DPIC \
 	$(GLIB_CFLAGS)
 
