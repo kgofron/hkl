@@ -228,13 +228,13 @@ static inline double *coordinates_get_square(const struct shape_t *shape,
 
 /* masks */
 
-static uint8_t *mask_new(const struct shape_t *shape)
+static inline uint8_t *mask_new(const struct shape_t *shape)
 {
         return calloc(shape_size(*shape), sizeof(uint8_t));
 }
 
-static uint8_t *mask_get_imxpad(const struct shape_t *shape,
-                                const struct imxpad_t *imxpad)
+static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
+                                       const struct imxpad_t *imxpad)
 {
         uint8_t *arr = mask_new(shape);
 
@@ -275,7 +275,7 @@ static uint8_t *mask_get_imxpad(const struct shape_t *shape,
         return arr;
 }
 
-static uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
+static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
 {
         uint8_t *arr = mask_new(shape);
 
@@ -290,8 +290,8 @@ static uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
         return arr;
 }
 
-static uint8_t *mask_get_dectris(const struct shape_t *shape,
-                                 const struct dectris_t *dectris)
+static inline uint8_t *mask_get_dectris(const struct shape_t *shape,
+                                        const struct dectris_t *dectris)
 {
         int i;
         uint8_t *arr = mask_new(shape);
@@ -322,12 +322,12 @@ static uint8_t *mask_get_dectris(const struct shape_t *shape,
 /***************/
 
 static inline void translate_coordinates(double *arr,
-                                         struct shape_t shape,
+                                         const struct shape_t shape,
                                          double dx, double dy, double dz)
 {
-        double *x = &arr[0 * shape_size(shape)];
-        double *y = &arr[1 * shape_size(shape)];
-        double *z = &arr[2 * shape_size(shape)];
+        double *x = x_coordinates(arr, shape);
+        double *y = y_coordinates(arr, shape);
+        double *z = z_coordinates(arr, shape);
 
         for(int i=0; i<shape_size(shape); ++i){
                 x[i] += dx;
@@ -337,13 +337,13 @@ static inline void translate_coordinates(double *arr,
 }
 
 static inline void rotate_coordinates(double *arr,
-                                      struct shape_t shape,
+                                      const struct shape_t shape,
                                       double angle,
                                       double axis_x, double axis_y, double axis_z)
 {
-        double *x = &arr[0 * shape_size(shape)];
-        double *y = &arr[1 * shape_size(shape)];
-        double *z = &arr[2 * shape_size(shape)];
+        double *x = x_coordinates(arr, shape);
+        double *y = y_coordinates(arr, shape);
+        double *z = z_coordinates(arr, shape);
 
         HklVector axis = {{axis_x, axis_y, axis_z}};
         HklQuaternion q;
@@ -367,8 +367,8 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
                                                  double detrot)
 {
         struct shape_t shape = SHAPE(width, height);
-        double *y = &arr[1 * shape_size(shape)];
-        double *z = &arr[2 * shape_size(shape)];
+        double *y = y_coordinates(arr, shape);
+        double *z = z_coordinates(arr, shape);
 
         double dx = sdd;
         double dy = -y[item_offset(shape, ix0, iy0)];
@@ -378,7 +378,7 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
 }
 
-static struct detector_t get_detector(HklBinocularsDetectorEnum n)
+static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
 {
         struct detector_t detectors[] = {
                 DETECTOR(ImXpadS140,
