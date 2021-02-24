@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -457,93 +457,93 @@ REGISTER_DIFFRACTOMETER(kappa4C_vertical, "K4CV", HKL_GEOMETRY_KAPPA4C_VERTICAL_
 /* K4CH */
 /********/
 
-#define HKL_GEOMETRY_KAPPA4C_HORIZONTAL_DESCRIPTION			\
-	"For this geometry there is a special parameter called :math:`\\alpha` which is the\n" \
-	"angle between the kappa rotation axis and the  :math:`\\vec{y}` direction.\n" \
-	"\n"								\
-	"+ The X-ray source is fixed along the :math:`\\vec{x}` direction (1, 0, 0)\n" \
-	"+ 3 axes for the sample\n"					\
-	"\n"								\
-	"  + **" KOMEGA "** : rotating around the :math:`-\\vec{y}` direction (0, 0, 1)\n" \
-	"  + **" KAPPA "** : rotating around the :math:`\\vec{x}` direction (0, :math:`\\sin\\alpha`, :math:`\\cos\\alpha`)\n" \
-	"  + **" KPHI "** : rotating around the :math:`-\\vec{y}` direction (0, 0, 1)\n" \
-	"\n"								\
-	"+ 1 axis for the detector\n"					\
-	"\n"								\
-	"  + **" TTH "** : rotation around the :math:`-\\\vec{y}` direction (0, 0, 1)\n"
+/* #define HKL_GEOMETRY_KAPPA4C_HORIZONTAL_DESCRIPTION			\ */
+/* 	"For this geometry there is a special parameter called :math:`\\alpha` which is the\n" \ */
+/* 	"angle between the kappa rotation axis and the  :math:`\\vec{y}` direction.\n" \ */
+/* 	"\n"								\ */
+/* 	"+ The X-ray source is fixed along the :math:`\\vec{x}` direction (1, 0, 0)\n" \ */
+/* 	"+ 3 axes for the sample\n"					\ */
+/* 	"\n"								\ */
+/* 	"  + **" KOMEGA "** : rotating around the :math:`-\\vec{y}` direction (0, 0, 1)\n" \ */
+/* 	"  + **" KAPPA "** : rotating around the :math:`\\vec{x}` direction (0, :math:`\\sin\\alpha`, :math:`\\cos\\alpha`)\n" \ */
+/* 	"  + **" KPHI "** : rotating around the :math:`-\\vec{y}` direction (0, 0, 1)\n" \ */
+/* 	"\n"								\ */
+/* 	"+ 1 axis for the detector\n"					\ */
+/* 	"\n"								\ */
+/* 	"  + **" TTH "** : rotation around the :math:`-\\\vec{y}` direction (0, 0, 1)\n" */
 
-static const char* hkl_geometry_kappa4C_horizontal_axes[] = {KOMEGA, KAPPA, KPHI, TTH};
+/* static const char* hkl_geometry_kappa4C_horizontal_axes[] = {KOMEGA, KAPPA, KPHI, TTH}; */
 
-static HklGeometry *hkl_geometry_new_kappa4C_horizontal(const HklFactory *factory)
-{
-	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
-	double alpha = 50 * HKL_DEGTORAD;	// TODO: check the sign here
-	HklHolder *h;
+/* static HklGeometry *hkl_geometry_new_kappa4C_horizontal(const HklFactory *factory) */
+/* { */
+/* 	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults); */
+/* 	double alpha = 50 * HKL_DEGTORAD;	// TODO: check the sign here */
+/* 	HklHolder *h; */
 
-	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation(h, KOMEGA, 0, 0, 1, &hkl_unit_angle_deg);
-	hkl_holder_add_rotation(h, KAPPA, 0, sin(alpha), cos(alpha), &hkl_unit_angle_deg);
-	hkl_holder_add_rotation(h, KPHI, 0, 0, 1, &hkl_unit_angle_deg);
+/* 	h = hkl_geometry_add_holder(self); */
+/* 	hkl_holder_add_rotation(h, KOMEGA, 0, 0, 1, &hkl_unit_angle_deg); */
+/* 	hkl_holder_add_rotation(h, KAPPA, 0, sin(alpha), cos(alpha), &hkl_unit_angle_deg); */
+/* 	hkl_holder_add_rotation(h, KPHI, 0, 0, 1, &hkl_unit_angle_deg); */
 
-	h = hkl_geometry_add_holder(self);
-	hkl_holder_add_rotation(h, TTH, 0, 0, 1, &hkl_unit_angle_deg);
+/* 	h = hkl_geometry_add_holder(self); */
+/* 	hkl_holder_add_rotation(h, TTH, 0, 0, 1, &hkl_unit_angle_deg); */
 
-	return self;
-}
+/* 	return self; */
+/* } */
 
-static HklEngine *hkl_engine_k4ch_hkl_new(HklEngineList *engines)
-{
-	HklEngine *self;
-	HklMode *default_mode;
+/* static HklEngine *hkl_engine_k4ch_hkl_new(HklEngineList *engines) */
+/* { */
+/* 	HklEngine *self; */
+/* 	HklMode *default_mode; */
 
-	self = hkl_engine_hkl_new(engines);
+/* 	self = hkl_engine_hkl_new(engines); */
 
-	default_mode = bissector();
-	hkl_engine_add_mode(self, default_mode);
-	hkl_engine_mode_set(self, default_mode);
+/* 	default_mode = bissector(); */
+/* 	hkl_engine_add_mode(self, default_mode); */
+/* 	hkl_engine_mode_set(self, default_mode); */
 
-	hkl_engine_add_mode(self, constant_omega());
-	hkl_engine_add_mode(self, constant_chi());
-	hkl_engine_add_mode(self, constant_phi());
-	hkl_engine_add_mode(self, double_diffraction());
-	hkl_engine_add_mode(self, psi_constant());	// FIXME: this has: psi_constant_vertical_{func,mode_operations}
+/* 	hkl_engine_add_mode(self, constant_omega()); */
+/* 	hkl_engine_add_mode(self, constant_chi()); */
+/* 	hkl_engine_add_mode(self, constant_phi()); */
+/* 	hkl_engine_add_mode(self, double_diffraction()); */
+/* 	hkl_engine_add_mode(self, psi_constant());	// FIXME: this has: psi_constant_vertical_{func,mode_operations} */
 
-	return self;
-}
+/* 	return self; */
+/* } */
 
-static HklEngine *hkl_engine_k4ch_psi_new(HklEngineList *engines)
-{
-	HklEngine *self;
-	HklMode *default_mode;
+/* static HklEngine *hkl_engine_k4ch_psi_new(HklEngineList *engines) */
+/* { */
+/* 	HklEngine *self; */
+/* 	HklMode *default_mode; */
 
-	self = hkl_engine_psi_new(engines);
+/* 	self = hkl_engine_psi_new(engines); */
 
-	default_mode = psi();
-	hkl_engine_add_mode(self, default_mode);
-	hkl_engine_mode_set(self, default_mode);
+/* 	default_mode = psi(); */
+/* 	hkl_engine_add_mode(self, default_mode); */
+/* 	hkl_engine_mode_set(self, default_mode); */
 
-	return self;
-}
+/* 	return self; */
+/* } */
 
-REGISTER_READONLY_INCIDENCE(hkl_engine_kappa4C_horizontal_incidence_new,
-			    P99_PROTECT({KOMEGA, KAPPA, KPHI}),
-			    surface_parameters_y);
+/* REGISTER_READONLY_INCIDENCE(hkl_engine_kappa4C_horizontal_incidence_new, */
+/* 			    P99_PROTECT({KOMEGA, KAPPA, KPHI}), */
+/* 			    surface_parameters_y); */
 
-REGISTER_READONLY_EMERGENCE(hkl_engine_kappa4C_horizontal_emergence_new,
-			    P99_PROTECT({KOMEGA, KAPPA, KPHI, TTH}),
-			    surface_parameters_y);
+/* REGISTER_READONLY_EMERGENCE(hkl_engine_kappa4C_horizontal_emergence_new, */
+/* 			    P99_PROTECT({KOMEGA, KAPPA, KPHI, TTH}), */
+/* 			    surface_parameters_y); */
 
-static HklEngineList *hkl_engine_list_new_kappa4C_horizontal(const HklFactory *factory)
-{
-	HklEngineList *self = hkl_engine_list_new();
+/* static HklEngineList *hkl_engine_list_new_kappa4C_horizontal(const HklFactory *factory) */
+/* { */
+/* 	HklEngineList *self = hkl_engine_list_new(); */
 
-	self->geometries->multiply = hkl_geometry_list_multiply_k4c_real;
-	hkl_engine_k4ch_hkl_new(self);
-	hkl_engine_eulerians_new(self);
-	hkl_engine_k4ch_psi_new(self);
-	hkl_engine_q_new(self);
-	hkl_engine_kappa4C_horizontal_incidence_new(self);
-	hkl_engine_kappa4C_horizontal_emergence_new(self);
+/* 	self->geometries->multiply = hkl_geometry_list_multiply_k4c_real; */
+/* 	hkl_engine_k4ch_hkl_new(self); */
+/* 	hkl_engine_eulerians_new(self); */
+/* 	hkl_engine_k4ch_psi_new(self); */
+/* 	hkl_engine_q_new(self); */
+/* 	hkl_engine_kappa4C_horizontal_incidence_new(self); */
+/* 	hkl_engine_kappa4C_horizontal_emergence_new(self); */
 
-	return self;
-}
+/* 	return self; */
+/* } */

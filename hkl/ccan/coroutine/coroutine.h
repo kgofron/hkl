@@ -137,7 +137,7 @@ struct coroutine_stack *coroutine_stack_check(struct coroutine_stack *stack,
  * coroutine_stack_init().
  */
 static inline void *coroutine_stack_to_metadata(struct coroutine_stack *stack,
-						size_t metasize)
+						UNUSED size_t metasize)
 {
 #if HAVE_STACK_GROWS_UPWARDS
 	return (char *)stack - metasize;
@@ -158,7 +158,7 @@ static inline void *coroutine_stack_to_metadata(struct coroutine_stack *stack,
  * equal to the value passed to coroutine_stack_init().
  */
 static inline struct coroutine_stack *
-coroutine_stack_from_metadata(void *metadata, size_t metasize)
+coroutine_stack_from_metadata(void *metadata, UNUSED size_t metasize)
 {
 #if HAVE_STACK_GROWS_UPWARDS
 	return (struct coroutine_stack *)((char *)metadata + metasize);

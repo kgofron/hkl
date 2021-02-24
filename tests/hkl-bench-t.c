@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -75,7 +75,7 @@ static void hkl_test_bench_run_real(HklEngine *engine, HklGeometry *geometry,
 			max = t > max ? t : max;
 			mean += t;
 		}
-		fprintf(stdout, "\"%s\" \"%s\" \"%s\" (%d/%d) iterations %f / %f / %f [min/mean/max] ms each\n",
+		fprintf(stdout, "\"%s\" \"%s\" \"%s\" (%zd/%zd) iterations %f / %f / %f [min/mean/max] ms each\n",
 			hkl_geometry_name_get(geometry),
 			hkl_engine_name_get(engine),
 			*mode, n, i, min, mean/n, max);

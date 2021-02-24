@@ -30,39 +30,17 @@
 static const HklFactory *getFactory(struct Geometry geometry)
 {
         match(geometry){
-                of(E4ch){
-                        return hkl_factory_get_by_name("E4CH", NULL);
-                }
-                of(E4cv){
-                        return hkl_factory_get_by_name("E4CV", NULL);
-                }
-                of(E6c){
-                        return hkl_factory_get_by_name("E6C", NULL);
-                }
-                of(K4ch){
-                        return hkl_factory_get_by_name("K4CH", NULL);
-                }
-                of(K4cv){
-                        return hkl_factory_get_by_name("K4CV", NULL);
-                }
-                of(K6c){
-                        return hkl_factory_get_by_name("K6C", NULL);
-                }
-                of(SoleilNanoscopiumRobot){
-                        return hkl_factory_get_by_name("SOLEIL NANOSCOPIUM ROBOT", NULL);
-                }
-                of(SoleilSiriusKappa){
-                        return hkl_factory_get_by_name("SOLEIL SIRIUS KAPPA", NULL);
-                }
-                of(SoleilSixsMed2_3){
-                        return hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-                }
-                of(SoleilSixsMed2_3_v2){
-                        return hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
-                }
-                of(Zaxis){
-                        return hkl_factory_get_by_name("ZAXIS", NULL);
-                }
+                of(E4ch) return hkl_factory_get_by_name("E4CH", NULL);
+                of(E4cv) return hkl_factory_get_by_name("E4CV", NULL);
+                of(E6c)  return hkl_factory_get_by_name("E6C", NULL);
+                of(K4ch) return hkl_factory_get_by_name("K4CH", NULL);
+                of(K4cv) return hkl_factory_get_by_name("K4CV", NULL);
+                of(K6c)  return hkl_factory_get_by_name("K6C", NULL);
+                of(SoleilNanoscopiumRobot) return hkl_factory_get_by_name("SOLEIL NANOSCOPIUM ROBOT", NULL);
+                of(SoleilSiriusKappa) return hkl_factory_get_by_name("SOLEIL SIRIUS KAPPA", NULL);
+                of(SoleilSixsMed2_3) return hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
+                of(SoleilSixsMed2_3_v2) return hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
+                of(Zaxis)return hkl_factory_get_by_name("ZAXIS", NULL);
 	}
 }
 

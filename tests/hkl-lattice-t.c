@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -283,9 +283,9 @@ static void volume(void)
 	reciprocal = hkl_lattice_new_default();
 
 	/* cubic */
-	DIAG(hkl_lattice_set(lattice, 1.54, 1.54, 1.54,
-			     90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 90*HKL_DEGTORAD,
-			     HKL_UNIT_DEFAULT, NULL));
+	(DIAG(hkl_lattice_set(lattice, 1.54, 1.54, 1.54,
+                             90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 90*HKL_DEGTORAD,
+                              HKL_UNIT_DEFAULT, NULL)));
 	CHECK_PARAM(lattice, volume, 1.54*1.54*1.54);
 
 	hkl_lattice_reciprocal(lattice, reciprocal);
