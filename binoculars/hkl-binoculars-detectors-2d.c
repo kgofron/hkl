@@ -35,8 +35,8 @@
 #define shape_size(shape) (shape).width * (shape).height
 #define item_offset(shape, i, j) i + j * (shape).width
 
-#define detector_row(arr, shape, i) &arr[(i) * (shape).width]
-#define detector_col(arr, i) &arr[i]
+#define get_row(arr, shape, i) &arr[(i) * (shape).width]
+#define get_col(arr, i) &arr[i]
 
 #define replicate_row(row, shape, n) do{                                \
                 for(int i_=1; i_<(n); ++i_){                            \
@@ -184,7 +184,7 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
         /* z */
         z = z_coordinates(arr, *shape);
         for(i=0; i<shape->height; ++i){
-                row = detector_row(z, *shape, i);
+                row = get_row(z, *shape, i);
                 fill_row(row, *shape,
                          imxpad_coordinates_pattern(i,
                                                     imxpad->chip_h,
@@ -210,7 +210,7 @@ static inline double *coordinates_rectangle(const struct shape_t *shape,
         /* z */
         z = z_coordinates(arr, *shape);
         for(i=0; i<shape->height; ++i){
-                double *row = detector_row(z, *shape, i);
+                double *row = get_row(z, *shape, i);
                 fill_row(row, *shape, (0.5 + i) * p_h);
         }
 
@@ -245,12 +245,12 @@ static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
 
         for(int chip=0; chip<n_chips; ++chip){
                 if (chip != 0){
-                        uint8_t *first = detector_col(arr, chip * imxpad->chip_w);
+                        uint8_t *first = get_col(arr, chip * imxpad->chip_w);
                         fill_column(first, *shape, 1);
                 }
 
                 if (chip != (n_chips - 1)){
-                        uint8_t *last = detector_col(arr, (chip + 1) * imxpad->chip_w - 1);
+                        uint8_t *last = get_col(arr, (chip + 1) * imxpad->chip_w - 1);
                         fill_column(last, *shape, 1);
                 }
         }
@@ -260,13 +260,13 @@ static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
 
         for(int module=0; module<n_modules; ++module){
                 if (module != 0){
-                        uint8_t *first = detector_row(arr, *shape,
+                        uint8_t *first = get_row(arr, *shape,
                                                       module * imxpad->chip_h);
                         fill_row(first, *shape, 1);
                 }
 
                 if (module != (n_modules - 1)){
-                        uint8_t *last = detector_row(arr, *shape,
+                        uint8_t *last = get_row(arr, *shape,
                                                      (module + 1) * imxpad->chip_h - 1);
                         fill_row(last, *shape, 1);
                 }
@@ -281,7 +281,7 @@ static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
 
         /* now mask all the strange row */
         for(int i=118; i<=1006; i=i+148){
-                uint8_t *row = detector_row(arr, *shape, i);
+                uint8_t *row = get_row(arr, *shape, i);
 
                 fill_row(row, *shape, 1);
                 replicate_row(row, *shape, 30);
@@ -300,7 +300,7 @@ static inline uint8_t *mask_get_dectris(const struct shape_t *shape,
         for(i=dectris->module_width;
             i<shape->width;
             i=i+dectris->module_width + dectris->gap_width){
-                uint8_t *col = detector_col(arr, i);
+                uint8_t *col = get_col(arr, i);
                 fill_column(col, *shape, 1);
                 replicate_column(col, *shape, dectris->gap_width);
         }
@@ -309,7 +309,7 @@ static inline uint8_t *mask_get_dectris(const struct shape_t *shape,
         for(i=dectris->module_height;
             i<shape->height;
             i=i+dectris->module_height + dectris->gap_height){
-                uint8_t *row = detector_row(arr, *shape, i);
+                uint8_t *row = get_row(arr, *shape, i);
                 fill_row(row, *shape, 1);
                 replicate_row(row, *shape, dectris->gap_height);
         }
