@@ -228,15 +228,19 @@ static inline double *coordinates_get_square(const struct shape_t *shape,
 
 /* masks */
 
+static uint8_t *mask_new(const struct shape_t *shape)
+{
+        return calloc(shape_size(*shape), sizeof(uint8_t));
+}
+
 static uint8_t *mask_get_imxpad(const struct shape_t *shape,
                                 const struct imxpad_t *imxpad)
 {
-        div_t q;
-        uint8_t *arr = calloc(shape_size(*shape), sizeof(*arr));
+        uint8_t *arr = mask_new(shape);
 
         /* now mask all the strange row */
 
-        q =  div(shape->width, imxpad->chip_w);
+        div_t q = div(shape->width, imxpad->chip_w);
         int n_chips = q.quot;
 
         for(int chip=0; chip<n_chips; ++chip){
@@ -273,7 +277,7 @@ static uint8_t *mask_get_imxpad(const struct shape_t *shape,
 
 static uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
 {
-        uint8_t *arr = calloc(shape_size(*shape), sizeof(*arr));
+        uint8_t *arr = mask_new(shape);
 
         /* now mask all the strange row */
         for(int i=118; i<=1006; i=i+148){
@@ -290,7 +294,7 @@ static uint8_t *mask_get_dectris(const struct shape_t *shape,
                                  const struct dectris_t *dectris)
 {
         int i;
-        uint8_t *arr = calloc(shape_size(*shape), sizeof(*arr));
+        uint8_t *arr = mask_new(shape);
 
         /* columns */
         for(i=dectris->module_width;
