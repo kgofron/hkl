@@ -162,24 +162,22 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
                                              const struct imxpad_t *imxpad)
 {
         int i;
-        int width = shape->width;
-        int height = shape->height;
         double *arr, *z, *row;
 
         malloc_detector_coordinates(arr, *shape);
 
         /* y */
         row = y_coordinates(arr, *shape);
-        for(i=0; i<width; ++i){
+        for(i=0; i<shape->width; ++i){
                 row[i] = - imxpad_coordinates_pattern(i,
                                                       imxpad->chip_w,
                                                       imxpad->square.pixel_size);
         }
-        replicate_row(row, *shape, height);
+        replicate_row(row, *shape, shape->height);
 
         /* z */
         z = z_coordinates(arr, *shape);
-        for(i=0; i<height; ++i){
+        for(i=0; i<shape->height; ++i){
                 row = detector_row(z, *shape, i);
                 fill_row(row, *shape,
                          imxpad_coordinates_pattern(i,
@@ -360,7 +358,7 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
                                                  int ix0, int iy0, double sdd,
                                                  double detrot)
 {
-        struct shape_t shape = {width, height};
+        struct shape_t shape = SHAPE(width, height);
         double *y = &arr[1 * shape_size(shape)];
         double *z = &arr[2 * shape_size(shape)];
 
