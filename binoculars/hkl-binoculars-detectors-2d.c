@@ -64,12 +64,6 @@
                 }                                                       \
         } while(0)
 
-#define malloc_detector_coordinates(arr, shape) do{                     \
-                (arr) = malloc(3 * shape_size((shape)) * sizeof(*(arr))); \
-                /* x set to zero for all 2d detectors */                \
-                memset((arr), 0,  shape_size((shape)) * sizeof(*(arr))); \
-        } while (0)
-
 #define x_coordinates(arr, shape) &arr[0 * shape_size(shape)]
 #define y_coordinates(arr, shape) &arr[1 * shape_size(shape)]
 #define z_coordinates(arr, shape) &arr[2 * shape_size(shape)]
@@ -136,6 +130,19 @@ struct detector_t {
 
 /* coordinates */
 
+static inline double *coordinates_new(const struct shape_t *shape)
+{
+        double *arr;
+        int n = shape_size(*shape) * sizeof(*arr);
+
+        arr = malloc(3 * n);
+
+        /* x set to zero for all 2d detectors */
+        memset(arr, 0, n);
+
+        return arr;
+}
+
 static inline double imxpad_coordinates_pattern(int i, int chip, double s)
 {
         div_t q = div(i, chip);
@@ -162,9 +169,8 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
                                              const struct imxpad_t *imxpad)
 {
         int i;
-        double *arr, *z, *row;
-
-        malloc_detector_coordinates(arr, *shape);
+        double *arr = coordinates_new(shape);
+        double *z, *row;
 
         /* y */
         row = y_coordinates(arr, *shape);
@@ -192,10 +198,8 @@ static inline double *coordinates_rectangle(const struct shape_t *shape,
                                             double p_w, double p_h)
 {
         int i;
-        double *arr;
+        double *arr = coordinates_new(shape);
         double *y, *z;
-
-        malloc_detector_coordinates(arr, *shape);
 
         /* y */
         y = y_coordinates(arr, *shape);
