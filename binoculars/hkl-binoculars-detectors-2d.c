@@ -83,18 +83,15 @@ struct shape_t {
         int height;
 };
 
+#define SHAPE(width_, height_) (struct shape_t) \
+        {.width=width_, .height=height_}
+
 struct square_t {
         double pixel_size;
 };
 
-#define SQUARE(pixel_size_) {.pixel_size=pixel_size_}
-
-struct rectangular_t {
-        double pixel_w;
-        double pixel_h;
-};
-
-#define RECTANGULAR(pixel_w_, pixel_h_) {.pixel_w=pixel_w_, .pixel_h=pixel_h_}
+#define SQUARE(pixel_size_) (struct square_t) \
+        {.pixel_size=pixel_size_}
 
 struct imxpad_t {
         struct square_t square;
@@ -102,11 +99,8 @@ struct imxpad_t {
         int chip_h;
 };
 
-#define IMXPAD(pixel_size_, chip_w_, chip_h_) {                         \
-                .square=SQUARE(pixel_size_),                            \
-                        .chip_w=chip_w_,                                \
-                        .chip_h=chip_h_,                                \
-                        }
+#define IMXPAD(pixel_size_, chip_w_, chip_h_) (struct imxpad_t) \
+        {.square=SQUARE(pixel_size_), .chip_w=chip_w_, .chip_h=chip_h_}
 
 struct dectris_t {
         struct square_t square;
@@ -116,13 +110,14 @@ struct dectris_t {
         int gap_height;
 };
 
-#define DECTRIS(module_width_, module_height_, gap_width_, gap_height_, pixel_size_) {SQUARE(pixel_size_), .module_width=module_width_, .module_height=module_height_, .gap_width=gap_width_, .gap_height=gap_height_}
+#define DECTRIS(module_width_, module_height_, gap_width_, gap_height_, pixel_size_) (struct dectris_t) \
+        {.square=SQUARE(pixel_size_), .module_width=module_width_, .module_height=module_height_, .gap_width=gap_width_, .gap_height=gap_height_}
 
 datatype(
         DetectorType,
         (ImXpadS70, struct imxpad_t),
         (ImXpadS140, struct imxpad_t),
-        (XpadFlatCorrected, struct rectangular_t),
+        (XpadFlatCorrected, struct square_t),
         (Eiger1M, struct dectris_t)
         );
 
@@ -132,8 +127,8 @@ struct detector_t {
         DetectorType type;
 };
 
-#define DETECTOR(name_, width_, height_, type_)                         \
-        {.name=#name_, .shape = (struct shape_t){width_, height_}, .type=name_(type_)}
+#define DETECTOR(name_, shape_, type_) (struct detector_t)      \
+        {.name=#name_, .shape=shape_, .type=name_(type_)}
 
 /***********************/
 /* specific operations */
@@ -219,14 +214,6 @@ static inline double *coordinates_rectangle(const struct shape_t *shape,
 
         return arr;
 
-}
-
-static inline double *coordinates_get_rectangular(const struct shape_t *shape,
-                                                  const struct rectangular_t *rectangular)
-{
-        return coordinates_rectangle(shape,
-                                     rectangular->pixel_w,
-                                     rectangular->pixel_h);
 }
 
 static inline double *coordinates_get_square(const struct shape_t *shape,
@@ -387,15 +374,15 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
 
 static struct detector_t get_detector(HklBinocularsDetectorEnum n)
 {
-        static struct imxpad_t imxpad = IMXPAD(130e-6, 80, 120);
-        static struct rectangular_t rectangular = RECTANGULAR(130e-6, 130e-6);
-        static struct dectris_t dectris = DECTRIS(1030, 514, 10, 37, 75e-6);
-
         struct detector_t detectors[] = {
-                DETECTOR(ImXpadS140, 560, 240, imxpad),
-                DETECTOR(XpadFlatCorrected, 576, 1154, rectangular),
-                DETECTOR(ImXpadS70, 560, 120, imxpad),
-                DETECTOR(Eiger1M, 1030, 1065, dectris),
+                DETECTOR(ImXpadS140,
+                         SHAPE(560, 240), IMXPAD(130e-6, 80, 120)),
+                DETECTOR(XpadFlatCorrected,
+                         SHAPE(576, 1154), SQUARE(130e-6)),
+                DETECTOR(ImXpadS70,
+                         SHAPE(560, 120), IMXPAD(130e-6, 80, 120)),
+                DETECTOR(Eiger1M,
+                         SHAPE(1030, 1065), DECTRIS(1030, 514, 10, 37, 75e-6)),
         };
         return detectors[n];
 }
@@ -438,9 +425,9 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         return coordinates_get_imxpad(&detector.shape,
                                                       imxpad);
                 }
-                of(XpadFlatCorrected, rectangular){
-                        return coordinates_get_rectangular(&detector.shape,
-                                                           rectangular);
+                of(XpadFlatCorrected, square){
+                        return coordinates_get_square(&detector.shape,
+                                                      square);
                 }
                 of(Eiger1M, dectris){
                         return coordinates_get_square(&detector.shape,
