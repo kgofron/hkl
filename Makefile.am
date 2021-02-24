@@ -179,6 +179,7 @@ metalang99-update:
 		echo "EXTRA_DIST= \\";\
 		(\
 			cd $(METALANG99_DEST) && find . -name '*.[h]'\
+				| sort\
 				| sed -e 's,^./,\t,;$$!s,$$, \\,';\
 		);\
 	) > $(METALANG99_DEST)/Makefile.am
@@ -204,6 +205,7 @@ datatype99-update:
 		echo "EXTRA_DIST= \\";\
 		(\
 			cd $(METALANG99_DEST) && find . -name '*.[h]'\
+				| sort\
 				| sed -e 's,^./,\t,;$$!s,$$, \\,';\
 		);\
 	) > $(METALANG99_DEST)/Makefile.am
