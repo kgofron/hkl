@@ -33,7 +33,7 @@
 #define wrong_detector(n) fprintf(stderr, "You requested a non existing detector %d the maximum number available is %d", n, HKL_BINOCULARS_DETECTOR_NUM_DETECTORS)
 
 #define shape_size(shape) (shape).width * (shape).height
-#define item_offset(shape, i, j) i + j * (shape).width
+#define flat_index(shape, i, j) i + j * (shape).width
 
 #define get_row(arr, shape, i) &arr[(i) * (shape).width]
 #define get_col(arr, i) &arr[i]
@@ -371,8 +371,8 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
         double *z = z_coordinates(arr, shape);
 
         double dx = sdd;
-        double dy = -y[item_offset(shape, ix0, iy0)];
-        double dz = -z[item_offset(shape, ix0, iy0)];
+        double dy = -y[flat_index(shape, ix0, iy0)];
+        double dz = -z[flat_index(shape, ix0, iy0)];
 
         translate_coordinates(arr, shape, dx, dy, dz);
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
