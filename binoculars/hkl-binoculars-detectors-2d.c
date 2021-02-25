@@ -124,6 +124,21 @@ struct detector_t {
 #define DETECTOR(name_, shape_, type_) (struct detector_t)      \
         {.name=#name_, .shape=shape_, .type=name_(type_)}
 
+static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
+{
+        struct detector_t detectors[] = {
+                DETECTOR(ImXpadS140,
+                         SHAPE(560, 240), IMXPAD(130e-6, 80, 120)),
+                DETECTOR(XpadFlatCorrected,
+                         SHAPE(576, 1154), SQUARE(130e-6)),
+                DETECTOR(ImXpadS70,
+                         SHAPE(560, 120), IMXPAD(130e-6, 80, 120)),
+                DETECTOR(Eiger1M,
+                         SHAPE(1030, 1065), DECTRIS(1030, 514, 10, 37, 75e-6)),
+        };
+        return detectors[n];
+}
+
 /***********************/
 /* specific operations */
 /***********************/
@@ -376,21 +391,6 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
 
         translate_coordinates(arr, shape, dx, dy, dz);
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
-}
-
-static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
-{
-        struct detector_t detectors[] = {
-                DETECTOR(ImXpadS140,
-                         SHAPE(560, 240), IMXPAD(130e-6, 80, 120)),
-                DETECTOR(XpadFlatCorrected,
-                         SHAPE(576, 1154), SQUARE(130e-6)),
-                DETECTOR(ImXpadS70,
-                         SHAPE(560, 120), IMXPAD(130e-6, 80, 120)),
-                DETECTOR(Eiger1M,
-                         SHAPE(1030, 1065), DECTRIS(1030, 514, 10, 37, 75e-6)),
-        };
-        return detectors[n];
 }
 
 /*****************************/
