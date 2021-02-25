@@ -35,7 +35,7 @@ struct pre_header_t {
 
 struct descr_t {
         enum endianess_e endianess;
-        enum HklBinocularsNpyDataType elem_type;
+        HklBinocularsNpyDataType elem_type;
         size_t elem_size;
 };
 
@@ -83,7 +83,7 @@ static struct descr_t parse_descr(const char *header, regmatch_t match)
         /* elem_type */
         switch(description[1]){
         case 'b':
-                descr.elem_type = HKL_BINOCULARS_NPY_BOOL;
+                descr.elem_type = HklBinocularsNpyBool();
                 break;
         };
 
@@ -157,7 +157,7 @@ static int shape_size(const darray_int *shape)
 }
 
 static struct npy_t *parse_npy(FILE* fp,
-                               enum HklBinocularsNpyDataType type,
+                               HklBinocularsNpyDataType type,
                                const darray_int *shape)
 {
         struct npy_t *npy = calloc(1, sizeof(struct npy_t));
@@ -233,7 +233,7 @@ static struct npy_t *parse_npy(FILE* fp,
         npy->fortran_order = parse_fortran_order(npy->header, matches[2]);
         parse_shape(npy->header, matches[3], &npy->shape);
 
-        if(type != npy->descr.elem_type)
+        if(type.tag != npy->descr.elem_type.tag)
                 goto fail;
 
         if(0 != shape_cmp(shape, &npy->shape))
@@ -258,7 +258,7 @@ fail_no_header:
 }
 
 void *npy_load(const char *fname,
-               enum HklBinocularsNpyDataType type,
+               HklBinocularsNpyDataType type,
                const darray_int *shape)
 {
         uint8_t *arr = NULL;
@@ -282,13 +282,11 @@ static inline char bigendian(void)
         return (((char *)&x)[0]) ? '<' : '>';
 }
 
-static inline char map_type(enum HklBinocularsNpyDataType type)
+static inline char map_type(HklBinocularsNpyDataType type)
 {
-        char res = 'b';
-
-        switch(type){
-        case HKL_BINOCULARS_NPY_BOOL: res = 'b';
-        case HKL_BINOCULARS_NPY_DOUBLE: res = 'f';
+        match(type){
+                of(HklBinocularsNpyBool)   return 'b';
+                of(HklBinocularsNpyDouble) return 'f';
         }
 
     /* if(t == typeid(float) ) return 'f'; */
@@ -314,21 +312,17 @@ static inline char map_type(enum HklBinocularsNpyDataType type)
     /* if(t == typeid(std::complex<long double>) ) return 'c'; */
 
     /* else return '?'; */
-        return res;
 }
 
-static inline int map_size(enum HklBinocularsNpyDataType type)
+static inline int map_size(HklBinocularsNpyDataType type)
 {
-        int res = 1;
-
-        switch(type){
-        case HKL_BINOCULARS_NPY_BOOL: res = 1;
-        case HKL_BINOCULARS_NPY_DOUBLE: res = 8;
+        match(type){
+                of(HklBinocularsNpyBool)   return 1;
+                of(HklBinocularsNpyDouble) return 8;
         }
-        return res;
 }
 
-static inline char *create_npy_header(enum HklBinocularsNpyDataType type,
+static inline char *create_npy_header(HklBinocularsNpyDataType type,
                                       const darray_int *shape,
                                       size_t *header_size)
 {
@@ -387,7 +381,7 @@ static inline char *create_npy_header(enum HklBinocularsNpyDataType type,
 
 void npy_save(const char *fname,
               const void *arr,
-              enum HklBinocularsNpyDataType type,
+              HklBinocularsNpyDataType type,
               const darray_int *shape)
 {
         FILE *f;

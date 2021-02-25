@@ -457,7 +457,7 @@ void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
 
 
         arr = hkl_binoculars_detector_2d_coordinates_get(n);
-        npy_save(fname, arr, HKL_BINOCULARS_NPY_DOUBLE, &shape);
+        npy_save(fname, arr, HklBinocularsNpyDouble(), &shape);
         free(arr);
 }
 
@@ -496,7 +496,7 @@ uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
                        detector.shape.height,
                        detector.shape.width);
 
-        arr = npy_load(fname, HKL_BINOCULARS_NPY_BOOL, &shape);
+        arr = npy_load(fname, HklBinocularsNpyBool(), &shape);
 
         darray_free(shape);
 
@@ -515,6 +515,6 @@ void hkl_binoculars_detector_2d_mask_save(HklBinocularsDetectorEnum n,
                        detector.shape.width);
 
         arr = hkl_binoculars_detector_2d_mask_get(n);
-        npy_save(fname, arr, HKL_BINOCULARS_NPY_BOOL, &shape);
+        npy_save(fname, arr, HklBinocularsNpyBool(), &shape);
         free(arr);
 }
