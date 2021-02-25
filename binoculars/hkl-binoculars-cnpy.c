@@ -16,10 +16,11 @@
 #define REGEX_SHAPE "'shape':\\s+\\((.+)\\)"
 #define REGEX_HEADER "^\\{" REGEX_DESCR ",\\s+" REGEX_FORTRAN ",\\s+" REGEX_SHAPE ",\\s+" "\\}\\s+"
 
-enum endianess_e {
-        ENDIAN_LITTLE,
-        ENDIAN_BIG,
-};
+datatype(
+        Endianess,
+        (LittleEndian),
+        (BigEndian)
+        );
 
 static const char magic[] = {(char)0x93, 'N', 'U', 'M', 'P', 'Y'};
 
@@ -34,7 +35,7 @@ struct pre_header_t {
 };
 
 struct descr_t {
-        enum endianess_e endianess;
+        Endianess endianess;
         HklBinocularsNpyDataType elem_type;
         size_t elem_size;
 };
@@ -76,7 +77,7 @@ static struct descr_t parse_descr(const char *header, regmatch_t match)
         switch(description[0]){
         case '|':
         case '<':
-                descr.endianess = ENDIAN_LITTLE;
+                descr.endianess = LittleEndian();
                 break;
         };
 
