@@ -3,21 +3,23 @@ bin_PROGRAMS = ghkl
 dist_man_MANS = ghkl.1
 
 AM_CFLAGS = \
-	-I$(top_srcdir) \
-	-I$(top_srcdir)/hkl \
 	-DPKGDATA=\""$(pkgdatadir)"\" \
 	-DGTK_DISABLE_SINGLE_INCLUDES \
 	-DGDK_DISABLE_DEPRECATED \
 	-DGTK_DISABLE_DEPRECATED \
 	-DGSEAL_ENABLE \
-	$(GSL_CFLAGS) \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/hkl \
+	-I$(top_srcdir)/third-party/ \
+	-ftrack-macro-expansion=0 \
 	$(GLIB_CFLAGS) \
+	$(GSL_CFLAGS) \
 	$(GTK_CFLAGS)
 
 AM_LDFLAGS = \
 	-Wl,--export-dynamic \
-	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(GSL_LIBS) \
 	$(GTK_LIBS)
 
 ghkl_LDADD = \

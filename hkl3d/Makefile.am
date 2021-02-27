@@ -1,20 +1,22 @@
 # Process this file with automake to produce Makefile.in
 
 AM_CXXFLAGS = \
+	-DPKGDATA=\""$(pkgdatadir)"\" \
 	-fpermissive \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
 	-I$(top_srcdir)/hkl3d \
 	-I$(top_srcdir)/hkl3d/bullet/src\
-	-DPKGDATA=\""$(pkgdatadir)"\" \
+	-I$(top_srcdir)/third-party/ \
+	-ftrack-macro-expansion=0 \
+	$(BULLET_CFLAGS) \
 	$(G3D_CFLAGS) \
-	$(YAML_CFLAGS) \
-	$(BULLET_CFLAGS)
+	$(YAML_CFLAGS)
 
 AM_LDFLAGS = -version-info 0:0:0 \
+	$(BULLET_LIBS) \
 	$(G3D_LIBS) \
-	$(YAML_LIBS) \
-	$(BULLET_LIBS)
+	$(YAML_LIBS)
 
 noinst_LTLIBRARIES = libhkl3d.la
 libhkl3d_la_SOURCES = hkl3d.cpp

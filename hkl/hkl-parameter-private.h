@@ -23,6 +23,8 @@
 #ifndef __HKL_PARAMETER_PRIVATE_H__
 #define __HKL_PARAMETER_PRIVATE_H__
 
+#include "datatype99.h"
+
 #include <math.h>                       // for M_PI
 #include <stdio.h>                      // for FILE, fprintf, NULL
 #include <stdlib.h>                     // for free, rand, RAND_MAX
@@ -33,6 +35,11 @@
 #include "hkl.h"                        // for HklParameter, TRUE, etc
 
 G_BEGIN_DECLS
+
+datatype(
+        HklParameterType,
+        (Parameter)
+        );
 
 typedef struct _HklParameterOperations HklParameterOperations;
 

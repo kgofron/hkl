@@ -7,8 +7,10 @@ AM_LDFLAGS = \
 	$(GSL_LIBS)
 AM_CFLAGS = \
 	-DG_LOG_DOMAIN=\"Hkl\" \
-	-I$(top_srcdir) \
 	-I$(top_builddir) \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/third-party/ \
+	-ftrack-macro-expansion=0 \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS)
 
