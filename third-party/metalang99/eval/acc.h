@@ -3,14 +3,12 @@
 
 #include <metalang99/priv/util.h>
 
-#define METALANG99_PRIV_EVAL_ACC_EMPTY() 0empty()
+#define METALANG99_PRIV_EVAL_ACC()           (, )
+#define METALANG99_PRIV_EVAL_ACC_COMMA_SEP() ()
 
-#define METALANG99_PRIV_EVAL_ACC_IS_EMPTY(acc)            METALANG99_PRIV_EVAL_ACC_IS_EMPTY_##acc
-#define METALANG99_PRIV_EVAL_ACC_IS_EMPTY_0empty(...)     1
-#define METALANG99_PRIV_EVAL_ACC_IS_EMPTY_0non_empty(...) 0
+#define METALANG99_PRIV_EVAL_0fappend(acc, ...) (METALANG99_PRIV_EXPAND acc __VA_ARGS__)
+#define METALANG99_PRIV_EVAL_0fcomma(acc, ...)  (METALANG99_PRIV_EXPAND acc, __VA_ARGS__)
 
-#define METALANG99_PRIV_EVAL_ACC_UNWRAP(acc)            METALANG99_PRIV_EVAL_ACC_UNWRAP_##acc
-#define METALANG99_PRIV_EVAL_ACC_UNWRAP_0empty(...)     __VA_ARGS__
-#define METALANG99_PRIV_EVAL_ACC_UNWRAP_0non_empty(...) __VA_ARGS__
+#define METALANG99_PRIV_EVAL_ACC_UNWRAP(_emptiness, ...) __VA_ARGS__
 
 #endif // METALANG99_EVAL_ACC_H

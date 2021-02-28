@@ -9,14 +9,18 @@
 #ifndef METALANG99_VARIADICS_H
 #define METALANG99_VARIADICS_H
 
-#include <metalang99/lang.h>
 #include <metalang99/priv/variadics/count.h>
-#include <metalang99/uint/dec.h>
-#include <metalang99/uint/eq.h>
+
+#include <metalang99/lang.h>
+#include <metalang99/nat/dec.h>
+#include <metalang99/nat/eq.h>
+#include <metalang99/util.h>
 
 // Desugaring {
 /**
  * Computes a count of its arguments.
+ *
+ * At most 63 arguments are acceptable.
  *
  * # Examples
  *
@@ -29,32 +33,29 @@
  * // 1
  * M_variadicsCount()
  * @endcode
- *
- * @note @note At most 63 arguments are acceptable.
  */
 #define METALANG99_variadicsCount(...) METALANG99_call(METALANG99_variadicsCount, __VA_ARGS__)
 
 /**
- * Extracts a head of its arguments.
+ * Expands to a metafunction extracting the @p i -indexed argument.
+ *
+ * @p i can range from 0 to 7, inclusively.
  *
  * # Examples
  *
  * @code
  * #include <metalang99/variadics.h>
  *
- * // 1
- * M_variadicsHead(v(1, 2, 3))
- *
- * // 1
- * M_variadicsHead(v(1))
+ * // 2
+ * M_variadicsGet(1)(v(1, 2, 3))
  * @endcode
  */
-#define METALANG99_variadicsHead(...) METALANG99_call(METALANG99_variadicsHead, __VA_ARGS__)
+#define METALANG99_variadicsGet(i) METALANG99_catPlain(METALANG99_PRIV_variadicsGet_, i)
 
 /**
- * Extracts a tail of its arguments.
+ * Extracts the tail of its arguments.
  *
- * At least two arguments shall be specified.
+ * At least two arguments must be specified.
  *
  * # Examples
  *
@@ -68,239 +69,200 @@
 #define METALANG99_variadicsTail(...) METALANG99_call(METALANG99_variadicsTail, __VA_ARGS__)
 
 /**
- * Maps a sequence of arguments with @p f.
+ * Applies @p f to each argument.
  *
- * The result is `METALANG99_appl(v(f), v(x1)) ... METALANG99_appl(v(f), v(xN))`.
+ * The result is `M_appl(v(f), v(x1)) ... M_appl(v(f), v(xN))`.
  *
- * # Examples
+ * If you already have variadics, using this macro is more efficient than
+ * `M_listUnwrap(M_listMap(v(f), M_list(v(...))))`.
  *
- * @code
- * #include <metalang99/variadics.h>
- * #include <metalang99/uint.h>
- *
- * // 2 3 4
- * M_variadicsMap(M_appl(v(M_uintAdd), v(1)), v(1, 2, 3))
- * @endcode
- *
- * @note @p f can evaluate to many Metalang99 terms.
- * @note At most 63 variadic arguments are acceptable.
- */
-#define METALANG99_variadicsMap(f, ...) METALANG99_call(METALANG99_variadicsMap, f __VA_ARGS__)
-
-/**
- * The same as #METALANG99_variadicsMap but intersperses a comma between invocations of @p f.
- *
- * The result is `METALANG99_appl(v(f), v(x1)) v(,) ... v(,) METALANG99_appl(v(f), v(xN))`.
+ * At most 63 variadic arguments are acceptable.
  *
  * # Examples
  *
  * @code
- * #include <metalang99/variadics.h>
- * #include <metalang99/uint.h>
+ * #include <metalang99/misc.h>
  *
- * // 2, 3, 4
- * M_variadicsMapCommaSep(M_appl(v(M_uintAdd), v(1)), v(1, 2, 3))
+ * #define F_IMPL(x) v(@x)
+ * #define F_ARITY   1
+ *
+ * // @1 @2 @3
+ * M_variadicsForEach(v(F), v(1, 2, 3))
  * @endcode
  *
- * @note @p f can evaluate to many Metalang99 terms.
- * @note At most 63 variadic arguments are acceptable.
+ * @note Unlike #METALANG99_listMap, @p f can evaluate to many Metalang99 terms.
  */
-#define METALANG99_variadicsMapCommaSep(f, ...)                                                    \
-    METALANG99_call(METALANG99_variadicsMapCommaSep, f __VA_ARGS__)
+#define METALANG99_variadicsForEach(f, ...)                                                        \
+    METALANG99_call(METALANG99_variadicsForEach, f, __VA_ARGS__)
 
 /**
- * The same as #METALANG99_listMapI but for variadics.
+ * Applies @p f to each argument with an index.
  *
- * The result is `METALANG99_appl2(v(f), v(x1), v(0)) ... METALANG99_appl2(v(f), v(xN), v(N))`.
+ * The result is `M_appl2(v(f), v(x1), v(0)) ... M_appl2(v(f), v(xN), v(N))`.
+ *
+ * If you already have variadics, using this macro is more efficient than
+ * `M_listUnwrap(M_listMapI(v(f), M_list(v(...))))`.
+ *
+ * At most 63 variadic arguments are acceptable.
  *
  * @note Unlike #METALANG99_listMapI, @p f can evaluate to many Metalang99 terms.
- * @note @note At most 63 variadic arguments are acceptable.
  */
-#define METALANG99_variadicsMapI(f, ...) METALANG99_call(METALANG99_variadicsMapI, f __VA_ARGS__)
+#define METALANG99_variadicsForEachI(f, ...)                                                       \
+    METALANG99_call(METALANG99_variadicsForEachI, f, __VA_ARGS__)
 
-/**
- * The same as #METALANG99_variadicsMapI but intersperses a comma between invocations of @p f.
- *
- * The result is `METALANG99_appl2(v(f), v(x1), v(0)) v(,) ... v(,) METALANG99_appl2(v(f), v(xN),
- * v(N))`.
- *
- * @note @p f can evaluate to many Metalang99 terms.
- * @note @note At most variadic 63 arguments are acceptable.
- */
-#define METALANG99_variadicsMapICommaSep(f, ...)                                                   \
-    METALANG99_call(METALANG99_variadicsMapICommaSep, f __VA_ARGS__)
-
-/**
- * The plain version of #METALANG99_variadicsCount.
- */
 #define METALANG99_variadicsCountPlain(...) METALANG99_PRIV_VARIADICS_COUNT(__VA_ARGS__)
-
-/**
- * The plain version of #METALANG99_variadicsHead.
- */
-#define METALANG99_variadicsHeadPlain(...) METALANG99_PRIV_VARIADICS_HEAD(__VA_ARGS__)
-
-/**
- * The plain version of #METALANG99_variadicsTail.
- */
-#define METALANG99_variadicsTailPlain(...) METALANG99_PRIV_VARIADICS_TAIL(__VA_ARGS__)
+#define METALANG99_variadicsGetPlain(i)     METALANG99_catPlain(METALANG99_PRIV_variadicsGetPlain_, i)
+#define METALANG99_variadicsTailPlain(...)  METALANG99_PRIV_VARIADICS_TAIL(__VA_ARGS__)
 // }
 
 #ifndef DOXYGEN_IGNORE
 
 // Implementation {
-#define METALANG99_variadicsCount_IMPL(...) v(METALANG99_PRIV_VARIADICS_COUNT(__VA_ARGS__))
-#define METALANG99_variadicsHead_IMPL(...)  v(METALANG99_variadicsHeadPlain(__VA_ARGS__))
-#define METALANG99_variadicsTail_IMPL(...)  v(METALANG99_variadicsTailPlain(__VA_ARGS__))
+#define METALANG99_variadicsCount_IMPL(...) v(METALANG99_variadicsCountPlain(__VA_ARGS__))
 
-// TODO: refactor this boilerplate.
+#define METALANG99_PRIV_variadicsGet_0(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_0, __VA_ARGS__)
+#define METALANG99_PRIV_variadicsGet_1(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_1, __VA_ARGS__)
+#define METALANG99_PRIV_variadicsGet_2(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_2, __VA_ARGS__)
+#define METALANG99_PRIV_variadicsGet_3(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_3, __VA_ARGS__)
+#define METALANG99_PRIV_variadicsGet_4(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_4, __VA_ARGS__)
+#define METALANG99_PRIV_variadicsGet_5(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_5, __VA_ARGS__)
+#define METALANG99_PRIV_variadicsGet_6(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_6, __VA_ARGS__)
+#define METALANG99_PRIV_variadicsGet_7(...)                                                        \
+    METALANG99_call(METALANG99_PRIV_variadicsGet_7, __VA_ARGS__)
 
-// METALANG99_variadicsMap_IMPL {
-#define METALANG99_variadicsMap_IMPL(f, ...)                                                       \
-    METALANG99_variadicsMap_AUX_IMPL(                                                              \
+#define METALANG99_PRIV_variadicsGet_0_IMPL(...) v(METALANG99_variadicsGetPlain(0)(__VA_ARGS__))
+#define METALANG99_PRIV_variadicsGet_1_IMPL(...) v(METALANG99_variadicsGetPlain(1)(__VA_ARGS__))
+#define METALANG99_PRIV_variadicsGet_2_IMPL(...) v(METALANG99_variadicsGetPlain(2)(__VA_ARGS__))
+#define METALANG99_PRIV_variadicsGet_3_IMPL(...) v(METALANG99_variadicsGetPlain(3)(__VA_ARGS__))
+#define METALANG99_PRIV_variadicsGet_4_IMPL(...) v(METALANG99_variadicsGetPlain(4)(__VA_ARGS__))
+#define METALANG99_PRIV_variadicsGet_5_IMPL(...) v(METALANG99_variadicsGetPlain(5)(__VA_ARGS__))
+#define METALANG99_PRIV_variadicsGet_6_IMPL(...) v(METALANG99_variadicsGetPlain(6)(__VA_ARGS__))
+#define METALANG99_PRIV_variadicsGet_7_IMPL(...) v(METALANG99_variadicsGetPlain(7)(__VA_ARGS__))
+
+#define METALANG99_PRIV_variadicsGetPlain_0(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_0(__VA_ARGS__, ~)
+#define METALANG99_PRIV_variadicsGetPlain_1(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_1(__VA_ARGS__, ~)
+#define METALANG99_PRIV_variadicsGetPlain_2(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_2(__VA_ARGS__, ~)
+#define METALANG99_PRIV_variadicsGetPlain_3(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_3(__VA_ARGS__, ~)
+#define METALANG99_PRIV_variadicsGetPlain_4(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_4(__VA_ARGS__, ~)
+#define METALANG99_PRIV_variadicsGetPlain_5(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_5(__VA_ARGS__, ~)
+#define METALANG99_PRIV_variadicsGetPlain_6(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_6(__VA_ARGS__, ~)
+#define METALANG99_PRIV_variadicsGetPlain_7(...)                                                   \
+    METALANG99_PRIV_variadicsGetPlainAux_7(__VA_ARGS__, ~)
+
+#define METALANG99_PRIV_variadicsGetPlainAux_0(a, ...)                             a
+#define METALANG99_PRIV_variadicsGetPlainAux_1(_a, b, ...)                         b
+#define METALANG99_PRIV_variadicsGetPlainAux_2(_a, _b, c, ...)                     c
+#define METALANG99_PRIV_variadicsGetPlainAux_3(_a, _b, _c, d, ...)                 d
+#define METALANG99_PRIV_variadicsGetPlainAux_4(_a, _b, _c, _d, e, ...)             e
+#define METALANG99_PRIV_variadicsGetPlainAux_5(_a, _b, _c, _d, _e, f, ...)         f
+#define METALANG99_PRIV_variadicsGetPlainAux_6(_a, _b, _c, _d, _e, _f, g, ...)     g
+#define METALANG99_PRIV_variadicsGetPlainAux_7(_a, _b, _c, _d, _e, _f, _g, h, ...) h
+
+#define METALANG99_variadicsTail_IMPL(...) v(METALANG99_variadicsTailPlain(__VA_ARGS__))
+
+// METALANG99_variadicsForEach_IMPL {
+#define METALANG99_variadicsForEach_IMPL(f, ...)                                                   \
+    METALANG99_PRIV_variadicsForEachAux_IMPL(                                                      \
         f,                                                                                         \
         METALANG99_PRIV_VARIADICS_COUNT(__VA_ARGS__),                                              \
         __VA_ARGS__,                                                                               \
         ~)
 
-#define METALANG99_variadicsMap_AUX_IMPL(f, count, ...)                                            \
+#define METALANG99_PRIV_variadicsForEachAux_IMPL(f, count, ...)                                    \
     METALANG99_callTrivial(                                                                        \
         METALANG99_PRIV_IF(                                                                        \
-            METALANG99_PRIV_uintEq(count, 1),                                                      \
-            METALANG99_variadicsMap_DONE,                                                          \
-            METALANG99_variadicsMap_PROGRESS),                                                     \
+            METALANG99_PRIV_natEq(count, 1),                                                       \
+            METALANG99_PRIV_variadicsForEachDone,                                                  \
+            METALANG99_PRIV_variadicsForEachProgress),                                             \
         f,                                                                                         \
         count,                                                                                     \
         __VA_ARGS__)
 
-#define METALANG99_variadicsMap_DONE_IMPL(f, _count, x, _)                                         \
-    METALANG99_callTrivial(METALANG99_appl, f, x)
-#define METALANG99_variadicsMap_PROGRESS_IMPL(f, count, x, ...)                                    \
-    METALANG99_callTrivial(METALANG99_appl, f, x) METALANG99_callTrivial(                          \
-        METALANG99_variadicsMap_AUX,                                                               \
-        f,                                                                                         \
-        METALANG99_PRIV_uintDec(count),                                                            \
-        __VA_ARGS__)
+#define METALANG99_PRIV_variadicsForEachDone_IMPL(f, _count, x, _) METALANG99_appl_IMPL(f, x)
+#define METALANG99_PRIV_variadicsForEachProgress_IMPL(f, count, x, ...)                            \
+    METALANG99_terms(                                                                              \
+        METALANG99_appl_IMPL(f, x),                                                                \
+        METALANG99_PRIV_variadicsForEachAux_IMPL(f, METALANG99_PRIV_dec(count), __VA_ARGS__))
 // }
 
-// METALANG99_variadicsMapCommaSep_IMPL {
-#define METALANG99_variadicsMapCommaSep_IMPL(f, ...)                                               \
-    METALANG99_variadicsMapCommaSep_AUX_IMPL(                                                      \
-        f,                                                                                         \
-        METALANG99_PRIV_VARIADICS_COUNT(__VA_ARGS__),                                              \
-        __VA_ARGS__,                                                                               \
-        ~)
-
-#define METALANG99_variadicsMapCommaSep_AUX_IMPL(f, count, ...)                                    \
-    METALANG99_callTrivial(                                                                        \
-        METALANG99_PRIV_IF(                                                                        \
-            METALANG99_PRIV_uintEq(count, 1),                                                      \
-            METALANG99_variadicsMapCommaSep_DONE,                                                  \
-            METALANG99_variadicsMapCommaSep_PROGRESS),                                             \
-        f,                                                                                         \
-        count,                                                                                     \
-        __VA_ARGS__)
-
-#define METALANG99_variadicsMapCommaSep_DONE_IMPL(f, _count, x, _)                                 \
-    METALANG99_callTrivial(METALANG99_appl, f, x)
-#define METALANG99_variadicsMapCommaSep_PROGRESS_IMPL(f, count, x, ...)                            \
-    METALANG99_callTrivial(METALANG99_appl, f, x) v(, ) METALANG99_callTrivial(                    \
-        METALANG99_variadicsMapCommaSep_AUX,                                                       \
-        f,                                                                                         \
-        METALANG99_PRIV_uintDec(count),                                                            \
-        __VA_ARGS__)
-// }
-
-// METALANG99_variadicsMapI_IMPL {
-#define METALANG99_variadicsMapI_IMPL(f, ...)                                                      \
-    METALANG99_variadicsMapI_AUX_IMPL(                                                             \
+// METALANG99_variadicsForEachI_IMPL {
+#define METALANG99_variadicsForEachI_IMPL(f, ...)                                                  \
+    METALANG99_PRIV_variadicsForEachIAux_IMPL(                                                     \
         f,                                                                                         \
         0,                                                                                         \
         METALANG99_PRIV_VARIADICS_COUNT(__VA_ARGS__),                                              \
         __VA_ARGS__,                                                                               \
         ~)
 
-#define METALANG99_variadicsMapI_AUX_IMPL(f, i, count, ...)                                        \
+#define METALANG99_PRIV_variadicsForEachIAux_IMPL(f, i, count, ...)                                \
     METALANG99_callTrivial(                                                                        \
         METALANG99_PRIV_IF(                                                                        \
-            METALANG99_PRIV_uintEq(count, 1),                                                      \
-            METALANG99_variadicsMapI_DONE,                                                         \
-            METALANG99_variadicsMapI_PROGRESS),                                                    \
+            METALANG99_PRIV_natEq(count, 1),                                                       \
+            METALANG99_PRIV_variadicsForEachIDone,                                                 \
+            METALANG99_PRIV_variadicsForEachIProgress),                                            \
         f,                                                                                         \
         i,                                                                                         \
         count,                                                                                     \
         __VA_ARGS__)
 
-#define METALANG99_variadicsMapI_DONE_IMPL(f, i, _count, x, _)                                     \
-    METALANG99_callTrivial(METALANG99_appl2, f, x, i)
-#define METALANG99_variadicsMapI_PROGRESS_IMPL(f, i, count, x, ...)                                \
-    METALANG99_callTrivial(METALANG99_appl2, f, x, i) METALANG99_callTrivial(                      \
-        METALANG99_variadicsMapI_AUX,                                                              \
-        f,                                                                                         \
-        METALANG99_PRIV_uintInc(i),                                                                \
-        METALANG99_PRIV_uintDec(count),                                                            \
-        __VA_ARGS__)
-// }
-
-// METALANG99_variadicsMapICommaSep_IMPL {
-#define METALANG99_variadicsMapICommaSep_IMPL(f, ...)                                              \
-    METALANG99_variadicsMapICommaSep_AUX_IMPL(                                                     \
-        f,                                                                                         \
-        0,                                                                                         \
-        METALANG99_PRIV_VARIADICS_COUNT(__VA_ARGS__),                                              \
-        __VA_ARGS__,                                                                               \
-        ~)
-
-#define METALANG99_variadicsMapICommaSep_AUX_IMPL(f, i, count, ...)                                \
-    METALANG99_callTrivial(                                                                        \
-        METALANG99_PRIV_IF(                                                                        \
-            METALANG99_PRIV_uintEq(count, 1),                                                      \
-            METALANG99_variadicsMapICommaSep_DONE,                                                 \
-            METALANG99_variadicsMapICommaSep_PROGRESS),                                            \
-        f,                                                                                         \
-        i,                                                                                         \
-        count,                                                                                     \
-        __VA_ARGS__)
-
-#define METALANG99_variadicsMapICommaSep_DONE_IMPL(f, i, _count, x, _)                             \
-    METALANG99_callTrivial(METALANG99_appl2, f, x, i)
-#define METALANG99_variadicsMapICommaSep_PROGRESS_IMPL(f, i, count, x, ...)                        \
-    METALANG99_callTrivial(METALANG99_appl2, f, x, i) v(, ) METALANG99_callTrivial(                \
-        METALANG99_variadicsMapICommaSep_AUX,                                                      \
-        f,                                                                                         \
-        METALANG99_PRIV_uintInc(i),                                                                \
-        METALANG99_PRIV_uintDec(count),                                                            \
-        __VA_ARGS__)
+#define METALANG99_PRIV_variadicsForEachIDone_IMPL(f, i, _count, x, _)                             \
+    METALANG99_appl2_IMPL(f, x, i)
+#define METALANG99_PRIV_variadicsForEachIProgress_IMPL(f, i, count, x, ...)                        \
+    METALANG99_terms(                                                                              \
+        METALANG99_appl2_IMPL(f, x, i),                                                            \
+        METALANG99_PRIV_variadicsForEachIAux_IMPL(                                                 \
+            f,                                                                                     \
+            METALANG99_PRIV_inc(i),                                                                \
+            METALANG99_PRIV_dec(count),                                                            \
+            __VA_ARGS__))
 // }
 
 // } (Implementation)
 
 // Arity specifiers {
-#define METALANG99_variadicsCount_ARITY        1
-#define METALANG99_variadicsHead_ARITY         1
-#define METALANG99_variadicsTail_ARITY         1
-#define METALANG99_variadicsMap_ARITY          2
-#define METALANG99_variadicsMapCommaSep_ARITY  2
-#define METALANG99_variadicsMapI_ARITY         2
-#define METALANG99_variadicsMapICommaSep_ARITY 2
+#define METALANG99_variadicsCount_ARITY    1
+#define METALANG99_variadicsTail_ARITY     1
+#define METALANG99_variadicsForEach_ARITY  2
+#define METALANG99_variadicsForEachI_ARITY 2
+
+#define METALANG99_PRIV_variadicsGet_0_ARITY 1
+#define METALANG99_PRIV_variadicsGet_1_ARITY 1
+#define METALANG99_PRIV_variadicsGet_2_ARITY 1
+#define METALANG99_PRIV_variadicsGet_3_ARITY 1
+#define METALANG99_PRIV_variadicsGet_4_ARITY 1
+#define METALANG99_PRIV_variadicsGet_5_ARITY 1
+#define METALANG99_PRIV_variadicsGet_6_ARITY 1
+#define METALANG99_PRIV_variadicsGet_7_ARITY 1
 // }
 
 // Aliases {
-#ifndef METALANG99_NO_SMALL_PREFIX
+#ifndef METALANG99_FULL_PREFIX_ONLY
 
-#define M_variadicsCount        METALANG99_variadicsCount
-#define M_variadicsHead         METALANG99_variadicsHead
-#define M_variadicsTail         METALANG99_variadicsTail
-#define M_variadicsMap          METALANG99_variadicsMap
-#define M_variadicsMapCommaSep  METALANG99_variadicsMapCommaSep
-#define M_variadicsMapI         METALANG99_variadicsMapI
-#define M_variadicsMapICommaSep METALANG99_variadicsMapICommaSep
+#define M_variadicsCount    METALANG99_variadicsCount
+#define M_variadicsGet      METALANG99_variadicsGet
+#define M_variadicsTail     METALANG99_variadicsTail
+#define M_variadicsForEach  METALANG99_variadicsForEach
+#define M_variadicsForEachI METALANG99_variadicsForEachI
 
 #define M_variadicsCountPlain METALANG99_variadicsCountPlain
-#define M_variadicsHeadPlain  METALANG99_variadicsHeadPlain
+#define M_variadicsGetPlain   METALANG99_variadicsGetPlain
 #define M_variadicsTailPlain  METALANG99_variadicsTailPlain
 
-#endif // METALANG99_NO_SMALL_PREFIX
+#endif // METALANG99_FULL_PREFIX_ONLY
 // }
 
 #endif // DOXYGEN_IGNORE

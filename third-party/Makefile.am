@@ -1,38 +1,45 @@
 EXTRA_DIST= \
-	metalang99.h \
-	metalang99/control.h \
-	metalang99/list.h \
-	metalang99/eval.h \
-	metalang99/priv/aux.h \
-	metalang99/priv/pair.h \
-	metalang99/priv/compiler_attr.h \
-	metalang99/priv/variadics/get.h \
-	metalang99/priv/variadics/count.h \
-	metalang99/priv/util.h \
-	metalang99/uint.h \
-	metalang99/logical.h \
-	metalang99/uint/inc.h \
-	metalang99/uint/dec.h \
-	metalang99/uint/eq.h \
-	metalang99/uint/div.h \
-	metalang99/misc.h \
-	metalang99/aux.h \
-	metalang99/lang.h \
+	datatype99.h \
 	metalang99/assert.h \
+	metalang99/aux.h \
+	metalang99/choice.h \
+	metalang99/control.h \
 	metalang99/either.h \
+	metalang99/eval/acc.h \
+	metalang99/eval/control.h \
+	metalang99/eval/diagnostics.h \
+	metalang99/eval/fold.h \
+	metalang99/eval.h \
+	metalang99/eval/rec/control.h \
+	metalang99/eval/rec/progress.h \
+	metalang99/eval/rec/unroll.h \
+	metalang99/eval/syntax_checker.h \
+	metalang99/eval/term.h \
+	metalang99.h \
 	metalang99/lang/closure.h \
 	metalang99/lang/curry.h \
+	metalang99/lang.h \
+	metalang99/list.h \
+	metalang99/logical.h \
 	metalang99/maybe.h \
-	metalang99/variadics.h \
-	metalang99/eval/rec/control.h \
-	metalang99/eval/rec/unroll.h \
-	metalang99/eval/rec/progress.h \
-	metalang99/eval/control.h \
-	metalang99/eval/syntax_checker.h \
-	metalang99/eval/acc.h \
-	metalang99/eval/term.h \
-	metalang99/eval/fold.h \
-	metalang99/eval/diagnostics.h \
-	metalang99/choice.h \
+	metalang99/misc.h \
+	metalang99/nat/dec.h \
+	metalang99/nat/div.h \
+	metalang99/nat/eq.h \
+	metalang99/nat.h \
+	metalang99/nat/inc.h \
+	metalang99/priv/aux.h \
+	metalang99/priv/compiler_attr.h \
+	metalang99/priv/compiler_specific.h \
+	metalang99/priv/pair.h \
+	metalang99/priv/util.h \
+	metalang99/priv/variadics/count.h \
+	metalang99/priv/variadics/get.h \
+	metalang99/tuple.h \
+	metalang99/uint/dec.h \
+	metalang99/uint/div.h \
+	metalang99/uint/eq.h \
+	metalang99/uint.h \
+	metalang99/uint/inc.h \
 	metalang99/util.h \
-	datatype99.h
+	metalang99/variadics.h

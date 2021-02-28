@@ -6,11 +6,11 @@
 #ifndef METALANG99_ASSERT_H
 #define METALANG99_ASSERT_H
 
+#include <metalang99/priv/compiler_specific.h>
+
 #include <metalang99/eval.h>
 #include <metalang99/lang.h>
 #include <metalang99/logical.h>
-#include <metalang99/priv/compiler_attr.h>
-#include <metalang99/priv/util.h>
 #include <metalang99/util.h>
 
 // Desugaring {
@@ -25,8 +25,7 @@
  * METALANG99_assert(v(123 == 123));
  * @endcode
  */
-#define METALANG99_assert(expr)                                                                    \
-    METALANG99_assertEq(METALANG99_PRIV_EXPAND(expr), v(METALANG99_true))
+#define METALANG99_assert(expr) METALANG99_assertEq(expr, v(METALANG99_true))
 
 /**
  * Asserts the equality of `METALANG99_eval(lhs)` and `METALANG99_eval(rhs)` at compile-time.
@@ -58,7 +57,7 @@
     /* How to imitate static assertions in C99: https://stackoverflow.com/a/3385694/13166656. */   \
     static const char METALANG99_PRIV_CAT(                                                         \
         metalang99_assert_,                                                                        \
-        __LINE__)[(expr) ? 1 : -1] METALANG99_PRIV_COMPILER_ATTR_UNUSED
+        __LINE__)[(expr) ? 1 : -1] METALANG99_PRIV_COMPILER_ATTR_UNUSED = {0}
 
 /**
  * Asserts that `METALANG99_eval(expr)` is emptiness.
@@ -101,7 +100,7 @@
 #define METALANG99_PRIV_assertEmpty_ 1
 
 // Aliases {
-#ifndef METALANG99_NO_SMALL_PREFIX
+#ifndef METALANG99_FULL_PREFIX_ONLY
 
 #define M_assert           METALANG99_assert
 #define M_assertEq         METALANG99_assertEq
@@ -109,7 +108,7 @@
 #define M_assertEmpty      METALANG99_assertEmpty
 #define M_assertEmptyPlain METALANG99_assertEmptyPlain
 
-#endif // METALANG99_NO_SMALL_PREFIX
+#endif // METALANG99_FULL_PREFIX_ONLY
 // }
 
 #endif // DOXYGEN_IGNORE

@@ -10,17 +10,17 @@
 
 // Desugaring {
 /**
- * The alias to 0.
+ * An alias to 0.
  *
- * @note This macro expands literally to 0. If you want to use it as an Metalang99 term, write
+ * @note This macro expands literally to 0. If you want to use it as a Metalang99 term, write
  * `v(M_false)`.
  */
 #define METALANG99_false 0
 
 /**
- * The alias to 1.
+ * An alias to 1.
  *
- * @note This macro expands literally to 1. If you want to use it as an Metalang99 term, write
+ * @note This macro expands literally to 1. If you want to use it as a Metalang99 term, write
  * `v(M_true)`.
  */
 #define METALANG99_true 1
@@ -59,7 +59,7 @@
  * M_and(v(1), v(1))
  * @endcode
  */
-#define METALANG99_and(x, y) METALANG99_call(METALANG99_and, x y)
+#define METALANG99_and(x, y) METALANG99_call(METALANG99_and, x, y)
 
 /**
  * Logical inclusive OR.
@@ -80,7 +80,7 @@
  * M_or(v(1), v(1))
  * @endcode
  */
-#define METALANG99_or(x, y) METALANG99_call(METALANG99_or, x y)
+#define METALANG99_or(x, y) METALANG99_call(METALANG99_or, x, y)
 
 /**
  * Logical exclusive OR.
@@ -101,7 +101,7 @@
  * M_xor(v(1), v(1))
  * @endcode
  */
-#define METALANG99_xor(x, y) METALANG99_call(METALANG99_xor, x y)
+#define METALANG99_xor(x, y) METALANG99_call(METALANG99_xor, x, y)
 
 /**
  * Tests @p x and @p y for equality.
@@ -121,32 +121,13 @@
  * M_boolEq(v(1), v(1))
  * @endcode
  */
-#define METALANG99_boolEq(x, y) METALANG99_call(METALANG99_boolEq, x y)
+#define METALANG99_boolEq(x, y) METALANG99_call(METALANG99_boolEq, x, y)
 
-/**
- * The plain version of #METALANG99_not.
- */
-#define METALANG99_notPlain(x) METALANG99_PRIV_CAT(METALANG99_PRIV_not_, x)()
-
-/**
- * The plain version of #METALANG99_and.
- */
-#define METALANG99_andPlain(x, y) METALANG99_PRIV_UINT_OVERLOAD(METALANG99_PRIV_and_, x, y)
-
-/**
- * The plain version of #METALANG99_or.
- */
-#define METALANG99_orPlain(x, y) METALANG99_PRIV_UINT_OVERLOAD(METALANG99_PRIV_or_, x, y)
-
-/**
- * The plain version of #METALANG99_xor.
- */
-#define METALANG99_xorPlain(x, y) METALANG99_PRIV_UINT_OVERLOAD(METALANG99_PRIV_xor_, x, y)
-
-/**
- * The plain version of #METALANG99_boolEq.
- */
-#define METALANG99_boolEqPlain(x, y) METALANG99_PRIV_UINT_OVERLOAD(METALANG99_PRIV_boolEq_, x, y)
+#define METALANG99_notPlain(x)       METALANG99_PRIV_CAT(METALANG99_PRIV_not_, x)()
+#define METALANG99_andPlain(x, y)    METALANG99_PRIV_LOGICAL_OVERLOAD(METALANG99_PRIV_and_, x, y)
+#define METALANG99_orPlain(x, y)     METALANG99_PRIV_LOGICAL_OVERLOAD(METALANG99_PRIV_or_, x, y)
+#define METALANG99_xorPlain(x, y)    METALANG99_PRIV_LOGICAL_OVERLOAD(METALANG99_PRIV_xor_, x, y)
+#define METALANG99_boolEqPlain(x, y) METALANG99_PRIV_LOGICAL_OVERLOAD(METALANG99_PRIV_boolEq_, x, y)
 // }
 
 #ifndef DOXYGEN_IGNORE
@@ -181,10 +162,10 @@
 #define METALANG99_PRIV_boolEq_10() 0
 #define METALANG99_PRIV_boolEq_11() 1
 
-#define METALANG99_PRIV_UINT_OVERLOAD(op, x, y) op##x##y()
+#define METALANG99_PRIV_LOGICAL_OVERLOAD(op, x, y) op##x##y()
 
-#define METALANG99_PRIV_CONST_TRUE_IMPL(...)  v(METALANG99_true)
-#define METALANG99_PRIV_CONST_FALSE_IMPL(...) v(METALANG99_false)
+#define METALANG99_PRIV_constTrue_IMPL(...)  v(METALANG99_true)
+#define METALANG99_PRIV_constFalse_IMPL(...) v(METALANG99_false)
 // }
 
 // Arity specifiers {
@@ -196,7 +177,7 @@
 // }
 
 // Aliases {
-#ifndef METALANG99_NO_SMALL_PREFIX
+#ifndef METALANG99_FULL_PREFIX_ONLY
 
 #define M_true  METALANG99_true
 #define M_false METALANG99_false
@@ -213,7 +194,7 @@
 #define M_xorPlain    METALANG99_xorPlain
 #define M_boolEqPlain METALANG99_boolEqPlain
 
-#endif // METALANG99_NO_SMALL_PREFIX
+#endif // METALANG99_FULL_PREFIX_ONLY
 // }
 
 #endif // DOXYGEN_IGNORE
