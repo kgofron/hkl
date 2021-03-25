@@ -8,13 +8,16 @@ EXTRA_DIST= \
 	metalang99/eval/acc.h \
 	metalang99/eval/control.h \
 	metalang99/eval/diagnostics.h \
+	metalang99/eval/eval.h \
 	metalang99/eval/fold.h \
 	metalang99/eval.h \
 	metalang99/eval/rec/control.h \
+	metalang99/eval/rec.h \
 	metalang99/eval/rec/progress.h \
 	metalang99/eval/rec/unroll.h \
 	metalang99/eval/syntax_checker.h \
 	metalang99/eval/term.h \
+	metalang99/gen.h \
 	metalang99.h \
 	metalang99/lang/closure.h \
 	metalang99/lang/curry.h \

@@ -34,8 +34,8 @@ typedef struct { double data[4]; } double4;
 typedef struct { double data[5]; } double5;
 typedef struct { double data[6]; } double6;
 
-#define VALUES(...)                                                     \
-        ((M_catPlain(double, M_variadicsCountPlain(__VA_ARGS__))){.data = {__VA_ARGS__}})
+#define VALUES(...)                                                                                \
+        ((ML99_CAT(double, ML99_VARIADICS_COUNT(__VA_ARGS__))){.data = {__VA_ARGS__}})
 
 datatype(
         Geometry,
