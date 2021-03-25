@@ -37,6 +37,7 @@ typedef enum _HklBinocularsDetectorEnum
         HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED,
         HKL_BINOCULARS_DETECTOR_IMXPAD_S70,
         HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M,
+        HKL_BINOCULARS_DETECTOR_UFXC,
         /* Add new your detectors here */
         HKL_BINOCULARS_DETECTOR_NUM_DETECTORS,
 } HklBinocularsDetectorEnum;
