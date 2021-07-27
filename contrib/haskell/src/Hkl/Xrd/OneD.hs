@@ -29,7 +29,6 @@ module Hkl.Xrd.OneD
        , dummiesForPy
        ) where
 
-import           Control.Applicative               (pure, (<$>), (<*>))
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad                     (forM_, forever, void,
                                                     zipWithM_)
@@ -71,7 +70,8 @@ import           Hkl.Flat                          (Flat)
 import           Hkl.H5                            (lenH5Dataspace)
 import           Hkl.MyMatrix                      (Basis (HklB),
                                                     MyMatrix (MyMatrix))
-import           Hkl.Nxs                           (DataFrameH5 (DataFrameH5), DataFrameH5Path (XrdOneDH5Path),
+import           Hkl.Nxs                           (DataFrameH5 (DataFrameH5),
+                                                    DataFrameH5Path (XrdOneDH5Path),
                                                     Nxs (Nxs), XrdOneD,
                                                     withDataFrameH5)
 import           Hkl.PyFAI                         (AIMethod, Poni,
@@ -79,7 +79,8 @@ import           Hkl.PyFAI                         (AIMethod, Poni,
                                                     Pose (Pose), move, poniP,
                                                     poniToText)
 import           Hkl.Python                        (PyVal, toPyVal)
-import           Hkl.Script                        (Gnuplot, Py2, Script (Py2Script, ScriptGnuplot),
+import           Hkl.Script                        (Gnuplot, Py2,
+                                                    Script (Py2Script, ScriptGnuplot),
                                                     run, scriptSave)
 import           Hkl.Types                         (AbsDirPath, SampleName,
                                                     Source (Source))

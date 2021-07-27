@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -112,11 +112,18 @@ newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
   deriving (Eq, Show)
 
-data InputType = SixsFlyMedV
+data InputType = CristalK6C
+               | SixsFlyMedH
+               | SixsFlyMedV
+               | SixsFlyMedVEiger
+               | SixsFlyMedVS70
                | SixsFlyScanUhv
                | SixsFlyScanUhv2
+               | SixsFlyScanUhvUfxc
+               | SixsSbsFixedDetector
+               | SixsSbsMedH
                | SixsSbsMedV
-               | CristalK6C
+               | SixsSbsMedVFixDetector
   deriving (Eq, Show)
 
 newtype ConfigRange a = ConfigRange [a]
@@ -233,19 +240,33 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String InputType
       parse t
-          | t == "sixs:flymedv" = Right SixsFlyMedV
-          | t == "sixs:flyscanuhv" = Right SixsFlyScanUhv
-          | t == "sixs:flyscanuhv2" = Right SixsFlyScanUhv2
-          | t == "sixs:sbsmedv" = Right SixsSbsMedV
-          | t == "cristal:k6c" = Right CristalK6C
+          | t == emit SixsFlyMedH = Right SixsFlyMedH
+          | t == emit SixsFlyMedV = Right SixsFlyMedV
+          | t == emit SixsFlyMedVEiger = Right SixsFlyMedVEiger
+          | t == emit SixsFlyMedVS70 = Right SixsFlyMedVS70
+          | t == emit SixsFlyScanUhv = Right SixsFlyScanUhv
+          | t == emit SixsFlyScanUhv2 = Right SixsFlyScanUhv2
+          | t == emit SixsFlyScanUhvUfxc = Right SixsFlyScanUhvUfxc
+          | t == emit SixsSbsFixedDetector = Right SixsSbsFixedDetector
+          | t == emit SixsSbsMedH = Right SixsSbsMedH
+          | t == emit SixsSbsMedV = Right SixsSbsMedV
+          | t == emit SixsSbsMedVFixDetector = Right SixsSbsMedVFixDetector
+          | t == emit CristalK6C = Right CristalK6C
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: InputType -> Text
-      emit SixsFlyMedV     = "sixs:flymedv"
-      emit SixsFlyScanUhv  = "sixs:flyscanuhv"
-      emit SixsFlyScanUhv2 = "sixs:flyscanuhv2"
-      emit SixsSbsMedV     = "sixs:sbsmedv"
-      emit CristalK6C      = "cristal:k6c"
+      emit SixsFlyMedH            = "sixs:flymedh"
+      emit SixsFlyMedV            = "sixs:flymedv"
+      emit SixsFlyMedVEiger       = "sixs:flymedveiger"
+      emit SixsFlyMedVS70         = "sixs:flymedvs70"
+      emit SixsFlyScanUhv         = "sixs:flyscanuhv"
+      emit SixsFlyScanUhv2        = "sixs:flyscanuhv2"
+      emit SixsFlyScanUhvUfxc     = "sixs:flyscanuhvufxc"
+      emit SixsSbsFixedDetector   = "sixs:sbsfixeddetector"
+      emit SixsSbsMedH            = "sixs:sbsmedh"
+      emit SixsSbsMedV            = "sixs:sbsmedv"
+      emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
+      emit CristalK6C             = "cristal:k6c"
 
 projectionType :: FieldValue ProjectionType
 projectionType = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }

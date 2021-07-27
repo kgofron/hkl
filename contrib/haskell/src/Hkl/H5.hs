@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE UnicodeSyntax             #-}
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -28,6 +28,7 @@ module Hkl.H5
     , get_ub
     , lenH5Dataspace
     , datasetShape
+    , findDatasetAttr
     , nxEntries
     , nxEntries'
     , openDataset
@@ -37,7 +38,7 @@ module Hkl.H5
     -- new API
     , Hdf5
     , ToHdf5(..)
-    , empty
+    , Hkl.H5.empty
     , hdf5
     , group
     , dataset
@@ -47,6 +48,7 @@ module Hkl.H5
     , groupp
     , grouppat
     , datasetp
+    , datasetpattr
     , withHdf5Path'
     , withHdf5Path
     )
@@ -111,6 +113,7 @@ import           Foreign.StablePtr               (StablePtr, castPtrToStablePtr,
                                                   castStablePtrToPtr,
                                                   deRefStablePtr, freeStablePtr,
                                                   newStablePtr)
+import           GHC.Base                        (Alternative (..))
 import           Numeric.LinearAlgebra           (Matrix, reshape)
 
 import           Hkl.Detector
@@ -302,6 +305,9 @@ nxEntries' l = do
         modifyIORef' stRef $ \st -> name : st
         return $ HErr_t 0
 
+findDatasetAttr :: Location l => l -> ByteString -> ByteString -> IO Dataset
+findDatasetAttr = undefined
+
 --  Better API
 
 data Hdf5M a
@@ -343,7 +349,9 @@ data Hdf5Path sh e
   | H5GroupPath ByteString (Hdf5Path sh e)
   | H5GroupAtPath Int (Hdf5Path sh e)
   | H5DatasetPath ByteString
-    deriving Show
+  | H5DatasetPathAttr (ByteString, ByteString)
+  | H5Or (Hdf5Path sh e) (Hdf5Path sh e)
+    deriving (Show)
 
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
 hdf5p = H5RootPath
@@ -357,11 +365,16 @@ grouppat = H5GroupAtPath
 datasetp :: ByteString -> Hdf5Path sh e
 datasetp = H5DatasetPath
 
+datasetpattr :: (ByteString, ByteString) -> Hdf5Path sh e
+datasetpattr = H5DatasetPathAttr
+
 withHdf5Path' :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
-withHdf5Path' l (H5RootPath subpath) f = withHdf5Path' l subpath f
-withHdf5Path' l (H5GroupPath n subpath) f = withGroup (openGroup l n Nothing) $ \g -> withHdf5Path' g subpath f
-withHdf5Path' l (H5GroupAtPath i subpath) f = withGroupAt l i $ \g -> withHdf5Path' g subpath f
-withHdf5Path' l (H5DatasetPath n) f = withDataset (openDataset l n Nothing) f
+withHdf5Path' loc (H5RootPath subpath) f = withHdf5Path' loc subpath f
+withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup loc n Nothing) $ \g -> withHdf5Path' g subpath f
+withHdf5Path' loc (H5GroupAtPath i subpath) f = withGroupAt loc i $ \g -> withHdf5Path' g subpath f
+withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset loc n Nothing) f
+withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (findDatasetAttr loc a c) f
+withHdf5Path' loc (H5Or l r) f = (withHdf5Path' loc l f) <|> (withHdf5Path' loc r f)
 
 withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
 withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f

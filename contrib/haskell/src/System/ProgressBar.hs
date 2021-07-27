@@ -1,8 +1,8 @@
-{-# language DeriveGeneric #-}
-{-# language GeneralizedNewtypeDeriving #-}
-{-# language OverloadedStrings #-}
-{-# language PackageImports #-}
-{-# language ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PackageImports             #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 {- |
 A progress bar in the terminal.
@@ -44,22 +44,27 @@ module System.ProgressBar
     , renderDuration
     ) where
 
-import "base" Control.Concurrent.MVar ( MVar, newMVar, modifyMVar_)
-import "base" Control.Monad ( when )
-import "base" Data.Int       ( Int64 )
-import "base" Data.Monoid    ( Monoid, mempty )
-import "base" Data.Ratio     ( Ratio, (%) )
-import "base" Data.Semigroup ( Semigroup, (<>) )
-import "base" Data.String    ( IsString, fromString )
-import "base" GHC.Generics   ( Generic )
-import "base" System.IO      ( Handle, stderr, hFlush )
-import "deepseq" Control.DeepSeq ( NFData, rnf )
+import           "base" Control.Concurrent.MVar               (MVar,
+                                                               modifyMVar_,
+                                                               newMVar)
+import           "deepseq" Control.DeepSeq                    (NFData, rnf)
+import           "base" Control.Monad                         (when)
+import           "base" Data.Int                              (Int64)
+import           "base" Data.Ratio                            (Ratio, (%))
+import           "base" Data.String                           (IsString,
+                                                               fromString)
+import qualified "text" Data.Text.Lazy                        as TL
+import qualified "text" Data.Text.Lazy.Builder                as TLB
+import qualified "text" Data.Text.Lazy.Builder.Int            as TLB
+import qualified "text" Data.Text.Lazy.IO                     as TL
+import           "time" Data.Time.Clock                       (NominalDiffTime,
+                                                               UTCTime,
+                                                               diffUTCTime,
+                                                               getCurrentTime)
+import           "base" GHC.Generics                          (Generic)
 import qualified "terminal-size" System.Console.Terminal.Size as TS
-import qualified "text" Data.Text.Lazy             as TL
-import qualified "text" Data.Text.Lazy.Builder     as TLB
-import qualified "text" Data.Text.Lazy.Builder.Int as TLB
-import qualified "text" Data.Text.Lazy.IO          as TL
-import "time" Data.Time.Clock ( UTCTime, NominalDiffTime, diffUTCTime, getCurrentTime )
+import           "base" System.IO                             (Handle, hFlush,
+                                                               stderr)
 
 --------------------------------------------------------------------------------
 
@@ -71,11 +76,11 @@ import "time" Data.Time.Clock ( UTCTime, NominalDiffTime, diffUTCTime, getCurren
 -- Update a progress bar with 'updateProgress' or 'incProgress'.
 data ProgressBar s
    = ProgressBar
-     { pbStyle :: !(Style s)
-     , pbStateMv :: !(MVar (State s))
+     { pbStyle        :: !(Style s)
+     , pbStateMv      :: !(MVar (State s))
      , pbRefreshDelay :: !Double
-     , pbStartTime :: !UTCTime
-     , pbHandle :: !Handle
+     , pbStartTime    :: !UTCTime
+     , pbHandle       :: !Handle
      }
 
 instance (NFData s) => NFData (ProgressBar s) where
@@ -89,7 +94,7 @@ instance (NFData s) => NFData (ProgressBar s) where
 -- | State of a progress bar.
 data State s
    = State
-     { stProgress :: !(Progress s)
+     { stProgress   :: !(Progress s)
        -- ^ Current progress.
      , stRenderTime :: !UTCTime
        -- ^ Moment in time of last render.
@@ -98,9 +103,9 @@ data State s
 -- | An amount of progress.
 data Progress s
    = Progress
-     { progressDone :: !Int
+     { progressDone   :: !Int
        -- ^ Amount of work completed.
-     , progressTodo :: !Int
+     , progressTodo   :: !Int
        -- ^ Total amount of work.
      , progressCustom :: !s
        -- ^ A value which is used by custom labels. The builtin labels
@@ -164,7 +169,7 @@ updateWidth style =
       TerminalWidth {} -> do
         mbWindow <- TS.size
         pure $ case mbWindow of
-          Nothing -> style
+          Nothing     -> style
           Just window -> style{ styleWidth = TerminalWidth (TS.width window) }
 
 -- | Change the progress of a progress bar.
@@ -226,7 +231,7 @@ hPutProgressBar hndl style progress timing = do
              WriteNewline -> "\n"
              -- Move to beginning of line and then clear everything to
              -- the right of the cursor.
-             Clear -> "\r\ESC[K"
+             Clear        -> "\r\ESC[K"
       else "\r"
     hFlush hndl
 
@@ -365,37 +370,37 @@ This bar can be specified using the following style:
 -}
 data Style s
    = Style
-     { styleOpen :: !TL.Text
+     { styleOpen          :: !TL.Text
        -- ^ Bar opening symbol.
-     , styleClose :: !TL.Text
+     , styleClose         :: !TL.Text
        -- ^ Bar closing symbol
-     , styleDone :: !Char
+     , styleDone          :: !Char
        -- ^ Completed work.
-     , styleCurrent :: !Char
+     , styleCurrent       :: !Char
        -- ^ Symbol used to denote the current amount of work that has been done.
-     , styleTodo :: !Char
+     , styleTodo          :: !Char
        -- ^ Work not yet completed.
-     , stylePrefix :: Label s
+     , stylePrefix        :: Label s
        -- ^ Prefixed label.
-     , stylePostfix :: Label s
+     , stylePostfix       :: Label s
        -- ^ Postfixed label.
-     , styleWidth :: !ProgressBarWidth
+     , styleWidth         :: !ProgressBarWidth
        -- ^ Total width of the progress bar.
-     , styleEscapeOpen :: EscapeCode s
+     , styleEscapeOpen    :: EscapeCode s
        -- ^ Escape code printed just before the 'styleOpen' symbol.
-     , styleEscapeClose :: EscapeCode s
+     , styleEscapeClose   :: EscapeCode s
        -- ^ Escape code printed just before the 'styleClose' symbol.
-     , styleEscapeDone :: EscapeCode s
+     , styleEscapeDone    :: EscapeCode s
        -- ^ Escape code printed just before the first 'styleDone' character.
      , styleEscapeCurrent :: EscapeCode s
        -- ^ Escape code printed just before the 'styleCurrent' character.
-     , styleEscapeTodo :: EscapeCode s
+     , styleEscapeTodo    :: EscapeCode s
        -- ^ Escape code printed just before the first 'styleTodo' character.
-     , styleEscapePrefix :: EscapeCode s
+     , styleEscapePrefix  :: EscapeCode s
        -- ^ Escape code printed just before the 'stylePrefix' label.
      , styleEscapePostfix :: EscapeCode s
        -- ^ Escape code printed just before the 'stylePostfix' label.
-     , styleOnComplete :: !OnComplete
+     , styleOnComplete    :: !OnComplete
        -- ^ What happens when progress is finished.
      } deriving (Generic)
 
@@ -477,7 +482,7 @@ instance IsString (Label s) where
 -- See 'elapsedTime', 'remainingTime' and 'totalTime'.
 data Timing
    = Timing
-     { timingStart :: !UTCTime
+     { timingStart      :: !UTCTime
        -- ^ Moment in time when a progress bar was created. See
        -- 'newProgressBar'.
      , timingLastUpdate :: !UTCTime

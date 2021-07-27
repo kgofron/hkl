@@ -81,13 +81,7 @@ newtype DetectorPath = DetectorPath
 -- GeometryPath
 
 data GeometryPath
-  = GeometryPathUhv { geometryPathWavelength :: Hdf5Path Z Double
-                    , geometryPathAxes       :: [Hdf5Path DIM1 Double]
-                    }
-  | GeometryPathMedV { geometryPathWavelength :: Hdf5Path Z Double
-                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
-                     }
-  | GeometryPathCristalK6C { geometryPathWavelength :: Hdf5Path Z Double
+  = GeometryPathCristalK6C { geometryPathWavelength :: Hdf5Path Z Double
                            , geometryPathMu         :: Hdf5Path DIM1 Double
                            , geometryPathKomega     :: Hdf5Path DIM1 Double
                            , geometryPathKappa      :: Hdf5Path DIM1 Double
@@ -95,7 +89,21 @@ data GeometryPath
                            , geometryPathGamma      :: Hdf5Path DIM1 Double
                            , geometryPathDelta      :: Hdf5Path DIM1 Double
                            }
-
+  | GeometryPathFix { geometryPathWavelength :: Hdf5Path Z Double }
+  | GeometryPathMedH { geometryPathWavelength :: Hdf5Path Z Double
+                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                     }
+  | GeometryPathMedV { geometryPathWavelength :: Hdf5Path Z Double
+                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                     }
+  | GeometryPathMedVEiger { geometryPathWavelength :: Hdf5Path Z Double
+                          , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                          , geometryPathEix        :: Hdf5Path DIM1 Double
+                          , geometryPathEiz        :: Hdf5Path DIM1 Double
+                          }
+  | GeometryPathUhv { geometryPathWavelength :: Hdf5Path Z Double
+                    , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                    }
                   deriving Show
 
 -- AttenuationPath

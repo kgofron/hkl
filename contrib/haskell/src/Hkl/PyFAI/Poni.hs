@@ -22,8 +22,7 @@ module Hkl.PyFAI.Poni
        , fromAxisAndAngle
        ) where
 
-import           Control.Applicative               (many, optional, pure, (*>),
-                                                    (<$>), (<*), (<*>), (<|>))
+import           Control.Applicative               (many, optional, (<|>))
 import           Data.Attoparsec.Text              (Parser, double, endOfLine,
                                                     isEndOfLine, many1, string,
                                                     takeTill, (<?>))

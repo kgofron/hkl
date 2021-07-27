@@ -41,10 +41,11 @@ import Hkl.C.DArray
 
 --  Factory
 
-data Factory = K6c | Uhv | MedH | MedV | SoleilSiriusKappa
+data Factory = K6c | Fixe | Uhv | MedH | MedV | SoleilSiriusKappa
 
 instance Show Factory where
   show K6c = "K6C"
+  show Fixe = undefined
   show Uhv = "ZAXIS"
   show MedH = undefined
   show MedV = "SOLEIL SIXS MED2+3"
@@ -53,6 +54,7 @@ instance Show Factory where
 factoryFromString :: String -> Factory
 factoryFromString s
   | s == "K6C"  = K6c
+  | s == undefined = Fixe
   | s == "ZAXIS" = Uhv
   | s == undefined = MedH
   | s == "SOLEIL SIXS MED2+3" = MedV

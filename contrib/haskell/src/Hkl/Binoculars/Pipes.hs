@@ -238,22 +238,6 @@ withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([D
 withAxesPathP f dpaths = nest (map (withHdf5PathP f) dpaths)
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
-withGeometryPathP f (GeometryPathMedV w as) gg =
-    withHdf5PathP f w $ \w' ->
-    withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry MedV
-                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> do
-                         vs <- Prelude.mapM (`get_position` j) as'
-                         return (0.0 : vs))
-                 <*> pure Nothing)
-withGeometryPathP f (GeometryPathUhv w as) gg =
-    withHdf5PathP f w $ \w' ->
-    withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry Uhv
-                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> Prelude.mapM (`get_position` j) as')
-                 <*> pure Nothing)
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
     withHdf5PathP f w $ \w' ->
     withHdf5PathP f m $ \mu' ->
@@ -275,6 +259,39 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
                     (Source wavelength)
                     (fromList [mu, komega, kappa, kphi, gamma, delta])
                     Nothing))
+withGeometryPathP f (GeometryPathFix w) gg =
+  withHdf5PathP f w $ \w' ->
+                        gg (const $
+                             Geometry Fixe
+                             <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                             <*> (fromList <$> pure [])
+                             <*> pure Nothing)
+withGeometryPathP f (GeometryPathMedH w as) gg =
+    withHdf5PathP f w $ \w' ->
+    withAxesPathP f as $ \as' ->
+        gg (\j -> Geometry MedH
+                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <*> (fromList <$> do
+                         vs <- Prelude.mapM (`get_position` j) as'
+                         return (0.0 : vs))
+                 <*> pure Nothing)
+withGeometryPathP f (GeometryPathMedV w as) gg =
+    withHdf5PathP f w $ \w' ->
+    withAxesPathP f as $ \as' ->
+        gg (\j -> Geometry MedV
+                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <*> (fromList <$> do
+                         vs <- Prelude.mapM (`get_position` j) as'
+                         return (0.0 : vs))
+                 <*> pure Nothing)
+withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
+withGeometryPathP f (GeometryPathUhv w as) gg =
+    withHdf5PathP f w $ \w' ->
+    withAxesPathP f as $ \as' ->
+        gg (\j -> Geometry Uhv
+                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <*> (fromList <$> Prelude.mapM (`get_position` j) as')
+                 <*> pure Nothing)
 
 withAttenuationPathP :: (MonadSafe m, Location l) =>
                        l

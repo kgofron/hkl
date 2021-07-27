@@ -1,4 +1,6 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Hkl.Pipes
     ( withBytes
     , withFileP
@@ -14,7 +16,7 @@ import           Bindings.HDF5.Group     (Group, closeGroup, openGroup)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
 import           Foreign.ForeignPtr      (ForeignPtr, mallocForeignPtrBytes,
                                           touchForeignPtr)
-import           Pipes.Safe              (MonadSafe, bracket)
+import           Pipes.Safe              (MonadSafe, bracket, catchAll)
 
 import           Hkl.H5
 
@@ -44,7 +46,9 @@ withDataspaceP :: MonadSafe m => IO Dataspace -> (Dataspace -> m r) -> m r
 withDataspaceP = bracket' closeDataspace
 
 withHdf5PathP :: (MonadSafe m, Location l) => l -> Hdf5Path sh e -> (Dataset -> m r) -> m r
-withHdf5PathP l (H5RootPath subpath) f = withHdf5PathP l subpath f
-withHdf5PathP l (H5GroupPath n subpath) f = withGroupP (openGroup l n Nothing) $ \g -> withHdf5PathP g subpath f
-withHdf5PathP l (H5GroupAtPath i subpath) f = withGroupAtP l i $ \g -> withHdf5PathP g subpath f
-withHdf5PathP l (H5DatasetPath n) f = withDatasetP (openDataset l n Nothing) f
+withHdf5PathP loc (H5RootPath subpath) f = withHdf5PathP loc subpath f
+withHdf5PathP loc (H5GroupPath n subpath) f = withGroupP (openGroup loc n Nothing) $ \g -> withHdf5PathP g subpath f
+withHdf5PathP loc (H5GroupAtPath i subpath) f = withGroupAtP loc i $ \g -> withHdf5PathP g subpath f
+withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset loc n Nothing) f
+withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = withDatasetP (findDatasetAttr loc a c) f
+withHdf5PathP loc (H5Or l r) f = (withHdf5PathP loc l f) `catchAll` \_ -> (withHdf5PathP loc r f)
