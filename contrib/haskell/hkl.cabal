@@ -164,7 +164,6 @@ library
                     , Hkl.Xrd.OneD
                     , Hkl.Xrd.ZeroD
   other-modules:      Paths_hkl
-                    , System.ProgressBar
   other-extensions:    CPP
                      , ForeignFunctionInterface
                      , EmptyDataDecls
