@@ -48,4 +48,4 @@ withHdf5PathC l (H5RootPath subpath) f = withHdf5PathC l subpath f
 withHdf5PathC l (H5GroupPath n subpath) f = withGroupC (openGroup l n Nothing) $ \g -> withHdf5PathC g subpath f
 withHdf5PathC l (H5GroupAtPath i subpath) f = withGroupAtC l i $ \g -> withHdf5PathC g subpath f
 withHdf5PathC l (H5DatasetPath n) f = withDatasetC (openDataset l n Nothing) f
-withHdf5PathC l (H5DatasetPathAttr (a, c)) f = withDatasetC (findDatasetAttr l a c) f
+-- withHdf5PathC l (H5DatasetPathAttr (a, c)) f = withDatasetC (findDatasetAttr l a c) f

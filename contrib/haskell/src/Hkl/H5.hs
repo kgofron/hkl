@@ -54,6 +54,8 @@ module Hkl.H5
     )
     where
 
+import           Bindings.HDF5.Attribute         (Attribute, closeAttribute,
+                                                  openAttribute, readAttribute)
 import           Bindings.HDF5.Core              (HSize (HSize),
                                                   IndexType (ByName),
                                                   IterOrder (Native), Location,
@@ -80,6 +82,11 @@ import           Bindings.HDF5.File              (AccFlags (ReadOnly, Truncate),
                                                   openFile)
 import           Bindings.HDF5.Group             (Group, closeGroup,
                                                   createGroup, openGroup)
+import           Bindings.HDF5.Link              (visitLinks)
+import           Bindings.HDF5.Object            (ObjectId, ObjectType (..),
+                                                  closeObject, getObjectType,
+                                                  openObject,
+                                                  uncheckedCastObject)
 import           Bindings.HDF5.PropertyList.DXPL (DXPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5d_read,
@@ -97,10 +104,11 @@ import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   head, unsafeFromForeignPtr0)
+import           Data.Vector.Storable.ByteString (vectorToByteString)
 import           Data.Vector.Storable.Mutable    (MVector (..), new, replicate)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
-import           Foreign.C.Types                 (CInt (CInt))
+import           Foreign.C.Types                 (CChar, CInt (CInt))
 import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr,
                                                   withForeignPtr)
 import           Foreign.Marshal.Alloc           (finalizerFree, mallocBytes)
@@ -305,8 +313,30 @@ nxEntries' l = do
         modifyIORef' stRef $ \st -> name : st
         return $ HErr_t 0
 
-findDatasetAttr :: Location l => l -> ByteString -> ByteString -> IO Dataset
-findDatasetAttr = undefined
+-- Attribute
+
+withObject :: IO ObjectId -> (ObjectId -> IO r) -> IO r
+withObject a = bracket a closeObject
+
+withAttribute :: IO Attribute -> (Attribute -> IO r) -> IO r
+withAttribute a = bracket a closeAttribute
+
+findDatasetAttr :: Location l => l -> ByteString -> ByteString -> IO (Maybe Dataset)
+findDatasetAttr loc attr value = do
+  state <- newIORef (Nothing :: Maybe Dataset)
+  visitLinks loc ByName Native $ \g n _ -> do
+    withObject (openObject g n Nothing) $ \obj -> do
+      t <-  getObjectType obj
+      case t of
+        DatasetObj -> withAttribute (openAttribute obj attr) $ \a -> do
+          c <- readAttribute a :: IO (Vector CChar)
+          if vectorToByteString c == value
+            then do
+            modifyIORef' state $ \_ -> (Just (uncheckedCastObject obj))
+            return $ HErr_t 1
+            else return $ HErr_t 0
+        _          -> return $ HErr_t 0
+  readIORef state
 
 --  Better API
 
@@ -373,7 +403,11 @@ withHdf5Path' loc (H5RootPath subpath) f = withHdf5Path' loc subpath f
 withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup loc n Nothing) $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5GroupAtPath i subpath) f = withGroupAt loc i $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset loc n Nothing) f
-withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (findDatasetAttr loc a c) f
+withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = do
+  mds <- findDatasetAttr loc a c
+  case mds of
+    Nothing   -> error "can not find a dataset with the attribute "--  ++ a ++ "with content " ++ c
+    (Just ds) -> withDataset (return ds) f
 withHdf5Path' loc (H5Or l r) f = (withHdf5Path' loc l f) <|> (withHdf5Path' loc r f)
 
 withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
