@@ -50,9 +50,5 @@ withHdf5PathP loc (H5RootPath subpath) f = withHdf5PathP loc subpath f
 withHdf5PathP loc (H5GroupPath n subpath) f = withGroupP (openGroup loc n Nothing) $ \g -> withHdf5PathP g subpath f
 withHdf5PathP loc (H5GroupAtPath i subpath) f = withGroupAtP loc i $ \g -> withHdf5PathP g subpath f
 withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset loc n Nothing) f
-withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = do
-  mds <- liftIO $ findDatasetAttr loc a c
-  case mds of
-    Nothing   -> error "can not find a dataset with the attribute "--  ++ a ++ "with content " ++ c
-    (Just ds) -> withDatasetP (return ds) f
+withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = withDatasetP (findDatasetAttr loc a c) f
 withHdf5PathP loc (H5Or l r) f = (withHdf5PathP loc l f) `catchAll` \_ -> (withHdf5PathP loc r f)

@@ -92,7 +92,8 @@ import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5d_read,
                                                   h5l_iterate, h5p_DEFAULT,
                                                   h5s_ALL)
-import           Control.Exception               (bracket)
+import           Control.Exception               (Exception, bracket, throwIO)
+import           Control.Monad.Extra             (fromMaybeM)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   linearIndex, listOfShape,
                                                   size)
@@ -130,6 +131,11 @@ import           Prelude                         hiding (head)
 
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
+data HklH5Exception
+  = CanNotFindDatasetWithAttributContent ByteString ByteString
+  deriving (Show)
+
+instance Exception HklH5Exception
 
 data H5
 
@@ -321,7 +327,7 @@ withObject a = bracket a closeObject
 withAttribute :: IO Attribute -> (Attribute -> IO r) -> IO r
 withAttribute a = bracket a closeAttribute
 
-findDatasetAttr :: Location l => l -> ByteString -> ByteString -> IO (Maybe Dataset)
+findDatasetAttr :: Location l => l -> ByteString -> ByteString -> IO Dataset
 findDatasetAttr loc attr value = do
   state <- newIORef (Nothing :: Maybe Dataset)
   visitLinks loc ByName Native $ \g n _ -> do
@@ -336,7 +342,7 @@ findDatasetAttr loc attr value = do
             return $ HErr_t 1
             else return $ HErr_t 0
         _          -> return $ HErr_t 0
-  readIORef state
+  fromMaybeM (throwIO $ CanNotFindDatasetWithAttributContent attr value) (readIORef state)
 
 --  Better API
 
@@ -403,11 +409,7 @@ withHdf5Path' loc (H5RootPath subpath) f = withHdf5Path' loc subpath f
 withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup loc n Nothing) $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5GroupAtPath i subpath) f = withGroupAt loc i $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset loc n Nothing) f
-withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = do
-  mds <- findDatasetAttr loc a c
-  case mds of
-    Nothing   -> error "can not find a dataset with the attribute "--  ++ a ++ "with content " ++ c
-    (Just ds) -> withDataset (return ds) f
+withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (findDatasetAttr loc a c) f
 withHdf5Path' loc (H5Or l r) f = (withHdf5Path' loc l f) <|> (withHdf5Path' loc r f)
 
 withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
