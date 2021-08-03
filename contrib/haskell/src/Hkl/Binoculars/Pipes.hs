@@ -124,8 +124,8 @@ class LenP a => FramesQxQyQzP a where
 mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO ([[Chunk Int FilePath]], ProgressBar ())
 mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputQxQyQz :: (MonadIO m, MonadThrow m, FramesQxQyQzP a) =>
-                BinocularsConfig
+mkInputQxQyQz :: (MonadIO m, MonadThrow m, FramesQxQyQzP a)
+              => BinocularsConfig
               -> (BinocularsConfig -> m a)
               -> m (InputQxQyQz a)
 mkInputQxQyQz c f = do
@@ -170,28 +170,30 @@ class LenP a => FramesHklP a where
 mkJobsHkl :: LenP a => InputHkl a -> IO ([[Chunk Int FilePath]], ProgressBar ())
 mkJobsHkl (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputHkl :: FramesHklP a => BinocularsConfig -> (BinocularsConfig -> Maybe a) -> IO (InputHkl a)
+mkInputHkl :: (FramesHklP a, MonadIO m, MonadThrow m)
+           => BinocularsConfig
+           -> (BinocularsConfig -> m a)
+           -> m (InputHkl a)
 mkInputHkl c f = do
   fs <- files c
   let d = fromMaybe defaultDetector (_binocularsInputDetector c)
   mask' <- getMask c d
   res <- getResolution c 3
-  case f c of
-    (Just h5dpath') -> pure $ InputHkl
-                      { detector = d
-                      , filename = InputList fs
-                      , h5dpath = h5dpath'
-                      , output = destination'
-                                 (fromMaybe (ConfigRange []) (_binocularsInputInputRange c))
-                                 (_binocularsDispatcherDestination c)
-                      , resolutions = res
-                      , centralPixel = _binocularsInputCentralpixel c
-                      , sdd' = _binocularsInputSdd c
-                      , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
-                      , config = c
-                      , mask = mask'
-                      }
-    Nothing -> error "TODO"
+  h5dpath' <- f c
+  pure $ InputHkl
+    { detector = d
+    , filename = InputList fs
+    , h5dpath = h5dpath'
+    , output = destination'
+               (fromMaybe (ConfigRange []) (_binocularsInputInputRange c))
+               (_binocularsDispatcherDestination c)
+    , resolutions = res
+    , centralPixel = _binocularsInputCentralpixel c
+    , sdd' = _binocularsInputSdd c
+    , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
+    , config = c
+    , mask = mask'
+    }
 
 processHkl :: FramesHklP a => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
