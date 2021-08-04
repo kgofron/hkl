@@ -31,10 +31,10 @@ instance Exception HklBinocularsSixsException
 mkAttenuation :: MonadThrow m => BinocularsConfig -> AttenuationPath -> m AttenuationPath
 mkAttenuation c att = case _binocularsInputAttenuationCoefficient c of
                         Nothing -> case att of
-                                    NoAttenuation -> return NoAttenuation
-                                    AttenuationPath{}             -> throwM MissingAttenuationCoefficient
+                                    NoAttenuation     -> return NoAttenuation
+                                    AttenuationPath{} -> throwM MissingAttenuationCoefficient
                         (Just coef) -> return $ case att of
-                                        NoAttenuation -> NoAttenuation
+                                        NoAttenuation           -> NoAttenuation
                                         (AttenuationPath p o _) -> AttenuationPath p o coef
 
 h5dpathQxQyQz :: MonadThrow m => BinocularsConfig -> m QxQyQzPath
