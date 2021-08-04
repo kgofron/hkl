@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -11,6 +11,10 @@
 -}
 module Main where
 
+import           Control.Monad.Catch       (MonadThrow)
+import           Control.Monad.IO.Class    (MonadIO)
+import           Control.Monad.Logger      (LogLevel (LevelDebug), MonadLogger,
+                                            filterLogger, runStdoutLoggingT)
 import           Data.Attoparsec.Text      (parseOnly)
 import           Data.Text                 (pack)
 import           Options.Applicative       (CommandFields, Mod, argument,
@@ -52,7 +56,7 @@ cfgUpdateCommand = command "cfg-update" (info cfgUpdateOption (progDesc "update 
 options :: Parser Options
 options = hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand)
 
-run :: Options -> IO ()
+run :: (MonadIO m, MonadLogger m, MonadThrow m) => Options -> m ()
 run (Process mf mr) = process mf mr
 run (CfgNew mf)     = new mf
 run (CfgUpdate f)   = update f
@@ -60,7 +64,7 @@ run (CfgUpdate f)   = update f
 main :: IO ()
 main = do
   opts' <- execParser opts
-  run opts'
+  runStdoutLoggingT $ filterLogger (\_ l -> l /=LevelDebug) $ run opts'
     where
       opts = info (options <**> helper)
              ( fullDesc

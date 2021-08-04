@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 {-
     Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -14,6 +15,10 @@ module Hkl.Binoculars.Sixs
   (process) where
 
 import           Control.Monad.Catch        (Exception, MonadThrow, throwM)
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import           Control.Monad.Logger       (MonadLogger, logDebugSH,
+                                             logErrorSH, logWarn, logWarnN)
+import           Data.Text                  (Text)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Pipes
@@ -28,16 +33,21 @@ data HklBinocularsSixsException
 
 instance Exception HklBinocularsSixsException
 
-mkAttenuation :: MonadThrow m => BinocularsConfig -> AttenuationPath -> m AttenuationPath
+mkAttenuation :: (MonadLogger m, MonadThrow m) => BinocularsConfig -> AttenuationPath -> m AttenuationPath
 mkAttenuation c att = case _binocularsInputAttenuationCoefficient c of
                         Nothing -> case att of
                                     NoAttenuation     -> return NoAttenuation
-                                    AttenuationPath{} -> throwM MissingAttenuationCoefficient
+                                    AttenuationPath{} -> do
+                                      $(logWarn) ("The current configuration extract the attenuation from the data files." :: Text)
+                                      logWarnN "You forgot to provide the attenuation coefficient in the config file."
+                                      logWarnN ("I continue without attenuation correction" :: Text)
+                                      logWarnN ("Add attenuation_coefficient=<something> under the [input] section, to fix this" :: Text)
+                                      return NoAttenuation
                         (Just coef) -> return $ case att of
                                         NoAttenuation           -> NoAttenuation
                                         (AttenuationPath p o _) -> AttenuationPath p o coef
 
-h5dpathQxQyQz :: MonadThrow m => BinocularsConfig -> m QxQyQzPath
+h5dpathQxQyQz ::  (MonadLogger m, MonadThrow m) => BinocularsConfig -> m QxQyQzPath
 h5dpathQxQyQz c = case _binocularsInputItype c of
   CristalK6C -> QxQyQzPath
                <$> mkAttenuation c NoAttenuation
@@ -208,7 +218,7 @@ h5dpathQxQyQz c = case _binocularsInputItype c of
 
 --  FramesHklP
 
-h5dpathHkl :: MonadThrow m => BinocularsConfig -> m HklPath
+h5dpathHkl :: (MonadLogger m, MonadThrow m) => BinocularsConfig -> m HklPath
 h5dpathHkl c = do
     let sixsSample device = SamplePath
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "A")
@@ -256,20 +266,20 @@ h5dpathHkl c = do
          --               medVSamplePath
          --               -- "attenuation": DatasetPathWithAttribute("long_name", b"i14-c-c00/ex/roic/att"),
          --               -- "timestamp": HItem("sensors_timestamps", True),
-process :: Maybe FilePath -> Maybe (ConfigRange Int) -> IO ()
+process :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange Int) -> m ()
 process mf mr = do
-  conf <- getConfig mf
+  conf <- liftIO $ getConfig mf
   case conf of
     Right conf' -> do
               let c = combineWithCmdLineArgs conf' mr
-              print c
+              $(logDebugSH) c
               case _binocularsProjectionPtype c of
                  QxQyQzProjection -> do
                    i <- mkInputQxQyQz c h5dpathQxQyQz
-                   print i
-                   processQxQyQz i
+                   $(logDebugSH) i
+                   liftIO $ processQxQyQz i
                  HklProjection -> do
                    i <- mkInputHkl c h5dpathHkl
-                   print i
-                   processHkl i
-    Left e   -> print e
+                   $(logDebugSH) i
+                   liftIO $ processHkl i
+    Left e   -> $(logErrorSH) e

@@ -30,6 +30,7 @@ import           Control.Exception                 (throwIO)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.Catch               (MonadThrow, tryJust)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
+import           Control.Monad.Logger              (MonadLogger)
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
@@ -124,7 +125,7 @@ class LenP a => FramesQxQyQzP a where
 mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO ([[Chunk Int FilePath]], ProgressBar ())
 mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
 
-mkInputQxQyQz :: (MonadIO m, MonadThrow m, FramesQxQyQzP a)
+mkInputQxQyQz :: (MonadIO m, MonadLogger m, MonadThrow m, FramesQxQyQzP a)
               => BinocularsConfig
               -> (BinocularsConfig -> m a)
               -> m (InputQxQyQz a)
