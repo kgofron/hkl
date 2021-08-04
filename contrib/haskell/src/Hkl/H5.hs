@@ -55,6 +55,7 @@ module Hkl.H5
     where
 
 import           Bindings.HDF5.Attribute         (Attribute, closeAttribute,
+                                                  doesAttributeExist,
                                                   openAttribute, readAttribute)
 import           Bindings.HDF5.Core              (HSize (HSize),
                                                   IndexType (ByName),
@@ -334,13 +335,17 @@ findDatasetAttr loc attr value = do
     withObject (openObject g n Nothing) $ \obj -> do
       t <-  getObjectType obj
       case t of
-        DatasetObj -> withAttribute (openAttribute obj attr) $ \a -> do
-          c <- readAttribute a :: IO (Vector CChar)
-          if vectorToByteString c == value
-            then do
-            modifyIORef' state $ \_ -> (Just (uncheckedCastObject obj))
-            return $ HErr_t 1
-            else return $ HErr_t 0
+        DatasetObj -> do
+          exist <- doesAttributeExist obj attr
+          case exist of
+            True -> withAttribute (openAttribute obj attr) $ \a -> do
+              c <- readAttribute a :: IO (Vector CChar)
+              case vectorToByteString c == value of
+                True -> do
+                  modifyIORef' state $ \_ -> (Just (uncheckedCastObject obj))
+                  return $ HErr_t 1
+                False -> return $ HErr_t 0
+            False -> return $ HErr_t 0
         _          -> return $ HErr_t 0
   fromMaybeM (throwIO $ CanNotFindDatasetWithAttributContent attr value) (readIORef state)
 
