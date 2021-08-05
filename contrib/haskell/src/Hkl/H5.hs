@@ -28,10 +28,10 @@ module Hkl.H5
     , get_ub
     , lenH5Dataspace
     , datasetShape
-    , findDatasetAttr
     , nxEntries
     , nxEntries'
     , openDataset
+    , openDatasetWithAttr
     , openH5
     , set_image
     , withH5File
@@ -56,7 +56,8 @@ module Hkl.H5
 
 import           Bindings.HDF5.Attribute         (Attribute, closeAttribute,
                                                   doesAttributeExist,
-                                                  openAttribute, readAttribute)
+                                                  openAttribute,
+                                                  readAttributeStringASCII)
 import           Bindings.HDF5.Core              (HSize (HSize),
                                                   IndexType (ByName),
                                                   IterOrder (Native), Location,
@@ -86,8 +87,7 @@ import           Bindings.HDF5.Group             (Group, closeGroup,
 import           Bindings.HDF5.Link              (visitLinks)
 import           Bindings.HDF5.Object            (ObjectId, ObjectType (..),
                                                   closeObject, getObjectType,
-                                                  openObject,
-                                                  uncheckedCastObject)
+                                                  openObject)
 import           Bindings.HDF5.PropertyList.DXPL (DXPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5d_read,
@@ -106,11 +106,10 @@ import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   head, unsafeFromForeignPtr0)
-import           Data.Vector.Storable.ByteString (vectorToByteString)
 import           Data.Vector.Storable.Mutable    (MVector (..), new, replicate)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
-import           Foreign.C.Types                 (CChar, CInt (CInt))
+import           Foreign.C.Types                 (CInt (CInt))
 import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr,
                                                   withForeignPtr)
 import           Foreign.Marshal.Alloc           (finalizerFree, mallocBytes)
@@ -328,8 +327,8 @@ withObject a = bracket a closeObject
 withAttribute :: IO Attribute -> (Attribute -> IO r) -> IO r
 withAttribute a = bracket a closeAttribute
 
-findDatasetAttr :: Location l => l -> ByteString -> ByteString -> IO Dataset
-findDatasetAttr loc attr value = do
+openDatasetWithAttr :: Location l => l -> ByteString -> ByteString -> IO Dataset
+openDatasetWithAttr loc attr value = do
   state <- newIORef (Nothing :: Maybe Dataset)
   visitLinks loc ByName Native $ \g n _ -> do
     withObject (openObject g n Nothing) $ \obj -> do
@@ -339,10 +338,11 @@ findDatasetAttr loc attr value = do
           exist <- doesAttributeExist obj attr
           case exist of
             True -> withAttribute (openAttribute obj attr) $ \a -> do
-              c <- readAttribute a :: IO (Vector CChar)
-              case vectorToByteString c == value of
+              c <- readAttributeStringASCII a
+              case c == value of
                 True -> do
-                  modifyIORef' state $ \_ -> (Just (uncheckedCastObject obj))
+                  ds <- openDataset g n Nothing
+                  modifyIORef' state $ \_ -> (Just ds)
                   return $ HErr_t 1
                 False -> return $ HErr_t 0
             False -> return $ HErr_t 0
@@ -414,7 +414,7 @@ withHdf5Path' loc (H5RootPath subpath) f = withHdf5Path' loc subpath f
 withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup loc n Nothing) $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5GroupAtPath i subpath) f = withGroupAt loc i $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset loc n Nothing) f
-withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (findDatasetAttr loc a c) f
+withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (openDatasetWithAttr loc a c) f
 withHdf5Path' loc (H5Or l r) f = (withHdf5Path' loc l f) <|> (withHdf5Path' loc r f)
 
 withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
