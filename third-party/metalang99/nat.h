@@ -1,6 +1,9 @@
 /**
  * @file
  * Natural numbers ([0; 255]).
+ *
+ * Most of the time, natural numbers are used for iteration; they are not meant for CPU-bound tasks
+ * such as Fibonacci numbers or factorials.
  */
 
 #ifndef ML99_NAT_H
@@ -14,7 +17,6 @@
 #include <metalang99/control.h>
 #include <metalang99/lang.h>
 #include <metalang99/logical.h>
-#include <metalang99/maybe.h>
 
 /**
  * \f$x + 1\f$
@@ -256,8 +258,8 @@
 #define ML99_div(x, y) ML99_call(ML99_div, x, y)
 
 /**
- * Like #ML99_div but returns #ML99_nothing is @p x is not divisible by @p y,
- * otherwise, #ML99_just.
+ * Like #ML99_div but returns `ML99_nothing()` is @p x is not divisible by @p y,
+ * otherwise `ML99_just(result)`.
  *
  * # Examples
  *
@@ -378,6 +380,25 @@
  */
 #define ML99_max(x, y) ML99_call(ML99_max, x, y)
 
+/**
+ * Emits a fatal error if @p x is not a natural number, otherwise results in emptiness.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/nat.h>
+ *
+ * #define F_IMPL(x) ML99_TERMS(ML99_assertIsNat(v(x)), ML99_inc(v(x)))
+ *
+ * // 6
+ * ML99_call(F, v(5))
+ *
+ * // A compile-time number mismatch error.
+ * ML99_call(F, v(blah))
+ * @endcode
+ */
+#define ML99_assertIsNat(x) ML99_call(ML99_assertIsNat, x)
+
 #define ML99_INC(x)            ML99_PRIV_INC(x)
 #define ML99_DEC(x)            ML99_PRIV_DEC(x)
 #define ML99_NAT_EQ(x, y)      ML99_PRIV_NAT_EQ(x, y)
@@ -392,13 +413,13 @@
 #ifndef DOXYGEN_IGNORE
 
 #define ML99_natMatch_IMPL(x, matcher)                                                             \
-    ML99_IF(                                                                                       \
+    ML99_PRIV_IF(                                                                                  \
         ML99_NAT_EQ(x, 0),                                                                         \
         ML99_callUneval(matcher##Z, ),                                                             \
         ML99_callUneval(matcher##S, ML99_DEC(x)))
 
 #define ML99_natMatchWithArgs_IMPL(x, matcher, ...)                                                \
-    ML99_IF(                                                                                       \
+    ML99_PRIV_IF(                                                                                  \
         ML99_NAT_EQ(x, 0),                                                                         \
         ML99_callUneval(matcher##Z, __VA_ARGS__),                                                  \
         ML99_callUneval(matcher##S, ML99_DEC(x), __VA_ARGS__))
@@ -409,33 +430,37 @@
 #define ML99_natEq_IMPL(x, y)  v(ML99_NAT_EQ(x, y))
 #define ML99_natNeq_IMPL(x, y) v(ML99_NAT_NEQ(x, y))
 
-#define ML99_greater_IMPL(x, y)   ML99_lesser_IMPL(y, x)
-#define ML99_greaterEq_IMPL(x, y) ML99_IF(ML99_NAT_EQ(x, y), ML99_true, ML99_greater_IMPL(x, y))
+#define ML99_greater_IMPL(x, y) ML99_lesser_IMPL(y, x)
+#define ML99_greaterEq_IMPL(x, y)                                                                  \
+    ML99_PRIV_IF(ML99_NAT_EQ(x, y), v(ML99_TRUE()), ML99_greater_IMPL(x, y))
 
 #define ML99_lesser_IMPL(x, y)                                                                     \
-    ML99_IF(                                                                                       \
+    ML99_PRIV_IF(                                                                                  \
         ML99_NAT_EQ(y, 0),                                                                         \
-        ML99_false,                                                                                \
-        ML99_IF(                                                                                   \
+        v(ML99_FALSE()),                                                                           \
+        ML99_PRIV_IF(                                                                              \
             ML99_NAT_EQ(x, ML99_DEC(y)),                                                           \
-            ML99_true,                                                                             \
+            v(ML99_TRUE()),                                                                        \
             ML99_callUneval(ML99_lesser, x, ML99_DEC(y))))
 
 #define ML99_lesserEq_IMPL(x, y) ML99_greaterEq_IMPL(y, x)
 
 #define ML99_add_IMPL(x, y)                                                                        \
-    ML99_IF(ML99_NAT_EQ(y, 0), v(x), ML99_callUneval(ML99_add, ML99_INC(x), ML99_DEC(y)))
+    ML99_PRIV_IF(ML99_NAT_EQ(y, 0), v(x), ML99_callUneval(ML99_add, ML99_INC(x), ML99_DEC(y)))
 #define ML99_sub_IMPL(x, y)                                                                        \
-    ML99_IF(ML99_NAT_EQ(y, 0), v(x), ML99_callUneval(ML99_sub, ML99_DEC(x), ML99_DEC(y)))
+    ML99_PRIV_IF(ML99_NAT_EQ(y, 0), v(x), ML99_callUneval(ML99_sub, ML99_DEC(x), ML99_DEC(y)))
 #define ML99_mul_IMPL(x, y)                                                                        \
-    ML99_IF(ML99_NAT_EQ(y, 0), v(0), ML99_add(v(x), ML99_callUneval(ML99_mul, x, ML99_DEC(y))))
+    ML99_PRIV_IF(ML99_NAT_EQ(y, 0), v(0), ML99_add(v(x), ML99_callUneval(ML99_mul, x, ML99_DEC(y))))
 
 // ML99_mod_IMPL {
 #define ML99_mod_IMPL(x, y)                                                                        \
-    ML99_IF(ML99_NAT_EQ(y, 0), ML99_fatal(ML99_mod, modulo by 0), ML99_PRIV_modAux_IMPL(x, y, 0))
+    ML99_PRIV_IF(                                                                                  \
+        ML99_NAT_EQ(y, 0),                                                                         \
+        ML99_fatal(ML99_mod, modulo by 0),                                                         \
+        ML99_PRIV_modAux_IMPL(x, y, 0))
 
 #define ML99_PRIV_modAux_IMPL(x, y, acc)                                                           \
-    ML99_IF(                                                                                       \
+    ML99_PRIV_IF(                                                                                  \
         ML99_OR(ML99_NAT_EQ(x, 0), ML99_IS_JUST(ML99_DIV_CHECKED(x, y))),                          \
         v(acc),                                                                                    \
         ML99_callUneval(ML99_PRIV_modAux, ML99_DEC(x), y, ML99_INC(acc)))
@@ -450,6 +475,16 @@
 
 #define ML99_min_IMPL(x, y) ML99_call(ML99_if, ML99_lesser_IMPL(x, y), v(x, y))
 #define ML99_max_IMPL(x, y) ML99_call(ML99_if, ML99_lesser_IMPL(x, y), v(y, x))
+
+#define ML99_assertIsNat_IMPL(x)                                                                   \
+    ML99_PRIV_IF(                                                                                  \
+        ML99_PRIV_NAT_EQ(x, x),                                                                    \
+        v(ML99_PRIV_EMPTY()),                                                                      \
+        ML99_PRIV_ASSERT_IS_NAT_FATAL(x, ML99_NAT_MAX))
+
+// clang-format off
+#define ML99_PRIV_ASSERT_IS_NAT_FATAL(x, max) ML99_fatal(ML99_assertIsNat, x must be within [0; max])
+// clang-format on
 
 // Arity specifiers {
 #define ML99_inc_ARITY              1
@@ -474,6 +509,7 @@
 #define ML99_div3_ARITY             3
 #define ML99_min_ARITY              2
 #define ML99_max_ARITY              2
+#define ML99_assertIsNat_ARITY      1
 // }
 
 #endif // DOXYGEN_IGNORE

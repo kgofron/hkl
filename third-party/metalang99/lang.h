@@ -29,7 +29,8 @@
 /**
  * Invokes a metafunction with arguments.
  */
-#define ML99_call(op, ...) (ML99_PRIV_IF(ML99_PRIV_IS_UNTUPLE(op), 0args, 0op), op, __VA_ARGS__)
+#define ML99_call(op, ...)                                                                         \
+    (ML99_PRIV_IF(ML99_PRIV_IS_UNTUPLE_FAST(op), 0args, 0op), op, __VA_ARGS__)
 
 /**
  * Invokes a metafunction @p ident with unevaluated arguments.
@@ -141,10 +142,35 @@
  */
 #define v(...) (0v, __VA_ARGS__)
 
+// clang-format off
 /**
  * Emits a fatal error.
+ *
+ * @p f must be a macro name that has caused the error and the rest of arguments comprise the error
+ * message.
+ *
+ * #ML99_fatal interprets its variadic arguments without preprocessor expansion -- i.e., they are
+ * pasted as-is. This is intended because otherwise identifiers located in an error message may
+ * stand for other macros that will be unintentionally expanded.
+ *
+ * # Examples
+ *
+ * [`playground.c`]
+ * @code
+ * #include <metalang99/lang.h>
+ *
+ * ML99_EVAL(ML99_fatal(F, the description of your error))
+ * @endcode
+ *
+ * [`/bin/sh`]
+ * @code{.txt}
+ * playground.c:3:1: error: static assertion failed: "F: the description of your error"
+ *     3 | ML99_EVAL(ML99_fatal(F, the description of your error))
+ *       | ^~~~~~~~~
+ * @endcode
  */
 #define ML99_fatal(f, ...) (0fatal, f, #__VA_ARGS__)
+// clang-format on
 
 /**
  * Immediately aborts the interpretation with evaluated arguments.
@@ -189,7 +215,7 @@
  *
  * #define F_IMPL(x) v(~x)
  *
- * #define PROG v(1), v(2), ML99_call(F, v(7))
+ * #define PROG ML99_TERMS(v(1), v(2), ML99_call(F, v(7)))
  *
  * // The same as `PROG` pasted into a source file.
  * ML99_EVAL(ML99_QUOTE(PROG))

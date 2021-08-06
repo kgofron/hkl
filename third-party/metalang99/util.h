@@ -8,10 +8,11 @@
 
 #include <metalang99/priv/util.h>
 
+#include <metalang99/ident.h> // For backward compatibility.
 #include <metalang99/lang.h>
 
 /**
- * Concatenates @p x with @p y and evaluates the result.
+ * Concatenates @p a with @p b and evaluates the result.
  *
  * # Examples
  *
@@ -27,10 +28,10 @@
  * ML99_catEval(v(123), v(ABC))
  * @endcode
  */
-#define ML99_catEval(x, y) ML99_call(ML99_catEval, x, y)
+#define ML99_catEval(a, b) ML99_call(ML99_catEval, a, b)
 
 /**
- * Concatenates @p x with @p y, leaving the result unevaluated.
+ * Concatenates @p a with @p b, leaving the result unevaluated.
  *
  * # Examples
  *
@@ -46,7 +47,17 @@
  * ML99_cat(v(123), v(ABC))
  * @endcode
  */
-#define ML99_cat(x, y) ML99_call(ML99_cat, x, y)
+#define ML99_cat(a, b) ML99_call(ML99_cat, a, b)
+
+/**
+ * The same as #ML99_cat but deals with 3 parameters.
+ */
+#define ML99_cat3(a, b, c) ML99_call(ML99_cat, a, b, c)
+
+/**
+ * The same as #ML99_cat but deals with 4 parameters.
+ */
+#define ML99_cat4(a, b, c, d) ML99_call(ML99_cat, a, b, c, d)
 
 /**
  * Stringifies provided arguments.
@@ -65,7 +76,7 @@
 /**
  * Evaluates to nothing.
  */
-#define ML99_empty() ML99_callUneval(ML99_empty, )
+#define ML99_empty(...) ML99_callUneval(ML99_empty, )
 
 /**
  * Evaluates to its arguments.
@@ -110,21 +121,120 @@
 #define ML99_flip(f) ML99_call(ML99_flip, f)
 
 /**
- * Consumes all its arguments and expands to emptiness.
+ * Accepts terms and evaluates them with the space-separator.
  *
  * # Examples
  *
  * @code
  * #include <metalang99/util.h>
  *
- * // ML99_empty()
- * ML99_consume(v(1, 2, 3))
+ * // 1 2 3
+ * ML99_uncomma(ML99_QUOTE(v(1), v(2), v(3)))
  * @endcode
  */
-#define ML99_consume(...) ML99_call(ML99_consume, __VA_ARGS__)
+#define ML99_uncomma(...) ML99_call(ML99_uncomma, __VA_ARGS__)
 
 /**
- * Concatenates @p x with @p y as-is, without expanding them.
+ * Turns @p f into a Metalang99-compliant metafunction with the arity of 1, which can be then called
+ * by #ML99_appl.
+ *
+ * @p f can be any C function or function-like macro.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/util.h>
+ * #include <metalang99/variadics.h>
+ *
+ * #define F(x) @x
+ *
+ * // @1 @2 @3
+ * ML99_variadicsForEach(ML99_reify(v(F)), v(1, 2, 3))
+ * @endcode
+ *
+ * Without #ML99_reify, you would need to write some additional boilerplate:
+ *
+ * @code
+ * #define F_IMPL(x) v(@x)
+ * #define F_ARITY   1
+ * @endcode
+ */
+#define ML99_reify(f) ML99_call(ML99_reify, f)
+
+/**
+ * Indicates not yet implemented functionality of the macro @p f.
+ *
+ * #ML99_todo is the same as #ML99_unimplemented except that the former conveys an intent that the
+ * functionality is to be implemented later but #ML99_unimplemented makes no such claims.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/util.h>
+ *
+ * // A not-yet implemented error.
+ * ML99_todo(v(F))
+ * @endcode
+ *
+ * @see <a href="https://doc.rust-lang.org/core/macro.todo.html">Rust's std::todo\!</a> (thanks for
+ * the idea!)
+ */
+#define ML99_todo(f) ML99_call(ML99_todo, f)
+
+/**
+ * The same as #ML99_todo but emits a caller-supplied message.
+ *
+ * @p message must be a string literal.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/util.h>
+ *
+ * // A not-yet-implemented error.
+ * ML99_todoWithMsg(v(F), v("your message"))
+ * @endcode
+ */
+#define ML99_todoWithMsg(f, message) ML99_call(ML99_todoWithMsg, f, message)
+
+/**
+ * Indicates unimplemented functionality of the macro @p f.
+ *
+ * #ML99_unimplemented is the same as #ML99_todo except that the latter conveys an intent that the
+ * functionality is to be implemented later but #ML99_unimplemented makes no such claims.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/util.h>
+ *
+ * // A not-implemented error.
+ * ML99_unimplemented(v(F))
+ * @endcode
+ *
+ * @see <a href="https://doc.rust-lang.org/core/macro.unimplemented.html">Rust's
+ * std::unimplemented\!</a> (thanks for the idea!)
+ */
+#define ML99_unimplemented(f) ML99_call(ML99_unimplemented, f)
+
+/**
+ * The same as #ML99_unimplemented but emits a caller-supplied message.
+ *
+ * @p message must be a string literal.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/util.h>
+ *
+ * // A not-implemented error.
+ * ML99_unimplementedWithMsg(v(F), v("your message"))
+ * @endcode
+ */
+#define ML99_unimplementedWithMsg(f, message) ML99_call(ML99_unimplementedWithMsg, f, message)
+
+/**
+ * Concatenates @p a with @p b as-is, without expanding them.
  *
  * # Examples
  *
@@ -138,7 +248,17 @@
  * ML99_CAT_PRIMITIVE(ABC, 123)
  * @endcode
  */
-#define ML99_CAT_PRIMITIVE(x, y) x##y
+#define ML99_CAT_PRIMITIVE(a, b) a##b
+
+/**
+ * The same as #ML99_CAT_PRIMITIVE but deals with 3 parameters.
+ */
+#define ML99_CAT3_PRIMITIVE(a, b, c) a##b##c
+
+/**
+ * The same as #ML99_CAT_PRIMITIVE but deals with 4 parameters.
+ */
+#define ML99_CAT4_PRIMITIVE(a, b, c, d) a##b##c##d
 
 /**
  * Stringifies @p x as-is, without expanding it.
@@ -158,31 +278,20 @@
 #define ML99_STRINGIFY_PRIMITIVE(...) #__VA_ARGS__
 
 /**
- * Tells whether @p ident belongs to a set of identifiers defined by @p prefix.
+ * Expands to an opening parenthesis (`(`).
  *
- * If `<prefix><ident>` exists, it must be an object-like macro which expands to `()`. If so,
- * `ML99_DETECT_IDENT(prefix, ident)` will expand to 1, otherwise (`<prefix><ident>` does **not**
- * exist), `ML99_DETECT_IDENT(prefix, ident)` will expand to 0.
+ * This is helpful when you want to delay macro arguments passing: just type `BAR ML99_LPAREN()
+ * initial args...` at the end of some macro `FOO` and complete the invocation of `BAR` with
+ * `the rest of args...)` in future.
  *
- * # Examples
- *
- * @code
- * #include <metalang99/util.h>
- *
- * #define FOO_x ()
- * #define FOO_y ()
- *
- * // 1
- * ML99_DETECT_IDENT(FOO_, x)
- *
- * // 1
- * ML99_DETECT_IDENT(FOO_, y)
- *
- * // 0
- * ML99_DETECT_IDENT(FOO_, z)
- * @endcode
+ * This macro consumes all its arguments.
  */
-#define ML99_DETECT_IDENT(prefix, ident) ML99_PRIV_IS_TUPLE(ML99_CAT(prefix, ident))
+#define ML99_LPAREN(...) (
+
+/**
+ * The same as #ML99_LPAREN but emits a closing parenthesis.
+ */
+#define ML99_RPAREN(...) )
 
 /**
  * If you are compiling on GCC, this macro expands to `_Pragma(str)`, otherwise to emptiness.
@@ -194,23 +303,37 @@
  */
 #define ML99_CLANG_PRAGMA(str) ML99_PRIV_CLANG_PRAGMA(str)
 
-#define ML99_CAT(x, y)      ML99_CAT_PRIMITIVE(x, y)
-#define ML99_STRINGIFY(...) ML99_STRINGIFY_PRIMITIVE(__VA_ARGS__)
-#define ML99_EMPTY()
+#define ML99_CAT(a, b)        ML99_CAT_PRIMITIVE(a, b)
+#define ML99_CAT3(a, b, c)    ML99_CAT3_PRIMITIVE(a, b, c)
+#define ML99_CAT4(a, b, c, d) ML99_CAT4_PRIMITIVE(a, b, c, d)
+#define ML99_STRINGIFY(...)   ML99_STRINGIFY_PRIMITIVE(__VA_ARGS__)
+#define ML99_EMPTY(...)
 #define ML99_ID(...) __VA_ARGS__
-#define ML99_CONSUME(...)
 
 #ifndef DOXYGEN_IGNORE
 
-#define ML99_catEval_IMPL(x, y)      x##y
-#define ML99_cat_IMPL(x, y)          v(ML99_CAT(x, y))
+#define ML99_catEval_IMPL(a, b)      a##b
+#define ML99_cat_IMPL(a, b)          v(a##b)
+#define ML99_cat3_IMPL(a, b, c)      v(a##b##c)
+#define ML99_cat4_IMPL(a, b, c, d)   v(a##b##c##d)
 #define ML99_stringify_IMPL(...)     v(ML99_STRINGIFY(__VA_ARGS__))
-#define ML99_empty_IMPL()            v(ML99_EMPTY())
+#define ML99_empty_IMPL(...)         v(ML99_EMPTY())
 #define ML99_id_IMPL(...)            v(ML99_ID(__VA_ARGS__))
 #define ML99_const_IMPL(x, _a)       v(x)
 #define ML99_flip_IMPL(f)            ML99_appl_IMPL(ML99_PRIV_flip, f)
 #define ML99_PRIV_flip_IMPL(f, a, b) ML99_appl2_IMPL(f, b, a)
-#define ML99_consume_IMPL(...)       v(ML99_CONSUME(__VA_ARGS__))
+#define ML99_uncomma_IMPL(...)       __VA_ARGS__
+
+#define ML99_reify_IMPL(f)           ML99_appl_IMPL(ML99_PRIV_reify, f)
+#define ML99_PRIV_reify_IMPL(f, ...) v(f(__VA_ARGS__))
+
+// clang-format off
+#define ML99_todo_IMPL(f) ML99_fatal(f, not yet implemented)
+#define ML99_todoWithMsg_IMPL(f, message) ML99_fatal(f, not yet implemented: message)
+
+#define ML99_unimplemented_IMPL(f) ML99_fatal(f, not implemented)
+#define ML99_unimplementedWithMsg_IMPL(f, message) ML99_fatal(f, not implemented: message)
+// clang-format on
 
 #if defined(__GNUC__) && !defined(__clang__)
 #define ML99_PRIV_GCC_PRAGMA(str) _Pragma(str)
@@ -225,16 +348,24 @@
 #endif
 
 // Arity specifiers {
-#define ML99_catEval_ARITY   2
-#define ML99_cat_ARITY       2
-#define ML99_stringify_ARITY 1
-#define ML99_empty_ARITY     1
-#define ML99_id_ARITY        1
-#define ML99_const_ARITY     2
-#define ML99_flip_ARITY      1
-#define ML99_consume_ARITY   1
+#define ML99_catEval_ARITY              2
+#define ML99_cat_ARITY                  2
+#define ML99_cat3_ARITY                 3
+#define ML99_cat4_ARITY                 4
+#define ML99_stringify_ARITY            1
+#define ML99_empty_ARITY                1
+#define ML99_id_ARITY                   1
+#define ML99_const_ARITY                2
+#define ML99_flip_ARITY                 1
+#define ML99_uncomma_ARITY              1
+#define ML99_reify_ARITY                1
+#define ML99_todo_ARITY                 1
+#define ML99_todoWithMsg_ARITY          2
+#define ML99_unimplemented_ARITY        1
+#define ML99_unimplementedWithMsg_ARITY 2
 
-#define ML99_PRIV_flip_ARITY 3
+#define ML99_PRIV_flip_ARITY  3
+#define ML99_PRIV_reify_ARITY 2
 // }
 
 #endif // DOXYGEN_IGNORE

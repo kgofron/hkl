@@ -21,7 +21,7 @@
 #define ML99_right(x) ML99_call(ML99_right, x)
 
 /**
- * 1 if @p either contains a left value, otherwise 0.
+ * `ML99_true()` if @p either contains a left value, otherwise `ML99_false()`.
  *
  * # Examples
  *
@@ -38,7 +38,7 @@
 #define ML99_isLeft(either) ML99_call(ML99_isLeft, either)
 
 /**
- * 1 if @p either contains a right value, otherwise 0.
+ * The inverse of #ML99_isLeft.
  *
  * # Examples
  *
@@ -73,10 +73,10 @@
  * ML99_eitherEq(v(ML99_natEq), ML99_right(v(123)), ML99_left(v(123)))
  * @endcode
  */
-#define ML99_eitherEq(compare, either, other) ML99_call(ML99_eitherEq, compare, either, other)
+#define ML99_eitherEq(cmp, either, other) ML99_call(ML99_eitherEq, cmp, either, other)
 
 /**
- * Returns the left value on #ML99_left or emits a fatal error on #ML99_right.
+ * Returns the left value on `ML99_left(x)` or emits a fatal error on `ML99_right(y)`.
  *
  * # Examples
  *
@@ -93,7 +93,7 @@
 #define ML99_unwrapLeft(either) ML99_call(ML99_unwrapLeft, either)
 
 /**
- * Returns the right value on #ML99_right or emits a fatal error on #ML99_left.
+ * The inverse of #ML99_unwrapLeft.
  *
  * # Examples
  *
@@ -126,18 +126,11 @@
 #define ML99_PRIV_IS_LEFT_left    ()
 
 // ML99_eitherEq_IMPL {
-#define ML99_eitherEq_IMPL(compare, either, other)                                                 \
-    ML99_matchWithArgs_IMPL(either, ML99_PRIV_eitherEq_, other, compare)
-
-#define ML99_PRIV_eitherEq_left_IMPL(x, other, compare)                                            \
-    ML99_matchWithArgs_IMPL(other, ML99_PRIV_eitherEq_left_, x, compare)
-#define ML99_PRIV_eitherEq_right_IMPL(x, other, compare)                                           \
-    ML99_matchWithArgs_IMPL(other, ML99_PRIV_eitherEq_right_, x, compare)
-
-#define ML99_PRIV_eitherEq_left_left_IMPL(y, x, compare)   ML99_appl2_IMPL(compare, x, y)
-#define ML99_PRIV_eitherEq_left_right_IMPL                 ML99_PRIV_constFalse_IMPL
-#define ML99_PRIV_eitherEq_right_left_IMPL                 ML99_PRIV_constFalse_IMPL
-#define ML99_PRIV_eitherEq_right_right_IMPL(y, x, compare) ML99_appl2_IMPL(compare, x, y)
+#define ML99_eitherEq_IMPL(cmp, either, other)                                                     \
+    ML99_PRIV_IF(                                                                                  \
+        ML99_PRIV_EITHER_TAGS_ARE_EQUAL(either, other),                                            \
+        ML99_appl2_IMPL(cmp, ML99_PRIV_CHOICE_DATA either, ML99_PRIV_CHOICE_DATA other),           \
+        v(ML99_FALSE()))
 // }
 
 // ML99_unwrapLeft_IMPL {
@@ -153,6 +146,11 @@
     ML99_fatal(ML99_unwrapRight, expected ML99_right but found ML99_left)
 #define ML99_PRIV_unwrapRight_right_IMPL(x) v(x)
 // }
+
+#define ML99_PRIV_EITHER_TAGS_ARE_EQUAL(either, other)                                             \
+    ML99_OR(                                                                                       \
+        ML99_AND(ML99_IS_LEFT(either), ML99_IS_LEFT(other)),                                       \
+        ML99_AND(ML99_IS_RIGHT(either), ML99_IS_RIGHT(other)))
 
 // Arity specifiers {
 #define ML99_left_ARITY        1

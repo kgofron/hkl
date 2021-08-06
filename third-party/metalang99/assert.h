@@ -1,6 +1,9 @@
 /**
  * @file
  * Static assertions.
+ *
+ * @note Any of the following assertion macros must **not** appear on the same line number twice
+ * with itself as well as with any other Metalang99 assertion macro.
  */
 
 #ifndef ML99_ASSERT_H
@@ -10,7 +13,19 @@
 
 #include <metalang99/lang.h>
 #include <metalang99/logical.h>
-#include <metalang99/util.h>
+
+/**
+ * The same as #ML99_ASSERT but results in a Metalang99 term.
+ *
+ * It can be used inside other Metalang99-compliant macros, unlike #ML99_ASSERT, which uses
+ * #ML99_EVAL internally.
+ */
+#define ML99_assert(expr) ML99_call(ML99_assert, expr)
+
+/**
+ * Like #ML99_assert but compares @p lhs with @p rhs for equality (`==`).
+ */
+#define ML99_assertEq(lhs, rhs) ML99_call(ML99_assertEq, lhs, rhs)
 
 /**
  * Asserts `ML99_EVAL(expr)` at compile-time.
@@ -23,10 +38,10 @@
  * ML99_ASSERT(v(123 == 123));
  * @endcode
  */
-#define ML99_ASSERT(expr) ML99_ASSERT_EQ(expr, ML99_true)
+#define ML99_ASSERT(expr) ML99_ASSERT_EQ(expr, ML99_true())
 
 /**
- * Asserts the equality of `ML99_EVAL(lhs)` and `ML99_EVAL(rhs)` at compile-time.
+ * Asserts `ML99_EVAL(lhs) == ML99_EVAL(rhs)` at compile-time.
  *
  * # Examples
  *
@@ -36,7 +51,7 @@
  * ML99_ASSERT_EQ(v(123), v(123));
  * @endcode
  */
-#define ML99_ASSERT_EQ(lhs, rhs) ML99_ASSERT_UNEVAL(ML99_EVAL(lhs) == ML99_EVAL(rhs))
+#define ML99_ASSERT_EQ(lhs, rhs) ML99_ASSERT_UNEVAL((ML99_EVAL(lhs)) == (ML99_EVAL(rhs)))
 
 /**
  * Asserts the C constant expression @p expr; <a
@@ -52,8 +67,8 @@
  */
 #define ML99_ASSERT_UNEVAL(expr)                                                                   \
     /* How to imitate static assertions in C99: <https://stackoverflow.com/a/3385694/13166656>. */ \
-    static const char ML99_CAT(                                                                    \
-        metalang99_assert_,                                                                        \
+    static const char ML99_PRIV_CAT(                                                               \
+        ml99_assert_,                                                                              \
         __LINE__)[(expr) ? 1 : -1] ML99_PRIV_COMPILER_ATTR_UNUSED = {0}
 
 /**
@@ -88,11 +103,20 @@
  * ML99_ASSERT_EMPTY_UNEVAL(123);
  * @endcode
  */
-#define ML99_ASSERT_EMPTY_UNEVAL(expr) ML99_ASSERT_UNEVAL(ML99_CAT(ML99_PRIV_ASSERT_EMPTY_, expr))
+#define ML99_ASSERT_EMPTY_UNEVAL(expr)                                                             \
+    ML99_ASSERT_UNEVAL(ML99_PRIV_CAT(ML99_PRIV_ASSERT_EMPTY_, expr))
 
 #ifndef DOXYGEN_IGNORE
 
+#define ML99_assert_IMPL(expr)       v(ML99_ASSERT_UNEVAL(expr))
+#define ML99_assertEq_IMPL(lhs, rhs) v(ML99_ASSERT_UNEVAL((lhs) == (rhs)))
+
 #define ML99_PRIV_ASSERT_EMPTY_ 1
+
+// Arity specifiers {
+#define ML99_assert_ARITY   1
+#define ML99_assertEq_ARITY 2
+// }
 
 #endif // DOXYGEN_IGNORE
 

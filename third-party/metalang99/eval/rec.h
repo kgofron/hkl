@@ -1,5 +1,33 @@
-#ifndef METALANG99_EVAL_REC_H
-#define METALANG99_EVAL_REC_H
+/*
+ * This recursion engine takes its roots from map-macro [1] and Cloak [2], with a few improvements:
+ *
+ *  - It can do many more expansions (roughly 1024 * 16 or 2^14).
+ *
+ *  - The expansion chain is linear: `ML99_PRIV_REC_0` invokes `ML99_PRIV_REC_1`, `ML99_PRIV_REC_1`
+ * invokes `ML99_PRIV_REC_2`, and so on.
+ *
+ *  - If a given metaprogram does not require more expansions, then it will stop expanding. I.e.,
+ * perform only as many expansions as needed. This is controlled by `ML99_PRIV_REC_NEXT`: if
+ * `choice` is `0stop`, then just terminate the expansion chain.
+ *
+ *  - The last expander `ML99_PRIV_REC_1023` really results in a deferred `ML99_PRIV_REC_0`, not to
+ * make it painted blue. Then, in `ML99_PRIV_REC_UNROLL_AUX`, this `ML99_PRIV_REC_0` is expanded
+ * once again 16 times.
+ *
+ *  - It requires recursive macros to be written in CPS, continuation-passing style [3]. This is
+ * controlled by `ML99_PRIV_REC_CONTINUE`: the `k` parameter stands for "continuation". `k` must
+ * eventually expand to yet another `ML99_PRIV_REC_CONTINUE`. Also, there is a special continuation
+ * called `ML99_PRIV_REC_STOP` -- it terminates the engine.
+ *
+ * The minimal usage example is located at `tests/eval/rec.c`.
+ *
+ * [1]: https://github.com/swansontec/map-macro
+ * [2]: https://github.com/pfultz2/Cloak/wiki/C-Preprocessor-tricks,-tips,-and-idioms#recursion
+ * [3]: https://en.wikipedia.org/wiki/Continuation-passing_style
+ */
+
+#ifndef ML99_EVAL_REC_H
+#define ML99_EVAL_REC_H
 
 #define ML99_PRIV_REC_CONTINUE(k)      0continue, ML99_PRIV_REC_DEFER(k##_HOOK)()
 #define ML99_PRIV_REC_STOP(_k_cx, ...) 0stop, __VA_ARGS__
@@ -15,10 +43,10 @@
 
 #define ML99_PRIV_REC_HALT(...) __VA_ARGS__
 
-#define ML99_PRIV_REC_UNROLL(...) ML99_PRIV_REC_0(__VA_ARGS__)
+#define ML99_PRIV_REC_UNROLL(...) ML99_PRIV_REC_UNROLL_AUX(__VA_ARGS__)
 
 // clang-format off
-#define ML99_PRIV_REC_0(choice, ...)                                                               \
+#define ML99_PRIV_REC_UNROLL_AUX(choice, ...) \
     /* Approximately 1024 * 16 reduction steps. */ \
     ML99_PRIV_REC_EXPAND( \
     ML99_PRIV_REC_EXPAND( \
@@ -36,12 +64,11 @@
     ML99_PRIV_REC_EXPAND( \
     ML99_PRIV_REC_EXPAND( \
     ML99_PRIV_REC_EXPAND( \
-        ML99_PRIV_REC_NEXT(1, choice)(__VA_ARGS__) \
+        ML99_PRIV_REC_NEXT(0, choice)(__VA_ARGS__) \
     ))))))))))))))))
 // clang-format on
 
-#define ML99_PRIV_REC_1_HOOK() ML99_PRIV_REC_1
-
+#define ML99_PRIV_REC_0(choice, ...)    ML99_PRIV_REC_NEXT(1, choice)(__VA_ARGS__)
 #define ML99_PRIV_REC_1(choice, ...)    ML99_PRIV_REC_NEXT(2, choice)(__VA_ARGS__)
 #define ML99_PRIV_REC_2(choice, ...)    ML99_PRIV_REC_NEXT(3, choice)(__VA_ARGS__)
 #define ML99_PRIV_REC_3(choice, ...)    ML99_PRIV_REC_NEXT(4, choice)(__VA_ARGS__)
@@ -1064,6 +1091,8 @@
 #define ML99_PRIV_REC_1020(choice, ...) ML99_PRIV_REC_NEXT(1021, choice)(__VA_ARGS__)
 #define ML99_PRIV_REC_1021(choice, ...) ML99_PRIV_REC_NEXT(1022, choice)(__VA_ARGS__)
 #define ML99_PRIV_REC_1022(choice, ...) ML99_PRIV_REC_NEXT(1023, choice)(__VA_ARGS__)
-#define ML99_PRIV_REC_1023              ML99_PRIV_REC_DEFER(ML99_PRIV_REC_1_HOOK)()
+#define ML99_PRIV_REC_1023              ML99_PRIV_REC_DEFER(ML99_PRIV_REC_0_HOOK)()
 
-#endif // METALANG99_EVAL_REC_H
+#define ML99_PRIV_REC_0_HOOK() ML99_PRIV_REC_0
+
+#endif // ML99_EVAL_REC_H

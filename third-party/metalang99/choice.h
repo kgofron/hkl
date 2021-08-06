@@ -13,10 +13,9 @@
 #ifndef ML99_CHOICE_H
 #define ML99_CHOICE_H
 
-#include <metalang99/priv/variadics/get.h>
+#include <metalang99/priv/util.h>
 
 #include <metalang99/lang.h>
-#include <metalang99/util.h>
 
 /**
  * Constructs an instance of a choice type.
@@ -48,7 +47,7 @@
 /**
  * Matches the instance @p choice of a choice type.
  *
- * This macro results in `ML99_callUneval(<matcher><a choice's tag>, <choice's data>)`.
+ * This macro results in `ML99_call(ML99_cat(matcher, ML99_choiceTag(choice)), <choice data>)`.
  *
  * # Examples
  *
@@ -60,7 +59,8 @@
 /**
  * The same as #ML99_match but supplies additional arguments to all branches.
  *
- * This macro results in `ML99_callUneval(<matcher><a choice's tag>, <choice's data>, args...)`.
+ * This macro results in `ML99_call(ML99_cat(matcher, ML99_choiceTag(choice)), <choice data>,
+ * args...)`.
  *
  * # Examples
  *
@@ -77,7 +77,7 @@
     ML99_call(ML99_matchWithArgs, choice, matcher, __VA_ARGS__)
 
 #define ML99_CHOICE(tag, ...)   (tag, __VA_ARGS__)
-#define ML99_CHOICE_TAG(choice) ML99_PRIV_VARIADICS_HEAD_AUX choice
+#define ML99_CHOICE_TAG(choice) ML99_PRIV_HEAD_AUX choice
 
 #ifndef DOXYGEN_IGNORE
 
@@ -85,15 +85,15 @@
 #define ML99_choiceTag_IMPL(choice) v(ML99_CHOICE_TAG(choice))
 
 #define ML99_match_IMPL(choice, matcher)                                                           \
-    ML99_callUneval(                                                                               \
-        ML99_CAT(matcher, ML99_PRIV_VARIADICS_HEAD_AUX choice),                                    \
-        ML99_PRIV_VARIADICS_TAIL_AUX choice)
+    ML99_callUneval(ML99_PRIV_CAT(matcher, ML99_PRIV_HEAD_AUX choice), ML99_PRIV_CHOICE_DATA choice)
 
 #define ML99_matchWithArgs_IMPL(choice, matcher, ...)                                              \
     ML99_callUneval(                                                                               \
-        ML99_CAT(matcher, ML99_PRIV_VARIADICS_HEAD_AUX choice),                                    \
-        ML99_PRIV_VARIADICS_TAIL_AUX choice,                                                       \
+        ML99_PRIV_CAT(matcher, ML99_PRIV_HEAD_AUX choice),                                         \
+        ML99_PRIV_CHOICE_DATA choice,                                                              \
         __VA_ARGS__)
+
+#define ML99_PRIV_CHOICE_DATA ML99_PRIV_TAIL_AUX
 
 // Arity specifiers {
 #define ML99_choice_ARITY        2

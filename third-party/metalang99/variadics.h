@@ -1,7 +1,6 @@
 /**
  * @file
  * Variadic arguments manipulation.
- *.
  *
  * Metalang99 does not provide a lot of stuff in this module; if a needed function is missed,
  * invoking #ML99_list and then manipulating with the resulting Cons-list might be helpful.
@@ -10,12 +9,11 @@
 #ifndef ML99_VARIADICS_H
 #define ML99_VARIADICS_H
 
-#include <metalang99/priv/variadics/count.h>
+#include <metalang99/nat/eq.h>
+#include <metalang99/priv/util.h>
 
-#include <metalang99/control.h>
 #include <metalang99/lang.h>
-#include <metalang99/nat.h>
-#include <metalang99/util.h>
+#include <metalang99/logical.h>
 
 /**
  * Computes a count of its arguments.
@@ -35,6 +33,23 @@
  * @endcode
  */
 #define ML99_variadicsCount(...) ML99_call(ML99_variadicsCount, __VA_ARGS__)
+
+/**
+ * Tells if it received only one argument or not.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/variadics.h>
+ *
+ * // 1
+ * ML99_variadicsIsSingle(v(~))
+ *
+ * // 0
+ * ML99_variadicsIsSingle(v(~, ~, ~))
+ * @endcode
+ */
+#define ML99_variadicsIsSingle(...) ML99_call(ML99_variadicsIsSingle, __VA_ARGS__)
 
 /**
  * Expands to a metafunction extracting the @p i -indexed argument.
@@ -71,7 +86,7 @@
 /**
  * Applies @p f to each argument.
  *
- * The result is `ML99_appl(v(f), v(x1)) ... ML99_appl(v(f), v(xN))`.
+ * The result is `ML99_appl(f, x1) ... ML99_appl(f, xN)`.
  *
  * If you already have variadics, using this macro is more efficient than
  * `ML99_listUnwrap(ML99_listMap(v(f), ML99_list(v(...))))`.
@@ -90,31 +105,33 @@
  * ML99_variadicsForEach(v(F), v(1, 2, 3))
  * @endcode
  *
- * @note Unlike #ML99_listMap, @p f can evaluate to many Metalang99 terms.
+ * @note Unlike #ML99_listMap, @p f can evaluate to many commas.
  */
 #define ML99_variadicsForEach(f, ...) ML99_call(ML99_variadicsForEach, f, __VA_ARGS__)
 
 /**
  * Applies @p f to each argument with an index.
  *
- * The result is `ML99_appl2(v(f), v(x1), v(0)) ... ML99_appl2(v(f), v(xN), v(N))`.
+ * The result is `ML99_appl2(f, x1, 0) ... ML99_appl2(f, xN, N)`.
  *
  * If you already have variadics, using this macro is more efficient than
  * `ML99_listUnwrap(ML99_listMapI(v(f), ML99_list(v(...))))`.
  *
  * At most 63 variadic arguments are acceptable.
  *
- * @note Unlike #ML99_listMapI, @p f can evaluate to many Metalang99 terms.
+ * @note Unlike #ML99_listMapI, @p f can evaluate to many commas.
  */
 #define ML99_variadicsForEachI(f, ...) ML99_call(ML99_variadicsForEachI, f, __VA_ARGS__)
 
-#define ML99_VARIADICS_COUNT(...) ML99_PRIV_VARIADICS_COUNT(__VA_ARGS__)
-#define ML99_VARIADICS_GET(i)     ML99_CAT(ML99_PRIV_VARIADICS_GET_, i)
-#define ML99_VARIADICS_TAIL(...)  ML99_PRIV_VARIADICS_TAIL(__VA_ARGS__)
+#define ML99_VARIADICS_COUNT(...)     ML99_PRIV_VARIADICS_COUNT(__VA_ARGS__)
+#define ML99_VARIADICS_IS_SINGLE(...) ML99_NOT(ML99_PRIV_CONTAINS_COMMA(__VA_ARGS__))
+#define ML99_VARIADICS_GET(i)         ML99_PRIV_CAT(ML99_PRIV_VARIADICS_GET_, i)
+#define ML99_VARIADICS_TAIL(...)      ML99_PRIV_TAIL(__VA_ARGS__)
 
 #ifndef DOXYGEN_IGNORE
 
-#define ML99_variadicsCount_IMPL(...) v(ML99_VARIADICS_COUNT(__VA_ARGS__))
+#define ML99_variadicsCount_IMPL(...)    v(ML99_VARIADICS_COUNT(__VA_ARGS__))
+#define ML99_variadicsIsSingle_IMPL(...) v(ML99_VARIADICS_IS_SINGLE(__VA_ARGS__))
 
 #define ML99_PRIV_variadicsGet_0(...) ML99_call(ML99_PRIV_variadicsGet_0, __VA_ARGS__)
 #define ML99_PRIV_variadicsGet_1(...) ML99_call(ML99_PRIV_variadicsGet_1, __VA_ARGS__)
@@ -159,20 +176,17 @@
     ML99_PRIV_variadicsForEachAux_IMPL(f, ML99_PRIV_VARIADICS_COUNT(__VA_ARGS__), __VA_ARGS__, ~)
 
 #define ML99_PRIV_variadicsForEachAux_IMPL(f, count, ...)                                          \
-    ML99_callUneval(                                                                               \
-        ML99_IF(                                                                                   \
-            ML99_NAT_EQ(count, 1),                                                                 \
-            ML99_PRIV_variadicsForEachDone,                                                        \
-            ML99_PRIV_variadicsForEachProgress),                                                   \
-        f,                                                                                         \
-        count,                                                                                     \
-        __VA_ARGS__)
+    ML99_PRIV_IF(                                                                                  \
+        ML99_PRIV_NAT_EQ(count, 1),                                                                \
+        ML99_PRIV_VARIADICS_FOR_EACH_DONE,                                                         \
+        ML99_PRIV_VARIADICS_FOR_EACH_PROGRESS)                                                     \
+    (f, count, __VA_ARGS__)
 
-#define ML99_PRIV_variadicsForEachDone_IMPL(f, _count, x, _) ML99_appl_IMPL(f, x)
-#define ML99_PRIV_variadicsForEachProgress_IMPL(f, count, x, ...)                                  \
+#define ML99_PRIV_VARIADICS_FOR_EACH_DONE(f, _count, x, _) ML99_appl_IMPL(f, x)
+#define ML99_PRIV_VARIADICS_FOR_EACH_PROGRESS(f, count, x, ...)                                    \
     ML99_TERMS(                                                                                    \
         ML99_appl_IMPL(f, x),                                                                      \
-        ML99_PRIV_variadicsForEachAux_IMPL(f, ML99_DEC(count), __VA_ARGS__))
+        ML99_callUneval(ML99_PRIV_variadicsForEachAux, f, ML99_PRIV_DEC(count), __VA_ARGS__))
 // }
 
 // ML99_variadicsForEachI_IMPL {
@@ -185,25 +199,70 @@
         ~)
 
 #define ML99_PRIV_variadicsForEachIAux_IMPL(f, i, count, ...)                                      \
-    ML99_callUneval(                                                                               \
-        ML99_IF(                                                                                   \
-            ML99_NAT_EQ(count, 1),                                                                 \
-            ML99_PRIV_variadicsForEachIDone,                                                       \
-            ML99_PRIV_variadicsForEachIProgress),                                                  \
-        f,                                                                                         \
-        i,                                                                                         \
-        count,                                                                                     \
-        __VA_ARGS__)
+    ML99_PRIV_IF(                                                                                  \
+        ML99_PRIV_NAT_EQ(count, 1),                                                                \
+        ML99_PRIV_VARIADICS_FOR_EACH_I_DONE,                                                       \
+        ML99_PRIV_VARIADICS_FOR_EACH_I_PROGRESS)                                                   \
+    (f, i, count, __VA_ARGS__)
 
-#define ML99_PRIV_variadicsForEachIDone_IMPL(f, i, _count, x, _) ML99_appl2_IMPL(f, x, i)
-#define ML99_PRIV_variadicsForEachIProgress_IMPL(f, i, count, x, ...)                              \
+#define ML99_PRIV_VARIADICS_FOR_EACH_I_DONE(f, i, _count, x, _) ML99_appl2_IMPL(f, x, i)
+#define ML99_PRIV_VARIADICS_FOR_EACH_I_PROGRESS(f, i, count, x, ...)                               \
     ML99_TERMS(                                                                                    \
         ML99_appl2_IMPL(f, x, i),                                                                  \
-        ML99_PRIV_variadicsForEachIAux_IMPL(f, ML99_INC(i), ML99_DEC(count), __VA_ARGS__))
+        ML99_callUneval(                                                                           \
+            ML99_PRIV_variadicsForEachIAux,                                                        \
+            f,                                                                                     \
+            ML99_PRIV_INC(i),                                                                      \
+            ML99_PRIV_DEC(count),                                                                  \
+            __VA_ARGS__))
 // }
+
+/*
+ * Proposition: The count of arguments of `ML99_PRIV_VARIADICS_COUNT` is `x` returned from
+ * `ML99_PRIV_VARIADICS_COUNT_AUX`.
+ *
+ * Proof:
+ *  1) Let N be the length of __VA_ARGS__.
+ *  2) Let (args...) ---> (params...) mean that (params...) are initialised with (args...).
+ *
+ * Then
+ * ({~ N times}, {63, ..., 1}, ~) ---> ({_1, ..., _63}, x, ...)
+ *
+ * And since N belongs to [1; 63]:
+ * ({63, ..., 1}, ~)              ---> ({_(N + 1), ..., _63}, x, ...)
+ *
+ * (N, ..., 1, ~)                 ---> (x, ...)
+ * (N)                            ---> (x)
+ */
+
+/*
+ * The StackOverflow solution: <https://stackoverflow.com/a/2124385/13166656>.
+ *
+ * This macro supports at most 63 arguments because C99 allows implementations to handle only 127
+ * parameters/arguments per macro definition/invocation (C99 | 5.2.4 Environmental limits). Thus,
+ * `ML99_PRIV_VARIADICS_COUNT_AUX` already accepts 64 arguments.
+ */
+
+// clang-format off
+#define ML99_PRIV_VARIADICS_COUNT(...)                                         \
+  ML99_PRIV_VARIADICS_COUNT_AUX(                                               \
+      __VA_ARGS__, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, \
+      48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31,  \
+      30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13,  \
+      12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ~)
+
+#define ML99_PRIV_VARIADICS_COUNT_AUX(                                         \
+    _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16,     \
+    _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, \
+    _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, \
+    _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, \
+    _62, _63, x, ...)                                                          \
+  x
+// clang-format on
 
 // Arity specifiers {
 #define ML99_variadicsCount_ARITY    1
+#define ML99_variadicsIsSingle_ARITY 1
 #define ML99_variadicsTail_ARITY     1
 #define ML99_variadicsForEach_ARITY  2
 #define ML99_variadicsForEachI_ARITY 2

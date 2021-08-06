@@ -19,6 +19,7 @@ EXTRA_DIST= \
 	metalang99/eval/term.h \
 	metalang99/gen.h \
 	metalang99.h \
+	metalang99/ident.h \
 	metalang99/lang/closure.h \
 	metalang99/lang/curry.h \
 	metalang99/lang.h \
@@ -34,6 +35,7 @@ EXTRA_DIST= \
 	metalang99/priv/aux.h \
 	metalang99/priv/compiler_attr.h \
 	metalang99/priv/compiler_specific.h \
+	metalang99/priv/logical.h \
 	metalang99/priv/pair.h \
 	metalang99/priv/util.h \
 	metalang99/priv/variadics/count.h \
