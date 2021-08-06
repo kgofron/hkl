@@ -184,6 +184,9 @@ metalang99-update:
 		);\
 	) > $(METALANG99_DEST)/Makefile.am
 
+	@echo Added all files to git
+	git add $(METALANG99_DEST)
+
 ## Update the datatype99 library
 
 DATATYPE99_LOCAL_REPO=/tmp/datatype99
@@ -209,3 +212,6 @@ datatype99-update:
 				| sed -e 's,^./,\t,;$$!s,$$, \\,';\
 		);\
 	) > $(METALANG99_DEST)/Makefile.am
+
+	@echo Added all files to git
+	git add $(METALANG99_DEST)
