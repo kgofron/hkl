@@ -145,9 +145,20 @@
 #define ML99_assign(lhs, ...) ML99_call(ML99_assign, lhs, __VA_ARGS__)
 
 /**
+ * A shortcut for `ML99_assign(lhs, ML99_braced(...))`.
+ */
+#define ML99_assignInitializerList(lhs, ...) ML99_call(ML99_assignInitializerList, lhs, __VA_ARGS__)
+
+/**
  * A shortcut for `ML99_semicoloned(ML99_assign(lhs, ...))`.
  */
 #define ML99_assignStmt(lhs, ...) ML99_call(ML99_assignStmt, lhs, __VA_ARGS__)
+
+/**
+ * A shortcut for `ML99_assignStmt(lhs, ML99_braced(...))`.
+ */
+#define ML99_assignInitializerListStmt(lhs, ...)                                                   \
+    ML99_call(ML99_assignInitializerListStmt, lhs, __VA_ARGS__)
 
 /**
  * Generates a function/macro invocation.
@@ -439,13 +450,15 @@
     __VA_ARGS__                                                                                    \
     ML99_CLANG_PRAGMA("clang diagnostic pop")
 
-#define ML99_semicoloned_IMPL(...)     v(__VA_ARGS__;)
-#define ML99_braced_IMPL(...)          v({__VA_ARGS__})
-#define ML99_assign_IMPL(lhs, ...)     v(lhs = __VA_ARGS__)
-#define ML99_assignStmt_IMPL(lhs, ...) v(lhs = __VA_ARGS__;)
-#define ML99_invoke_IMPL(f, ...)       v(f(__VA_ARGS__))
-#define ML99_invokeStmt_IMPL(f, ...)   v(f(__VA_ARGS__);)
-#define ML99_typedef_IMPL(ident, ...)  v(typedef __VA_ARGS__ ident;)
+#define ML99_semicoloned_IMPL(...)                    v(__VA_ARGS__;)
+#define ML99_braced_IMPL(...)                         v({__VA_ARGS__})
+#define ML99_assign_IMPL(lhs, ...)                    v(lhs = __VA_ARGS__)
+#define ML99_assignStmt_IMPL(lhs, ...)                v(lhs = __VA_ARGS__;)
+#define ML99_assignInitializerList_IMPL(lhs, ...)     v(lhs = {__VA_ARGS__})
+#define ML99_assignInitializerListStmt_IMPL(lhs, ...) v(lhs = {__VA_ARGS__};)
+#define ML99_invoke_IMPL(f, ...)                      v(f(__VA_ARGS__))
+#define ML99_invokeStmt_IMPL(f, ...)                  v(f(__VA_ARGS__);)
+#define ML99_typedef_IMPL(ident, ...)                 v(typedef __VA_ARGS__ ident;)
 
 // clang-format off
 #define ML99_prefixedBlock_IMPL(prefix, ...) v(prefix {__VA_ARGS__})
@@ -458,6 +471,7 @@
 // clang-format on
 
 // ML99_indexedParams_IMPL {
+
 #define ML99_indexedParams_IMPL(type_list)                                                         \
     ML99_tuple(ML99_PRIV_IF(                                                                       \
         ML99_IS_NIL(type_list),                                                                    \
@@ -469,9 +483,10 @@
 #define ML99_PRIV_indexedParamsAux_nil_IMPL(...) v(ML99_EMPTY())
 #define ML99_PRIV_indexedParamsAux_cons_IMPL(x, xs, i)                                             \
     ML99_TERMS(v(, x _##i), ML99_PRIV_indexedParamsAux_IMPL(xs, ML99_INC(i)))
-// }
+// } (ML99_indexedParams_IMPL)
 
 // ML99_indexedFields_IMPL {
+
 #define ML99_indexedFields_IMPL(type_list) ML99_PRIV_indexedFieldsAux_IMPL(type_list, 0)
 
 #define ML99_PRIV_indexedFieldsAux_IMPL(type_list, i)                                              \
@@ -479,7 +494,7 @@
 #define ML99_PRIV_indexedFields_nil_IMPL(...) v(ML99_EMPTY())
 #define ML99_PRIV_indexedFields_cons_IMPL(x, xs, i)                                                \
     ML99_TERMS(v(x _##i;), ML99_PRIV_indexedFieldsAux_IMPL(xs, ML99_INC(i)))
-// }
+// } (ML99_indexedFields_IMPL)
 
 #define ML99_indexedInitializerList_IMPL(n) ML99_braced(ML99_PRIV_INDEXED_ITEMS(n, v(0)))
 #define ML99_indexedArgs_IMPL(n)            ML99_PRIV_INDEXED_ITEMS(n, v(ML99_EMPTY()))
@@ -493,27 +508,30 @@
 #define ML99_PRIV_indexedItem_IMPL(i) v(, _##i)
 
 // Arity specifiers {
-#define ML99_semicoloned_ARITY            1
-#define ML99_braced_ARITY                 1
-#define ML99_assign_ARITY                 2
-#define ML99_assignStmt_ARITY             2
-#define ML99_invoke_ARITY                 2
-#define ML99_invokeStmt_ARITY             2
-#define ML99_prefixedBlock_ARITY          2
-#define ML99_typedef_ARITY                2
-#define ML99_struct_ARITY                 2
-#define ML99_anonStruct_ARITY             1
-#define ML99_union_ARITY                  2
-#define ML99_anonUnion_ARITY              1
-#define ML99_enum_ARITY                   2
-#define ML99_anonEnum_ARITY               1
-#define ML99_indexedParams_ARITY          1
-#define ML99_indexedFields_ARITY          1
-#define ML99_indexedInitializerList_ARITY 1
-#define ML99_indexedArgs_ARITY            1
+
+#define ML99_semicoloned_ARITY               1
+#define ML99_braced_ARITY                    1
+#define ML99_assign_ARITY                    2
+#define ML99_assignStmt_ARITY                2
+#define ML99_assignInitializerList_ARITY     2
+#define ML99_assignInitializerListStmt_ARITY 2
+#define ML99_invoke_ARITY                    2
+#define ML99_invokeStmt_ARITY                2
+#define ML99_prefixedBlock_ARITY             2
+#define ML99_typedef_ARITY                   2
+#define ML99_struct_ARITY                    2
+#define ML99_anonStruct_ARITY                1
+#define ML99_union_ARITY                     2
+#define ML99_anonUnion_ARITY                 1
+#define ML99_enum_ARITY                      2
+#define ML99_anonEnum_ARITY                  1
+#define ML99_indexedParams_ARITY             1
+#define ML99_indexedFields_ARITY             1
+#define ML99_indexedInitializerList_ARITY    1
+#define ML99_indexedArgs_ARITY               1
 
 #define ML99_PRIV_indexedItem_ARITY 1
-// }
+// } (Arity specifiers)
 
 #endif // DOXYGEN_IGNORE
 

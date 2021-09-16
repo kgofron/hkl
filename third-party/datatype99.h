@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Hirrolot
+Copyright (c) 2020-2021 Hirrolot
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,16 +29,20 @@ SOFTWARE.
 
 #include <metalang99.h>
 
-#if (ML99_MAJOR == 1 && ML99_MINOR < 2) || (ML99_MAJOR > 1)
-#error "Please, update Metalang99 to v1.2.0 or later"
+#if !ML99_VERSION_COMPATIBLE(1, 9, 0)
+#error Please, update Metalang99 to v1.9.0 or later.
 #endif
 
 #ifndef DATATYPE99_NO_ALIASES
 
-#define datatype  datatype99
-#define record    record99
-#define match     match99
-#define matches   matches99
+#define datatype datatype99
+#define record   record99
+#define match    match99
+#define MATCHES  MATCHES99
+/// @deprecated Use `MATCHES` instead.
+#define matches(val, tag_)                                                                         \
+    DATATYPE99_PRIV_PRAGMA_WARN("GCC warning \"`matches` is deprecated, use `MATCHES` instead\"")  \
+    MATCHES(val, tag_)
 #define ifLet     ifLet99
 #define of        of99
 #define otherwise otherwise99
@@ -48,7 +52,7 @@ SOFTWARE.
 
 #endif // DATATYPE99_NO_ALIASES
 
-// Various public stuff {
+// Public stuff {
 
 // Metalang99-compliant macros {
 
@@ -61,7 +65,7 @@ SOFTWARE.
 #define record99(...)          ML99_EVAL(DATATYPE99_record_IMPL(__VA_ARGS__))
 #define of99(...)              ML99_EVAL(DATATYPE99_of_IMPL(__VA_ARGS__))
 #define ifLet99(val, tag, ...) ML99_EVAL(DATATYPE99_ifLet_IMPL(val, tag, __VA_ARGS__))
-// }
+// } (Metalang99-compliant macros)
 
 // Attributes manipulation {
 
@@ -83,22 +87,28 @@ SOFTWARE.
 
 #define DATATYPE99_ATTR_VALUE(attr)          ML99_CAT(DATATYPE99_PRIV_ATTR_VALUE_, attr)
 #define DATATYPE99_PRIV_ATTR_VALUE_attr(...) __VA_ARGS__
-// }
+// } (Attributes manipulation)
 
 #define DATATYPE99_DERIVE_dummy_IMPL(...)        ML99_empty()
 #define DATATYPE99_RECORD_DERIVE_dummy_IMPL(...) ML99_empty()
 
 #define DATATYPE99_MAJOR 1
-#define DATATYPE99_MINOR 3
+#define DATATYPE99_MINOR 5
 #define DATATYPE99_PATCH 0
 
-// } (Various public stuff)
+#define DATATYPE99_VERSION_COMPATIBLE(x, y, z)                                                     \
+    (DATATYPE99_MAJOR == (x) &&                                                                    \
+     ((DATATYPE99_MINOR == (y) && DATATYPE99_PATCH >= (z)) || (DATATYPE99_MINOR > (y))))
+
+#define DATATYPE99_VERSION_EQ(x, y, z)                                                             \
+    (DATATYPE99_MAJOR == (x) && DATATYPE99_MINOR == (y) && DATATYPE99_PATCH == (z))
+// } (Public stuff)
 
 // Unit type {
 
 typedef char UnitT99;
 static const UnitT99 unit_v99 = '\0';
-// }
+// } (Unit type)
 
 // Sum type generation {
 
@@ -136,6 +146,7 @@ static const UnitT99 unit_v99 = '\0';
 // } (Sum type generation)
 
 // Record type generation {
+
 #define DATATYPE99_record_IMPL(...)                                                                \
     ML99_TERMS(                                                                                    \
         ML99_CAT(                                                                                  \
@@ -178,6 +189,7 @@ static const UnitT99 unit_v99 = '\0';
 // } (Record type generation)
 
 // Parse variants {
+
 #define DATATYPE99_PRIV_parseVariants(...)                                                         \
     ML99_listFromTuples(v(DATATYPE99_PRIV_parseVariant), v(__VA_ARGS__))
 
@@ -191,6 +203,7 @@ static const UnitT99 unit_v99 = '\0';
 // } (Parse variants)
 
 // Parse fields {
+
 #define DATATYPE99_PRIV_parseFields(...)                                                           \
     ML99_listFromTuples(v(DATATYPE99_PRIV_parseField), v(__VA_ARGS__))
 
@@ -198,6 +211,7 @@ static const UnitT99 unit_v99 = '\0';
 // } (Parse fields)
 
 // Variant {
+
 #define DATATYPE99_PRIV_variant(tag, sig) ML99_tuple(tag, sig)
 
 #define DATATYPE99_PRIV_forEachVariant(f, variants)                                                \
@@ -205,6 +219,7 @@ static const UnitT99 unit_v99 = '\0';
 // } (Variant)
 
 // Derivation {
+
 #define DATATYPE99_PRIV_IS_DERIVE(x)          ML99_IS_TUPLE(ML99_CAT(DATATYPE99_PRIV_IS_DERIVE_, x))
 #define DATATYPE99_PRIV_IS_DERIVE_derive(...) ()
 
@@ -254,8 +269,6 @@ static const UnitT99 unit_v99 = '\0';
         DATATYPE99_PRIV_genBindingForEach(v(tag_, __VA_ARGS__)))
 // clang-format on
 
-#define matches99(val, tag_) ((val).tag == tag_##Tag)
-
 #define DATATYPE99_PRIV_genBindingForEach(...)                                                     \
     ML99_call(DATATYPE99_PRIV_genBindingForEach, __VA_ARGS__)
 #define DATATYPE99_PRIV_genBindingForEach_IMPL(tag, ...)                                           \
@@ -267,6 +280,15 @@ static const UnitT99 unit_v99 = '\0';
         ML99_empty(),                                                                              \
         v(ML99_INTRODUCE_VAR_TO_STMT(                                                              \
             tag_##_##i *x = &((tag_##SumT *)datatype99_priv_matched_val)->data.tag_._##i)))
+
+#define MATCHES99(val, tag_) ((val).tag == tag_##Tag)
+
+/// @deprecated Use `MATCHES99` instead.
+#define matches99(val, tag_)                                                                       \
+    DATATYPE99_PRIV_PRAGMA_WARN(                                                                   \
+        "GCC warning \"`matches99` is deprecated, use `MATCHES99` instead\"")                      \
+    MATCHES99(val, tag_)
+
 // } (Pattern matching)
 
 /*
@@ -378,26 +400,35 @@ static const UnitT99 unit_v99 = '\0';
 #define DATATYPE99_PRIV_genRecordField_IMPL(ty, ident) v(ty ident;)
 
 // Compiler-specific stuff {
+
+#define DATATYPE99_PRIV_CTOR_ATTRS DATATYPE99_PRIV_WARN_UNUSED_RESULT DATATYPE99_PRIV_CONST
+
 #if defined(__GNUC__)
 #define DATATYPE99_PRIV_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#else
+#define DATATYPE99_PRIV_WARN_UNUSED_RESULT
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)
 #define DATATYPE99_PRIV_CONST __attribute__((const))
-#endif
-
-#define DATATYPE99_PRIV_CTOR_ATTRS DATATYPE99_PRIV_WARN_UNUSED_RESULT DATATYPE99_PRIV_CONST
-
-#ifndef DATATYPE99_PRIV_WARN_UNUSED_RESULT
-#define DATATYPE99_PRIV_WARN_UNUSED_RESULT
-#endif
-
-#ifndef DATATYPE99_PRIV_CONST
+#else
 #define DATATYPE99_PRIV_CONST
+#endif
+
+#define DATATYPE99_PRIV_IS_GCC_4_8_1_OR_HIGHER                                                     \
+    ((__GNUC__ == 4 &&                                                                             \
+      (__GNUC_MINOR__ >= 8 && __GNUC_PATCHLEVEL__ >= 1 || __GNUC_MINOR__ >= 9)) ||                 \
+     __GNUC__ >= 5)
+
+#if defined(__clang__) || DATATYPE99_PRIV_IS_GCC_4_8_1_OR_HIGHER
+#define DATATYPE99_PRIV_PRAGMA_WARN _Pragma
+#else
+#define DATATYPE99_PRIV_PRAGMA_WARN ML99_EMPTY
 #endif
 // } (Compiler-specific stuff)
 
 // Arity specifiers {
+
 #define DATATYPE99_PRIV_parseVariant_ARITY       1
 #define DATATYPE99_PRIV_parseField_ARITY         1
 #define DATATYPE99_PRIV_invokeDeriver_ARITY      2
@@ -411,6 +442,7 @@ static const UnitT99 unit_v99 = '\0';
 #define DATATYPE99_PRIV_genRecordField_ARITY     1
 
 // Public:
+
 #define DATATYPE99_datatype_ARITY            1
 #define DATATYPE99_record_ARITY              1
 #define DATATYPE99_of_ARITY                  1
@@ -418,6 +450,6 @@ static const UnitT99 unit_v99 = '\0';
 #define DATATYPE99_attrIsPresent_ARITY       1
 #define DATATYPE99_attrValue_ARITY           1
 #define DATATYPE99_assertAttrIsPresent_ARITY 1
-// }
+// } (Arity specifiers)
 
 #endif // DATATYPE99_H

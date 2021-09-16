@@ -52,12 +52,12 @@
 /**
  * The same as #ML99_cat but deals with 3 parameters.
  */
-#define ML99_cat3(a, b, c) ML99_call(ML99_cat, a, b, c)
+#define ML99_cat3(a, b, c) ML99_call(ML99_cat3, a, b, c)
 
 /**
  * The same as #ML99_cat but deals with 4 parameters.
  */
-#define ML99_cat4(a, b, c, d) ML99_call(ML99_cat, a, b, c, d)
+#define ML99_cat4(a, b, c, d) ML99_call(ML99_cat4, a, b, c, d)
 
 /**
  * Stringifies provided arguments.
@@ -285,13 +285,45 @@
  * `the rest of args...)` in future.
  *
  * This macro consumes all its arguments.
+ *
+ * @deprecated This macro results in code that is difficult to reason about.
  */
 #define ML99_LPAREN(...) (
 
 /**
  * The same as #ML99_LPAREN but emits a closing parenthesis.
+ *
+ * @deprecated For the same reason as #ML99_LPAREN.
  */
 #define ML99_RPAREN(...) )
+
+/**
+ * Expands to a single comma, consuming all arguments.
+ *
+ * # Examples
+ *
+ * Consider this variation of <a href="https://en.wikipedia.org/wiki/X_Macro">X-Macro</a>:
+ *
+ * @code
+ * #include <metalang99/util.h>
+ *
+ * #define FOO X(1) X(2, 3) X(4, 5, 6)
+ * #define BAR
+ *
+ * #define X ML99_COMMA
+ *
+ * // , , ,
+ * FOO
+ *
+ * // (No commas.)
+ * BAR
+ * @endcode
+ *
+ * Later, with #ML99_variadicsIsSingle, we can detect whether or not `FOO` and `BAR` result in one
+ * or more invocation of `X`. This technique is used in <a
+ * href="https://github.com/Hirrolot/interface99">Interface99</a> to detect marker interfaces.
+ */
+#define ML99_COMMA(...) ,
 
 /**
  * If you are compiling on GCC, this macro expands to `_Pragma(str)`, otherwise to emptiness.
@@ -299,7 +331,7 @@
 #define ML99_GCC_PRAGMA(str) ML99_PRIV_GCC_PRAGMA(str)
 
 /**
- * If you are compiling on Clang, this macro expands to `_Pragma(str)`, otherwise to emptiness.
+ * The same as #ML99_GCC_PRAGMA but for Clang.
  */
 #define ML99_CLANG_PRAGMA(str) ML99_PRIV_CLANG_PRAGMA(str)
 
@@ -348,6 +380,7 @@
 #endif
 
 // Arity specifiers {
+
 #define ML99_catEval_ARITY              2
 #define ML99_cat_ARITY                  2
 #define ML99_cat3_ARITY                 3
@@ -366,7 +399,7 @@
 
 #define ML99_PRIV_flip_ARITY  3
 #define ML99_PRIV_reify_ARITY 2
-// }
+// } (Arity specifiers)
 
 #endif // DOXYGEN_IGNORE
 
