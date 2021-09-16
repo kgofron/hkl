@@ -285,9 +285,9 @@ HklParameter *hkl_parameter_new_rotation(const char *name, HklVector const *axis
 {
 	HklAxis axis0 = {
 		.parameter = { HKL_PARAMETER_DEFAULTS_ANGLE,
-			       .name = name,
-			       .punit = punit,
-			       .ops = &hkl_parameter_operations_axis,
+			.name = name,
+			.punit = punit,
+			.ops = &hkl_parameter_operations_axis,
 		},
 		.axis_v = *axis_v,
 		.q = {{1., 0., 0., 0.}},
@@ -386,9 +386,9 @@ HklParameter *hkl_parameter_new_rotation_with_origin(const char *name,
 	HklRotationWithOrigin rotation0 = {
 		.axis = {
 			.parameter = { HKL_PARAMETER_DEFAULTS_ANGLE,
-				       .name = name,
-				       .punit = punit,
-				       .ops = &hkl_parameter_operations_rotation_with_origin,
+				.name = name,
+				.punit = punit,
+				.ops = &hkl_parameter_operations_rotation_with_origin,
 			},
 			.axis_v = *axis_v,
 			.q = {{1., 0., 0., 0.}},
@@ -494,9 +494,9 @@ HklParameter *hkl_parameter_new_translation(const char *name, HklVector const *a
 {
 	HklTranslation translation0 = {
 		.parameter = { HKL_PARAMETER_DEFAULTS_LENGTH,
-			       .name = name,
-			       .punit = punit,
-			       .ops = &hkl_parameter_operations_translation,
+			.name = name,
+			.punit = punit,
+			.ops = &hkl_parameter_operations_translation,
 		},
 		.axis_v = *axis_v,
 	};

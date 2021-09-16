@@ -72,9 +72,9 @@ extern HklEngine *hkl_engine_emergence_new(HklEngineList *engines);
 			.range = { .min=-1, .max=1 },			\
 			}
 
-	static const HklParameter surface_parameters_y[] = {
-		SURFACE_PARAMETERS(0, 1, 0),
-	};
+static const HklParameter surface_parameters_y[] = {
+	SURFACE_PARAMETERS(0, 1, 0),
+};
 
 static const HklParameter surface_parameters_z[] = {
 	SURFACE_PARAMETERS(0, 0, 1),

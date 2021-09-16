@@ -281,7 +281,7 @@ Failed Set                 Fail/Total (%) Skip Stat  Failing Tests\n\
 
 /* Declare internal functions that benefit from compiler attributes. */
 static void sysdie(const char *, ...)
-__attribute__((__nonnull__, __noreturn__, __format__(printf, 1, 2)));
+	__attribute__((__nonnull__, __noreturn__, __format__(printf, 1, 2)));
 static void *x_calloc(size_t, size_t, const char *, int)
 	__attribute__((__alloc_size__(1, 2), __malloc__, __nonnull__));
 static void *x_malloc(size_t, const char *, int)

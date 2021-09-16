@@ -52,9 +52,9 @@
 /* static part */
 /***************/
 static float identity[] = {1, 0, 0, 0,
-			   0, 1, 0, 0,
-			   0, 0, 1 ,0,
-			   0, 0, 0, 1};
+	0, 1, 0, 0,
+	0, 0, 1 ,0,
+	0, 0, 0, 1};
 
 static void *_hkl3d_malloc(int size, const char *error)
 {
