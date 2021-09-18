@@ -1,11 +1,3 @@
-	@rm -rf $(CCAN_TMP_DEST) && mkdir -p $(CCAN_TMP_DEST)
-	@rsync -av --exclude=Makefile.am $(CCAN_LOCAL_EXTRACT)/* $(CCAN_TMP_DEST)
-	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '*.[ch]' | xargs sed -i -e 's,ccan/,hkl/ccan/,'
-	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '*.[ch]' | xargs sed -i -e 's,"config.h",<hkl/ccan/ccan_config.h>,'
-	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name '_info' | xargs rm -f
-	@find $(CCAN_TMP_DEST)/ccan -maxdepth 2 -name 'test' | xargs rm -rf
-
-	@$(CCAN_CREATE_TREE) $(CCAN_PUBLIC_MODULES)
 ## Process this file with automake to produce Makefile.in
 
 ACLOCAL_AMFLAGS = -I m4
