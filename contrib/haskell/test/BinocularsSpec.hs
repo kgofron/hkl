@@ -19,7 +19,7 @@ import           Prelude        hiding (readFile)
 spec :: Spec
 spec = do
   describe "parseBinocularsConfig" $ do
-         forM_ [ "data/test/config_hkl_facet.cfg"
+         forM_ [ "data/test/config_sixs_biggest.ini"
                -- , "data/test/config_map.txt"
                ] $ \f -> it f $ do
            cfg <- getConfig =<< Just <$> getDataFileName f
