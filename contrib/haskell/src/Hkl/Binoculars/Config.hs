@@ -42,11 +42,9 @@ import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Control.Monad.Logger              (MonadLogger)
 import           Data.Array.Repa.Index             (DIM2)
-#if MIN_VERSION_extra(1, 6, 14)
-import           Data.Either.Extra                 (mapLeft, mapRight)
-#endif
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     sepBy)
+import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -80,27 +78,6 @@ import           Hkl.Detector
 import           Hkl.Types
 import           Paths_hkl
 
-
-#if MIN_VERSION_extra(1, 6, 14)
-#else
--- for buster
-
---  The 'mapLeft' function takes a function and applies it to an Either value
--- iff the value takes the form @'Left' _@.
---
--- > mapLeft show (Left 1) == Left "1"
--- > mapLeft show (Right True) == Right True
-mapLeft :: (a -> c) -> Either a b -> Either c b
-mapLeft f = either (Left . f) Right
-
---  The 'mapRight' function takes a function and applies it to an Either value
--- iff the value takes the form @'Right' _@.
---
--- > mapRight show (Left 1) == Left 1
--- > mapRight show (Right True) == Right "True"
-mapRight :: (b -> c) -> Either a b -> Either a c
-mapRight = fmap
-#endif
 
 data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
                                   | NoDataFilesInTheGivenDirectory (Path Abs Dir)
@@ -348,17 +325,10 @@ files c = do
            Nothing -> return fs'
     where
       isHdf5 :: Path Abs File -> Bool
--- debian bulleyes (signature changed ???)
-#if MIN_VERSION_path(0, 7, 0)
       isHdf5 p = case ((fileExtension p) :: Maybe [Char]) of
                    Nothing    -> False
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
--- debian buster
-#else
-      isHdf5 p = case (fileExtension p) of
-                   ""  -> False
-                   ext -> ext `elem` [".h5", ".nxs"]
-#endif
+
       matchIndex :: Path Abs File -> Int -> Bool
       matchIndex p n = printf "%04d" n `isInfixOf` toFilePath p
 
