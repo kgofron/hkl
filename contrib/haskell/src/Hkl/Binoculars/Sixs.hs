@@ -267,9 +267,10 @@ h5dpathHkl c = do
          --               medVSamplePath
          --               -- "attenuation": DatasetPathWithAttribute("long_name", b"i14-c-c00/ex/roic/att"),
          --               -- "timestamp": HItem("sensors_timestamps", True),
-process :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange Int) -> m ()
+process :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 process mf mr = do
   conf <- liftIO $ getConfig mf
+  liftIO $ print conf
   case conf of
     Right conf' -> do
               let c = combineWithCmdLineArgs conf' mr

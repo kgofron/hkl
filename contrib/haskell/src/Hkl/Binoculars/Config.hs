@@ -19,6 +19,7 @@ module Hkl.Binoculars.Config
     ( BinocularsConfig(..)
     , ConfigRange(..)
     , DestinationTmpl(..)
+    , InputRange(..)
     , InputType(..)
     , ProjectionType(..)
     , configRangeP
@@ -35,6 +36,7 @@ module Hkl.Binoculars.Config
     ) where
 
 
+import           Control.Applicative               (many, (<|>))
 import           Control.Lens                      (makeLenses, (^.))
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
@@ -43,7 +45,7 @@ import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Control.Monad.Logger              (MonadLogger)
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
-                                                    sepBy)
+                                                    parseOnly, satisfy, sepBy)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
@@ -56,7 +58,8 @@ import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, breakOn, drop,
                                                     findIndex, length, lines,
                                                     pack, replace, strip, take,
-                                                    takeWhile, unlines, unpack)
+                                                    takeWhile, unlines, unpack,
+                                                    unwords)
 import           Data.Text.IO                      (putStr, readFile)
 import           Data.Typeable                     (Typeable)
 import           GHC.Exts                          (IsList)
@@ -72,7 +75,7 @@ import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (drop, length, lines,
                                                     putStr, readFile, take,
-                                                    takeWhile, unlines)
+                                                    takeWhile, unlines, unwords)
 
 import           Hkl.Detector
 import           Hkl.Types
@@ -81,7 +84,7 @@ import           Paths_hkl
 
 data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
                                   | NoDataFilesInTheGivenDirectory (Path Abs Dir)
-                                  | NoFilesInRangeInTheGivenDirectory (Path Abs Dir) (ConfigRange Int)
+                                  | NoFilesInRangeInTheGivenDirectory (Path Abs Dir) ConfigRange
                                   | ResolutionNotCompatibleWithProjectionNbOfCoordinates [Double] Int
     deriving (Show)
 instance Exception HklBinocularsConfigException
@@ -104,7 +107,11 @@ data InputType = CristalK6C
                | SixsSbsMedVFixDetector
   deriving (Eq, Show)
 
-newtype ConfigRange a = ConfigRange [a]
+data InputRange = InputRangeSingle Int
+                | InputRangeFromTo Int Int
+                deriving (Eq, Show)
+
+newtype ConfigRange = ConfigRange [InputRange]
   deriving (Eq, Show, IsList)
 
 data ProjectionType = QxQyQzProjection
@@ -117,7 +124,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsDispatcherOverwrite         :: Bool
   , _binocularsInputItype                  :: InputType
   , _binocularsInputNexusdir               :: Maybe (Path Abs Dir)
-  , _binocularsInputInputRange             :: Maybe (ConfigRange Int)
+  , _binocularsInputInputRange             :: Maybe ConfigRange
   , _binocularsInputDetector               :: Maybe (Detector Hkl DIM2)
   , _binocularsInputCentralpixel           :: (Int, Int)
   , _binocularsInputSdd                    :: Length Double
@@ -267,11 +274,38 @@ pathAbsDir = FieldValue
   , fvEmit = pack . fromAbsDir
   }
 
-configRange :: (Num a, Read a, Show a, Typeable a) => FieldValue (ConfigRange a)
-configRange = listWithSeparator "-" number'
 
-configRangeP :: Integral a => Parser (ConfigRange a)
-configRangeP = ConfigRange <$> (decimal `sepBy` char '-')
+inputRangeP :: Parser InputRange
+inputRangeP = inputRangeFromToP <|> inputRangeP'
+  where
+    inputRangeFromToP :: Parser InputRange
+    inputRangeFromToP = do
+      f <- decimal
+      _ <- char '-'
+      t <- decimal
+      return $ InputRangeFromTo f t
+
+    inputRangeP' :: Parser InputRange
+    inputRangeP' = InputRangeSingle <$> decimal
+
+configRange :: FieldValue ConfigRange
+configRange = FieldValue {fvParse = parse, fvEmit = emit }
+    where
+      parse :: Text -> Either String ConfigRange
+      parse = parseOnly configRangeP
+
+      emit :: ConfigRange -> Text
+      emit (ConfigRange is) = unwords $ map (pack . showInputRange) is
+
+      showInputRange :: InputRange -> String
+      showInputRange (InputRangeSingle f)   = printf "%d" f
+      showInputRange (InputRangeFromTo f t) = printf "%d-%d" f t
+
+configRangeP :: Parser ConfigRange
+configRangeP = ConfigRange <$> (inputRangeP `sepBy` (many (satisfy isSep)))
+    where
+      isSep :: Char -> Bool
+      isSep c = c == ' ' || c == ','
 
 detector :: FieldValue (Detector Hkl DIM2)
 detector = FieldValue
@@ -332,23 +366,41 @@ files c = do
       matchIndex :: Path Abs File -> Int -> Bool
       matchIndex p n = printf "%04d" n `isInfixOf` toFilePath p
 
-      isInConfigRange :: ConfigRange Int -> Path Abs File -> Bool
+      isInInputRange :: Path Abs File -> InputRange -> Bool
+      isInInputRange p (InputRangeSingle i) = any (matchIndex p) [i]
+      isInInputRange p (InputRangeFromTo from to) = any (matchIndex p) [from..to]
+
+      isInConfigRange :: ConfigRange -> Path Abs File -> Bool
       isInConfigRange (ConfigRange []) _ = True
-      isInConfigRange (ConfigRange [from]) p = any (matchIndex p) [from]
-      isInConfigRange (ConfigRange [from, to]) p = any (matchIndex p) [from..to]
-      isInConfigRange (ConfigRange (from:to:_)) p = any (matchIndex p) [from..to]
+      isInConfigRange (ConfigRange rs) p = any (isInInputRange p) rs
+
 
 
 replace' :: Int -> Int -> DestinationTmpl -> FilePath
 replace' f t = unpack . replace "{last}" (pack . show $ t) . replace "{first}" (pack . show $ f) . unDestinationTmpl
 
-destination' :: ConfigRange Int -> DestinationTmpl -> FilePath
-destination' (ConfigRange [])          = replace' 0 0
-destination' (ConfigRange [from])      = replace' from from
-destination' (ConfigRange [from, to])  = replace' from to
-destination' (ConfigRange (from:to:_)) = replace' from to
+destination' :: ConfigRange -> DestinationTmpl -> FilePath
+destination' (ConfigRange rs) = replace' from to
+  where
+    (from,to) = hull rs
 
-combineWithCmdLineArgs :: BinocularsConfig -> Maybe (ConfigRange Int) -> BinocularsConfig
+    froms :: [Int]
+    froms = [ case r of
+                (InputRangeSingle f)   -> f
+                (InputRangeFromTo f _) -> f
+            | r <- rs]
+
+    tos :: [Int]
+    tos = [ case r of
+              (InputRangeSingle f)   -> f
+              (InputRangeFromTo _ t) -> t
+          | r <- rs]
+
+    hull :: [InputRange] -> (Int, Int)
+    hull [] = (0, 0)
+    hull _  = (minimum froms, maximum tos)
+
+combineWithCmdLineArgs :: BinocularsConfig -> Maybe ConfigRange -> BinocularsConfig
 combineWithCmdLineArgs c mr = case mr of
                                 Nothing  -> c
                                 (Just _) -> c{_binocularsInputInputRange = mr}

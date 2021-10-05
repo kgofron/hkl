@@ -28,7 +28,7 @@ import           Options.Applicative.Types (Parser)
 import           Hkl.Binoculars
 
 
-data Options = Process (Maybe FilePath) (Maybe (ConfigRange Int))
+data Options = Process (Maybe FilePath) (Maybe ConfigRange)
              | CfgNew (Maybe FilePath)
              | CfgUpdate FilePath
   deriving Show
