@@ -144,9 +144,13 @@ h5dpathQxQyQz c = case _binocularsInputItype c of
                                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                           2 0)
                     <*> pure (DetectorPath
-                              (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                              (H5Or
+                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")))
                     <*> pure (GeometryPathUhv
-                              (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                              (H5Or
+                                (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                                (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                               [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
                               , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
                               , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
@@ -232,6 +236,7 @@ h5dpathHkl c = do
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uy")
                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uz")
     let uhvSamplePath = sixsSample "I14-C-CX2__EX__DIFF-UHV__#1"
+    let uhvSamplePath2 = sixsSample "i14-c-cx2-ex-diff-uhv"
     let cmMedHSamplePath = sixsSample "i14-c-cx2-ex-cm-med.h"  -- TODO check
     let cmMedVSamplePath = sixsSample "i14-c-cx1-ex-cm-med.v"
     qxqyqz <- h5dpathQxQyQz c
@@ -241,7 +246,7 @@ h5dpathHkl c = do
       SixsFlyMedVEiger -> return $ HklPath qxqyqz cmMedVSamplePath
       SixsFlyMedVS70 -> return $ HklPath qxqyqz cmMedVSamplePath
       SixsFlyScanUhv -> return $ HklPath qxqyqz uhvSamplePath
-      SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath
+      SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath2
       SixsFlyScanUhvUfxc -> return $ HklPath qxqyqz uhvSamplePath
       SixsSbsFixedDetector -> undefined -- TODO this must not be possible.
       SixsSbsMedH -> return $ HklPath qxqyqz cmMedHSamplePath
