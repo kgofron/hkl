@@ -1,7 +1,13 @@
 ord05133:
-	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run4/20210628_Torrelles/binoculars/config2.txt 1303-1312
-#       cd ../..; cabal run binoculars-ng -- process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run4/Arthur_UHV/binoculars/config210_m1018_32h_Qxyz_Vhkl.txt 134-160
+#	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run4/20210628_Torrelles/binoculars/config2.txt 1303
+#	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run4/20210628_Torrelles/binoculars/config2.txt 1303-1312
+	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_flymedh.ini 1303-1312
+#	valgrind --tool=massif /home/picca/src/repo.or.cz/hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process config_ord05133_flymedh.ini 1303-1312
+#	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run4/Arthur_UHV/binoculars/config210_m1018_32h_Qxyz_Vhkl.txt 134-160
 #	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_110_m1018_32h_Qxyz_Vhkl.ini 272-285,289-316
+#	/usr/bin/time /tmp/binoculars-ng +RTS -N4 -- process ~/src/repo.or.cz/hkl/contrib/haskell/data/test/config_ord05133_flymedh.ini 1303-1312
+#	/usr/bin/time /tmp/binoculars-ng-prof +RTS -N4 -- process ~/src/repo.or.cz/hkl/contrib/haskell/data/test/config_ord05133_flymedh.ini 1303-1312
+#	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_flymedh.ini 1303-1312
 
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224

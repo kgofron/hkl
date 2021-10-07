@@ -94,12 +94,15 @@ executable binoculars-ng
   ghc-options:         -ddump-to-file
   ghc-options:         -ddump-simpl
   ghc-options:         -ddump-stg
+  ghc-options:         "-with-rtsopts=-N"
 
   if flag(useHklDev)
       pkgconfig-depends:   gobject-2.0
       ghc-options: -pgml gcc "-optl-Wl,--allow-multiple-definition"
       ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
       ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
+
+  ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
 
 library
   exposed-modules:    Hkl
