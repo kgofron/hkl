@@ -47,7 +47,7 @@ instance Show Factory where
   show K6c = "K6C"
   show Fixe = undefined
   show Uhv = "ZAXIS"
-  show MedH = undefined
+  show MedH = "SOLEIL SIXS MED1+2"
   show MedV = "SOLEIL SIXS MED2+3"
   show SoleilSiriusKappa = "SOLEIL SIRIUS KAPPA"
 

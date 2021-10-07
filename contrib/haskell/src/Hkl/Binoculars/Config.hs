@@ -58,8 +58,8 @@ import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, breakOn, drop,
                                                     findIndex, length, lines,
                                                     pack, replace, strip, take,
-                                                    takeWhile, unlines, unpack,
-                                                    unwords)
+                                                    takeWhile, toLower, unlines,
+                                                    unpack, unwords)
 import           Data.Text.IO                      (putStr, readFile)
 import           Data.Typeable                     (Typeable)
 import           GHC.Exts                          (IsList)
@@ -225,7 +225,7 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String InputType
       parse t
-          | t == emit SixsFlyMedH = Right SixsFlyMedH
+          | toLower t == emit SixsFlyMedH = Right SixsFlyMedH
           | t == emit SixsFlyMedV = Right SixsFlyMedV
           | t == emit SixsFlyMedVEiger = Right SixsFlyMedVEiger
           | t == emit SixsFlyMedVS70 = Right SixsFlyMedVS70

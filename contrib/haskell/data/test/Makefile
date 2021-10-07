@@ -1,5 +1,8 @@
 ord05133:
-	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_110_m1018_32h_Qxyz_Vhkl.ini 272-285,289-316
+	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run4/20210628_Torrelles/binoculars/config2.txt 1303-1312
+#       cd ../..; cabal run binoculars-ng -- process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run4/Arthur_UHV/binoculars/config210_m1018_32h_Qxyz_Vhkl.txt 134-160
+#	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_110_m1018_32h_Qxyz_Vhkl.ini 272-285,289-316
+
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224
 #binoculars process config_m1018_32h_HKL.txt 103-132
