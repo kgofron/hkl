@@ -277,7 +277,7 @@ h5dpathHkl c = do
 process :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 process mf mr = do
   conf <- liftIO $ getConfig mf
-  liftIO $ print conf
+  $(logDebugSH) conf
   case conf of
     Right conf' -> do
               let c = combineWithCmdLineArgs conf' mr
