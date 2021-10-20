@@ -112,19 +112,22 @@ HKLAPI extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
 
 HKLAPI extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
 
-HKLAPI extern void hkl_binoculars_space_q(HklBinocularsSpace *self,
-                                          const HklGeometry *geometry,
-                                          const uint16_t *image,
-                                          size_t n_pixels,
-                                          double weight,
-                                          const double *pixels_coordinates,
-                                          size_t pixels_coordinates_ndim,
-                                          const size_t *pixels_coordinates_dims,
-                                          const double *resolutions,
-                                          size_t n_resolutions,
-                                          const uint8_t *mask);
+#define HKL_BINOCULARS_SPACE_Q_DECL(image_t)                            \
+        void hkl_binoculars_space_q_ ## image_t (HklBinocularsSpace *space, \
+                                                 const HklGeometry *geometry, \
+                                                 const image_t *image,  \
+                                                 size_t n_pixels,       \
+                                                 double weight,         \
+                                                 const double *pixels_coordinates, \
+                                                 size_t pixels_coordinates_ndim, \
+                                                 const size_t *pixels_coordinates_dims, \
+                                                 const double *resolutions, \
+                                                 size_t n_resolutions,  \
+                                                 const uint8_t *masked)
 
-HKLAPI extern void hkl_binoculars_space_hkl(HklBinocularsSpace *self,
+HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint16_t);
+
+HKLAPI extern void hkl_binoculars_space_hkl(HklBinocularsSpace *space,
                                             const HklGeometry *geometry,
                                             const HklSample *sample,
                                             const uint16_t *image,
@@ -135,7 +138,7 @@ HKLAPI extern void hkl_binoculars_space_hkl(HklBinocularsSpace *self,
                                             const size_t *pixels_coordinates_dims,
                                             const double *resolutions,
                                             size_t n_resolutions,
-                                            const uint8_t *mask);
+                                            const uint8_t *masked);
 
 /********/
 /* Cube */

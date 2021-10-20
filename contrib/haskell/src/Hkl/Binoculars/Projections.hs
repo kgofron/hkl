@@ -165,7 +165,7 @@ spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g img) =
     withMaybeMask mmask' $ \ mask'' ->
     withForeignPtr img $ \i ->
     withForeignPtr (spaceHklPointer space) $ \pSpace -> do
-      {-# SCC "hkl_binoculars_space_q" #-} hkl_binoculars_space_q pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
+      {-# SCC "hkl_binoculars_space_q_uint16_t" #-} hkl_binoculars_space_q_uint16_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
       return (DataFrameSpace img space att)
 
 -- SamplePath
