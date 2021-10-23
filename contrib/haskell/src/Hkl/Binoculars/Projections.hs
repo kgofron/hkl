@@ -220,5 +220,5 @@ spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att
       withPixelsDims pixels $ \ndim dims ->
       withForeignPtr img $ \i ->
       withForeignPtr (spaceHklPointer space) $ \pSpace -> do
-        {-# SCC "hkl_binoculars_space_hkl" #-} hkl_binoculars_space_hkl pSpace geometry sample i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
+        {-# SCC "hkl_binoculars_space_hkl_uint16_t" #-} hkl_binoculars_space_hkl_uint16_t pSpace geometry sample i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
         return (DataFrameSpace img space att)
