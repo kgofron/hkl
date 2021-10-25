@@ -90,7 +90,7 @@ mkJobs fn h5d = do
       c = if c' >= 2 then c' - 1 else c'
   pb <- newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration }
                 10 (Progress 0 ntot ())
-  return $ (mkJobs' (quot ntot c) fns ns, pb)
+  return (mkJobs' (quot ntot c) fns ns, pb)
 
 
 -- Project
@@ -267,7 +267,7 @@ withGeometryPathP f (GeometryPathFix w) gg =
                         gg (const $
                              Geometry Fixe
                              <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                             <*> (fromList <$> pure [])
+                             <*> pure (fromList [])
                              <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedH w as) gg =
     withHdf5PathP f w $ \w' ->
@@ -358,7 +358,7 @@ instance FramesQxQyQzP QxQyQzPath where
           (Chunk fp from to) <- await
           withFileP (openH5 fp) $ \f ->
             withQxQyQzPath f det p $ \getDataFrameQxQyQz ->
-            forM_ [from..to-1] (\j -> tryYield (getDataFrameQxQyQz j))
+            forM_ [from..to-1] (tryYield . getDataFrameQxQyQz)
 
 -- FramesHklP
 

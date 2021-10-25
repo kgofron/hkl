@@ -279,11 +279,9 @@ inputRangeP :: Parser InputRange
 inputRangeP = inputRangeFromToP <|> inputRangeP'
   where
     inputRangeFromToP :: Parser InputRange
-    inputRangeFromToP = do
-      f <- decimal
-      _ <- char '-'
-      t <- decimal
-      return $ InputRangeFromTo f t
+    inputRangeFromToP =  InputRangeFromTo
+                         <$> decimal <* char '-'
+                         <*> decimal
 
     inputRangeP' :: Parser InputRange
     inputRangeP' = InputRangeSingle <$> decimal
@@ -302,7 +300,7 @@ configRange = FieldValue {fvParse = parse, fvEmit = emit }
       showInputRange (InputRangeFromTo f t) = printf "%d-%d" f t
 
 configRangeP :: Parser ConfigRange
-configRangeP = ConfigRange <$> (inputRangeP `sepBy` (many (satisfy isSep)))
+configRangeP = ConfigRange <$> (inputRangeP `sepBy` many (satisfy isSep))
     where
       isSep :: Char -> Bool
       isSep c = c == ' ' || c == ','
@@ -359,7 +357,7 @@ files c = do
            Nothing -> return fs'
     where
       isHdf5 :: Path Abs File -> Bool
-      isHdf5 p = case ((fileExtension p) :: Maybe [Char]) of
+      isHdf5 p = case (fileExtension p :: Maybe [Char]) of
                    Nothing    -> False
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
 
@@ -452,8 +450,8 @@ getMask c d = case _binocularsInputMaskmatrix c of
 getResolution :: MonadThrow m => BinocularsConfig -> Int -> m [Double]
 getResolution c n
   | Data.List.length res == 1 = return $ replicate n (head res)
-  | Data.List.length res == n = return $ res
-  | otherwise = throwM $ (ResolutionNotCompatibleWithProjectionNbOfCoordinates res) n
+  | Data.List.length res == n = return res
+  | otherwise = throwM $ ResolutionNotCompatibleWithProjectionNbOfCoordinates res n
   where
     res = _binocularsProjectionResolution c
 

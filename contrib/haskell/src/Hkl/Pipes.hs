@@ -51,4 +51,4 @@ withHdf5PathP loc (H5GroupPath n subpath) f = withGroupP (openGroup loc n Nothin
 withHdf5PathP loc (H5GroupAtPath i subpath) f = withGroupAtP loc i $ \g -> withHdf5PathP g subpath f
 withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset loc n Nothing) f
 withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = withDatasetP (openDatasetWithAttr loc a c) f
-withHdf5PathP loc (H5Or l r) f = (withHdf5PathP loc l f) `catchAll` \_ -> (withHdf5PathP loc r f)
+withHdf5PathP loc (H5Or l r) f = withHdf5PathP loc l f `catchAll` const (withHdf5PathP loc r f)

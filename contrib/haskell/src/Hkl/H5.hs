@@ -336,16 +336,16 @@ openDatasetWithAttr loc attr value = do
       case t of
         DatasetObj -> do
           exist <- doesAttributeExist obj attr
-          case exist of
-            True -> withAttribute (openAttribute obj attr) $ \a -> do
+          if exist
+            then withAttribute (openAttribute obj attr) $ \a -> do
               c <- readAttributeStringASCII a
-              case c == value of
-                True -> do
+              if c == value
+                then do
                   ds <- openDataset g n Nothing
-                  modifyIORef' state $ \_ -> (Just ds)
+                  modifyIORef' state $ const (Just ds)
                   return $ HErr_t 1
-                False -> return $ HErr_t 0
-            False -> return $ HErr_t 0
+                else return $ HErr_t 0
+            else return $ HErr_t 0
         _          -> return $ HErr_t 0
   fromMaybeM (throwIO $ CanNotFindDatasetWithAttributContent attr value) (readIORef state)
 
@@ -415,7 +415,7 @@ withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup loc n Nothing
 withHdf5Path' loc (H5GroupAtPath i subpath) f = withGroupAt loc i $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset loc n Nothing) f
 withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (openDatasetWithAttr loc a c) f
-withHdf5Path' loc (H5Or l r) f = (withHdf5Path' loc l f) <|> (withHdf5Path' loc r f)
+withHdf5Path' loc (H5Or l r) f = withHdf5Path' loc l f <|> withHdf5Path' loc r f
 
 withHdf5Path :: FilePath -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
 withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f

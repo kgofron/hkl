@@ -55,7 +55,7 @@ chunk target = go target target
     go tgt gap [x]     = golast tgt gap x
     go tgt gap ~(x:xs) =
       let gap' = gap - cweight x
-      in if | gap' > 0                -> cons1 x $ go tgt gap' xs
+      in if | gap' > 0                 -> cons1 x $ go tgt gap' xs
             | gap' == 0                -> [x] : go tgt tgt xs
             | (x1, x2) <- csplit x gap -> [x1] : go tgt tgt (x2 : xs)
 
@@ -97,7 +97,7 @@ mkCube' dfs = do
     peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces'
 
 {-# INLINE addSpace #-}
-addSpace :: Shape sh => DataFrameSpace sh -> (Cube' sh) -> IO (ForeignPtr (Cube' sh))
+addSpace :: Shape sh => DataFrameSpace sh -> Cube' sh -> IO (ForeignPtr (Cube' sh))
 addSpace df EmptyCube' = do
   (Cube' fp) <- mkCube' [df]
   return fp
