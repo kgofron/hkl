@@ -65,7 +65,8 @@ import           Bindings.HDF5.Core              (HSize (HSize),
                                                   iterOrderCode)
 import           Bindings.HDF5.Dataset           (Dataset, closeDataset,
                                                   createDataset,
-                                                  getDatasetSpace, openDataset,
+                                                  getDatasetSpace,
+                                                  getDatasetType, openDataset,
                                                   readDataset, readDatasetInto,
                                                   writeDataset)
 import           Bindings.HDF5.Dataspace         (Dataspace,
@@ -76,6 +77,9 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   getSimpleDataspaceExtentNDims,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
+import           Bindings.HDF5.Datatype          (getArrayTypeDims,
+                                                  getArrayTypeNDims,
+                                                  getTypeClass, getTypeSize)
 import           Bindings.HDF5.Datatype.Internal (NativeType, hdfTypeOf1,
                                                   nativeTypeOf)
 import           Bindings.HDF5.Error             (withErrorCheck_)
@@ -269,7 +273,16 @@ datasetShape d = withDataspace (getDatasetSpace d) getSimpleDataspaceExtent
 --  DataSet
 
 openDataset' :: Location l => l -> ByteString -> Maybe DAPL -> IO Dataset
-openDataset' = openDataset
+openDataset' loc n ml = do
+  ds <- openDataset loc n ml
+  s <- getDatasetSpace ds
+  np <- getSimpleDataspaceExtentNPoints s
+  e <- getSimpleDataspaceExtent s
+  t <- getDatasetType ds
+  c <- getTypeClass t
+  es <- getTypeSize t
+  print (n, c, es, np, e)
+  return ds
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
