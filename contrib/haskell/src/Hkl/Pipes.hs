@@ -49,6 +49,6 @@ withHdf5PathP :: (MonadSafe m, Location l) => l -> Hdf5Path sh e -> (Dataset -> 
 withHdf5PathP loc (H5RootPath subpath) f = withHdf5PathP loc subpath f
 withHdf5PathP loc (H5GroupPath n subpath) f = withGroupP (openGroup loc n Nothing) $ \g -> withHdf5PathP g subpath f
 withHdf5PathP loc (H5GroupAtPath i subpath) f = withGroupAtP loc i $ \g -> withHdf5PathP g subpath f
-withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset loc n Nothing) f
+withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset' loc n Nothing) f
 withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = withDatasetP (openDatasetWithAttr loc a c) f
 withHdf5PathP loc (H5Or l r) f = withHdf5PathP loc l f `catchAll` const (withHdf5PathP loc r f)

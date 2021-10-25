@@ -30,7 +30,7 @@ module Hkl.H5
     , datasetShape
     , nxEntries
     , nxEntries'
-    , openDataset
+    , openDataset'
     , openDatasetWithAttr
     , openH5
     , set_image
@@ -88,6 +88,7 @@ import           Bindings.HDF5.Link              (visitLinks)
 import           Bindings.HDF5.Object            (ObjectId, ObjectType (..),
                                                   closeObject, getObjectType,
                                                   openObject)
+import           Bindings.HDF5.PropertyList.DAPL (DAPL)
 import           Bindings.HDF5.PropertyList.DXPL (DXPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5d_read,
@@ -267,6 +268,9 @@ datasetShape d = withDataspace (getDatasetSpace d) getSimpleDataspaceExtent
 
 --  DataSet
 
+openDataset' :: Location l => l -> ByteString -> Maybe DAPL -> IO Dataset
+openDataset' = openDataset
+
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
 
@@ -341,7 +345,7 @@ openDatasetWithAttr loc attr value = do
               c <- readAttributeStringASCII a
               if c == value
                 then do
-                  ds <- openDataset g n Nothing
+                  ds <- openDataset' g n Nothing
                   modifyIORef' state $ const (Just ds)
                   return $ HErr_t 1
                 else return $ HErr_t 0
@@ -413,7 +417,7 @@ withHdf5Path' :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
 withHdf5Path' loc (H5RootPath subpath) f = withHdf5Path' loc subpath f
 withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup loc n Nothing) $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5GroupAtPath i subpath) f = withGroupAt loc i $ \g -> withHdf5Path' g subpath f
-withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset loc n Nothing) f
+withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset' loc n Nothing) f
 withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (openDatasetWithAttr loc a c) f
 withHdf5Path' loc (H5Or l r) f = withHdf5Path' loc l f <|> withHdf5Path' loc r f
 
