@@ -108,7 +108,6 @@ library
   exposed-modules:    Hkl
                     , Hkl.Binoculars
                     , Hkl.Binoculars.Common
-                    -- , Hkl.Binoculars.Conduit
                     , Hkl.Binoculars.Config
                     , Hkl.Binoculars.Pipes
                     , Hkl.Binoculars.Projections
@@ -123,51 +122,16 @@ library
                     , Hkl.C.GeometryList
                     , Hkl.C.Lattice
                     , Hkl.C.Sample
-                    , Hkl.Conduit
-                    , Hkl.DataSource
                     , Hkl.Detector
-                    , Hkl.Edf
                     , Hkl.Engine
-                    , Hkl.Flat
                     , Hkl.H5
                     , Hkl.Lattice
                     , Hkl.MyMatrix
-                    , Hkl.Nxs
                     , Hkl.Orphan
-                    , Hkl.Projects
-                    , Hkl.Projects.D2AM
-                    , Hkl.Projects.D2AM.XRD
-                    , Hkl.Projects.Diffabs
-                    , Hkl.Projects.Diffabs.Charlier
-                    , Hkl.Projects.Diffabs.Hamon
-                    , Hkl.Projects.Diffabs.Hercules
-                    , Hkl.Projects.Diffabs.IRDRx
-                    , Hkl.Projects.Diffabs.Laure
-                    , Hkl.Projects.Diffabs.Melle
-                    , Hkl.Projects.Diffabs.Martinetto
-                    , Hkl.Projects.Mars
-                    , Hkl.Projects.Mars.Romeden
-                    , Hkl.Projects.Mars.Schlegel
                     , Hkl.Pipes
-                    , Hkl.PyFAI
-                    , Hkl.PyFAI.AzimuthalIntegrator
-                    , Hkl.PyFAI.Calib
-                    , Hkl.PyFAI.Calibrant
-                    , Hkl.PyFAI.Detector
-                    , Hkl.PyFAI.Poni
-                    , Hkl.PyFAI.PoniExt
-                    , Hkl.PyFAI.Npt
-                    , Hkl.Python
-                    , Hkl.Script
-                    , Hkl.Tiff
                     , Hkl.Types
                     , Hkl.Types.Parameter
                     , Hkl.Utils
-                    , Hkl.Xrd
-                    , Hkl.Xrd.Calibration
-                    , Hkl.Xrd.Mesh
-                    , Hkl.Xrd.OneD
-                    , Hkl.Xrd.ZeroD
   other-modules:      Paths_hkl
   other-extensions:    CPP
                      , ForeignFunctionInterface
@@ -176,50 +140,31 @@ library
                      , FlexibleInstances
                      , FlexibleContexts
                      , RecordWildCards
-  build-depends:       aeson >=0.8
-                     , async
+  build-depends:       async
                      , attoparsec
                      , base >= 4.6
                      , bytestring >= 0.10.0.2
-                     , bytestring-to-vector
-                     , conduit
                      , config-ini
-                     , containers >= 0.5 && < 0.7
                      , dimensional >= 0.10
                      , directory >= 1.3.0
                      , errors
                      , exceptions
                      , extra
                      , filepath >= 1.3.0
-                     , fgl
-                     , Glob >= 0.7.5
                      , hdf5
                      , hmatrix >= 0.17
                      , hmatrix-gsl >= 0.17
-                     , JuicyPixels >= 3.1.7
                      , lens
-                     , lifted-async
-                     , lifted-base
-                     , mmorph >= 1.0.3
-                     , monad-control
                      , monad-logger
                      , monad-loops >= 0.4.2
-                     , monads-tf
                      , path
                      , path-io
                      , pipes >= 4.1.2
                      , pipes-safe >= 2.2.0
-                     , process >= 1.1
                      , repa
-                     , pureMD5 >= 2.0
-                     , stm
-                     , safe
-                     , template-haskell >=2.8
                      , terminal-progress-bar
                      , text
                      , transformers >= 0.3
-                     , transformers-base
-                     , unix >= 2.6.0.0
                      , vector >= 0.10.0.1
   hs-source-dirs:      src
   default-language:    Haskell2010
