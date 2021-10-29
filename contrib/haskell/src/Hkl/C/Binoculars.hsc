@@ -30,6 +30,8 @@ module Hkl.C.Binoculars
        , hkl_binoculars_cube_add_space
        , hkl_binoculars_space_q_uint16_t
        , hkl_binoculars_space_hkl_uint16_t
+       , hkl_binoculars_space_q_int32_t
+       , hkl_binoculars_space_hkl_int32_t
        , newSpace
        , toCube
        ) where
@@ -37,6 +39,7 @@ module Hkl.C.Binoculars
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
 import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, ix1, size)
 import           Data.ByteString.Char8 (ByteString, packCString)
+import           Data.Int              (Int32)
 import           Data.Word             (Word16)
 import           Foreign.C.Types       (CBool, CDouble(..), CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.Marshal.Alloc (finalizerFree)
@@ -233,31 +236,42 @@ hkl_binoculars_space_new :: CSize -- size_t n_index0 (aka n_pixels)
 
 foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_space_free" hkl_binoculars_space_free :: FunPtr (Ptr (Space sh) -> IO ())
 
+type C'ProjectionTypeQ t = Ptr (Space DIM3) -- HklBinocularsSpace *self
+ -> Ptr Geometry -- const HklGeometry *geometry
+ -> Ptr t --  const uint16_t *image
+ -> CSize -- size_t n_pixels
+ -> CDouble -- double weight
+ -> Ptr Double -- const double *pixels_coordinates
+ -> CSize -- int32_t pixels_coordinates_ndim
+ -> Ptr CSize --  const int32_t *pixels_coordinates_dims
+ -> Ptr Double --  const double *resolutions
+ -> CSize -- size_t n_resolutions
+ -> Ptr CBool -- const uint8_t *mask
+ -> IO ()
+
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_uint16_t" \
-hkl_binoculars_space_q_uint16_t :: Ptr (Space DIM3) -- HklBinocularsSpace *self
-                                -> Ptr Geometry -- const HklGeometry *geometry
-                                -> Ptr Word16 --  const uint16_t *image
-                                -> CSize -- size_t n_pixels
-                                -> CDouble -- double weight
-                                -> Ptr Double -- const double *pixels_coordinates
-                                -> CSize -- int32_t pixels_coordinates_ndim
-                                -> Ptr CSize --  const int32_t *pixels_coordinates_dims
-                                -> Ptr Double --  const double *resolutions
-                                -> CSize -- size_t n_resolutions
-                                -> Ptr CBool -- const uint8_t *mask
-                                -> IO ()
+hkl_binoculars_space_q_uint16_t :: C'ProjectionTypeQ Word16
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_int32_t" \
+hkl_binoculars_space_q_int32_t :: C'ProjectionTypeQ Int32
+
+
+type C'ProjectionTypeHkl t = Ptr (Space DIM3) -- HklBinocularsSpace *self
+  -> Ptr Geometry -- const HklGeometry *geometry
+  -> Ptr HklSample -- const HklSample *sample
+  -> Ptr t --  const <t> *image
+  -> CSize -- size_t n_pixels
+  -> CDouble -- double weight
+  -> Ptr Double -- const double *pixels_coordinates
+  -> CSize -- size_t pixels_coordinates_ndim
+  -> Ptr CSize --  const int32_t *pixels_coordinates_dims
+  -> Ptr Double --  const double *resolutions
+  -> CSize -- size_t n_resolutions
+  -> Ptr CBool -- const uint8_t *mask
+  -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_uint16_t" \
-hkl_binoculars_space_hkl_uint16_t :: Ptr (Space DIM3) -- HklBinocularsSpace *self
-                                  -> Ptr Geometry -- const HklGeometry *geometry
-                                  -> Ptr HklSample -- const HklSample *sample
-                                  -> Ptr Word16 --  const uint16_t *image
-                                  -> CSize -- size_t n_pixels
-                                  -> CDouble -- double weight
-                                  -> Ptr Double -- const double *pixels_coordinates
-                                  -> CSize -- size_t pixels_coordinates_ndim
-                                  -> Ptr CSize --  const int32_t *pixels_coordinates_dims
-                                  -> Ptr Double --  const double *resolutions
-                                  -> CSize -- size_t n_resolutions
-                                  -> Ptr CBool -- const uint8_t *mask
-                                  -> IO ()
+hkl_binoculars_space_hkl_uint16_t :: C'ProjectionTypeHkl Word16
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_int32_t" \
+hkl_binoculars_space_hkl_int32_t :: C'ProjectionTypeHkl Int32

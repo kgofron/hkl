@@ -15,7 +15,6 @@
 
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
-  , DataFrameSpace(..)
   , LenP(..)
   , mkJobs
   , mkInputHkl
@@ -25,18 +24,24 @@ module Hkl.Binoculars.Pipes
   ) where
 
 import           Bindings.HDF5.Core                (Location)
+import           Bindings.HDF5.Dataset             (getDatasetType)
+import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
+                                                    typeIDsEqual)
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Exception                 (throwIO)
 import           Control.Monad                     (forM_, forever)
 import           Control.Monad.Catch               (MonadThrow, tryJust)
+import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Logger              (MonadLogger)
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, readIORef)
+import           Data.Int                          (Int32)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Vector.Storable              (fromList)
+import           Data.Word                         (Word16)
 import           GHC.Base                          (returnIO)
 import           GHC.Conc                          (getNumCapabilities)
 import           GHC.Float                         (float2Double)
@@ -229,9 +234,15 @@ progress p = forever $ do
 
 withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO Image) -> m r) -> m r
 withDetectorPathP f det (DetectorPath p) g = do
-  let n = (size . shape $ det) * 2  -- hardcoded size
-  withBytes n $ \buf ->
-      withHdf5PathP f p $ \p' -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)
+  withHdf5PathP f p $ \p' -> do
+    t <- liftIO $ getDatasetType p'
+    s <- liftIO $ getTypeSize t
+    let n = (size . shape $ det) * fromEnum s
+    ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16)))
+      (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i))
+      (ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Int32)))
+        (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i))
+        undefined)
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)

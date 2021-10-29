@@ -157,17 +157,21 @@ data DataFrameQxQyQz
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g (ImageWord16 img)) =
+spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g img) =
   withNPixels det $ \nPixels ->
-    withGeometry g $ \geometry ->
-    withForeignPtr (toForeignPtr pixels) $ \pix ->
-    withArrayLen rs $ \nr r ->
-    withPixelsDims pixels $ \ndim dims ->
-    withMaybeMask mmask' $ \ mask'' ->
-    withForeignPtr img $ \i ->
-    withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+  withGeometry g $ \geometry ->
+  withForeignPtr (toForeignPtr pixels) $ \pix ->
+  withArrayLen rs $ \nr r ->
+  withPixelsDims pixels $ \ndim dims ->
+  withMaybeMask mmask' $ \ mask'' ->
+  withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+  case img of
+    (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
       {-# SCC "hkl_binoculars_space_q_uint16_t" #-} hkl_binoculars_space_q_uint16_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
-      return (DataFrameSpace img space att)
+    (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
+      {-# SCC "hkl_binoculars_space_q_int32_t" #-} hkl_binoculars_space_q_int32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
+
+  return (DataFrameSpace img space att)
 
 -- SamplePath
 
@@ -210,16 +214,19 @@ data DataFrameHkl a
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att g (ImageWord16 img)) samp) = do
+spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
-      withGeometry g $ \geometry ->
-      withSample sample' $ \sample ->
-      withForeignPtr (toForeignPtr pixels) $ \pix ->
-      withArrayLen rs $ \nr r ->
-      withMaybeMask mmask' $ \ mask'' ->
-      withPixelsDims pixels $ \ndim dims ->
-      withForeignPtr img $ \i ->
-      withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+    withGeometry g $ \geometry ->
+    withSample sample' $ \sample ->
+    withForeignPtr (toForeignPtr pixels) $ \pix ->
+    withArrayLen rs $ \nr r ->
+    withMaybeMask mmask' $ \ mask'' ->
+    withPixelsDims pixels $ \ndim dims ->
+    withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+    case img of
+      (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
         {-# SCC "hkl_binoculars_space_hkl_uint16_t" #-} hkl_binoculars_space_hkl_uint16_t pSpace geometry sample i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
-        return (DataFrameSpace img space att)
+      (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
+        {-# SCC "hkl_binoculars_space_hkl_int32_t" #-} hkl_binoculars_space_hkl_int32_t pSpace geometry sample i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
+    return (DataFrameSpace img space att)

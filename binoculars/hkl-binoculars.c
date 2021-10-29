@@ -251,8 +251,9 @@ static inline void space_update_axes(HklBinocularsSpace *space,
                                 hkl_vector_minus_vector(&v, &ki);       \
                                 hkl_vector_rotated_quaternion(&v, &qs_1); \
                                                                         \
-                                for(j=0; j<ARRAY_SIZE(names); ++j)      \
+                                for(j=0; j<ARRAY_SIZE(names); ++j){     \
                                         item.indexes_0[j] = rint(v.data[j] / resolutions[j]); \
+                                }\
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                 darray_append(space->items, item);      \
@@ -266,6 +267,7 @@ static inline void space_update_axes(HklBinocularsSpace *space,
         }
 
 HKL_BINOCULARS_SPACE_Q_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_Q_IMPL(int32_t);
 
 #define HKL_BINOCULARS_SPACE_HKL_IMPL(image_t)                          \
         HKL_BINOCULARS_SPACE_HKL_DECL(image_t)                          \
@@ -304,8 +306,9 @@ HKL_BINOCULARS_SPACE_Q_IMPL(uint16_t);
                                 hkl_vector_minus_vector(&v, &ki);       \
                                 hkl_matrix_times_vector(&RUB_1, &v);    \
                                                                         \
-                                for(j=0; j<ARRAY_SIZE(names); ++j)      \
+                                for(j=0; j<ARRAY_SIZE(names); ++j){     \
                                         item.indexes_0[j] = rint(v.data[j] / resolutions[j]); \
+                                }\
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                 darray_append(space->items, item);      \
@@ -318,6 +321,7 @@ HKL_BINOCULARS_SPACE_Q_IMPL(uint16_t);
         }
 
 HKL_BINOCULARS_SPACE_HKL_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_HKL_IMPL(int32_t);
 
 /* Cube */
 

@@ -14,8 +14,8 @@
 -}
 module Hkl.Binoculars.Common
   ( Chunk(..)
-  , InputFn(..)
   , DataFrameSpace(..)
+  , InputFn(..)
   , addSpace
   , chunk
   , mkCube'
@@ -27,7 +27,6 @@ module Hkl.Binoculars.Common
 import           Control.Exception     (bracket)
 import           Data.Array.Repa       (Shape)
 import           Data.IORef            (IORef, newIORef, readIORef)
-import           Data.Word             (Word16)
 import           Foreign.ForeignPtr    (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array (withArrayLen)
 import           Foreign.Ptr           (Ptr)
@@ -36,6 +35,7 @@ import           Path                  (Abs, File, Path, fromAbsFile)
 import           Text.Printf           (printf)
 
 import           Hkl.C.Binoculars
+import           Hkl.Image
 import           Hkl.Orphan            ()
 
 data Chunk n a = Chunk !a !n !n
@@ -77,7 +77,7 @@ mkJobs' n fns ts = chunk n [Chunk f 0 t | (f, t) <- zip fns ts]
 
 --  DataFrameSpace
 
-data DataFrameSpace sh = DataFrameSpace (ForeignPtr Word16) (Space sh) Double
+data DataFrameSpace sh = DataFrameSpace Image (Space sh) Double
   deriving Show
 
 --  Create the Cube
