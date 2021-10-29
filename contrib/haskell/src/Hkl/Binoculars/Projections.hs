@@ -39,7 +39,7 @@ import           Data.Typeable                     (typeOf)
 import           Data.Word                         (Word16)
 import           Foreign.C.Types                   (CBool, CDouble (..),
                                                     CSize (..))
-import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
+import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr, nullPtr)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length)
@@ -53,6 +53,7 @@ import           Hkl.C.Geometry
 import           Hkl.C.Sample
 import           Hkl.Detector
 import           Hkl.H5                            hiding (File)
+import           Hkl.Image
 import           Hkl.Orphan                        ()
 import           Hkl.Types
 
@@ -151,12 +152,12 @@ data DataFrameQxQyQz
       Int -- n
       Double -- attenuation
       Geometry -- geometry
-      (ForeignPtr Word16) -- image
+      Image -- image
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g img) =
+spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g (ImageWord16 img)) =
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -209,7 +210,7 @@ data DataFrameHkl a
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
+spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att g (ImageWord16 img)) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
       withGeometry g $ \geometry ->

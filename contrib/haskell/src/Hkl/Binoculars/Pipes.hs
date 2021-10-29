@@ -37,8 +37,6 @@ import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, readIORef)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Vector.Storable              (fromList)
-import           Data.Word                         (Word16)
-import           Foreign.ForeignPtr                (ForeignPtr)
 import           GHC.Base                          (returnIO)
 import           GHC.Conc                          (getNumCapabilities)
 import           GHC.Float                         (float2Double)
@@ -69,6 +67,7 @@ import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
 import           Hkl.Detector
 import           Hkl.H5                            hiding (File)
+import           Hkl.Image
 import           Hkl.Pipes
 import           Hkl.Types
 
@@ -228,11 +227,11 @@ progress p = forever $ do
 
 -- Instances
 
-withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO (ForeignPtr Word16)) -> m r) -> m r
+withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO Image) -> m r) -> m r
 withDetectorPathP f det (DetectorPath p) g = do
   let n = (size . shape $ det) * 2  -- hardcoded size
   withBytes n $ \buf ->
-      withHdf5PathP f p $ \p' -> g (getArrayInBuffer buf det p')
+      withHdf5PathP f p $ \p' -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)

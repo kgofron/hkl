@@ -125,6 +125,7 @@ library
                     , Hkl.Detector
                     , Hkl.Engine
                     , Hkl.H5
+                    , Hkl.Image
                     , Hkl.Lattice
                     , Hkl.MyMatrix
                     , Hkl.Orphan
