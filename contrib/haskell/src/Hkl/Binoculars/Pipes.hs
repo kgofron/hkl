@@ -225,7 +225,7 @@ accumulateP ref =
     forever $ do s <- await
                  liftIO $ addSpace s =<< readIORef ref
 
-progress :: (MonadIO m, Shape sh) => ProgressBar s -> Consumer (DataFrameSpace sh) m ()
+progress :: MonadIO m => ProgressBar s -> Consumer a m ()
 progress p = forever $ do
   _ <- await
   liftIO $ p `incProgress` 1

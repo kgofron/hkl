@@ -96,7 +96,7 @@ double *hkl_binoculars_axis_array(const HklBinocularsAxis *self)
 static inline int hkl_binoculars_axis_contains_axis(const HklBinocularsAxis *self,
                                                     const HklBinocularsAxis *other)
 {
-        return self->imin >= other->imin && self->imax <= other->imax;
+        return self->imin <= other->imin && self->imax >= other->imax;
 }
 
 static inline void hkl_binoculars_axis_merge(HklBinocularsAxis *self, const HklBinocularsAxis *other)
@@ -127,7 +127,7 @@ static inline void merge_axes(darray_axis *axes,
 }
 
 static inline int does_not_include(const darray_axis *axes,
-                                  const darray_axis *others)
+                                   const darray_axis *others)
 {
         size_t i;
         int res = 0;
@@ -601,6 +601,9 @@ void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
 {
         HklBinocularsCube *cube;
 
+        /* hkl_binoculars_cube_fprintf(stdout, self); */
+        /* hkl_binoculars_space_fprintf(stdout, space); */
+
         if(is_empty(self)){
                 cube = hkl_binoculars_cube_new_from_space(space);
                 switch_content(self, cube);
@@ -608,6 +611,7 @@ void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
         }else{
                 /* check the compatibility of the cube and the space. */
                 if (does_not_include(&self->axes, &space->axes)){
+                        /* fprintf(stdout, "new\n"); */
                         HklBinocularsCube *cube = empty_cube(&self->axes);
 
                         merge_axes(&cube->axes, &space->axes); /* circonscript */
@@ -618,6 +622,8 @@ void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
 
                         switch_content(self, cube);
                         hkl_binoculars_cube_free(cube);
+                }else{
+                        /* fprintf(stdout, "no new\n"); */
                 }
                 add_space(self, space);
         }
