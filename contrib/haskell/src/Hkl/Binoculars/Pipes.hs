@@ -18,8 +18,8 @@ module Hkl.Binoculars.Pipes
   , LenP(..)
   , mkInputHklP
   , mkInputQxQyQzP
-  , processHkl
-  , processQxQyQz
+  , processHklP
+  , processQxQyQzP
   ) where
 
 import           Bindings.HDF5.Core                (Location)
@@ -131,11 +131,9 @@ class LenP a => MkJobsQxQyQzP a where
 
 instance MkJobsQxQyQzP QxQyQzPath
 
-class FramesQxQyQzP a => MkInputQxQyQzP a where
+class MkInputQxQyQzP a where
   mkInputQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
-                 => BinocularsConfig
-                 -> (BinocularsConfig -> m a)
-                 -> m (InputQxQyQz a)
+                 => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputQxQyQz a)
   mkInputQxQyQzP c f = do
     fs <- files c
     let d = fromMaybe defaultDetector (_binocularsInputDetector c)
@@ -157,20 +155,25 @@ class FramesQxQyQzP a => MkInputQxQyQzP a where
 
 instance MkInputQxQyQzP QxQyQzPath
 
-processQxQyQz :: (FramesQxQyQzP a, MkJobsQxQyQzP a) => InputQxQyQz a -> IO ()
-processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
-  pixels <- getPixelsCoordinates det cen d r
-  (jobs, pb) <- mkJobsQxQyQzP input
-  r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
-                           runSafeT $ runEffect $
-                           each job
-                           >-> framesQxQyQzP h5d det
-                           -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                           >-> project det 3 (spaceQxQyQz det pixels res mask')
-                           >-> tee (accumulateP c)
-                           >-> progress pb
-                       ) jobs
-  saveCube o r'
+class (FramesQxQyQzP a, MkJobsQxQyQzP a) => ProcessQxQyQzP a where
+  processQxQyQzP :: InputQxQyQz a -> IO ()
+  processQxQyQzP input@(InputQxQyQz det _ h5d o res cen d r mask') = do
+    pixels <- getPixelsCoordinates det cen d r
+    (jobs, pb) <- mkJobsQxQyQzP input
+    r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
+                             runSafeT $ runEffect $
+                             each job
+                             >-> framesQxQyQzP h5d det
+                             -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                             >-> project det 3 (spaceQxQyQz det pixels res mask')
+                             >-> tee (accumulateP c)
+                             >-> progress pb
+                         ) jobs
+    saveCube o r'
+
+    updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+
+instance ProcessQxQyQzP QxQyQzPath
 
 -- Hkl
 
@@ -183,11 +186,9 @@ class LenP a => MkJobsHklP a where
 
 instance MkJobsHklP HklPath
 
-class FramesHklP a => MkInputHklP a where
+class MkInputHklP a where
   mkInputHklP :: (MonadIO m, MonadThrow m)
-              => BinocularsConfig
-              -> (BinocularsConfig -> m a)
-              -> m (InputHkl a)
+              => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputHkl a)
   mkInputHklP c f = do
     fs <- files c
     let d = fromMaybe defaultDetector (_binocularsInputDetector c)
@@ -211,23 +212,26 @@ class FramesHklP a => MkInputHklP a where
 
 instance MkInputHklP HklPath
 
-processHkl :: (FramesHklP a, MkJobsHklP a) => InputHkl a -> IO ()
-processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
-  pixels <- getPixelsCoordinates det cen d r
-  (jobs, pb) <- mkJobsHklP input
-  r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
-                           runEffect $ runSafeP $
-                           each job
-                           -- >-> tee Pipes.Prelude.print
-                           >-> framesHklP h5d det
-                           -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
-                           >-> project det 3 (spaceHkl config' det pixels res mask')
-                           >-> tee (accumulateP c)
-                           >-> progress pb
-                       ) jobs
-  saveCube o r'
+class (FramesHklP a, MkJobsHklP a) => ProcessHklP a where
+  processHklP :: InputHkl a -> IO ()
+  processHklP input@(InputHkl det _ h5d o res cen d r config' mask') = do
+    pixels <- getPixelsCoordinates det cen d r
+    (jobs, pb) <- mkJobsHklP input
+    r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
+                             runEffect $ runSafeP $
+                             each job
+                             -- >-> tee Pipes.Prelude.print
+                             >-> framesHklP h5d det
+                             -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
+                             >-> project det 3 (spaceHkl config' det pixels res mask')
+                             >-> tee (accumulateP c)
+                             >-> progress pb
+                         ) jobs
+    saveCube o r'
 
-  updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+    updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+
+instance ProcessHklP HklPath
 
 --  Create the Cube
 

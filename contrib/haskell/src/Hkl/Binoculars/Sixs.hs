@@ -287,10 +287,10 @@ process mf mr = do
                    i <- mkInputQxQyQzP c h5dpathQxQyQz
                    $(logDebugSH) i
                    $(logInfo) "let's do a QxQyQz projection"
-                   liftIO $ processQxQyQz i
+                   liftIO $ processQxQyQzP i
                  HklProjection -> do
                    i <- mkInputHklP c h5dpathHkl
                    $(logDebugSH) i
                    $(logInfo) "let's do an Hkl projection"
-                   liftIO $ processHkl i
+                   liftIO $ processHklP i
     Left e   -> $(logErrorSH) e
