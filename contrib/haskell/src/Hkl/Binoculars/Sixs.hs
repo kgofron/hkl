@@ -284,12 +284,12 @@ process mf mr = do
               $(logDebugSH) c
               case _binocularsProjectionPtype c of
                  QxQyQzProjection -> do
-                   i <- mkInputQxQyQz c h5dpathQxQyQz
+                   i <- mkInputQxQyQzP c h5dpathQxQyQz
                    $(logDebugSH) i
                    $(logInfo) "let's do a QxQyQz projection"
                    liftIO $ processQxQyQz i
                  HklProjection -> do
-                   i <- mkInputHkl c h5dpathHkl
+                   i <- mkInputHklP c h5dpathHkl
                    $(logDebugSH) i
                    $(logInfo) "let's do an Hkl projection"
                    liftIO $ processHkl i
