@@ -16,7 +16,6 @@
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
   , LenP(..)
-  , mkJobs
   , mkInputHkl
   , mkInputQxQyQz
   , processHkl
@@ -126,8 +125,11 @@ skipMalformed p = loop
 class LenP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
-mkJobsQxQyQz :: LenP a => InputQxQyQz a -> IO ([[Chunk Int FilePath]], ProgressBar ())
-mkJobsQxQyQz (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
+class LenP a => MkJobsQxQyQzP a where
+  mkJobsQxQyQzP :: InputQxQyQz a -> IO ([[Chunk Int FilePath]], ProgressBar ())
+  mkJobsQxQyQzP (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
+
+instance MkJobsQxQyQzP QxQyQzPath
 
 mkInputQxQyQz :: (MonadIO m, MonadLogger m, MonadThrow m, FramesQxQyQzP a)
               => BinocularsConfig
@@ -152,10 +154,10 @@ mkInputQxQyQz c f = do
                      , mask = mask'
                      }
 
-processQxQyQz :: FramesQxQyQzP a => InputQxQyQz a -> IO ()
+processQxQyQz :: (FramesQxQyQzP a, MkJobsQxQyQzP a) => InputQxQyQz a -> IO ()
 processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
   pixels <- getPixelsCoordinates det cen d r
-  (jobs, pb) <- mkJobsQxQyQz input
+  (jobs, pb) <- mkJobsQxQyQzP input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
                            runSafeT $ runEffect $
                            each job
@@ -172,8 +174,11 @@ processQxQyQz input@(InputQxQyQz det _ h5d o res cen d r mask') = do
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
-mkJobsHkl :: LenP a => InputHkl a -> IO ([[Chunk Int FilePath]], ProgressBar ())
-mkJobsHkl (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
+class LenP a => MkJobsHklP a where
+  mkJobsHklP :: InputHkl a -> IO ([[Chunk Int FilePath]], ProgressBar ())
+  mkJobsHklP (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
+
+instance MkJobsHklP HklPath
 
 mkInputHkl :: (FramesHklP a, MonadIO m, MonadThrow m)
            => BinocularsConfig
@@ -200,10 +205,10 @@ mkInputHkl c f = do
     , mask = mask'
     }
 
-processHkl :: FramesHklP a => InputHkl a -> IO ()
+processHkl :: (FramesHklP a, MkJobsHklP a) => InputHkl a -> IO ()
 processHkl input@(InputHkl det _ h5d o res cen d r config' mask') = do
   pixels <- getPixelsCoordinates det cen d r
-  (jobs, pb) <- mkJobsHkl input
+  (jobs, pb) <- mkJobsHklP input
   r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
                            runEffect $ runSafeP $
                            each job
