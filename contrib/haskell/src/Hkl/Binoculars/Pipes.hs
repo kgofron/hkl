@@ -31,8 +31,7 @@ import           Control.Monad                     (forM_, forever)
 import           Control.Monad.Catch               (MonadThrow, tryJust)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Logger              (MonadLogger, logDebugSH,
-                                                    logInfo)
+import           Control.Monad.Logger              (MonadLogger, logInfo)
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
@@ -139,12 +138,12 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let sampleDetectorDistance = _binocularsInputSdd conf
     let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
 
-    filenames <- InputList <$> files conf
-    mask' <- getMask conf det
-    res <- getResolution conf 3
     h5d <- mkPaths conf
-    pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+    filenames <- InputList <$> files conf
     (jobs, pb) <- liftIO $ mkJobs filenames h5d
+    pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+    res <- getResolution conf 3
+    mask' <- getMask conf det
 
     r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
                                       runSafeT $ runEffect $
@@ -166,55 +165,39 @@ instance ProcessQxQyQzP QxQyQzPath
 class LenP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
-class LenP a => MkJobsHklP a where
-  mkJobsHklP :: InputHkl a -> IO ([[Chunk Int FilePath]], ProgressBar ())
-  mkJobsHklP (InputHkl _ fn h5d _ _ _ _ _ _ _) = mkJobs fn h5d
 
-instance MkJobsHklP HklPath
-
-class (FramesHklP a, MkJobsHklP a, Show a) => ProcessHklP a where
-  mkInputHklP :: (MonadIO m, MonadThrow m)
-              => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputHkl a)
-  mkInputHklP c f = do
-    fs <- files c
-    let d = fromMaybe defaultDetector (_binocularsInputDetector c)
-    mask' <- getMask c d
-    res <- getResolution c 3
-    h5dpath' <- f c
-    pure $ InputHkl
-      { detector = d
-      , filename = InputList fs
-      , h5dpath = h5dpath'
-      , output = destination'
-                 (fromMaybe (ConfigRange []) (_binocularsInputInputRange c))
-                 (_binocularsDispatcherDestination c)
-      , resolutions = res
-      , centralPixel = _binocularsInputCentralpixel c
-      , sdd' = _binocularsInputSdd c
-      , detrot' = fromMaybe (0 *~ degree) (_binocularsInputDetrot c)
-      , config = c
-      , mask = mask'
-      }
-
+class (FramesHklP a, Show a) => ProcessHklP a where
   processHklP :: (MonadIO m, MonadLogger m, MonadThrow m)
               => BinocularsConfig -> (BinocularsConfig -> m a) -> m ()
-  processHklP conf f = do
+  processHklP conf mkPaths = do
     $(logInfo) "let's do an Hkl projection"
-    input@(InputHkl det _ h5d o res cen d r config' mask') <- mkInputHklP conf f
-    $(logDebugSH) input
-    pixels <- liftIO $ getPixelsCoordinates det cen d r
-    (jobs, pb) <- liftIO $ mkJobsHklP input
+
+    let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
+    let output' = case _binocularsInputInputRange conf of
+                   Just r  -> destination' r (_binocularsDispatcherDestination conf)
+                   Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination conf)
+    let centralPixel' = _binocularsInputCentralpixel conf
+    let sampleDetectorDistance = _binocularsInputSdd conf
+    let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+
+    filenames <- InputList <$> files conf
+    mask' <- getMask conf det
+    res <- getResolution conf 3
+    h5d <- mkPaths conf
+    pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+    (jobs, pb) <- liftIO $ mkJobs filenames h5d
+
     r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
                                       runEffect $ runSafeP $
                                       each job
                                       -- >-> tee Pipes.Prelude.print
                                       >-> framesHklP h5d det
                                       -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
-                                      >-> project det 3 (spaceHkl config' det pixels res mask')
+                                      >-> project det 3 (spaceHkl conf det pixels res mask')
                                       >-> tee (accumulateP c)
                                       >-> progress pb
                                   ) jobs
-    liftIO $ saveCube o r'
+    liftIO $ saveCube output' r'
 
     liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 

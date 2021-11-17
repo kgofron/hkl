@@ -19,7 +19,6 @@ module Hkl.Binoculars.Projections
   , GeometryPath(..)
   , HklPath(..)
   , HklBinocularsException(..)
-  , InputHkl(..)
   , QxQyQzPath(..)
   , SamplePath(..)
   , badAttenuation
@@ -28,22 +27,21 @@ module Hkl.Binoculars.Projections
   , spaceQxQyQz
   ) where
 
-import           Control.Exception                 (Exception)
-import           Data.Array.Repa                   (Array, extent, listOfShape,
-                                                    size)
-import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Text                         (Text)
-import           Data.Typeable                     (typeOf)
-import           Data.Word                         (Word16)
-import           Foreign.C.Types                   (CBool, CDouble (..),
-                                                    CSize (..))
-import           Foreign.ForeignPtr                (withForeignPtr)
-import           Foreign.Marshal.Array             (withArrayLen)
-import           Foreign.Ptr                       (Ptr, nullPtr)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length)
+import           Control.Exception               (Exception)
+import           Data.Array.Repa                 (Array, extent, listOfShape,
+                                                  size)
+import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3, Z)
+import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
+import           Data.Text                       (Text)
+import           Data.Typeable                   (typeOf)
+import           Data.Word                       (Word16)
+import           Foreign.C.Types                 (CBool, CDouble (..),
+                                                  CSize (..))
+import           Foreign.ForeignPtr              (withForeignPtr)
+import           Foreign.Marshal.Array           (withArrayLen)
+import           Foreign.Ptr                     (Ptr, nullPtr)
 
-import           Prelude                           hiding (drop, mapM)
+import           Prelude                         hiding (drop, mapM)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -51,9 +49,9 @@ import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
 import           Hkl.C.Sample
 import           Hkl.Detector
-import           Hkl.H5                            hiding (File)
+import           Hkl.H5                          hiding (File)
 import           Hkl.Image
-import           Hkl.Orphan                        ()
+import           Hkl.Orphan                      ()
 import           Hkl.Types
 
 --  Common
@@ -184,20 +182,6 @@ data SamplePath
 
 data HklPath = HklPath QxQyQzPath SamplePath
                deriving Show
-
-data InputHkl a =
-  InputHkl { detector     :: Detector Hkl DIM2
-           , filename     :: InputFn
-           , h5dpath      :: a
-           , output       :: FilePath
-           , resolutions  :: [Double]
-           , centralPixel :: (Int, Int)  -- x, y
-           , sdd'         :: Length Double  -- sample to detector distance
-           , detrot'      :: Angle Double
-           , config       :: BinocularsConfig
-           , mask         :: Maybe Mask
-           }
-  deriving Show
 
 data DataFrameHkl a
     = DataFrameHkl DataFrameQxQyQz (Sample Triclinic)
