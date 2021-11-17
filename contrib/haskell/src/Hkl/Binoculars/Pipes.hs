@@ -40,7 +40,7 @@ import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
 import           Data.Maybe                        (fromMaybe)
 import           Data.Vector.Storable              (fromList)
-import           Data.Word                         (Word16)
+import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
 import           GHC.Conc                          (getNumCapabilities)
 import           GHC.Float                         (float2Double)
@@ -253,11 +253,13 @@ withDetectorPathP f det (DetectorPath p) g = do
     t <- liftIO $ getDatasetType p'
     s <- liftIO $ getTypeSize t
     let n = (size . shape $ det) * fromEnum s
-    ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16)))
+    (ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16)))
       (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i))
       (ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Int32)))
         (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i))
-        undefined)
+        (ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32)))
+         (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i))
+         undefined)))
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)

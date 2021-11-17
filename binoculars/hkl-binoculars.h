@@ -125,8 +125,9 @@ HKLAPI extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
                                                  size_t n_resolutions,  \
                                                  const uint8_t *masked)
 
-HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(int32_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint16_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint32_t);
 
 
 #define HKL_BINOCULARS_SPACE_HKL_DECL(image_t)\
@@ -143,8 +144,9 @@ HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(int32_t);
                                                    size_t n_resolutions, \
                                                    const uint8_t *masked)
 
-HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(int32_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint16_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint32_t);
 
 /********/
 /* Cube */

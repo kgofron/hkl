@@ -266,8 +266,9 @@ static inline void space_update_axes(HklBinocularsSpace *space,
                 hkl_sample_free(sample);                                \
         }
 
-HKL_BINOCULARS_SPACE_Q_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_Q_IMPL(int32_t);
+HKL_BINOCULARS_SPACE_Q_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_Q_IMPL(uint32_t);
 
 #define HKL_BINOCULARS_SPACE_HKL_IMPL(image_t)                          \
         HKL_BINOCULARS_SPACE_HKL_DECL(image_t)                          \
@@ -320,8 +321,9 @@ HKL_BINOCULARS_SPACE_Q_IMPL(int32_t);
                 hkl_detector_free(detector);                            \
         }
 
-HKL_BINOCULARS_SPACE_HKL_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_HKL_IMPL(int32_t);
+HKL_BINOCULARS_SPACE_HKL_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
 
 /* Cube */
 

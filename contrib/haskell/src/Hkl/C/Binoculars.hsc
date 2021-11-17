@@ -28,10 +28,12 @@ module Hkl.C.Binoculars
        , hkl_binoculars_cube_new_empty'
        , hkl_binoculars_cube_new_from_space
        , hkl_binoculars_cube_add_space
-       , hkl_binoculars_space_q_uint16_t
-       , hkl_binoculars_space_hkl_uint16_t
-       , hkl_binoculars_space_q_int32_t
        , hkl_binoculars_space_hkl_int32_t
+       , hkl_binoculars_space_hkl_uint16_t
+       , hkl_binoculars_space_hkl_uint32_t
+       , hkl_binoculars_space_q_int32_t
+       , hkl_binoculars_space_q_uint16_t
+       , hkl_binoculars_space_q_uint32_t
        , newSpace
        , toCube
        ) where
@@ -40,7 +42,7 @@ import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
 import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, ix1, size)
 import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Int              (Int32)
-import           Data.Word             (Word16)
+import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
@@ -249,11 +251,14 @@ type C'ProjectionTypeQ t = Ptr (Space DIM3) -- HklBinocularsSpace *self
  -> Ptr CBool -- const uint8_t *mask
  -> IO ()
 
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_int32_t" \
+hkl_binoculars_space_q_int32_t :: C'ProjectionTypeQ Int32
+
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_uint16_t" \
 hkl_binoculars_space_q_uint16_t :: C'ProjectionTypeQ Word16
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_int32_t" \
-hkl_binoculars_space_q_int32_t :: C'ProjectionTypeQ Int32
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_uint32_t" \
+hkl_binoculars_space_q_uint32_t :: C'ProjectionTypeQ Word32
 
 
 type C'ProjectionTypeHkl t = Ptr (Space DIM3) -- HklBinocularsSpace *self
@@ -270,8 +275,12 @@ type C'ProjectionTypeHkl t = Ptr (Space DIM3) -- HklBinocularsSpace *self
   -> Ptr CBool -- const uint8_t *mask
   -> IO ()
 
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_int32_t" \
+hkl_binoculars_space_hkl_int32_t :: C'ProjectionTypeHkl Int32
+
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_uint16_t" \
 hkl_binoculars_space_hkl_uint16_t :: C'ProjectionTypeHkl Word16
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_int32_t" \
-hkl_binoculars_space_hkl_int32_t :: C'ProjectionTypeHkl Int32
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_uint32_t" \
+hkl_binoculars_space_hkl_uint32_t :: C'ProjectionTypeHkl Word32
