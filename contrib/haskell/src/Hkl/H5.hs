@@ -254,7 +254,7 @@ openDataset' loc n ml = do
   t <- getDatasetType ds
   c <- getTypeClass t
   es <- getTypeSize t
-  print (n, c, es, np, e)
+  -- print (n, c, es, np, e)
   return ds
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
