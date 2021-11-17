@@ -125,42 +125,27 @@ skipMalformed p = loop
 class LenP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
-class LenP a => MkJobsQxQyQzP a where
-  mkJobsQxQyQzP :: InputQxQyQz a -> IO ([[Chunk Int FilePath]], ProgressBar ())
-  mkJobsQxQyQzP (InputQxQyQz _ fn h5d _ _ _ _ _ _) = mkJobs fn h5d
-
-instance MkJobsQxQyQzP QxQyQzPath
-
-class (FramesQxQyQzP a, MkJobsQxQyQzP a, Show a) => ProcessQxQyQzP a where
-  mkInputQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
-                 => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputQxQyQz a)
-  mkInputQxQyQzP c f = do
-    fs <- files c
-    let d = fromMaybe defaultDetector (_binocularsInputDetector c)
-    mask' <- getMask c d
-    res <- getResolution c 3
-    h5dpath' <- f c
-    pure $ InputQxQyQz { detector = d
-                       , filename = InputList fs
-                       , h5dpath = h5dpath'
-                       , output = case _binocularsInputInputRange c of
-                                    Just r  -> destination' r (_binocularsDispatcherDestination c)
-                                    Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination c)
-                       , resolutions = res
-                       , centralPixel = _binocularsInputCentralpixel c
-                       , sdd' = _binocularsInputSdd c
-                       , detrot' = fromMaybe (0 *~ degree) ( _binocularsInputDetrot c)
-                       , mask = mask'
-                       }
-
+class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
   processQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
                  => BinocularsConfig -> (BinocularsConfig -> m a)-> m ()
-  processQxQyQzP conf f = do
+  processQxQyQzP conf mkPaths = do
     $(logInfo) "let's do a QxQyQz projection"
-    input@(InputQxQyQz det _ h5d o res cen d r mask') <- mkInputQxQyQzP conf f
-    $(logDebugSH) input
-    pixels <- liftIO $ getPixelsCoordinates det cen d r
-    (jobs, pb) <- liftIO $ mkJobsQxQyQzP input
+
+    let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
+    let output' = case _binocularsInputInputRange conf of
+                   Just r  -> destination' r (_binocularsDispatcherDestination conf)
+                   Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination conf)
+    let centralPixel' = _binocularsInputCentralpixel conf
+    let sampleDetectorDistance = _binocularsInputSdd conf
+    let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+
+    filenames <- InputList <$> files conf
+    mask' <- getMask conf det
+    res <- getResolution conf 3
+    h5d <- mkPaths conf
+    pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+    (jobs, pb) <- liftIO $ mkJobs filenames h5d
+
     r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
                                       runSafeT $ runEffect $
                                       each job
@@ -170,7 +155,7 @@ class (FramesQxQyQzP a, MkJobsQxQyQzP a, Show a) => ProcessQxQyQzP a where
                                       >-> tee (accumulateP c)
                                       >-> progress pb
                                   ) jobs
-    liftIO $ saveCube o r'
+    liftIO $ saveCube output' r'
 
     liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 

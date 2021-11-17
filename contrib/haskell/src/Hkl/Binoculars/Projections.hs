@@ -20,7 +20,6 @@ module Hkl.Binoculars.Projections
   , HklPath(..)
   , HklBinocularsException(..)
   , InputHkl(..)
-  , InputQxQyQz(..)
   , QxQyQzPath(..)
   , SamplePath(..)
   , badAttenuation
@@ -136,19 +135,6 @@ instance Show QxQyQzPath where
   show = show . typeOf
 
 type Resolutions = [Double]
-
-data InputQxQyQz a =
-  InputQxQyQz { detector     :: Detector Hkl DIM2
-              , filename     :: InputFn
-              , h5dpath      :: a
-              , output       :: FilePath
-              , resolutions  :: [Double]
-              , centralPixel :: (Int, Int)  -- x, y
-              , sdd'         :: Length Double  -- sample to detector distance
-              , detrot'      :: Angle Double
-              , mask         :: Maybe Mask
-              }
-  deriving Show
 
 data DataFrameQxQyQz
     = DataFrameQxQyQz
