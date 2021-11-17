@@ -10,6 +10,9 @@ ord05133:
 #	/usr/bin/time /tmp/binoculars-ng-prof +RTS -N4 -- process ~/src/repo.or.cz/hkl/contrib/haskell/data/test/config_ord05133_flymedh.ini 1303-1312
 #	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_flymedh.ini 1303-1312
 
+ssd:
+	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
+
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224
 #binoculars process config_m1018_32h_HKL.txt 103-132
@@ -25,4 +28,4 @@ ord05133:
 #binoculars process config_m1018_32h_Qxyz.txt 105-106 129 131
 #binoculars process configV2_m1018_32h_Qxyz_Vhkl.txt 45-48 62-63 67-68
 #binoculars process config_m1018_32h_HKL.txt 33-36
-.PHONI: ord05133
+.PHONI: ord05133 ssd
