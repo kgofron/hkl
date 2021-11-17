@@ -131,7 +131,7 @@ class LenP a => MkJobsQxQyQzP a where
 
 instance MkJobsQxQyQzP QxQyQzPath
 
-class MkInputQxQyQzP a where
+class (FramesQxQyQzP a, MkJobsQxQyQzP a) => ProcessQxQyQzP a where
   mkInputQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
                  => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputQxQyQz a)
   mkInputQxQyQzP c f = do
@@ -153,9 +153,6 @@ class MkInputQxQyQzP a where
                        , mask = mask'
                        }
 
-instance MkInputQxQyQzP QxQyQzPath
-
-class (FramesQxQyQzP a, MkJobsQxQyQzP a) => ProcessQxQyQzP a where
   processQxQyQzP :: InputQxQyQz a -> IO ()
   processQxQyQzP input@(InputQxQyQz det _ h5d o res cen d r mask') = do
     pixels <- getPixelsCoordinates det cen d r
@@ -186,7 +183,7 @@ class LenP a => MkJobsHklP a where
 
 instance MkJobsHklP HklPath
 
-class MkInputHklP a where
+class (FramesHklP a, MkJobsHklP a) => ProcessHklP a where
   mkInputHklP :: (MonadIO m, MonadThrow m)
               => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputHkl a)
   mkInputHklP c f = do
@@ -210,9 +207,6 @@ class MkInputHklP a where
       , mask = mask'
       }
 
-instance MkInputHklP HklPath
-
-class (FramesHklP a, MkJobsHklP a) => ProcessHklP a where
   processHklP :: InputHkl a -> IO ()
   processHklP input@(InputHkl det _ h5d o res cen d r config' mask') = do
     pixels <- getPixelsCoordinates det cen d r
