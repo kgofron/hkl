@@ -41,12 +41,13 @@ import Hkl.C.DArray
 
 --  Factory
 
-data Factory = K6c | Fixe | Uhv | MedH | MedV | SoleilSiriusKappa
+data Factory = K6c | Fixe | Uhv | Mars | MedH | MedV | SoleilSiriusKappa
 
 instance Show Factory where
   show K6c = "K6C"
   show Fixe = undefined
   show Uhv = "ZAXIS"
+  show Mars = "SOLEIL MARS"
   show MedH = "SOLEIL SIXS MED1+2"
   show MedV = "SOLEIL SIXS MED2+3"
   show SoleilSiriusKappa = "SOLEIL SIRIUS KAPPA"
@@ -56,6 +57,7 @@ factoryFromString s
   | s == "K6C"  = K6c
   | s == undefined = Fixe
   | s == "ZAXIS" = Uhv
+  | s == "SOLEIL MARS" = Mars
   | s == undefined = MedH
   | s == "SOLEIL SIXS MED2+3" = MedV
   | s == "SOLEIL SIRIUS KAPPA" = SoleilSiriusKappa

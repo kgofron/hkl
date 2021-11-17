@@ -94,6 +94,7 @@ newtype DestinationTmpl =
   deriving (Eq, Show)
 
 data InputType = CristalK6C
+               | Mars1
                | SixsFlyMedH
                | SixsFlyMedV
                | SixsFlyMedVEiger
@@ -237,6 +238,7 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
           | t == emit SixsSbsMedV = Right SixsSbsMedV
           | t == emit SixsSbsMedVFixDetector = Right SixsSbsMedVFixDetector
           | t == emit CristalK6C = Right CristalK6C
+          | t == emit Mars1 = Right Mars1
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: InputType -> Text
@@ -252,6 +254,7 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
       emit SixsSbsMedV            = "sixs:sbsmedv"
       emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
       emit CristalK6C             = "cristal:k6c"
+      emit Mars1                  = "mars"
 
 projectionType :: FieldValue ProjectionType
 projectionType = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }

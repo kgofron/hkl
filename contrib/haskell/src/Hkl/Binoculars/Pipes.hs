@@ -296,6 +296,15 @@ withGeometryPathP f (GeometryPathFix w) gg =
                              <$> (Source <$> getValueWithUnit w' 0 angstrom)
                              <*> pure (fromList [])
                              <*> pure Nothing)
+withGeometryPathP f (GeometryPathMars w as) gg =
+    withHdf5PathP f w $ \w' ->
+    withAxesPathP f as $ \as' ->
+        gg (\j -> Geometry Mars
+                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <*> (fromList <$> do
+                         vs <- Prelude.mapM (`get_position` j) as'
+                         return (0.0 : vs))
+                 <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedH w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->

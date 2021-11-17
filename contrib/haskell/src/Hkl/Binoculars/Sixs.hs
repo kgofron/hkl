@@ -62,6 +62,17 @@ h5dpathQxQyQz c = case _binocularsInputItype c of
                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
                          (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
                          (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
+  Mars1 -> QxQyQzPath
+          <$> mkAttenuation c NoAttenuation
+          <*> pure (DetectorPath
+                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image"))
+          <*> pure (GeometryPathMars
+                    (hdf5p $ grouppat 0 $ groupp "MARS/d03-1-c03__op__mono1_old_#1" $ datasetp "wavelength")
+                    [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "chi"
+                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"
+                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth"
+                    ])
   SixsFlyMedH -> QxQyQzPath
                   <$> mkAttenuation c (AttenuationPath
                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
@@ -227,38 +238,41 @@ h5dpathQxQyQz c = case _binocularsInputItype c of
 
 h5dpathHkl :: (MonadLogger m, MonadThrow m) => BinocularsConfig -> m HklPath
 h5dpathHkl c = do
-    let sixsSample device = SamplePath
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "A")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "B")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "C")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "alpha")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "beta")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "gamma")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Ux")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uy")
-                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp device $ datasetp "Uz")
-    let uhvSamplePath = sixsSample "I14-C-CX2__EX__DIFF-UHV__#1"
-    let uhvSamplePath2 = sixsSample "i14-c-cx2-ex-diff-uhv"
-    let cmMedHSamplePath = sixsSample "i14-c-cx1-ex-cm-med.h"
-    let cmMedVSamplePath = sixsSample "i14-c-cx1-ex-cm-med.v"
+    let samplePath beamline device =
+          SamplePath
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Ux")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uy")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uz")
+    let marsSamplePath = samplePath "MARS" "d03-1-cx2__ex__dif-cm_#1"
+    let medHSamplePath = samplePath "SIXS" "i14-c-cx1-ex-cm-med.h"
+    let medVSamplePath = samplePath "SIXS" "i14-c-cx1-ex-cm-med.v"
+    let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
+    let uhvSamplePath2 = samplePath "SIXS" "i14-c-cx2-ex-diff-uhv"
     qxqyqz <- h5dpathQxQyQz c
     case _binocularsInputItype c of
-      SixsFlyMedH -> return $ HklPath qxqyqz cmMedHSamplePath
-      SixsFlyMedV -> return $ HklPath qxqyqz cmMedVSamplePath
-      SixsFlyMedVEiger -> return $ HklPath qxqyqz cmMedVSamplePath
-      SixsFlyMedVS70 -> return $ HklPath qxqyqz cmMedVSamplePath
-      SixsFlyScanUhv -> return $ HklPath qxqyqz uhvSamplePath
-      SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath2
-      SixsFlyScanUhvUfxc -> return $ HklPath qxqyqz uhvSamplePath
-      SixsSbsFixedDetector -> undefined -- TODO this must not be possible.
-      SixsSbsMedH -> return $ HklPath qxqyqz cmMedHSamplePath
-      SixsSbsMedV -> return $ HklPath qxqyqz cmMedVSamplePath
-      SixsSbsMedVFixDetector -> return $ HklPath qxqyqz cmMedVSamplePath
       CristalK6C -> do
                  let ms = sampleConfig c
                  case ms of
                    (Just s) -> return (HklPath qxqyqz (SamplePath2 s))
                    Nothing  -> throwM (MissingSampleParameters c)
+      Mars1 -> return $ HklPath qxqyqz marsSamplePath
+      SixsFlyMedH -> return $ HklPath qxqyqz medHSamplePath
+      SixsFlyMedV -> return $ HklPath qxqyqz medVSamplePath
+      SixsFlyMedVEiger -> return $ HklPath qxqyqz medVSamplePath
+      SixsFlyMedVS70 -> return $ HklPath qxqyqz medVSamplePath
+      SixsFlyScanUhv -> return $ HklPath qxqyqz uhvSamplePath
+      SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath2
+      SixsFlyScanUhvUfxc -> return $ HklPath qxqyqz uhvSamplePath
+      SixsSbsFixedDetector -> undefined -- TODO this must not be possible.
+      SixsSbsMedH -> return $ HklPath qxqyqz medHSamplePath
+      SixsSbsMedV -> return $ HklPath qxqyqz medVSamplePath
+      SixsSbsMedVFixDetector -> return $ HklPath qxqyqz medVSamplePath
 
          -- SixsSbsMedV -> HklPath
          --               hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")  -- xpad
