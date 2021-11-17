@@ -17,8 +17,7 @@ module Hkl.Binoculars.Sixs
 import           Control.Monad.Catch        (Exception, MonadThrow, throwM)
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
 import           Control.Monad.Logger       (MonadLogger, logDebugSH,
-                                             logErrorSH, logInfo, logWarn,
-                                             logWarnN)
+                                             logErrorSH, logWarn, logWarnN)
 import           Data.Text                  (Text)
 
 import           Hkl.Binoculars.Config
@@ -297,14 +296,6 @@ process mf mr = do
               let c = combineWithCmdLineArgs conf' mr
               $(logDebugSH) c
               case _binocularsProjectionPtype c of
-                 QxQyQzProjection -> do
-                   i <- mkInputQxQyQzP c h5dpathQxQyQz
-                   $(logDebugSH) i
-                   $(logInfo) "let's do a QxQyQz projection"
-                   liftIO $ processQxQyQzP i
-                 HklProjection -> do
-                   i <- mkInputHklP c h5dpathHkl
-                   $(logDebugSH) i
-                   $(logInfo) "let's do an Hkl projection"
-                   liftIO $ processHklP i
+                 QxQyQzProjection -> processQxQyQzP c h5dpathQxQyQz
+                 HklProjection    -> processHklP c h5dpathHkl
     Left e   -> $(logErrorSH) e

@@ -1,6 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 {-
     Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
@@ -16,8 +17,6 @@
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
   , LenP(..)
-  , mkInputHklP
-  , mkInputQxQyQzP
   , processHklP
   , processQxQyQzP
   ) where
@@ -32,7 +31,8 @@ import           Control.Monad                     (forM_, forever)
 import           Control.Monad.Catch               (MonadThrow, tryJust)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Logger              (MonadLogger)
+import           Control.Monad.Logger              (MonadLogger, logDebugSH,
+                                                    logInfo)
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
@@ -131,7 +131,7 @@ class LenP a => MkJobsQxQyQzP a where
 
 instance MkJobsQxQyQzP QxQyQzPath
 
-class (FramesQxQyQzP a, MkJobsQxQyQzP a) => ProcessQxQyQzP a where
+class (FramesQxQyQzP a, MkJobsQxQyQzP a, Show a) => ProcessQxQyQzP a where
   mkInputQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
                  => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputQxQyQz a)
   mkInputQxQyQzP c f = do
@@ -153,22 +153,26 @@ class (FramesQxQyQzP a, MkJobsQxQyQzP a) => ProcessQxQyQzP a where
                        , mask = mask'
                        }
 
-  processQxQyQzP :: InputQxQyQz a -> IO ()
-  processQxQyQzP input@(InputQxQyQz det _ h5d o res cen d r mask') = do
-    pixels <- getPixelsCoordinates det cen d r
-    (jobs, pb) <- mkJobsQxQyQzP input
-    r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
-                             runSafeT $ runEffect $
-                             each job
-                             >-> framesQxQyQzP h5d det
-                             -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                             >-> project det 3 (spaceQxQyQz det pixels res mask')
-                             >-> tee (accumulateP c)
-                             >-> progress pb
-                         ) jobs
-    saveCube o r'
+  processQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
+                 => BinocularsConfig -> (BinocularsConfig -> m a)-> m ()
+  processQxQyQzP conf f = do
+    $(logInfo) "let's do a QxQyQz projection"
+    input@(InputQxQyQz det _ h5d o res cen d r mask') <- mkInputQxQyQzP conf f
+    $(logDebugSH) input
+    pixels <- liftIO $ getPixelsCoordinates det cen d r
+    (jobs, pb) <- liftIO $ mkJobsQxQyQzP input
+    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
+                                      runSafeT $ runEffect $
+                                      each job
+                                      >-> framesQxQyQzP h5d det
+                                      -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                                      >-> project det 3 (spaceQxQyQz det pixels res mask')
+                                      >-> tee (accumulateP c)
+                                      >-> progress pb
+                                  ) jobs
+    liftIO $ saveCube o r'
 
-    updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+    liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 
 instance ProcessQxQyQzP QxQyQzPath
 
@@ -183,7 +187,7 @@ class LenP a => MkJobsHklP a where
 
 instance MkJobsHklP HklPath
 
-class (FramesHklP a, MkJobsHklP a) => ProcessHklP a where
+class (FramesHklP a, MkJobsHklP a, Show a) => ProcessHklP a where
   mkInputHklP :: (MonadIO m, MonadThrow m)
               => BinocularsConfig -> (BinocularsConfig -> m a) -> m (InputHkl a)
   mkInputHklP c f = do
@@ -207,23 +211,27 @@ class (FramesHklP a, MkJobsHklP a) => ProcessHklP a where
       , mask = mask'
       }
 
-  processHklP :: InputHkl a -> IO ()
-  processHklP input@(InputHkl det _ h5d o res cen d r config' mask') = do
-    pixels <- getPixelsCoordinates det cen d r
-    (jobs, pb) <- mkJobsHklP input
-    r' <- mapConcurrently (\job -> withCubeAccumulator $ \c ->
-                             runEffect $ runSafeP $
-                             each job
-                             -- >-> tee Pipes.Prelude.print
-                             >-> framesHklP h5d det
-                             -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
-                             >-> project det 3 (spaceHkl config' det pixels res mask')
-                             >-> tee (accumulateP c)
-                             >-> progress pb
-                         ) jobs
-    saveCube o r'
+  processHklP :: (MonadIO m, MonadLogger m, MonadThrow m)
+              => BinocularsConfig -> (BinocularsConfig -> m a) -> m ()
+  processHklP conf f = do
+    $(logInfo) "let's do an Hkl projection"
+    input@(InputHkl det _ h5d o res cen d r config' mask') <- mkInputHklP conf f
+    $(logDebugSH) input
+    pixels <- liftIO $ getPixelsCoordinates det cen d r
+    (jobs, pb) <- liftIO $ mkJobsHklP input
+    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
+                                      runEffect $ runSafeP $
+                                      each job
+                                      -- >-> tee Pipes.Prelude.print
+                                      >-> framesHklP h5d det
+                                      -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
+                                      >-> project det 3 (spaceHkl config' det pixels res mask')
+                                      >-> tee (accumulateP c)
+                                      >-> progress pb
+                                  ) jobs
+    liftIO $ saveCube o r'
 
-    updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+    liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 
 instance ProcessHklP HklPath
 
