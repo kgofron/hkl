@@ -38,6 +38,7 @@ import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
 import           Data.Maybe                        (fromMaybe)
+import           Data.Text                         (pack)
 import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
@@ -60,6 +61,7 @@ import           System.ProgressBar                (Progress (..), ProgressBar,
                                                     newProgressBar,
                                                     renderDuration,
                                                     updateProgress)
+import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (filter)
 
@@ -128,8 +130,6 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
   processQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
                  => BinocularsConfig -> (BinocularsConfig -> m a)-> m ()
   processQxQyQzP conf mkPaths = do
-    $(logInfo) "let's do a QxQyQz projection"
-
     let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
     let output' = case _binocularsInputInputRange conf of
                    Just r  -> destination' r (_binocularsDispatcherDestination conf)
@@ -140,10 +140,20 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
 
     h5d <- mkPaths conf
     filenames <- InputList <$> files conf
-    (jobs, pb) <- liftIO $ mkJobs filenames h5d
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
     res <- getResolution conf 3
     mask' <- getMask conf det
+
+    let fns = concatMap (replicate 1) (toList filenames)
+    ns <- liftIO $ runSafeT $ toListM $ each fns >-> lenP h5d
+    cap' <-  liftIO $ getNumCapabilities
+    let ntot = sum ns
+    let cap = if cap' >= 2 then cap' - 1 else cap'
+    let jobs = mkJobs' (quot ntot cap) fns ns
+
+    $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d image(s) on %d core(s)" ntot cap)
+
+    pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
 
     r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
                                       runSafeT $ runEffect $
@@ -170,8 +180,6 @@ class (FramesHklP a, Show a) => ProcessHklP a where
   processHklP :: (MonadIO m, MonadLogger m, MonadThrow m)
               => BinocularsConfig -> (BinocularsConfig -> m a) -> m ()
   processHklP conf mkPaths = do
-    $(logInfo) "let's do an Hkl projection"
-
     let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
     let output' = case _binocularsInputInputRange conf of
                    Just r  -> destination' r (_binocularsDispatcherDestination conf)
@@ -185,7 +193,17 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     res <- getResolution conf 3
     h5d <- mkPaths conf
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
-    (jobs, pb) <- liftIO $ mkJobs filenames h5d
+
+    let fns = concatMap (replicate 1) (toList filenames)
+    ns <- liftIO $ runSafeT $ toListM $ each fns >-> lenP h5d
+    cap' <-  liftIO $ getNumCapabilities
+    let ntot = sum ns
+    let cap = if cap' >= 2 then cap' - 1 else cap'
+    let jobs = mkJobs' (quot ntot cap) fns ns
+
+    $(logInfo) (pack $ printf "let's do an Hkl projection of %d image(s) on %d core(s)" ntot cap)
+
+    pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
 
     r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
                                       runEffect $ runSafeP $
