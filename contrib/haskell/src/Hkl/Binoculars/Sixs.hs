@@ -61,17 +61,17 @@ h5dpathQxQyQz c = case _binocularsInputItype c of
                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
                          (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
                          (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
-  Mars1 -> QxQyQzPath
-          <$> mkAttenuation c NoAttenuation
-          <*> pure (DetectorPath
-                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image"))
-          <*> pure (GeometryPathMars
-                    (hdf5p $ grouppat 0 $ groupp "MARS/d03-1-c03__op__mono1_old_#1" $ datasetp "wavelength")
-                    [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "chi"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"
-                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth"
-                    ])
+  MarsFlyscan -> QxQyQzPath
+                <$> mkAttenuation c NoAttenuation
+                <*> pure (DetectorPath
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image"))
+                <*> pure (GeometryPathMars
+                          (hdf5p $ grouppat 0 $ groupp "MARS/d03-1-c03__op__mono1_old_#1" $ datasetp "wavelength")
+                          [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "chi"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth"
+                          ])
   SixsFlyMedH -> QxQyQzPath
                   <$> mkAttenuation c (AttenuationPath
                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
@@ -248,7 +248,18 @@ h5dpathHkl c = do
           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Ux")
           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uy")
           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uz")
-    let marsSamplePath = samplePath "MARS" "d03-1-cx2__ex__dif-cm_#1"
+    let sampleMarsPath beamline device =
+          SamplePath
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_x")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_y")
+          (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_z")
+    let marsSamplePath = sampleMarsPath "MARS" "d03-1-cx2__ex__dif-cm_#1"
     let medHSamplePath = samplePath "SIXS" "i14-c-cx1-ex-cm-med.h"
     let medVSamplePath = samplePath "SIXS" "i14-c-cx1-ex-cm-med.v"
     let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
@@ -260,7 +271,7 @@ h5dpathHkl c = do
                  case ms of
                    (Just s) -> return (HklPath qxqyqz (SamplePath2 s))
                    Nothing  -> throwM (MissingSampleParameters c)
-      Mars1 -> return $ HklPath qxqyqz marsSamplePath
+      MarsFlyscan -> return $ HklPath qxqyqz marsSamplePath
       SixsFlyMedH -> return $ HklPath qxqyqz medHSamplePath
       SixsFlyMedV -> return $ HklPath qxqyqz medVSamplePath
       SixsFlyMedVEiger -> return $ HklPath qxqyqz medVSamplePath

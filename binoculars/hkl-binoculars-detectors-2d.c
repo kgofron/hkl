@@ -113,7 +113,8 @@ datatype(
         (ImXpadS140, struct imxpad_t),
         (XpadFlatCorrected, struct square_t),
         (Eiger1M, struct dectris_t),
-        (Ufxc, struct square_t)
+        (Ufxc, struct square_t),
+        (Merlin, struct square_t)
         );
 
 struct detector_t {
@@ -138,6 +139,8 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                          SHAPE(1030, 1065), DECTRIS(1030, 514, 10, 37, 75e-6)),
                 DETECTOR(Ufxc,
                          SHAPE(257, 256), SQUARE(75e-6)),
+                DETECTOR(Merlin,
+                         SHAPE(256, 256), SQUARE(55e-6)),
         };
         return detectors[n];
 }
@@ -446,6 +449,10 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         return coordinates_get_square(&detector.shape,
                                                       square);
                 }
+                of(Merlin, square){
+                        return coordinates_get_square(&detector.shape,
+                                                      square);
+                }
         }
 }
 
@@ -489,6 +496,9 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                                                 dectris);
                 }
                 of(Ufxc){
+                        return no_mask(&detector.shape);
+                }
+                of(Merlin){
                         return no_mask(&detector.shape);
                 }
         }
