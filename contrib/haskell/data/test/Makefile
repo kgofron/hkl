@@ -13,7 +13,7 @@ ord05133:
 
 sixs:
 	#cd ../..; gdb --args ~picca/src/repo.or.cz/hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process data/test/config_sixs_ruche_uhv.ini
-	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_sixs_ruche_uhv.ini
+	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_uhv.ini
 
 ssd:
 	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
