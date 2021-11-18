@@ -11,6 +11,10 @@ ord05133:
 #	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_flymedh.ini 1303-1312
 	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ord05133_ruche_mars_flyscan.ini
 
+sixs:
+	#cd ../..; gdb --args ~picca/src/repo.or.cz/hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process data/test/config_sixs_ruche_uhv.ini
+	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_sixs_ruche_uhv.ini
+
 ssd:
 	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
 
@@ -29,4 +33,4 @@ ssd:
 #binoculars process config_m1018_32h_Qxyz.txt 105-106 129 131
 #binoculars process configV2_m1018_32h_Qxyz_Vhkl.txt 45-48 62-63 67-68
 #binoculars process config_m1018_32h_HKL.txt 33-36
-.PHONI: ord05133 ssd
+.PHONI: ord05133 ssd sixs

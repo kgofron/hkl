@@ -151,7 +151,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = mkJobs' (quot ntot cap) fns ns
 
-    $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d image(s) on %d core(s)" ntot cap)
+    $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
     pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
 
