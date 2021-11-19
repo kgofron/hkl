@@ -49,7 +49,7 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
 import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, each, runEffect,
                                                     yield, (>->))
-import           Pipes.Prelude                     (tee, toListM)
+import           Pipes.Prelude                     (map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, SafeT,
                                                     SomeException, bracket,
                                                     catchP, displayException,
@@ -108,7 +108,7 @@ skipMalformed p = loop
 -- QxQyQz
 
 class ChunkP a => FramesQxQyQzP a where
-  framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
+  framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameQxQyQz (SafeT IO) ()
 
 class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
   processQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
@@ -121,6 +121,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let centralPixel' = _binocularsInputCentralpixel conf
     let sampleDetectorDistance = _binocularsInputSdd conf
     let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+    let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsInputSurfaceOrientation conf)
 
     h5d <- mkPaths conf
     filenames <- InputList <$> files conf
@@ -133,9 +134,23 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let fns = concatMap (replicate 1) (toList filenames)
     chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
     cap' <-  liftIO $ getNumCapabilities
-    let ntot = sum (map clength chunks)
+    let ntot = sum (Prelude.map clength chunks)
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
+
+    -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
+
+    guessed <- liftIO $ withCubeAccumulator $ \c ->
+      runSafeT $ runEffect $
+      each chunks
+      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
+      >-> framesQxQyQzP h5d det
+      >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation)
+      >-> accumulateP c
+
+    liftIO $ Prelude.print guessed
+
+    -- do the final projection
 
     $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
@@ -144,9 +159,10 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
                                       runSafeT $ runEffect $
                                       each job
+                                      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                       >-> framesQxQyQzP h5d det
                                       -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                                      >-> project det 3 (spaceQxQyQz det pixels res mask')
+                                      >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation)
                                       >-> tee (accumulateP c)
                                       >-> progress pb
                                   ) jobs
@@ -183,7 +199,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let fns = concatMap (replicate 1) (toList filenames)
     chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
     cap' <-  liftIO $ getNumCapabilities
-    let ntot = sum (map clength chunks)
+    let ntot = sum (Prelude.map clength chunks)
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
 
@@ -239,7 +255,7 @@ nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
 
 withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([Dataset] -> m a) -> m a
-withAxesPathP f dpaths = nest (map (withHdf5PathP f) dpaths)
+withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
@@ -349,7 +365,7 @@ instance ChunkP QxQyQzPath where
         case head ss of
           (Just n) -> yield $ case ma of
             NoAttenuation             -> Chunk fp 0 (fromIntegral n - 1)
-            (AttenuationPath _ off _) -> Chunk fp off (fromIntegral n - 1)
+            (AttenuationPath _ off _) -> Chunk fp 0 (fromIntegral n - 1 - off)
           Nothing  -> error "can not extract length"
 
 tryYield :: IO r -> Proxy x' x () r (SafeT IO) ()
@@ -365,10 +381,10 @@ tryYield io = do
 instance FramesQxQyQzP QxQyQzPath where
     framesQxQyQzP p det =
         skipMalformed $ forever $ do
-          (Chunk fp from to) <- await
-          withFileP (openH5 fp) $ \f ->
+          (fn, js) <- await
+          withFileP (openH5 fn) $ \f ->
             withQxQyQzPath f det p $ \getDataFrameQxQyQz ->
-            forM_ [from..to-1] (tryYield . getDataFrameQxQyQz)
+            forM_ js (tryYield . getDataFrameQxQyQz)
 
 -- FramesHklP
 

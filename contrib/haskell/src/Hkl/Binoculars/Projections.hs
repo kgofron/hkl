@@ -143,8 +143,8 @@ data DataFrameQxQyQz
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
-spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g img) =
+spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
+spaceQxQyQz det pixels rs mmask' surf space (DataFrameQxQyQz _ att g img) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -154,11 +154,11 @@ spaceQxQyQz det pixels rs mmask' space (DataFrameQxQyQz _ att g img) =
   withForeignPtr (spaceHklPointer space) $ \pSpace -> do
   case img of
     (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_q_int32_t" #-} hkl_binoculars_space_q_int32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
+      {-# SCC "hkl_binoculars_space_q_int32_t" #-} hkl_binoculars_space_q_int32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf)
     (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_q_uint16_t" #-} hkl_binoculars_space_q_uint16_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
+      {-# SCC "hkl_binoculars_space_q_uint16_t" #-} hkl_binoculars_space_q_uint16_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf)
     (ImageWord32 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_q_uint32_t" #-} hkl_binoculars_space_q_uint32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask''
+      {-# SCC "hkl_binoculars_space_q_uint32_t" #-} hkl_binoculars_space_q_uint32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf)
 
   return (DataFrameSpace img space att)
 

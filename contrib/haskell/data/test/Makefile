@@ -9,7 +9,8 @@ ord05133:
 #	/usr/bin/time /tmp/binoculars-ng +RTS -N4 -- process ~/src/repo.or.cz/hkl/contrib/haskell/data/test/config_ord05133_flymedh.ini 1303-1312
 #	/usr/bin/time /tmp/binoculars-ng-prof +RTS -N4 -- process ~/src/repo.or.cz/hkl/contrib/haskell/data/test/config_ord05133_flymedh.ini 1303-1312
 #	cd ../..; cabal run binoculars-ng -- process data/test/config_ord05133_flymedh.ini 1303-1312
-	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ord05133_ruche_mars_flyscan.ini
+#	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ord05133_ruche_mars_flyscan.ini
+	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N -RTS process data/test/config_ord05133_ruche_uhv_big.ini
 
 sixs:
 	#cd ../..; gdb --args ~picca/src/repo.or.cz/hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process data/test/config_sixs_ruche_uhv.ini

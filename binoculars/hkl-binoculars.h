@@ -108,6 +108,15 @@ struct _HklBinocularsSpace
         darray_HklBinocularsSpaceItem items;
 };
 
+typedef enum _HklBinocularsSurfaceOrientationEnum
+{
+        HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL = 0,
+        HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL,
+        /* Add new your detectors here */
+        HKL_BINOCULARS_SURFACE_ORIENTATION_NUM_ORIENTATION,
+} HklBinocularsSurfaceOrientationEnum;
+
+
 HKLAPI extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
                                                            size_t n_axes);
 
@@ -124,7 +133,8 @@ HKLAPI extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
                                                  const size_t *pixels_coordinates_dims, \
                                                  const double *resolutions, \
                                                  size_t n_resolutions,  \
-                                                 const uint8_t *masked)
+                                                 const uint8_t *masked, \
+                                                 HklBinocularsSurfaceOrientationEnum surf)
 
 HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint16_t);

@@ -22,6 +22,7 @@ module Hkl.Binoculars.Config
     , InputRange(..)
     , InputType(..)
     , ProjectionType(..)
+    , SurfaceOrientation(..)
     , configRangeP
     , combineWithCmdLineArgs
     , destination'
@@ -118,6 +119,14 @@ newtype ConfigRange = ConfigRange [InputRange]
 data SurfaceOrientation = SurfaceOrientationVertical
                         | SurfaceOrientationHorizontal
   deriving (Eq, Show)
+
+instance Enum SurfaceOrientation where
+  fromEnum SurfaceOrientationVertical   = 0
+  fromEnum SurfaceOrientationHorizontal = 1
+
+  toEnum 0         = SurfaceOrientationVertical
+  toEnum 1         = SurfaceOrientationHorizontal
+  toEnum unmatched = error ("Key.toEnum: Cannot match " ++ show unmatched)
 
 data ProjectionType = QxQyQzProjection
                     | HklProjection
@@ -386,7 +395,7 @@ files c = do
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
 
       matchIndex :: Path Abs File -> Int -> Bool
-      matchIndex p n = printf "%04d" n `isInfixOf` toFilePath p
+      matchIndex p n = printf "%05d" n `isInfixOf` toFilePath p
 
       isInInputRange :: Path Abs File -> InputRange -> Bool
       isInInputRange p (InputRangeSingle i) = any (matchIndex p) [i]

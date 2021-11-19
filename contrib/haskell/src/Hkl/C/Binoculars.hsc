@@ -43,7 +43,7 @@ import           Data.Array.Repa       (DIM1, DIM3, Shape, shapeOfList, ix1, siz
 import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
-import           Foreign.C.Types       (CBool, CDouble(..), CSize(..), CUInt(..), CPtrdiff)
+import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.Marshal.Alloc (finalizerFree)
 import           Foreign.Marshal.Array (allocaArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
@@ -249,6 +249,7 @@ type C'ProjectionTypeQ t = Ptr (Space DIM3) -- HklBinocularsSpace *self
  -> Ptr Double --  const double *resolutions
  -> CSize -- size_t n_resolutions
  -> Ptr CBool -- const uint8_t *mask
+ -> CInt -- surface orientation
  -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_int32_t" \
