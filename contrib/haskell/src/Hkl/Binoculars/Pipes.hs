@@ -16,7 +16,6 @@
 
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
-  , LenP(..)
   , processHklP
   , processQxQyQzP
   ) where
@@ -77,25 +76,10 @@ import           Hkl.Pipes
 import           Hkl.Types
 
 
--- LenP
+-- ChunkP
 
-class LenP a where
-  lenP :: a -> Pipe FilePath Int (SafeT IO) ()
-
-
--- Jobs
-
-mkJobs :: LenP a => InputFn -> a -> IO ([[Chunk Int FilePath]], ProgressBar ())
-mkJobs fn h5d = do
-  let fns = concatMap (replicate 1) (toList fn)
-  ns <- runSafeT $ toListM $ each fns >-> lenP h5d
-  c' <- getNumCapabilities
-  let ntot = sum ns
-      c = if c' >= 2 then c' - 1 else c'
-  pb <- newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration }
-                10 (Progress 0 ntot ())
-  return (mkJobs' (quot ntot c) fns ns, pb)
-
+class ChunkP a where
+  chunkP :: a -> Pipe FilePath (Chunk Int FilePath) (SafeT IO) ()
 
 -- Project
 
@@ -123,7 +107,7 @@ skipMalformed p = loop
 
 -- QxQyQz
 
-class LenP a => FramesQxQyQzP a where
+class ChunkP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) DataFrameQxQyQz (SafeT IO) ()
 
 class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
@@ -144,12 +128,14 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     res <- getResolution conf 3
     mask' <- getMask conf det
 
+    -- compute the jobs
+
     let fns = concatMap (replicate 1) (toList filenames)
-    ns <- liftIO $ runSafeT $ toListM $ each fns >-> lenP h5d
+    chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
     cap' <-  liftIO $ getNumCapabilities
-    let ntot = sum ns
+    let ntot = sum (map clength chunks)
     let cap = if cap' >= 2 then cap' - 1 else cap'
-    let jobs = mkJobs' (quot ntot cap) fns ns
+    let jobs = chunk (quot ntot cap) chunks
 
     $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
@@ -172,7 +158,7 @@ instance ProcessQxQyQzP QxQyQzPath
 
 -- Hkl
 
-class LenP a => FramesHklP a where
+class ChunkP a => FramesHklP a where
   framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
 
 
@@ -195,11 +181,11 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
 
     let fns = concatMap (replicate 1) (toList filenames)
-    ns <- liftIO $ runSafeT $ toListM $ each fns >-> lenP h5d
+    chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
     cap' <-  liftIO $ getNumCapabilities
-    let ntot = sum ns
+    let ntot = sum (map clength chunks)
     let cap = if cap' >= 2 then cap' - 1 else cap'
-    let jobs = mkJobs' (quot ntot cap) fns ns
+    let jobs = chunk (quot ntot cap) chunks
 
     $(logInfo) (pack $ printf "let's do an Hkl projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
@@ -353,18 +339,18 @@ withQxQyQzPath f det (QxQyQzPath att d dif) g =
 
 --  FramesQxQyQzP
 
-instance LenP QxQyQzPath where
-    lenP (QxQyQzPath ma (DetectorPath i) _) =
-        skipMalformed $ forever $ do
-                           fp <- await
-                           withFileP (openH5 fp) $ \f ->
-                               withHdf5PathP f i $ \i' -> do
-                                    (_, ss) <- liftIO $ datasetShape i'
-                                    case head ss of
-                                      (Just n) -> yield $ fromIntegral n - case ma of
-                                                                            NoAttenuation           -> 0
-                                                                            (AttenuationPath _ off _) -> off
-                                      Nothing  -> error "can not extract length"
+instance ChunkP QxQyQzPath where
+    chunkP (QxQyQzPath ma (DetectorPath i) _) =
+      skipMalformed $ forever $ do
+      fp <- await
+      withFileP (openH5 fp) $ \f ->
+        withHdf5PathP f i $ \i' -> do
+        (_, ss) <- liftIO $ datasetShape i'
+        case head ss of
+          (Just n) -> yield $ case ma of
+            NoAttenuation             -> Chunk fp 0 (fromIntegral n - 1)
+            (AttenuationPath _ off _) -> Chunk fp off (fromIntegral n - 1)
+          Nothing  -> error "can not extract length"
 
 tryYield :: IO r -> Proxy x' x () r (SafeT IO) ()
 tryYield io = do
@@ -421,8 +407,8 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
                 <*> pure (Range 0 0)))
 withSamplePathP _ (SamplePath2 s) g = g (return s)
 
-instance LenP HklPath where
-  lenP (HklPath p _)           = lenP p
+instance ChunkP HklPath where
+  chunkP (HklPath p _)           = chunkP p
 
 instance FramesHklP HklPath where
   framesHklP (HklPath qp samp) det = skipMalformed $ forever $ do

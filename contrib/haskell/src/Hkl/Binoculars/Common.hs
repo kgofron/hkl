@@ -18,8 +18,8 @@ module Hkl.Binoculars.Common
   , InputFn(..)
   , addSpace
   , chunk
+  , clength
   , mkCube'
-  , mkJobs'
   , toList
   , withCubeAccumulator
   ) where
@@ -40,6 +40,10 @@ import           Hkl.Orphan            ()
 
 data Chunk n a = Chunk !a !n !n
 deriving instance (Show n, Show a) => Show (Chunk n a)
+
+clength :: Num n => Chunk n a -> n
+clength (Chunk _ l h) = h - l + 1
+{-# SPECIALIZE clength :: Chunk Int FilePath -> Int  #-}
 
 cweight :: Num n => Chunk n a -> n
 cweight (Chunk _ l h) = h - l
@@ -71,9 +75,6 @@ toList :: InputFn -> [FilePath]
 toList (InputFn f)           = [f]
 toList (InputRange tmpl f t) = [printf tmpl i | i <- [f..t]]
 toList (InputList fs)        = map fromAbsFile fs
-
-mkJobs' :: Int -> [FilePath] -> [Int] -> [[Chunk Int FilePath]]
-mkJobs' n fns ts = chunk n [Chunk f 0 t | (f, t) <- zip fns ts]
 
 --  DataFrameSpace
 
