@@ -115,6 +115,10 @@ data InputRange = InputRangeSingle Int
 newtype ConfigRange = ConfigRange [InputRange]
   deriving (Eq, Show, IsList)
 
+data SurfaceOrientation = SurfaceOrientationVertical
+                        | SurfaceOrientationHorizontal
+  deriving (Eq, Show)
+
 data ProjectionType = QxQyQzProjection
                     | HklProjection
   deriving (Eq, Show)
@@ -131,6 +135,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputSdd                    :: Length Double
   , _binocularsInputDetrot                 :: Maybe (Angle Double)
   , _binocularsInputAttenuationCoefficient :: Maybe Double
+  , _binocularsInputSurfaceOrientation     :: Maybe SurfaceOrientation
   , _binocularsInputMaskmatrix             :: Maybe Text
   , _binocularsInputA                      :: Maybe (Length Double)
   , _binocularsInputB                      :: Maybe (Length Double)
@@ -160,6 +165,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsInputSdd = 1 *~ meter
   , _binocularsInputDetrot = Nothing
   , _binocularsInputAttenuationCoefficient = Nothing
+  , _binocularsInputSurfaceOrientation = Just SurfaceOrientationVertical
   , _binocularsInputMaskmatrix = Nothing
   , _binocularsInputA = Nothing
   , _binocularsInputB = Nothing
@@ -207,6 +213,7 @@ binocularsConfigSpec = do
     binocularsInputSdd .= field "sdd" (numberUnit meter)
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
     binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" number'
+    binocularsInputSurfaceOrientation .=? field "surface_orientation" surfaceOrientation
     binocularsInputMaskmatrix .=? field "maskmatrix" text
     binocularsInputA .=? field "a" (numberUnit angstrom)
     binocularsInputB .=? field "b" (numberUnit angstrom)
@@ -255,6 +262,20 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
       emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
       emit CristalK6C             = "cristal:k6c"
       emit MarsFlyscan            = "mars:flyscan"
+
+surfaceOrientation :: FieldValue SurfaceOrientation
+surfaceOrientation = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+  where
+    parse ::  Text -> Either String SurfaceOrientation
+    parse t
+      | t == emit SurfaceOrientationVertical = Right SurfaceOrientationVertical
+      | t == emit SurfaceOrientationHorizontal = Right SurfaceOrientationHorizontal
+      | otherwise = Left ("Unsupported " ++ unpack t ++ " surface orientation (vertical or horizontal)")
+
+    emit :: SurfaceOrientation -> Text
+    emit SurfaceOrientationVertical   = "vertical"
+    emit SurfaceOrientationHorizontal = "horizontal"
+
 
 projectionType :: FieldValue ProjectionType
 projectionType = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
