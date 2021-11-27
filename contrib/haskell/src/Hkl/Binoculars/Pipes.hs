@@ -255,19 +255,20 @@ progress p = forever $ do
 
 -- Instances
 
+condM :: (Monad m) => [(m Bool, m a)] -> m a
+condM []          = undefined
+condM ((p, v):ls) = ifM p v (condM ls)
+
 withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO Image) -> m r) -> m r
 withDetectorPathP f det (DetectorPath p) g = do
   withHdf5PathP f p $ \p' -> do
     t <- liftIO $ getDatasetType p'
     s <- liftIO $ getTypeSize t
     let n = (size . shape $ det) * fromEnum s
-    (ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16)))
-      (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i))
-      (ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Int32)))
-        (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i))
-        (ifM (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32)))
-         (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i))
-         undefined)))
+    condM [ ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Int32))), (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i)))
+          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16))), (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)))
+          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
+          ]
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
