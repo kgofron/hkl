@@ -175,7 +175,7 @@ instance ProcessQxQyQzP QxQyQzPath
 -- Hkl
 
 class ChunkP a => FramesHklP a where
-  framesHklP :: a -> Detector b DIM2 -> Pipe (Chunk Int FilePath) (DataFrameHkl b) (SafeT IO) ()
+  framesHklP :: a -> Detector b DIM2 -> Pipe (FilePath, [Int]) (DataFrameHkl b) (SafeT IO) ()
 
 
 class (FramesHklP a, Show a) => ProcessHklP a where
@@ -203,6 +203,18 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
 
+    -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
+
+    guessed <- liftIO $ withCubeAccumulator $ \c ->
+      runSafeT $ runEffect $
+      each chunks
+      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
+      >-> framesHklP h5d det
+      >-> project det 3 (spaceHkl conf det pixels res mask')
+      >-> accumulateP c
+
+    liftIO $ Prelude.print guessed
+
     $(logInfo) (pack $ printf "let's do an Hkl projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
     pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
@@ -210,6 +222,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
                                       runEffect $ runSafeP $
                                       each job
+                                      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                       -- >-> tee Pipes.Prelude.print
                                       >-> framesHklP h5d det
                                       -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
@@ -428,11 +441,11 @@ instance ChunkP HklPath where
 
 instance FramesHklP HklPath where
   framesHklP (HklPath qp samp) det = skipMalformed $ forever $ do
-    (Chunk fp from to) <- await
+    (fp, js) <- await
     withFileP (openH5 fp) $ \f ->
       withQxQyQzPath f det qp $ \getDataFrameQxQyQz ->
       withSamplePathP f samp $ \getSample ->
-      forM_ [from..to-1] (\j -> tryYield ( DataFrameHkl
-                                          <$> getDataFrameQxQyQz j
-                                          <*> getSample
-                                        ))
+      forM_ js (\j -> tryYield ( DataFrameHkl
+                                <$> getDataFrameQxQyQz j
+                                <*> getSample
+                              ))
