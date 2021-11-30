@@ -263,7 +263,6 @@ static inline void space_update_axes(HklBinocularsSpace *space,
                                 HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
                                 hkl_vector_rotated_quaternion(&v, &q);  \
-                                hkl_vector_normalize(&v);               \
                                 hkl_vector_times_double(&v, k);         \
                                 hkl_vector_minus_vector(&v, &ki);       \
                                 hkl_vector_rotated_quaternion(&v, &qs_1); \
@@ -320,7 +319,6 @@ HKL_BINOCULARS_SPACE_Q_IMPL(uint32_t);
                                 HklVector v = {{h[i], k[i], l[i]}};     \
                                                                         \
                                 hkl_vector_rotated_quaternion(&v, &q_d); \
-                                hkl_vector_normalize(&v);               \
                                 hkl_vector_times_double(&v, K);         \
                                 hkl_vector_minus_vector(&v, &ki);       \
                                 hkl_matrix_times_vector(&RUB_1, &v);    \

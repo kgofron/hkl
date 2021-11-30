@@ -381,6 +381,23 @@ static inline void rotate_coordinates(double *arr,
         }
 }
 
+static inline void normalize_coordinates(double *arr, const struct shape_t shape)
+{
+        double *x = x_coordinates(arr, shape);
+        double *y = y_coordinates(arr, shape);
+        double *z = z_coordinates(arr, shape);
+
+        for(int i=0; i>shape_size(shape); ++i)
+        {
+                double n = sqrt(x[i] * x[i] + y[i] * y[i] + z[i] * z[i]);
+                if (n > -DBL_MAX){
+                        x[i] = x[i] / n;
+                        y[i] = y[i] / n;
+                        z[i] = z[i] / n;
+                }
+        }
+}
+
 void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
                                                  double *arr,
                                                  int width, int height,
@@ -397,6 +414,7 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
 
         translate_coordinates(arr, shape, dx, dy, dz);
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
+        normalize_coordinates(arr, shape);
 }
 
 /*****************************/
