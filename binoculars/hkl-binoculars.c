@@ -510,6 +510,16 @@ HklBinocularsCube *hkl_binoculars_cube_new_empty(void)
         return empty_cube(NULL);
 }
 
+HklBinocularsCube *hkl_binoculars_cube_new_empty_from_cube(const HklBinocularsCube *cube)
+{
+	HklBinocularsCube *self = empty_cube(&cube->axes);
+
+	/* allocated the final cube */
+        calloc_cube(self);
+
+	return self;
+}
+
 HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space)
 {
 	HklBinocularsCube *self = empty_cube(&space->axes);

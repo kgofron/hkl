@@ -115,7 +115,13 @@ data InputFn = InputFn FilePath
              | InputList [Path Abs File]
   deriving Show
 
-withCubeAccumulator :: Shape sh => (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
-withCubeAccumulator f = bracket (newIORef =<< peek =<< hkl_binoculars_cube_new_empty') pure (\r -> f r >> readIORef r)
+withCubeAccumulator :: Shape sh => Cube' sh -> (IORef (Cube' sh)  -> IO ()) -> IO (Cube' sh)
+withCubeAccumulator c f = bracket
+  (newIORef =<< peek =<< case c of
+                           EmptyCube' -> hkl_binoculars_cube_new_empty'
+                           (Cube' fp) -> withForeignPtr fp $ \p -> hkl_binoculars_cube_new_empty_from_cube' p
+  )
+  pure
+  (\r -> f r >> readIORef r)
 
 -- Projections

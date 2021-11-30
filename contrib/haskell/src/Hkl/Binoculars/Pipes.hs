@@ -140,7 +140,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
 
     -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
-    guessed <- liftIO $ withCubeAccumulator $ \c ->
+    guessed <- liftIO $ withCubeAccumulator EmptyCube' $ \c ->
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
@@ -156,7 +156,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
 
     pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
 
-    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
+    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
                                       runSafeT $ runEffect $
                                       each job
                                       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
@@ -205,7 +205,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
 
     -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
-    guessed <- liftIO $ withCubeAccumulator $ \c ->
+    guessed <- liftIO $ withCubeAccumulator EmptyCube' $ \c ->
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
@@ -219,7 +219,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
 
     pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
 
-    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator $ \c ->
+    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
                                       runEffect $ runSafeP $
                                       each job
                                       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))

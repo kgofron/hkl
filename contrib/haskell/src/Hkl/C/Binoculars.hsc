@@ -26,6 +26,7 @@ module Hkl.C.Binoculars
        , hkl_binoculars_cube_new
        , hkl_binoculars_cube_new'
        , hkl_binoculars_cube_new_empty'
+       , hkl_binoculars_cube_new_empty_from_cube'
        , hkl_binoculars_cube_new_from_space
        , hkl_binoculars_cube_add_space
        , hkl_binoculars_space_hkl_int32_t
@@ -137,6 +138,9 @@ hkl_binoculars_cube_new' :: CSize -- size_t n_spaces
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_empty" \
 hkl_binoculars_cube_new_empty' :: IO (Ptr (Cube' sh))
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_empty_from_cube" \
+hkl_binoculars_cube_new_empty_from_cube' :: Ptr (Cube' sh) -> IO (Ptr (Cube' sh))
 
 --  Cube
 

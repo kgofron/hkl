@@ -179,6 +179,8 @@ HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_empty(void);
 
+HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_empty_from_cube(const HklBinocularsCube *src);
+
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space);
