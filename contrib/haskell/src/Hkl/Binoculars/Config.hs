@@ -94,6 +94,9 @@ newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
   deriving (Eq, Show)
 
+newtype InputTmpl = InputTmpl { unInputTmpl :: Text }
+  deriving (Eq, Show)
+
 data InputType = CristalK6C
                | MarsFlyscan
                | SixsFlyMedH
@@ -138,6 +141,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsDispatcherOverwrite         :: Bool
   , _binocularsInputItype                  :: InputType
   , _binocularsInputNexusdir               :: Maybe (Path Abs Dir)
+  , _binocularsInputTmpl                   :: Maybe InputTmpl
   , _binocularsInputInputRange             :: Maybe ConfigRange
   , _binocularsInputDetector               :: Maybe (Detector Hkl DIM2)
   , _binocularsInputCentralpixel           :: (Int, Int)
@@ -168,6 +172,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsDispatcherOverwrite = False
   , _binocularsInputItype = SixsFlyScanUhv
   , _binocularsInputNexusdir = Nothing
+  , _binocularsInputTmpl = Nothing
   , _binocularsInputInputRange = Nothing
   , _binocularsInputDetector = Nothing
   , _binocularsInputCentralpixel = (0, 0)
@@ -207,6 +212,15 @@ destinationTmpl = FieldValue { fvParse = parse, fvEmit = emit }
       emit :: DestinationTmpl -> Text
       emit (DestinationTmpl t) = t
 
+inputTmpl :: FieldValue InputTmpl
+inputTmpl = FieldValue { fvParse = parse, fvEmit = emit }
+    where
+      parse :: Text -> Either String InputTmpl
+      parse = Right . InputTmpl . uncomment
+
+      emit :: InputTmpl -> Text
+      emit (InputTmpl t) = t
+
 binocularsConfigSpec :: IniSpec BinocularsConfig ()
 binocularsConfigSpec = do
   section "dispatcher" $ do
@@ -216,6 +230,7 @@ binocularsConfigSpec = do
   section "input" $ do
     binocularsInputItype .= field "type" inputType
     binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
+    binocularsInputTmpl .=? field "inputtmpl" inputTmpl
     binocularsInputInputRange .=? field "inputrange" configRange
     binocularsInputDetector .=? field "detector" detector
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
@@ -383,7 +398,8 @@ files c = do
     then throwM (NoDataFilesInTheGivenDirectory dir)
     else case c ^. binocularsInputInputRange of
            Just r  -> do
-             let fs'' = filter (isInConfigRange r) fs'
+             let tmpl = fromMaybe "%05d" (fmap (unpack . unInputTmpl) (c ^. binocularsInputTmpl))
+             let fs'' = filter (isInConfigRange tmpl r) fs'
              if null fs''
              then throwM (NoFilesInRangeInTheGivenDirectory dir r)
              else return fs''
@@ -394,16 +410,16 @@ files c = do
                    Nothing    -> False
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
 
-      matchIndex :: Path Abs File -> Int -> Bool
-      matchIndex p n = printf "%05d" n `isInfixOf` toFilePath p
+      matchIndex :: Path Abs File -> String -> Int -> Bool
+      matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
 
-      isInInputRange :: Path Abs File -> InputRange -> Bool
-      isInInputRange p (InputRangeSingle i) = any (matchIndex p) [i]
-      isInInputRange p (InputRangeFromTo from to) = any (matchIndex p) [from..to]
+      isInInputRange :: Path Abs File -> String -> InputRange -> Bool
+      isInInputRange p tmpl (InputRangeSingle i) = any (matchIndex p tmpl) [i]
+      isInInputRange p tmpl (InputRangeFromTo from to) = any (matchIndex p tmpl) [from..to]
 
-      isInConfigRange :: ConfigRange -> Path Abs File -> Bool
-      isInConfigRange (ConfigRange []) _ = True
-      isInConfigRange (ConfigRange rs) p = any (isInInputRange p) rs
+      isInConfigRange :: String -> ConfigRange -> Path Abs File -> Bool
+      isInConfigRange _ (ConfigRange []) _    = True
+      isInConfigRange tmpl (ConfigRange rs) p = any (isInInputRange p tmpl) rs
 
 
 
