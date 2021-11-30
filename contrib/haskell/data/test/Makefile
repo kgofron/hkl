@@ -1,5 +1,5 @@
 mars:
-	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_mars_ruche_rel_flyscan.ini
+	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N5 -RTS process data/test/config_mars_ruche_rel_flyscan.ini
 
 ord05133:
 #	cd ../..; cabal run binoculars-ng -- process /nfs/ruche/sixs-soleil/com-sixs/2021/Run4/20210628_Torrelles/binoculars/config2.txt 1303
