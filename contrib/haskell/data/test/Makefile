@@ -1,3 +1,6 @@
+mars:
+	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_mars_ruche_rel_flyscan.ini
+
 ord05133:
 #	cd ../..; cabal run binoculars-ng -- process /nfs/ruche/sixs-soleil/com-sixs/2021/Run4/20210628_Torrelles/binoculars/config2.txt 1303
 #	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ord05133_int32.cfg 1303-1312
@@ -36,4 +39,4 @@ ssd:
 #binoculars process config_m1018_32h_Qxyz.txt 105-106 129 131
 #binoculars process configV2_m1018_32h_Qxyz_Vhkl.txt 45-48 62-63 67-68
 #binoculars process config_m1018_32h_HKL.txt 33-36
-.PHONI: ord05133 ssd sixs
+.PHONI: mars ord05133 ssd sixs
