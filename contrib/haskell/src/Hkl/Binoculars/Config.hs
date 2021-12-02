@@ -159,6 +159,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputUx                     :: Maybe (Angle Double)
   , _binocularsInputUy                     :: Maybe (Angle Double)
   , _binocularsInputUz                     :: Maybe (Angle Double)
+  , _binocularsInputWavelength             :: Maybe (Length Double)
   , _binocularsProjectionPtype             :: ProjectionType
   , _binocularsProjectionResolution        :: [Double]
   } deriving (Eq, Show)
@@ -190,6 +191,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsInputUx = Nothing
   , _binocularsInputUy = Nothing
   , _binocularsInputUz = Nothing
+  , _binocularsInputWavelength = Nothing
   , _binocularsProjectionPtype = QxQyQzProjection
   , _binocularsProjectionResolution = [0.01, 0.01, 0.01]
   }
@@ -248,6 +250,7 @@ binocularsConfigSpec = do
     binocularsInputUx .=? field "ux" (numberUnit degree)
     binocularsInputUy .=? field "uy" (numberUnit degree)
     binocularsInputUz .=? field "uz" (numberUnit degree)
+    binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
     binocularsProjectionPtype .= field "type" projectionType
     binocularsProjectionResolution .= field "resolution" (listWithSeparator "," number')
