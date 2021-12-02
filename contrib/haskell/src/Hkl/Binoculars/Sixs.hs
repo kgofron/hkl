@@ -1,6 +1,8 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+
 {-
     Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -18,6 +20,8 @@ import           Control.Monad.Catch        (Exception, MonadThrow, throwM)
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
 import           Control.Monad.Logger       (MonadLogger, logDebugSH,
                                              logErrorSH, logWarn, logWarnN)
+import           Control.Monad.Reader       (MonadReader, ask)
+import           Control.Monad.Trans.Reader (runReaderT)
 import           Data.Text                  (Text)
 
 import           Hkl.Binoculars.Config
@@ -301,15 +305,20 @@ h5dpathHkl c = do
          --               medVSamplePath
          --               -- "attenuation": DatasetPathWithAttribute("long_name", b"i14-c-c00/ex/roic/att"),
          --               -- "timestamp": HItem("sensors_timestamps", True),
+
+process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader BinocularsConfig m)
+         => m ()
+process' = do
+  c <- ask
+  $(logDebugSH) c
+  case _binocularsProjectionPtype c of
+    QxQyQzProjection -> processQxQyQzP h5dpathQxQyQz
+    HklProjection    -> processHklP h5dpathHkl
+
 process :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 process mf mr = do
   conf <- liftIO $ getConfig mf
   $(logDebugSH) conf
   case conf of
-    Right conf' -> do
-              let c = combineWithCmdLineArgs conf' mr
-              $(logDebugSH) c
-              case _binocularsProjectionPtype c of
-                 QxQyQzProjection -> processQxQyQzP c h5dpathQxQyQz
-                 HklProjection    -> processHklP c h5dpathHkl
-    Left e   -> $(logErrorSH) e
+    Right conf' -> runReaderT process' (combineWithCmdLineArgs conf' mr)
+    Left e      -> $(logErrorSH) e

@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -31,6 +32,7 @@ import           Control.Monad.Catch               (MonadThrow, tryJust)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Logger              (MonadLogger, logInfo)
+import           Control.Monad.Reader              (MonadReader, ask)
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
@@ -111,9 +113,10 @@ class ChunkP a => FramesQxQyQzP a where
   framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameQxQyQz (SafeT IO) ()
 
 class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
-  processQxQyQzP :: (MonadIO m, MonadLogger m, MonadThrow m)
-                 => BinocularsConfig -> (BinocularsConfig -> m a)-> m ()
-  processQxQyQzP conf mkPaths = do
+  processQxQyQzP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
+                 => (BinocularsConfig -> m a) -> m ()
+  processQxQyQzP mkPaths = do
+    conf <- ask
     let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
     let output' = case _binocularsInputInputRange conf of
                    Just r  -> destination' r (_binocularsDispatcherDestination conf)
@@ -179,9 +182,10 @@ class ChunkP a => FramesHklP a where
 
 
 class (FramesHklP a, Show a) => ProcessHklP a where
-  processHklP :: (MonadIO m, MonadLogger m, MonadThrow m)
-              => BinocularsConfig -> (BinocularsConfig -> m a) -> m ()
-  processHklP conf mkPaths = do
+  processHklP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
+              => (BinocularsConfig -> m a) -> m ()
+  processHklP mkPaths = do
+    conf <- ask
     let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
     let output' = case _binocularsInputInputRange conf of
                    Just r  -> destination' r (_binocularsDispatcherDestination conf)
