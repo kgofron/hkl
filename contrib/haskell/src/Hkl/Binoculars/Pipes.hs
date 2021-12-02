@@ -299,11 +299,10 @@ withGeometryPathP f (GeometryPathFix w) gg =
                              <$> (Source <$> getValueWithUnit w' 0 angstrom)
                              <*> pure (fromList [])
                              <*> pure Nothing)
-withGeometryPathP f (GeometryPathMars w as) gg =
-    withHdf5PathP f w $ \w' ->
+withGeometryPathP f (GeometryPathMars as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Mars
-                 <$> (Source <$> getValueWithUnit w' 0 angstrom)
+                 <$> (Source <$> (return $ 1.537591 *~ angstrom))
                  <*> (fromList <$> do
                          vs <- Prelude.mapM (`get_position` j) as'
                          return (0.0 : vs))
@@ -341,14 +340,16 @@ withAttenuationPathP :: (MonadSafe m, Location l) =>
                      -> ((Int -> IO Double) -> m r)
                      -> m r
 withAttenuationPathP f matt g =
-    case matt of
-      NoAttenuation -> g (const $ returnIO 1)
-      (AttenuationPath p offset coef) ->
-          withHdf5PathP f p $ \p' -> g (\j -> do
-                                          v <-  get_position p' (j + offset)
-                                          if v == badAttenuation
-                                          then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
-                                          else return  (coef ** float2Double v))
+  case matt of
+    NoAttenuation -> g (const $ returnIO 1)
+    (AttenuationPath p offset coef) ->
+      withHdf5PathP f p $ \p' -> g (\j -> do
+                                       v <-  get_position p' (j + offset)
+                                       if v == badAttenuation
+                                         then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
+                                         else return  (coef ** float2Double v))
+    (ApplyedAttenuationFactorPath p) ->
+      withHdf5PathP f p $ \p' -> g (\j -> get_position p' j)
 
 withQxQyQzPath :: (MonadSafe m, Location l) =>
                  l
@@ -379,6 +380,7 @@ instance ChunkP QxQyQzPath where
           (Just n) -> yield $ case ma of
             NoAttenuation             -> Chunk fp 0 (fromIntegral n - 1)
             (AttenuationPath _ off _) -> Chunk fp 0 (fromIntegral n - 1 - off)
+            (ApplyedAttenuationFactorPath _) -> Chunk fp 0 (fromIntegral n -1)
           Nothing  -> error "can not extract length"
 
 tryYield :: IO r -> Proxy x' x () r (SafeT IO) ()

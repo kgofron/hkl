@@ -43,9 +43,12 @@ mkAttenuation c att = case _binocularsInputAttenuationCoefficient c of
                                       logWarnN ("I continue without attenuation correction" :: Text)
                                       logWarnN ("Add attenuation_coefficient=<something> under the [input] section, to fix this" :: Text)
                                       return NoAttenuation
+                                    applyed@ApplyedAttenuationFactorPath{} -> return applyed
                         (Just coef) -> return $ case att of
                                         NoAttenuation           -> NoAttenuation
                                         (AttenuationPath p o _) -> AttenuationPath p o coef
+                                        (ApplyedAttenuationFactorPath _) -> undefined
+
 
 h5dpathQxQyQz ::  (MonadLogger m, MonadThrow m) => BinocularsConfig -> m QxQyQzPath
 h5dpathQxQyQz c = case _binocularsInputItype c of
@@ -62,11 +65,11 @@ h5dpathQxQyQz c = case _binocularsInputItype c of
                          (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
                          (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
   MarsFlyscan -> QxQyQzPath
-                <$> mkAttenuation c NoAttenuation
+                <$> mkAttenuation c (ApplyedAttenuationFactorPath
+                                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "applied_att"))
                 <*> pure (DetectorPath
                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image"))
                 <*> pure (GeometryPathMars
-                          (hdf5p $ grouppat 0 $ groupp "MARS/d03-1-c03__op__mono1_old_#1" $ datasetp "wavelength")
                           [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
                           , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "chi"
                           , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"

@@ -88,8 +88,7 @@ data GeometryPath
                            , geometryPathDelta      :: Hdf5Path DIM1 Double
                            }
   | GeometryPathFix { geometryPathWavelength :: Hdf5Path Z Double }
-  | GeometryPathMars { geometryPathWavelength :: Hdf5Path Z Double
-                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+  | GeometryPathMars { geometryPathAxes       :: [Hdf5Path DIM1 Double]
                      }
   | GeometryPathMedH { geometryPathWavelength :: Hdf5Path Z Double
                      , geometryPathAxes       :: [Hdf5Path DIM1 Double]
@@ -119,6 +118,7 @@ data AttenuationPath
                       , attenuationOffset      :: Int
                       , attenuationCoefficient :: Double
                       }
+    | ApplyedAttenuationFactorPath { attenuationPath :: Hdf5Path DIM1 Float }
     | NoAttenuation
     deriving Show
 

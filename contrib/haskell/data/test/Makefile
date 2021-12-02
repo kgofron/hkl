@@ -1,5 +1,11 @@
 mars:
-	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N5 -RTS process data/test/config_mars_ruche_rel_flyscan.ini
+#	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N5 -RTS process data/test/config_mars_ruche_rel_flyscan.ini
+	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 173
+	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 153
+	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 132
+	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 105
+	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 78
+	cd ../..; cabal run binoculars-ng -- process /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 75
 
 ord05133:
 #	cd ../..; cabal run binoculars-ng -- process /nfs/ruche/sixs-soleil/com-sixs/2021/Run4/20210628_Torrelles/binoculars/config2.txt 1303
