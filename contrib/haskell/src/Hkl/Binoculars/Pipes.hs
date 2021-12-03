@@ -52,10 +52,10 @@ import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, each, runEffect,
                                                     yield, (>->))
 import           Pipes.Prelude                     (map, mapM, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, SafeT,
-                                                    SomeException, bracket,
-                                                    catchP, displayException,
-                                                    runSafeP, runSafeT)
+import           Pipes.Safe                        (MonadSafe, SomeException,
+                                                    bracket, catchP,
+                                                    displayException, runSafeP,
+                                                    runSafeT)
 import           System.ProgressBar                (Progress (..), ProgressBar,
                                                     Style (..), defStyle,
                                                     elapsedTime, incProgress,
@@ -81,7 +81,7 @@ import           Hkl.Types
 -- ChunkP
 
 class ChunkP a where
-  chunkP :: a -> Pipe FilePath (Chunk Int FilePath) (SafeT IO) ()
+  chunkP :: MonadSafe m => a -> Pipe FilePath (Chunk Int FilePath) m ()
 
 -- Project
 
@@ -97,8 +97,8 @@ project :: (MonadSafe m, Shape sh)
 project d n f = withSpace d n $ \s -> Pipes.Prelude.mapM (liftIO . f s)
 
 
-skipMalformed :: MonadSafe m =>
-                Proxy a' a b' b m r
+skipMalformed :: MonadSafe m
+              => Proxy a' a b' b m r
               -> Proxy a' a b' b m r
 skipMalformed p = loop
   where
@@ -109,7 +109,8 @@ skipMalformed p = loop
 -- QxQyQz
 
 class ChunkP a => FramesQxQyQzP a where
-  framesQxQyQzP :: a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameQxQyQz (SafeT IO) ()
+  framesQxQyQzP :: MonadSafe m
+                => a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameQxQyQz m ()
 
 class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
   processQxQyQzP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
@@ -177,7 +178,8 @@ instance ProcessQxQyQzP QxQyQzPath
 -- Hkl
 
 class ChunkP a => FramesHklP a where
-  framesHklP :: a -> Detector b DIM2 -> Pipe (FilePath, [Int]) (DataFrameHkl b) (SafeT IO) ()
+  framesHklP :: MonadSafe m
+             => a -> Detector b DIM2 -> Pipe (FilePath, [Int]) (DataFrameHkl b) m ()
 
 
 class (FramesHklP a, Show a) => ProcessHklP a where
@@ -386,7 +388,8 @@ instance ChunkP QxQyQzPath where
             (ApplyedAttenuationFactorPath _) -> Chunk fp 0 (fromIntegral n -1)
           Nothing  -> error "can not extract length"
 
-tryYield :: IO r -> Proxy x' x () r (SafeT IO) ()
+tryYield :: MonadSafe m
+         => IO r -> Proxy x' x () r m ()
 tryYield io = do
   edf <- liftIO $ tryJust selectHklBinocularsException io
   case edf of
