@@ -114,7 +114,7 @@ class ChunkP a => FramesQxQyQzP a where
 
 class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
   processQxQyQzP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
-                 => (BinocularsConfig -> m a) -> m ()
+                 => m a -> m ()
   processQxQyQzP mkPaths = do
     conf <- ask
     let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
@@ -126,7 +126,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsInputSurfaceOrientation conf)
 
-    h5d <- mkPaths conf
+    h5d <- mkPaths
     filenames <- InputList <$> files conf
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
     res <- getResolution conf 3
@@ -183,7 +183,7 @@ class ChunkP a => FramesHklP a where
 
 class (FramesHklP a, Show a) => ProcessHklP a where
   processHklP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
-              => (BinocularsConfig -> m a) -> m ()
+              => m a -> m ()
   processHklP mkPaths = do
     conf <- ask
     let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
@@ -197,7 +197,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     filenames <- InputList <$> files conf
     mask' <- getMask conf det
     res <- getResolution conf 3
-    h5d <- mkPaths conf
+    h5d <- mkPaths
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
 
     let fns = concatMap (replicate 1) (toList filenames)
