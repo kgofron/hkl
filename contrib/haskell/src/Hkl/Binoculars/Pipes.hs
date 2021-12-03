@@ -51,7 +51,7 @@ import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, degree,
 import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, each, runEffect,
                                                     yield, (>->))
-import           Pipes.Prelude                     (map, tee, toListM)
+import           Pipes.Prelude                     (map, mapM, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, SafeT,
                                                     SomeException, bracket,
                                                     catchP, displayException,
@@ -94,9 +94,8 @@ project :: (MonadSafe m, Shape sh)
         -> Int
         -> (Space sh -> b -> IO (DataFrameSpace sh))
         -> Pipe b (DataFrameSpace sh) m ()
-project d n f = withSpace d n $ \s -> forever $ do
-               df <- await
-               yield =<< liftIO (f s df)
+project d n f = withSpace d n $ \s -> Pipes.Prelude.mapM (liftIO . f s)
+
 
 skipMalformed :: MonadSafe m =>
                 Proxy a' a b' b m r
