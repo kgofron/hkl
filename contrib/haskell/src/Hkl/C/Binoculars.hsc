@@ -46,9 +46,9 @@ import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.Marshal.Alloc (finalizerFree)
-import           Foreign.Marshal.Array (allocaArray, peekArray)
-import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, newForeignPtr_, withForeignPtr)
-import           Foreign.Ptr           (FunPtr, Ptr, plusPtr)
+import           Foreign.Marshal.Array (allocaArray, copyArray, peekArray)
+import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, mallocForeignPtrArray, withForeignPtr)
+import           Foreign.Ptr           (FunPtr, Ptr, plusPtr, castPtr)
 import           Foreign.Storable      (Storable (..))
 import           System.IO.Unsafe      (unsafePerformIO)
 
@@ -147,27 +147,17 @@ hkl_binoculars_cube_new_empty_from_cube' :: Ptr (Cube' sh) -> IO (Ptr (Cube' sh)
 data Cube sh = Cube { cubePhotons :: (Array F sh CUInt)
                     , cubeContributions :: (Array F sh CUInt)
                     , cubeAxes :: [Axis]
-                    , cubeHklPointer :: (ForeignPtr (Cube sh))
-                    }
+                     }
              | EmptyCube
              deriving Show
 
-instance Shape sh => Semigroup (Cube sh) where
-  (<>) EmptyCube EmptyCube = EmptyCube
-  (<>) EmptyCube b = b
-  (<>) a EmptyCube = a
-  (<>) (Cube _ _ _ fpa) (Cube _ _ _ fpb) = unsafePerformIO $ do
-    withForeignPtr fpa $ \pa ->
-      withForeignPtr fpb $ \pb ->
-      peek =<< {-# SCC "hkl_binoculars_cube_new_merge" #-} hkl_binoculars_cube_new_merge pa pb
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_merge" \
-hkl_binoculars_cube_new_merge :: Ptr (Cube sh)
-                              -> Ptr (Cube sh)
-                              -> IO (Ptr (Cube sh))
-
-instance Shape sh => Monoid (Cube sh) where
-  mempty = EmptyCube
+extractArray :: Storable a => IO (Ptr a) -> Int -> IO (ForeignPtr a)
+extractArray io n = do
+    fp <- mallocForeignPtrArray n
+    withForeignPtr fp $ \to -> do
+                      from <- io
+                      copyArray to from n
+    return fp
 
 instance Shape sh => Storable (Cube sh) where
   alignment _ = #{alignment HklBinocularsCube}
@@ -181,13 +171,11 @@ instance Shape sh => Storable (Cube sh) where
       hkl_binoculars_cube_dims ptr n dims'
       dims <- peekArray (fromEnum n) dims'
       let sh = shapeOfList (reverse (map fromEnum dims))
-      fpPhotons <- newForeignPtr_ =<< (#{peek HklBinocularsCube, photons} ptr)
-      fpContributions <- newForeignPtr_ =<< (#{peek HklBinocularsCube, contributions} ptr)
+      let nbElem = size sh
+      fpPhotons <- extractArray (#{peek HklBinocularsCube, photons} ptr) nbElem
+      fpContributions <- extractArray (#{peek HklBinocularsCube, contributions} ptr) nbElem
       axes <- peekArray (fromEnum n) =<< (#{peek darray_axis, item} paxes)
-      fp <- newForeignPtr hkl_binoculars_cube_free ptr
-      return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) axes fp
-
-foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_cube_free" hkl_binoculars_cube_free :: FunPtr (Ptr (Cube sh) -> IO ())
+      return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) axes
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
 hkl_binoculars_cube_new :: CSize -- number of Space
@@ -201,21 +189,16 @@ hkl_binoculars_cube_dims :: Ptr (Cube sh)
                          -> IO ()
 
 instance Shape sh => ToHdf5 (Cube sh) where
-  toHdf5 (Cube p c axes _) = group "binoculars"
-                             [ group "axes" [dataset (name axis) (arr axis) | axis <- axes]
-                             , dataset "counts" p
-                             , dataset "contributions" c
-                             ]
+  toHdf5 (Cube p c axes) = group "binoculars"
+                           [ group "axes" [dataset (name axis) (arr axis) | axis <- axes]
+                           , dataset "counts" p
+                           , dataset "contributions" c
+                           ]
   toHdf5 EmptyCube = empty
 
 toCube :: Shape sh => Cube' sh -> IO (Cube sh)
 toCube EmptyCube' = pure EmptyCube
-toCube (Cube' fp') = withForeignPtr fp' $ \p -> do
-  peek =<< hkl_binoculars_cube_new_copy p
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_copy" \
-hkl_binoculars_cube_new_copy :: Ptr (Cube' sh) -- src
-                             -> IO (Ptr (Cube sh))
+toCube (Cube' fp') = withForeignPtr fp' (peek . castPtr)
 
 --  Space
 
