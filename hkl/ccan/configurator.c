@@ -1,7 +1,7 @@
 /* Simple tool to create config.h.
  * Would be much easier with ccan modules, but deliberately standalone.
  *
- * Copyright 2011, 2020 Rusty Russell <rusty@rustcorp.com.au>.  MIT license.
+ * Copyright 2011 Rusty Russell <rusty@rustcorp.com.au>.  MIT license.
  *
  * c12r_err, c12r_errx functions copied from ccan/err/err.c
  * Copyright Rusty Russell <rusty@rustcorp.com.au>. CC0 (Public domain) License.
@@ -142,6 +142,9 @@ static const struct test base_tests[] = {
 	{ "HAVE_ATTRIBUTE_NONNULL", "__attribute__((nonnull)) support",
 	  "DEFINES_FUNC", NULL, NULL,
 	  "static char *__attribute__((nonnull)) func(char *p) { return p; }" },
+	{ "HAVE_ATTRIBUTE_RETURNS_NONNULL", "__attribute__((returns_nonnull)) support",
+	  "DEFINES_FUNC", NULL, NULL,
+	  "static const char *__attribute__((returns_nonnull)) func(void) { return \"hi\"; }" },
 	{ "HAVE_ATTRIBUTE_SENTINEL", "__attribute__((sentinel)) support",
 	  "DEFINES_FUNC", NULL, NULL,
 	  "static int __attribute__((sentinel)) func(int i, ...) { return i; }" },
@@ -411,7 +414,7 @@ static const struct test base_tests[] = {
 	  "int main(int argc, char *argv[]) {\n"
 	  "	(void)argc;\n"
 	  "     char pad[sizeof(int *) * 1];\n"
-	  "	strncpy(pad, argv[0], sizeof(pad));\n"
+	  "	memcpy(pad, argv[0], sizeof(pad));\n"
 	  "	int *x = (int *)pad, *y = (int *)(pad + 1);\n"
 	  "	return *x == *y;\n"
 	  "}\n" },
@@ -494,6 +497,43 @@ static const struct test base_tests[] = {
 	  "static bool func(void) {\n"
 	  "	return __builtin_cpu_supports(\"mmx\");\n"
 	  "}"
+	},
+	{ "HAVE_CLOSEFROM", "closefrom() offered by system",
+	  "DEFINES_EVERYTHING", NULL, NULL,
+	  "#include <stdlib.h>\n"
+	  "#include <unistd.h>\n"
+	  "int main(void) {\n"
+	  "    closefrom(STDERR_FILENO + 1);\n"
+	  "    return 0;\n"
+	  "}\n"
+	},
+	{ "HAVE_F_CLOSEM", "F_CLOSEM defined for fctnl.",
+	  "DEFINES_EVERYTHING", NULL, NULL,
+	  "#include <fcntl.h>\n"
+	  "#include <unistd.h>\n"
+	  "int main(void) {\n"
+	  "    int res = fcntl(STDERR_FILENO + 1, F_CLOSEM, 0);\n"
+	  "    return res < 0;\n"
+	  "}\n"
+	},
+	{ "HAVE_NR_CLOSE_RANGE", "close_range syscall available as __NR_close_range.",
+	  "DEFINES_EVERYTHING", NULL, NULL,
+	  "#include <limits.h>\n"
+	  "#include <sys/syscall.h>\n"
+	  "#include <unistd.h>\n"
+	  "int main(void) {\n"
+	  "    int res = syscall(__NR_close_range, STDERR_FILENO + 1, INT_MAX, 0);\n"
+	  "    return res < 0;\n"
+	  "}\n"
+	},
+	{ "HAVE_F_MAXFD", "F_MAXFD defined for fcntl.",
+	  "DEFINES_EVERYTHING", NULL, NULL,
+	  "#include <fcntl.h>\n"
+	  "#include <unistd.h>\n"
+	  "int main(void) {\n"
+	  "    int res = fcntl(0, F_MAXFD);\n"
+	  "    return res < 0;\n"
+	  "}\n"
 	},
 };
 
@@ -762,9 +802,7 @@ static bool run_test(const char *cmd, const char *wrapper, struct test *test)
 			strcpy(cmd, wrapper);
 			strcat(cmd, " ." DIR_SEP OUTPUT_FILE);
 			output = run(cmd, &status);
-			if (wrapper) {
-				free(cmd);
-			}
+			free(cmd);
 			if (!strstr(test->style, "EXECUTE") && status != 0)
 				c12r_errx(EXIT_BAD_TEST,
 					  "Test for %s failed with %i:\n%s",

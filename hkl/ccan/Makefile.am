@@ -7,32 +7,32 @@ ccan_config.h: configurator
 noinst_LTLIBRARIES=libccan.la
 libccan_la_SOURCES = \
 	ccan_config.h \
-	ptrint/ptrint.h \
-	noerr/noerr.h \
-	noerr/noerr.c \
+	alignof/alignof.h \
+	array_size/array_size.h \
+	autodata/autodata.c \
+	autodata/autodata.h \
+	build_assert/build_assert.h \
+	check_type/check_type.h \
+	compiler/compiler.h \
+	container_of/container_of.h \
 	coroutine/coroutine.c \
 	coroutine/coroutine.h \
-	build_assert/build_assert.h \
-	alignof/alignof.h \
+	cppmagic/cppmagic.h \
+	darray/darray.h \
 	generator/generator.c \
 	generator/generator.h \
-	container_of/container_of.h \
+	list/list.c \
+	list/list.h \
+	noerr/noerr.c \
+	noerr/noerr.h \
+	ptr_valid/ptr_valid.c \
+	ptr_valid/ptr_valid.h \
+	ptrint/ptrint.h \
+	str/debug.c \
 	str/str.c \
 	str/str.h \
 	str/str_debug.h \
-	str/debug.c \
-	list/list.h \
-	list/list.c \
-	check_type/check_type.h \
-	compiler/compiler.h \
-	autodata/autodata.c \
-	autodata/autodata.h \
-	cppmagic/cppmagic.h \
-	darray/darray.h \
-	typesafe_cb/typesafe_cb.h \
-	array_size/array_size.h \
-	ptr_valid/ptr_valid.c \
-	ptr_valid/ptr_valid.h
+	typesafe_cb/typesafe_cb.h
 
 ccanincludedir=$(includedir)/hkl-@VMAJ@/hkl/ccan
 nobase_ccaninclude_HEADERS= \
