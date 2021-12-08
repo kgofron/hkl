@@ -401,7 +401,7 @@ files c = do
     then throwM (NoDataFilesInTheGivenDirectory dir)
     else case c ^. binocularsInputInputRange of
            Just r  -> do
-             let tmpl = fromMaybe "%05d" (fmap (unpack . unInputTmpl) (c ^. binocularsInputTmpl))
+             let tmpl = maybe "%05d" (unpack . unInputTmpl) (c ^. binocularsInputTmpl)
              let fs'' = filter (isInConfigRange tmpl r) fs'
              if null fs''
              then throwM (NoFilesInRangeInTheGivenDirectory dir r)

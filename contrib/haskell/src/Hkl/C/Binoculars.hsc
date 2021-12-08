@@ -20,10 +20,9 @@
 -}
 
 module Hkl.C.Binoculars
-       ( Cube(..)
+       ( Cube
        , Cube'(..)
        , Space(..)
-       , hkl_binoculars_cube_new
        , hkl_binoculars_cube_new'
        , hkl_binoculars_cube_new_empty'
        , hkl_binoculars_cube_new_empty_from_cube'
@@ -176,11 +175,6 @@ instance Shape sh => Storable (Cube sh) where
       fpContributions <- extractArray (#{peek HklBinocularsCube, contributions} ptr) nbElem
       axes <- peekArray (fromEnum n) =<< (#{peek darray_axis, item} paxes)
       return $ Cube (fromForeignPtr sh fpPhotons) (fromForeignPtr sh fpContributions) axes
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new" \
-hkl_binoculars_cube_new :: CSize -- number of Space
-                        -> Ptr (Ptr (Space sh)) -- spaces
-                        -> IO (Ptr (Cube sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_dims" \
 hkl_binoculars_cube_dims :: Ptr (Cube sh)

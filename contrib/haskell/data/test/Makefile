@@ -28,7 +28,8 @@ sixs:
 	#cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_flymedv_2.ini
 
 ssd:
-	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
+#	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
+	cd /home/picca/tests-datas/binoculars/sixs/int32/ && ~picca/src/repo.or.cz/hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process config.cfg
 
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224
