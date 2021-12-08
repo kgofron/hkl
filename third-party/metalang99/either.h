@@ -6,9 +6,11 @@
 #ifndef ML99_EITHER_H
 #define ML99_EITHER_H
 
+#include <metalang99/priv/util.h>
+
+#include <metalang99/bool.h>
 #include <metalang99/choice.h>
-#include <metalang99/logical.h>
-#include <metalang99/util.h>
+#include <metalang99/ident.h>
 
 /**
  * The left value @p x.
@@ -122,14 +124,22 @@
 #define ML99_isLeft_IMPL(either)  v(ML99_IS_LEFT(either))
 #define ML99_isRight_IMPL(either) v(ML99_IS_RIGHT(either))
 
-#define ML99_PRIV_IS_LEFT(either) ML99_DETECT_IDENT(ML99_PRIV_IS_LEFT_, ML99_CHOICE_TAG(either))
-#define ML99_PRIV_IS_LEFT_left    ()
+// ML99_eitherEq_IMPL {
 
 #define ML99_eitherEq_IMPL(cmp, either, other)                                                     \
-    ML99_PRIV_IF(                                                                                  \
-        ML99_PRIV_EITHER_TAGS_ARE_EQUAL(either, other),                                            \
-        ML99_appl2_IMPL(cmp, ML99_PRIV_CHOICE_DATA either, ML99_PRIV_CHOICE_DATA other),           \
-        v(ML99_FALSE()))
+    ML99_matchWithArgs_IMPL(either, ML99_PRIV_eitherEq_, cmp, other)
+
+#define ML99_PRIV_eitherEq_left_IMPL(x, cmp, other)                                                \
+    ML99_matchWithArgs_IMPL(other, ML99_PRIV_eitherEq_left_, cmp, x)
+#define ML99_PRIV_eitherEq_right_IMPL(x, cmp, other)                                               \
+    ML99_matchWithArgs_IMPL(other, ML99_PRIV_eitherEq_right_, cmp, x)
+
+#define ML99_PRIV_eitherEq_left_left_IMPL(y, cmp, x) ML99_appl2_IMPL(cmp, x, y)
+#define ML99_PRIV_eitherEq_left_right_IMPL           ML99_false_IMPL
+
+#define ML99_PRIV_eitherEq_right_left_IMPL             ML99_false_IMPL
+#define ML99_PRIV_eitherEq_right_right_IMPL(y, cmp, x) ML99_appl2_IMPL(cmp, x, y)
+// } (ML99_eitherEq_IMPL)
 
 #define ML99_unwrapLeft_IMPL(either)      ML99_match_IMPL(either, ML99_PRIV_unwrapLeft_)
 #define ML99_PRIV_unwrapLeft_left_IMPL(x) v(x)
@@ -141,10 +151,8 @@
     ML99_fatal(ML99_unwrapRight, expected ML99_right but found ML99_left)
 #define ML99_PRIV_unwrapRight_right_IMPL(x) v(x)
 
-#define ML99_PRIV_EITHER_TAGS_ARE_EQUAL(either, other)                                             \
-    ML99_OR(                                                                                       \
-        ML99_AND(ML99_IS_LEFT(either), ML99_IS_LEFT(other)),                                       \
-        ML99_AND(ML99_IS_RIGHT(either), ML99_IS_RIGHT(other)))
+#define ML99_PRIV_IS_LEFT(either) ML99_DETECT_IDENT(ML99_PRIV_IS_LEFT_, ML99_CHOICE_TAG(either))
+#define ML99_PRIV_IS_LEFT_left    ()
 
 // Arity specifiers {
 

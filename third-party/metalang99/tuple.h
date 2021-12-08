@@ -1,20 +1,23 @@
 /**
  * @file
- * Tuple manipulation.
+ * Tuples: `(x, y, z)`.
  *
- * A tuple is represented as `(x1, ..., xN)`. Tuples are more time and space-efficient than lists,
- * but export less functionality.
+ * A tuple is represented as `(x1, ..., xN)`. Tuples are a convenient way to deal with product
+ * types. For example:
  *
- * Tuples are a convenient way to deal with product types. For example:
- *
- * [<a
- * href="https://github.com/Hirrolot/metalang99/blob/master/examples/rectangle.c">examples/rectangle.c</a>]
+ * [[examples/rectangle.c](https://github.com/Hirrolot/metalang99/blob/master/examples/rectangle.c)]
  * @include rectangle.c
+ *
+ * @note Tuples are more time and space-efficient than lists, but export less functionality; if a
+ * needed function is missed, invoking #ML99_list and then manipulating with the resulting Cons-list
+ * might be helpful.
  */
 
 #ifndef ML99_TUPLE_H
 #define ML99_TUPLE_H
 
+#include <metalang99/priv/bool.h>
+#include <metalang99/priv/tuple.h>
 #include <metalang99/priv/util.h>
 
 #include <metalang99/lang.h>
@@ -45,11 +48,16 @@
  * // (v(1, 2, 3))
  * ML99_tupleEval(v(1, 2, 3))
  * @endcode
+ *
+ * @deprecated I have seen no single use case over time. Please, [open an
+ * issue](https://github.com/Hirrolot/metalang99/issues/new/choose) if you need this function.
  */
 #define ML99_tupleEval(...) ML99_call(ML99_tupleEval, __VA_ARGS__)
 
 /**
  * Untuples the tuple @p x, leaving the result unevaluated.
+ *
+ * If @p x is not a tuple, it emits a fatal error.
  *
  * # Examples
  *
@@ -63,9 +71,9 @@
 #define ML99_untuple(x) ML99_call(ML99_untuple, x)
 
 /**
- * The same as #ML99_untuple, except that it emits a fatal error if @p x is not a tuple.
+ * The same as #ML99_untuple.
  *
- * The preconditions are the same as of #ML99_isUntuple.
+ * @deprecated Use #ML99_untuple instead.
  */
 #define ML99_untupleChecked(x) ML99_call(ML99_untupleChecked, x)
 
@@ -80,6 +88,8 @@
  * // 1, 2, 3
  * ML99_untupleEval(v((v(1, 2, 3))))
  * @endcode
+ *
+ * @deprecated For the same reason as #ML99_tupleEval.
  */
 #define ML99_untupleEval(x) ML99_call(ML99_untupleEval, x)
 
@@ -272,16 +282,16 @@
 
 #define ML99_tuple_IMPL(...)     v(ML99_TUPLE(__VA_ARGS__))
 #define ML99_tupleEval_IMPL(...) v((v(__VA_ARGS__)))
-#define ML99_untuple_IMPL(x)     v(ML99_UNTUPLE(x))
-#define ML99_untupleChecked_IMPL(x)                                                                \
-    ML99_PRIV_IF(ML99_IS_TUPLE(x), ML99_PRIV_UNTUPLE_CHECKED_AUX, ML99_PRIV_NOT_TUPLE_ERROR)(x)
-#define ML99_untupleEval_IMPL(x)   ML99_PRIV_EXPAND x
-#define ML99_isTuple_IMPL(x)       v(ML99_IS_TUPLE(x))
-#define ML99_isUntuple_IMPL(x)     v(ML99_IS_UNTUPLE(x))
-#define ML99_tupleCount_IMPL(x)    v(ML99_TUPLE_COUNT(x))
-#define ML99_tupleIsSingle_IMPL(x) v(ML99_TUPLE_IS_SINGLE(x))
+#define ML99_untuple_IMPL(x)                                                                       \
+    ML99_PRIV_IF(ML99_IS_TUPLE(x), ML99_PRIV_UNTUPLE_TERM, ML99_PRIV_NOT_TUPLE_ERROR)(x)
+#define ML99_untupleChecked_IMPL(x) ML99_untuple_IMPL(x)
+#define ML99_untupleEval_IMPL(x)    ML99_PRIV_EXPAND x
+#define ML99_isTuple_IMPL(x)        v(ML99_IS_TUPLE(x))
+#define ML99_isUntuple_IMPL(x)      v(ML99_IS_UNTUPLE(x))
+#define ML99_tupleCount_IMPL(x)     v(ML99_TUPLE_COUNT(x))
+#define ML99_tupleIsSingle_IMPL(x)  v(ML99_TUPLE_IS_SINGLE(x))
 
-#define ML99_PRIV_UNTUPLE_CHECKED_AUX(x) v(ML99_UNTUPLE(x))
+#define ML99_PRIV_UNTUPLE_TERM(x) v(ML99_UNTUPLE(x))
 
 #define ML99_PRIV_tupleGet_0(x) ML99_call(ML99_PRIV_tupleGet_0, x)
 #define ML99_PRIV_tupleGet_1(x) ML99_call(ML99_PRIV_tupleGet_1, x)

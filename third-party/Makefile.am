@@ -2,6 +2,7 @@ EXTRA_DIST= \
 	datatype99.h \
 	metalang99/assert.h \
 	metalang99/aux.h \
+	metalang99/bool.h \
 	metalang99/choice.h \
 	metalang99/control.h \
 	metalang99/either.h \
@@ -33,13 +34,17 @@ EXTRA_DIST= \
 	metalang99/nat.h \
 	metalang99/nat/inc.h \
 	metalang99/priv/aux.h \
+	metalang99/priv/bool.h \
 	metalang99/priv/compiler_attr.h \
 	metalang99/priv/compiler_specific.h \
 	metalang99/priv/logical.h \
 	metalang99/priv/pair.h \
+	metalang99/priv/tuple.h \
 	metalang99/priv/util.h \
 	metalang99/priv/variadics/count.h \
 	metalang99/priv/variadics/get.h \
+	metalang99/seq.h \
+	metalang99/stmt.h \
 	metalang99/tuple.h \
 	metalang99/uint/dec.h \
 	metalang99/uint/div.h \

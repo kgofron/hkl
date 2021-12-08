@@ -8,7 +8,7 @@
 
 #include <metalang99/priv/util.h>
 
-#include <metalang99/ident.h> // For backward compatibility.
+#include <metalang99/ident.h> // For backwards compatibility.
 #include <metalang99/lang.h>
 
 /**
@@ -27,6 +27,9 @@
  * // ERROR: 123ABC is not a valid Metalang99 term.
  * ML99_catEval(v(123), v(ABC))
  * @endcode
+ *
+ * @deprecated I have seen no single use case over time. Please, [open an
+ * issue](https://github.com/Hirrolot/metalang99/issues/new/choose) if you need this function.
  */
 #define ML99_catEval(a, b) ML99_call(ML99_catEval, a, b)
 
@@ -176,8 +179,7 @@
  * ML99_todo(v(F))
  * @endcode
  *
- * @see <a href="https://doc.rust-lang.org/core/macro.todo.html">Rust's std::todo\!</a> (thanks for
- * the idea!)
+ * @see [Rust's std::todo\!](https://doc.rust-lang.org/core/macro.todo.html) (thanks for the idea!)
  */
 #define ML99_todo(f) ML99_call(ML99_todo, f)
 
@@ -212,8 +214,8 @@
  * ML99_unimplemented(v(F))
  * @endcode
  *
- * @see <a href="https://doc.rust-lang.org/core/macro.unimplemented.html">Rust's
- * std::unimplemented\!</a> (thanks for the idea!)
+ * @see [Rust's std::unimplemented\!](https://doc.rust-lang.org/core/macro.unimplemented.html)
+ * (thanks for the idea!)
  */
 #define ML99_unimplemented(f) ML99_call(ML99_unimplemented, f)
 
@@ -232,6 +234,65 @@
  * @endcode
  */
 #define ML99_unimplementedWithMsg(f, message) ML99_call(ML99_unimplementedWithMsg, f, message)
+
+#ifdef __COUNTER__
+
+/**
+ * Generates a unique identifier @p id in the namespace @p prefix.
+ *
+ * Let `FOO` be the name of an enclosing macro. Then `FOO_` must be specified for @p prefix, and @p
+ * id should be given any meaningful name (this makes debugging easier).
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/util.h>
+ *
+ * #define FOO(...) FOO_NAMED(ML99_GEN_SYM(FOO_, x), __VA_ARGS__)
+ * #define FOO_NAMED(x_sym, ...) \
+ *      do { int x_sym = 5; __VA_ARGS__ } while (0)
+ *
+ * // `x` here will not conflict with the `x` inside `FOO`.
+ * FOO({
+ *     int x = 7;
+ *     printf("x is %d\n", x); // x is 7
+ * });
+ * @endcode
+ *
+ * @note Two identical calls to #ML99_GEN_SYM will yield different identifiers, therefore, to refer
+ * to the result later, you must save it in an auxiliary macro's parameter, as shown in the example
+ * above.
+ * @note #ML99_GEN_SYM is defined only if `__COUNTER__` is defined, which must be a macro yielding
+ * integral literals starting from 0 incremented by 1 each time it is called. Currently, it is
+ * supported at least by Clang, GCC, TCC, and MSVC.
+ * @see https://en.wikipedia.org/wiki/Hygienic_macro
+ */
+#define ML99_GEN_SYM(prefix, id) ML99_CAT4(prefix, id, _, __COUNTER__)
+
+#endif // __COUNTER__
+
+/**
+ * Forces a caller to put a trailing semicolon.
+ *
+ * It is useful when defining macros, to make them formatted as complete statements.
+ *
+ * # Examples
+ *
+ * @code
+ * #include <metalang99/util.h>
+ *
+ * #define MY_MACRO(fn_name, val_ty, val) \
+ *     inline static val_ty fn_name(void) { return val; } \
+ *     ML99_TRAILING_SEMICOLON()
+ *
+ * // Defines a function that always returns 0.
+ * MY_MACRO(zero, int, 0);
+ * @endcode
+ *
+ * @note #ML99_TRAILING_SEMICOLON is to be used outside of functions: unlike the `do { ... } while
+ * (0)` idiom, this macro expands to a C declaration.
+ */
+#define ML99_TRAILING_SEMICOLON(...) struct ml99_priv_trailing_semicolon
 
 /**
  * Concatenates @p a with @p b as-is, without expanding them.
@@ -299,29 +360,6 @@
 
 /**
  * Expands to a single comma, consuming all arguments.
- *
- * # Examples
- *
- * Consider this variation of <a href="https://en.wikipedia.org/wiki/X_Macro">X-Macro</a>:
- *
- * @code
- * #include <metalang99/util.h>
- *
- * #define FOO X(1) X(2, 3) X(4, 5, 6)
- * #define BAR
- *
- * #define X ML99_COMMA
- *
- * // , , ,
- * FOO
- *
- * // (No commas.)
- * BAR
- * @endcode
- *
- * Later, with #ML99_variadicsIsSingle, we can detect whether or not `FOO` and `BAR` result in one
- * or more invocation of `X`. This technique is used in <a
- * href="https://github.com/Hirrolot/interface99">Interface99</a> to detect marker interfaces.
  */
 #define ML99_COMMA(...) ,
 

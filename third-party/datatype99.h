@@ -29,23 +29,24 @@ SOFTWARE.
 
 #include <metalang99.h>
 
-#if !ML99_VERSION_COMPATIBLE(1, 9, 0)
-#error Please, update Metalang99 to v1.9.0 or later.
+#if !ML99_VERSION_COMPATIBLE(1, 13, 0)
+#error Please, update Metalang99 to v1.13.0 or later.
 #endif
 
 #ifndef DATATYPE99_NO_ALIASES
 
-#define datatype datatype99
-#define record   record99
-#define match    match99
-#define MATCHES  MATCHES99
+#define datatype(...)     datatype99(__VA_ARGS__)
+#define derive(...)       derive99(__VA_ARGS__)
+#define record(...)       record99(__VA_ARGS__)
+#define match(val)        match99(val)
+#define MATCHES(val, tag) MATCHES99(val, tag)
 /// @deprecated Use `MATCHES` instead.
-#define matches(val, tag_)                                                                         \
+#define matches(val, tag)                                                                          \
     DATATYPE99_PRIV_PRAGMA_WARN("GCC warning \"`matches` is deprecated, use `MATCHES` instead\"")  \
-    MATCHES(val, tag_)
-#define ifLet     ifLet99
-#define of        of99
-#define otherwise otherwise99
+    MATCHES(val, tag)
+#define ifLet(val, tag, ...) ifLet99(val, tag, __VA_ARGS__)
+#define of(...)              of99(__VA_ARGS__)
+#define otherwise            otherwise99
 
 #define UnitT  UnitT99
 #define unit_v unit_v99
@@ -92,8 +93,12 @@ SOFTWARE.
 #define DATATYPE99_DERIVE_dummy_IMPL(...)        ML99_empty()
 #define DATATYPE99_RECORD_DERIVE_dummy_IMPL(...) ML99_empty()
 
+#define derive99(...)                                                                              \
+    0derive(__VA_ARGS__) /* 0 is used as a prefix to cancel macro expansion; see                   \
+                            <https://github.com/Hirrolot/datatype99/issues/12>. */
+
 #define DATATYPE99_MAJOR 1
-#define DATATYPE99_MINOR 5
+#define DATATYPE99_MINOR 6
 #define DATATYPE99_PATCH 0
 
 #define DATATYPE99_VERSION_COMPATIBLE(x, y, z)                                                     \
@@ -118,14 +123,14 @@ static const UnitT99 unit_v99 = '\0';
         v(ML99_TRAILING_SEMICOLON()))
 
 #define DATATYPE99_PRIV_withDerive_0(name, ...)                                                    \
-    DATATYPE99_PRIV_withDerive_1(derive(dummy), name, __VA_ARGS__)
+    DATATYPE99_PRIV_withDerive_1(derive99(dummy), name, __VA_ARGS__)
 
 #define DATATYPE99_PRIV_withDerive_1(derivers, name, ...)                                          \
     ML99_call(                                                                                     \
         DATATYPE99_PRIV_genDatatype,                                                               \
         v(name),                                                                                   \
         DATATYPE99_PRIV_parseVariants(__VA_ARGS__),                                                \
-        v(DATATYPE99_PRIV_ELIM_##derivers))
+        v(ML99_CAT(DATATYPE99_PRIV_ELIM_, derivers)))
 
 #define DATATYPE99_PRIV_genDatatype_IMPL(name, variants, ...)                                      \
     ML99_TERMS(                                                                                    \
@@ -155,26 +160,21 @@ static const UnitT99 unit_v99 = '\0';
         v(ML99_TRAILING_SEMICOLON()))
 
 #define DATATYPE99_PRIV_recordWithDerive_0(...)                                                    \
-    DATATYPE99_PRIV_recordWithDerive_1(derive(dummy), __VA_ARGS__)
+    DATATYPE99_PRIV_recordWithDerive_1(derive99(dummy), __VA_ARGS__)
 
 #define DATATYPE99_PRIV_recordWithDerive_1(derivers, ...)                                          \
     ML99_call(                                                                                     \
         DATATYPE99_PRIV_genRecord,                                                                 \
         DATATYPE99_PRIV_recordName(__VA_ARGS__),                                                   \
         DATATYPE99_PRIV_recordFields(__VA_ARGS__),                                                 \
-        v(DATATYPE99_PRIV_ELIM_##derivers))
+        v(ML99_CAT(DATATYPE99_PRIV_ELIM_, derivers)))
 
 #define DATATYPE99_PRIV_recordName(...) v(ML99_VARIADICS_GET(0)(__VA_ARGS__))
 
 #define DATATYPE99_PRIV_recordFields(...)                                                          \
-    ML99_IF(                                                                                       \
-        ML99_VARIADICS_IS_SINGLE(__VA_ARGS__),                                                     \
-        DATATYPE99_PRIV_recordFieldsDummy,                                                         \
-        DATATYPE99_PRIV_recordFieldsSeq)                                                           \
-    (__VA_ARGS__)
-
-#define DATATYPE99_PRIV_recordFieldsDummy(...)      ML99_list(v((char, dummy)))
-#define DATATYPE99_PRIV_recordFieldsSeq(_name, ...) DATATYPE99_PRIV_parseFields(__VA_ARGS__)
+    ML99_CAT(DATATYPE99_PRIV_recordFields_, ML99_VARIADICS_IS_SINGLE(__VA_ARGS__))(__VA_ARGS__)
+#define DATATYPE99_PRIV_recordFields_1(_name)      ML99_list(v((char, dummy)))
+#define DATATYPE99_PRIV_recordFields_0(_name, ...) DATATYPE99_PRIV_parseFields(__VA_ARGS__)
 
 #define DATATYPE99_PRIV_genRecord_IMPL(name, fields, ...)                                          \
     ML99_TERMS(                                                                                    \
@@ -220,10 +220,10 @@ static const UnitT99 unit_v99 = '\0';
 
 // Derivation {
 
-#define DATATYPE99_PRIV_IS_DERIVE(x)          ML99_IS_TUPLE(ML99_CAT(DATATYPE99_PRIV_IS_DERIVE_, x))
-#define DATATYPE99_PRIV_IS_DERIVE_derive(...) ()
+#define DATATYPE99_PRIV_IS_DERIVE(x)           ML99_IS_TUPLE(ML99_CAT(DATATYPE99_PRIV_IS_DERIVE_, x))
+#define DATATYPE99_PRIV_IS_DERIVE_0derive(...) ()
 
-#define DATATYPE99_PRIV_ELIM_derive(...) __VA_ARGS__
+#define DATATYPE99_PRIV_ELIM_0derive(...) __VA_ARGS__
 
 #define DATATYPE99_PRIV_invokeDeriverForEach(prefix, name, repr, ...)                              \
     ML99_variadicsForEach(                                                                         \
@@ -284,10 +284,10 @@ static const UnitT99 unit_v99 = '\0';
 #define MATCHES99(val, tag_) ((val).tag == tag_##Tag)
 
 /// @deprecated Use `MATCHES99` instead.
-#define matches99(val, tag_)                                                                       \
+#define matches99(val, tag)                                                                        \
     DATATYPE99_PRIV_PRAGMA_WARN(                                                                   \
         "GCC warning \"`matches99` is deprecated, use `MATCHES99` instead\"")                      \
-    MATCHES99(val, tag_)
+    MATCHES99(val, tag)
 
 // } (Pattern matching)
 

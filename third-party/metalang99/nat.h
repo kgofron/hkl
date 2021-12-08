@@ -1,6 +1,6 @@
 /**
  * @file
- * Natural numbers ([0; 255]).
+ * Natural numbers: [0; 255].
  *
  * Most of the time, natural numbers are used for iteration; they are not meant for CPU-bound tasks
  * such as Fibonacci numbers or factorials.
@@ -9,14 +9,14 @@
 #ifndef ML99_NAT_H
 #define ML99_NAT_H
 
+#include <metalang99/priv/bool.h>
+
 #include <metalang99/nat/dec.h>
 #include <metalang99/nat/div.h>
 #include <metalang99/nat/eq.h>
 #include <metalang99/nat/inc.h>
 
-#include <metalang99/control.h>
 #include <metalang99/lang.h>
-#include <metalang99/logical.h>
 
 /**
  * \f$x + 1\f$
@@ -51,7 +51,7 @@
 #define ML99_dec(x) ML99_call(ML99_dec, x)
 
 /**
- * Matches @p x to the two cases: if it is zero or positive.
+ * Matches @p x against the two cases: if it is zero or positive.
  *
  * # Examples
  *
@@ -90,9 +90,6 @@
  * // Jean ~ 122 ~ 1 2 3
  * ML99_natMatchWithArgs(v(123), v(MATCH_), v(1, 2, 3))
  * @endcode
- *
- * @note This function calls @p f with #ML99_call, so no partial application occurs, and so
- * arity specifiers are not needed.
  */
 #define ML99_natMatchWithArgs(x, matcher, ...)                                                     \
     ML99_call(ML99_natMatchWithArgs, x, matcher, __VA_ARGS__)
@@ -402,7 +399,7 @@
 #define ML99_INC(x)            ML99_PRIV_INC(x)
 #define ML99_DEC(x)            ML99_PRIV_DEC(x)
 #define ML99_NAT_EQ(x, y)      ML99_PRIV_NAT_EQ(x, y)
-#define ML99_NAT_NEQ(x, y)     ML99_NOT(ML99_NAT_EQ(x, y))
+#define ML99_NAT_NEQ(x, y)     ML99_PRIV_NOT(ML99_NAT_EQ(x, y))
 #define ML99_DIV_CHECKED(x, y) ML99_PRIV_DIV_CHECKED(x, y)
 
 /**
@@ -411,6 +408,8 @@
 #define ML99_NAT_MAX 255
 
 #ifndef DOXYGEN_IGNORE
+
+// Pattern matching {
 
 #define ML99_natMatch_IMPL(x, matcher)                                                             \
     ML99_PRIV_IF(                                                                                  \
@@ -423,27 +422,33 @@
         ML99_NAT_EQ(x, 0),                                                                         \
         ML99_callUneval(matcher##Z, __VA_ARGS__),                                                  \
         ML99_callUneval(matcher##S, ML99_DEC(x), __VA_ARGS__))
+// } (Pattern matching)
 
-#define ML99_inc_IMPL(x) v(ML99_INC(x))
-#define ML99_dec_IMPL(x) v(ML99_DEC(x))
+// Comparison operators {
 
 #define ML99_natEq_IMPL(x, y)  v(ML99_NAT_EQ(x, y))
 #define ML99_natNeq_IMPL(x, y) v(ML99_NAT_NEQ(x, y))
 
-#define ML99_greater_IMPL(x, y) ML99_lesser_IMPL(y, x)
-#define ML99_greaterEq_IMPL(x, y)                                                                  \
-    ML99_PRIV_IF(ML99_NAT_EQ(x, y), v(ML99_TRUE()), ML99_greater_IMPL(x, y))
-
 #define ML99_lesser_IMPL(x, y)                                                                     \
     ML99_PRIV_IF(                                                                                  \
         ML99_NAT_EQ(y, 0),                                                                         \
-        v(ML99_FALSE()),                                                                           \
+        v(ML99_PRIV_FALSE()),                                                                      \
         ML99_PRIV_IF(                                                                              \
             ML99_NAT_EQ(x, ML99_DEC(y)),                                                           \
-            v(ML99_TRUE()),                                                                        \
+            v(ML99_PRIV_TRUE()),                                                                   \
             ML99_callUneval(ML99_lesser, x, ML99_DEC(y))))
 
 #define ML99_lesserEq_IMPL(x, y) ML99_greaterEq_IMPL(y, x)
+
+#define ML99_greater_IMPL(x, y) ML99_lesser_IMPL(y, x)
+#define ML99_greaterEq_IMPL(x, y)                                                                  \
+    ML99_PRIV_IF(ML99_NAT_EQ(x, y), v(ML99_PRIV_TRUE()), ML99_greater_IMPL(x, y))
+// } (Comparison operators)
+
+// Arithmetical operators {
+
+#define ML99_inc_IMPL(x) v(ML99_INC(x))
+#define ML99_dec_IMPL(x) v(ML99_DEC(x))
 
 #define ML99_add_IMPL(x, y)                                                                        \
     ML99_PRIV_IF(ML99_NAT_EQ(y, 0), v(x), ML99_callUneval(ML99_add, ML99_INC(x), ML99_DEC(y)))
@@ -451,6 +456,16 @@
     ML99_PRIV_IF(ML99_NAT_EQ(y, 0), v(x), ML99_callUneval(ML99_sub, ML99_DEC(x), ML99_DEC(y)))
 #define ML99_mul_IMPL(x, y)                                                                        \
     ML99_PRIV_IF(ML99_NAT_EQ(y, 0), v(0), ML99_add(v(x), ML99_callUneval(ML99_mul, x, ML99_DEC(y))))
+
+#define ML99_add3_IMPL(x, y, z) ML99_add(ML99_add_IMPL(x, y), v(z))
+#define ML99_sub3_IMPL(x, y, z) ML99_sub(ML99_sub_IMPL(x, y), v(z))
+#define ML99_mul3_IMPL(x, y, z) ML99_mul(ML99_mul_IMPL(x, y), v(z))
+#define ML99_div3_IMPL(x, y, z) ML99_div(ML99_div_IMPL(x, y), v(z))
+
+#define ML99_min_IMPL(x, y) ML99_call(ML99_if, ML99_lesser_IMPL(x, y), v(x, y))
+#define ML99_max_IMPL(x, y) ML99_call(ML99_if, ML99_lesser_IMPL(x, y), v(y, x))
+
+#define ML99_divChecked_IMPL(x, y) v(ML99_DIV_CHECKED(x, y))
 
 // ML99_mod_IMPL {
 
@@ -462,20 +477,12 @@
 
 #define ML99_PRIV_modAux_IMPL(x, y, acc)                                                           \
     ML99_PRIV_IF(                                                                                  \
-        ML99_OR(ML99_NAT_EQ(x, 0), ML99_IS_JUST(ML99_DIV_CHECKED(x, y))),                          \
+        ML99_PRIV_OR(ML99_NAT_EQ(x, 0), ML99_IS_JUST(ML99_DIV_CHECKED(x, y))),                     \
         v(acc),                                                                                    \
         ML99_callUneval(ML99_PRIV_modAux, ML99_DEC(x), y, ML99_INC(acc)))
 // } (ML99_mod_IMPL)
 
-#define ML99_divChecked_IMPL(x, y) v(ML99_DIV_CHECKED(x, y))
-
-#define ML99_add3_IMPL(x, y, z) ML99_add(ML99_add_IMPL(x, y), v(z))
-#define ML99_sub3_IMPL(x, y, z) ML99_sub(ML99_sub_IMPL(x, y), v(z))
-#define ML99_mul3_IMPL(x, y, z) ML99_mul(ML99_mul_IMPL(x, y), v(z))
-#define ML99_div3_IMPL(x, y, z) ML99_div(ML99_div_IMPL(x, y), v(z))
-
-#define ML99_min_IMPL(x, y) ML99_call(ML99_if, ML99_lesser_IMPL(x, y), v(x, y))
-#define ML99_max_IMPL(x, y) ML99_call(ML99_if, ML99_lesser_IMPL(x, y), v(y, x))
+// } (Arithmetical operators)
 
 #define ML99_assertIsNat_IMPL(x)                                                                   \
     ML99_PRIV_IF(                                                                                  \

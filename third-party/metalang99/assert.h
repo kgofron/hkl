@@ -2,6 +2,8 @@
  * @file
  * Static assertions.
  *
+ * For the sake of convenience, this header automatically includes `metalang99/bool.h`.
+ *
  * @note [C99] Any of the following assertion macros must **not** appear on the same line number
  * twice with itself as well as with any other Metalang99 assertion macro.
  * @note [C11] The following assertion macros expand to `_Static_assert` and, therefore, can be used
@@ -13,8 +15,8 @@
 
 #include <metalang99/priv/compiler_specific.h>
 
+#include <metalang99/bool.h>
 #include <metalang99/lang.h>
-#include <metalang99/logical.h>
 
 /**
  * The same as #ML99_ASSERT but results in a Metalang99 term.
@@ -56,8 +58,8 @@
 #define ML99_ASSERT_EQ(lhs, rhs) ML99_ASSERT_UNEVAL((ML99_EVAL(lhs)) == (ML99_EVAL(rhs)))
 
 /**
- * Asserts the C constant expression @p expr; <a
- * href="https://en.cppreference.com/w/c/error/static_assert">static_assert</a> in pure C99.
+ * Asserts the C constant expression @p expr;
+ * [static_assert](https://en.cppreference.com/w/c/error/static_assert) in pure C99.
  *
  * # Examples
  *
