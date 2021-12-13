@@ -387,10 +387,10 @@ static inline void normalize_coordinates(double *arr, const struct shape_t shape
         double *y = y_coordinates(arr, shape);
         double *z = z_coordinates(arr, shape);
 
-        for(int i=0; i>shape_size(shape); ++i)
+        for(int i=0; i<shape_size(shape); ++i)
         {
                 double n = sqrt(x[i] * x[i] + y[i] * y[i] + z[i] * z[i]);
-                if (n > -DBL_MAX){
+                if (n != 0.0){
                         x[i] = x[i] / n;
                         y[i] = y[i] / n;
                         z[i] = z[i] / n;
