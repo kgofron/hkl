@@ -276,6 +276,7 @@ h5dpathHkl =
      let medVSamplePath = samplePath "SIXS" "i14-c-cx1-ex-cm-med.v"
      let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
      let uhvSamplePath2 = samplePath "SIXS" "i14-c-cx2-ex-diff-uhv"
+     let uhvSamplePath3 = samplePath "SIXS" "i14-c-cx2-ex-cm-uhv"
      qxqyqz <- h5dpathQxQyQz
      case _binocularsInputItype c of
        CristalK6C -> do
@@ -289,7 +290,7 @@ h5dpathHkl =
        SixsFlyMedVEiger -> return $ HklPath qxqyqz medVSamplePath
        SixsFlyMedVS70 -> return $ HklPath qxqyqz medVSamplePath
        SixsFlyScanUhv -> return $ HklPath qxqyqz uhvSamplePath
-       SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath2
+       SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath3
        SixsFlyScanUhvUfxc -> return $ HklPath qxqyqz uhvSamplePath
        SixsSbsFixedDetector -> undefined -- TODO this must not be possible.
        SixsSbsMedH -> return $ HklPath qxqyqz medHSamplePath
