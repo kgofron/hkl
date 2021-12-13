@@ -245,7 +245,9 @@ static inline void space_update_axes(HklBinocularsSpace *space,
                 switch(surf){                                           \
                 case HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL:       \
                 {                                                       \
-                        HklQuaternion q_ub = {{0, -1, 0, 0}};           \
+                        HklQuaternion q_ub; \
+                        HklVector v_s = {{1, 0, 0}};                    \
+                        hkl_quaternion_init_from_angle_and_axe(&q_ub, -M_PI_2, &v_s);\
                         hkl_quaternion_times_quaternion(&qs_1, &q_ub);  \
                         break;                                          \
                 };                                                      \
