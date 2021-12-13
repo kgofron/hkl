@@ -102,7 +102,9 @@ h5dpathQxQyQz =
                                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                           2 0)
                      <*> pure (DetectorPath
-                               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                               (H5Or
+                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")))
                      <*> pure (GeometryPathMedV
                                (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
                                [ -- hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta" it was not saved in the file

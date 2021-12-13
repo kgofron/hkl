@@ -261,18 +261,18 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
       parse :: Text -> Either String InputType
       parse t
           | toLower t == emit SixsFlyMedH = Right SixsFlyMedH
-          | t == emit SixsFlyMedV = Right SixsFlyMedV
-          | t == emit SixsFlyMedVEiger = Right SixsFlyMedVEiger
-          | t == emit SixsFlyMedVS70 = Right SixsFlyMedVS70
-          | t == emit SixsFlyScanUhv = Right SixsFlyScanUhv
-          | t == emit SixsFlyScanUhv2 = Right SixsFlyScanUhv2
-          | t == emit SixsFlyScanUhvUfxc = Right SixsFlyScanUhvUfxc
-          | t == emit SixsSbsFixedDetector = Right SixsSbsFixedDetector
-          | t == emit SixsSbsMedH = Right SixsSbsMedH
-          | t == emit SixsSbsMedV = Right SixsSbsMedV
-          | t == emit SixsSbsMedVFixDetector = Right SixsSbsMedVFixDetector
-          | t == emit CristalK6C = Right CristalK6C
-          | t == emit MarsFlyscan = Right MarsFlyscan
+          | toLower t == emit SixsFlyMedV = Right SixsFlyMedV
+          | toLower t == emit SixsFlyMedVEiger = Right SixsFlyMedVEiger
+          | toLower t == emit SixsFlyMedVS70 = Right SixsFlyMedVS70
+          | toLower t == emit SixsFlyScanUhv = Right SixsFlyScanUhv
+          | toLower t == emit SixsFlyScanUhv2 = Right SixsFlyScanUhv2
+          | toLower t == emit SixsFlyScanUhvUfxc = Right SixsFlyScanUhvUfxc
+          | toLower t == emit SixsSbsFixedDetector = Right SixsSbsFixedDetector
+          | toLower t == emit SixsSbsMedH = Right SixsSbsMedH
+          | toLower t == emit SixsSbsMedV = Right SixsSbsMedV
+          | toLower t == emit SixsSbsMedVFixDetector = Right SixsSbsMedVFixDetector
+          | toLower t == emit CristalK6C = Right CristalK6C
+          | toLower t == emit MarsFlyscan = Right MarsFlyscan
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: InputType -> Text
