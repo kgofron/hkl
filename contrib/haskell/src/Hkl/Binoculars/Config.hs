@@ -1,9 +1,11 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE UndecidableInstances       #-}
+
 {-
     Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -232,6 +234,19 @@ inputTmpl = FieldValue { fvParse = parse, fvEmit = emit }
       emit :: InputTmpl -> Text
       emit (InputTmpl t) = t
 
+class FieldParsable a where
+  fieldParser :: Parser a
+  fieldEmitter :: a -> Text
+
+parsable :: FieldParsable a => FieldValue a
+parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+  where
+    parse ::  FieldParsable a => Text -> Either String a
+    parse = parseOnly fieldParser
+
+    emit ::  FieldParsable a => a -> Text
+    emit = fieldEmitter
+
 binocularsConfigSpec :: IniSpec BinocularsConfig ()
 binocularsConfigSpec = do
   section "dispatcher" $ do
@@ -263,7 +278,7 @@ binocularsConfigSpec = do
   section "projection" $ do
     binocularsProjectionPtype .= field "type" projectionType
     binocularsProjectionResolution .= field "resolution" (listWithSeparator "," number')
-    binocularsProjectionLimits .=? field "limits" projectionLimits
+    binocularsProjectionLimits .=? field "limits" parsable
 
 inputType :: FieldValue InputType
 inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
@@ -408,20 +423,15 @@ limitsP :: Parser [Limits]
 limitsP = char '[' *> limitsP' `sepBy1'` char ',' <* char ']'
 
 
-projectionLimits :: FieldValue [Limits]
-projectionLimits = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
-  where
-    parse ::  Text -> Either String [Limits]
-    parse = parseOnly limitsP
+instance (FieldParsable [Limits]) where
+  fieldParser = limitsP
+  fieldEmitter ls = singleton '['  <> intercalate "," (map emit' ls) <> singleton ']'
+    where
+      emit' :: Limits -> Text
+      emit' (Limits from to) = tolim from <> singleton ':' <> tolim to
 
-    emit :: [Limits] -> Text
-    emit ls = singleton '['  <> intercalate "," (map emit' ls) <> singleton ']'
-
-    emit' :: Limits -> Text
-    emit' (Limits from to) = tolim from <> singleton ':' <> tolim to
-      where
-        tolim (Just l) = pack $ printf "%f" l
-        tolim Nothing  = empty
+      tolim (Just l) = pack $ printf "%f" l
+      tolim Nothing  = empty
 
 files :: (MonadThrow m, MonadIO m) => BinocularsConfig -> m [Path Abs File]
 files c = do
