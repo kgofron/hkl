@@ -21,6 +21,7 @@ module Hkl.Binoculars.Config
     , DestinationTmpl(..)
     , InputRange(..)
     , InputType(..)
+    , Limits(..)
     , ProjectionType(..)
     , SurfaceOrientation(..)
     , configRangeP
@@ -30,6 +31,7 @@ module Hkl.Binoculars.Config
     , getConfig
     , getMask
     , getResolution
+    , limitsP
     , new
     , overloadSampleWithConfig
     , sampleConfig
@@ -46,7 +48,8 @@ import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Control.Monad.Logger              (MonadLogger)
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
-                                                    parseOnly, satisfy, sepBy)
+                                                    double, parseOnly, satisfy,
+                                                    sepBy, sepBy1')
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
@@ -56,11 +59,12 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     (.=?))
 import           Data.List                         (isInfixOf, length)
 import           Data.Maybe                        (fromMaybe)
-import           Data.Text                         (Text, breakOn, drop,
-                                                    findIndex, length, lines,
-                                                    pack, replace, strip, take,
-                                                    takeWhile, toLower, unlines,
-                                                    unpack, unwords)
+import           Data.Text                         (Text, breakOn, drop, empty,
+                                                    findIndex, intercalate,
+                                                    length, lines, pack,
+                                                    replace, singleton, strip,
+                                                    take, takeWhile, toLower,
+                                                    unlines, unpack, unwords)
 import           Data.Text.IO                      (putStr, readFile)
 import           Data.Typeable                     (Typeable)
 import           GHC.Exts                          (IsList)
@@ -135,6 +139,9 @@ data ProjectionType = QxQyQzProjection
                     | HklProjection
   deriving (Eq, Show)
 
+data Limits = Limits (Maybe Double) (Maybe Double)
+  deriving (Eq, Show)
+
 data BinocularsConfig = BinocularsConfig
   { _binocularsDispatcherNcore             :: Maybe Int
   , _binocularsDispatcherDestination       :: DestinationTmpl
@@ -162,6 +169,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputWavelength             :: Maybe (Length Double)
   , _binocularsProjectionPtype             :: ProjectionType
   , _binocularsProjectionResolution        :: [Double]
+  , _binocularsProjectionLimits            :: Maybe [Limits]
   } deriving (Eq, Show)
 
 makeLenses ''BinocularsConfig
@@ -194,6 +202,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsInputWavelength = Nothing
   , _binocularsProjectionPtype = QxQyQzProjection
   , _binocularsProjectionResolution = [0.01, 0.01, 0.01]
+  , _binocularsProjectionLimits = Nothing
   }
 
 ms :: String
@@ -254,6 +263,7 @@ binocularsConfigSpec = do
   section "projection" $ do
     binocularsProjectionPtype .= field "type" projectionType
     binocularsProjectionResolution .= field "resolution" (listWithSeparator "," number')
+    binocularsProjectionLimits .=? field "limits" projectionLimits
 
 inputType :: FieldValue InputType
 inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
@@ -386,6 +396,32 @@ numberUnit u = FieldValue
   , fvEmit = pack . show . (/~ u)
   }
 
+limitsP' :: Parser Limits
+limitsP' = Limits
+           <$> lim <* char ':'
+           <*> lim
+  where
+    lim :: Parser (Maybe Double)
+    lim = (Just <$> double) <|> return Nothing
+
+limitsP :: Parser [Limits]
+limitsP = char '[' *> limitsP' `sepBy1'` char ',' <* char ']'
+
+
+projectionLimits :: FieldValue [Limits]
+projectionLimits = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+  where
+    parse ::  Text -> Either String [Limits]
+    parse = parseOnly limitsP
+
+    emit :: [Limits] -> Text
+    emit ls = singleton '['  <> intercalate "," (map emit' ls) <> singleton ']'
+
+    emit' :: Limits -> Text
+    emit' (Limits from to) = tolim from <> singleton ':' <> tolim to
+      where
+        tolim (Just l) = pack $ printf "%f" l
+        tolim Nothing  = empty
 
 files :: (MonadThrow m, MonadIO m) => BinocularsConfig -> m [Path Abs File]
 files c = do
