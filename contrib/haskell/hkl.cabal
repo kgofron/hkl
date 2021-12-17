@@ -20,89 +20,8 @@ Data-Files:          data/ghkl3.ui
                    , data/3d3.ui
 
 Flag useHklDev
-     Description: Use the current devel hkl library in the source tree
-     Default: True
-
--- executable ghkl
---   main-is:             src/ghkl.hs
---   build-depends:       attoparsec
---                      , base >= 4.6
---                      , containers >= 0.5 && < 0.7
---                      , dimensional >= 0.10
---                      , filepath >= 1.3.0
---                      , Glob >= 0.7.5
---                      , hkl
---                      , monad-loops >= 0.4.2
---                      , pipes >= 4.1.2
---                      , repa
---                      , text
---                      , transformers >= 0.3
---                      , vector >= 0.10.0.1
---   default-language:    Haskell2010
---   build-tools:         hsc2hs
---   ghc-options:         -Wall -threaded -O2
---   ghc-options:         -Werror
---   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
-
--- executable xrd
---   main-is:             src/xrd.hs
---   build-depends:       attoparsec
---                      , base >= 4.6
---                      , containers >= 0.5 && < 0.7
---                      , dimensional >= 0.10
---                      , filepath >= 1.3.0
---                      , Glob >= 0.7.5
---                      , hkl
---                      , monad-loops >= 0.4.2
---                      , pipes >= 4.1.2
---                      , text
---                      , transformers >= 0.3
---                      , vector >= 0.10.0.1
-
---   default-language:    Haskell2010
---   build-tools:         hsc2hs
---   ghc-options:         -Wall -threaded -O2
---   ghc-options:         -Werror
---   ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
-
-executable binoculars-ng
-  main-is:             app/Binoculars.hs
-  build-depends:       base >= 4.6
-                     , attoparsec
-                     , containers >= 0.5 && < 0.7
-                     , dimensional >= 0.10
-                     , exceptions
-                     , filepath >= 1.3.0
-                     , hkl
-                     , monad-logger
-                     , monad-loops >= 0.4.2
-                     , optparse-applicative
-                     , pipes >= 4.1.2
-                     , text
-                     , transformers >= 0.3
-                     , vector >= 0.10.0.1
-  default-language:    Haskell2010
-
-  ghc-options:         -O2
-  ghc-options:         -Wall
-  ghc-options:         -Werror
-  ghc-options:         -rtsopts
-  ghc-options:         -threaded
-  ghc-options:         -g
-  ghc-options:         -dcore-lint
-  ghc-options:         -debug
-  ghc-options:         -ddump-to-file
-  ghc-options:         -ddump-simpl
-  ghc-options:         -ddump-stg
-  ghc-options:         "-with-rtsopts=-N"
-
-  if flag(useHklDev)
-      pkgconfig-depends:   gobject-2.0
-      ghc-options: -pgml gcc "-optl-Wl,--allow-multiple-definition"
-      ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
-      ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
-
-  ghc-prof-options:    -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+  Description: Use the current devel hkl library in the source tree
+  Default: True
 
 library
   exposed-modules:    Hkl
@@ -193,26 +112,97 @@ library
   ghc-options:         -ddump-simpl
   ghc-options:         -ddump-stg
 
-test-suite hkl-test
-   default-language:   Haskell2010
-   hs-source-dirs:     test
-   build-depends:      attoparsec
-   build-depends:      base >= 4.6
-   build-depends:      config-ini
-   build-depends:      hkl
-   build-depends:      hspec
-   build-depends:      text
+executable binoculars-ng
+  build-depends: base >= 4.6
+  build-depends: attoparsec
+  build-depends: containers >= 0.5 && < 0.7
+  build-depends: dimensional >= 0.10
+  build-depends: exceptions
+  build-depends: filepath >= 1.3.0
+  build-depends: hkl
+  build-depends: monad-logger
+  build-depends: monad-loops >= 0.4.2
+  build-depends: optparse-applicative
+  build-depends: pipes >= 4.1.2
+  build-depends: text
+  build-depends: transformers >= 0.3
+  build-depends: vector >= 0.10.0.1
 
-   if flag(useHklDev)
-      pkgconfig-depends:   gobject-2.0
-      ghc-options: -pgml gcc "-optl-Wl,--allow-multiple-definition"
-      ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
-      ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
+  default-language:    Haskell2010
 
-   ghc-options:        -threaded
-   ghc-options:        -rtsopts=all
-   ghc-options:        -with-rtsopts=-K1k
-   main-is:            Spec.hs
-   other-modules:      BinocularsSpec
-   other-modules:      Paths_hkl
-   type:               exitcode-stdio-1.0
+  ghc-options: -O2
+  ghc-options: -Wall
+  ghc-options: -Werror
+  ghc-options: -rtsopts
+  ghc-options: -threaded
+  ghc-options: -g
+  ghc-options: -dcore-lint
+  ghc-options: -debug
+  ghc-options: -ddump-to-file
+  ghc-options: -ddump-simpl
+  ghc-options: -ddump-stg
+  ghc-options: "-with-rtsopts=-N"
+
+  if flag(useHklDev)
+    pkgconfig-depends: gobject-2.0
+    ghc-options: -pgml
+    ghc-options: gcc
+    ghc-options: "-optl-Wl,--allow-multiple-definition"
+    ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
+    ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
+
+  ghc-prof-options: -fprof-auto
+  ghc-prof-options: "-with-rtsopts=-N -p -s -h -i0.1"
+
+  main-is: app/Binoculars.hs
+
+
+executable hkl-test
+  build-depends: attoparsec
+  build-depends: base >= 4.6
+  build-depends: config-ini
+  build-depends: dimensional
+  build-depends: hkl
+  build-depends: hspec
+  build-depends: path
+  build-depends: text
+
+  default-language: Haskell2010
+
+  extra-libraries: hkl-binoculars
+  extra-lib-dirs: ../../binoculars/
+
+  ghc-options: -threaded
+  ghc-options: -rtsopts=all
+  ghc-options: -with-rtsopts=-K1k
+
+  ghc-options: -O2
+  ghc-options: -Wall
+  ghc-options: -Werror
+  ghc-options: -rtsopts
+  ghc-options: -threaded
+  ghc-options: -g
+  ghc-options: -dcore-lint
+  ghc-options: -debug
+  ghc-options: -ddump-to-file
+  ghc-options: -ddump-simpl
+  ghc-options: -ddump-stg
+  ghc-options: "-with-rtsopts=-N"
+
+  if flag(useHklDev)
+    pkgconfig-depends: gobject-2.0
+    ghc-options: -pgml
+    ghc-options: gcc
+
+    -- ghc-options: "-optl-Wl,--allow-multiple-definition"
+    -- ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
+    -- ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
+
+  hs-source-dirs: test
+
+  main-is: Spec.hs
+
+  other-modules: BinocularsSpec
+  other-modules: Paths_hkl
+
+  type: exitcode-stdio-1.0

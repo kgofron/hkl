@@ -276,7 +276,7 @@ binocularsConfigSpec = do
     binocularsInputUz .=? field "uz" (numberUnit degree)
     binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
-    binocularsProjectionPtype .= field "type" projectionType
+    binocularsProjectionPtype .= field "type" parsable
     binocularsProjectionResolution .= field "resolution" (listWithSeparator "," number')
     binocularsProjectionLimits .=? field "limits" parsable
 
@@ -329,20 +329,14 @@ surfaceOrientation = FieldValue { fvParse = parse . strip . uncomment, fvEmit = 
     emit SurfaceOrientationHorizontal = "horizontal"
 
 
-projectionType :: FieldValue ProjectionType
-projectionType = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
-  where
-    parse ::  Text -> Either String ProjectionType
-    parse t
-      | t == "hkl" = Right HklProjection
-      | t == "qxqyqz" = Right QxQyQzProjection
-      | t == "sixs:qxqyqzprojection" = Right QxQyQzProjection
-      | t == "sixs:hklprojection" = Right HklProjection
-      | otherwise = Left ("Unsupported " ++ unpack t ++ " projection type")
+instance FieldParsable ProjectionType where
+  fieldParser = "hkl" *> return HklProjection
+                <|> "qxqyqz" *> return QxQyQzProjection
+                <|> "sixs:qxqyqzprojection" *> return QxQyQzProjection
+                <|> "sixs:hklprojection" *> return HklProjection
 
-    emit :: ProjectionType -> Text
-    emit QxQyQzProjection = "qxqyqz"
-    emit HklProjection    = "hkl"
+  fieldEmitter QxQyQzProjection = "qxqyqz"
+  fieldEmitter HklProjection    = "hkl"
 
 pathAbsDir :: FieldValue (Path Abs Dir)
 pathAbsDir = FieldValue
