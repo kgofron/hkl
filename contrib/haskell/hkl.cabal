@@ -95,13 +95,13 @@ library
   other-modules: Paths_hkl
 
   if flag(useHklDev)
+    -- hkl
     extra-lib-dirs: /home/picca/src/repo.or.cz/hkl/hkl/.libs/
-    extra-lib-dirs: /home/picca/src/repo.or.cz/hkl/binoculars/
-
     extra-libraries: hkl
-
-    include-dirs: ../../
     include-dirs: ../../hkl/
+
+    -- hkl-binoculars
+    extra-lib-dirs: /home/picca/src/repo.or.cz/hkl/binoculars/
     include-dirs: ../../binoculars/
 
     pkgconfig-depends: glib-2.0
@@ -135,9 +135,6 @@ executable binoculars-ng
 
   main-is: app/Binoculars.hs
 
-  if flag(useHklDev)
-    pkgconfig-depends: gobject-2.0
-
 
 test-suite hkl-test
   build-depends: attoparsec
@@ -165,6 +162,3 @@ test-suite hkl-test
   other-modules: Paths_hkl
 
   type: exitcode-stdio-1.0
-
-  if flag(useHklDev)
-    pkgconfig-depends: gobject-2.0
