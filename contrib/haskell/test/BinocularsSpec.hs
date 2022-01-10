@@ -8,11 +8,7 @@ module BinocularsSpec
 
 import           Control.Monad                     (forM_)
 import           Data.Attoparsec.Text              (parseOnly)
-import           Data.Either                       (isRight)
-import           Data.Text.IO                      (readFile)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, Quantity,
-                                                    Unit, meter, radian, (*~),
-                                                    (/~))
+import           Numeric.Units.Dimensional.Prelude (meter, radian, (*~))
 import           Path                              (mkAbsDir)
 
 
