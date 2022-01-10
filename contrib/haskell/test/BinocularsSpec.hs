@@ -35,6 +35,9 @@ spec = do
     it "parse a limits with no limits" $ do
       let p = parseOnly limitsP "[-1.0:,:]"
       p `shouldBe` (Right [Limits (Just (-1)) Nothing, Limits Nothing Nothing])
+    it "parse a limits with no limits" $ do
+      let p = parseOnly limitsP "[:,:]"
+      p `shouldBe` (Right [Limits Nothing Nothing, Limits Nothing Nothing])
 
   describe "parseConfigRange" $ do
     it "parse a range" $ do
