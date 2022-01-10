@@ -24,93 +24,87 @@ Flag useHklDev
   Default: True
 
 library
-  exposed-modules:    Hkl
-                    , Hkl.Binoculars
-                    , Hkl.Binoculars.Common
-                    , Hkl.Binoculars.Config
-                    , Hkl.Binoculars.Pipes
-                    , Hkl.Binoculars.Projections
-                    , Hkl.Binoculars.Sixs
-                    , Hkl.C
-                    , Hkl.C.Binoculars
-                    , Hkl.C.DArray
-                    , Hkl.C.Detector
-                    , Hkl.C.Engine
-                    , Hkl.C.EngineList
-                    , Hkl.C.Geometry
-                    , Hkl.C.GeometryList
-                    , Hkl.C.Lattice
-                    , Hkl.C.Sample
-                    , Hkl.Detector
-                    , Hkl.Engine
-                    , Hkl.H5
-                    , Hkl.Image
-                    , Hkl.Lattice
-                    , Hkl.MyMatrix
-                    , Hkl.Orphan
-                    , Hkl.Pipes
-                    , Hkl.Types
-                    , Hkl.Types.Parameter
-                    , Hkl.Utils
-  other-modules:      Paths_hkl
-  other-extensions:    CPP
-                     , ForeignFunctionInterface
-                     , EmptyDataDecls
-                     , TypeFamilies
-                     , FlexibleInstances
-                     , FlexibleContexts
-                     , RecordWildCards
-  build-depends:       async
-                     , attoparsec
-                     , base >= 4.6
-                     , bytestring >= 0.10.0.2
-                     , config-ini
-                     , dimensional >= 0.10
-                     , directory >= 1.3.0
-                     , errors
-                     , exceptions
-                     , extra
-                     , filepath >= 1.3.0
-                     , hdf5
-                     , hmatrix >= 0.17
-                     , hmatrix-gsl >= 0.17
-                     , lens
-                     , monad-logger
-                     , monad-loops >= 0.4.2
-                     , mtl
-                     , path
-                     , path-io
-                     , pipes >= 4.1.2
-                     , pipes-safe >= 2.2.0
-                     , repa
-                     , terminal-progress-bar
-                     , text
-                     , transformers >= 0.3
-                     , vector >= 0.10.0.1
-  hs-source-dirs:      src
-  default-language:    Haskell2010
+  build-depends: async
+  build-depends: attoparsec
+  build-depends: base >= 4.6
+  build-depends: bytestring >= 0.10.0.2
+  build-depends: config-ini
+  build-depends: dimensional >= 0.10
+  build-depends: directory >= 1.3.0
+  build-depends: errors
+  build-depends: exceptions
+  build-depends: extra
+  build-depends: filepath >= 1.3.0
+  build-depends: hdf5
+  build-depends: hmatrix >= 0.17
+  build-depends: hmatrix-gsl >= 0.17
+  build-depends: lens
+  build-depends: monad-logger
+  build-depends: monad-loops >= 0.4.2
+  build-depends: mtl
+  build-depends: path
+  build-depends: path-io
+  build-depends: pipes >= 4.1.2
+  build-depends: pipes-safe >= 2.2.0
+  build-depends: repa
+  build-depends: terminal-progress-bar
+  build-depends: text
+  build-depends: transformers >= 0.3
+  build-depends: vector >= 0.10.0.1
+
+  default-language: Haskell2010
+
+  exposed-modules: Hkl
+  exposed-modules: Hkl.Binoculars
+  exposed-modules: Hkl.Binoculars.Common
+  exposed-modules: Hkl.Binoculars.Config
+  exposed-modules: Hkl.Binoculars.Pipes
+  exposed-modules: Hkl.Binoculars.Projections
+  exposed-modules: Hkl.Binoculars.Sixs
+  exposed-modules: Hkl.C
+  exposed-modules: Hkl.C.Binoculars
+  exposed-modules: Hkl.C.DArray
+  exposed-modules: Hkl.C.Detector
+  exposed-modules: Hkl.C.Engine
+  exposed-modules: Hkl.C.EngineList
+  exposed-modules: Hkl.C.Geometry
+  exposed-modules: Hkl.C.GeometryList
+  exposed-modules: Hkl.C.Lattice
+  exposed-modules: Hkl.C.Sample
+  exposed-modules: Hkl.Detector
+  exposed-modules: Hkl.Engine
+  exposed-modules: Hkl.H5
+  exposed-modules: Hkl.Image
+  exposed-modules: Hkl.Lattice
+  exposed-modules: Hkl.MyMatrix
+  exposed-modules: Hkl.Orphan
+  exposed-modules: Hkl.Pipes
+  exposed-modules: Hkl.Types
+  exposed-modules: Hkl.Types.Parameter
+  exposed-modules: Hkl.Utils
+
+  extra-libraries: hkl-binoculars
+
+  ghc-options: -g
+  ghc-options: -Wall
+  ghc-options: -Wincomplete-uni-patterns
+  ghc-options: -Wincomplete-record-updates
+
+  hs-source-dirs: src
+
+  other-modules: Paths_hkl
+
   if flag(useHklDev)
-    include-dirs:      ../../
-                     , ../../hkl/
-                     , ../../binoculars/
-    pkgconfig-depends:   glib-2.0
+    extra-libraries: hkl
+
+    include-dirs: ../../
+    include-dirs: ../../hkl/
+    include-dirs: ../../binoculars/
+
+    pkgconfig-depends: glib-2.0
   else
-    pkgconfig-depends:   hkl
-    extra-libraries:     hkl-binoculars
+    pkgconfig-depends: hkl
 
-  ghc-options:         -O2
-  ghc-options:         -Wall
-  -- ghc-options:         -Werror
-  ghc-options:         -Wincomplete-uni-patterns
-  ghc-options:         -Wincomplete-record-updates
-  -- ghc-options:         -fno-warn-incomplete-patterns
-
-  ghc-options:         -g
-  ghc-options:         -dcore-lint
-  ghc-options:         -debug
-  ghc-options:         -ddump-to-file
-  ghc-options:         -ddump-simpl
-  ghc-options:         -ddump-stg
 
 executable binoculars-ng
   build-depends: base >= 4.6
@@ -128,36 +122,25 @@ executable binoculars-ng
   build-depends: transformers >= 0.3
   build-depends: vector >= 0.10.0.1
 
-  default-language:    Haskell2010
+  default-language: Haskell2010
 
-  ghc-options: -O2
-  ghc-options: -Wall
-  ghc-options: -Werror
+  ghc-options: -g
   ghc-options: -rtsopts
   ghc-options: -threaded
-  ghc-options: -g
-  ghc-options: -dcore-lint
-  ghc-options: -debug
-  ghc-options: -ddump-to-file
-  ghc-options: -ddump-simpl
-  ghc-options: -ddump-stg
   ghc-options: "-with-rtsopts=-N"
+  ghc-options: -Wall
+
+  main-is: app/Binoculars.hs
 
   if flag(useHklDev)
     pkgconfig-depends: gobject-2.0
-    ghc-options: -pgml
-    ghc-options: gcc
+
     ghc-options: "-optl-Wl,--allow-multiple-definition"
     ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
     ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
 
-  ghc-prof-options: -fprof-auto
-  ghc-prof-options: "-with-rtsopts=-N -p -s -h -i0.1"
 
-  main-is: app/Binoculars.hs
-
-
-executable hkl-test
+test-suite hkl-test
   build-depends: attoparsec
   build-depends: base >= 4.6
   build-depends: config-ini
@@ -169,34 +152,11 @@ executable hkl-test
 
   default-language: Haskell2010
 
-  extra-libraries: hkl-binoculars
-  extra-lib-dirs: ../../binoculars/
-
-  ghc-options: -threaded
-  ghc-options: -rtsopts=all
-  ghc-options: -with-rtsopts=-K1k
-
-  ghc-options: -O2
+  ghc-options: -g
   ghc-options: -Wall
-  ghc-options: -Werror
   ghc-options: -rtsopts
   ghc-options: -threaded
-  ghc-options: -g
-  ghc-options: -dcore-lint
-  ghc-options: -debug
-  ghc-options: -ddump-to-file
-  ghc-options: -ddump-simpl
-  ghc-options: -ddump-stg
   ghc-options: "-with-rtsopts=-N"
-
-  if flag(useHklDev)
-    pkgconfig-depends: gobject-2.0
-    ghc-options: -pgml
-    ghc-options: gcc
-
-    -- ghc-options: "-optl-Wl,--allow-multiple-definition"
-    -- ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
-    -- ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
 
   hs-source-dirs: test
 
@@ -206,3 +166,10 @@ executable hkl-test
   other-modules: Paths_hkl
 
   type: exitcode-stdio-1.0
+
+  if flag(useHklDev)
+    pkgconfig-depends: gobject-2.0
+
+    ghc-options: "-optl-Wl,--allow-multiple-definition"
+    ghc-options: "-optl-Wl,--whole-archive,../../hkl/.libs/libhkl.a,--no-whole-archive"
+    ghc-options: "-optl-Wl,--whole-archive,../../binoculars/libhkl-binoculars.a,--no-whole-archive"
