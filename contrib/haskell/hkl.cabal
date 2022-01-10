@@ -95,14 +95,7 @@ library
   other-modules: Paths_hkl
 
   if flag(useHklDev)
-    -- hkl
-    extra-lib-dirs: /home/picca/src/repo.or.cz/hkl/hkl/.libs/
     extra-libraries: hkl
-    include-dirs: ../../hkl/
-
-    -- hkl-binoculars
-    extra-lib-dirs: /home/picca/src/repo.or.cz/hkl/binoculars/
-    include-dirs: ../../binoculars/
 
     pkgconfig-depends: glib-2.0
   else
