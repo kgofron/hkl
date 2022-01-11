@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell       #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -125,6 +125,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let sampleDetectorDistance = _binocularsInputSdd conf
     let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsInputSurfaceOrientation conf)
+    let mlimits = _binocularsProjectionLimits conf
 
     h5d <- mkPaths
     filenames <- InputList <$> files conf
@@ -148,7 +149,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
       >-> framesQxQyQzP h5d det
-      >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation)
+      >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
       >-> accumulateP c
 
     liftIO $ Prelude.print guessed
@@ -165,7 +166,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
                                       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                       >-> framesQxQyQzP h5d det
                                       -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                                      >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation)
+                                      >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
                                       >-> tee (accumulateP c)
                                       >-> progress pb
                                   ) jobs
@@ -194,6 +195,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let centralPixel' = _binocularsInputCentralpixel conf
     let sampleDetectorDistance = _binocularsInputSdd conf
     let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+    let mlimits = _binocularsProjectionLimits conf
 
     filenames <- InputList <$> files conf
     mask' <- getMask conf det
@@ -215,7 +217,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
       >-> framesHklP h5d det
-      >-> project det 3 (spaceHkl conf det pixels res mask')
+      >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
       >-> accumulateP c
 
     liftIO $ Prelude.print guessed
@@ -231,7 +233,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
                                       -- >-> tee Pipes.Prelude.print
                                       >-> framesHklP h5d det
                                       -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
-                                      >-> project det 3 (spaceHkl conf det pixels res mask')
+                                      >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
                                       >-> tee (accumulateP c)
                                       >-> progress pb
                                   ) jobs
@@ -243,7 +245,8 @@ instance ProcessHklP HklPath
 
 --  Create the Cube
 
-accumulateP :: (MonadIO m, Shape sh) => IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
+accumulateP :: (MonadIO m, Shape sh)
+            => IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
 accumulateP ref =
     forever $ do s <- await
                  liftIO $ addSpace s =<< readIORef ref

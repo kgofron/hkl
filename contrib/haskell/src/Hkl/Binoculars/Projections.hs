@@ -2,7 +2,7 @@
 {-# LANGUAGE GADTs                 #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -143,8 +143,8 @@ data DataFrameQxQyQz
     deriving Show
 
 {-# INLINE spaceQxQyQz #-}
-spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' surf space (DataFrameQxQyQz _ att g img) =
+spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
+spaceQxQyQz det pixels rs mmask' surf mlimits space (DataFrameQxQyQz _ att g img) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -188,8 +188,8 @@ data DataFrameHkl a
       deriving Show
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' space (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
+spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
+spaceHkl config' det pixels rs mmask' mlimits space (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
