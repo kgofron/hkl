@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -23,6 +23,7 @@
 #include <time.h>
 
 #include "ccan/array_size/array_size.h"
+#include "datatype99.h"
 #include "hkl-binoculars.h"
 #include "hkl-geometry-private.h"
 #include "hkl-matrix-private.h"
@@ -45,6 +46,45 @@ static inline ptrdiff_t min(ptrdiff_t x, ptrdiff_t y)
 static inline ptrdiff_t max(ptrdiff_t x, ptrdiff_t y)
 {
 	return x ^ ((x ^ y) & -(x < y));
+}
+
+/* Axis Limits */
+
+datatype(
+        AxisLimitType,
+        (NoLimit),
+        (Limit, ptrdiff_t)
+        );
+
+struct _HklBinocularsAxisLimits
+{
+        AxisLimitType imin;
+        AxisLimitType imax;
+};
+
+void hkl_binoculars_axis_limits_free(HklBinocularsAxisLimits *self)
+{
+	free(self);
+}
+
+HklBinocularsAxisLimits *hkl_binoculars_axis_limits_new(const ptrdiff_t *imin,
+                                                        const ptrdiff_t *imax)
+{
+	HklBinocularsAxisLimits *self = malloc(sizeof(*self));
+
+        if (NULL == imin){
+                self->imin = NoLimit();
+        } else {
+                self->imin = Limit(*imin);
+        }
+
+        if (NULL == imax){
+                self->imax = NoLimit();
+        } else {
+                self->imax = Limit(*imax);
+        }
+
+        return self;
 }
 
 /* Axis */
@@ -220,6 +260,39 @@ static inline void space_update_axes(HklBinocularsSpace *space,
         }
 }
 
+static inline int item_in_the_limits(const HklBinocularsSpaceItem *item,
+                                     const HklBinocularsAxisLimits **limits,
+                                     size_t n_limits)
+{
+        int res = TRUE;
+
+        if (NULL != limits){
+                for(size_t i=0; i<n_limits; ++i){
+                        ptrdiff_t v = item->indexes_0[i];
+
+                        match(limits[i]->imin){
+                                of(NoLimit){
+                                }
+                                of(Limit, imin){
+                                        if (v < *imin) res = FALSE;
+                                        break;
+                                }
+                        }
+
+                        match(limits[i]->imax){
+                                of(NoLimit){
+                                }
+                                of(Limit, imax){
+                                        if(v > *imax) res = FALSE;
+                                        break;
+                                }
+                        }
+                }
+        }
+
+        return res;
+}
+
 /* the array is pre filled with the pixel coordinates */
 
 #define HKL_BINOCULARS_SPACE_Q_IMPL(image_t)                            \
@@ -275,7 +348,8 @@ static inline void space_update_axes(HklBinocularsSpace *space,
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                                                         \
-                                darray_append(space->items, item);      \
+                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                        darray_append(space->items, item); \
                         }                                               \
                 }                                                       \
                                                                         \
@@ -330,7 +404,8 @@ HKL_BINOCULARS_SPACE_Q_IMPL(uint32_t);
                                 }\
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
-                                darray_append(space->items, item);      \
+                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                        darray_append(space->items, item); \
                         }                                               \
                 }                                                       \
                                                                         \

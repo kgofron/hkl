@@ -9,7 +9,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans     #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -20,9 +20,12 @@
 -}
 
 module Hkl.C.Binoculars
-       ( Cube
+       ( C'HklBinocularsAxisLimits
+       , Cube
        , Cube'(..)
        , Space(..)
+       , c'hkl_binoculars_axis_limits_free
+       , c'hkl_binoculars_axis_limits_new
        , hkl_binoculars_cube_new'
        , hkl_binoculars_cube_new_empty'
        , hkl_binoculars_cube_new_empty_from_cube'
@@ -34,8 +37,10 @@ module Hkl.C.Binoculars
        , hkl_binoculars_space_q_int32_t
        , hkl_binoculars_space_q_uint16_t
        , hkl_binoculars_space_q_uint32_t
+       , newLimits
        , newSpace
        , toCube
+       , withForeignPtrs
        ) where
 
 import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
@@ -44,13 +49,14 @@ import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
-import           Foreign.Marshal.Alloc (finalizerFree)
+import           Foreign.Marshal.Alloc (finalizerFree, alloca)
 import           Foreign.Marshal.Array (allocaArray, copyArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, mallocForeignPtrArray, withForeignPtr)
-import           Foreign.Ptr           (FunPtr, Ptr, plusPtr, castPtr)
+import           Foreign.Ptr           (FunPtr, Ptr, plusPtr, castPtr, nullPtr)
 import           Foreign.Storable      (Storable (..))
 import           System.IO.Unsafe      (unsafePerformIO)
 
+import           Hkl.Binoculars.Config
 import           Hkl.Detector
 import           Hkl.C.Geometry
 import           Hkl.C.Sample
@@ -59,7 +65,43 @@ import           Hkl.Orphan ()
 
 #include "hkl-binoculars.h"
 
---  Axis
+withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
+withForeignPtrs []       f = f []
+withForeignPtrs (fp:fps) f =
+  withForeignPtr fp $ \p ->
+  withForeignPtrs fps $ \ps -> f (p:ps)
+
+
+-- AxisLimits
+
+data C'HklBinocularsAxisLimits
+
+newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
+newLimits (Limits mmin mmax) res =
+    alloca $ \imin' ->
+        alloca $ \imax' -> do
+          imin'' <- case mmin of
+                    Nothing -> pure nullPtr
+                    (Just d) -> do
+                              poke imin' (round (d / res))
+                              pure imin'
+          imax'' <- case mmax of
+                    Nothing -> pure nullPtr
+                    (Just d) -> do
+                              poke imax' (round (d / res))
+                              pure imax'
+          newForeignPtr c'hkl_binoculars_axis_limits_free
+                        =<< c'hkl_binoculars_axis_limits_new imin'' imax''
+
+foreign import ccall unsafe "&hkl_binoculars_axis_limits_free" \
+c'hkl_binoculars_axis_limits_free :: FunPtr (Ptr C'HklBinocularsAxisLimits -> IO ())
+
+foreign import ccall unsafe "hkl_binoculars_axis_limits_new" \
+c'hkl_binoculars_axis_limits_new :: Ptr CPtrdiff
+                                 -> Ptr CPtrdiff
+                                 -> IO (Ptr C'HklBinocularsAxisLimits)
+
+-- Axis
 
 data Axis = Axis { name :: ByteString
                  , index :: CSize
@@ -231,6 +273,8 @@ type C'ProjectionTypeQ t = Ptr (Space DIM3) -- HklBinocularsSpace *self
  -> CSize -- size_t n_resolutions
  -> Ptr CBool -- const uint8_t *mask
  -> CInt -- surface orientation
+ -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
+ -> CInt -- size_t n_limits
  -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_int32_t" \
@@ -255,6 +299,8 @@ type C'ProjectionTypeHkl t = Ptr (Space DIM3) -- HklBinocularsSpace *self
   -> Ptr Double --  const double *resolutions
   -> CSize -- size_t n_resolutions
   -> Ptr CBool -- const uint8_t *mask
+  -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
+  -> CInt -- size_t n_limits
   -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_int32_t" \

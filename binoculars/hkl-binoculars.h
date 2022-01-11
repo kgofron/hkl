@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -68,6 +68,18 @@ HKLAPI extern void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDete
                                                                int width, int height,
                                                                int ix0, int iy0, double sdd,
                                                                double detrot);
+
+/***********/
+/* Limits  */
+/***********/
+
+typedef struct _HklBinocularsAxisLimits HklBinocularsAxisLimits;
+
+HKLAPI extern void hkl_binoculars_axis_limits_free(HklBinocularsAxisLimits *self);
+
+HKLAPI extern HklBinocularsAxisLimits *hkl_binoculars_axis_limits_new(const ptrdiff_t *min,
+                                                                      const ptrdiff_t *max);
+
 /********/
 /* Axis */
 /********/
@@ -134,15 +146,17 @@ HKLAPI extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
                                                  const double *resolutions, \
                                                  size_t n_resolutions,  \
                                                  const uint8_t *masked, \
-                                                 HklBinocularsSurfaceOrientationEnum surf)
+                                                 HklBinocularsSurfaceOrientationEnum surf, \
+                                                 const HklBinocularsAxisLimits **limits, \
+                                                 size_t n_limits)
 
 HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint32_t);
 
 
-#define HKL_BINOCULARS_SPACE_HKL_DECL(image_t)\
-        void hkl_binoculars_space_hkl_ ## image_t (HklBinocularsSpace *space,\
+#define HKL_BINOCULARS_SPACE_HKL_DECL(image_t)                          \
+        void hkl_binoculars_space_hkl_ ## image_t (HklBinocularsSpace *space, \
                                                    const HklGeometry *geometry, \
                                                    const HklSample *sample, \
                                                    const image_t *image, \
@@ -153,7 +167,9 @@ HKLAPI extern HKL_BINOCULARS_SPACE_Q_DECL(uint32_t);
                                                    const size_t *pixels_coordinates_dims, \
                                                    const double *resolutions, \
                                                    size_t n_resolutions, \
-                                                   const uint8_t *masked)
+                                                   const uint8_t *masked, \
+                                                   const HklBinocularsAxisLimits **limits, \
+                                                   size_t n_limits)
 
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint16_t);

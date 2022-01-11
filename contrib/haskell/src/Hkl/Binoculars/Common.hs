@@ -3,7 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -29,7 +29,6 @@ import           Data.Array.Repa       (Shape)
 import           Data.IORef            (IORef, newIORef, readIORef)
 import           Foreign.ForeignPtr    (ForeignPtr, withForeignPtr)
 import           Foreign.Marshal.Array (withArrayLen)
-import           Foreign.Ptr           (Ptr)
 import           Foreign.Storable      (peek)
 import           Path                  (Abs, File, Path, fromAbsFile)
 import           Text.Printf           (printf)
@@ -82,12 +81,6 @@ data DataFrameSpace sh = DataFrameSpace Image (Space sh) Double
   deriving Show
 
 --  Create the Cube
-
-withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
-withForeignPtrs []       f = f []
-withForeignPtrs (fp:fps) f =
-  withForeignPtr fp $ \p ->
-  withForeignPtrs fps $ \ps -> f (p:ps)
 
 {-# INLINE mkCube' #-}
 mkCube' :: Shape sh => [DataFrameSpace sh] -> IO (Cube' sh)

@@ -26,7 +26,8 @@ sixs:
 	#cd ../..; gdb --args ~picca/src/repo.or.cz/hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process data/test/config_sixs_ruche_uhv.ini
 	#cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_uhv.ini
 	#cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_uhv_2.ini
-	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_flymedv_2.ini
+	#cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_flymedv_2.ini
+	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- +RTS -N4 -RTS process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run2/test_Arthur/binoculars/Test_ROD_config_UHV_2m115_1500_3h_TT_Qxyz.txt 2016-2044
 
 ssd:
 #	cd ../..; /usr/bin/time -v cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
