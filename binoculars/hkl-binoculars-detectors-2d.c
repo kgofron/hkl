@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -445,33 +445,35 @@ void hkl_binoculars_detector_2d_shape_get(HklBinocularsDetectorEnum n,
 double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
 {
         const struct detector_t detector = get_detector(n);
+        double *arr = NULL;
 
         match(detector.type){
                 of(ImXpadS70, imxpad){
-                        return coordinates_get_imxpad(&detector.shape,
-                                                      imxpad);
+                        arr = coordinates_get_imxpad(&detector.shape,
+                                                     imxpad);
                 }
                 of(ImXpadS140, imxpad){
-                        return coordinates_get_imxpad(&detector.shape,
-                                                      imxpad);
+                        arr = coordinates_get_imxpad(&detector.shape,
+                                                     imxpad);
                 }
                 of(XpadFlatCorrected, square){
-                        return coordinates_get_square(&detector.shape,
-                                                      square);
+                        arr = coordinates_get_square(&detector.shape,
+                                                     square);
                 }
                 of(Eiger1M, dectris){
-                        return coordinates_get_square(&detector.shape,
-                                                      &dectris->square);
+                        arr = coordinates_get_square(&detector.shape,
+                                                     &dectris->square);
                 }
                 of(Ufxc, square){
-                        return coordinates_get_square(&detector.shape,
-                                                      square);
+                        arr = coordinates_get_square(&detector.shape,
+                                                     square);
                 }
                 of(Merlin, square){
-                        return coordinates_get_square(&detector.shape,
-                                                      square);
+                        arr = coordinates_get_square(&detector.shape,
+                                                     square);
                 }
         }
+        return arr;
 }
 
 void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
@@ -496,30 +498,33 @@ void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
 uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
 {
         const struct detector_t detector = get_detector(n);
+        uint8_t *arr = NULL;
 
         match(detector.type){
                 of(ImXpadS70, imxpad){
-                        return mask_get_imxpad(&detector.shape,
-                                               imxpad);
+                        arr = mask_get_imxpad(&detector.shape,
+                                              imxpad);
                 }
                 of(ImXpadS140, imxpad){
-                        return mask_get_imxpad(&detector.shape,
+                        arr = mask_get_imxpad(&detector.shape,
                                                imxpad);
                 }
                 of(XpadFlatCorrected){
-                        return mask_get_xpad_flat_corrected(&detector.shape);
+                        arr = mask_get_xpad_flat_corrected(&detector.shape);
                 }
                 of(Eiger1M, dectris){
-                        return mask_get_dectris(&detector.shape,
+                        arr = mask_get_dectris(&detector.shape,
                                                 dectris);
                 }
                 of(Ufxc){
-                        return no_mask(&detector.shape);
+                        arr = no_mask(&detector.shape);
                 }
                 of(Merlin){
-                        return no_mask(&detector.shape);
+                        arr = no_mask(&detector.shape);
                 }
         }
+
+        return arr;
 }
 
 uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
