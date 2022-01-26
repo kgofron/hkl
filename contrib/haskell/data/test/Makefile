@@ -30,7 +30,8 @@ sixs:
 	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- +RTS -N4 -RTS process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run2/test_Arthur/binoculars/Test_ROD_config_UHV_2m115_1500_3h_TT_Qxyz.txt 2016-2044
 
 ssd:
-	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
+#	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
+	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- process data/test/config_ssd_cristal_limits.ini
 #	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- +RTS -N4 -RTS process /home/picca/tests-datas/binoculars/sixs/int32/config.cfg
 
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
