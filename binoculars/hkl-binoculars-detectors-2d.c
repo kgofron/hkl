@@ -96,7 +96,7 @@ struct imxpad_t {
 #define IMXPAD(pixel_size_, chip_w_, chip_h_) (struct imxpad_t) \
         {.square=SQUARE(pixel_size_), .chip_w=chip_w_, .chip_h=chip_h_}
 
-struct dectris_t {
+struct tiling_t {
         struct square_t square;
         int module_width;
         int module_height;
@@ -104,7 +104,7 @@ struct dectris_t {
         int gap_height;
 };
 
-#define DECTRIS(module_width_, module_height_, gap_width_, gap_height_, pixel_size_) (struct dectris_t) \
+#define TILING(module_width_, module_height_, gap_width_, gap_height_, pixel_size_) (struct tiling_t) \
         {.square=SQUARE(pixel_size_), .module_width=module_width_, .module_height=module_height_, .gap_width=gap_width_, .gap_height=gap_height_}
 
 datatype(
@@ -112,9 +112,10 @@ datatype(
         (ImXpadS70, struct imxpad_t),
         (ImXpadS140, struct imxpad_t),
         (XpadFlatCorrected, struct square_t),
-        (Eiger1M, struct dectris_t),
+        (Eiger1M, struct tiling_t),
         (Ufxc, struct square_t),
-        (Merlin, struct square_t)
+        (Merlin, struct square_t),
+        (MerlinMedipix3RXQuad, struct tiling_t)
         );
 
 struct detector_t {
@@ -136,11 +137,13 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                 DETECTOR(ImXpadS70,
                          SHAPE(560, 120), IMXPAD(130e-6, 80, 120)),
                 DETECTOR(Eiger1M,
-                         SHAPE(1030, 1065), DECTRIS(1030, 514, 10, 37, 75e-6)),
+                         SHAPE(1030, 1065), TILING(1030, 514, 10, 37, 75e-6)),
                 DETECTOR(Ufxc,
                          SHAPE(257, 256), SQUARE(75e-6)),
                 DETECTOR(Merlin,
                          SHAPE(256, 256), SQUARE(55e-6)),
+                DETECTOR(MerlinMedipix3RXQuad,
+                         SHAPE(515, 515), TILING(256, 256, 3, 3, 55e-6)),
         };
         return detectors[n];
 }
@@ -311,28 +314,28 @@ static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
         return arr;
 }
 
-static inline uint8_t *mask_get_dectris(const struct shape_t *shape,
-                                        const struct dectris_t *dectris)
+static inline uint8_t *mask_get_tiling(const struct shape_t *shape,
+                                       const struct tiling_t *tiling)
 {
         int i;
         uint8_t *arr = no_mask(shape);
 
         /* columns */
-        for(i=dectris->module_width;
+        for(i=tiling->module_width;
             i<shape->width;
-            i=i+dectris->module_width + dectris->gap_width){
+            i=i+tiling->module_width + tiling->gap_width){
                 uint8_t *col = get_col(arr, i);
                 fill_column(col, *shape, 1);
-                replicate_column(col, *shape, dectris->gap_width);
+                replicate_column(col, *shape, tiling->gap_width);
         }
 
         /* rows */
-        for(i=dectris->module_height;
+        for(i=tiling->module_height;
             i<shape->height;
-            i=i+dectris->module_height + dectris->gap_height){
+            i=i+tiling->module_height + tiling->gap_height){
                 uint8_t *row = get_row(arr, *shape, i);
                 fill_row(row, *shape, 1);
-                replicate_row(row, *shape, dectris->gap_height);
+                replicate_row(row, *shape, tiling->gap_height);
         }
 
         return arr;
@@ -460,9 +463,9 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_square(&detector.shape,
                                                      square);
                 }
-                of(Eiger1M, dectris){
+                of(Eiger1M, tiling){
                         arr = coordinates_get_square(&detector.shape,
-                                                     &dectris->square);
+                                                     &tiling->square);
                 }
                 of(Ufxc, square){
                         arr = coordinates_get_square(&detector.shape,
@@ -471,6 +474,10 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                 of(Merlin, square){
                         arr = coordinates_get_square(&detector.shape,
                                                      square);
+                }
+                of(MerlinMedipix3RXQuad, tiling){
+                        arr = coordinates_get_square(&detector.shape,
+                                                     &tiling->square);
                 }
         }
         return arr;
@@ -512,15 +519,19 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(XpadFlatCorrected){
                         arr = mask_get_xpad_flat_corrected(&detector.shape);
                 }
-                of(Eiger1M, dectris){
-                        arr = mask_get_dectris(&detector.shape,
-                                                dectris);
+                of(Eiger1M, tiling){
+                        arr = mask_get_tiling(&detector.shape,
+                                              tiling);
                 }
                 of(Ufxc){
                         arr = no_mask(&detector.shape);
                 }
                 of(Merlin){
                         arr = no_mask(&detector.shape);
+                }
+                of(MerlinMedipix3RXQuad, tiling){
+                        arr = mask_get_tiling(&detector.shape,
+                                              tiling);
                 }
         }
 
