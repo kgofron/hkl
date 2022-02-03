@@ -334,18 +334,14 @@ withGeometryPathP f (GeometryPathMedH w as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedH
                  <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> do
-                         vs <- Prelude.mapM (`get_position` j) as'
-                         return (0.0 : vs))
+                 <*> (fromList <$> Prelude.mapM (`get_position` j) as')
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedV w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedV
                  <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> do
-                         vs <- Prelude.mapM (`get_position` j) as'
-                         return (0.0 : vs))
+                 <*> (fromList <$> Prelude.mapM (`get_position` j) as')
                  <*> pure Nothing)
 withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
 withGeometryPathP f (GeometryPathUhv w as) gg =
