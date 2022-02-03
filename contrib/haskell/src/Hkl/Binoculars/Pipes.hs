@@ -31,7 +31,8 @@ import           Control.Monad                     (forM_, forever)
 import           Control.Monad.Catch               (MonadThrow, tryJust)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Logger              (MonadLogger, logInfo)
+import           Control.Monad.Logger              (MonadLogger, logDebug,
+                                                    logDebugSH, logInfo)
 import           Control.Monad.Reader              (MonadReader, ask)
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
@@ -142,6 +143,12 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
 
+    -- log parameters
+
+    $(logDebugSH) filenames
+    $(logDebugSH) h5d
+    $(logDebug) "start gessing final cube size"
+
     -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
     guessed <- liftIO $ withCubeAccumulator EmptyCube' $ \c ->
@@ -152,7 +159,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
       >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
       >-> accumulateP c
 
-    liftIO $ Prelude.print guessed
+    $(logDebug) "stop gessing final cube size"
 
     -- do the final projection
 
@@ -210,6 +217,12 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
 
+    -- log parameters
+
+    $(logDebugSH) filenames
+    $(logDebugSH) h5d
+    $(logDebug) "start gessing final cube size"
+
     -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
     guessed <- liftIO $ withCubeAccumulator EmptyCube' $ \c ->
@@ -220,7 +233,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
       >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
       >-> accumulateP c
 
-    liftIO $ Prelude.print guessed
+    $(logDebug) "stop gessing final cube size"
 
     $(logInfo) (pack $ printf "let's do an Hkl projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 

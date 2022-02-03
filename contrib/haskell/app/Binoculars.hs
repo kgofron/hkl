@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -13,59 +13,78 @@ module Main where
 
 import           Control.Monad.Catch       (MonadThrow)
 import           Control.Monad.IO.Class    (MonadIO)
-import           Control.Monad.Logger      (LogLevel (LevelDebug), MonadLogger,
-                                            filterLogger, runStdoutLoggingT)
+import           Control.Monad.Logger      (LogLevel (LevelDebug), LoggingT,
+                                            MonadLogger, filterLogger,
+                                            runStdoutLoggingT)
 import           Data.Attoparsec.Text      (parseOnly)
 import           Data.Text                 (pack)
 import           Options.Applicative       (CommandFields, Mod, argument,
                                             command, eitherReader, execParser,
-                                            fullDesc, header, helper,
-                                            hsubparser, info, metavar, optional,
-                                            progDesc, str, (<**>))
+                                            fullDesc, header, help, helper,
+                                            hsubparser, info, long, metavar,
+                                            optional, progDesc, short, str,
+                                            switch, (<**>))
 import           Options.Applicative.Types (Parser)
 
 
 import           Hkl.Binoculars
 
 
+data FullOptions = FullOptions Bool Options
+  deriving Show
+
 data Options = Process (Maybe FilePath) (Maybe ConfigRange)
              | CfgNew (Maybe FilePath)
              | CfgUpdate FilePath
   deriving Show
 
+debug :: Parser Bool
+debug = switch ( long "debug" <> short 'd' <> help "Print debug informations" )
+
+config :: Parser FilePath
+config = argument str (metavar "CONFIG")
+
 processOptions :: Parser Options
 processOptions = Process
-                 <$> optional (argument str (metavar "CONFIG"))
+                 <$> optional config
                  <*> optional (argument (eitherReader (parseOnly configRangeP . pack)) (metavar "RANGE"))
 
 processCommand :: Mod CommandFields Options
 processCommand = command "process" (info processOptions (progDesc "process data's"))
 
 cfgNewOption :: Parser Options
-cfgNewOption = CfgNew <$> optional (argument str (metavar "CONFIG"))
+cfgNewOption = CfgNew <$> optional config
 
 cfgNewCommand :: Mod CommandFields Options
 cfgNewCommand = command "cfg-new" (info cfgNewOption (progDesc "new config files"))
 
 cfgUpdateOption :: Parser Options
-cfgUpdateOption = CfgUpdate <$> argument str (metavar "CONFIG")
+cfgUpdateOption = CfgUpdate <$> config
 
 cfgUpdateCommand :: Mod CommandFields Options
 cfgUpdateCommand = command "cfg-update" (info cfgUpdateOption (progDesc "update config files"))
 
-options :: Parser Options
-options = hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand)
+options :: Parser FullOptions
+options = FullOptions
+          <$> debug
+          <*> hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand)
 
 run :: (MonadIO m, MonadLogger m, MonadThrow m) => Options -> m ()
 run (Process mf mr) = process mf mr
 run (CfgNew mf)     = new mf
 run (CfgUpdate f)   = update f
 
+
 main :: IO ()
 main = do
-  opts' <- execParser opts
-  runStdoutLoggingT $ filterLogger (\_ l -> l /=LevelDebug) $ run opts'
+  (FullOptions d opts') <- execParser opts
+  runStdoutLoggingT $ debugLogging d $ run opts'
     where
+      debugLogging :: Bool -> LoggingT m a -> LoggingT m a
+      debugLogging d = case d of
+        True  -> id
+        False -> filterLogger (\_ l -> l /=LevelDebug)
+
       opts = info (options <**> helper)
              ( fullDesc
                <> progDesc "binoculars subcommand"

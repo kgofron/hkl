@@ -27,12 +27,13 @@ sixs:
 	#cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_uhv.ini
 	#cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_uhv_2.ini
 	#cd ../..; /usr/bin/time -v cabal run binoculars-ng -- +RTS -N4 -RTS process data/test/config_sixs_ruche_flymedv_2.ini
-	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- +RTS -N4 -RTS process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run2/test_Arthur/binoculars/Test_ROD_config_UHV_2m115_1500_3h_TT_Qxyz.txt 2016-2044
+	#cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- +RTS -N4 -RTS process /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run2/test_Arthur/binoculars/Test_ROD_config_UHV_2m115_1500_3h_TT_Qxyz.txt 2016-2044
+	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- --debug +RTS -N4 -RTS process /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run1/20211017_resta/Binoculars/T450C/config_map2h.txt 1596-1635
 
 ssd:
 #	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- process data/test/config_ssd_cristal.ini
-	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- process data/test/config_ssd_cristal_limits.ini
-#	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- +RTS -N4 -RTS process /home/picca/tests-datas/binoculars/sixs/int32/config.cfg
+#	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- process data/test/config_ssd_cristal_limits.ini
+	cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- +RTS -N4 -RTS process /home/picca/tests-datas/binoculars/sixs/int32/config.cfg
 
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224

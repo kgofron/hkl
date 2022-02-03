@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -18,7 +18,7 @@ module Hkl.Binoculars.Sixs
 
 import           Control.Monad.Catch        (Exception, MonadThrow, throwM)
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import           Control.Monad.Logger       (MonadLogger, logDebugSH,
+import           Control.Monad.Logger       (MonadLogger, logDebug, logDebugSH,
                                              logErrorSH, logWarn, logWarnN)
 import           Control.Monad.Reader       (MonadReader, ask)
 import           Control.Monad.Trans.Reader (runReaderT)
@@ -318,6 +318,7 @@ process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader BinocularsConfi
          => m ()
 process' = do
   c <- ask
+  $(logDebug) "config once overloaded with the command line arguments"
   $(logDebugSH) c
   case _binocularsProjectionPtype c of
     QxQyQzProjection -> processQxQyQzP h5dpathQxQyQz
@@ -326,6 +327,7 @@ process' = do
 process :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 process mf mr = do
   conf <- liftIO $ getConfig mf
+  $(logDebug) "config red from the config file"
   $(logDebugSH) conf
   case conf of
     Right conf' -> runReaderT process' (combineWithCmdLineArgs conf' mr)
