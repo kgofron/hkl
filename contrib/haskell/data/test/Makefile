@@ -33,7 +33,8 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run2/test_Arthur/binoculars/Test_ROD_config_UHV_2m115_1500_3h_TT_Qxyz.txt 2016-2044
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run1/20211017_resta/Binoculars/T450C/config_map2h.txt 1596-1635
 #	$(PROCESS) data/test/config_sixs_ruche_flymedv_2.ini
-	$(PROCESS) data/test/config_sixs_ruche_flymedv_3.ini 698-734 735-736
+#	$(PROCESS) data/test/config_sixs_ruche_flymedv_3.ini 698-734 735-736
+	$(PROCESS) data/test/config_sixs_ruche_limits.txt 338
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal.ini
