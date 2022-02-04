@@ -50,11 +50,11 @@ spec = do
       let p = parseOnly configRangeP "120,,,123-453"
       p `shouldBe` (Right (ConfigRange [InputRangeSingle 120, InputRangeFromTo 123 453]))
     it "parse a range" $ do
-      let p = parseOnly configRangeP "120-135 123-453"
-      p `shouldBe` (Right (ConfigRange [InputRangeFromTo 120 135, InputRangeFromTo 123 453]))
+      let p = parseOnly configRangeP "120-135 137-453"
+      p `shouldBe` (Right (ConfigRange [InputRangeFromTo 120 135, InputRangeFromTo 137 453]))
     it "parse a range" $ do
-      let p = parseOnly configRangeP "120-135, 123-453"
-      p `shouldBe` (Right (ConfigRange [InputRangeFromTo 120 135, InputRangeFromTo 123 453]))
+      let p = parseOnly configRangeP "120-135, 137-453"
+      p `shouldBe` (Right (ConfigRange [InputRangeFromTo 120 135, InputRangeFromTo 137 453]))
 
   describe "parseBinocularsConfig" $ do
          forM_ [ "data/test/config_sixs_biggest.ini"

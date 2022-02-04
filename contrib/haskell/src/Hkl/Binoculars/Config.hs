@@ -7,7 +7,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -74,9 +74,10 @@ import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, Quantity,
                                                     Unit, degree, meter, (*~),
                                                     (/~))
-import           Path                              (Abs, Dir, File, Path,
-                                                    fileExtension, fromAbsDir,
-                                                    parseAbsDir, toFilePath)
+import           Path                              (Abs, Dir, File, Path, Rel,
+                                                    fileExtension, filename,
+                                                    fromAbsDir, parseAbsDir,
+                                                    toFilePath)
 import           Path.IO                           (getCurrentDir, listDir)
 import           Text.Printf                       (printf)
 
@@ -453,16 +454,16 @@ files c = do
                    Nothing    -> False
                    (Just ext) -> ext `elem` [".h5", ".nxs"]
 
-      matchIndex :: Path Abs File -> String -> Int -> Bool
+      matchIndex :: Path Rel File -> String -> Int -> Bool
       matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
 
-      isInInputRange :: Path Abs File -> String -> InputRange -> Bool
+      isInInputRange :: Path Rel File -> String -> InputRange -> Bool
       isInInputRange p tmpl (InputRangeSingle i) = any (matchIndex p tmpl) [i]
       isInInputRange p tmpl (InputRangeFromTo from to) = any (matchIndex p tmpl) [from..to]
 
       isInConfigRange :: String -> ConfigRange -> Path Abs File -> Bool
       isInConfigRange _ (ConfigRange []) _    = True
-      isInConfigRange tmpl (ConfigRange rs) p = any (isInInputRange p tmpl) rs
+      isInConfigRange tmpl (ConfigRange rs) p = any (isInInputRange (filename p) tmpl) rs
 
 
 
