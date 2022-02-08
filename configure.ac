@@ -62,6 +62,7 @@ AX_CXXFLAGS_WARN_ALL
 # Checks for libraries.
 AX_PATH_GSL
 AM_PATH_GLIB_2_0
+PKG_CHECK_MODULES([HDF5], [hdf5 >= 1.8.13])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -220,9 +221,6 @@ dnl ***************
 OPTION_DEFAULT_OFF([contrib], [compile the contrib part])
 
 AM_CONDITIONAL([CONTRIB], [test x$enable_contrib != xno])
-AM_COND_IF([CONTRIB],
-	   [PKG_CHECK_MODULES([HDF5], [hdf5 >= 1.8.13])
-])
 
 AC_CONFIG_FILES([Makefile
                  binoculars/Makefile

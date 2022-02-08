@@ -9,7 +9,8 @@ mars:
 #	$(PROCESS) /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 132
 #	$(PROCESS) /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 105
 #	$(PROCESS) /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 78
-	$(PROCESS) /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 75
+#	$(PROCESS) /nfs/ruche-mars/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 75
+	$(PROCESS) /nfs/ruche-mars/mars-soleil/com-mars/2022_Run1/20211749/binoculars/config_qxqyqz.ini 75
 
 ord05133:
 #	valgrind --tool=massif /home/picca/src/repo.or.cz/hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process config_ord05133_flymedh.ini 1303-1312

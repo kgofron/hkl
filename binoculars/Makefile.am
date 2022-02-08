@@ -7,10 +7,12 @@ AM_CFLAGS = \
 	-DPKGDATA=\""$(pkgdatadir)"\" \
 	-ftrack-macro-expansion=0 \
 	-fPIC -DPIC \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(HDF5_CFLAGS)
 
 AM_LDFLAGS = -version-info 0:0:0 \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(HDF5_LIBS)
 
 lib_LIBRARIES = libhkl-binoculars.a
 libhkl_binoculars_a_SOURCES = \
@@ -18,6 +20,8 @@ libhkl_binoculars_a_SOURCES = \
 	hkl-binoculars-cnpy.c \
 	hkl-binoculars-cnpy-private.h \
 	hkl-binoculars-detectors-2d.c \
+	hkl-binoculars-hdf5.c \
+	hkl-binoculars-private.h \
 	$(top_builddir)/hkl/hkl-axis.c \
 	$(top_builddir)/hkl/hkl-geometry.c \
 	$(top_builddir)/hkl/hkl-interval.c \
