@@ -38,9 +38,9 @@ sixs:
 	$(PROCESS) data/test/config_sixs_ruche_limits.txt 338
 
 ssd:
-#	$(PROCESS) data/test/config_ssd_cristal.ini
+	$(PROCESS) data/test/config_ssd_cristal.ini
 #	$(PROCESS) data/test/config_ssd_cristal_limits.ini
-	$(PROCESS) /home/picca/tests-datas/binoculars/sixs/int32/config.cfg
+#	$(PROCESS) /home/picca/tests-datas/binoculars/sixs/int32/config.cfg
 
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224

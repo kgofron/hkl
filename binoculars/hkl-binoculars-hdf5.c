@@ -21,42 +21,86 @@
  */
 #include <hdf5.h>
 
+#include "hkl/ccan/array_size/array_size.h"
 #include "hkl-binoculars-private.h"
 
-herr_t hkl_binoculars_cube_save_hdf5(const char *fn,
-                                   const HklBinocularsCube *self)
+hid_t create_dataspace_from_axes(const darray_axis *axes)
 {
         HklBinocularsAxis *axis;
-
-        // hdf5 related variables
-        hid_t   file_id, dataset_id, dataspace_id;
         darray(hsize_t) dims;
-        herr_t  status;
 
+        darray_init(dims);
+        darray_foreach(axis, *axes){
+                darray_append(dims, axis_size(axis));
+        }
+
+        return H5Screate_simple(darray_size(dims), &darray_item(dims, 0), NULL);
+}
+
+void hkl_binoculars_cube_save_hdf5(const char *fn,
+                                   const HklBinocularsCube *self)
+{
+        hid_t file_id;
+        hid_t groupe_id;
+        hid_t groupe_axes_id;
+        hid_t dataset_id;
+        hid_t dataspace_id;
+        herr_t status;
+        HklBinocularsAxis *axis;
 
         file_id = H5Fcreate(fn, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-        // create simple dataspace for the dataset
-        darray_init(dims);
-        darray_resize(dims, darray_size(self->axes));
+        groupe_id = H5Gcreate(file_id, "binoculars",
+                              H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+        // axes
+        groupe_axes_id = H5Gcreate(groupe_id, "axes",
+                                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
         darray_foreach(axis, self->axes){
-                darray_append(dims, axis_size(axis));
+                double *arr;
+                hid_t dataspace_id;
+                hid_t dataset_id;
+                hsize_t dims[] = {6};
+
+                arr = hkl_binoculars_axis_array(axis);
+                dataspace_id = H5Screate_simple(ARRAY_SIZE(dims), dims, NULL);
+                dataset_id = H5Dcreate(groupe_axes_id, axis->name,
+                                       H5T_NATIVE_DOUBLE, dataspace_id,
+                                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE,
+                                  H5S_ALL, H5S_ALL,
+                                  H5P_DEFAULT, arr);
+                status = H5Dclose(dataset_id);
+                status = H5Sclose(dataspace_id);
+                free(arr);
         }
-        dataspace_id = H5Screate_simple(darray_size(dims), &darray_item(dims, 0), NULL);
 
-        // create dataset
-        dataset_id = H5Dcreate( file_id, "dataset",
-                                H5T_NATIVE_DOUBLE, dataspace_id,
-                                H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT );
-        // write the dataset
-        status = H5Dwrite( dataset_id, H5T_NATIVE_DOUBLE,
-                           H5S_ALL, H5S_ALL,
-                           H5P_DEFAULT, self->photons );
+        status = H5Gclose(groupe_axes_id);
 
-        // terminate access and free identifiers
+        // create count dataset
+        dataspace_id = create_dataspace_from_axes(&self->axes);
+        dataset_id = H5Dcreate(groupe_id, "counts",
+                               H5T_NATIVE_UINT32, dataspace_id,
+                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT32,
+                          H5S_ALL, H5S_ALL,
+                          H5P_DEFAULT, self->photons);
         status = H5Dclose(dataset_id);
         status = H5Sclose(dataspace_id);
-        status = H5Fclose(file_id);
 
-        return status;
+        // create contributions dataset
+        dataspace_id = create_dataspace_from_axes(&self->axes);
+        dataset_id = H5Dcreate(groupe_id, "contributions",
+                               H5T_NATIVE_UINT32, dataspace_id,
+                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT32,
+                          H5S_ALL, H5S_ALL,
+                          H5P_DEFAULT, self->contributions);
+        status = H5Dclose(dataset_id);
+        status = H5Sclose(dataspace_id);
+
+        // terminate access and free identifiers
+        status = H5Gclose(groupe_id);
+        status = H5Fclose(file_id);
 }

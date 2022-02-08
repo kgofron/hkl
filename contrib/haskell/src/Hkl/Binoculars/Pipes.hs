@@ -177,7 +177,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
                                       >-> tee (accumulateP c)
                                       >-> progress pb
                                   ) jobs
-    liftIO $ saveCube output' r'
+    liftIO $ saveCube' output' r'
 
     liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 
@@ -250,7 +250,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
                                       >-> tee (accumulateP c)
                                       >-> progress pb
                                   ) jobs
-    liftIO $ saveCube output' r'
+    liftIO $ saveCube' output' r'
 
     liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 

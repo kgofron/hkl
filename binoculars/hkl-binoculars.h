@@ -209,6 +209,9 @@ HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocula
 HKLAPI extern void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
                                                  const HklBinocularsSpace *space);
 
+HKLAPI extern void hkl_binoculars_cube_save_hdf5(const char *fn,
+                                                 const HklBinocularsCube *self);
+
 G_END_DECLS
 
 #endif

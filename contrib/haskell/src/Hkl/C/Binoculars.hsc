@@ -26,6 +26,7 @@ module Hkl.C.Binoculars
        , Space(..)
        , c'hkl_binoculars_axis_limits_free
        , c'hkl_binoculars_axis_limits_new
+       , c'hkl_binoculars_cube_save_hdf5
        , hkl_binoculars_cube_new'
        , hkl_binoculars_cube_new_empty'
        , hkl_binoculars_cube_new_empty_from_cube'
@@ -49,6 +50,7 @@ import           Data.ByteString.Char8 (ByteString, packCString)
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
+import           Foreign.C.String      (CString)
 import           Foreign.Marshal.Alloc (finalizerFree, alloca)
 import           Foreign.Marshal.Array (allocaArray, copyArray, peekArray)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, mallocForeignPtrArray, withForeignPtr)
@@ -182,6 +184,9 @@ hkl_binoculars_cube_new_empty' :: IO (Ptr (Cube' sh))
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_empty_from_cube" \
 hkl_binoculars_cube_new_empty_from_cube' :: Ptr (Cube' sh) -> IO (Ptr (Cube' sh))
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_save_hdf5" \
+c'hkl_binoculars_cube_save_hdf5 :: CString -> Ptr (Cube' sh) -> IO ()
 
 --  Cube
 

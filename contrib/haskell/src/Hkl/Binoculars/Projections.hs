@@ -23,6 +23,7 @@ module Hkl.Binoculars.Projections
   , SamplePath(..)
   , badAttenuation
   , saveCube
+  , saveCube'
   , spaceHkl
   , spaceQxQyQz
   ) where
@@ -36,6 +37,7 @@ import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import           Data.Text                       (Text)
 import           Data.Typeable                   (typeOf)
 import           Data.Word                       (Word16)
+import           Foreign.C.String                (withCString)
 import           Foreign.C.Types                 (CBool, CDouble (..),
                                                   CSize (..))
 import           Foreign.ForeignPtr              (withForeignPtr)
@@ -65,6 +67,16 @@ withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
 saveCube :: FilePath -> [Cube' DIM3] -> IO ()
 saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
+
+saveCube' :: FilePath -> [Cube' DIM3] -> IO ()
+saveCube' o rs = do
+  let c = (mconcat rs)
+  case c of
+    (Cube' fp) ->
+        withCString o $ \fn ->
+        withForeignPtr fp $ \p ->
+            c'hkl_binoculars_cube_save_hdf5 fn p
+    EmptyCube' -> return ()
 
 withMaybeMask :: Maybe Mask -> (Ptr CBool -> IO r) -> IO r
 withMaybeMask mm f = case mm of
