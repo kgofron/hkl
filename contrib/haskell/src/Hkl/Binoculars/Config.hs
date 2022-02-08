@@ -106,6 +106,7 @@ newtype InputTmpl = InputTmpl { unInputTmpl :: Text }
 
 data InputType = CristalK6C
                | MarsFlyscan
+               | MarsSbs
                | SixsFlyMedH
                | SixsFlyMedV
                | SixsFlyMedVEiger
@@ -286,6 +287,8 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String InputType
       parse t
+          | toLower t == emit CristalK6C = Right CristalK6C
+          | toLower t == emit MarsFlyscan = Right MarsFlyscan
           | toLower t == emit SixsFlyMedH = Right SixsFlyMedH
           | toLower t == emit SixsFlyMedV = Right SixsFlyMedV
           | toLower t == emit SixsFlyMedVEiger = Right SixsFlyMedVEiger
@@ -297,11 +300,12 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
           | toLower t == emit SixsSbsMedH = Right SixsSbsMedH
           | toLower t == emit SixsSbsMedV = Right SixsSbsMedV
           | toLower t == emit SixsSbsMedVFixDetector = Right SixsSbsMedVFixDetector
-          | toLower t == emit CristalK6C = Right CristalK6C
-          | toLower t == emit MarsFlyscan = Right MarsFlyscan
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: InputType -> Text
+      emit CristalK6C             = "cristal:k6c"
+      emit MarsFlyscan            = "mars:flyscan"
+      emit MarsSbs                = "mars:sbs"
       emit SixsFlyMedH            = "sixs:flymedh"
       emit SixsFlyMedV            = "sixs:flymedv"
       emit SixsFlyMedVEiger       = "sixs:flymedveiger"
@@ -313,8 +317,6 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
       emit SixsSbsMedH            = "sixs:sbsmedh"
       emit SixsSbsMedV            = "sixs:sbsmedv"
       emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
-      emit CristalK6C             = "cristal:k6c"
-      emit MarsFlyscan            = "mars:flyscan"
 
 surfaceOrientation :: FieldValue SurfaceOrientation
 surfaceOrientation = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }

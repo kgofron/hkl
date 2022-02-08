@@ -82,6 +82,16 @@ h5dpathQxQyQz =
                                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"
                                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth"
                                ])
+       MarsSbs -> QxQyQzPath
+                 <$> mkAttenuation c NoAttenuation
+                 <*> pure (DetectorPath
+                            (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")))
+                 <*> pure (GeometryPathMars
+                               [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                               , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "chi"
+                               , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"
+                               , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth"
+                               ])
        SixsFlyMedH -> QxQyQzPath
                      <$> mkAttenuation c (AttenuationPath
                                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
@@ -287,6 +297,7 @@ h5dpathHkl =
            (Just s) -> return (HklPath qxqyqz (SamplePath2 s))
            Nothing  -> throwM (MissingSampleParameters c)
        MarsFlyscan -> return $ HklPath qxqyqz marsSamplePath
+       MarsSbs -> return $ HklPath qxqyqz marsSamplePath
        SixsFlyMedH -> return $ HklPath qxqyqz medHSamplePath
        SixsFlyMedV -> return $ HklPath qxqyqz medVSamplePath
        SixsFlyMedVEiger -> return $ HklPath qxqyqz medVSamplePath
