@@ -75,7 +75,9 @@ h5dpathQxQyQz =
                      <$> mkAttenuation c (ApplyedAttenuationFactorPath
                                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "applied_att"))
                      <*> pure (DetectorPath
-                               (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image"))
+                                (H5Or
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image")
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_quad_image")))
                      <*> pure (GeometryPathMars
                                [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
                                , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "chi"
