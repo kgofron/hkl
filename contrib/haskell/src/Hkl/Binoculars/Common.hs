@@ -27,9 +27,8 @@ module Hkl.Binoculars.Common
 import           Control.Exception     (bracket)
 import           Data.Array.Repa       (Shape)
 import           Data.IORef            (IORef, newIORef, readIORef)
-import           Foreign.ForeignPtr    (ForeignPtr, withForeignPtr)
+import           Foreign.ForeignPtr    (withForeignPtr)
 import           Foreign.Marshal.Array (withArrayLen)
-import           Foreign.Storable      (peek)
 import           Path                  (Abs, File, Path, fromAbsFile)
 import           Text.Printf           (printf)
 
@@ -88,18 +87,16 @@ mkCube' dfs = do
   let spaces = [spaceHklPointer s | (DataFrameSpace _ s _) <- dfs]
   withForeignPtrs spaces $ \pspaces ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
-    peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} c'hkl_binoculars_cube_new (toEnum nSpaces') spaces'
+    newCube =<< {-# SCC "hkl_binoculars_cube_new'" #-} c'hkl_binoculars_cube_new (toEnum nSpaces') spaces'
 
 {-# INLINE addSpace #-}
-addSpace :: Shape sh => DataFrameSpace sh -> Cube sh -> IO (ForeignPtr (Cube sh))
-addSpace df EmptyCube = do
-  (Cube fp) <- mkCube' [df]
-  return fp
+addSpace :: Shape sh => DataFrameSpace sh -> Cube sh -> IO (Cube sh)
+addSpace df EmptyCube = mkCube' [df]
 addSpace (DataFrameSpace _ s _) (Cube fp) =
-    withForeignPtr (spaceHklPointer s) $ \spacePtr ->
-    withForeignPtr fp $ \cPtr -> do
-      {-# SCC "hkl_binoculars_cube_add_space" #-} c'hkl_binoculars_cube_add_space cPtr spacePtr
-      return fp
+  withForeignPtr (spaceHklPointer s) $ \spacePtr ->
+  withForeignPtr fp $ \cPtr -> do
+  {-# SCC "hkl_binoculars_cube_add_space" #-} c'hkl_binoculars_cube_add_space cPtr spacePtr
+  return $ Cube fp
 
 type Template = String
 
@@ -110,10 +107,11 @@ data InputFn = InputFn FilePath
 
 withCubeAccumulator :: Shape sh => Cube sh -> (IORef (Cube sh)  -> IO ()) -> IO (Cube sh)
 withCubeAccumulator c f = bracket
-  (newIORef =<< peek =<< case c of
-                           EmptyCube -> c'hkl_binoculars_cube_new_empty
-                           (Cube fp) -> withForeignPtr fp $ \p ->
-                             c'hkl_binoculars_cube_new_empty_from_cube p
+  (newIORef =<< newCube =<< (case c of
+                               EmptyCube -> c'hkl_binoculars_cube_new_empty
+                               (Cube fp) -> withForeignPtr fp $ \p ->
+                                 c'hkl_binoculars_cube_new_empty_from_cube p
+                            )
   )
   pure
   (\r -> f r >> readIORef r)
