@@ -104,22 +104,7 @@ HKLAPI extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 /* Space */
 /*********/
 
-typedef struct _HklBinocularsSpaceItem HklBinocularsSpaceItem;
-struct _HklBinocularsSpaceItem
-{
-        ptrdiff_t indexes_0[3]; /* for now hardcode the max number of axes */
-        uint32_t intensity;
-};
-
-typedef darray(HklBinocularsSpaceItem) darray_HklBinocularsSpaceItem;
-
 typedef struct _HklBinocularsSpace HklBinocularsSpace;
-struct _HklBinocularsSpace
-{
-        darray_axis axes;
-        size_t max_items;
-        darray_HklBinocularsSpaceItem items;
-};
 
 typedef enum _HklBinocularsSurfaceOrientationEnum
 {

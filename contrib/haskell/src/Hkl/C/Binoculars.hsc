@@ -190,8 +190,8 @@ newtype Space sh = Space { spaceHklPointer :: (ForeignPtr (Space sh)) }
   deriving Show
 
 instance Shape sh => Storable (Space sh) where
-  alignment _ = #{alignment HklBinocularsSpace}
-  sizeOf _ = #{size HklBinocularsSpace}
+  alignment _ = #{alignment HklBinocularsSpace*}
+  sizeOf _ = #{size HklBinocularsSpace*}
   poke _ _ = undefined
   peek ptr = Space <$> newForeignPtr hkl_binoculars_space_free ptr
 
