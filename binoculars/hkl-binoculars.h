@@ -181,13 +181,6 @@ HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint32_t);
 /********/
 
 typedef  struct _HklBinocularsCube HklBinocularsCube;
-struct _HklBinocularsCube
-{
-        darray_axis axes;
-        ptrdiff_t offset0;
-	unsigned int *photons;
-	unsigned int *contributions;
-};
 
 HKLAPI extern void hkl_binoculars_cube_free(HklBinocularsCube *self);
 

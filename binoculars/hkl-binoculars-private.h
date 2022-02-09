@@ -24,6 +24,14 @@
 
 #include "hkl-binoculars.h"
 
+struct _HklBinocularsCube
+{
+        darray_axis axes;
+        ptrdiff_t offset0;
+	unsigned int *photons;
+	unsigned int *contributions;
+};
+
 static inline size_t axis_size(const HklBinocularsAxis *self)
 {
 	return self->imax - self->imin + 1;

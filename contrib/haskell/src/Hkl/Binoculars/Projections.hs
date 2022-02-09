@@ -23,7 +23,6 @@ module Hkl.Binoculars.Projections
   , SamplePath(..)
   , badAttenuation
   , saveCube
-  , saveCube'
   , spaceHkl
   , spaceQxQyQz
   ) where
@@ -66,10 +65,7 @@ withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CSize -> IO r) -> IO r
 withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
 saveCube :: FilePath -> [Cube' DIM3] -> IO ()
-saveCube o rs = saveHdf5 o =<< toCube (mconcat rs)
-
-saveCube' :: FilePath -> [Cube' DIM3] -> IO ()
-saveCube' o rs = do
+saveCube o rs = do
   let c = (mconcat rs)
   case c of
     (Cube' fp) ->

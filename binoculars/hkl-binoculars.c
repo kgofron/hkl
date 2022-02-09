@@ -24,7 +24,7 @@
 
 #include "ccan/array_size/array_size.h"
 #include "datatype99.h"
-#include "hkl-binoculars.h"
+#include "hkl-binoculars-private.h"
 #include "hkl-geometry-private.h"
 #include "hkl-matrix-private.h"
 #include "hkl-quaternion-private.h"
@@ -88,11 +88,6 @@ HklBinocularsAxisLimits *hkl_binoculars_axis_limits_new(const ptrdiff_t *imin,
 }
 
 /* Axis */
-
-static inline size_t axis_size(const HklBinocularsAxis *self)
-{
-	return self->imax - self->imin + 1;
-}
 
 static inline double axis_min(const HklBinocularsAxis *self)
 {
