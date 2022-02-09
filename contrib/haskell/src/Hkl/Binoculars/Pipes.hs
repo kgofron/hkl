@@ -151,7 +151,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
 
     -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
-    guessed <- liftIO $ withCubeAccumulator EmptyCube' $ \c ->
+    guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
@@ -225,7 +225,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
 
     -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
-    guessed <- liftIO $ withCubeAccumulator EmptyCube' $ \c ->
+    guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
@@ -259,7 +259,7 @@ instance ProcessHklP HklPath
 --  Create the Cube
 
 accumulateP :: (MonadIO m, Shape sh)
-            => IORef (Cube' sh) -> Consumer (DataFrameSpace sh) m ()
+            => IORef (Cube sh) -> Consumer (DataFrameSpace sh) m ()
 accumulateP ref =
     forever $ do s <- await
                  liftIO $ addSpace s =<< readIORef ref

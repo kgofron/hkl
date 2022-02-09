@@ -64,15 +64,15 @@ withNPixels d f = f (toEnum . size . shape $ d)
 withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CSize -> IO r) -> IO r
 withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
-saveCube :: FilePath -> [Cube' DIM3] -> IO ()
+saveCube :: FilePath -> [Cube DIM3] -> IO ()
 saveCube o rs = do
   let c = (mconcat rs)
   case c of
-    (Cube' fp) ->
+    (Cube fp) ->
         withCString o $ \fn ->
         withForeignPtr fp $ \p ->
             c'hkl_binoculars_cube_save_hdf5 fn p
-    EmptyCube' -> return ()
+    EmptyCube -> return ()
 
 withMaybeMask :: Maybe Mask -> (Ptr CBool -> IO r) -> IO r
 withMaybeMask mm f = case mm of
