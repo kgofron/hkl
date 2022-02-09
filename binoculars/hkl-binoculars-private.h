@@ -24,6 +24,21 @@
 
 #include "hkl-binoculars.h"
 
+/********/
+/* Axis */
+/********/
+
+struct _HklBinocularsAxis
+{
+	const char *name; /* the name of the axis */
+	size_t index; /* the index of the axis of the projection used */
+	double resolution; /* the resolution of the bins */
+	ptrdiff_t imin; /* the minimum index of the axis min = imin * resolution */
+	ptrdiff_t imax; /* the maximum index of the axis max = imax * resolution */
+};
+
+typedef darray(HklBinocularsAxis) darray_axis;
+
 /*********/
 /* Space */
 /*********/

@@ -42,14 +42,12 @@ module Hkl.C.Binoculars
        , withForeignPtrs
        ) where
 
-import           Data.Array.Repa.Repr.ForeignPtr (Array, F, fromForeignPtr)
-import           Data.Array.Repa       (DIM1, DIM3, Shape, ix1, size)
-import           Data.ByteString.Char8 (ByteString, packCString)
+import           Data.Array.Repa       (DIM3, Shape, size)
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CPtrdiff)
 import           Foreign.C.String      (CString)
-import           Foreign.Marshal.Alloc (finalizerFree, alloca)
+import           Foreign.Marshal.Alloc (alloca)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, withForeignPtr)
 import           Foreign.Ptr           (FunPtr, Ptr, nullPtr)
 import           Foreign.Storable      (Storable (..))
@@ -98,33 +96,6 @@ foreign import ccall unsafe "hkl_binoculars_axis_limits_new" \
 c'hkl_binoculars_axis_limits_new :: Ptr CPtrdiff
                                  -> Ptr CPtrdiff
                                  -> IO (Ptr C'HklBinocularsAxisLimits)
-
--- Axis
-
-data Axis = Axis { name :: ByteString
-                 , index :: CSize
-                 , resolution :: CDouble
-                 , imin :: CPtrdiff
-                 , imax :: CPtrdiff
-                 , arr :: Array F DIM1 CDouble
-                 } deriving Show
-
-instance Storable Axis where
-  alignment _ = #{alignment HklBinocularsAxis}
-  sizeOf _ = #{size HklBinocularsAxis}
-  poke _ _ = undefined
-  peek ptr = Axis
-             <$> (packCString =<< (#{peek HklBinocularsAxis, name} ptr))
-             <*> #{peek HklBinocularsAxis, index} ptr
-             <*> #{peek HklBinocularsAxis, resolution} ptr
-             <*> #{peek HklBinocularsAxis, imin} ptr
-             <*> #{peek HklBinocularsAxis, imax} ptr
-             <*> (fromForeignPtr (ix1 6)
-                 <$> (newForeignPtr finalizerFree =<< hkl_binoculars_axis_array ptr))
-
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_axis_array" \
-hkl_binoculars_axis_array :: Ptr Axis -> IO (Ptr CDouble)
 
 --  Cube'
 

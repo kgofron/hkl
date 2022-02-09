@@ -86,16 +86,6 @@ HKLAPI extern HklBinocularsAxisLimits *hkl_binoculars_axis_limits_new(const ptrd
 /********/
 
 typedef struct _HklBinocularsAxis HklBinocularsAxis;
-struct _HklBinocularsAxis
-{
-	const char *name; /* the name of the axis */
-	size_t index; /* the index of the axis of the projection used */
-	double resolution; /* the resolution of the bins */
-	ptrdiff_t imin; /* the minimum index of the axis min = imin * resolution */
-	ptrdiff_t imax; /* the maximum index of the axis max = imax * resolution */
-};
-
-typedef darray(HklBinocularsAxis) darray_axis;
 
 HKLAPI extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 
