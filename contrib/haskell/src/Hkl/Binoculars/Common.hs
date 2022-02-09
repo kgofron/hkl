@@ -88,7 +88,7 @@ mkCube' dfs = do
   let spaces = [spaceHklPointer s | (DataFrameSpace _ s _) <- dfs]
   withForeignPtrs spaces $ \pspaces ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
-    peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} hkl_binoculars_cube_new' (toEnum nSpaces') spaces'
+    peek =<< {-# SCC "hkl_binoculars_cube_new'" #-} c'hkl_binoculars_cube_new (toEnum nSpaces') spaces'
 
 {-# INLINE addSpace #-}
 addSpace :: Shape sh => DataFrameSpace sh -> Cube sh -> IO (ForeignPtr (Cube sh))
@@ -98,7 +98,7 @@ addSpace df EmptyCube = do
 addSpace (DataFrameSpace _ s _) (Cube fp) =
     withForeignPtr (spaceHklPointer s) $ \spacePtr ->
     withForeignPtr fp $ \cPtr -> do
-      {-# SCC "hkl_binoculars_cube_add_space" #-} hkl_binoculars_cube_add_space cPtr spacePtr
+      {-# SCC "hkl_binoculars_cube_add_space" #-} c'hkl_binoculars_cube_add_space cPtr spacePtr
       return fp
 
 type Template = String
@@ -111,8 +111,9 @@ data InputFn = InputFn FilePath
 withCubeAccumulator :: Shape sh => Cube sh -> (IORef (Cube sh)  -> IO ()) -> IO (Cube sh)
 withCubeAccumulator c f = bracket
   (newIORef =<< peek =<< case c of
-                           EmptyCube -> hkl_binoculars_cube_new_empty'
-                           (Cube fp) -> withForeignPtr fp $ \p -> hkl_binoculars_cube_new_empty_from_cube' p
+                           EmptyCube -> c'hkl_binoculars_cube_new_empty
+                           (Cube fp) -> withForeignPtr fp $ \p ->
+                             c'hkl_binoculars_cube_new_empty_from_cube p
   )
   pure
   (\r -> f r >> readIORef r)
