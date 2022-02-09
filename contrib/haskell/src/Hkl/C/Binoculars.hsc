@@ -1,12 +1,16 @@
-{-# LANGUAGE CPP                      #-}
-{-# LANGUAGE DataKinds                #-}
-{-# LANGUAGE FlexibleInstances        #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE KindSignatures           #-}
-{-# LANGUAGE TypeInType               #-}
-{-# LANGUAGE OverloadedStrings        #-}
+#include "hkl-binoculars.h"
+#include <bindings.dsl.h>
 
-{-# OPTIONS_GHC -fno-warn-orphans     #-}
+{-# LANGUAGE CPP                       #-}
+{-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE ForeignFunctionInterface  #-}
+{-# LANGUAGE KindSignatures            #-}
+{-# LANGUAGE TypeInType                #-}
+{-# LANGUAGE OverloadedStrings         #-}
+
+{-# OPTIONS_GHC -fno-warn-orphans      #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
@@ -59,8 +63,6 @@ import           Hkl.C.Geometry
 import           Hkl.C.Sample
 import           Hkl.Orphan ()
 
-#include "hkl-binoculars.h"
-
 withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
 withForeignPtrs []       f = f []
 withForeignPtrs (fp:fps) f =
@@ -70,7 +72,7 @@ withForeignPtrs (fp:fps) f =
 
 -- AxisLimits
 
-data C'HklBinocularsAxisLimits
+#opaque_t HklBinocularsAxisLimits
 
 newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
 newLimits (Limits mmin mmax) res =
@@ -86,16 +88,14 @@ newLimits (Limits mmin mmax) res =
                     (Just d) -> do
                               poke imax' (round (d / res))
                               pure imax'
-          newForeignPtr c'hkl_binoculars_axis_limits_free
+          newForeignPtr p'hkl_binoculars_axis_limits_free
                         =<< c'hkl_binoculars_axis_limits_new imin'' imax''
 
-foreign import ccall unsafe "&hkl_binoculars_axis_limits_free" \
-c'hkl_binoculars_axis_limits_free :: FunPtr (Ptr C'HklBinocularsAxisLimits -> IO ())
+#ccall hkl_binoculars_axis_limits_free, \
+  Ptr <HklBinocularsAxisLimits> -> IO ()
 
-foreign import ccall unsafe "hkl_binoculars_axis_limits_new" \
-c'hkl_binoculars_axis_limits_new :: Ptr CPtrdiff
-                                 -> Ptr CPtrdiff
-                                 -> IO (Ptr C'HklBinocularsAxisLimits)
+#ccall hkl_binoculars_axis_limits_new, \
+  Ptr CPtrdiff -> Ptr CPtrdiff -> IO (Ptr <HklBinocularsAxisLimits>)
 
 --  Cube
 
@@ -113,11 +113,8 @@ instance Shape sh => Semigroup (Cube sh) where
       peek =<< {-# SCC "hkl_binoculars_cube_new_merge'" #-} c'hkl_binoculars_cube_new_merge pa pb
 
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_merge" \
-c'hkl_binoculars_cube_new_merge :: Ptr (Cube sh)
-                               -> Ptr (Cube sh)
-                               -> IO (Ptr (Cube sh))
-
+#ccall hkl_binoculars_cube_new_merge, \
+  Ptr (Cube sh) -> Ptr (Cube sh) -> IO (Ptr (Cube sh))
 
 instance Shape sh => Monoid (Cube sh) where
   {-# INLINE mempty #-}

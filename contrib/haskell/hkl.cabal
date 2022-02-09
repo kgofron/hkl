@@ -27,6 +27,7 @@ library
   build-depends: async
   build-depends: attoparsec
   build-depends: base >= 4.6
+  build-depends: bindings-DSL
   build-depends: bytestring >= 0.10.0.2
   build-depends: config-ini
   build-depends: dimensional >= 0.10
