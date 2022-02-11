@@ -298,8 +298,78 @@ static inline int item_in_the_limits(const HklBinocularsSpaceItem *item,
 
 /* the array is pre filled with the pixel coordinates */
 
-#define HKL_BINOCULARS_SPACE_Q_IMPL(image_t)                            \
-        HKL_BINOCULARS_SPACE_Q_DECL(image_t)                            \
+/* qparqper */
+
+#define HKL_BINOCULARS_SPACE_QPARQPER_IMPL(image_t)                     \
+        HKL_BINOCULARS_SPACE_QPARQPER_DECL(image_t)                     \
+        {                                                               \
+                size_t i;                                               \
+                const char * names[] = {"qpar", "qper"};                \
+                                                                        \
+                assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
+                assert(ARRAY_SIZE(names) == n_resolutions);             \
+                assert(n_pixels == space->max_items);                   \
+                                                                        \
+                const double *q_x = &pixels_coordinates[0 * n_pixels];  \
+                const double *q_y = &pixels_coordinates[1 * n_pixels];  \
+                const double *q_z = &pixels_coordinates[2 * n_pixels];  \
+                                                                        \
+                HklSample *sample = hkl_sample_new("test");             \
+                HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
+                const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector); \
+                const HklVector ki = hkl_geometry_ki_get(geometry);     \
+                double k = hkl_vector_norm2(&ki);                       \
+                HklQuaternion qs_1 = hkl_geometry_sample_rotation_get(geometry, sample); \
+                switch(surf){                                           \
+                case HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL:       \
+                {                                                       \
+                        HklQuaternion q_ub;                             \
+                        HklVector v_s = {{1, 0, 0}};                    \
+                        hkl_quaternion_init_from_angle_and_axe(&q_ub, -M_PI_2, &v_s); \
+                        hkl_quaternion_times_quaternion(&qs_1, &q_ub);  \
+                        break;                                          \
+                };                                                      \
+                case HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL:     \
+                case HKL_BINOCULARS_SURFACE_ORIENTATION_NUM_ORIENTATION: \
+                        break;                                          \
+                };                                                      \
+                hkl_quaternion_conjugate(&qs_1);                        \
+                                                                        \
+                darray_size(space->items) = 0;                          \
+                                                                        \
+                for(i=0;i<n_pixels;++i){                                \
+                        if(NULL == masked || 0 == masked[i]){           \
+                                HklBinocularsSpaceItem item;            \
+                                HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                hkl_vector_rotated_quaternion(&v, &q);  \
+                                hkl_vector_times_double(&v, k);         \
+                                hkl_vector_minus_vector(&v, &ki);       \
+                                hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                                                        \
+                                item.indexes_0[0] = sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0] / 10; \
+                                item.indexes_0[1] = v.data[2] / resolutions[1] / 10; \
+                                item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                        darray_append(space->items, item); \
+                        }                                               \
+                }                                                       \
+                                                                        \
+                space_update_axes(space, names, n_pixels, resolutions); \
+                                                                        \
+                hkl_detector_free(detector);                            \
+                hkl_sample_free(sample);                                \
+        }
+
+HKL_BINOCULARS_SPACE_QPARQPER_IMPL(int32_t);
+HKL_BINOCULARS_SPACE_QPARQPER_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_QPARQPER_IMPL(uint32_t);
+
+/* qxqyqz */
+
+#define HKL_BINOCULARS_SPACE_QXQYQZ_IMPL(image_t)                            \
+        HKL_BINOCULARS_SPACE_QXQYQZ_DECL(image_t)                            \
         {                                                               \
                 size_t i, j;                                            \
                 const char * names[] = {"qx", "qy", "qz"};              \
@@ -362,9 +432,11 @@ static inline int item_in_the_limits(const HklBinocularsSpaceItem *item,
                 hkl_sample_free(sample);                                \
         }
 
-HKL_BINOCULARS_SPACE_Q_IMPL(int32_t);
-HKL_BINOCULARS_SPACE_Q_IMPL(uint16_t);
-HKL_BINOCULARS_SPACE_Q_IMPL(uint32_t);
+HKL_BINOCULARS_SPACE_QXQYQZ_IMPL(int32_t);
+HKL_BINOCULARS_SPACE_QXQYQZ_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_QXQYQZ_IMPL(uint32_t);
+
+/* hkl */
 
 #define HKL_BINOCULARS_SPACE_HKL_IMPL(image_t)                          \
         HKL_BINOCULARS_SPACE_HKL_DECL(image_t)                          \
@@ -574,6 +646,7 @@ static inline size_t find_first_non_empty_space_index(size_t n_spaces,
 
         return n_spaces;
 }
+
 HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
                                            const HklBinocularsSpace *const *spaces)
 {
@@ -665,13 +738,37 @@ HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src)
         return self;
 }
 
-
-static inline void cube_add_cube(HklBinocularsCube *self,
-                                 const HklBinocularsCube *other)
+static inline void cube_add_cube_2(HklBinocularsCube *self,
+                                   const HklBinocularsCube *other)
 {
-        if ((NULL == other->photons) || (NULL == other->contributions))
-                return;
+        size_t i, j;
+        size_t i_offset, j_offset;
 
+        size_t stride_i = 1;
+        size_t stride_j = stride_i * axis_size(&darray_item(self->axes, 1));
+
+        /* fill the values of other */
+        size_t stride_i_other = 1;
+        size_t stride_j_other = stride_i_other * axis_size(&darray_item(other->axes, 1));
+
+        i_offset = darray_item(other->axes, 1).imin - darray_item(self->axes, 1).imin;
+        j_offset = darray_item(other->axes, 0).imin - darray_item(self->axes, 0).imin;
+
+        for(j=0; j<axis_size(&darray_item(other->axes, 0)); ++j){
+                for(i=0; i<axis_size(&darray_item(other->axes, 1)); ++i){
+                        size_t w = (i + i_offset) * stride_i + (j + j_offset) * stride_j;
+                        size_t w1 = i * stride_i_other + j * stride_j_other;
+
+                        self->photons[w] += other->photons[w1];
+                        self->contributions[w] += other->contributions[w1];
+                }
+        }
+}
+
+
+static inline void cube_add_cube_3(HklBinocularsCube *self,
+                                   const HklBinocularsCube *other)
+{
         size_t i, j, k;
         size_t i_offset, j_offset, k_offset;
 
@@ -699,6 +796,32 @@ static inline void cube_add_cube(HklBinocularsCube *self,
                         }
                 }
         }
+}
+
+static inline void cube_add_cube(HklBinocularsCube *self,
+                                 const HklBinocularsCube *other)
+{
+        if ((NULL == other->photons) || (NULL == other->contributions))
+                return;
+
+        assert(darray_size(self->axes) == darray_size(other->axes));
+
+        switch(darray_size(self->axes)){
+        case 2: cube_add_cube_2(self, other);
+                break;
+        case 3: cube_add_cube_3(self, other);
+                break;
+        default: assert(0);
+        }
+}
+
+static inline void compute_strides(const darray_axis *axes, size_t strides[], size_t n_strides)
+{
+        size_t i;
+
+        strides[0] = 1;
+        for(i=1; i<n_strides; ++i)
+                strides[i] = strides[i-1] * axis_size(&darray_item(*axes, n_strides - i + 1));
 }
 
 HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
