@@ -164,7 +164,7 @@ data DataFrameQxQyQz
 
 {-# INLINE spaceQxQyQz #-}
 spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM3 -> DataFrameQxQyQz -> IO (DataFrameSpace DIM3)
-spaceQxQyQz det pixels rs mmask' surf mlimits space (DataFrameQxQyQz _ att g img) =
+spaceQxQyQz det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQxQyQz _ att g img) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -172,7 +172,7 @@ spaceQxQyQz det pixels rs mmask' surf mlimits space (DataFrameQxQyQz _ att g img
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
   withMaybeLimits mlimits rs $ \nlimits limits ->
-  withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+  withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
       {-# SCC "hkl_binoculars_space_q_int32_t" #-} c'hkl_binoculars_space_q_int32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
@@ -210,7 +210,7 @@ data DataFrameHkl a
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: BinocularsConfig -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' mlimits space (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
+spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
@@ -220,7 +220,7 @@ spaceHkl config' det pixels rs mmask' mlimits space (DataFrameHkl (DataFrameQxQy
     withMaybeMask mmask' $ \ mask'' ->
     withPixelsDims pixels $ \ndim dims ->
     withMaybeLimits mlimits rs $ \nlimits limits ->
-    withForeignPtr (spaceHklPointer space) $ \pSpace -> do
+    withForeignPtr fSpace $ \pSpace -> do
     case img of
       (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
         {-# SCC "hkl_binoculars_space_hkl_int32_t" #-} c'hkl_binoculars_space_hkl_int32_t pSpace geometry sample i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)

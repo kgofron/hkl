@@ -33,7 +33,6 @@ module Hkl.C.Binoculars
        , c'hkl_binoculars_cube_new
        , c'hkl_binoculars_cube_new_empty
        , c'hkl_binoculars_cube_new_empty_from_cube
-       , c'hkl_binoculars_cube_new_from_space
        , c'hkl_binoculars_cube_save_hdf5
        , c'hkl_binoculars_space_hkl_int32_t
        , c'hkl_binoculars_space_hkl_uint16_t
@@ -47,7 +46,7 @@ module Hkl.C.Binoculars
        , withForeignPtrs
        ) where
 
-import           Data.Array.Repa       (DIM3, Shape, size)
+import           Data.Array.Repa       (Shape, size)
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CPtrdiff)
@@ -127,15 +126,11 @@ instance Shape sh => Monoid (Cube sh) where
 
 #ccall hkl_binoculars_cube_free, Ptr <HklBinocularsCube> -> IO ()
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_cube_new_from_space" \
-c'hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
-                                   -> IO (Ptr (Cube sh))
-
 #ccall hkl_binoculars_cube_add_space, \
-  Ptr <HklBinocularsCube> -> Ptr (Space sh) -> IO ()
+  Ptr <HklBinocularsCube> -> Ptr <HklBinocularsSpace> -> IO ()
 
 #ccall hkl_binoculars_cube_new, \
-  CSize -> Ptr (Ptr (Space sh)) -> IO (Ptr <HklBinocularsCube>)
+  CSize -> Ptr (Ptr <HklBinocularsSpace>) -> IO (Ptr <HklBinocularsCube>)
 
 #ccall hkl_binoculars_cube_new_empty, \
   IO (Ptr <HklBinocularsCube>)
@@ -148,31 +143,27 @@ c'hkl_binoculars_cube_new_from_space :: Ptr (Space sh) -- space
 
 --  Space
 
-newtype Space sh = Space { spaceHklPointer :: (ForeignPtr (Space sh)) }
+#opaque_t HklBinocularsSpace
+
+newtype Space sh = Space (ForeignPtr C'HklBinocularsSpace)
   deriving Show
 
-instance Shape sh => Storable (Space sh) where
-  alignment _ = #{alignment HklBinocularsSpace*}
-  sizeOf _ = #{size HklBinocularsSpace*}
-  poke _ _ = undefined
-  peek ptr = Space <$> newForeignPtr c'hkl_binoculars_space_free ptr
+newSpace' :: Ptr C'HklBinocularsSpace -> IO (Space sh)
+newSpace' p = Space <$> (newForeignPtr p'hkl_binoculars_space_free p)
 
 newSpace :: (Shape sh1, Shape sh) => Detector a sh1 -> Int -> IO (Space sh)
 newSpace d n = do
   let nPixels = toEnum . size . shape $ d
   let nDims = toEnum n
-  ptr <- c'hkl_binoculars_space_new nPixels nDims
-  Space <$> newForeignPtr c'hkl_binoculars_space_free ptr
+  newSpace' =<< c'hkl_binoculars_space_new nPixels nDims
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_new" \
-c'hkl_binoculars_space_new :: CSize -- size_t n_index0 (aka n_pixels)
-                         -> CSize -- size_t n_axes
-                         -> IO (Ptr (Space sh))
+#ccall hkl_binoculars_space_new, \
+  CSize -> CSize -> IO (Ptr <HklBinocularsSpace>)
 
-foreign import ccall unsafe "hkl-binoculars.h &hkl_binoculars_space_free" \
-c'hkl_binoculars_space_free :: FunPtr (Ptr (Space sh) -> IO ())
+#ccall hkl_binoculars_space_free, \
+  Ptr <HklBinocularsSpace> -> IO ()
 
-type C'ProjectionTypeQ t = Ptr (Space DIM3) -- HklBinocularsSpace *self
+type C'ProjectionTypeQ t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
  -> Ptr Geometry -- const HklGeometry *geometry
  -> Ptr t --  const uint16_t *image
  -> CSize -- size_t n_pixels
@@ -198,7 +189,7 @@ foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_uint32_t" \
 c'hkl_binoculars_space_q_uint32_t :: C'ProjectionTypeQ Word32
 
 
-type C'ProjectionTypeHkl t = Ptr (Space DIM3) -- HklBinocularsSpace *self
+type C'ProjectionTypeHkl t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
   -> Ptr Geometry -- const HklGeometry *geometry
   -> Ptr HklSample -- const HklSample *sample
   -> Ptr t --  const <t> *image

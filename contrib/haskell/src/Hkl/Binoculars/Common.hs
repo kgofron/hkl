@@ -84,7 +84,7 @@ data DataFrameSpace sh = DataFrameSpace Image (Space sh) Double
 {-# INLINE mkCube' #-}
 mkCube' :: Shape sh => [DataFrameSpace sh] -> IO (Cube sh)
 mkCube' dfs = do
-  let spaces = [spaceHklPointer s | (DataFrameSpace _ s _) <- dfs]
+  let spaces = [fp | (DataFrameSpace _ (Space fp) _) <- dfs]
   withForeignPtrs spaces $ \pspaces ->
     withArrayLen pspaces $ \nSpaces' spaces' ->
     newCube =<< {-# SCC "hkl_binoculars_cube_new'" #-} c'hkl_binoculars_cube_new (toEnum nSpaces') spaces'
@@ -92,8 +92,8 @@ mkCube' dfs = do
 {-# INLINE addSpace #-}
 addSpace :: Shape sh => DataFrameSpace sh -> Cube sh -> IO (Cube sh)
 addSpace df EmptyCube = mkCube' [df]
-addSpace (DataFrameSpace _ s _) (Cube fp) =
-  withForeignPtr (spaceHklPointer s) $ \spacePtr ->
+addSpace (DataFrameSpace _ (Space fs) _) (Cube fp) =
+  withForeignPtr fs $ \spacePtr ->
   withForeignPtr fp $ \cPtr -> do
   {-# SCC "hkl_binoculars_cube_add_space" #-} c'hkl_binoculars_cube_add_space cPtr spacePtr
   return $ Cube fp
