@@ -146,7 +146,7 @@ HKLAPI extern void hkl_binoculars_cube_save_hdf5(const char *fn,
 /* qperqpar */
 
 #define HKL_BINOCULARS_SPACE_QPARQPER_DECL(image_t)                            \
-        void hkl_binoculars_space_qperqpar_ ## image_t (HklBinocularsSpace *space, \
+        void hkl_binoculars_space_qparqper_ ## image_t (HklBinocularsSpace *space, \
                                                         const HklGeometry *geometry, \
                                                         const image_t *image, \
                                                         size_t n_pixels, \
