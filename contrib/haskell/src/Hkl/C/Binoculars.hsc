@@ -179,13 +179,13 @@ type C'ProjectionTypeQ t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
  -> CInt -- size_t n_limits
  -> IO ()
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_int32_t" \
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qxqyqz_int32_t" \
 c'hkl_binoculars_space_qxqyqz_int32_t :: C'ProjectionTypeQ Int32
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_uint16_t" \
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qxqyqz_uint16_t" \
 c'hkl_binoculars_space_qxqyqz_uint16_t :: C'ProjectionTypeQ Word16
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_q_uint32_t" \
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qxqyqz_uint32_t" \
 c'hkl_binoculars_space_qxqyqz_uint32_t :: C'ProjectionTypeQ Word32
 
 
