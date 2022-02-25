@@ -143,7 +143,7 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
     h5d <- mkPaths
     filenames <- InputList <$> files conf
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
-    res <- getResolution conf 3
+    res <- getResolution conf 2
     mask' <- getMask conf det
 
     -- compute the jobs
