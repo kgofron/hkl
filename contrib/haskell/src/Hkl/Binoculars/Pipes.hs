@@ -108,6 +108,14 @@ skipMalformed p = loop
         liftIO $ Prelude.print $ displayException (e :: SomeException)
         loop
 
+-- ProgressBar
+
+withProgressBar :: Int -> (ProgressBar () -> IO ()) -> IO ()
+withProgressBar ntot f = do
+  pb <- newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
+  f pb
+  updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+
 --------------
 -- QparQper --
 --------------
@@ -169,21 +177,18 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
 
     $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
-    pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
-
-    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
-                                      runSafeT $ runEffect $
-                                      each job
-                                      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                                      >-> framesQparQperP h5d det
-                                      -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                                      >-> project det 3 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
-                                      >-> tee (accumulateP c)
-                                      >-> progress pb
-                                  ) jobs
-    liftIO $ saveCube output' r'
-
-    liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+    liftIO $ withProgressBar ntot $ \pb -> do
+      r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
+                               runSafeT $ runEffect $
+                               each job
+                               >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
+                               >-> framesQparQperP h5d det
+                               -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                               >-> project det 3 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
+                               >-> tee (accumulateP c)
+                               >-> progress pb
+                           ) jobs
+      saveCube output' r'
 
 instance ProcessQparQperP QparQperPath
 
@@ -245,21 +250,19 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
 
     $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
-    pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
+    liftIO $ withProgressBar ntot $ \pb -> do
+      r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
+                               runSafeT $ runEffect $
+                               each job
+                               >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
+                               >-> framesQxQyQzP h5d det
+                               -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                               >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
+                               >-> tee (accumulateP c)
+                               >-> progress pb
+                           ) jobs
+      saveCube output' r'
 
-    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
-                                      runSafeT $ runEffect $
-                                      each job
-                                      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                                      >-> framesQxQyQzP h5d det
-                                      -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                                      >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
-                                      >-> tee (accumulateP c)
-                                      >-> progress pb
-                                  ) jobs
-    liftIO $ saveCube output' r'
-
-    liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
 
 instance ProcessQxQyQzP QxQyQzPath
 
@@ -317,22 +320,19 @@ class (FramesHklP a, Show a) => ProcessHklP a where
 
     $(logInfo) (pack $ printf "let's do an Hkl projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
-    pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
-
-    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
-                                      runEffect $ runSafeP $
-                                      each job
-                                      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                                      -- >-> tee Pipes.Prelude.print
-                                      >-> framesHklP h5d det
-                                      -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
-                                      >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
-                                      >-> tee (accumulateP c)
-                                      >-> progress pb
-                                  ) jobs
-    liftIO $ saveCube output' r'
-
-    liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+    liftIO $ withProgressBar ntot $ \pb -> do
+      r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
+                               runEffect $ runSafeP $
+                               each job
+                               >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
+                               -- >-> tee Pipes.Prelude.print
+                               >-> framesHklP h5d det
+                               -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
+                               >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
+                               >-> tee (accumulateP c)
+                               >-> progress pb
+                           ) jobs
+      saveCube output' r'
 
 instance ProcessHklP HklPath
 
