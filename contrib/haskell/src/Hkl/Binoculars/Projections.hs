@@ -14,23 +14,26 @@
 module Hkl.Binoculars.Projections
   ( AttenuationPath(..)
   , DataFrameHkl(..)
+  , DataFrameQparQper(..)
   , DataFrameQxQyQz(..)
   , DetectorPath(..)
   , GeometryPath(..)
   , HklPath(..)
   , HklBinocularsException(..)
+  , QparQperPath(..)
   , QxQyQzPath(..)
   , SamplePath(..)
   , badAttenuation
   , saveCube
   , spaceHkl
+  , spaceQparQper
   , spaceQxQyQz
   ) where
 
 import           Control.Exception               (Exception)
 import           Control.Monad                   (zipWithM)
-import           Data.Array.Repa                 (Array, extent, listOfShape,
-                                                  size)
+import           Data.Array.Repa                 (Array, Shape, extent,
+                                                  listOfShape, size)
 import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import           Data.Text                       (Text)
@@ -64,7 +67,7 @@ withNPixels d f = f (toEnum . size . shape $ d)
 withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CSize -> IO r) -> IO r
 withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
-saveCube :: FilePath -> [Cube DIM3] -> IO ()
+saveCube :: Shape sh => FilePath -> [Cube sh] -> IO ()
 saveCube o rs = do
   let c = (mconcat rs)
   case c of
@@ -145,7 +148,41 @@ data AttenuationPath
 badAttenuation :: Float
 badAttenuation = -100
 
---  QxQyQz Projection
+-------------------------
+-- QparQper Projection --
+-------------------------
+
+newtype QparQperPath = QparQperPath QxQyQzPath
+
+instance Show QparQperPath where
+  show = show . typeOf
+
+newtype DataFrameQparQper = DataFrameQparQper DataFrameQxQyQz
+
+{-# INLINE spaceQparQper #-}
+spaceQparQper :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM2 -> DataFrameQparQper -> IO (DataFrameSpace DIM2)
+spaceQparQper det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQparQper (DataFrameQxQyQz _ att g img)) =
+  withNPixels det $ \nPixels ->
+  withGeometry g $ \geometry ->
+  withForeignPtr (toForeignPtr pixels) $ \pix ->
+  withArrayLen rs $ \nr r ->
+  withPixelsDims pixels $ \ndim dims ->
+  withMaybeMask mmask' $ \ mask'' ->
+  withMaybeLimits mlimits rs $ \nlimits limits ->
+  withForeignPtr fSpace $ \pSpace -> do
+  case img of
+    (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
+      {-# SCC "hkl_binoculars_space_qparqper_int32_t" #-} c'hkl_binoculars_space_qparqper_int32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
+    (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
+      {-# SCC "hkl_binoculars_space_qparqper_uint16_t" #-} c'hkl_binoculars_space_qparqper_uint16_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
+    (ImageWord32 fp) -> withForeignPtr fp $ \i -> do
+      {-# SCC "hkl_binoculars_space_qparqper_uint32_t" #-} c'hkl_binoculars_space_qparqper_uint32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
+
+  return (DataFrameSpace img space att)
+
+-----------------------
+-- QxQyQz Projection --
+-----------------------
 
 data QxQyQzPath = QxQyQzPath AttenuationPath DetectorPath GeometryPath
 

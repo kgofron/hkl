@@ -18,6 +18,7 @@
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
   , processHklP
+  , processQparQperP
   , processQxQyQzP
   ) where
 
@@ -106,6 +107,85 @@ skipMalformed p = loop
     loop = catchP p $ \e -> do
         liftIO $ Prelude.print $ displayException (e :: SomeException)
         loop
+
+--------------
+-- QparQper --
+--------------
+
+class ChunkP a => FramesQparQperP a where
+  framesQparQperP :: MonadSafe m
+                  => a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameQparQper m ()
+
+
+class (FramesQparQperP a, Show a) => ProcessQparQperP a where
+  processQparQperP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
+                  => m a -> m ()
+  processQparQperP mkPaths = do
+    conf <- ask
+    let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
+    let output' = case _binocularsInputInputRange conf of
+                   Just r  -> destination' r (_binocularsDispatcherDestination conf)
+                   Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination conf)
+    let centralPixel' = _binocularsInputCentralpixel conf
+    let sampleDetectorDistance = _binocularsInputSdd conf
+    let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+    let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsInputSurfaceOrientation conf)
+    let mlimits = _binocularsProjectionLimits conf
+
+    h5d <- mkPaths
+    filenames <- InputList <$> files conf
+    pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+    res <- getResolution conf 3
+    mask' <- getMask conf det
+
+    -- compute the jobs
+
+    let fns = concatMap (replicate 1) (toList filenames)
+    chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
+    cap' <-  liftIO $ getNumCapabilities
+    let ntot = sum (Prelude.map clength chunks)
+    let cap = if cap' >= 2 then cap' - 1 else cap'
+    let jobs = chunk (quot ntot cap) chunks
+
+    -- log parameters
+
+    $(logDebugSH) filenames
+    $(logDebugSH) h5d
+    $(logDebug) "start gessing final cube size"
+
+    -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
+
+    guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
+      runSafeT $ runEffect $
+      each chunks
+      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
+      >-> framesQparQperP h5d det
+      >-> project det 3 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
+      >-> accumulateP c
+
+    $(logDebug) "stop gessing final cube size"
+
+    -- do the final projection
+
+    $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
+
+    pb <- liftIO $ newProgressBar defStyle{ stylePostfix=elapsedTime renderDuration } 10 (Progress 0 ntot ())
+
+    r' <- liftIO $ mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
+                                      runSafeT $ runEffect $
+                                      each job
+                                      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
+                                      >-> framesQparQperP h5d det
+                                      -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                                      >-> project det 3 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
+                                      >-> tee (accumulateP c)
+                                      >-> progress pb
+                                  ) jobs
+    liftIO $ saveCube output' r'
+
+    liftIO $ updateProgress pb $ \p@(Progress _ t _) -> p{progressDone=t}
+
+instance ProcessQparQperP QparQperPath
 
 -- QxQyQz
 
@@ -385,6 +465,15 @@ withQxQyQzPath f det (QxQyQzPath att d dif) g =
           <*> getImage j
     )
 
+-- FramesQparQperP
+
+instance ChunkP QparQperPath where
+  chunkP (QparQperPath p) = chunkP p
+
+instance FramesQparQperP QparQperPath where
+  framesQparQperP (QparQperPath qxqyqz) det = framesQxQyQzP qxqyqz det
+                                              >->  Pipes.Prelude.map DataFrameQparQper
+
 --  FramesQxQyQzP
 
 instance ChunkP QxQyQzPath where
@@ -419,6 +508,9 @@ instance FramesQxQyQzP QxQyQzPath where
           withFileP (openH5 fn) $ \f ->
             withQxQyQzPath f det p $ \getDataFrameQxQyQz ->
             forM_ js (tryYield . getDataFrameQxQyQz)
+
+instance FramesQxQyQzP QparQperPath where
+  framesQxQyQzP (QparQperPath p) det = framesQxQyQzP p det
 
 -- FramesHklP
 

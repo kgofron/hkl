@@ -139,7 +139,8 @@ instance Enum SurfaceOrientation where
   toEnum 1         = SurfaceOrientationHorizontal
   toEnum unmatched = error ("Key.toEnum: Cannot match " ++ show unmatched)
 
-data ProjectionType = QxQyQzProjection
+data ProjectionType = QparQperProjection
+                    | QxQyQzProjection
                     | HklProjection
   deriving (Eq, Show)
 
@@ -334,12 +335,14 @@ surfaceOrientation = FieldValue { fvParse = parse . strip . uncomment, fvEmit = 
 
 instance FieldParsable ProjectionType where
   fieldParser = "hkl" *> return HklProjection
+                <|> "qparqper" *> return QparQperProjection
                 <|> "qxqyqz" *> return QxQyQzProjection
                 <|> "sixs:qxqyqzprojection" *> return QxQyQzProjection
                 <|> "sixs:hklprojection" *> return HklProjection
 
-  fieldEmitter QxQyQzProjection = "qxqyqz"
-  fieldEmitter HklProjection    = "hkl"
+  fieldEmitter QparQperProjection = "qparqper"
+  fieldEmitter QxQyQzProjection   = "qxqyqz"
+  fieldEmitter HklProjection      = "hkl"
 
 pathAbsDir :: FieldValue (Path Abs Dir)
 pathAbsDir = FieldValue

@@ -37,6 +37,9 @@ module Hkl.C.Binoculars
        , c'hkl_binoculars_space_hkl_int32_t
        , c'hkl_binoculars_space_hkl_uint16_t
        , c'hkl_binoculars_space_hkl_uint32_t
+       , c'hkl_binoculars_space_qparqper_int32_t
+       , c'hkl_binoculars_space_qparqper_uint16_t
+       , c'hkl_binoculars_space_qparqper_uint32_t
        , c'hkl_binoculars_space_qxqyqz_int32_t
        , c'hkl_binoculars_space_qxqyqz_uint16_t
        , c'hkl_binoculars_space_qxqyqz_uint32_t
@@ -178,6 +181,16 @@ type C'ProjectionTypeQ t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
  -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
  -> CInt -- size_t n_limits
  -> IO ()
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qparqper_int32_t" \
+c'hkl_binoculars_space_qparqper_int32_t :: C'ProjectionTypeQ Int32
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qparqper_uint16_t" \
+c'hkl_binoculars_space_qparqper_uint16_t :: C'ProjectionTypeQ Word16
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qparqper_uint32_t" \
+c'hkl_binoculars_space_qparqper_uint32_t :: C'ProjectionTypeQ Word32
+
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qxqyqz_int32_t" \
 c'hkl_binoculars_space_qxqyqz_int32_t :: C'ProjectionTypeQ Int32

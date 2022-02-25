@@ -54,6 +54,10 @@ mkAttenuation c att = case _binocularsInputAttenuationCoefficient c of
                                         (ApplyedAttenuationFactorPath _) -> undefined
 
 
+h5dpathQparQper :: (MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
+              => m QparQperPath
+h5dpathQparQper = QparQperPath <$> h5dpathQxQyQz
+
 h5dpathQxQyQz ::  (MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
               => m QxQyQzPath
 h5dpathQxQyQz =
@@ -334,8 +338,9 @@ process' = do
   $(logDebug) "config once overloaded with the command line arguments"
   $(logDebugSH) c
   case _binocularsProjectionPtype c of
-    QxQyQzProjection -> processQxQyQzP h5dpathQxQyQz
-    HklProjection    -> processHklP h5dpathHkl
+    QparQperProjection -> processQparQperP h5dpathQparQper
+    QxQyQzProjection   -> processQxQyQzP h5dpathQxQyQz
+    HklProjection      -> processHklP h5dpathHkl
 
 process :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 process mf mr = do
