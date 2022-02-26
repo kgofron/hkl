@@ -127,7 +127,7 @@ class ChunkP a => FramesQparQperP a where
 
 class (FramesQparQperP a, Show a) => ProcessQparQperP a where
   processQparQperP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfig m, MonadThrow m)
-                  => m a -> m ()
+                   => m a -> m ()
   processQparQperP mkPaths = do
     conf <- ask
     let det = fromMaybe defaultDetector (_binocularsInputDetector conf)
@@ -168,14 +168,14 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
       >-> framesQparQperP h5d det
-      >-> project det 3 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
+      >-> project det 2 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
       >-> accumulateP c
 
     $(logDebug) "stop gessing final cube size"
 
     -- do the final projection
 
-    $(logInfo) (pack $ printf "let's do a QxQyQz projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
+    $(logInfo) (pack $ printf "let's do a QparQper projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
     liftIO $ withProgressBar ntot $ \pb -> do
       r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
@@ -184,7 +184,7 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                >-> framesQparQperP h5d det
                                -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                               >-> project det 3 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
+                               >-> project det 2 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb
                            ) jobs
