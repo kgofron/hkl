@@ -29,7 +29,6 @@ module Hkl.Binoculars.Config
     , ProjectionType(..)
     , SurfaceOrientation(..)
     , centralPixel
-    , configRange
     , configRangeP
     , combineWithCmdLineArgs
     , destination'
@@ -296,7 +295,7 @@ binocularsConfigSpec = do
     binocularsInputItype .= field "type" inputType
     binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
     binocularsInputTmpl .=? field "inputtmpl" inputTmpl
-    binocularsInputInputRange .=? field "inputrange" configRange
+    binocularsInputInputRange .=? field "inputrange" parsable
     binocularsInputDetector .=? field "detector" detector
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
     binocularsInputSdd .= field "sdd" (numberUnit meter)
@@ -387,6 +386,12 @@ pathAbsDir = FieldValue
   }
 
 
+instance FieldParsable InputRange where
+  fieldParser = inputRangeP
+
+  fieldEmitter (InputRangeSingle f)   = pack $ printf "%d" f
+  fieldEmitter (InputRangeFromTo f t) = pack $ printf "%d-%d" f t
+
 inputRangeP :: Parser InputRange
 inputRangeP = inputRangeFromToP <|> inputRangeP'
   where
@@ -398,18 +403,11 @@ inputRangeP = inputRangeFromToP <|> inputRangeP'
     inputRangeP' :: Parser InputRange
     inputRangeP' = InputRangeSingle <$> decimal
 
-configRange :: FieldValue ConfigRange
-configRange = FieldValue {fvParse = parse, fvEmit = emit }
-    where
-      parse :: Text -> Either String ConfigRange
-      parse = parseOnly configRangeP
+instance FieldParsable ConfigRange where
+  fieldParser = configRangeP
 
-      emit :: ConfigRange -> Text
-      emit (ConfigRange is) = unwords $ map (pack . showInputRange) is
+  fieldEmitter (ConfigRange is) = unwords $ map fieldEmitter is
 
-      showInputRange :: InputRange -> String
-      showInputRange (InputRangeSingle f)   = printf "%d" f
-      showInputRange (InputRangeFromTo f t) = printf "%d-%d" f t
 
 configRangeP :: Parser ConfigRange
 configRangeP = ConfigRange <$> (inputRangeP `sepBy` many (satisfy isSep))
