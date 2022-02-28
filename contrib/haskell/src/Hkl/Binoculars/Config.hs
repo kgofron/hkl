@@ -585,7 +585,7 @@ new mf = do
 
 update :: (MonadIO m, MonadLogger m, MonadThrow m) => FilePath -> m ()
 update f = liftIO $ do
-  cfg <- readFile f
+  (ConfigContent cfg) <- readConfig (Just f)
   let eini = parseIni cfg (ini binocularsConfigDefault binocularsConfigSpec)
   putStr $ case eini of
              Left s  -> pack s
