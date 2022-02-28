@@ -23,21 +23,33 @@ module Hkl.Binoculars.Config
     , ConfigRange(..)
     , DestinationTmpl(..)
     , InputRange(..)
+    , InputTmpl(..)
     , InputType(..)
     , Limits(..)
     , ProjectionType(..)
     , SurfaceOrientation(..)
+    , centralPixel
+    , configRange
     , configRangeP
     , combineWithCmdLineArgs
     , destination'
+    , destinationTmpl
+    , detector
     , files
     , getConfig
     , getMask
     , getResolution
+    , inputTmpl
+    , inputType
     , limitsP
     , new
+    , number'
+    , numberUnit
     , overloadSampleWithConfig
+    , parsable
+    , pathAbsDir
     , sampleConfig
+    , surfaceOrientation
     , update
     ) where
 
