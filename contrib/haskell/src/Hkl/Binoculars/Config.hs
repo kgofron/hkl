@@ -19,6 +19,7 @@
 
 module Hkl.Binoculars.Config
     ( BinocularsConfig(..)
+    , BinocularsPreConfig(..)
     , ConfigRange(..)
     , DestinationTmpl(..)
     , InputRange(..)
@@ -147,6 +148,48 @@ data ProjectionType = QparQperProjection
 data Limits = Limits (Maybe Double) (Maybe Double)
   deriving (Eq, Show)
 
+class FieldParsable a where
+  fieldParser :: Parser a
+  fieldEmitter :: a -> Text
+
+ms :: String
+ms = "#;"
+
+uncomment :: Text -> Text
+uncomment = takeWhile (`notElem` ms)
+
+parsable :: FieldParsable a => FieldValue a
+parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+  where
+    parse ::  FieldParsable a => Text -> Either String a
+    parse = parseOnly fieldParser
+
+    emit ::  FieldParsable a => a -> Text
+    emit = fieldEmitter
+
+-------------------------
+-- BinocularsPreConfig --
+-------------------------
+
+data BinocularsPreConfig = BinocularsPreConfig
+  { _binocularsPreConfigProjectionType :: ProjectionType }
+  deriving (Eq, Show)
+
+makeLenses ''BinocularsPreConfig
+
+binocularsPreConfigDefault :: BinocularsPreConfig
+binocularsPreConfigDefault = BinocularsPreConfig
+  { _binocularsPreConfigProjectionType = QxQyQzProjection }
+
+binocularsPreConfigSpec :: IniSpec BinocularsPreConfig ()
+binocularsPreConfigSpec = do
+  section "projection" $ do
+    binocularsPreConfigProjectionType .= field "type" parsable
+
+----------------------
+-- BinocularsConfig --
+----------------------
+
 data BinocularsConfig = BinocularsConfig
   { _binocularsDispatcherNcore             :: Maybe Int
   , _binocularsDispatcherDestination       :: DestinationTmpl
@@ -210,12 +253,6 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsProjectionLimits = Nothing
   }
 
-ms :: String
-ms = "#;"
-
-uncomment :: Text -> Text
-uncomment = takeWhile (`notElem` ms)
-
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
 
@@ -236,19 +273,6 @@ inputTmpl = FieldValue { fvParse = parse, fvEmit = emit }
 
       emit :: InputTmpl -> Text
       emit (InputTmpl t) = t
-
-class FieldParsable a where
-  fieldParser :: Parser a
-  fieldEmitter :: a -> Text
-
-parsable :: FieldParsable a => FieldValue a
-parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
-  where
-    parse ::  FieldParsable a => Text -> Either String a
-    parse = parseOnly fieldParser
-
-    emit ::  FieldParsable a => a -> Text
-    emit = fieldEmitter
 
 binocularsConfigSpec :: IniSpec BinocularsConfig ()
 binocularsConfigSpec = do
