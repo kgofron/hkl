@@ -28,12 +28,12 @@ module Hkl.Binoculars.Config
     , Limits(..)
     , ProjectionType(..)
     , SurfaceOrientation(..)
+    , auto
     , centralPixel
     , configRangeP
     , combineWithCmdLineArgs
     , destination'
     , destinationTmpl
-    , detector
     , files
     , getConfig
     , getMask
@@ -159,6 +159,9 @@ data ProjectionType = QparQperProjection
 data Limits = Limits (Maybe Double) (Maybe Double)
   deriving (Eq, Show)
 
+class HasFieldValue a where
+  fieldvalue :: FieldValue a
+
 class FieldParsable a where
   fieldParser :: Parser a
   fieldEmitter :: a -> Text
@@ -177,6 +180,9 @@ parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
 
     emit ::  FieldParsable a => a -> Text
     emit = fieldEmitter
+
+auto :: HasFieldValue a => FieldValue a
+auto = fieldvalue
 
 -------------------------
 -- BinocularsPreConfig --
@@ -296,7 +302,7 @@ binocularsConfigSpec = do
     binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
     binocularsInputTmpl .=? field "inputtmpl" inputTmpl
     binocularsInputInputRange .=? field "inputrange" parsable
-    binocularsInputDetector .=? field "detector" detector
+    binocularsInputDetector .=? field "detector" auto
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
     binocularsInputSdd .= field "sdd" (numberUnit meter)
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
@@ -415,11 +421,11 @@ configRangeP = ConfigRange <$> (inputRangeP `sepBy` many (satisfy isSep))
       isSep :: Char -> Bool
       isSep c = c == ' ' || c == ','
 
-detector :: FieldValue (Detector Hkl DIM2)
-detector = FieldValue
-           { fvParse = parseDetector2D . strip . uncomment
-           , fvEmit = \(Detector2D _ name _) -> pack name
-           }
+instance  HasFieldValue (Detector Hkl DIM2) where
+  fieldvalue = FieldValue
+               { fvParse = parseDetector2D . strip . uncomment
+               , fvEmit = \(Detector2D _ name _) -> pack name
+               }
 
 centralPixel :: FieldValue (Int, Int)
 centralPixel = pairWithSeparator' number' "," number'
