@@ -27,8 +27,7 @@ import           Data.Array.Repa.Index             (DIM2)
 import           Data.Ini.Config.Bidir             (IniSpec, field, section,
                                                     (.=), (.=?))
 import           Data.Text                         (Text)
-import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Length, meter, (*~))
+import           Numeric.Units.Dimensional.Prelude (meter, (*~))
 import           Path                              (Abs, Dir, Path)
 
 import           Prelude                           hiding (drop, length, lines,
@@ -54,7 +53,7 @@ data BinocularsConfigQparQper = BinocularsConfigQparQper
   , _binocularsConfigQparQperAttenuationCoefficient :: Maybe Double
   , _binocularsConfigQparQperSurfaceOrientation     :: Maybe SurfaceOrientation
   , _binocularsConfigQparQperMaskmatrix             :: Maybe Text
-  , _binocularsConfigQparQperWavelength             :: Maybe (Length Double)
+  , _binocularsConfigQparQperWavelength             :: Maybe Angstrom
   , _binocularsConfigQparQperProjectionType         :: ProjectionType
   , _binocularsConfigQparQperProjectionResolution   :: [Double]
   , _binocularsConfigQparQperProjectionLimits       :: Maybe [Limits]
@@ -102,7 +101,7 @@ binocularsConfigQparQperSpec = do
     binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
     binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto
-    binocularsConfigQparQperWavelength .=? field "wavelength" (numberUnit angstrom)
+    binocularsConfigQparQperWavelength .=? field "wavelength" auto
   section "projection" $ do
     binocularsConfigQparQperProjectionType .= field "type" auto
     binocularsConfigQparQperProjectionResolution .= field "resolution" auto

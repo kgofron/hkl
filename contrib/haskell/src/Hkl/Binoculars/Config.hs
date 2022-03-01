@@ -229,7 +229,7 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputUx                     :: Maybe Degree
   , _binocularsInputUy                     :: Maybe Degree
   , _binocularsInputUz                     :: Maybe Degree
-  , _binocularsInputWavelength             :: Maybe (Length Double)
+  , _binocularsInputWavelength             :: Maybe Angstrom
   , _binocularsProjectionPtype             :: ProjectionType
   , _binocularsProjectionResolution        :: [Double]
   , _binocularsProjectionLimits            :: Maybe [Limits]
@@ -418,7 +418,7 @@ binocularsConfigSpec = do
     binocularsInputUx .=? field "ux" auto
     binocularsInputUy .=? field "uy" auto
     binocularsInputUz .=? field "uz" auto
-    binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
+    binocularsInputWavelength .=? field "wavelength" auto
   section "projection" $ do
     binocularsProjectionPtype .= field "type" auto
     binocularsProjectionResolution .= field "resolution" auto
