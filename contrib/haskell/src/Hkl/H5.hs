@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE UnicodeSyntax             #-}
 {-
-    Copyright  : Copyright (C) 2014-2021 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -63,8 +63,7 @@ import           Bindings.HDF5.Core              (HSize (HSize),
                                                   iterOrderCode)
 import           Bindings.HDF5.Dataset           (Dataset, closeDataset,
                                                   createDataset,
-                                                  getDatasetSpace,
-                                                  getDatasetType, openDataset,
+                                                  getDatasetSpace, openDataset,
                                                   readDataset, readDatasetInto,
                                                   writeDataset)
 import           Bindings.HDF5.Dataspace         (Dataspace,
@@ -75,7 +74,6 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   getSimpleDataspaceExtentNDims,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
-import           Bindings.HDF5.Datatype          (getTypeClass, getTypeSize)
 import           Bindings.HDF5.Datatype.Internal (NativeType, hdfTypeOf1,
                                                   nativeTypeOf)
 import           Bindings.HDF5.Error             (withErrorCheck_)
@@ -246,16 +244,7 @@ datasetShape d = withDataspace (getDatasetSpace d) getSimpleDataspaceExtent
 --  DataSet
 
 openDataset' :: Location l => l -> ByteString -> Maybe DAPL -> IO Dataset
-openDataset' loc n ml = do
-  ds <- openDataset loc n ml
-  s <- getDatasetSpace ds
-  np <- getSimpleDataspaceExtentNPoints s
-  e <- getSimpleDataspaceExtent s
-  t <- getDatasetType ds
-  c <- getTypeClass t
-  es <- getTypeSize t
-  -- print (n, c, es, np, e)
-  return ds
+openDataset' = openDataset
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
