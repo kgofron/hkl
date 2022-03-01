@@ -89,7 +89,7 @@ binocularsConfigQparQperDefault = BinocularsConfigQparQper
 binocularsConfigQparQperSpec :: IniSpec BinocularsConfigQparQper ()
 binocularsConfigQparQperSpec = do
   section "dispatcher" $ do
-    binocularsConfigQparQperNcore .=? field "ncores" number'
+    binocularsConfigQparQperNcore .=? field "ncores" auto
     binocularsConfigQparQperDestination .= field "destination" destinationTmpl
     binocularsConfigQparQperOverwrite .= field "overwrite" bool
   section "input" $ do
@@ -101,11 +101,11 @@ binocularsConfigQparQperSpec = do
     binocularsConfigQparQperCentralpixel .= field "centralpixel" centralPixel
     binocularsConfigQparQperSdd .= field "sdd" (numberUnit meter)
     binocularsConfigQparQperDetrot .=? field "detrot" (numberUnit degree)
-    binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" number'
+    binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" surfaceOrientation
     binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" text
     binocularsConfigQparQperWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
     binocularsConfigQparQperProjectionType .= field "type" parsable
-    binocularsConfigQparQperProjectionResolution .= field "resolution" (listWithSeparator "," number')
+    binocularsConfigQparQperProjectionResolution .= field "resolution" (listWithSeparator "," auto)
     binocularsConfigQparQperProjectionLimits .=? field "limits" parsable

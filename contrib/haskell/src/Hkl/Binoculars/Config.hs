@@ -42,7 +42,6 @@ module Hkl.Binoculars.Config
     , inputType
     , limitsP
     , new
-    , number'
     , numberUnit
     , overloadSampleWithConfig
     , parsable
@@ -273,6 +272,12 @@ binocularsConfigDefault = BinocularsConfig
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
 
+instance HasFieldValue Int where
+  fieldvalue = number'
+
+instance HasFieldValue Double where
+  fieldvalue = number'
+
 destinationTmpl :: FieldValue DestinationTmpl
 destinationTmpl = FieldValue { fvParse = parse, fvEmit = emit }
     where
@@ -294,7 +299,7 @@ inputTmpl = FieldValue { fvParse = parse, fvEmit = emit }
 binocularsConfigSpec :: IniSpec BinocularsConfig ()
 binocularsConfigSpec = do
   section "dispatcher" $ do
-    binocularsDispatcherNcore .=? field "ncores" number'
+    binocularsDispatcherNcore .=? field "ncores" auto
     binocularsDispatcherDestination .= field "destination" destinationTmpl
     binocularsDispatcherOverwrite .= field "overwrite" bool
   section "input" $ do
@@ -306,7 +311,7 @@ binocularsConfigSpec = do
     binocularsInputCentralpixel .= field "centralpixel" centralPixel
     binocularsInputSdd .= field "sdd" (numberUnit meter)
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
-    binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" number'
+    binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsInputSurfaceOrientation .=? field "surface_orientation" surfaceOrientation
     binocularsInputMaskmatrix .=? field "maskmatrix" text
     binocularsInputA .=? field "a" (numberUnit angstrom)
@@ -321,7 +326,7 @@ binocularsConfigSpec = do
     binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
     binocularsProjectionPtype .= field "type" parsable
-    binocularsProjectionResolution .= field "resolution" (listWithSeparator "," number')
+    binocularsProjectionResolution .= field "resolution" (listWithSeparator "," auto)
     binocularsProjectionLimits .=? field "limits" parsable
 
 inputType :: FieldValue InputType
