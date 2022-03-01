@@ -41,7 +41,6 @@ module Hkl.Binoculars.Config
     , getResolution
     , limitsP
     , new
-    , numberUnit
     , overloadSampleWithConfig
     , sampleConfig
     , update
@@ -78,9 +77,8 @@ import           Data.Text.IO                      (putStr, readFile)
 import           Data.Typeable                     (Typeable)
 import           GHC.Exts                          (IsList)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, Quantity,
-                                                    Unit, degree, meter, (*~),
-                                                    (/~))
+import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
+                                                    meter, (*~), (/~))
 import           Path                              (Abs, Dir, File, Path, Rel,
                                                     fileExtension, filename,
                                                     fromAbsDir, parseAbsDir,
@@ -479,13 +477,6 @@ pairWithSeparator' left sep right = FieldValue
         y <- fvParse right (drop (Data.Text.length sep) rightChunk)
         return (x, y)
   , fvEmit = \ (x, y) -> fvEmit left x <> sep <> fvEmit right y
-  }
-
-numberUnit :: (Num a, Fractional a, Read a, Show a, Typeable a) =>
-             Unit m d a -> FieldValue (Quantity d a)
-numberUnit u = FieldValue
-  { fvParse = mapRight (*~ u) . fvParse number'
-  , fvEmit = pack . show . (/~ u)
   }
 
 limitsP' :: Parser Limits
