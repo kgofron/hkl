@@ -347,6 +347,9 @@ instance HasFieldValue SurfaceOrientation where
       emit SurfaceOrientationVertical   = "vertical"
       emit SurfaceOrientationHorizontal = "horizontal"
 
+instance HasFieldValue Text where
+  fieldvalue = text
+
 instance HasFieldValue [Limits] where
   fieldvalue = parsable
 
@@ -375,7 +378,7 @@ binocularsConfigSpec = do
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
     binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsInputSurfaceOrientation .=? field "surface_orientation" auto
-    binocularsInputMaskmatrix .=? field "maskmatrix" text
+    binocularsInputMaskmatrix .=? field "maskmatrix" auto
     binocularsInputA .=? field "a" (numberUnit angstrom)
     binocularsInputB .=? field "b" (numberUnit angstrom)
     binocularsInputC .=? field "c" (numberUnit angstrom)

@@ -26,7 +26,7 @@ import           Control.Lens                      (makeLenses)
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.Ini.Config.Bidir             (IniSpec, field,
                                                     listWithSeparator, section,
-                                                    text, (.=), (.=?))
+                                                    (.=), (.=?))
 import           Data.Text                         (Text)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
@@ -103,7 +103,7 @@ binocularsConfigQparQperSpec = do
     binocularsConfigQparQperDetrot .=? field "detrot" (numberUnit degree)
     binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
-    binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" text
+    binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto
     binocularsConfigQparQperWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
     binocularsConfigQparQperProjectionType .= field "type" auto
