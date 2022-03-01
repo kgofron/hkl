@@ -42,7 +42,6 @@ module Hkl.Binoculars.Config
     , numberUnit
     , overloadSampleWithConfig
     , parsable
-    , pathAbsDir
     , sampleConfig
     , surfaceOrientation
     , update
@@ -324,6 +323,11 @@ instance HasFieldValue InputType where
 instance HasFieldValue Int where
   fieldvalue = number'
 
+instance HasFieldValue (Path Abs Dir) where
+  fieldvalue = FieldValue { fvParse = \t -> mapLeft show (runCatch . parseAbsDir . unpack $ t)
+                          , fvEmit = pack . fromAbsDir
+                          }
+
 binocularsConfigSpec :: IniSpec BinocularsConfig ()
 binocularsConfigSpec = do
   section "dispatcher" $ do
@@ -332,7 +336,7 @@ binocularsConfigSpec = do
     binocularsDispatcherOverwrite .= field "overwrite" auto
   section "input" $ do
     binocularsInputItype .= field "type" auto
-    binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
+    binocularsInputNexusdir .=? field "nexusdir" auto
     binocularsInputTmpl .=? field "inputtmpl" auto
     binocularsInputInputRange .=? field "inputrange" parsable
     binocularsInputDetector .=? field "detector" auto
@@ -383,11 +387,6 @@ instance FieldParsable ProjectionType where
   fieldEmitter QxQyQzProjection   = "qxqyqz"
   fieldEmitter HklProjection      = "hkl"
 
-pathAbsDir :: FieldValue (Path Abs Dir)
-pathAbsDir = FieldValue
-  { fvParse = \t -> mapLeft show (runCatch . parseAbsDir . unpack $ t)
-  , fvEmit = pack . fromAbsDir
-  }
 
 
 instance FieldParsable InputRange where

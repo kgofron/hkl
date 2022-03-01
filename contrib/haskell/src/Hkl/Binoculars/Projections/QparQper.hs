@@ -94,7 +94,7 @@ binocularsConfigQparQperSpec = do
     binocularsConfigQparQperOverwrite .= field "overwrite" auto
   section "input" $ do
     binocularsConfigQparQperInputType .= field "type" auto
-    binocularsConfigQparQperNexusdir .=? field "nexusdir" pathAbsDir
+    binocularsConfigQparQperNexusdir .=? field "nexusdir" auto
     binocularsConfigQparQperTmpl .=? field "inputtmpl" auto
     binocularsConfigQparQperInputRange .=? field "inputrange" parsable
     binocularsConfigQparQperDetector .=? field "detector" auto
