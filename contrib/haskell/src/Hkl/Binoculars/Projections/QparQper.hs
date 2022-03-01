@@ -24,8 +24,7 @@ module Hkl.Binoculars.Projections.QparQper
 
 import           Control.Lens                      (makeLenses)
 import           Data.Array.Repa.Index             (DIM2)
-import           Data.Ini.Config.Bidir             (IniSpec, field,
-                                                    listWithSeparator, section,
+import           Data.Ini.Config.Bidir             (IniSpec, field, section,
                                                     (.=), (.=?))
 import           Data.Text                         (Text)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
@@ -107,5 +106,5 @@ binocularsConfigQparQperSpec = do
     binocularsConfigQparQperWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
     binocularsConfigQparQperProjectionType .= field "type" auto
-    binocularsConfigQparQperProjectionResolution .= field "resolution" (listWithSeparator "," auto)
+    binocularsConfigQparQperProjectionResolution .= field "resolution" auto
     binocularsConfigQparQperProjectionLimits .=? field "limits" auto

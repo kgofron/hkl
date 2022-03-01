@@ -350,6 +350,9 @@ instance HasFieldValue SurfaceOrientation where
 instance HasFieldValue Text where
   fieldvalue = text
 
+instance HasFieldValue [Double] where
+  fieldvalue = listWithSeparator "," auto
+
 instance HasFieldValue [Limits] where
   fieldvalue = parsable
 
@@ -391,7 +394,7 @@ binocularsConfigSpec = do
     binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
     binocularsProjectionPtype .= field "type" auto
-    binocularsProjectionResolution .= field "resolution" (listWithSeparator "," auto)
+    binocularsProjectionResolution .= field "resolution" auto
     binocularsProjectionLimits .=? field "limits" auto
 
 
