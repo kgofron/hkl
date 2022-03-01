@@ -29,7 +29,6 @@ module Hkl.Binoculars.Config
     , ProjectionType(..)
     , SurfaceOrientation(..)
     , auto
-    , centralPixel
     , configRangeP
     , combineWithCmdLineArgs
     , destination'
@@ -41,7 +40,6 @@ module Hkl.Binoculars.Config
     , new
     , numberUnit
     , overloadSampleWithConfig
-    , parsable
     , sampleConfig
     , surfaceOrientation
     , update
@@ -154,9 +152,6 @@ data ProjectionType = QparQperProjection
 data Limits = Limits (Maybe Double) (Maybe Double)
   deriving (Eq, Show)
 
-class HasFieldValue a where
-  fieldvalue :: FieldValue a
-
 class FieldParsable a where
   fieldParser :: Parser a
   fieldEmitter :: a -> Text
@@ -175,9 +170,6 @@ parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
 
     emit ::  FieldParsable a => a -> Text
     emit = fieldEmitter
-
-auto :: HasFieldValue a => FieldValue a
-auto = fieldvalue
 
 -------------------------
 -- BinocularsPreConfig --
@@ -268,8 +260,14 @@ binocularsConfigDefault = BinocularsConfig
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
 
+class HasFieldValue a where
+  fieldvalue :: FieldValue a
+
 instance HasFieldValue Bool where
   fieldvalue = bool
+
+instance HasFieldValue ConfigRange where
+  fieldvalue = parsable
 
 instance HasFieldValue Double where
   fieldvalue = number'
@@ -278,6 +276,12 @@ instance HasFieldValue DestinationTmpl where
   fieldvalue = FieldValue { fvParse = Right . DestinationTmpl . uncomment
                           , fvEmit = \(DestinationTmpl t) -> t
                           }
+
+instance  HasFieldValue (Detector Hkl DIM2) where
+  fieldvalue = FieldValue
+               { fvParse = parseDetector2D . strip . uncomment
+               , fvEmit = \(Detector2D _ name _) -> pack name
+               }
 
 instance HasFieldValue InputTmpl where
   fieldvalue = FieldValue { fvParse = Right . InputTmpl . uncomment
@@ -328,6 +332,20 @@ instance HasFieldValue (Path Abs Dir) where
                           , fvEmit = pack . fromAbsDir
                           }
 
+instance HasFieldValue ProjectionType where
+  fieldvalue = parsable
+
+instance HasFieldValue [Limits] where
+  fieldvalue = parsable
+
+instance HasFieldValue (Int, Int) where
+  fieldvalue = pairWithSeparator' number' "," number'
+
+
+
+auto :: HasFieldValue a => FieldValue a
+auto = fieldvalue
+
 binocularsConfigSpec :: IniSpec BinocularsConfig ()
 binocularsConfigSpec = do
   section "dispatcher" $ do
@@ -338,9 +356,9 @@ binocularsConfigSpec = do
     binocularsInputItype .= field "type" auto
     binocularsInputNexusdir .=? field "nexusdir" auto
     binocularsInputTmpl .=? field "inputtmpl" auto
-    binocularsInputInputRange .=? field "inputrange" parsable
+    binocularsInputInputRange .=? field "inputrange" auto
     binocularsInputDetector .=? field "detector" auto
-    binocularsInputCentralpixel .= field "centralpixel" centralPixel
+    binocularsInputCentralpixel .= field "centralpixel" auto
     binocularsInputSdd .= field "sdd" (numberUnit meter)
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
     binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
@@ -357,9 +375,9 @@ binocularsConfigSpec = do
     binocularsInputUz .=? field "uz" (numberUnit degree)
     binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
-    binocularsProjectionPtype .= field "type" parsable
+    binocularsProjectionPtype .= field "type" auto
     binocularsProjectionResolution .= field "resolution" (listWithSeparator "," auto)
-    binocularsProjectionLimits .=? field "limits" parsable
+    binocularsProjectionLimits .=? field "limits" auto
 
 
 surfaceOrientation :: FieldValue SurfaceOrientation
@@ -417,15 +435,6 @@ configRangeP = ConfigRange <$> (inputRangeP `sepBy` many (satisfy isSep))
     where
       isSep :: Char -> Bool
       isSep c = c == ' ' || c == ','
-
-instance  HasFieldValue (Detector Hkl DIM2) where
-  fieldvalue = FieldValue
-               { fvParse = parseDetector2D . strip . uncomment
-               , fvEmit = \(Detector2D _ name _) -> pack name
-               }
-
-centralPixel :: FieldValue (Int, Int)
-centralPixel = pairWithSeparator' number' "," number'
 
 --  Represents a field whose value is a pair of two other values
 -- separated by a given string, whose individual values are described
