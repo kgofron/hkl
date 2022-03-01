@@ -21,11 +21,13 @@ module Hkl.Binoculars.Config
     ( BinocularsConfig(..)
     , BinocularsPreConfig(..)
     , ConfigRange(..)
+    , Degree(..)
     , DestinationTmpl(..)
     , InputRange(..)
     , InputTmpl(..)
     , InputType(..)
     , Limits(..)
+    , Meter(..)
     , ProjectionType(..)
     , SurfaceOrientation(..)
     , auto
@@ -193,6 +195,12 @@ binocularsPreConfigSpec = do
 -- BinocularsConfig --
 ----------------------
 
+newtype Meter = Meter (Length Double)
+  deriving (Eq, Show)
+
+newtype Degree = Degree (Angle Double)
+  deriving (Eq, Show)
+
 data BinocularsConfig = BinocularsConfig
   { _binocularsDispatcherNcore             :: Maybe Int
   , _binocularsDispatcherDestination       :: DestinationTmpl
@@ -203,8 +211,8 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputInputRange             :: Maybe ConfigRange
   , _binocularsInputDetector               :: Maybe (Detector Hkl DIM2)
   , _binocularsInputCentralpixel           :: (Int, Int)
-  , _binocularsInputSdd                    :: Length Double
-  , _binocularsInputDetrot                 :: Maybe (Angle Double)
+  , _binocularsInputSdd                    :: Meter
+  , _binocularsInputDetrot                 :: Maybe Degree
   , _binocularsInputAttenuationCoefficient :: Maybe Double
   , _binocularsInputSurfaceOrientation     :: Maybe SurfaceOrientation
   , _binocularsInputMaskmatrix             :: Maybe Text
@@ -236,7 +244,7 @@ binocularsConfigDefault = BinocularsConfig
   , _binocularsInputInputRange = Nothing
   , _binocularsInputDetector = Nothing
   , _binocularsInputCentralpixel = (0, 0)
-  , _binocularsInputSdd = 1 *~ meter
+  , _binocularsInputSdd = Meter (1 *~ meter)
   , _binocularsInputDetrot = Nothing
   , _binocularsInputAttenuationCoefficient = Nothing
   , _binocularsInputSurfaceOrientation = Just SurfaceOrientationVertical
@@ -267,6 +275,11 @@ instance HasFieldValue Bool where
 
 instance HasFieldValue ConfigRange where
   fieldvalue = parsable
+
+instance HasFieldValue Degree where
+  fieldvalue = FieldValue { fvParse =  mapRight (Degree . (*~ degree)) . fvParse auto
+                          , fvEmit = \(Degree m) -> pack . show . (/~ degree) $ m
+                          }
 
 instance HasFieldValue Double where
   fieldvalue = number'
@@ -326,6 +339,11 @@ instance HasFieldValue InputType where
 instance HasFieldValue Int where
   fieldvalue = number'
 
+instance HasFieldValue Meter where
+  fieldvalue = FieldValue { fvParse =  mapRight (Meter . (*~ meter)) . fvParse auto
+                          , fvEmit = \(Meter m) -> pack . show . (/~ meter) $ m
+                          }
+
 instance HasFieldValue (Path Abs Dir) where
   fieldvalue = FieldValue { fvParse = \t -> mapLeft show (runCatch . parseAbsDir . unpack $ t)
                           , fvEmit = pack . fromAbsDir
@@ -377,8 +395,8 @@ binocularsConfigSpec = do
     binocularsInputInputRange .=? field "inputrange" auto
     binocularsInputDetector .=? field "detector" auto
     binocularsInputCentralpixel .= field "centralpixel" auto
-    binocularsInputSdd .= field "sdd" (numberUnit meter)
-    binocularsInputDetrot .=? field "detrot" (numberUnit degree)
+    binocularsInputSdd .= field "sdd" auto
+    binocularsInputDetrot .=? field "detrot" auto
     binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsInputSurfaceOrientation .=? field "surface_orientation" auto
     binocularsInputMaskmatrix .=? field "maskmatrix" auto

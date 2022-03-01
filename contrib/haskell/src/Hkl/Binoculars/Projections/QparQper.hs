@@ -28,8 +28,7 @@ import           Data.Ini.Config.Bidir             (IniSpec, field, section,
                                                     (.=), (.=?))
 import           Data.Text                         (Text)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
-                                                    meter, (*~))
+import           Numeric.Units.Dimensional.Prelude (Length, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 
 import           Prelude                           hiding (drop, length, lines,
@@ -50,8 +49,8 @@ data BinocularsConfigQparQper = BinocularsConfigQparQper
   , _binocularsConfigQparQperInputRange             :: Maybe ConfigRange
   , _binocularsConfigQparQperDetector               :: Maybe (Detector Hkl DIM2)
   , _binocularsConfigQparQperCentralpixel           :: (Int, Int)
-  , _binocularsConfigQparQperSdd                    :: Length Double
-  , _binocularsConfigQparQperDetrot                 :: Maybe (Angle Double)
+  , _binocularsConfigQparQperSdd                    :: Meter
+  , _binocularsConfigQparQperDetrot                 :: Maybe Degree
   , _binocularsConfigQparQperAttenuationCoefficient :: Maybe Double
   , _binocularsConfigQparQperSurfaceOrientation     :: Maybe SurfaceOrientation
   , _binocularsConfigQparQperMaskmatrix             :: Maybe Text
@@ -74,7 +73,7 @@ binocularsConfigQparQperDefault = BinocularsConfigQparQper
   , _binocularsConfigQparQperInputRange  = Nothing
   , _binocularsConfigQparQperDetector = Nothing
   , _binocularsConfigQparQperCentralpixel = (0, 0)
-  , _binocularsConfigQparQperSdd = 1 *~ meter
+  , _binocularsConfigQparQperSdd = Meter (1 *~ meter)
   , _binocularsConfigQparQperDetrot = Nothing
   , _binocularsConfigQparQperAttenuationCoefficient = Nothing
   , _binocularsConfigQparQperSurfaceOrientation = Just SurfaceOrientationVertical
@@ -98,8 +97,8 @@ binocularsConfigQparQperSpec = do
     binocularsConfigQparQperInputRange .=? field "inputrange" auto
     binocularsConfigQparQperDetector .=? field "detector" auto
     binocularsConfigQparQperCentralpixel .= field "centralpixel" auto
-    binocularsConfigQparQperSdd .= field "sdd" (numberUnit meter)
-    binocularsConfigQparQperDetrot .=? field "detrot" (numberUnit degree)
+    binocularsConfigQparQperSdd .= field "sdd" auto
+    binocularsConfigQparQperDetrot .=? field "detrot" auto
     binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
     binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto

@@ -83,7 +83,7 @@ detectors = unsafePerformIO $ do
                                    h <- peek height
                                    return $ ix2 (fromEnum h) (fromEnum w))
 
-defaultDetector ::Detector Hkl DIM2
+defaultDetector :: Detector Hkl DIM2
 defaultDetector = head detectors
 
 foreign import ccall unsafe

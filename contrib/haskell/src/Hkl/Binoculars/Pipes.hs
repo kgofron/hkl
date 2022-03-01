@@ -135,8 +135,8 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
                    Just r  -> destination' r (_binocularsDispatcherDestination conf)
                    Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination conf)
     let centralPixel' = _binocularsInputCentralpixel conf
-    let sampleDetectorDistance = _binocularsInputSdd conf
-    let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+    let (Meter sampleDetectorDistance) = _binocularsInputSdd conf
+    let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsInputDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsInputSurfaceOrientation conf)
     let mlimits = _binocularsProjectionLimits conf
 
@@ -208,8 +208,8 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
                    Just r  -> destination' r (_binocularsDispatcherDestination conf)
                    Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination conf)
     let centralPixel' = _binocularsInputCentralpixel conf
-    let sampleDetectorDistance = _binocularsInputSdd conf
-    let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+    let (Meter sampleDetectorDistance) = _binocularsInputSdd conf
+    let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsInputDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsInputSurfaceOrientation conf)
     let mlimits = _binocularsProjectionLimits conf
 
@@ -283,8 +283,8 @@ class (FramesHklP a, Show a) => ProcessHklP a where
                    Just r  -> destination' r (_binocularsDispatcherDestination conf)
                    Nothing -> destination' (ConfigRange []) (_binocularsDispatcherDestination conf)
     let centralPixel' = _binocularsInputCentralpixel conf
-    let sampleDetectorDistance = _binocularsInputSdd conf
-    let detrot = fromMaybe (0 *~ degree) ( _binocularsInputDetrot conf)
+    let (Meter sampleDetectorDistance) = _binocularsInputSdd conf
+    let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsInputDetrot conf)
     let mlimits = _binocularsProjectionLimits conf
 
     filenames <- InputList <$> files conf
