@@ -271,6 +271,9 @@ binocularsConfigDefault = BinocularsConfig
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
 
+instance HasFieldValue Bool where
+  fieldvalue = bool
+
 instance HasFieldValue Int where
   fieldvalue = number'
 
@@ -296,7 +299,7 @@ binocularsConfigSpec = do
   section "dispatcher" $ do
     binocularsDispatcherNcore .=? field "ncores" auto
     binocularsDispatcherDestination .= field "destination" auto
-    binocularsDispatcherOverwrite .= field "overwrite" bool
+    binocularsDispatcherOverwrite .= field "overwrite" auto
   section "input" $ do
     binocularsInputItype .= field "type" inputType
     binocularsInputNexusdir .=? field "nexusdir" pathAbsDir

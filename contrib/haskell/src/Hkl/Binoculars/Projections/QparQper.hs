@@ -24,7 +24,7 @@ module Hkl.Binoculars.Projections.QparQper
 
 import           Control.Lens                      (makeLenses)
 import           Data.Array.Repa.Index             (DIM2)
-import           Data.Ini.Config.Bidir             (IniSpec, bool, field,
+import           Data.Ini.Config.Bidir             (IniSpec, field,
                                                     listWithSeparator, section,
                                                     text, (.=), (.=?))
 import           Data.Text                         (Text)
@@ -91,7 +91,7 @@ binocularsConfigQparQperSpec = do
   section "dispatcher" $ do
     binocularsConfigQparQperNcore .=? field "ncores" auto
     binocularsConfigQparQperDestination .= field "destination" auto
-    binocularsConfigQparQperOverwrite .= field "overwrite" bool
+    binocularsConfigQparQperOverwrite .= field "overwrite" auto
   section "input" $ do
     binocularsConfigQparQperInputType .= field "type" inputType
     binocularsConfigQparQperNexusdir .=? field "nexusdir" pathAbsDir
