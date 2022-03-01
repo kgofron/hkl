@@ -102,7 +102,7 @@ binocularsConfigQparQperSpec = do
     binocularsConfigQparQperSdd .= field "sdd" (numberUnit meter)
     binocularsConfigQparQperDetrot .=? field "detrot" (numberUnit degree)
     binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
-    binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" surfaceOrientation
+    binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
     binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" text
     binocularsConfigQparQperWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do

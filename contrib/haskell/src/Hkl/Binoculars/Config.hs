@@ -41,7 +41,6 @@ module Hkl.Binoculars.Config
     , numberUnit
     , overloadSampleWithConfig
     , sampleConfig
-    , surfaceOrientation
     , update
     ) where
 
@@ -335,6 +334,19 @@ instance HasFieldValue (Path Abs Dir) where
 instance HasFieldValue ProjectionType where
   fieldvalue = parsable
 
+instance HasFieldValue SurfaceOrientation where
+  fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+    where
+      parse ::  Text -> Either String SurfaceOrientation
+      parse t
+        | t == emit SurfaceOrientationVertical = Right SurfaceOrientationVertical
+        | t == emit SurfaceOrientationHorizontal = Right SurfaceOrientationHorizontal
+        | otherwise = Left ("Unsupported " ++ unpack t ++ " surface orientation (vertical or horizontal)")
+
+      emit :: SurfaceOrientation -> Text
+      emit SurfaceOrientationVertical   = "vertical"
+      emit SurfaceOrientationHorizontal = "horizontal"
+
 instance HasFieldValue [Limits] where
   fieldvalue = parsable
 
@@ -362,7 +374,7 @@ binocularsConfigSpec = do
     binocularsInputSdd .= field "sdd" (numberUnit meter)
     binocularsInputDetrot .=? field "detrot" (numberUnit degree)
     binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
-    binocularsInputSurfaceOrientation .=? field "surface_orientation" surfaceOrientation
+    binocularsInputSurfaceOrientation .=? field "surface_orientation" auto
     binocularsInputMaskmatrix .=? field "maskmatrix" text
     binocularsInputA .=? field "a" (numberUnit angstrom)
     binocularsInputB .=? field "b" (numberUnit angstrom)
@@ -378,20 +390,6 @@ binocularsConfigSpec = do
     binocularsProjectionPtype .= field "type" auto
     binocularsProjectionResolution .= field "resolution" (listWithSeparator "," auto)
     binocularsProjectionLimits .=? field "limits" auto
-
-
-surfaceOrientation :: FieldValue SurfaceOrientation
-surfaceOrientation = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
-  where
-    parse ::  Text -> Either String SurfaceOrientation
-    parse t
-      | t == emit SurfaceOrientationVertical = Right SurfaceOrientationVertical
-      | t == emit SurfaceOrientationHorizontal = Right SurfaceOrientationHorizontal
-      | otherwise = Left ("Unsupported " ++ unpack t ++ " surface orientation (vertical or horizontal)")
-
-    emit :: SurfaceOrientation -> Text
-    emit SurfaceOrientationVertical   = "vertical"
-    emit SurfaceOrientationHorizontal = "horizontal"
 
 
 instance FieldParsable ProjectionType where
