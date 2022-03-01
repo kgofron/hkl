@@ -33,7 +33,6 @@ module Hkl.Binoculars.Config
     , configRangeP
     , combineWithCmdLineArgs
     , destination'
-    , destinationTmpl
     , files
     , getConfig
     , getMask
@@ -278,14 +277,10 @@ instance HasFieldValue Int where
 instance HasFieldValue Double where
   fieldvalue = number'
 
-destinationTmpl :: FieldValue DestinationTmpl
-destinationTmpl = FieldValue { fvParse = parse, fvEmit = emit }
-    where
-      parse :: Text -> Either String DestinationTmpl
-      parse = Right . DestinationTmpl . uncomment
-
-      emit :: DestinationTmpl -> Text
-      emit (DestinationTmpl t) = t
+instance HasFieldValue DestinationTmpl where
+  fieldvalue = FieldValue { fvParse = Right . DestinationTmpl . uncomment
+                          , fvEmit = \(DestinationTmpl t) -> t
+                          }
 
 inputTmpl :: FieldValue InputTmpl
 inputTmpl = FieldValue { fvParse = parse, fvEmit = emit }
@@ -300,7 +295,7 @@ binocularsConfigSpec :: IniSpec BinocularsConfig ()
 binocularsConfigSpec = do
   section "dispatcher" $ do
     binocularsDispatcherNcore .=? field "ncores" auto
-    binocularsDispatcherDestination .= field "destination" destinationTmpl
+    binocularsDispatcherDestination .= field "destination" auto
     binocularsDispatcherOverwrite .= field "overwrite" bool
   section "input" $ do
     binocularsInputItype .= field "type" inputType

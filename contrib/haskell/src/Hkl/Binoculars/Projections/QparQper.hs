@@ -90,7 +90,7 @@ binocularsConfigQparQperSpec :: IniSpec BinocularsConfigQparQper ()
 binocularsConfigQparQperSpec = do
   section "dispatcher" $ do
     binocularsConfigQparQperNcore .=? field "ncores" auto
-    binocularsConfigQparQperDestination .= field "destination" destinationTmpl
+    binocularsConfigQparQperDestination .= field "destination" auto
     binocularsConfigQparQperOverwrite .= field "overwrite" bool
   section "input" $ do
     binocularsConfigQparQperInputType .= field "type" inputType
