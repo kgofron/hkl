@@ -223,12 +223,12 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputA                      :: Maybe Angstrom
   , _binocularsInputB                      :: Maybe Angstrom
   , _binocularsInputC                      :: Maybe Angstrom
-  , _binocularsInputAlpha                  :: Maybe (Angle Double)
-  , _binocularsInputBeta                   :: Maybe (Angle Double)
-  , _binocularsInputGamma                  :: Maybe (Angle Double)
-  , _binocularsInputUx                     :: Maybe (Angle Double)
-  , _binocularsInputUy                     :: Maybe (Angle Double)
-  , _binocularsInputUz                     :: Maybe (Angle Double)
+  , _binocularsInputAlpha                  :: Maybe Degree
+  , _binocularsInputBeta                   :: Maybe Degree
+  , _binocularsInputGamma                  :: Maybe Degree
+  , _binocularsInputUx                     :: Maybe Degree
+  , _binocularsInputUy                     :: Maybe Degree
+  , _binocularsInputUz                     :: Maybe Degree
   , _binocularsInputWavelength             :: Maybe (Length Double)
   , _binocularsProjectionPtype             :: ProjectionType
   , _binocularsProjectionResolution        :: [Double]
@@ -412,12 +412,12 @@ binocularsConfigSpec = do
     binocularsInputA .=? field "a" auto
     binocularsInputB .=? field "b" auto
     binocularsInputC .=? field "c" auto
-    binocularsInputAlpha  .=?field "alpha" (numberUnit degree)
-    binocularsInputBeta  .=? field "beta" (numberUnit degree)
-    binocularsInputGamma .=? field "gamma" (numberUnit degree)
-    binocularsInputUx .=? field "ux" (numberUnit degree)
-    binocularsInputUy .=? field "uy" (numberUnit degree)
-    binocularsInputUz .=? field "uz" (numberUnit degree)
+    binocularsInputAlpha  .=?field "alpha" auto
+    binocularsInputBeta  .=? field "beta" auto
+    binocularsInputGamma .=? field "gamma" auto
+    binocularsInputUx .=? field "ux" auto
+    binocularsInputUy .=? field "uy" auto
+    binocularsInputUz .=? field "uz" auto
     binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
   section "projection" $ do
     binocularsProjectionPtype .= field "type" auto
@@ -583,12 +583,12 @@ sampleConfig cf = do
   (Angstrom a) <- _binocularsInputA cf
   (Angstrom b) <- _binocularsInputB cf
   (Angstrom c) <- _binocularsInputC cf
-  alpha <- _binocularsInputAlpha cf
-  beta <- _binocularsInputBeta cf
-  gamma <- _binocularsInputGamma cf
-  ux <- _binocularsInputUx cf
-  uy <- _binocularsInputUy cf
-  uz <- _binocularsInputUz cf
+  (Degree alpha) <- _binocularsInputAlpha cf
+  (Degree beta) <- _binocularsInputBeta cf
+  (Degree gamma) <- _binocularsInputGamma cf
+  (Degree ux) <- _binocularsInputUx cf
+  (Degree uy) <- _binocularsInputUy cf
+  (Degree uz) <- _binocularsInputUz cf
   let pux = Parameter "ux" (ux /~ degree) (Range 0  360)
   let puy = Parameter "uy" (uy /~ degree) (Range 0  360)
   let puz = Parameter "uz" (uz /~ degree) (Range 0  360)
@@ -605,16 +605,16 @@ overloadSampleWithConfig conf (Sample
                  (fromMaybe a (unAngstrom <$> _binocularsInputA conf))
                  (fromMaybe b (unAngstrom <$> _binocularsInputB conf))
                  (fromMaybe c (unAngstrom <$> _binocularsInputC conf))
-                 (fromMaybe alpha (_binocularsInputAlpha conf))
-                 (fromMaybe beta (_binocularsInputBeta conf))
-                 (fromMaybe gamma (_binocularsInputGamma conf))
+                 (fromMaybe alpha (unDegree <$> _binocularsInputAlpha conf))
+                 (fromMaybe beta (unDegree <$> _binocularsInputBeta conf))
+                 (fromMaybe gamma (unDegree <$> _binocularsInputGamma conf))
 
           go :: Parameter -> Maybe Double -> Parameter
           go (Parameter n v r) nv = Parameter n (fromMaybe v nv) r
 
-          nux = go ux (fmap (/~ degree) (_binocularsInputUx conf))
-          nuy = go uy (fmap (/~ degree) (_binocularsInputUy conf))
-          nuz = go uz (fmap (/~ degree) (_binocularsInputUz conf))
+          nux = go ux ((/~ degree) . unDegree <$> _binocularsInputUx conf)
+          nuy = go uy ((/~ degree) . unDegree <$> _binocularsInputUy conf)
+          nuz = go uz ((/~ degree) . unDegree <$> _binocularsInputUz conf)
 
 getMask :: (MonadThrow m, MonadIO m) => BinocularsConfig -> Detector a DIM2 -> m (Maybe Mask)
 getMask c d = case _binocularsInputMaskmatrix c of
