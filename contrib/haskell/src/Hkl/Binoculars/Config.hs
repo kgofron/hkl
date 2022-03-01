@@ -18,7 +18,8 @@
 -}
 
 module Hkl.Binoculars.Config
-    ( BinocularsConfig(..)
+    ( Angstrom(..)
+    , BinocularsConfig(..)
     , BinocularsPreConfig(..)
     , ConfigRange(..)
     , Degree(..)
@@ -195,10 +196,13 @@ binocularsPreConfigSpec = do
 -- BinocularsConfig --
 ----------------------
 
-newtype Meter = Meter (Length Double)
+newtype Angstrom = Angstrom { unAngstrom :: Length Double }
   deriving (Eq, Show)
 
-newtype Degree = Degree (Angle Double)
+newtype Meter = Meter { unMeter :: Length Double }
+  deriving (Eq, Show)
+
+newtype Degree = Degree { unDegree :: Angle Double }
   deriving (Eq, Show)
 
 data BinocularsConfig = BinocularsConfig
@@ -216,9 +220,9 @@ data BinocularsConfig = BinocularsConfig
   , _binocularsInputAttenuationCoefficient :: Maybe Double
   , _binocularsInputSurfaceOrientation     :: Maybe SurfaceOrientation
   , _binocularsInputMaskmatrix             :: Maybe Text
-  , _binocularsInputA                      :: Maybe (Length Double)
-  , _binocularsInputB                      :: Maybe (Length Double)
-  , _binocularsInputC                      :: Maybe (Length Double)
+  , _binocularsInputA                      :: Maybe Angstrom
+  , _binocularsInputB                      :: Maybe Angstrom
+  , _binocularsInputC                      :: Maybe Angstrom
   , _binocularsInputAlpha                  :: Maybe (Angle Double)
   , _binocularsInputBeta                   :: Maybe (Angle Double)
   , _binocularsInputGamma                  :: Maybe (Angle Double)
@@ -269,6 +273,11 @@ number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir
 
 class HasFieldValue a where
   fieldvalue :: FieldValue a
+
+instance HasFieldValue Angstrom where
+  fieldvalue = FieldValue { fvParse =  mapRight (Angstrom . (*~ angstrom)) . fvParse auto
+                          , fvEmit = \(Angstrom m) -> pack . show . (/~ angstrom) $ m
+                          }
 
 instance HasFieldValue Bool where
   fieldvalue = bool
@@ -400,9 +409,9 @@ binocularsConfigSpec = do
     binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
     binocularsInputSurfaceOrientation .=? field "surface_orientation" auto
     binocularsInputMaskmatrix .=? field "maskmatrix" auto
-    binocularsInputA .=? field "a" (numberUnit angstrom)
-    binocularsInputB .=? field "b" (numberUnit angstrom)
-    binocularsInputC .=? field "c" (numberUnit angstrom)
+    binocularsInputA .=? field "a" auto
+    binocularsInputB .=? field "b" auto
+    binocularsInputC .=? field "c" auto
     binocularsInputAlpha  .=?field "alpha" (numberUnit degree)
     binocularsInputBeta  .=? field "beta" (numberUnit degree)
     binocularsInputGamma .=? field "gamma" (numberUnit degree)
@@ -571,9 +580,9 @@ combineWithCmdLineArgs c mr = case mr of
 
 sampleConfig ::  BinocularsConfig -> Maybe (Sample Triclinic)
 sampleConfig cf = do
-  a <- _binocularsInputA cf
-  b <- _binocularsInputB cf
-  c <- _binocularsInputC cf
+  (Angstrom a) <- _binocularsInputA cf
+  (Angstrom b) <- _binocularsInputB cf
+  (Angstrom c) <- _binocularsInputC cf
   alpha <- _binocularsInputAlpha cf
   beta <- _binocularsInputBeta cf
   gamma <- _binocularsInputGamma cf
@@ -593,9 +602,9 @@ overloadSampleWithConfig conf (Sample
     Sample name nlat nux nuy nuz
         where
           nlat = Triclinic
-                 (fromMaybe a (_binocularsInputA conf))
-                 (fromMaybe b (_binocularsInputB conf))
-                 (fromMaybe c (_binocularsInputC conf))
+                 (fromMaybe a (unAngstrom <$> _binocularsInputA conf))
+                 (fromMaybe b (unAngstrom <$> _binocularsInputB conf))
+                 (fromMaybe c (unAngstrom <$> _binocularsInputC conf))
                  (fromMaybe alpha (_binocularsInputAlpha conf))
                  (fromMaybe beta (_binocularsInputBeta conf))
                  (fromMaybe gamma (_binocularsInputGamma conf))
