@@ -61,7 +61,9 @@ library
   exposed-modules: Hkl.Binoculars.Config
   exposed-modules: Hkl.Binoculars.Pipes
   exposed-modules: Hkl.Binoculars.Projections
+  exposed-modules: Hkl.Binoculars.Projections.Hkl
   exposed-modules: Hkl.Binoculars.Projections.QparQper
+  exposed-modules: Hkl.Binoculars.Projections.QxQyQz
   exposed-modules: Hkl.Binoculars.Sixs
   exposed-modules: Hkl.C
   exposed-modules: Hkl.C.Binoculars
