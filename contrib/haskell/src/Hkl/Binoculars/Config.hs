@@ -37,8 +37,6 @@ module Hkl.Binoculars.Config
     , getConfig
     , getMask
     , getResolution
-    , inputTmpl
-    , inputType
     , limitsP
     , new
     , numberUnit
@@ -274,9 +272,6 @@ number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir
 instance HasFieldValue Bool where
   fieldvalue = bool
 
-instance HasFieldValue Int where
-  fieldvalue = number'
-
 instance HasFieldValue Double where
   fieldvalue = number'
 
@@ -285,50 +280,13 @@ instance HasFieldValue DestinationTmpl where
                           , fvEmit = \(DestinationTmpl t) -> t
                           }
 
-inputTmpl :: FieldValue InputTmpl
-inputTmpl = FieldValue { fvParse = parse, fvEmit = emit }
-    where
-      parse :: Text -> Either String InputTmpl
-      parse = Right . InputTmpl . uncomment
+instance HasFieldValue InputTmpl where
+  fieldvalue = FieldValue { fvParse = Right . InputTmpl . uncomment
+                          , fvEmit = \(InputTmpl t) -> t
+                          }
 
-      emit :: InputTmpl -> Text
-      emit (InputTmpl t) = t
-
-binocularsConfigSpec :: IniSpec BinocularsConfig ()
-binocularsConfigSpec = do
-  section "dispatcher" $ do
-    binocularsDispatcherNcore .=? field "ncores" auto
-    binocularsDispatcherDestination .= field "destination" auto
-    binocularsDispatcherOverwrite .= field "overwrite" auto
-  section "input" $ do
-    binocularsInputItype .= field "type" inputType
-    binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
-    binocularsInputTmpl .=? field "inputtmpl" inputTmpl
-    binocularsInputInputRange .=? field "inputrange" parsable
-    binocularsInputDetector .=? field "detector" auto
-    binocularsInputCentralpixel .= field "centralpixel" centralPixel
-    binocularsInputSdd .= field "sdd" (numberUnit meter)
-    binocularsInputDetrot .=? field "detrot" (numberUnit degree)
-    binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
-    binocularsInputSurfaceOrientation .=? field "surface_orientation" surfaceOrientation
-    binocularsInputMaskmatrix .=? field "maskmatrix" text
-    binocularsInputA .=? field "a" (numberUnit angstrom)
-    binocularsInputB .=? field "b" (numberUnit angstrom)
-    binocularsInputC .=? field "c" (numberUnit angstrom)
-    binocularsInputAlpha  .=?field "alpha" (numberUnit degree)
-    binocularsInputBeta  .=? field "beta" (numberUnit degree)
-    binocularsInputGamma .=? field "gamma" (numberUnit degree)
-    binocularsInputUx .=? field "ux" (numberUnit degree)
-    binocularsInputUy .=? field "uy" (numberUnit degree)
-    binocularsInputUz .=? field "uz" (numberUnit degree)
-    binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
-  section "projection" $ do
-    binocularsProjectionPtype .= field "type" parsable
-    binocularsProjectionResolution .= field "resolution" (listWithSeparator "," auto)
-    binocularsProjectionLimits .=? field "limits" parsable
-
-inputType :: FieldValue InputType
-inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
+instance HasFieldValue InputType where
+  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String InputType
       parse t
@@ -362,6 +320,43 @@ inputType = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
       emit SixsSbsMedH            = "sixs:sbsmedh"
       emit SixsSbsMedV            = "sixs:sbsmedv"
       emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
+
+instance HasFieldValue Int where
+  fieldvalue = number'
+
+binocularsConfigSpec :: IniSpec BinocularsConfig ()
+binocularsConfigSpec = do
+  section "dispatcher" $ do
+    binocularsDispatcherNcore .=? field "ncores" auto
+    binocularsDispatcherDestination .= field "destination" auto
+    binocularsDispatcherOverwrite .= field "overwrite" auto
+  section "input" $ do
+    binocularsInputItype .= field "type" auto
+    binocularsInputNexusdir .=? field "nexusdir" pathAbsDir
+    binocularsInputTmpl .=? field "inputtmpl" auto
+    binocularsInputInputRange .=? field "inputrange" parsable
+    binocularsInputDetector .=? field "detector" auto
+    binocularsInputCentralpixel .= field "centralpixel" centralPixel
+    binocularsInputSdd .= field "sdd" (numberUnit meter)
+    binocularsInputDetrot .=? field "detrot" (numberUnit degree)
+    binocularsInputAttenuationCoefficient .=? field "attenuation_coefficient" auto
+    binocularsInputSurfaceOrientation .=? field "surface_orientation" surfaceOrientation
+    binocularsInputMaskmatrix .=? field "maskmatrix" text
+    binocularsInputA .=? field "a" (numberUnit angstrom)
+    binocularsInputB .=? field "b" (numberUnit angstrom)
+    binocularsInputC .=? field "c" (numberUnit angstrom)
+    binocularsInputAlpha  .=?field "alpha" (numberUnit degree)
+    binocularsInputBeta  .=? field "beta" (numberUnit degree)
+    binocularsInputGamma .=? field "gamma" (numberUnit degree)
+    binocularsInputUx .=? field "ux" (numberUnit degree)
+    binocularsInputUy .=? field "uy" (numberUnit degree)
+    binocularsInputUz .=? field "uz" (numberUnit degree)
+    binocularsInputWavelength .=? field "wavelength" (numberUnit angstrom)
+  section "projection" $ do
+    binocularsProjectionPtype .= field "type" parsable
+    binocularsProjectionResolution .= field "resolution" (listWithSeparator "," auto)
+    binocularsProjectionLimits .=? field "limits" parsable
+
 
 surfaceOrientation :: FieldValue SurfaceOrientation
 surfaceOrientation = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
