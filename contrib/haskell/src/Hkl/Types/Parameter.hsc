@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE CPP #-}
 {-
-    Copyright  : Copyright (C) 2014-2020 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2020, 2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -46,10 +46,10 @@ data Range
 --  Parameter
 
 data Parameter
-  = Parameter
-    String --  name
-    Double --  value
-    Range --  range
+  = Parameter { parameterName  :: String
+              , parameterValue :: Double
+              , parameterRange :: Range
+              }
   deriving (Show)
 
 instance Storable Parameter where

@@ -59,6 +59,7 @@ import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, satisfy,
                                                     sepBy, sepBy1')
 import           Data.Either.Extra                 (mapLeft, mapRight)
+import           Data.Functor                      (($>))
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -175,7 +176,7 @@ parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
 -- BinocularsPreConfig --
 -------------------------
 
-data BinocularsPreConfig = BinocularsPreConfig
+newtype BinocularsPreConfig = BinocularsPreConfig
   { _binocularsPreConfigProjectionType :: ProjectionType }
   deriving (Eq, Show)
 
@@ -424,11 +425,11 @@ binocularsConfigSpec = do
 
 
 instance FieldParsable ProjectionType where
-  fieldParser = "hkl" *> return HklProjection
-                <|> "qparqper" *> return QparQperProjection
-                <|> "qxqyqz" *> return QxQyQzProjection
-                <|> "sixs:qxqyqzprojection" *> return QxQyQzProjection
-                <|> "sixs:hklprojection" *> return HklProjection
+  fieldParser = "hkl" $> HklProjection
+                <|> "qparqper" $> QparQperProjection
+                <|> "qxqyqz" $> QxQyQzProjection
+                <|> "sixs:qxqyqzprojection" $> QxQyQzProjection
+                <|> "sixs:hklprojection" $> HklProjection
 
   fieldEmitter QparQperProjection = "qparqper"
   fieldEmitter QxQyQzProjection   = "qxqyqz"
@@ -593,15 +594,15 @@ overloadSampleWithConfig conf (Sample
     Sample name nlat nux nuy nuz
         where
           nlat = Triclinic
-                 (fromMaybe a (unAngstrom <$> _binocularsInputA conf))
-                 (fromMaybe b (unAngstrom <$> _binocularsInputB conf))
-                 (fromMaybe c (unAngstrom <$> _binocularsInputC conf))
-                 (fromMaybe alpha (unDegree <$> _binocularsInputAlpha conf))
-                 (fromMaybe beta (unDegree <$> _binocularsInputBeta conf))
-                 (fromMaybe gamma (unDegree <$> _binocularsInputGamma conf))
+                 (maybe a unAngstrom (_binocularsInputA conf))
+                 (maybe b unAngstrom (_binocularsInputB conf))
+                 (maybe c unAngstrom (_binocularsInputC conf))
+                 (maybe alpha unDegree (_binocularsInputAlpha conf))
+                 (maybe beta unDegree (_binocularsInputBeta conf))
+                 (maybe gamma unDegree (_binocularsInputGamma conf))
 
           go :: Parameter -> Maybe Double -> Parameter
-          go (Parameter n v r) nv = Parameter n (fromMaybe v nv) r
+          go p@(Parameter _ v _) nv = p{parameterValue=fromMaybe v nv}
 
           nux = go ux ((/~ degree) . unDegree <$> _binocularsInputUx conf)
           nuy = go uy ((/~ degree) . unDegree <$> _binocularsInputUy conf)
