@@ -1,10 +1,6 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TemplateHaskell            #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+
 
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
@@ -29,10 +25,6 @@ import           Data.Ini.Config.Bidir             (IniSpec, field, section,
 import           Data.Text                         (Text)
 import           Numeric.Units.Dimensional.Prelude (meter, (*~))
 import           Path                              (Abs, Dir, Path)
-
-import           Prelude                           hiding (drop, length, lines,
-                                                    putStr, readFile, take,
-                                                    takeWhile, unlines, unwords)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Detector
