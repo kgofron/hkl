@@ -34,7 +34,7 @@ data FullOptions = FullOptions Bool Options
   deriving Show
 
 data Options = Process (Maybe FilePath) (Maybe ConfigRange)
-             | CfgNew (Maybe FilePath)
+             | CfgNew ProjectionType (Maybe FilePath)
              | CfgUpdate FilePath
   deriving Show
 
@@ -53,7 +53,9 @@ processCommand :: Mod CommandFields Options
 processCommand = command "process" (info processOptions (progDesc "process data's"))
 
 cfgNewOption :: Parser Options
-cfgNewOption = CfgNew <$> optional config
+cfgNewOption = CfgNew
+               <$> argument (eitherReader (parseOnly projectionTypeP . pack)) (metavar "PROJECTION")
+               <*> optional config
 
 cfgNewCommand :: Mod CommandFields Options
 cfgNewCommand = command "cfg-new" (info cfgNewOption (progDesc "new config files"))
@@ -71,7 +73,7 @@ options = FullOptions
 
 run :: (MonadIO m, MonadLogger m, MonadThrow m) => Options -> m ()
 run (Process mf mr) = process mf mr
-run (CfgNew mf)     = new mf
+run (CfgNew p mf)   = new p mf
 run (CfgUpdate f)   = update f
 
 

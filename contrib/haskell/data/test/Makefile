@@ -25,7 +25,7 @@ ord05133:
 #	$(PROCESS) ~/src/repo.or.cz/hkl/contrib/haskell/data/test/config_ord05133_flymedh.ini 1303-1312
 #	$(PROCESS) data/test/config_ord05133_flymedh.ini 1303-1312
 #	$(PROCESS) data/test/config_ord05133_ruche_mars_flyscan.ini
-#	$(PROCESS) data/test/config_ord05133_ruche_uhv_big.in
+	$(PROCESS) data/test/config_ord05133_ruche_uhv_big.ini
 #	$(PROCESS) data/test/config_ord05133_ruche_flymedv_3.ini
 
 sixs:
