@@ -1,7 +1,9 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
@@ -32,9 +34,7 @@ import           Control.Monad.Trans.Reader        (runReaderT)
 import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Either.Extra                 (mapRight)
-import           Data.Ini.Config.Bidir             (IniSpec, field, getIniValue,
-                                                    ini, parseIni, section,
+import           Data.Ini.Config.Bidir             (field, ini, section,
                                                     serializeIni, (.=), (.=?))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (pack)
@@ -61,7 +61,7 @@ import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Image
 
-data BinocularsConfigQparQper = BinocularsConfigQparQper
+data instance Config 'QparQperProjection = BinocularsConfigQparQper
   { _binocularsConfigQparQperNcore                  :: Maybe Int
   , _binocularsConfigQparQperDestination            :: DestinationTmpl
   , _binocularsConfigQparQperOverwrite              :: Bool
@@ -82,55 +82,54 @@ data BinocularsConfigQparQper = BinocularsConfigQparQper
   , _binocularsConfigQparQperProjectionLimits       :: Maybe [Limits]
   } deriving (Eq, Show)
 
-makeLenses ''BinocularsConfigQparQper
+makeLenses 'BinocularsConfigQparQper
 
-binocularsConfigQparQperDefault :: BinocularsConfigQparQper
-binocularsConfigQparQperDefault = BinocularsConfigQparQper
-  { _binocularsConfigQparQperNcore = Nothing
-  , _binocularsConfigQparQperDestination = DestinationTmpl "."
-  , _binocularsConfigQparQperOverwrite = False
-  , _binocularsConfigQparQperInputType = SixsFlyScanUhv
-  , _binocularsConfigQparQperNexusdir = Nothing
-  , _binocularsConfigQparQperTmpl = Nothing
-  , _binocularsConfigQparQperInputRange  = Nothing
-  , _binocularsConfigQparQperDetector = Nothing
-  , _binocularsConfigQparQperCentralpixel = (0, 0)
-  , _binocularsConfigQparQperSdd = Meter (1 *~ meter)
-  , _binocularsConfigQparQperDetrot = Nothing
-  , _binocularsConfigQparQperAttenuationCoefficient = Nothing
-  , _binocularsConfigQparQperSurfaceOrientation = Just SurfaceOrientationVertical
-  , _binocularsConfigQparQperMaskmatrix = Nothing
-  , _binocularsConfigQparQperWavelength = Nothing
-  , _binocularsConfigQparQperProjectionType = QparQperProjection
-  , _binocularsConfigQparQperProjectionResolution = [0.01, 0.01]
-  , _binocularsConfigQparQperProjectionLimits  = Nothing
-  }
+instance HasIniConfig 'QparQperProjection where
+  defaultConfig = BinocularsConfigQparQper
+    { _binocularsConfigQparQperNcore = Nothing
+    , _binocularsConfigQparQperDestination = DestinationTmpl "."
+    , _binocularsConfigQparQperOverwrite = False
+    , _binocularsConfigQparQperInputType = SixsFlyScanUhv
+    , _binocularsConfigQparQperNexusdir = Nothing
+    , _binocularsConfigQparQperTmpl = Nothing
+    , _binocularsConfigQparQperInputRange  = Nothing
+    , _binocularsConfigQparQperDetector = Nothing
+    , _binocularsConfigQparQperCentralpixel = (0, 0)
+    , _binocularsConfigQparQperSdd = Meter (1 *~ meter)
+    , _binocularsConfigQparQperDetrot = Nothing
+    , _binocularsConfigQparQperAttenuationCoefficient = Nothing
+    , _binocularsConfigQparQperSurfaceOrientation = Just SurfaceOrientationVertical
+    , _binocularsConfigQparQperMaskmatrix = Nothing
+    , _binocularsConfigQparQperWavelength = Nothing
+    , _binocularsConfigQparQperProjectionType = QparQperProjection
+    , _binocularsConfigQparQperProjectionResolution = [0.01, 0.01]
+    , _binocularsConfigQparQperProjectionLimits  = Nothing
+    }
 
-binocularsConfigQparQperSpec :: IniSpec BinocularsConfigQparQper ()
-binocularsConfigQparQperSpec = do
-  section "dispatcher" $ do
-    binocularsConfigQparQperNcore .=? field "ncores" auto
-    binocularsConfigQparQperDestination .= field "destination" auto
-    binocularsConfigQparQperOverwrite .= field "overwrite" auto
-  section "input" $ do
-    binocularsConfigQparQperInputType .= field "type" auto
-    binocularsConfigQparQperNexusdir .=? field "nexusdir" auto
-    binocularsConfigQparQperTmpl .=? field "inputtmpl" auto
-    binocularsConfigQparQperInputRange .=? field "inputrange" auto
-    binocularsConfigQparQperDetector .=? field "detector" auto
-    binocularsConfigQparQperCentralpixel .= field "centralpixel" auto
-    binocularsConfigQparQperSdd .= field "sdd" auto
-    binocularsConfigQparQperDetrot .=? field "detrot" auto
-    binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
-    binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
-    binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto
-    binocularsConfigQparQperWavelength .=? field "wavelength" auto
-  section "projection" $ do
-    binocularsConfigQparQperProjectionType .= field "type" auto
-    binocularsConfigQparQperProjectionResolution .= field "resolution" auto
-    binocularsConfigQparQperProjectionLimits .=? field "limits" auto
+  specConfig = do
+    section "dispatcher" $ do
+      binocularsConfigQparQperNcore .=? field "ncores" auto
+      binocularsConfigQparQperDestination .= field "destination" auto
+      binocularsConfigQparQperOverwrite .= field "overwrite" auto
+    section "input" $ do
+      binocularsConfigQparQperInputType .= field "type" auto
+      binocularsConfigQparQperNexusdir .=? field "nexusdir" auto
+      binocularsConfigQparQperTmpl .=? field "inputtmpl" auto
+      binocularsConfigQparQperInputRange .=? field "inputrange" auto
+      binocularsConfigQparQperDetector .=? field "detector" auto
+      binocularsConfigQparQperCentralpixel .= field "centralpixel" auto
+      binocularsConfigQparQperSdd .= field "sdd" auto
+      binocularsConfigQparQperDetrot .=? field "detrot" auto
+      binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
+      binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
+      binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto
+      binocularsConfigQparQperWavelength .=? field "wavelength" auto
+    section "projection" $ do
+      binocularsConfigQparQperProjectionType .= field "type" auto
+      binocularsConfigQparQperProjectionResolution .= field "resolution" auto
+      binocularsConfigQparQperProjectionLimits .=? field "limits" auto
 
--------------------------
+  -------------------------
 -- QparQper Projection --
 -------------------------
 
@@ -166,7 +165,7 @@ spaceQparQper det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQ
 -- Pipe --
 ----------
 
-getResolution' :: MonadThrow m => BinocularsConfigQparQper -> m [Double]
+getResolution' :: MonadThrow m => (Config 'QparQperProjection) -> m [Double]
 getResolution' c = getResolution (_binocularsConfigQparQperProjectionResolution c) 2
 
 class ChunkP a => FramesQparQperP a where
@@ -174,10 +173,10 @@ class ChunkP a => FramesQparQperP a where
                   => a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameQparQper m ()
 
 class (FramesQparQperP a, Show a) => ProcessQparQperP a where
-  processQparQperP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfigQparQper m, MonadThrow m)
+  processQparQperP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QparQperProjection) m, MonadThrow m)
                    => m a -> m ()
   processQparQperP mkPaths = do
-    (conf :: BinocularsConfigQparQper) <- ask
+    (conf :: (Config 'QparQperProjection)) <- ask
     let det = fromMaybe defaultDetector (_binocularsConfigQparQperDetector conf)
     let output' = case _binocularsConfigQparQperInputRange conf of
                    Just r  -> destination' r (_binocularsConfigQparQperDestination conf)
@@ -264,20 +263,12 @@ h5dpathQparQper i ma = QparQperPath <$> (h5dpathQxQyQz i ma)
 -- Cmd --
 ---------
 
-getConfig' :: ConfigContent -> Either String BinocularsConfigQparQper
-getConfig'  (ConfigContent cfg) = do
-  let r = parseIni cfg (ini binocularsConfigQparQperDefault binocularsConfigQparQperSpec)
-  mapRight getIniValue r
-
-getConfig :: Maybe FilePath -> IO (Either String BinocularsConfigQparQper)
-getConfig mf = getConfig' <$> readConfig mf
-
-combineWithCmdLineArgs :: BinocularsConfigQparQper -> Maybe ConfigRange -> BinocularsConfigQparQper
+combineWithCmdLineArgs :: (Config 'QparQperProjection) -> Maybe ConfigRange -> (Config 'QparQperProjection)
 combineWithCmdLineArgs c mr = case mr of
                                 Nothing  -> c
                                 (Just _) -> c{_binocularsConfigQparQperInputRange = mr}
 
-process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader BinocularsConfigQparQper m)
+process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'QparQperProjection) m)
          => m ()
 process' = do
   c <- ask
@@ -297,15 +288,15 @@ processQparQper mf mr = do
 newQparQper :: (MonadIO m, MonadLogger m, MonadThrow m)
             => Path Abs Dir -> m ()
 newQparQper cwd = do
-  let conf = binocularsConfigQparQperDefault {_binocularsConfigQparQperNexusdir = Just cwd}
-  liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf binocularsConfigQparQperSpec)
+  let conf = defaultConfig {_binocularsConfigQparQperNexusdir = Just cwd}
+  liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf specConfig)
 
 updateQparQper :: (MonadIO m, MonadLogger m, MonadThrow m)
                => Maybe FilePath -> m ()
 updateQparQper mf = do
-  conf <- liftIO $ getConfig mf
+  (conf  :: Either String (Config 'QparQperProjection))<- liftIO $ getConfig mf
   $(logDebug) "config red from the config file"
   $(logDebugSH) conf
   case conf of
     Left e      -> $(logErrorSH) e
-    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf' binocularsConfigQparQperSpec)
+    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf' specConfig)

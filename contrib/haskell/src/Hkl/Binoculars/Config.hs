@@ -1,8 +1,10 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -21,10 +23,12 @@
 module Hkl.Binoculars.Config
     ( Angstrom(..)
     , BinocularsPreConfig(..)
+    , Config
     , ConfigContent(..)
     , ConfigRange(..)
     , Degree(..)
     , DestinationTmpl(..)
+    , HasIniConfig(..)
     , InputRange(..)
     , InputTmpl(..)
     , InputType(..)
@@ -99,6 +103,8 @@ data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
     deriving (Show)
 instance Exception HklBinocularsConfigException
 
+newtype ConfigContent = ConfigContent Text
+
 newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
   deriving (Eq, Show)
@@ -167,6 +173,33 @@ parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
 
     emit ::  FieldParsable a => a -> Text
     emit = fieldEmitter
+
+readConfig :: Maybe FilePath -> IO ConfigContent
+readConfig mf = do
+  cfg <- readFile =<< case mf of
+                       Nothing  -> getDataFileName "data/test/config_manip1.cfg"
+                       (Just f) -> pure f
+  return $ ConfigContent $ unlines $ [fixHeader l | l <- lines cfg]
+    where
+      fixHeader :: Text -> Text
+      fixHeader l = case findIndex (== ']' ) l of
+        Nothing  -> l
+        (Just n) -> take (n + 1) l
+
+data family Config (a :: ProjectionType)
+
+class HasIniConfig (a :: ProjectionType) where
+  defaultConfig :: Config a
+
+  specConfig :: IniSpec (Config a) ()
+
+  getConfig ::  Maybe FilePath -> IO (Either String (Config a))
+  getConfig mf = getConfig' <$> readConfig mf
+    where
+      getConfig' :: HasIniConfig a => ConfigContent -> Either String (Config a)
+      getConfig'  (ConfigContent cfg) = do
+        let r = parseIni cfg (ini defaultConfig specConfig)
+        mapRight getIniValue r
 
 -------------------------
 -- BinocularsPreConfig --
@@ -487,20 +520,6 @@ getResolution res n
   | Data.List.length res == 1 = return $ replicate n (head res)
   | Data.List.length res == n = return res
   | otherwise = throwM $ ResolutionNotCompatibleWithProjectionNbOfCoordinates res n
-
-newtype ConfigContent = ConfigContent Text
-
-readConfig :: Maybe FilePath -> IO ConfigContent
-readConfig mf = do
-  cfg <- readFile =<< case mf of
-                       Nothing  -> getDataFileName "data/test/config_manip1.cfg"
-                       (Just f) -> pure f
-  return $ ConfigContent $ unlines $ [fixHeader l | l <- lines cfg]
-    where
-      fixHeader :: Text -> Text
-      fixHeader l = case findIndex (== ']' ) l of
-        Nothing  -> l
-        (Just n) -> take (n + 1) l
 
 getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig
 getPreConfig' (ConfigContent cfg) = do

@@ -1,8 +1,9 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
@@ -16,8 +17,7 @@
 -}
 
 module Hkl.Binoculars.Projections.Hkl
-    ( BinocularsConfigHkl(..)
-    , DataFrameHkl(..)
+    ( DataFrameHkl(..)
     , HklPath(..)
     , SamplePath(..)
     , newHkl
@@ -42,9 +42,7 @@ import           Control.Monad.Trans.Reader        (runReaderT)
 import           Data.Array.Repa                   (Array, Z)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Either.Extra                 (mapRight)
-import           Data.Ini.Config.Bidir             (IniSpec, field, getIniValue,
-                                                    ini, parseIni, section,
+import           Data.Ini.Config.Bidir             (field, ini, section,
                                                     serializeIni, (.=), (.=?))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (pack)
@@ -82,7 +80,7 @@ import           Hkl.Types
 ----------------
 
 data HklBinocularsProjectionsHklException
-    = MissingSampleParameters BinocularsConfigHkl
+    = MissingSampleParameters (Config 'HklProjection)
     deriving (Show)
 
 instance Exception HklBinocularsProjectionsHklException
@@ -92,7 +90,7 @@ instance Exception HklBinocularsProjectionsHklException
 -- Config --
 ------------
 
-data BinocularsConfigHkl = BinocularsConfigHkl
+data instance Config 'HklProjection = BinocularsConfigHkl
   { _binocularsConfigHklNcore                  :: Maybe Int
   , _binocularsConfigHklDestination            :: DestinationTmpl
   , _binocularsConfigHklOverwrite              :: Bool
@@ -121,71 +119,70 @@ data BinocularsConfigHkl = BinocularsConfigHkl
   , _binocularsConfigHklProjectionLimits       :: Maybe [Limits]
   } deriving (Eq, Show)
 
-makeLenses ''BinocularsConfigHkl
+makeLenses 'BinocularsConfigHkl
 
-binocularsConfigHklDefault :: BinocularsConfigHkl
-binocularsConfigHklDefault = BinocularsConfigHkl
-  { _binocularsConfigHklNcore = Nothing
-  , _binocularsConfigHklDestination = DestinationTmpl "."
-  , _binocularsConfigHklOverwrite = False
-  , _binocularsConfigHklInputType = SixsFlyScanUhv
-  , _binocularsConfigHklNexusdir = Nothing
-  , _binocularsConfigHklTmpl = Nothing
-  , _binocularsConfigHklInputRange  = Nothing
-  , _binocularsConfigHklDetector = Nothing
-  , _binocularsConfigHklCentralpixel = (0, 0)
-  , _binocularsConfigHklSdd = Meter (1 *~ meter)
-  , _binocularsConfigHklDetrot = Nothing
-  , _binocularsConfigHklAttenuationCoefficient = Nothing
-  , _binocularsConfigHklMaskmatrix = Nothing
-  , _binocularsConfigHklA  = Nothing
-  , _binocularsConfigHklB = Nothing
-  , _binocularsConfigHklC = Nothing
-  , _binocularsConfigHklAlpha  = Nothing
-  , _binocularsConfigHklBeta = Nothing
-  , _binocularsConfigHklGamma  = Nothing
-  , _binocularsConfigHklUx = Nothing
-  , _binocularsConfigHklUy = Nothing
-  , _binocularsConfigHklUz = Nothing
-  , _binocularsConfigHklWavelength = Nothing
-  , _binocularsConfigHklProjectionType = HklProjection
-  , _binocularsConfigHklProjectionResolution = [0.01, 0.01, 0.01]
-  , _binocularsConfigHklProjectionLimits  = Nothing
-  }
+instance HasIniConfig 'HklProjection where
+  defaultConfig = BinocularsConfigHkl
+    { _binocularsConfigHklNcore = Nothing
+    , _binocularsConfigHklDestination = DestinationTmpl "."
+    , _binocularsConfigHklOverwrite = False
+    , _binocularsConfigHklInputType = SixsFlyScanUhv
+    , _binocularsConfigHklNexusdir = Nothing
+    , _binocularsConfigHklTmpl = Nothing
+    , _binocularsConfigHklInputRange  = Nothing
+    , _binocularsConfigHklDetector = Nothing
+    , _binocularsConfigHklCentralpixel = (0, 0)
+    , _binocularsConfigHklSdd = Meter (1 *~ meter)
+    , _binocularsConfigHklDetrot = Nothing
+    , _binocularsConfigHklAttenuationCoefficient = Nothing
+    , _binocularsConfigHklMaskmatrix = Nothing
+    , _binocularsConfigHklA  = Nothing
+    , _binocularsConfigHklB = Nothing
+    , _binocularsConfigHklC = Nothing
+    , _binocularsConfigHklAlpha  = Nothing
+    , _binocularsConfigHklBeta = Nothing
+    , _binocularsConfigHklGamma  = Nothing
+    , _binocularsConfigHklUx = Nothing
+    , _binocularsConfigHklUy = Nothing
+    , _binocularsConfigHklUz = Nothing
+    , _binocularsConfigHklWavelength = Nothing
+    , _binocularsConfigHklProjectionType = HklProjection
+    , _binocularsConfigHklProjectionResolution = [0.01, 0.01, 0.01]
+    , _binocularsConfigHklProjectionLimits  = Nothing
+    }
 
-binocularsConfigHklSpec :: IniSpec BinocularsConfigHkl ()
-binocularsConfigHklSpec = do
-  section "dispatcher" $ do
-    binocularsConfigHklNcore .=? field "ncores" auto
-    binocularsConfigHklDestination .= field "destination" auto
-    binocularsConfigHklOverwrite .= field "overwrite" auto
-  section "input" $ do
-    binocularsConfigHklInputType .= field "type" auto
-    binocularsConfigHklNexusdir .=? field "nexusdir" auto
-    binocularsConfigHklTmpl .=? field "inputtmpl" auto
-    binocularsConfigHklInputRange .=? field "inputrange" auto
-    binocularsConfigHklDetector .=? field "detector" auto
-    binocularsConfigHklCentralpixel .= field "centralpixel" auto
-    binocularsConfigHklSdd .= field "sdd" auto
-    binocularsConfigHklDetrot .=? field "detrot" auto
-    binocularsConfigHklAttenuationCoefficient .=? field "attenuation_coefficient" auto
-    binocularsConfigHklMaskmatrix .=? field "maskmatrix" auto
-    binocularsConfigHklA .=? field "a" auto
-    binocularsConfigHklB .=? field "b" auto
-    binocularsConfigHklC .=? field "c" auto
-    binocularsConfigHklAlpha .=?field "alpha" auto
-    binocularsConfigHklBeta .=? field "beta" auto
-    binocularsConfigHklGamma .=? field "gamma" auto
-    binocularsConfigHklUx .=? field "ux" auto
-    binocularsConfigHklUy .=? field "uy" auto
-    binocularsConfigHklUz .=? field "uz" auto
-    binocularsConfigHklWavelength .=? field "wavelength" auto
-  section "projection" $ do
-    binocularsConfigHklProjectionType .= field "type" auto
-    binocularsConfigHklProjectionResolution .= field "resolution" auto
-    binocularsConfigHklProjectionLimits .=? field "limits" auto
+  specConfig = do
+    section "dispatcher" $ do
+      binocularsConfigHklNcore .=? field "ncores" auto
+      binocularsConfigHklDestination .= field "destination" auto
+      binocularsConfigHklOverwrite .= field "overwrite" auto
+    section "input" $ do
+      binocularsConfigHklInputType .= field "type" auto
+      binocularsConfigHklNexusdir .=? field "nexusdir" auto
+      binocularsConfigHklTmpl .=? field "inputtmpl" auto
+      binocularsConfigHklInputRange .=? field "inputrange" auto
+      binocularsConfigHklDetector .=? field "detector" auto
+      binocularsConfigHklCentralpixel .= field "centralpixel" auto
+      binocularsConfigHklSdd .= field "sdd" auto
+      binocularsConfigHklDetrot .=? field "detrot" auto
+      binocularsConfigHklAttenuationCoefficient .=? field "attenuation_coefficient" auto
+      binocularsConfigHklMaskmatrix .=? field "maskmatrix" auto
+      binocularsConfigHklA .=? field "a" auto
+      binocularsConfigHklB .=? field "b" auto
+      binocularsConfigHklC .=? field "c" auto
+      binocularsConfigHklAlpha .=?field "alpha" auto
+      binocularsConfigHklBeta .=? field "beta" auto
+      binocularsConfigHklGamma .=? field "gamma" auto
+      binocularsConfigHklUx .=? field "ux" auto
+      binocularsConfigHklUy .=? field "uy" auto
+      binocularsConfigHklUz .=? field "uz" auto
+      binocularsConfigHklWavelength .=? field "wavelength" auto
+    section "projection" $ do
+      binocularsConfigHklProjectionType .= field "type" auto
+      binocularsConfigHklProjectionResolution .= field "resolution" auto
+      binocularsConfigHklProjectionLimits .=? field "limits" auto
 
-overloadSampleWithConfig :: BinocularsConfigHkl -> Sample Triclinic -> Sample Triclinic
+overloadSampleWithConfig :: (Config 'HklProjection) -> Sample Triclinic -> Sample Triclinic
 overloadSampleWithConfig conf (Sample
                                name
                                (Triclinic a b c alpha beta gamma)
@@ -207,10 +204,10 @@ overloadSampleWithConfig conf (Sample
           nuy = go uy ((/~ degree) . unDegree <$> _binocularsConfigHklUy conf)
           nuz = go uz ((/~ degree) . unDegree <$> _binocularsConfigHklUz conf)
 
-getResolution' :: MonadThrow m => BinocularsConfigHkl -> m [Double]
+getResolution' :: MonadThrow m => (Config 'HklProjection) -> m [Double]
 getResolution' c = getResolution (_binocularsConfigHklProjectionResolution c) 3
 
-sampleConfig ::  BinocularsConfigHkl -> Maybe (Sample Triclinic)
+sampleConfig ::  (Config 'HklProjection) -> Maybe (Sample Triclinic)
 sampleConfig cf = do
   (Angstrom a) <- _binocularsConfigHklA cf
   (Angstrom b) <- _binocularsConfigHklB cf
@@ -239,7 +236,7 @@ data DataFrameHkl a
 
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: BinocularsConfigHkl -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
+spaceHkl :: (Config 'HklProjection) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
 spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
@@ -270,7 +267,7 @@ class ChunkP a => FramesHklP a where
 
 
 class (FramesHklP a, Show a) => ProcessHklP a where
-  processHklP :: (MonadIO m, MonadLogger m, MonadReader BinocularsConfigHkl m, MonadThrow m)
+  processHklP :: (MonadIO m, MonadLogger m, MonadReader (Config 'HklProjection) m, MonadThrow m)
               => m a -> m ()
   processHklP mkPaths = do
     conf <- ask
@@ -402,7 +399,7 @@ instance FramesHklP HklPath where
 ------------
 
 h5dpathHkl :: (MonadLogger m, MonadThrow m)
-           => BinocularsConfigHkl
+           => (Config 'HklProjection)
            -> m HklPath
 h5dpathHkl c =
   do let i = _binocularsConfigHklInputType c
@@ -475,30 +472,22 @@ h5dpathHkl c =
 -- Cmd --
 ---------
 
-getConfig' :: ConfigContent -> Either String BinocularsConfigHkl
-getConfig'  (ConfigContent cfg) = do
-  let r = parseIni cfg (ini binocularsConfigHklDefault binocularsConfigHklSpec)
-  mapRight getIniValue r
-
-getConfig :: Maybe FilePath -> IO (Either String BinocularsConfigHkl)
-getConfig mf = getConfig' <$> readConfig mf
-
-combineWithCmdLineArgs :: BinocularsConfigHkl -> Maybe ConfigRange -> BinocularsConfigHkl
+combineWithCmdLineArgs :: (Config 'HklProjection) -> Maybe ConfigRange -> (Config 'HklProjection)
 combineWithCmdLineArgs c mr = case mr of
                                 Nothing  -> c
                                 (Just _) -> c{_binocularsConfigHklInputRange = mr}
 
-process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader BinocularsConfigHkl m)
+process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'HklProjection) m)
          => m ()
 process' = do
-  (c :: BinocularsConfigHkl) <- ask
+  (c :: (Config 'HklProjection)) <- ask
   $(logDebug) "config once overloaded with the command line arguments"
   $(logDebugSH) c
   processHklP (h5dpathHkl c)
 
 processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processHkl mf mr = do
-  conf <- liftIO $ getConfig mf
+  (conf :: Either String (Config 'HklProjection)) <- liftIO $ getConfig mf
   $(logDebug) "config red from the config file"
   $(logDebugSH) conf
   case conf of
@@ -508,16 +497,16 @@ processHkl mf mr = do
 newHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
        => Path Abs Dir -> m ()
 newHkl cwd = do
-  let conf = binocularsConfigHklDefault {_binocularsConfigHklNexusdir = Just cwd}
-  liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf binocularsConfigHklSpec)
+  let conf = defaultConfig {_binocularsConfigHklNexusdir = Just cwd}
+  liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf specConfig)
 
 
 updateHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
-               => Maybe FilePath -> m ()
+          => Maybe FilePath -> m ()
 updateHkl mf = do
-  conf <- liftIO $ getConfig mf
+  (conf :: Either String (Config 'HklProjection)) <- liftIO $ getConfig mf
   $(logDebug) "config red from the config file"
   $(logDebugSH) conf
   case conf of
     Left e      -> $(logErrorSH) e
-    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf' binocularsConfigHklSpec)
+    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf' specConfig)
