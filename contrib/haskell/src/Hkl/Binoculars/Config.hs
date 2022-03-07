@@ -193,6 +193,8 @@ class HasIniConfig (a :: ProjectionType) where
 
   specConfig :: IniSpec (Config a) ()
 
+  overwriteInputRange :: Maybe ConfigRange -> Config a -> Config a
+
   getConfig ::  Maybe FilePath -> IO (Either String (Config a))
   getConfig mf = getConfig' <$> readConfig mf
     where

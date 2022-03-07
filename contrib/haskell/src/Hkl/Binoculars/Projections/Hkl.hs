@@ -5,6 +5,8 @@
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -182,6 +184,11 @@ instance HasIniConfig 'HklProjection where
       binocularsConfigHklProjectionResolution .= field "resolution" auto
       binocularsConfigHklProjectionLimits .=? field "limits" auto
 
+  overwriteInputRange mr c = case mr of
+                               Nothing  -> c
+                               (Just _) -> c{_binocularsConfigHklInputRange = mr}
+
+
 overloadSampleWithConfig :: (Config 'HklProjection) -> Sample Triclinic -> Sample Triclinic
 overloadSampleWithConfig conf (Sample
                                name
@@ -270,7 +277,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
   processHklP :: (MonadIO m, MonadLogger m, MonadReader (Config 'HklProjection) m, MonadThrow m)
               => m a -> m ()
   processHklP mkPaths = do
-    conf <- ask
+    conf :: Config 'HklProjection <- ask
     let det = fromMaybe defaultDetector (_binocularsConfigHklDetector conf)
     let output' = case _binocularsConfigHklInputRange conf of
                    Just r  -> destination' r (_binocularsConfigHklDestination conf)
@@ -472,26 +479,23 @@ h5dpathHkl c =
 -- Cmd --
 ---------
 
-combineWithCmdLineArgs :: (Config 'HklProjection) -> Maybe ConfigRange -> (Config 'HklProjection)
-combineWithCmdLineArgs c mr = case mr of
-                                Nothing  -> c
-                                (Just _) -> c{_binocularsConfigHklInputRange = mr}
-
 process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'HklProjection) m)
          => m ()
 process' = do
-  (c :: (Config 'HklProjection)) <- ask
-  $(logDebug) "config once overloaded with the command line arguments"
-  $(logDebugSH) c
+  c <- ask
   processHklP (h5dpathHkl c)
 
 processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processHkl mf mr = do
-  (conf :: Either String (Config 'HklProjection)) <- liftIO $ getConfig mf
-  $(logDebug) "config red from the config file"
-  $(logDebugSH) conf
-  case conf of
-    Right conf' -> runReaderT process' (combineWithCmdLineArgs conf' mr)
+  econf <- liftIO $ getConfig mf
+  case econf of
+    Right conf -> do
+      $(logDebug) "config red from the config file"
+      $(logDebugSH) conf
+      let conf' = overwriteInputRange mr conf
+      $(logDebug) "config once overloaded with the command line arguments"
+      $(logDebugSH) conf'
+      runReaderT process' conf'
     Left e      -> $(logErrorSH) e
 
 newHkl :: (MonadIO m, MonadLogger m, MonadThrow m)

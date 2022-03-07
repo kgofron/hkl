@@ -5,6 +5,8 @@
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -129,7 +131,12 @@ instance HasIniConfig 'QparQperProjection where
       binocularsConfigQparQperProjectionResolution .= field "resolution" auto
       binocularsConfigQparQperProjectionLimits .=? field "limits" auto
 
-  -------------------------
+  overwriteInputRange mr c = case mr of
+                               Nothing  -> c
+                               (Just _) -> c{_binocularsConfigQparQperInputRange = mr}
+
+
+-------------------------
 -- QparQper Projection --
 -------------------------
 
@@ -263,26 +270,23 @@ h5dpathQparQper i ma = QparQperPath <$> (h5dpathQxQyQz i ma)
 -- Cmd --
 ---------
 
-combineWithCmdLineArgs :: (Config 'QparQperProjection) -> Maybe ConfigRange -> (Config 'QparQperProjection)
-combineWithCmdLineArgs c mr = case mr of
-                                Nothing  -> c
-                                (Just _) -> c{_binocularsConfigQparQperInputRange = mr}
-
 process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'QparQperProjection) m)
          => m ()
 process' = do
   c <- ask
-  $(logDebug) "config once overloaded with the command line arguments"
-  $(logDebugSH) c
   processQparQperP (h5dpathQparQper (_binocularsConfigQparQperInputType c) (_binocularsConfigQparQperAttenuationCoefficient c))
 
 processQparQper :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQparQper mf mr = do
-  conf <- liftIO $ getConfig mf
-  $(logDebug) "config red from the config file"
-  $(logDebugSH) conf
-  case conf of
-    Right conf' -> runReaderT process' (combineWithCmdLineArgs conf' mr)
+  econf <- liftIO $ getConfig mf
+  case econf of
+    Right conf -> do
+      $(logDebug) "config red from the config file"
+      $(logDebugSH) conf
+      let conf' = overwriteInputRange mr conf
+      $(logDebug) "config once overloaded with the command line arguments"
+      $(logDebugSH) conf'
+      runReaderT process' conf'
     Left e      -> $(logErrorSH) e
 
 newQparQper :: (MonadIO m, MonadLogger m, MonadThrow m)

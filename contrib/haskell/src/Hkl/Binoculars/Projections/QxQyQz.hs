@@ -5,6 +5,8 @@
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -148,6 +150,10 @@ instance HasIniConfig 'QxQyQzProjection where
       binocularsConfigQxQyQzProjectionType .= field "type" auto
       binocularsConfigQxQyQzProjectionResolution .= field "resolution" auto
       binocularsConfigQxQyQzProjectionLimits .=? field "limits" auto
+
+  overwriteInputRange mr c = case mr of
+                               Nothing  -> c
+                               (Just _) -> c{_binocularsConfigQxQyQzInputRange = mr}
 
 
 ------------------
@@ -557,26 +563,23 @@ instance FramesQxQyQzP QxQyQzPath where
 -- Cmd --
 ---------
 
-combineWithCmdLineArgs :: (Config 'QxQyQzProjection) -> Maybe ConfigRange -> (Config 'QxQyQzProjection)
-combineWithCmdLineArgs c mr = case mr of
-                                Nothing  -> c
-                                (Just _) -> c{_binocularsConfigQxQyQzInputRange = mr}
-
 process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'QxQyQzProjection) m)
          => m ()
 process' = do
-  (c :: (Config 'QxQyQzProjection)) <- ask
-  $(logDebug) "config once overloaded with the command line arguments"
-  $(logDebugSH) c
+  c <- ask
   processQxQyQzP (h5dpathQxQyQz (_binocularsConfigQxQyQzInputType c) (_binocularsConfigQxQyQzAttenuationCoefficient c))
 
 processQxQyQz :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQxQyQz mf mr = do
-  conf <- liftIO $ getConfig mf
-  $(logDebug) "config red from the config file"
-  $(logDebugSH) conf
-  case conf of
-    Right conf' -> runReaderT process' (combineWithCmdLineArgs conf' mr)
+  econf <- liftIO $ getConfig mf
+  case econf of
+    Right conf -> do
+      $(logDebug) "config red from the config file"
+      $(logDebugSH) conf
+      let conf' = overwriteInputRange mr conf
+      $(logDebug) "config once overloaded with the command line arguments"
+      $(logDebugSH) conf'
+      runReaderT process' conf'
     Left e      -> $(logErrorSH) e
 
 newQxQyQz :: (MonadIO m, MonadLogger m, MonadThrow m)
@@ -586,7 +589,7 @@ newQxQyQz cwd = do
   liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf specConfig)
 
 updateQxQyQz :: (MonadIO m, MonadLogger m, MonadThrow m)
-          => Maybe FilePath -> m ()
+             => Maybe FilePath -> m ()
 updateQxQyQz mf = do
   (conf :: Either String (Config 'QxQyQzProjection)) <- liftIO $ getConfig mf
   $(logDebug) "config red from the config file"
