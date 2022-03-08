@@ -39,6 +39,7 @@ import           Foreign.Ptr                     (Ptr, nullPtr)
 
 import           Prelude                         hiding (drop)
 
+import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
 import           Hkl.Detector
@@ -102,6 +103,9 @@ data GeometryPath
   | GeometryPathUhv { geometryPathWavelength :: Hdf5Path Z Double
                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
                     }
+  | GeometryPathUhvTest { geometryPathWavelengthTest :: Angstrom
+                        , geometryPathAxes           :: [Hdf5Path DIM1 Double]
+                        }
                   deriving Show
 
 -- AttenuationPath

@@ -454,6 +454,7 @@ h5dpathHkl c =
        SixsFlyMedVS70 -> return $ HklPath qxqyqz medVSamplePath
        SixsFlyScanUhv -> return $ HklPath qxqyqz uhvSamplePath
        SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath3
+       SixsFlyScanUhvTest -> return $ HklPath qxqyqz uhvSamplePath3
        SixsFlyScanUhvUfxc -> return $ HklPath qxqyqz uhvSamplePath
        SixsSbsFixedDetector -> undefined -- TODO this must not be possible.
        SixsSbsMedH -> return $ HklPath qxqyqz medHSamplePath

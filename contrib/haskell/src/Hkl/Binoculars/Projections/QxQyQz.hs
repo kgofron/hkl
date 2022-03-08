@@ -57,6 +57,7 @@ import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr, nullPtr)
 import           GHC.Conc                          (getNumCapabilities)
+import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, await, each,
@@ -318,6 +319,21 @@ h5dpathQxQyQz i ma =
                                      (H5Or
                                       (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
                                       (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
+                                     [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
+                                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
+                                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
+                                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
+                                     ])
+         SixsFlyScanUhvTest -> QxQyQzPath
+                           <$> mkAttenuation ma (AttenuationPath
+                                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                                                2 0)
+                           <*> pure (DetectorPath
+                                     (H5Or
+                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")))
+                           <*> pure (GeometryPathUhvTest
+                                     (Angstrom (0.672494 *~ angstrom))
                                      [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
                                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
                                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"

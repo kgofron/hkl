@@ -121,6 +121,7 @@ data InputType = CristalK6C
                | SixsFlyMedVS70
                | SixsFlyScanUhv
                | SixsFlyScanUhv2
+               | SixsFlyScanUhvTest
                | SixsFlyScanUhvUfxc
                | SixsSbsFixedDetector
                | SixsSbsMedH
@@ -292,6 +293,7 @@ instance HasFieldValue InputType where
           | toLower t == emit SixsFlyMedVS70 = Right SixsFlyMedVS70
           | toLower t == emit SixsFlyScanUhv = Right SixsFlyScanUhv
           | toLower t == emit SixsFlyScanUhv2 = Right SixsFlyScanUhv2
+          | toLower t == emit SixsFlyScanUhvTest = Right SixsFlyScanUhvTest
           | toLower t == emit SixsFlyScanUhvUfxc = Right SixsFlyScanUhvUfxc
           | toLower t == emit SixsSbsFixedDetector = Right SixsSbsFixedDetector
           | toLower t == emit SixsSbsMedH = Right SixsSbsMedH
@@ -309,6 +311,7 @@ instance HasFieldValue InputType where
       emit SixsFlyMedVS70         = "sixs:flymedvs70"
       emit SixsFlyScanUhv         = "sixs:flyscanuhv"
       emit SixsFlyScanUhv2        = "sixs:flyscanuhv2"
+      emit SixsFlyScanUhvTest     = "sixs:flyscanuhvtest"
       emit SixsFlyScanUhvUfxc     = "sixs:flyscanuhvufxc"
       emit SixsSbsFixedDetector   = "sixs:sbsfixeddetector"
       emit SixsSbsMedH            = "sixs:sbsmedh"

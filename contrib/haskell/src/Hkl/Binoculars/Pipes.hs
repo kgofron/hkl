@@ -70,6 +70,7 @@ import           System.ProgressBar                (Progress (..), ProgressBar,
 import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Common
+import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
@@ -141,7 +142,7 @@ withDetectorPathP f det (DetectorPath p) g = do
     t <- liftIO $ getDatasetType p'
     s <- liftIO $ getTypeSize t
     let n = (size . shape $ det) * fromEnum s
-    condM [ ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Int32))), (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i)))
+    condM [ ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32))), (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i)))
           , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16))), (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)))
           , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
           ]
@@ -215,6 +216,11 @@ withGeometryPathP f (GeometryPathUhv w as) gg =
         gg (\j -> Geometry Uhv
                  <$> (Source <$> getValueWithUnit w' 0 angstrom)
                  <*> (fromList <$> Prelude.mapM (`get_position` j) as')
+                 <*> pure Nothing)
+withGeometryPathP f (GeometryPathUhvTest w as) gg =
+    withAxesPathP f as $ \as' ->
+        gg (\j -> Geometry Uhv (Source (unAngstrom w))
+                 <$> (fromList <$> Prelude.mapM (`get_position` j) as')
                  <*> pure Nothing)
 
 withAttenuationPathP :: (MonadSafe m, Location l) =>
