@@ -24,6 +24,7 @@ Flag useHklDev
   Default: True
 
 library
+  build-depends: aeson
   build-depends: async
   build-depends: attoparsec
   build-depends: base >= 4.6

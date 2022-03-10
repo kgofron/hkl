@@ -1,7 +1,9 @@
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ForeignFunctionInterface  #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE UnicodeSyntax             #-}
+
 {-
     Copyright  : Copyright (C) 2014-, 20222022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -94,6 +96,8 @@ import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   h5s_ALL)
 import           Control.Exception               (Exception, bracket, throwIO)
 import           Control.Monad.Extra             (fromMaybeM)
+import           Data.Aeson                      (FromJSON (..), ToJSON (..),
+                                                  Value (..))
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   linearIndex, listOfShape,
                                                   size)
@@ -102,6 +106,7 @@ import           Data.ByteString.Char8           (ByteString, pack, packCString,
                                                   unpack)
 import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
+import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   head, unsafeFromForeignPtr0)
 import           Data.Vector.Storable.Mutable    (new)
@@ -119,6 +124,7 @@ import           Foreign.StablePtr               (StablePtr, castPtrToStablePtr,
                                                   deRefStablePtr, freeStablePtr,
                                                   newStablePtr)
 import           GHC.Base                        (Alternative (..))
+import           GHC.Generics                    (Generic)
 import           Numeric.LinearAlgebra           (Matrix, reshape)
 
 import           Hkl.Detector
@@ -371,7 +377,19 @@ data Hdf5Path sh e
   | H5DatasetPath ByteString
   | H5DatasetPathAttr (ByteString, ByteString)
   | H5Or (Hdf5Path sh e) (Hdf5Path sh e)
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
+
+instance ToJSON ByteString where
+    toJSON = String . decodeUtf8
+    {-# INLINE toJSON #-}
+
+instance FromJSON ByteString where
+    parseJSON (String t) = pure . encodeUtf8 $ t
+    parseJSON _          = GHC.Base.empty
+    {-# INLINE parseJSON #-}
+
+instance ToJSON (Hdf5Path sh e)
+instance FromJSON (Hdf5Path sh e)
 
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
 hdf5p = H5RootPath

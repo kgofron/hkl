@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -45,19 +46,24 @@ import           Control.Monad.Logger              (MonadLogger, logDebug,
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
 import           Control.Monad.Trans.Reader        (runReaderT)
+import           Data.Aeson                        (FromJSON, ToJSON, encode)
 import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Ini.Config.Bidir             (field, ini, section,
-                                                    serializeIni, (.=), (.=?))
+import           Data.ByteString.Lazy              (toStrict)
+import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
+                                                    section, serializeIni, (.=),
+                                                    (.=?))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, pack)
+import           Data.Text.Encoding                (decodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr, nullPtr)
 import           GHC.Conc                          (getNumCapabilities)
+import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
@@ -66,7 +72,6 @@ import           Pipes                             (Pipe, await, each,
 import           Pipes.Prelude                     (map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
 import           Text.Printf                       (printf)
-
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -80,18 +85,43 @@ import           Hkl.Image
 import           Hkl.Orphan                        ()
 import           Hkl.Pipes
 
-------------
--- Config --
-------------
+--------------
+-- DataPath --
+--------------
 
 data instance DataPath 'QxQyQzProjection = DataPathQxQyQz
   { dataPathQxQyQzAttenuation :: AttenuationPath
   , dataPathQxQyQzDetector :: DetectorPath
   , dataPathQxQyQzGeometry :: GeometryPath
-  } deriving (Eq, Show)
+  } deriving (Eq, Generic, Show)
+
+defaultDataPathQxQyQz :: DataPath 'QxQyQzProjection
+defaultDataPathQxQyQz = DataPathQxQyQz
+                        (AttenuationPath
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                          2 0)
+                        (DetectorPath
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                        (GeometryPathUhv
+                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
+                          [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
+                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
+                          ])
 
 instance HasFieldValue (DataPath 'QxQyQzProjection) where
-  fieldvalue = undefined
+  fieldvalue = FieldValue
+               { fvParse = undefined
+               , fvEmit = decodeUtf8 . toStrict . encode
+               }
+
+instance ToJSON (DataPath 'QxQyQzProjection) where
+instance FromJSON (DataPath 'QxQyQzProjection) where
+
+------------
+-- Config --
+------------
 
 data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     { _binocularsConfigQxQyQzNcore                  :: Maybe Int
@@ -138,7 +168,7 @@ instance HasIniConfig 'QxQyQzProjection where
     , _binocularsConfigQxQyQzProjectionType = QxQyQzProjection
     , _binocularsConfigQxQyQzProjectionResolution = [0.01, 0.01, 0.01]
     , _binocularsConfigQxQyQzProjectionLimits  = Nothing
-    , _binocularsConfigQxQyQzDataPath = Nothing
+    , _binocularsConfigQxQyQzDataPath = (Just defaultDataPathQxQyQz)
     }
 
   specConfig = do

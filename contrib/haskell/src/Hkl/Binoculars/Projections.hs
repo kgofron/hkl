@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs                 #-}
 
@@ -25,6 +26,7 @@ module Hkl.Binoculars.Projections
   ) where
 
 import           Control.Exception               (Exception)
+import           Data.Aeson                      (FromJSON, ToJSON)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
 import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3, Z)
@@ -36,6 +38,7 @@ import           Foreign.C.Types                 (CBool, CSize (..))
 import           Foreign.ForeignPtr              (withForeignPtr)
 import           Foreign.Marshal.Array           (withArrayLen)
 import           Foreign.Ptr                     (Ptr, nullPtr)
+import           GHC.Generics                    (Generic)
 
 import           Prelude                         hiding (drop)
 
@@ -73,7 +76,10 @@ withMaybeMask mm f = case mm of
 
 newtype DetectorPath = DetectorPath
     { detectorPathImage    :: Hdf5Path DIM3 Word16
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
+
+instance ToJSON DetectorPath
+instance FromJSON DetectorPath
 
 -- GeometryPath
 
@@ -106,7 +112,11 @@ data GeometryPath
   | GeometryPathUhvTest { geometryPathWavelengthTest :: Angstrom
                         , geometryPathAxes           :: [Hdf5Path DIM1 Double]
                         }
-                  deriving (Eq, Show)
+                  deriving (Eq, Generic, Show)
+
+instance ToJSON GeometryPath
+instance FromJSON GeometryPath
+
 
 -- AttenuationPath
 
@@ -122,7 +132,10 @@ data AttenuationPath
                       }
     | ApplyedAttenuationFactorPath { attenuationPath :: Hdf5Path DIM1 Float }
     | NoAttenuation
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
+
+instance ToJSON AttenuationPath
+instance FromJSON AttenuationPath
 
 badAttenuation :: Float
 badAttenuation = -100

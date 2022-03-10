@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -58,6 +59,7 @@ import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
+import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, satisfy,
@@ -236,6 +238,12 @@ binocularsPreConfigSpec = do
 
 newtype Angstrom = Angstrom { unAngstrom :: Length Double }
     deriving (Eq, Show)
+
+instance FromJSON Angstrom where
+  parseJSON = fmap (Angstrom . (*~ angstrom)) . parseJSON
+
+instance ToJSON Angstrom where
+  toJSON = toJSON . (/~ angstrom) . unAngstrom
 
 newtype Degree = Degree { unDegree :: Angle Double }
     deriving (Eq, Show)
