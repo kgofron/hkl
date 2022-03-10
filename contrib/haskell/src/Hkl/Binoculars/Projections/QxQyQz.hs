@@ -20,7 +20,8 @@
 -}
 
 module Hkl.Binoculars.Projections.QxQyQz
-    ( DataPath(..)
+    ( Config(..)
+    , DataPath(..)
     , DataFrameQxQyQz(..)
     , FramesQxQyQzP(..)
     , Resolutions
@@ -52,7 +53,6 @@ import           Data.Ini.Config.Bidir             (field, ini, section,
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, pack)
 import           Data.Text.IO                      (putStr)
-import           Data.Typeable                     (typeOf)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
@@ -88,11 +88,10 @@ data instance DataPath 'QxQyQzProjection = DataPathQxQyQz
   { dataPathQxQyQzAttenuation :: AttenuationPath
   , dataPathQxQyQzDetector :: DetectorPath
   , dataPathQxQyQzGeometry :: GeometryPath
-  }
+  } deriving (Eq, Show)
 
-instance Show (DataPath 'QxQyQzProjection) where
-  show = show . typeOf
-
+instance HasFieldValue (DataPath 'QxQyQzProjection) where
+  fieldvalue = undefined
 
 data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     { _binocularsConfigQxQyQzNcore                  :: Maybe Int
@@ -113,6 +112,7 @@ data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     , _binocularsConfigQxQyQzProjectionType         :: ProjectionType
     , _binocularsConfigQxQyQzProjectionResolution   :: [Double]
     , _binocularsConfigQxQyQzProjectionLimits       :: Maybe [Limits]
+    , _binocularsConfigQxQyQzDataPath               :: Maybe (DataPath 'QxQyQzProjection)
     } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigQxQyQz
@@ -138,6 +138,7 @@ instance HasIniConfig 'QxQyQzProjection where
     , _binocularsConfigQxQyQzProjectionType = QxQyQzProjection
     , _binocularsConfigQxQyQzProjectionResolution = [0.01, 0.01, 0.01]
     , _binocularsConfigQxQyQzProjectionLimits  = Nothing
+    , _binocularsConfigQxQyQzDataPath = Nothing
     }
 
   specConfig = do
@@ -158,6 +159,7 @@ instance HasIniConfig 'QxQyQzProjection where
       binocularsConfigQxQyQzSurfaceOrientation .=? field "surface_orientation" auto
       binocularsConfigQxQyQzMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigQxQyQzWavelength .=? field "wavelength" auto
+      binocularsConfigQxQyQzDataPath .=? field "datapath" auto
     section "projection" $ do
       binocularsConfigQxQyQzProjectionType .= field "type" auto
       binocularsConfigQxQyQzProjectionResolution .= field "resolution" auto

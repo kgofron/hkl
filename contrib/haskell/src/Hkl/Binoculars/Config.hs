@@ -29,6 +29,7 @@ module Hkl.Binoculars.Config
     , DataPath
     , Degree(..)
     , DestinationTmpl(..)
+    , HasFieldValue(..)
     , HasIniConfig(..)
     , InputRange(..)
     , InputTmpl(..)
@@ -187,6 +188,10 @@ readConfig mf = do
       fixHeader l = case findIndex (== ']' ) l of
         Nothing  -> l
         (Just n) -> take (n + 1) l
+
+------------------
+-- HasIniConfig --
+------------------
 
 data family Config (a :: ProjectionType)
 data family DataPath (a :: ProjectionType)

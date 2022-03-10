@@ -371,7 +371,7 @@ data Hdf5Path sh e
   | H5DatasetPath ByteString
   | H5DatasetPathAttr (ByteString, ByteString)
   | H5Or (Hdf5Path sh e) (Hdf5Path sh e)
-    deriving (Show)
+    deriving (Eq, Show)
 
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
 hdf5p = H5RootPath

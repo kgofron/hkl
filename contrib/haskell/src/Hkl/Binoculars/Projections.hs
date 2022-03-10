@@ -73,7 +73,7 @@ withMaybeMask mm f = case mm of
 
 newtype DetectorPath = DetectorPath
     { detectorPathImage    :: Hdf5Path DIM3 Word16
-    } deriving Show
+    } deriving (Eq, Show)
 
 -- GeometryPath
 
@@ -106,7 +106,7 @@ data GeometryPath
   | GeometryPathUhvTest { geometryPathWavelengthTest :: Angstrom
                         , geometryPathAxes           :: [Hdf5Path DIM1 Double]
                         }
-                  deriving Show
+                  deriving (Eq, Show)
 
 -- AttenuationPath
 
@@ -122,7 +122,7 @@ data AttenuationPath
                       }
     | ApplyedAttenuationFactorPath { attenuationPath :: Hdf5Path DIM1 Float }
     | NoAttenuation
-    deriving Show
+    deriving (Eq, Show)
 
 badAttenuation :: Float
 badAttenuation = -100
