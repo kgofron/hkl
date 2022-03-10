@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
@@ -19,7 +20,8 @@
 -}
 
 module Hkl.Binoculars.Projections.QparQper
-    ( newQparQper
+    ( DataPath(..)
+    , newQparQper
     , processQparQper
     , updateQparQper
     ) where
@@ -62,6 +64,13 @@ import           Hkl.Binoculars.Projections.QxQyQz
 import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Image
+
+
+data instance DataPath 'QparQperProjection = DataPathQparQper
+ { dataPathQparQperQxQyQz :: DataPath 'QxQyQzProjection }
+
+instance Show (DataPath 'QparQperProjection) where
+  show = show . typeOf
 
 data instance Config 'QparQperProjection = BinocularsConfigQparQper
   { _binocularsConfigQparQperNcore                  :: Maybe Int
@@ -139,11 +148,6 @@ instance HasIniConfig 'QparQperProjection where
 -------------------------
 -- QparQper Projection --
 -------------------------
-
-newtype QparQperPath = QparQperPath QxQyQzPath
-
-instance Show QparQperPath where
-  show = show . typeOf
 
 newtype DataFrameQparQper = DataFrameQparQper DataFrameQxQyQz
 
@@ -247,23 +251,23 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
                            ) jobs
       saveCube output' r'
 
-instance ProcessQparQperP QparQperPath
+instance ProcessQparQperP (DataPath 'QparQperProjection)
 
-instance ChunkP QparQperPath where
-  chunkP (QparQperPath p) = chunkP p
+instance ChunkP (DataPath 'QparQperProjection) where
+  chunkP (DataPathQparQper p) = chunkP p
 
-instance FramesQparQperP QparQperPath where
-  framesQparQperP (QparQperPath qxqyqz) det = framesQxQyQzP qxqyqz det
+instance FramesQparQperP (DataPath 'QparQperProjection) where
+  framesQparQperP (DataPathQparQper qxqyqz) det = framesQxQyQzP qxqyqz det
                                               >->  Pipes.Prelude.map DataFrameQparQper
 
-instance FramesQxQyQzP QparQperPath where
-  framesQxQyQzP (QparQperPath p) det = framesQxQyQzP p det
+instance FramesQxQyQzP (DataPath 'QparQperProjection) where
+  framesQxQyQzP (DataPathQparQper p) det = framesQxQyQzP p det
 
 h5dpathQparQper :: (MonadLogger m, MonadThrow m)
                 => InputType
                 -> Maybe Double
-                -> m QparQperPath
-h5dpathQparQper i ma = QparQperPath <$> (h5dpathQxQyQz i ma)
+                -> m (DataPath 'QparQperProjection)
+h5dpathQparQper i ma = DataPathQparQper <$> (h5dpathQxQyQz i ma)
 
 
 ---------

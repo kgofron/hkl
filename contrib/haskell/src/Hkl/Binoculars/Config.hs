@@ -26,6 +26,7 @@ module Hkl.Binoculars.Config
     , Config
     , ConfigContent(..)
     , ConfigRange(..)
+    , DataPath
     , Degree(..)
     , DestinationTmpl(..)
     , HasIniConfig(..)
@@ -188,6 +189,7 @@ readConfig mf = do
         (Just n) -> take (n + 1) l
 
 data family Config (a :: ProjectionType)
+data family DataPath (a :: ProjectionType)
 
 class HasIniConfig (a :: ProjectionType) where
   defaultConfig :: Config a

@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
@@ -19,16 +20,16 @@
 -}
 
 module Hkl.Binoculars.Projections.QxQyQz
-    ( DataFrameQxQyQz(..)
+    ( DataPath(..)
+    , DataFrameQxQyQz(..)
     , FramesQxQyQzP(..)
-    , QxQyQzPath(..)
     , Resolutions
     , h5dpathQxQyQz
     , newQxQyQz
     , processQxQyQz
     , updateQxQyQz
     , withMaybeLimits
-    , withQxQyQzPath
+    , withDataPathQxQyQz
     ) where
 
 import           Bindings.HDF5.Core                (Location)
@@ -82,6 +83,16 @@ import           Hkl.Pipes
 ------------
 -- Config --
 ------------
+
+data instance DataPath 'QxQyQzProjection = DataPathQxQyQz
+  { dataPathQxQyQzAttenuation :: AttenuationPath
+  , dataPathQxQyQzDetector :: DetectorPath
+  , dataPathQxQyQzGeometry :: GeometryPath
+  }
+
+instance Show (DataPath 'QxQyQzProjection) where
+  show = show . typeOf
+
 
 data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     { _binocularsConfigQxQyQzNcore                  :: Maybe Int
@@ -188,10 +199,10 @@ mkAttenuation ma att =
 h5dpathQxQyQz ::  (MonadLogger m, MonadThrow m)
               => InputType
               -> Maybe Double
-              -> m QxQyQzPath
+              -> m (DataPath 'QxQyQzProjection)
 h5dpathQxQyQz i ma =
     do case i of
-         CristalK6C -> QxQyQzPath
+         CristalK6C -> DataPathQxQyQz
                       <$> mkAttenuation ma NoAttenuation
                       <*> pure (DetectorPath
                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
@@ -203,7 +214,7 @@ h5dpathQxQyQz i ma =
                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1")
                                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position")
                                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position"))
-         MarsFlyscan -> QxQyQzPath
+         MarsFlyscan -> DataPathQxQyQz
                        <$> mkAttenuation ma (ApplyedAttenuationFactorPath
                                             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "applied_att"))
                        <*> pure (DetectorPath
@@ -216,7 +227,7 @@ h5dpathQxQyQz i ma =
                                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"
                                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth"
                                  ])
-         MarsSbs -> QxQyQzPath
+         MarsSbs -> DataPathQxQyQz
                    <$> mkAttenuation ma NoAttenuation
                    <*> pure (DetectorPath
                              (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")))
@@ -226,7 +237,7 @@ h5dpathQxQyQz i ma =
                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi"
                              , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth"
                              ])
-         SixsFlyMedH -> QxQyQzPath
+         SixsFlyMedH -> DataPathQxQyQz
                        <$> mkAttenuation ma (AttenuationPath
                                             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                             2 0)
@@ -241,7 +252,7 @@ h5dpathQxQyQz i ma =
                                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
                                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
                                  ])
-         SixsFlyMedV -> QxQyQzPath
+         SixsFlyMedV -> DataPathQxQyQz
                        <$> mkAttenuation ma (AttenuationPath
                                             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                             2 0)
@@ -258,7 +269,7 @@ h5dpathQxQyQz i ma =
                                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
                                  , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
                                  ])
-         SixsFlyMedVEiger -> QxQyQzPath
+         SixsFlyMedVEiger -> DataPathQxQyQz
                             <$> mkAttenuation ma (AttenuationPath
                                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                                  2 0)
@@ -279,7 +290,7 @@ h5dpathQxQyQz i ma =
                                       ((hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
                                        `H5Or`
                                        (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre")))
-         SixsFlyMedVS70 -> QxQyQzPath
+         SixsFlyMedVS70 -> DataPathQxQyQz
                           <$> mkAttenuation ma (AttenuationPath
                                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                                2 0)
@@ -294,7 +305,7 @@ h5dpathQxQyQz i ma =
                                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
                                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
                                     ])
-         SixsFlyScanUhv -> QxQyQzPath
+         SixsFlyScanUhv -> DataPathQxQyQz
                           <$> mkAttenuation ma (AttenuationPath
                                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                                2 0)
@@ -307,7 +318,7 @@ h5dpathQxQyQz i ma =
                                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
                                     , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
                                     ])
-         SixsFlyScanUhv2 -> QxQyQzPath
+         SixsFlyScanUhv2 -> DataPathQxQyQz
                            <$> mkAttenuation ma (AttenuationPath
                                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                                 2 0)
@@ -324,7 +335,7 @@ h5dpathQxQyQz i ma =
                                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
                                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
                                      ])
-         SixsFlyScanUhvTest -> QxQyQzPath
+         SixsFlyScanUhvTest -> DataPathQxQyQz
                            <$> mkAttenuation ma (AttenuationPath
                                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                                 2 0)
@@ -339,7 +350,7 @@ h5dpathQxQyQz i ma =
                                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
                                      , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
                                      ])
-         SixsFlyScanUhvUfxc -> QxQyQzPath
+         SixsFlyScanUhvUfxc -> DataPathQxQyQz
                               <$> mkAttenuation ma (AttenuationPath
                                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
                                                    2 0)
@@ -352,7 +363,7 @@ h5dpathQxQyQz i ma =
                                         , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
                                         , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
                                         ])
-         SixsSbsFixedDetector -> QxQyQzPath
+         SixsSbsFixedDetector -> DataPathQxQyQz
                                 <$> mkAttenuation ma (AttenuationPath
                                                      (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
                                                      2 0)
@@ -360,7 +371,7 @@ h5dpathQxQyQz i ma =
                                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_11"))
                                 <*> pure (GeometryPathFix
                                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
-         SixsSbsMedH -> QxQyQzPath
+         SixsSbsMedH -> DataPathQxQyQz
                        <$> mkAttenuation ma (AttenuationPath
                                             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
                                             0 0)
@@ -373,7 +384,7 @@ h5dpathQxQyQz i ma =
                                  , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/gamma")
                                  , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/delta")
                                  ])
-         SixsSbsMedV -> QxQyQzPath
+         SixsSbsMedV -> DataPathQxQyQz
                        <$> mkAttenuation ma (AttenuationPath
                                             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
                                             0 0)
@@ -388,7 +399,7 @@ h5dpathQxQyQz i ma =
                                  , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")
                                  , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")
                                  ])
-         SixsSbsMedVFixDetector -> QxQyQzPath
+         SixsSbsMedVFixDetector -> DataPathQxQyQz
                                   <$> mkAttenuation ma (AttenuationPath
                                                        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
                                                        0 0)
@@ -410,11 +421,6 @@ getResolution' c = getResolution (_binocularsConfigQxQyQzProjectionResolution c)
 -----------------------
 -- QxQyQz Projection --
 -----------------------
-
-data QxQyQzPath = QxQyQzPath AttenuationPath DetectorPath GeometryPath
-
-instance Show QxQyQzPath where
-  show = show . typeOf
 
 type Resolutions = [Double]
 
@@ -535,10 +541,10 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
       saveCube output' r'
 
 
-instance ProcessQxQyQzP QxQyQzPath
+instance ProcessQxQyQzP (DataPath 'QxQyQzProjection)
 
-instance ChunkP QxQyQzPath where
-    chunkP (QxQyQzPath ma (DetectorPath i) _) =
+instance ChunkP (DataPath 'QxQyQzProjection) where
+    chunkP (DataPathQxQyQz ma (DetectorPath i) _) =
       skipMalformed $ forever $ do
       fp <- await
       withFileP (openH5 fp) $ \f ->
@@ -551,13 +557,13 @@ instance ChunkP QxQyQzPath where
             (ApplyedAttenuationFactorPath _) -> Chunk fp 0 (fromIntegral n -1)
           Nothing  -> error "can not extract length"
 
-withQxQyQzPath :: (MonadSafe m, Location l) =>
+withDataPathQxQyQz :: (MonadSafe m, Location l) =>
                  l
                -> Detector a DIM2
-               -> QxQyQzPath
+               -> DataPath 'QxQyQzProjection
                -> ((Int -> IO DataFrameQxQyQz) -> m r)
                -> m r
-withQxQyQzPath f det (QxQyQzPath att d dif) g =
+withDataPathQxQyQz f det (DataPathQxQyQz att d dif) g =
   withAttenuationPathP f att $ \getAttenuation ->
   withDetectorPathP f det d $ \getImage ->
   withGeometryPathP f dif $ \getDiffractometer ->
@@ -567,12 +573,12 @@ withQxQyQzPath f det (QxQyQzPath att d dif) g =
           <*> getImage j
     )
 
-instance FramesQxQyQzP QxQyQzPath where
+instance FramesQxQyQzP (DataPath 'QxQyQzProjection) where
     framesQxQyQzP p det =
         skipMalformed $ forever $ do
           (fn, js) <- await
           withFileP (openH5 fn) $ \f ->
-            withQxQyQzPath f det p $ \getDataFrameQxQyQz ->
+            withDataPathQxQyQz f det p $ \getDataFrameQxQyQz ->
             forM_ js (tryYield . getDataFrameQxQyQz)
 
 ---------

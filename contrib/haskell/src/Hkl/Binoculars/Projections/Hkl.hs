@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
@@ -20,7 +21,7 @@
 
 module Hkl.Binoculars.Projections.Hkl
     ( DataFrameHkl(..)
-    , HklPath(..)
+    , DataPath(..)
     , SamplePath(..)
     , newHkl
     , processHkl
@@ -88,9 +89,35 @@ data HklBinocularsProjectionsHklException
 instance Exception HklBinocularsProjectionsHklException
 
 
+----------------
+-- DataPath's --
+----------------
+
+data SamplePath
+    = SamplePath
+      (Hdf5Path Z Double) -- a
+      (Hdf5Path Z Double) -- b
+      (Hdf5Path Z Double) -- c
+      (Hdf5Path Z Double) -- alpha
+      (Hdf5Path Z Double) -- beta
+      (Hdf5Path Z Double) -- gamma
+      (Hdf5Path Z Double) -- ux
+      (Hdf5Path Z Double) -- uy
+      (Hdf5Path Z Double) -- yz
+    | SamplePath2 (Sample Triclinic)
+    deriving Show
+
+data instance DataPath 'HklProjection = DataPathHkl
+  { dataPathHklQxQyQz :: DataPath 'QxQyQzProjection
+  , dataPathHklSample :: SamplePath
+  }
+  deriving Show
+
 ------------
 -- Config --
 ------------
+
+
 
 data instance Config 'HklProjection = BinocularsConfigHkl
   { _binocularsConfigHklNcore                  :: Maybe Int
@@ -234,9 +261,6 @@ sampleConfig cf = do
 -- Projection --
 ----------------
 
-data HklPath = HklPath QxQyQzPath SamplePath
-               deriving Show
-
 data DataFrameHkl a
     = DataFrameHkl DataFrameQxQyQz (Sample Triclinic)
       deriving Show
@@ -337,25 +361,10 @@ class (FramesHklP a, Show a) => ProcessHklP a where
                            ) jobs
       saveCube output' r'
 
-instance ProcessHklP HklPath
+instance ProcessHklP (DataPath 'HklProjection)
 
 -- FramesHklP
 
--- SamplePath
-
-data SamplePath
-    = SamplePath
-      (Hdf5Path Z Double) -- a
-      (Hdf5Path Z Double) -- b
-      (Hdf5Path Z Double) -- c
-      (Hdf5Path Z Double) -- alpha
-      (Hdf5Path Z Double) -- beta
-      (Hdf5Path Z Double) -- gamma
-      (Hdf5Path Z Double) -- ux
-      (Hdf5Path Z Double) -- uy
-      (Hdf5Path Z Double) -- yz
-    | SamplePath2 (Sample Triclinic)
-    deriving Show
 
 withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> (IO (Sample Triclinic) -> m r) -> m r
 withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
@@ -387,14 +396,14 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
                 <*> pure (Range 0 0)))
 withSamplePathP _ (SamplePath2 s) g = g (return s)
 
-instance ChunkP HklPath where
-  chunkP (HklPath p _)           = chunkP p
+instance ChunkP (DataPath 'HklProjection) where
+  chunkP (DataPathHkl p _)           = chunkP p
 
-instance FramesHklP HklPath where
-  framesHklP (HklPath qp samp) det = skipMalformed $ forever $ do
+instance FramesHklP (DataPath 'HklProjection) where
+  framesHklP (DataPathHkl qp samp) det = skipMalformed $ forever $ do
     (fp, js) <- await
     withFileP (openH5 fp) $ \f ->
-      withQxQyQzPath f det qp $ \getDataFrameQxQyQz ->
+      withDataPathQxQyQz f det qp $ \getDataFrameQxQyQz ->
       withSamplePathP f samp $ \getSample ->
       forM_ js (\j -> tryYield ( DataFrameHkl
                                 <$> getDataFrameQxQyQz j
@@ -407,7 +416,7 @@ instance FramesHklP HklPath where
 
 h5dpathHkl :: (MonadLogger m, MonadThrow m)
            => (Config 'HklProjection)
-           -> m HklPath
+           -> m (DataPath 'HklProjection)
 h5dpathHkl c =
   do let i = _binocularsConfigHklInputType c
      let ma = _binocularsConfigHklAttenuationCoefficient c
@@ -444,24 +453,24 @@ h5dpathHkl c =
        CristalK6C -> do
          let ms = sampleConfig c
          case ms of
-           (Just s) -> return (HklPath qxqyqz (SamplePath2 s))
+           (Just s) -> return (DataPathHkl qxqyqz (SamplePath2 s))
            Nothing  -> throwM (MissingSampleParameters c)
-       MarsFlyscan -> return $ HklPath qxqyqz marsSamplePath
-       MarsSbs -> return $ HklPath qxqyqz marsSamplePath
-       SixsFlyMedH -> return $ HklPath qxqyqz medHSamplePath
-       SixsFlyMedV -> return $ HklPath qxqyqz medVSamplePath
-       SixsFlyMedVEiger -> return $ HklPath qxqyqz medVSamplePath
-       SixsFlyMedVS70 -> return $ HklPath qxqyqz medVSamplePath
-       SixsFlyScanUhv -> return $ HklPath qxqyqz uhvSamplePath
-       SixsFlyScanUhv2 -> return $ HklPath qxqyqz uhvSamplePath3
-       SixsFlyScanUhvTest -> return $ HklPath qxqyqz uhvSamplePath3
-       SixsFlyScanUhvUfxc -> return $ HklPath qxqyqz uhvSamplePath
+       MarsFlyscan -> return $ DataPathHkl qxqyqz marsSamplePath
+       MarsSbs -> return $ DataPathHkl qxqyqz marsSamplePath
+       SixsFlyMedH -> return $ DataPathHkl qxqyqz medHSamplePath
+       SixsFlyMedV -> return $ DataPathHkl qxqyqz medVSamplePath
+       SixsFlyMedVEiger -> return $ DataPathHkl qxqyqz medVSamplePath
+       SixsFlyMedVS70 -> return $ DataPathHkl qxqyqz medVSamplePath
+       SixsFlyScanUhv -> return $ DataPathHkl qxqyqz uhvSamplePath
+       SixsFlyScanUhv2 -> return $ DataPathHkl qxqyqz uhvSamplePath3
+       SixsFlyScanUhvTest -> return $ DataPathHkl qxqyqz uhvSamplePath3
+       SixsFlyScanUhvUfxc -> return $ DataPathHkl qxqyqz uhvSamplePath
        SixsSbsFixedDetector -> undefined -- TODO this must not be possible.
-       SixsSbsMedH -> return $ HklPath qxqyqz medHSamplePath
-       SixsSbsMedV -> return $ HklPath qxqyqz medVSamplePath
-       SixsSbsMedVFixDetector -> return $ HklPath qxqyqz medVSamplePath
+       SixsSbsMedH -> return $ DataPathHkl qxqyqz medHSamplePath
+       SixsSbsMedV -> return $ DataPathHkl qxqyqz medVSamplePath
+       SixsSbsMedVFixDetector -> return $ DataPathHkl qxqyqz medVSamplePath
 
-         -- SixsSbsMedV -> HklPath
+         -- SixsSbsMedV -> DataPathHkl
          --               hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")  -- xpad
          --               (GeometryPath
          --                hdf5p -- TODO wavelength
