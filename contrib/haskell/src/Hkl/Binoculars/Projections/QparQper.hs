@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -35,19 +37,25 @@ import           Control.Monad.Logger              (MonadLogger, logDebug,
                                                     logInfo)
 import           Control.Monad.Reader              (MonadReader, ask)
 import           Control.Monad.Trans.Reader        (runReaderT)
+import           Data.Aeson                        (FromJSON, ToJSON,
+                                                    eitherDecode', encode)
 import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Ini.Config.Bidir             (field, ini, section,
-                                                    serializeIni, (.=), (.=?))
+import           Data.ByteString.Lazy              (fromStrict, toStrict)
+import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
+                                                    section, serializeIni, (.=),
+                                                    (.=?))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (pack)
+import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Typeable                     (typeOf)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           GHC.Conc                          (getNumCapabilities)
+import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, each, runEffect,
@@ -66,11 +74,29 @@ import           Hkl.Detector
 import           Hkl.Image
 
 
+--------------
+-- DataPath --
+--------------
+
 data instance DataPath 'QparQperProjection = DataPathQparQper
- { dataPathQparQperQxQyQz :: DataPath 'QxQyQzProjection }
+  { dataPathQparQperQxQyQz :: DataPath 'QxQyQzProjection }
+  deriving (Eq, Generic, ToJSON, FromJSON)
 
 instance Show (DataPath 'QparQperProjection) where
   show = show . typeOf
+
+instance HasFieldValue (DataPath 'QparQperProjection) where
+  fieldvalue = FieldValue
+               { fvParse = eitherDecode' . fromStrict . encodeUtf8
+               , fvEmit = decodeUtf8 . toStrict . encode
+               }
+
+defaultDataPathQparQper :: DataPath 'QparQperProjection
+defaultDataPathQparQper = DataPathQparQper defaultDataPathQxQyQz
+
+------------
+-- Config --
+------------
 
 data instance Config 'QparQperProjection = BinocularsConfigQparQper
   { _binocularsConfigQparQperNcore                  :: Maybe Int
@@ -91,6 +117,7 @@ data instance Config 'QparQperProjection = BinocularsConfigQparQper
   , _binocularsConfigQparQperProjectionType         :: ProjectionType
   , _binocularsConfigQparQperProjectionResolution   :: [Double]
   , _binocularsConfigQparQperProjectionLimits       :: Maybe [Limits]
+  , _binocularsConfigQparQperDataPath               :: Maybe (DataPath 'QparQperProjection)
   } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigQparQper
@@ -115,6 +142,7 @@ instance HasIniConfig 'QparQperProjection where
     , _binocularsConfigQparQperProjectionType = QparQperProjection
     , _binocularsConfigQparQperProjectionResolution = [0.01, 0.01]
     , _binocularsConfigQparQperProjectionLimits  = Nothing
+    , _binocularsConfigQparQperDataPath = Just defaultDataPathQparQper
     }
 
   specConfig = do
@@ -135,6 +163,7 @@ instance HasIniConfig 'QparQperProjection where
       binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
       binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigQparQperWavelength .=? field "wavelength" auto
+      binocularsConfigQparQperDataPath .=? field "datapath" auto
     section "projection" $ do
       binocularsConfigQparQperProjectionType .= field "type" auto
       binocularsConfigQparQperProjectionResolution .= field "resolution" auto
