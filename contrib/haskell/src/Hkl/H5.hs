@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass            #-}
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ForeignFunctionInterface  #-}
@@ -377,7 +378,7 @@ data Hdf5Path sh e
   | H5DatasetPath ByteString
   | H5DatasetPathAttr (ByteString, ByteString)
   | H5Or (Hdf5Path sh e) (Hdf5Path sh e)
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 instance ToJSON ByteString where
     toJSON = String . decodeUtf8
@@ -387,9 +388,6 @@ instance FromJSON ByteString where
     parseJSON (String t) = pure . encodeUtf8 $ t
     parseJSON _          = GHC.Base.empty
     {-# INLINE parseJSON #-}
-
-instance ToJSON (Hdf5Path sh e)
-instance FromJSON (Hdf5Path sh e)
 
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
 hdf5p = H5RootPath

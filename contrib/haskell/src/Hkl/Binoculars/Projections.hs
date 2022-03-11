@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs                 #-}
@@ -76,10 +77,7 @@ withMaybeMask mm f = case mm of
 
 newtype DetectorPath = DetectorPath
     { detectorPathImage    :: Hdf5Path DIM3 Word16
-    } deriving (Eq, Generic, Show)
-
-instance ToJSON DetectorPath
-instance FromJSON DetectorPath
+    } deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 -- GeometryPath
 
@@ -112,10 +110,7 @@ data GeometryPath
   | GeometryPathUhvTest { geometryPathWavelengthTest :: Angstrom
                         , geometryPathAxes           :: [Hdf5Path DIM1 Double]
                         }
-                  deriving (Eq, Generic, Show)
-
-instance ToJSON GeometryPath
-instance FromJSON GeometryPath
+                  deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 
 -- AttenuationPath
@@ -132,10 +127,7 @@ data AttenuationPath
                       }
     | ApplyedAttenuationFactorPath { attenuationPath :: Hdf5Path DIM1 Float }
     | NoAttenuation
-    deriving (Eq, Generic, Show)
-
-instance ToJSON AttenuationPath
-instance FromJSON AttenuationPath
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 badAttenuation :: Float
 badAttenuation = -100

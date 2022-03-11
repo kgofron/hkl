@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveAnyClass      #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
@@ -94,7 +95,7 @@ data instance DataPath 'QxQyQzProjection = DataPathQxQyQz
   { dataPathQxQyQzAttenuation :: AttenuationPath
   , dataPathQxQyQzDetector :: DetectorPath
   , dataPathQxQyQzGeometry :: GeometryPath
-  } deriving (Eq, Generic, Show)
+  } deriving (Eq, Generic, Show, ToJSON, FromJSON)
 
 defaultDataPathQxQyQz :: DataPath 'QxQyQzProjection
 defaultDataPathQxQyQz = DataPathQxQyQz
@@ -116,9 +117,6 @@ instance HasFieldValue (DataPath 'QxQyQzProjection) where
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
                }
-
-instance ToJSON (DataPath 'QxQyQzProjection) where
-instance FromJSON (DataPath 'QxQyQzProjection) where
 
 ------------
 -- Config --
