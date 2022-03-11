@@ -46,17 +46,18 @@ import           Control.Monad.Logger              (MonadLogger, logDebug,
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
 import           Control.Monad.Trans.Reader        (runReaderT)
-import           Data.Aeson                        (FromJSON, ToJSON, encode)
+import           Data.Aeson                        (FromJSON, ToJSON,
+                                                    eitherDecode', encode)
 import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.ByteString.Lazy              (toStrict)
+import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
                                                     section, serializeIni, (.=),
                                                     (.=?))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, pack)
-import           Data.Text.Encoding                (decodeUtf8)
+import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
@@ -112,7 +113,7 @@ defaultDataPathQxQyQz = DataPathQxQyQz
 
 instance HasFieldValue (DataPath 'QxQyQzProjection) where
   fieldvalue = FieldValue
-               { fvParse = undefined
+               { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
                }
 
