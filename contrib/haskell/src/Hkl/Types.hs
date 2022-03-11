@@ -1,5 +1,8 @@
-{-# LANGUAGE GADTs         #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE GADTs          #-}
+{-# LANGUAGE UnicodeSyntax  #-}
+
 
 module Hkl.Types ( AbsDirPath
                  , Beamline(..)
@@ -16,7 +19,9 @@ module Hkl.Types ( AbsDirPath
                  , module X
                  ) where
 
+import           Data.Aeson                        (FromJSON, ToJSON)
 import           Data.Char                         (toUpper)
+import           GHC.Generics                      (Generic)
 
 import           Hkl.H5
 import           Hkl.Lattice                       as X
@@ -56,14 +61,14 @@ data Engine
 
 --  Sample
 
-data Sample a
+data Sample
     = Sample { sampleName    :: SampleName
-             , sampleLattice :: Lattice a
+             , sampleLattice :: Lattice
              , sampleUx      :: Parameter
              , sampleUy      :: Parameter
              , sampleUz      :: Parameter
              }
-  deriving (Show)
+  deriving (Eq, FromJSON, Generic, Show, ToJSON)
 
 --  Source
 

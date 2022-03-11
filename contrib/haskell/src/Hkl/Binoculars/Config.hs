@@ -83,8 +83,8 @@ import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Typeable)
 import           GHC.Exts                          (IsList)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
-                                                    meter, (*~), (/~))
+import           Numeric.Units.Dimensional.Prelude (Length, degree, meter, (*~),
+                                                    (/~))
 import           Path                              (Abs, Dir, File, Path, Rel,
                                                     fileExtension, filename,
                                                     fromAbsDir, parseAbsDir,
@@ -97,6 +97,7 @@ import           Prelude                           hiding (drop, length, lines,
                                                     takeWhile, unlines, unwords)
 
 import           Hkl.Detector
+import           Hkl.Lattice
 import           Paths_hkl
 
 
@@ -244,9 +245,6 @@ instance FromJSON Angstrom where
 
 instance ToJSON Angstrom where
   toJSON = toJSON . (/~ angstrom) . unAngstrom
-
-newtype Degree = Degree { unDegree :: Angle Double }
-    deriving (Eq, Show)
 
 newtype Meter = Meter { unMeter :: Length Double }
     deriving (Eq, Show)

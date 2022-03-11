@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -23,6 +25,7 @@ module Hkl.Binoculars.Projections.Hkl
     ( DataFrameHkl(..)
     , DataPath(..)
     , SamplePath(..)
+    , defaultDataPathHkl
     , newHkl
     , processHkl
     , spaceHkl
@@ -42,18 +45,24 @@ import           Control.Monad.Logger              (MonadLogger, logDebug,
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
 import           Control.Monad.Trans.Reader        (runReaderT)
+import           Data.Aeson                        (FromJSON, ToJSON,
+                                                    eitherDecode', encode)
 import           Data.Array.Repa                   (Array, Z)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.Ini.Config.Bidir             (field, ini, section,
-                                                    serializeIni, (.=), (.=?))
+import           Data.ByteString.Lazy              (fromStrict, toStrict)
+import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
+                                                    section, serializeIni, (.=),
+                                                    (.=?))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (pack)
+import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           GHC.Conc                          (getNumCapabilities)
+import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~), (/~))
 import           Path                              (Abs, Dir, Path)
@@ -88,7 +97,6 @@ data HklBinocularsProjectionsHklException
 
 instance Exception HklBinocularsProjectionsHklException
 
-
 ----------------
 -- DataPath's --
 ----------------
@@ -104,14 +112,38 @@ data SamplePath
       (Hdf5Path Z Double) -- ux
       (Hdf5Path Z Double) -- uy
       (Hdf5Path Z Double) -- yz
-    | SamplePath2 (Sample Triclinic)
-    deriving Show
+    | SamplePath2 Sample
+    deriving (Eq, FromJSON, Generic, Show, ToJSON)
+
+defaultDataPathHklSample :: SamplePath
+defaultDataPathHklSample = SamplePath
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Alpha")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Beta")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Gamma")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Ux")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uy")
+  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uz")
 
 data instance DataPath 'HklProjection = DataPathHkl
   { dataPathHklQxQyQz :: DataPath 'QxQyQzProjection
   , dataPathHklSample :: SamplePath
   }
-  deriving Show
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+defaultDataPathHkl :: DataPath 'HklProjection
+defaultDataPathHkl = DataPathHkl
+  { dataPathHklQxQyQz = defaultDataPathQxQyQz
+  , dataPathHklSample = defaultDataPathHklSample
+  }
+
+instance HasFieldValue (DataPath 'HklProjection) where
+  fieldvalue = FieldValue
+               { fvParse = eitherDecode' . fromStrict . encodeUtf8
+               , fvEmit = decodeUtf8 . toStrict . encode
+               }
 
 ------------
 -- Config --
@@ -146,6 +178,7 @@ data instance Config 'HklProjection = BinocularsConfigHkl
   , _binocularsConfigHklProjectionType         :: ProjectionType
   , _binocularsConfigHklProjectionResolution   :: [Double]
   , _binocularsConfigHklProjectionLimits       :: Maybe [Limits]
+  , _binocularsConfigHklDataPath               :: Maybe (DataPath 'HklProjection)
   } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigHkl
@@ -178,6 +211,7 @@ instance HasIniConfig 'HklProjection where
     , _binocularsConfigHklProjectionType = HklProjection
     , _binocularsConfigHklProjectionResolution = [0.01, 0.01, 0.01]
     , _binocularsConfigHklProjectionLimits  = Nothing
+    , _binocularsConfigHklDataPath = Just defaultDataPathHkl
     }
 
   specConfig = do
@@ -206,6 +240,7 @@ instance HasIniConfig 'HklProjection where
       binocularsConfigHklUy .=? field "uy" auto
       binocularsConfigHklUz .=? field "uz" auto
       binocularsConfigHklWavelength .=? field "wavelength" auto
+      binocularsConfigHklDataPath .=? field "datapath" auto
     section "projection" $ do
       binocularsConfigHklProjectionType .= field "type" auto
       binocularsConfigHklProjectionResolution .= field "resolution" auto
@@ -216,7 +251,7 @@ instance HasIniConfig 'HklProjection where
                                (Just _) -> c{_binocularsConfigHklInputRange = mr}
 
 
-overloadSampleWithConfig :: (Config 'HklProjection) -> Sample Triclinic -> Sample Triclinic
+overloadSampleWithConfig :: (Config 'HklProjection) -> Sample -> Sample
 overloadSampleWithConfig conf (Sample
                                name
                                (Triclinic a b c alpha beta gamma)
@@ -224,12 +259,12 @@ overloadSampleWithConfig conf (Sample
     Sample name nlat nux nuy nuz
         where
           nlat = Triclinic
-                 (maybe a unAngstrom (_binocularsConfigHklA conf))
-                 (maybe b unAngstrom (_binocularsConfigHklB conf))
-                 (maybe c unAngstrom (_binocularsConfigHklC conf))
-                 (maybe alpha unDegree (_binocularsConfigHklAlpha conf))
-                 (maybe beta unDegree (_binocularsConfigHklBeta conf))
-                 (maybe gamma unDegree (_binocularsConfigHklGamma conf))
+                 (maybe a (NanoMeter . unAngstrom) (_binocularsConfigHklA conf))
+                 (maybe b (NanoMeter . unAngstrom) (_binocularsConfigHklB conf))
+                 (maybe c (NanoMeter . unAngstrom) (_binocularsConfigHklC conf))
+                 (maybe alpha id (_binocularsConfigHklAlpha conf))
+                 (maybe beta id (_binocularsConfigHklBeta conf))
+                 (maybe gamma id (_binocularsConfigHklGamma conf))
 
           go :: Parameter -> Maybe Double -> Parameter
           go p@(Parameter _ v _) nv = p{parameterValue=fromMaybe v nv}
@@ -241,28 +276,29 @@ overloadSampleWithConfig conf (Sample
 getResolution' :: MonadThrow m => (Config 'HklProjection) -> m [Double]
 getResolution' c = getResolution (_binocularsConfigHklProjectionResolution c) 3
 
-sampleConfig ::  (Config 'HklProjection) -> Maybe (Sample Triclinic)
+sampleConfig ::  (Config 'HklProjection) -> Maybe Sample
 sampleConfig cf = do
   (Angstrom a) <- _binocularsConfigHklA cf
   (Angstrom b) <- _binocularsConfigHklB cf
   (Angstrom c) <- _binocularsConfigHklC cf
-  (Degree alpha) <- _binocularsConfigHklAlpha cf
-  (Degree beta) <- _binocularsConfigHklBeta cf
-  (Degree gamma) <- _binocularsConfigHklGamma cf
+  alpha <- _binocularsConfigHklAlpha cf
+  beta <- _binocularsConfigHklBeta cf
+  gamma <- _binocularsConfigHklGamma cf
   (Degree ux) <- _binocularsConfigHklUx cf
   (Degree uy) <- _binocularsConfigHklUy cf
   (Degree uz) <- _binocularsConfigHklUz cf
   let pux = Parameter "ux" (ux /~ degree) (Range 0  360)
   let puy = Parameter "uy" (uy /~ degree) (Range 0  360)
   let puz = Parameter "uz" (uz /~ degree) (Range 0  360)
-  return $ Sample "triclinic" (Triclinic a b c alpha beta gamma) pux puy puz
+  return $ Sample "triclinic" (Triclinic (NanoMeter a) (NanoMeter b) (NanoMeter c)
+                                alpha beta gamma) pux puy puz
 
 ----------------
 -- Projection --
 ----------------
 
 data DataFrameHkl a
-    = DataFrameHkl DataFrameQxQyQz (Sample Triclinic)
+    = DataFrameHkl DataFrameQxQyQz Sample
       deriving Show
 
 
@@ -366,7 +402,7 @@ instance ProcessHklP (DataPath 'HklProjection)
 -- FramesHklP
 
 
-withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> (IO (Sample Triclinic) -> m r) -> m r
+withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> (IO Sample -> m r) -> m r
 withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
     withHdf5PathP f a $ \a' ->
     withHdf5PathP f b $ \b' ->
@@ -379,12 +415,12 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
     withHdf5PathP f uz $ \uz' ->
         g (Sample "test"
            <$> (Triclinic
-                <$> getValueWithUnit a' 0 angstrom
-                <*> getValueWithUnit b' 0 angstrom
-                <*> getValueWithUnit c' 0 angstrom
-                <*> getValueWithUnit alpha' 0 degree
-                <*> getValueWithUnit beta' 0 degree
-                <*> getValueWithUnit gamma' 0 degree)
+                <$> (NanoMeter <$> getValueWithUnit a' 0 angstrom)
+                <*> (NanoMeter <$> getValueWithUnit b' 0 angstrom)
+                <*> (NanoMeter <$> getValueWithUnit c' 0 angstrom)
+                <*> (Degree <$> getValueWithUnit alpha' 0 degree)
+                <*> (Degree <$> getValueWithUnit beta' 0 degree)
+                <*> (Degree <$> getValueWithUnit gamma' 0 degree))
            <*> (Parameter "ux"
                 <$> get_position ux' 0
                 <*> pure (Range 0 0))

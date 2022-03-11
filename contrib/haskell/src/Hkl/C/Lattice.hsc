@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE GADTs                    #-}
 
 module Hkl.C.Lattice
        ( HklLattice
@@ -31,7 +30,7 @@ data HklLattice
 
 -- Lattice
 
-withLattice :: Lattice a -> (Ptr HklLattice -> IO r) -> IO r
+withLattice :: Lattice -> (Ptr HklLattice -> IO r) -> IO r
 withLattice l func = do
   fptr <- newLattice l
   withForeignPtr fptr func
@@ -47,40 +46,40 @@ newLattice' a b c alpha beta gamma = do
   lattice <- c_hkl_lattice_new a b c alpha beta gamma nullPtr
   newForeignPtr c_hkl_lattice_free lattice
 
-newLattice :: Lattice a -> IO (ForeignPtr HklLattice)
-newLattice  (Cubic la) = do
+newLattice :: Lattice -> IO (ForeignPtr HklLattice)
+newLattice  (Cubic (NanoMeter la)) = do
   let a = CDouble (la /~ nano meter)
   let alpha = CDouble ((90 *~ degree) /~ radian)
   newLattice' a a a alpha alpha alpha
-newLattice (Tetragonal la lc) = do
+newLattice (Tetragonal (NanoMeter la) (NanoMeter lc)) = do
   let a = CDouble (la /~ nano meter)
   let c = CDouble (lc /~ nano meter)
   let alpha = CDouble ((90 *~ degree) /~ radian)
   newLattice' a a c alpha alpha alpha
-newLattice  (Orthorhombic la lb lc) = do
+newLattice  (Orthorhombic (NanoMeter la) (NanoMeter lb) (NanoMeter lc)) = do
   let a = CDouble (la /~ nano meter)
   let b = CDouble (lb /~ nano meter)
   let c = CDouble (lc /~ nano meter)
   let alpha = CDouble ((90 *~ degree) /~ radian)
   newLattice' a b c alpha alpha alpha
-newLattice (Rhombohedral la aalpha) = do
+newLattice (Rhombohedral (NanoMeter la) (Degree aalpha)) = do
   let a = CDouble (la /~ nano meter)
   let alpha = CDouble (aalpha /~ radian)
   newLattice' a a a alpha alpha alpha
-newLattice (Hexagonal la lc) = do
+newLattice (Hexagonal (NanoMeter la) (NanoMeter lc)) = do
   let a = CDouble (la /~ nano meter)
   let c = CDouble (lc /~ nano meter)
   let alpha = CDouble ((90 *~ degree) /~ radian)
   let gamma = CDouble ((120 *~ degree) /~ radian)
   newLattice' a a c alpha alpha gamma
-newLattice (Monoclinic la lb lc abeta) = do
+newLattice (Monoclinic (NanoMeter la) (NanoMeter lb) (NanoMeter lc) (Degree abeta)) = do
   let a = CDouble (la /~ nano meter)
   let b = CDouble (lb /~ nano meter)
   let c = CDouble (lc /~ nano meter)
   let alpha = CDouble ((90 *~ degree) /~ radian)
   let beta = CDouble (abeta /~ radian)
   newLattice' a b c alpha beta alpha
-newLattice (Triclinic la lb lc aalpha abeta agamma) = do
+newLattice (Triclinic (NanoMeter la) (NanoMeter lb) (NanoMeter lc) (Degree aalpha) (Degree abeta) (Degree agamma)) = do
   let a = CDouble (la /~ nano meter)
   let b = CDouble (lb /~ nano meter)
   let c = CDouble (lc /~ nano meter)

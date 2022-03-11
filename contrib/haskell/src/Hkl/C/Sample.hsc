@@ -25,12 +25,12 @@ data HklSample
 
 -- Sample
 
-withSample :: Sample a -> (Ptr HklSample -> IO r) -> IO r
+withSample :: Sample -> (Ptr HklSample -> IO r) -> IO r
 withSample s fun = do
   fptr <- newSample s
   withForeignPtr fptr fun
 
-newSample :: Sample a -> IO (ForeignPtr HklSample)
+newSample :: Sample -> IO (ForeignPtr HklSample)
 newSample (Sample name l ux uy uz) =
     withCString name $ \cname -> do
       sample <- c_hkl_sample_new cname

@@ -27,6 +27,7 @@ module Hkl.Binoculars.Projections.QxQyQz
     , DataFrameQxQyQz(..)
     , FramesQxQyQzP(..)
     , Resolutions
+    , defaultDataPathQxQyQz
     , h5dpathQxQyQz
     , newQxQyQz
     , processQxQyQz
@@ -100,16 +101,16 @@ data instance DataPath 'QxQyQzProjection = DataPathQxQyQz
 defaultDataPathQxQyQz :: DataPath 'QxQyQzProjection
 defaultDataPathQxQyQz = DataPathQxQyQz
                         (AttenuationPath
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
+                          (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation")
                           2 0)
                         (DetectorPath
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
+                          (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image"))
                         (GeometryPathUhv
-                          (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
-                          [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU"
-                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_OMEGA"
-                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA"
-                          , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA"
+                          (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength")
+                          [ hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU"
+                          , hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA"
+                          , hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA"
+                          , hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA"
                           ])
 
 instance HasFieldValue (DataPath 'QxQyQzProjection) where

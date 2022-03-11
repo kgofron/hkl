@@ -1,63 +1,63 @@
-{-# LANGUAGE GADTs              #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE UnicodeSyntax      #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
 
-module Hkl.Lattice ( Lattice(..)
-                   , Cubic
-                   , Tetragonal
-                   , Orthorhombic
-                   , Rhombohedral
-                   , Hexagonal
-                   , Monoclinic
-                   , Triclinic
-                   ) where
+module Hkl.Lattice
+  ( Degree(..)
+  , Lattice(..)
+  , NanoMeter(..)
+  ) where
 
-import           Numeric.Units.Dimensional.Prelude (Angle, Length)
+import           Data.Aeson                        (FromJSON (..), ToJSON (..))
+import           GHC.Generics                      (Generic)
+import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
+                                                    meter, nano, (*~), (/~))
+
+newtype NanoMeter = NanoMeter { unNanoMeter :: Length Double }
+    deriving (Eq, Show)
+
+instance FromJSON NanoMeter where
+  parseJSON = fmap (NanoMeter . (*~ nano meter)) . parseJSON
+
+instance ToJSON NanoMeter where
+  toJSON = toJSON . (/~ nano meter) . unNanoMeter
+
+newtype Degree = Degree { unDegree :: Angle Double }
+    deriving (Eq, Show)
+
+instance FromJSON Degree where
+  parseJSON = fmap (Degree . (*~ degree)) . parseJSON
+
+instance ToJSON Degree where
+  toJSON = toJSON . (/~ degree) . unDegree
+
 
 --  Lattice
 
-data Cubic
-data Tetragonal
-data Orthorhombic
-data Rhombohedral
-data Hexagonal
-data Monoclinic
-data Triclinic
-
-data Lattice a where
-   -- a = b = c, alpha = beta = gamma = 90
-  Cubic ∷ Length Double
-        → Lattice Cubic -- a = b = c, alpha = beta = gamma = 90
-  -- a = b != c,  alpha = beta = gamma = 90
-  Tetragonal ∷ Length Double -- a, b
-             → Length Double -- c
-             → Lattice Tetragonal
-  -- a != b != c,  alpha = beta = gamma = 90
-  Orthorhombic ∷ Length Double -- a
-               → Length Double -- b
-               → Length Double -- c
-               → Lattice Orthorhombic
-  -- a = b = c, alpha = beta = gamma != 90
-  Rhombohedral ∷ Length Double -- a, b, c
-               → Angle Double -- alpha, beta, gamma
-               → Lattice Rhombohedral
-  -- a = b != c, alpha = beta = 90, gamma = 120
-  Hexagonal ∷ Length Double -- a, b
-            → Length Double -- c
-            → Lattice Hexagonal
-  -- a != b != c, alpha = gamma = 90, beta != 90
-  Monoclinic ∷ Length Double -- a
-             → Length Double -- b
-             → Length Double -- c
-             → Angle Double -- beta
-             → Lattice Monoclinic
-  -- a != b != c, alpha != beta != gamma != 90
-  Triclinic ∷ Length Double -- a
-            → Length Double -- b
-            → Length Double -- c
-            → Angle Double -- alpha
-            → Angle Double -- beta
-            → Angle Double -- gamma
-            → Lattice Triclinic
-
-deriving instance Show (Lattice a)
+data Lattice = Cubic -- a = b = c, alpha = beta = gamma = 90
+               NanoMeter
+             | Tetragonal -- a = b != c,  alpha = beta = gamma = 90
+               NanoMeter -- a, b
+               NanoMeter -- c
+             | Orthorhombic -- a != b != c,  alpha = beta = gamma = 90
+               NanoMeter -- a
+               NanoMeter -- b
+               NanoMeter -- c
+             | Rhombohedral -- a = b = c, alpha = beta = gamma != 90
+               NanoMeter -- a, b, c
+               Degree -- alpha, beta, gamma
+             | Hexagonal -- a = b != c, alpha = beta = 90, gamma = 120
+               NanoMeter -- a, b
+               NanoMeter -- c
+             | Monoclinic -- a != b != c, alpha = gamma = 90, beta != 90
+               NanoMeter -- a
+               NanoMeter -- b
+               NanoMeter -- c
+               Degree -- beta
+             | Triclinic -- a != b != c, alpha != beta != gamma != 90
+               NanoMeter -- a
+               NanoMeter -- b
+               NanoMeter -- c
+               Degree -- alpha
+               Degree -- beta
+               Degree -- gamma
+             deriving (Eq, Generic, FromJSON, Show, ToJSON)

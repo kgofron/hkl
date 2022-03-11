@@ -1,5 +1,8 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+
 {-
     Copyright  : Copyright (C) 2014-2020, 2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -31,6 +34,8 @@ import Foreign.Storable ( Storable
                         , peek
                         , poke
                         )
+import           Data.Aeson                        (FromJSON (..), ToJSON (..))
+import           GHC.Generics                      (Generic)
 
 unit :: CInt
 unit = 1
@@ -41,7 +46,7 @@ data Range
   = Range
     Double --  minimum value
     Double --  maximum value
-  deriving (Show)
+  deriving (Eq, FromJSON, Generic, Show, ToJSON)
 
 --  Parameter
 
@@ -50,7 +55,7 @@ data Parameter
               , parameterValue :: Double
               , parameterRange :: Range
               }
-  deriving (Show)
+  deriving (Eq, FromJSON, Generic, Show, ToJSON)
 
 instance Storable Parameter where
     alignment _ = #{alignment int}
