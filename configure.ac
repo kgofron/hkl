@@ -200,7 +200,8 @@ AM_CONDITIONAL([GUI], [test x$enable_gui = xyes])
 AM_COND_IF([GUI],
 	[PKG_CHECK_MODULES([GTK], [gtk+-3.0 >= 3.22])
 	AM_COND_IF([HKL3D],
-                   [PKG_CHECK_MODULES([GLU], [glu >= 7.7.1])
+                   [PKG_CHECK_MODULES([GL], [gl >= 1.0.0])
+                    PKG_CHECK_MODULES([GLU], [glu >= 7.7.1])
 	])
 ])
 
