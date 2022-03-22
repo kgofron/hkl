@@ -284,7 +284,7 @@ static void volume(void)
 
 	/* cubic */
 	(DIAG(hkl_lattice_set(lattice, 1.54, 1.54, 1.54,
-                             90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 90*HKL_DEGTORAD,
+			      90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 90*HKL_DEGTORAD,
                               HKL_UNIT_DEFAULT, NULL)));
 	CHECK_PARAM(lattice, volume, 1.54*1.54*1.54);
 
