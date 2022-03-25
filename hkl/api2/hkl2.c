@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2012, 2020, 2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2012, 2020, 2021, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -29,19 +29,22 @@
 
 static const HklFactory *getFactory(struct Geometry geometry)
 {
+        HklFactory *res = NULL;
+
         match(geometry){
-                of(E4ch) return hkl_factory_get_by_name("E4CH", NULL);
-                of(E4cv) return hkl_factory_get_by_name("E4CV", NULL);
-                of(E6c)  return hkl_factory_get_by_name("E6C", NULL);
-                of(K4ch) return hkl_factory_get_by_name("K4CH", NULL);
-                of(K4cv) return hkl_factory_get_by_name("K4CV", NULL);
-                of(K6c)  return hkl_factory_get_by_name("K6C", NULL);
-                of(SoleilNanoscopiumRobot) return hkl_factory_get_by_name("SOLEIL NANOSCOPIUM ROBOT", NULL);
-                of(SoleilSiriusKappa) return hkl_factory_get_by_name("SOLEIL SIRIUS KAPPA", NULL);
-                of(SoleilSixsMed2_3) return hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
-                of(SoleilSixsMed2_3_v2) return hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
-                of(Zaxis)return hkl_factory_get_by_name("ZAXIS", NULL);
+                of(E4ch) res = hkl_factory_get_by_name("E4CH", NULL);
+                of(E4cv) res = hkl_factory_get_by_name("E4CV", NULL);
+                of(E6c)  res = hkl_factory_get_by_name("E6C", NULL);
+                of(K4ch) res = hkl_factory_get_by_name("K4CH", NULL);
+                of(K4cv) res = hkl_factory_get_by_name("K4CV", NULL);
+                of(K6c)  res = hkl_factory_get_by_name("K6C", NULL);
+                of(SoleilNanoscopiumRobot) res = hkl_factory_get_by_name("SOLEIL NANOSCOPIUM ROBOT", NULL);
+                of(SoleilSiriusKappa) res = hkl_factory_get_by_name("SOLEIL SIRIUS KAPPA", NULL);
+                of(SoleilSixsMed2_3) res = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
+                of(SoleilSixsMed2_3_v2) res = hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
+                of(Zaxis) res = hkl_factory_get_by_name("ZAXIS", NULL);
 	}
+        return res;
 }
 
 HklEngineList *newEngines(struct Geometry geometry)
@@ -148,14 +151,17 @@ HklSample *newSample(struct Sample sample)
 
 const char *getModeName(struct Mode mode)
 {
+        const char *res = NULL;
+
         match(mode){
                 of(ModeHklBissectorVertical){
-                        return "bissector_vertical";
+                        res = "bissector_vertical";
                 }
                 of(ModeHklE4CHConstantPhi){
-                        return "constant_phi";
+                        res = "constant_phi";
                 }
 	};
+        return res;
 }
 
 /* Engine */
@@ -230,13 +236,17 @@ generator_def(trajectory_gen, struct Engine, struct Trajectory, tconfig)
 	}
 }
 
-uint Trajectory_len(struct Trajectory tconfig)
+uint Trajectory_len(Trajectory tconfig)
 {
+        uint res = 0;
+
         match(tconfig){
                 of(TrajectoryHklFromTo, _, _, _, _, _, _, n, _){
-                        return *n + 1;
+                        res = *n + 1;
                 }
         }
+
+        return res;
 }
 
 HklGeometryList *Trajectory_solve(struct Trajectory tconfig,
