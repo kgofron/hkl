@@ -25,13 +25,13 @@ libccan_la_SOURCES = \
 	list/list.h \
 	noerr/noerr.c \
 	noerr/noerr.h \
+	ptrint/ptrint.h \
 	ptr_valid/ptr_valid.c \
 	ptr_valid/ptr_valid.h \
-	ptrint/ptrint.h \
 	str/debug.c \
 	str/str.c \
-	str/str.h \
 	str/str_debug.h \
+	str/str.h \
 	typesafe_cb/typesafe_cb.h
 
 ccanincludedir=$(includedir)/hkl-@VMAJ@/hkl/ccan

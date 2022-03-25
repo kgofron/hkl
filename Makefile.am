@@ -123,12 +123,14 @@ ccan-update:
 		(\
 			echo -e "\tccan_config.h \\";\
 			cd $(CCAN_TMP_DEST)/ccan && find . -maxdepth 2 -name '*.[ch]'\
+				| sort\
 				| sed -e 's,^./,\t,;$$!s,$$, \\,'; echo;\
 		);\
 		echo "ccanincludedir=\$$(includedir)/hkl-@""VMAJ@/hkl/ccan";\
 		echo "nobase_ccaninclude_HEADERS= \\";\
 		(\
 			cd $(CCAN_LOCAL_EXTRACT)/ccan && find . -maxdepth 2 -name '*.[h]'\
+				| sort\
 				| sed -e 's,^./,\t,;$$!s,$$, \\,';\
 		);\
 		echo "nodist_ccaninclude_HEADERS=ccan_config.h";\
