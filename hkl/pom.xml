@@ -72,6 +72,7 @@
                            <includePath>${project.basedir}</includePath>
                            <includePath>${project.basedir}</includePath>
                            <includePath>${project.basedir}/..</includePath>
+                           <includePath>${project.basedir}/../third-party</includePath>
                            <includePath>${project.basedir}/../ica/centos6/</includePath>
                        </includePaths>
                        <options>
