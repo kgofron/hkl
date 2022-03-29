@@ -667,15 +667,15 @@ int hkl_geometry_axis_values_set(HklGeometry *self,
 	HklParameter **axis;
 
 	hkl_error (error == NULL || *error == NULL);
-	g_assert(n_values == darray_size(self->axes));
+	hkl_assert(n_values == darray_size(self->axes));
 
 	darray_foreach(axis, self->axes){
 		if(!hkl_parameter_value_set(*axis, values[i++], unit_type, error)){
-			g_assert (error == NULL || *error != NULL);
+			hkl_assert (error == NULL || *error != NULL);
 			return FALSE;
 		}
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	hkl_geometry_update(self);
 
@@ -721,13 +721,13 @@ int hkl_geometry_set_values_v(HklGeometry *self, HklUnitEnum unit_type, GError *
 		if(!hkl_parameter_value_set(*axis,
 					    va_arg(ap, double),
 					    unit_type, error)){
-			g_assert (error == NULL || *error != NULL);
+			hkl_assert (error == NULL || *error != NULL);
 			va_end(ap);
 			hkl_geometry_update(self);
 			return FALSE;
 		}
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	va_end(ap);
 

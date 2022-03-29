@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -85,10 +85,10 @@ static inline int hkl_axis_set_value_real(HklParameter *self, double value,
 	hkl_error (error == NULL || *error == NULL);
 
 	if(!hkl_parameter_value_set_real(self, value, unit_type, error)){
-		g_assert (error == NULL || *error != NULL);
+		hkl_assert (error == NULL || *error != NULL);
 		return FALSE;
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	hkl_axis_update(axis);
 

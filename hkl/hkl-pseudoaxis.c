@@ -136,10 +136,10 @@ int hkl_engine_pseudo_axis_values_get(HklEngine *self,
 	}
 
 	if(!hkl_engine_get(self, error)){
-		g_assert(error == NULL || *error != NULL);
+		hkl_assert(error == NULL || *error != NULL);
 		return FALSE;
 	}
-	g_assert(error == NULL || *error == NULL);
+	hkl_assert(error == NULL || *error == NULL);
 
 	for(size_t i=0; i<n_values; ++i){
 		values[i] = hkl_parameter_value_get(darray_item(self->pseudo_axes, i),
@@ -291,10 +291,10 @@ HklGeometryList *hkl_engine_pseudo_axis_set(HklEngine *self,
 			/* todo save the previous value to restore this value */
 			hkl_parameter_init_copy(*p, parameter, NULL);
 			if(!hkl_engine_set(self, error)){
-				g_assert(error == NULL || *error != NULL);
+				hkl_assert(error == NULL || *error != NULL);
 				return NULL;
 			}
-			g_assert(error == NULL || *error == NULL);
+			hkl_assert(error == NULL || *error == NULL);
 
 			return hkl_geometry_list_new_copy(self->engines->geometries);
 		}
@@ -395,11 +395,11 @@ int hkl_engine_parameters_values_set(HklEngine *self,
 	for(size_t i=0; i<n_values; ++i){
 		if(!hkl_parameter_value_set(darray_item(self->mode->parameters, i),
 					    values[i], unit_type, error)){
-			g_assert (error == NULL || *error != NULL);
+			hkl_assert (error == NULL || *error != NULL);
 			return FALSE;
 		}
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	return TRUE;
 }
@@ -831,11 +831,11 @@ int hkl_engine_list_parameters_values_set(HklEngineList *self,
 	for(size_t i=0; i<n_values; ++i){
 		if(!hkl_parameter_value_set(darray_item(self->parameters, i),
 					    values[i], unit_type, error)){
-			g_assert (error == NULL || *error != NULL);
+			hkl_assert (error == NULL || *error != NULL);
 			return FALSE;
 		}
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	return TRUE;
 }

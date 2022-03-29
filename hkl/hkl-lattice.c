@@ -93,10 +93,10 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
 
 	if(!check_lattice_param(a, b, c, alpha, beta, gamma, &volume, error))
 	{
-		g_assert (error == NULL || *error != NULL);
+		hkl_assert (error == NULL || *error != NULL);
 		return FALSE;
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	self = HKL_MALLOC(HklLattice);
 
@@ -208,10 +208,10 @@ void hkl_lattice_free(HklLattice *self)
 		_p = hkl_parameter_value_get((_parameter), HKL_UNIT_DEFAULT); \
 									\
 		if(!hkl_lattice_set(self, a, b, c, alpha, beta, gamma, HKL_UNIT_DEFAULT, (_error))){ \
-			g_assert ((_error) == NULL || *(_error) != NULL); \
+			hkl_assert ((_error) == NULL || *(_error) != NULL); \
 			return FALSE;					\
 		}							\
-		g_assert ((_error) == NULL || *(_error) == NULL);	\
+		hkl_assert ((_error) == NULL || *(_error) == NULL);	\
 		return hkl_parameter_init_copy(self->_p, (_parameter), (_error)); \
 	}while(0)
 
@@ -414,10 +414,10 @@ int hkl_lattice_set(HklLattice *self,
 
 	/* need to do the conversion before the check */
 	if(!check_lattice_param(_a, _b, _c, _alpha, _beta, _gamma, &_volume, error)){
-		g_assert (error == NULL || *error != NULL);
+		hkl_assert (error == NULL || *error != NULL);
 		return FALSE;
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	hkl_parameter_value_set(self->a, _a, HKL_UNIT_DEFAULT, NULL);
 	hkl_parameter_value_set(self->b, _b, HKL_UNIT_DEFAULT, NULL);

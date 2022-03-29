@@ -508,10 +508,10 @@ int hkl_sample_ux_set(HklSample *self,
 	hkl_error (error == NULL || *error == NULL);
 
 	if(!hkl_parameter_init_copy(self->ux, ux, error)){
-		g_assert (error == NULL || *error != NULL);
+		hkl_assert (error == NULL || *error != NULL);
 		return FALSE;
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	hkl_matrix_init_from_euler(&self->U,
 				   hkl_parameter_value_get(self->ux, HKL_UNIT_DEFAULT),
@@ -538,10 +538,10 @@ int hkl_sample_uy_set(HklSample *self, const HklParameter *uy,
 	hkl_error (error == NULL || *error == NULL);
 
 	if(!hkl_parameter_init_copy(self->uy, uy, error)){
-		g_assert (error == NULL || *error != NULL);
+		hkl_assert (error == NULL || *error != NULL);
 		return FALSE;
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	hkl_matrix_init_from_euler(&self->U,
 				   hkl_parameter_value_get(self->ux, HKL_UNIT_DEFAULT),
@@ -568,10 +568,10 @@ int hkl_sample_uz_set(HklSample *self, const HklParameter *uz,
 	hkl_error (error == NULL || *error == NULL);
 
 	if(!hkl_parameter_init_copy(self->uz, uz, error)){
-		g_assert (error == NULL || *error != NULL);
+		hkl_assert (error == NULL || *error != NULL);
 		return FALSE;
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	hkl_matrix_init_from_euler(&self->U,
 				   hkl_parameter_value_get(self->ux, HKL_UNIT_DEFAULT),
@@ -767,7 +767,7 @@ int hkl_sample_compute_UB_busing_levy(HklSample *self,
 
 		return FALSE;
 	}
-	g_assert (error == NULL || *error == NULL);
+	hkl_assert (error == NULL || *error == NULL);
 
 	return TRUE;
 }
