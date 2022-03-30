@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -98,12 +98,9 @@ struct _HklGui3D {
 
 G_DEFINE_TYPE_WITH_PRIVATE (HklGui3D, hkl_gui_3d, G_TYPE_OBJECT);
 
-#define HKL_GUI_3D_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), HKL_GUI_TYPE_3D, HklGui3DPrivate))
-
-
 static void hkl_gui_3d_update_hkl3d_objects_TreeStore(HklGui3D *self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 	size_t i;
 	size_t j;
 
@@ -138,7 +135,7 @@ static void hkl_gui_3d_update_hkl3d_objects_TreeStore(HklGui3D *self)
 static const char *
 hkl_gui_3d_get_filename(HklGui3D *self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	return priv->filename;
 }
@@ -146,14 +143,14 @@ hkl_gui_3d_get_filename(HklGui3D *self)
 static HklGeometry *
 hkl_gui_3d_get_geometry(HklGui3D *self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	return priv->geometry;
 }
 
 void _filename_and_geometry(HklGui3D *self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 	if(priv->filename && priv->geometry){
 		if (priv->hkl3d)
 			hkl3d_free(priv->hkl3d);
@@ -173,7 +170,7 @@ void _filename_and_geometry(HklGui3D *self)
 static void
 hkl_gui_3d_set_filename(HklGui3D *self, const char *filename)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	if(priv->filename)
 		g_free(priv->filename);
@@ -185,7 +182,7 @@ hkl_gui_3d_set_filename(HklGui3D *self, const char *filename)
 static void
 hkl_gui_3d_set_geometry(HklGui3D *self, HklGeometry *geometry)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	priv->geometry = geometry;
 	_filename_and_geometry(self);
@@ -233,7 +230,7 @@ get_property (GObject *object, guint prop_id,
 static void
 finalize (GObject* object)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(object);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(HKL_GUI_3D(object));
 
 
 	g_free(priv->filename);
@@ -256,14 +253,14 @@ hkl_gui_3d_new (const char *filename, HklGeometry *geometry)
 
 GtkFrame *hkl_gui_3d_frame_get(HklGui3D *self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	return priv->frame1;
 }
 
 void hkl_gui_3d_is_colliding(HklGui3D *self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	if(priv->hkl3d)
 		hkl3d_is_colliding(priv->hkl3d);
@@ -271,7 +268,7 @@ void hkl_gui_3d_is_colliding(HklGui3D *self)
 
 void hkl_gui_3d_invalidate(HklGui3D *self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	priv->renderoptions.updated = TRUE;
 
@@ -287,7 +284,7 @@ void hkl_gui_3d_cellrenderertext2_toggled_cb(GtkCellRendererToggle* renderer,
 					     const gchar* path, gpointer user_data)
 {
 	HklGui3D *self = HKL_GUI_3D(user_data);
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 	guint hide;
 	Hkl3DObject *object;
 	GtkTreeIter iter = {0};
@@ -351,7 +348,7 @@ void hkl_gui_3d_treeview1_cursor_changed_cb(GtkTreeView *tree_view,
 	int i;
 	int j;
 	HklGui3D *self = user_data;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 	GtkTreeIter iter = {0};
 	Hkl3DObject *object;
 	GtkTreePath *path;
@@ -380,7 +377,7 @@ void hkl_gui_3d_treeview1_cursor_changed_cb(GtkTreeView *tree_view,
 void hkl_gui_3d_toolbutton1_clicked_cb(GtkToolButton *toolbutton,
 				       gpointer user_data)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 	gtk_widget_show(GTK_WIDGET(priv->filechooserdialog1));
 }
@@ -390,7 +387,7 @@ void hkl_gui_3d_toolbutton2_clicked_cb(GtkToolButton *toolbutton,
 				       gpointer user_data)
 {
 	HklGui3D *self = user_data;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 	GtkTreeIter iter = {0};
 	GtkTreePath *path;
 	GtkTreeViewColumn * column;
@@ -446,7 +443,7 @@ void hkl_gui_3d_toolbutton3_clicked_cb(GtkToolButton *toolbutton,
 				       gpointer user_data)
 {
 	HklGui3D *self = user_data;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 	reset_3d(&priv->renderoptions);
 	hkl_gui_3d_invalidate(self);
@@ -456,7 +453,7 @@ void hkl_gui_3d_toolbutton4_toggled_cb(GtkToggleToolButton *toggle_tool_button,
 				       gpointer user_data)
 {
 	HklGui3D *self = user_data;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 	priv->aabb = gtk_toggle_tool_button_get_active(toggle_tool_button);
 	hkl_gui_3d_invalidate(self);
@@ -466,7 +463,7 @@ void hkl_gui_3d_button1_clicked_cb(GtkButton *button,
 				   gpointer user_data)
 {
 	HklGui3D *self = user_data;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 	GSList *filenames;
 	GSList *filename;
 
@@ -496,7 +493,7 @@ void hkl_gui_3d_button1_clicked_cb(GtkButton *button,
 void hkl_gui_3d_button2_clicked_cb(GtkButton *button,
 				   gpointer user_data)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 	gtk_widget_hide(GTK_WIDGET(priv->filechooserdialog1));
 }
@@ -517,7 +514,7 @@ static void hkl_gui_3d_draw_g3dmodel(HklGui3D *self)
 {
 	int i;
 	int j;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	/* set the alpha canal to 0.5 if there is a collision */
 	for(i=0; i<priv->hkl3d->config->len; i++)
@@ -583,7 +580,7 @@ void hkl_gui_3d_draw_selected(HklGui3D *self)
 {
 	int i;
 	int j;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	/* glDisable(GL_LIGHTING); */
 
@@ -653,7 +650,7 @@ void hkl_gui_3d_draw_collisions(HklGui3D *self)
 {
 	int i;
 	int numManifolds;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	/* glDisable(GL_LIGHTING); */
 	///one way to draw all the contact points is iterating over contact manifolds / points:
@@ -767,11 +764,11 @@ hkl_gui_3d_draw_aabb_object(const Hkl3DObject *self)
 }
 
 void
-hkl_gui_3d_draw_aabb(const HklGui3D *self)
+hkl_gui_3d_draw_aabb(HklGui3D *self)
 {
 	int i;
 	int j;
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 
 	for(i=0; i<priv->hkl3d->config->len; i++)
 		for(j=0; j<priv->hkl3d->config->models[i]->len; j++)
@@ -813,7 +810,7 @@ hkl_gui_3d_draw_aabb(const HklGui3D *self)
 /* { */
 /*	int i; */
 /*	int j; */
-/*	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self); */
+/*	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self); */
 
 /*	for(i=0; i<priv->hkl3d->config->len; i++) */
 /*		for(j=0; j<priv->hkl3d->config->models[i]->len; j++) */
@@ -827,7 +824,7 @@ hkl_gui_3d_gl_area_render_cb(GtkGLArea *area,
 			     gpointer user_data)
 {
 	HklGui3D *self = HKL_GUI_3D(user_data);
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 	hkl_gui_3d_draw_g3dmodel(self);
 	hkl_gui_3d_draw_selected(self);
@@ -845,7 +842,7 @@ hkl_gui_3d_gl_area_resize_cb(GtkGLArea *area,
 			     gint height,
 			     gpointer user_data)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 	glViewport(0, 0, width, height);
 	priv->renderoptions.aspect = (gfloat)width / (gfloat)height;
@@ -858,7 +855,7 @@ hkl_gui_3d_gl_area_button_press_event_cb(GtkWidget *gl_area,
 					 GdkEventButton* event,
 					 gpointer user_data)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 	/* left mouse buttom: rotate object */
 	if(event->button == 1)
@@ -877,7 +874,7 @@ hkl_gui_3d_gl_area_scroll_event_cb(GtkWidget *gl_area,
 				   GdkEventScroll *event,
 				   gpointer user_data)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 
 #define ZOOM_BY 10
 	if(event->direction == GDK_SCROLL_DOWN)
@@ -902,7 +899,7 @@ hkl_gui_3d_gl_area_motion_notify_event_cb(GtkWidget *gl_area,
 					  GdkEventMotion* event,
 					  gpointer user_data)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(user_data);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(user_data);
 	GtkAllocation alloc;
 	gint x, y;
 	GdkModifierType state;
@@ -1015,7 +1012,7 @@ hkl_gui_3d_class_init (HklGui3DClass *class)
 
 static void hkl_gui_3d_init (HklGui3D * self)
 {
-	HklGui3DPrivate *priv = HKL_GUI_3D_GET_PRIVATE(self);
+	HklGui3DPrivate *priv = hkl_gui_3d_get_instance_private(self);
 	GtkBuilder *builder;
 
 	/* properties */

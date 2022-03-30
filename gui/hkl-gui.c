@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -306,8 +306,6 @@ struct _HklGuiWindow {
 
 G_DEFINE_TYPE_WITH_PRIVATE (HklGuiWindow, hkl_gui_window, G_TYPE_OBJECT);
 
-#define HKL_GUI_WINDOW_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), HKL_GUI_TYPE_WINDOW, HklGuiWindowPrivate))
-
 static gboolean
 finalize_liststore_diffractometer(GtkTreeModel *model,
 				  GtkTreePath *path,
@@ -341,7 +339,7 @@ finalize_liststore_samples(GtkTreeModel *model,
 static void
 finalize (GObject* object)
 {
-	HklGuiWindowPrivate *priv =  HKL_GUI_WINDOW_GET_PRIVATE(object);
+	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(HKL_GUI_WINDOW(object));
 
 	g_object_unref(priv->builder);
 
@@ -366,7 +364,7 @@ HklGuiWindow* hkl_gui_window_new (void)
 static void
 hkl_gui_window_get_widgets_and_objects_from_ui (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv =  HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(self);
 	GtkBuilder* builder;
 
 	g_return_if_fail (self != NULL);
@@ -486,7 +484,7 @@ hkl_gui_window_get_widgets_and_objects_from_ui (HklGuiWindow* self)
 static void
 update_pseudo_axes_frames (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv =  HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(self);
 	HklGuiEngine **engine;
 
 	g_return_if_fail (self != NULL);
@@ -499,7 +497,7 @@ update_pseudo_axes_frames (HklGuiWindow* self)
 static void
 raise_error(HklGuiWindow *self, GError **error)
 {
-	HklGuiWindowPrivate *priv =  HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (error != NULL);
 
@@ -517,7 +515,7 @@ static gboolean
 _update_axis (GtkTreeModel *model, GtkTreePath *path,
 	      GtkTreeIter *iter, gpointer data)
 {
-	HklGuiWindowPrivate *priv =  HKL_GUI_WINDOW_GET_PRIVATE(data);
+	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(data);
 	const char *name;
 	const HklParameter *axis;
 	gdouble value, min, max;
@@ -542,7 +540,7 @@ _update_axis (GtkTreeModel *model, GtkTreePath *path,
 static void
 update_axes (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv =  HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 
@@ -579,7 +577,7 @@ _update_pseudo_axes (GtkTreeModel *model, GtkTreePath *path,
 static void
 update_pseudo_axes (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 
@@ -591,7 +589,7 @@ update_pseudo_axes (HklGuiWindow* self)
 static void
 update_solutions (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	GtkTreeIter iter = {0};
 
 	g_return_if_fail (self != NULL);
@@ -640,7 +638,7 @@ update_solutions (HklGuiWindow* self)
 static void
 update_source (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 
@@ -652,7 +650,7 @@ update_source (HklGuiWindow* self)
 static void
 update_reflections (HklGuiWindow *self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	gtk_list_store_clear (priv->liststore_reflections);
 
@@ -687,7 +685,7 @@ static void
 update_3d(HklGuiWindow *self)
 {
 #ifdef HKL3D
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	if(priv->frame3d){
 		hkl_gui_3d_is_colliding(priv->frame3d);
@@ -699,7 +697,7 @@ update_3d(HklGuiWindow *self)
 static void
 pseudo_axes_frame_changed_cb (HklGuiEngine *gui_engine, HklGuiWindow *self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	HklEngine *engine;
 	GtkListStore *liststore;
 	guint n_values;
@@ -748,7 +746,7 @@ pseudo_axes_frame_changed_cb (HklGuiEngine *gui_engine, HklGuiWindow *self)
 static void
 set_up_pseudo_axes_frames (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	HklGuiEngine **pseudo;
 	HklEngine **engine;
 	darray_engine *engines;
@@ -784,7 +782,7 @@ set_up_pseudo_axes_frames (HklGuiWindow* self)
 static void
 set_up_diffractometer_model (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	unsigned int i;
 	size_t n;
 	HklFactory **factories;
@@ -807,7 +805,7 @@ set_up_diffractometer_model (HklGuiWindow* self)
 static void
 set_up_tree_view_axes (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	const darray_string *axes;
 	const char **axis;
 	GtkTreeIter iter = {0};
@@ -828,7 +826,7 @@ set_up_tree_view_axes (HklGuiWindow* self)
 static void
 set_up_tree_view_pseudo_axes (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	HklEngine **engine;
 	const darray_engine *engines;
 
@@ -864,7 +862,7 @@ _delete_column(gpointer data,
 static void
 set_up_tree_view_solutions (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	const darray_string *axes;
 	int i;
 	GtkCellRenderer* renderer = NULL;
@@ -924,7 +922,7 @@ set_up_tree_view_solutions (HklGuiWindow* self)
 static void
 set_up_lambda(HklGuiWindow *self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_object_set(G_OBJECT(priv->spinbutton_lambda),
 		     "sensitive", TRUE,
@@ -940,7 +938,7 @@ set_up_3D (HklGuiWindow* self)
 {
 #if HKL3D
 
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	char *filename = NULL;
 	const char *name = hkl_factory_name_get(priv->diffractometer->factory);
 
@@ -972,7 +970,7 @@ void
 hkl_gui_window_combobox1_changed_cb(GtkComboBox *combobox, gpointer *user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	HklFactory *factory;
 	struct diffractometer_t *dif = NULL;
 
@@ -1016,7 +1014,7 @@ hkl_gui_window_cellrendererspin1_edited_cb(GtkCellRendererText *renderer,
 					   gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GtkTreeIter iter = {0};
 	gdouble value = 0.0;
 	const char *axis;
@@ -1074,7 +1072,7 @@ hkl_gui_window_cellrendererspin3_edited_cb(GtkCellRendererText *renderer,
 					   gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GtkTreeIter iter = {0};
 	gdouble value = 0.0;
 	const char *axis;
@@ -1129,7 +1127,7 @@ hkl_gui_window_cellrendererspin4_edited_cb(GtkCellRendererText *renderer,
 					   gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GtkTreeIter iter = {0};
 	gdouble value = 0.0;
 	const char *axis;
@@ -1185,7 +1183,7 @@ hkl_gui_window_cellrenderertext5_edited_cb(GtkCellRendererText *renderer,
 					   gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GtkTreeIter iter = {0};
 	gdouble value = 0.0;
 	gdouble old_value;
@@ -1254,7 +1252,7 @@ hkl_gui_window_treeview_solutions_cursor_changed_cb (GtkTreeView *tree_view,
 						     gpointer     user_data)
 {
 	HklGuiWindow* self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	GtkTreePath* path = NULL;
 	GtkTreeViewColumn* focus_column = NULL;
@@ -1285,7 +1283,7 @@ hkl_gui_window_treeview_solutions_cursor_changed_cb (GtkTreeView *tree_view,
 								 const gchar* new_text, gpointer user_data) \
 	{								\
 		HklGuiWindow *self = HKL_GUI_WINDOW(user_data);		\
-		HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data); \
+		HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data); \
 									\
 		g_return_if_fail (self != NULL);			\
 		g_return_if_fail (path != NULL);			\
@@ -1328,7 +1326,7 @@ void
 hkl_gui_window_cellrenderertoggle1_toggled_cb (GtkCellRendererToggle* renderer, const gchar* path,
 					       gpointer self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (path != NULL);
@@ -1365,7 +1363,7 @@ void
 hkl_gui_window_toolbutton_add_reflection_clicked_cb(GtkToolButton* _sender,
 						    gpointer self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	if (priv->diffractometer == NULL){
 		gtk_statusbar_push (priv->statusbar, 0,
@@ -1408,7 +1406,7 @@ void
 hkl_gui_window_toolbutton_goto_reflection_clicked_cb (GtkToolButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	g_return_if_fail (self != NULL);
 
@@ -1466,7 +1464,7 @@ _del_reflection(gpointer data, gpointer user_data)
 	HklSampleReflection *reflection;
 	GtkTreeIter iter = {0};
 	GtkTreePath *treepath = data;
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	gtk_tree_model_get_iter (GTK_TREE_MODEL(priv->liststore_reflections),
 				 &iter, treepath);
@@ -1482,7 +1480,7 @@ void
 hkl_gui_window_toolbutton_del_reflection_clicked_cb (GtkToolButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	g_return_if_fail (self != NULL);
 
@@ -1530,7 +1528,7 @@ hkl_gui_window_toolbutton_del_reflection_clicked_cb (GtkToolButton* _sender, gpo
 static void
 set_up_tree_view_reflections(HklGuiWindow *self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	GtkTreeSelection* selection = NULL;
 
 	selection = gtk_tree_view_get_selection (priv->treeview_reflections);
@@ -1542,7 +1540,7 @@ void
 hkl_gui_window_cellrenderertext10_edited_cb(GtkCellRendererText* _sender, const gchar* path,
 					    const gchar* new_text, gpointer user_data)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	GtkTreeModel* model = NULL;
 	GtkTreeIter iter = {0};
@@ -1584,7 +1582,7 @@ hkl_gui_window_cellrenderertext10_edited_cb(GtkCellRendererText* _sender, const 
 static void
 update_lattice (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 
@@ -1611,7 +1609,7 @@ update_lattice (HklGuiWindow* self)
 static void
 update_reciprocal_lattice (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 
@@ -1640,7 +1638,7 @@ update_reciprocal_lattice (HklGuiWindow* self)
 static void
 update_ux_uy_uz (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 
@@ -1662,7 +1660,7 @@ update_ux_uy_uz (HklGuiWindow* self)
 static void
 update_UB (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (self != NULL);
 
@@ -1692,7 +1690,7 @@ hkl_gui_window_treeview_crystals_cursor_changed_cb (GtkTreeView* _sender, gpoint
 	GtkTreeIter iter = {0};
 
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	HklSample *sample;
 
 	g_return_if_fail (user_data != NULL);
@@ -1734,7 +1732,7 @@ hkl_gui_window_treeview_crystals_cursor_changed_cb (GtkTreeView* _sender, gpoint
 static GtkTreeIter
 _add_sample(HklGuiWindow *self, HklSample *sample)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	GtkTreeIter iter = {0};
 	const HklLattice *lattice;
 	gdouble a, b, c, alpha, beta, gamma;
@@ -1769,7 +1767,7 @@ _add_sample(HklGuiWindow *self, HklSample *sample)
 static void
 set_up_tree_view_crystals (HklGuiWindow* self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	GtkTreeIter iter = {0};
 	GtkTreePath *path = NULL;
 
@@ -1788,7 +1786,7 @@ set_up_tree_view_crystals (HklGuiWindow* self)
 static void
 _add_sample_and_edit_name(HklGuiWindow *self, HklSample *sample)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 	GtkTreeIter iter = {0};
 	GtkTreePath* path = NULL;
 	GtkTreeViewColumn* column = NULL;
@@ -1820,7 +1818,7 @@ void
 hkl_gui_window_toolbutton_copy_crystal_clicked_cb (GtkToolButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	HklSample *copy = NULL;
 
 	g_return_if_fail (self != NULL);
@@ -1836,7 +1834,7 @@ hkl_gui_window_toolbutton_copy_crystal_clicked_cb (GtkToolButton* _sender, gpoin
 void
 hkl_gui_window_toolbutton_del_crystal_clicked_cb (GtkToolButton* _sender, gpointer user_data)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	g_return_if_fail (user_data != NULL);
 
@@ -1921,7 +1919,7 @@ _update_crystal_model(GtkTreeModel *model,
 		      GtkTreeIter *iter,
 		      gpointer data)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(data);
 	HklSample *sample = NULL;
 
 	gtk_tree_model_get(model, iter,
@@ -1963,7 +1961,7 @@ _update_crystal_model(GtkTreeModel *model,
 static void
 update_crystal_model(HklGuiWindow *self)
 {
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(self);
 
 	gtk_tree_model_foreach(GTK_TREE_MODEL(priv->liststore_crystals),
 			       _update_crystal_model,
@@ -1975,7 +1973,7 @@ void
 hkl_gui_window_button2_clicked_cb (GtkButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	g_return_if_fail (self != NULL);
 
@@ -2034,7 +2032,7 @@ void
 hkl_gui_window_spinbutton_lambda_value_changed_cb (GtkSpinButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	diffractometer_set_wavelength(priv->diffractometer,
 				      gtk_spin_button_get_value(_sender));
@@ -2046,7 +2044,7 @@ void
 hkl_gui_window_spinbutton_ux_value_changed_cb (GtkSpinButton *_senser, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GError *error = NULL;
 
 	get_ux_uy_uz(priv->sample, ux, &error);
@@ -2064,7 +2062,7 @@ void
 hkl_gui_window_spinbutton_uy_value_changed_cb (GtkSpinButton *_senser, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GError *error = NULL;
 
 	get_ux_uy_uz(priv->sample, uy, &error);
@@ -2082,7 +2080,7 @@ void
 hkl_gui_window_spinbutton_uz_value_changed_cb (GtkSpinButton *_senser, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GError *error = NULL;
 
 	get_ux_uy_uz(priv->sample, uz, &error);
@@ -2100,7 +2098,7 @@ void
 hkl_gui_window_toolbutton_setUB_clicked_cb(GtkToolButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 
 	HklMatrix *UB;
 	GError *error = NULL;
@@ -2139,7 +2137,7 @@ void
 hkl_gui_window_toolbutton_computeUB_clicked_cb (GtkToolButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GtkTreeSelection* selection = NULL;
 	guint nb_rows = 0U;
 
@@ -2198,7 +2196,7 @@ void
 hkl_gui_window_toolbutton_affiner_clicked_cb (GtkToolButton* _sender, gpointer user_data)
 {
 	HklGuiWindow *self = HKL_GUI_WINDOW(user_data);
-	HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data);
+	HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data);
 	GError *error = NULL;
 
 	if(!hkl_sample_affine (priv->sample, &error)){
@@ -2223,7 +2221,7 @@ hkl_gui_window_toolbutton_affiner_clicked_cb (GtkToolButton* _sender, gpointer u
 								      gpointer user_data) \
 	{								\
 		HklGuiWindow *self = HKL_GUI_WINDOW(user_data);		\
-		HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data); \
+		HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data); \
 		HklLattice *lattice;					\
 		HklParameter *p;					\
 		GError *error = NULL;					\
@@ -2252,7 +2250,7 @@ TOGGLE_LATTICE_CB(gamma);
 								      gpointer user_data) \
 	{								\
 		HklGuiWindow *self = HKL_GUI_WINDOW(user_data);		\
-		HklGuiWindowPrivate *priv = HKL_GUI_WINDOW_GET_PRIVATE(user_data); \
+		HklGuiWindowPrivate *priv = hkl_gui_window_get_instance_private(user_data); \
 		HklParameter *p;					\
 		GError *error = NULL;					\
 		p = hkl_parameter_new_copy(hkl_sample_ ## _parameter ## _get(priv->sample)); \
@@ -2305,7 +2303,7 @@ hkl_gui_window_class_init (HklGuiWindowClass *class)
 
 static void hkl_gui_window_init (HklGuiWindow * self)
 {
-	HklGuiWindowPrivate *priv =  HKL_GUI_WINDOW_GET_PRIVATE(self);
+	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(self);
 
 	priv->diffractometer = NULL;
 	priv->sample = NULL;
