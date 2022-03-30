@@ -22,6 +22,7 @@
 #include <hdf5.h>
 
 #include "hkl/ccan/array_size/array_size.h"
+#include "hkl/hkl-macros-private.h"
 #include "hkl-binoculars-private.h"
 
 hid_t create_dataspace_from_axes(const darray_axis *axes)
@@ -103,4 +104,6 @@ void hkl_binoculars_cube_save_hdf5(const char *fn,
         // terminate access and free identifiers
         status = H5Gclose(groupe_id);
         status = H5Fclose(file_id);
+
+        hkl_assert(status >= 0);
 }

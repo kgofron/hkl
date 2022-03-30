@@ -320,10 +320,14 @@ static inline char map_type(HklBinocularsNpyDataType type)
 
 static inline int map_size(HklBinocularsNpyDataType type)
 {
+        int res = 8;
+
         match(type){
-                of(HklBinocularsNpyBool)   return 1;
-                of(HklBinocularsNpyDouble) return 8;
+                of(HklBinocularsNpyBool)   res = 1;
+                of(HklBinocularsNpyDouble) res = 8;
         }
+
+        return res;
 }
 
 static inline char *create_npy_header(HklBinocularsNpyDataType type,
