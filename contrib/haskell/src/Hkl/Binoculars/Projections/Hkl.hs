@@ -22,7 +22,8 @@
 -}
 
 module Hkl.Binoculars.Projections.Hkl
-    ( DataFrameHkl(..)
+    ( Config(..)
+    , DataFrameHkl(..)
     , DataPath(..)
     , SamplePath(..)
     , defaultDataPathHkl
