@@ -285,9 +285,11 @@ static inline char bigendian(void)
 
 static inline char map_type(HklBinocularsNpyDataType type)
 {
+        char res = '?';
+
         match(type){
-                of(HklBinocularsNpyBool)   return 'b';
-                of(HklBinocularsNpyDouble) return 'f';
+                of(HklBinocularsNpyBool)   res = 'b';
+                of(HklBinocularsNpyDouble) res = 'f';
         }
 
     /* if(t == typeid(float) ) return 'f'; */
@@ -313,6 +315,7 @@ static inline char map_type(HklBinocularsNpyDataType type)
     /* if(t == typeid(std::complex<long double>) ) return 'c'; */
 
     /* else return '?'; */
+        return res;
 }
 
 static inline int map_size(HklBinocularsNpyDataType type)

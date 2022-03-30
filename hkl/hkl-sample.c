@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -126,9 +126,9 @@ static void hkl_sample_compute_UxUyUz(HklSample *self)
 	double uz;
 
 	hkl_matrix_to_euler(&self->U, &ux, &uy, &uz);
-	hkl_parameter_value_set(self->ux, ux, HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->uy, uy, HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->uz, uz, HKL_UNIT_DEFAULT, NULL);
+	IGNORE(hkl_parameter_value_set(self->ux, ux, HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->uy, uy, HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->uz, uz, HKL_UNIT_DEFAULT, NULL));
 }
 
 static int hkl_sample_compute_UB(HklSample *self)
@@ -162,15 +162,15 @@ static int hkl_sample_init_from_gsl_vector(HklSample *self, const gsl_vector *x)
 	euler_y = gsl_vector_get(x, 1);
 	euler_z = gsl_vector_get(x, 2);
 
-	hkl_parameter_value_set(self->ux, euler_x, HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->uy, euler_y, HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->uz, euler_z, HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->lattice->a, gsl_vector_get(x, 3), HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->lattice->b, gsl_vector_get(x, 4), HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->lattice->c, gsl_vector_get(x, 5), HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->lattice->alpha, gsl_vector_get(x, 6), HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->lattice->beta, gsl_vector_get(x, 7), HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->lattice->gamma, gsl_vector_get(x, 8), HKL_UNIT_DEFAULT, NULL);
+	IGNORE(hkl_parameter_value_set(self->ux, euler_x, HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->uy, euler_y, HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->uz, euler_z, HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->lattice->a, gsl_vector_get(x, 3), HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->lattice->b, gsl_vector_get(x, 4), HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->lattice->c, gsl_vector_get(x, 5), HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->lattice->alpha, gsl_vector_get(x, 6), HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->lattice->beta, gsl_vector_get(x, 7), HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->lattice->gamma, gsl_vector_get(x, 8), HKL_UNIT_DEFAULT, NULL));
 
 	hkl_matrix_init_from_euler(&self->U, euler_x, euler_y, euler_z);
 	if (!hkl_sample_compute_UB(self))
@@ -603,9 +603,9 @@ void hkl_sample_U_set(HklSample *self, const HklMatrix *U, GError **error)
 	hkl_matrix_matrix_set(&self->U, U);
 	hkl_sample_compute_UB(self);
 	hkl_matrix_to_euler(&self->U, &x, &y, &z);
-	hkl_parameter_value_set(self->ux, x, HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->uy, y, HKL_UNIT_DEFAULT, NULL);
-	hkl_parameter_value_set(self->uz, z, HKL_UNIT_DEFAULT, NULL);
+	IGNORE(hkl_parameter_value_set(self->ux, x, HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->uy, y, HKL_UNIT_DEFAULT, NULL));
+	IGNORE(hkl_parameter_value_set(self->uz, z, HKL_UNIT_DEFAULT, NULL));
 }
 
 /**

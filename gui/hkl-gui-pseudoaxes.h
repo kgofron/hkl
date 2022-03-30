@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2013 Synchrotron SOLEIL
+ * Copyright (C) 2003-2013, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -43,9 +43,10 @@ typedef enum  {
 } PseudoCol;
 
 #define HKL_GUI_TYPE_ENGINE (hkl_gui_engine_get_type ())
+
 G_DECLARE_FINAL_TYPE (HklGuiEngine, hkl_gui_engine, HKL_GUI, ENGINE, GObject)
 
-	HklGuiEngine* hkl_gui_engine_new (HklEngine* engine);
+HklGuiEngine* hkl_gui_engine_new (HklEngine* engine);
 
 void hkl_gui_engine_set_engine (HklGuiEngine *gui_engine,
 				HklEngine *engine);
