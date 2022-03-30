@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -857,9 +857,9 @@ int hkl_geometry_closest_from_geometry_with_range(HklGeometry *self,
 	}
 	if(!ko){
 		for(i=0;i<len;++i)
-			hkl_parameter_value_set(darray_item(self->axes, i),
-						values[i],
-						HKL_UNIT_DEFAULT, NULL);
+			IGNORE(hkl_parameter_value_set(darray_item(self->axes, i),
+                                                       values[i],
+                                                       HKL_UNIT_DEFAULT, NULL));
 		hkl_geometry_update(self);
 	}
 	return ko;

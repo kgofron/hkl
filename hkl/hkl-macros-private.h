@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -84,6 +84,9 @@
 #endif
 
 #define DARRAY(_items) {.item=_items, .size=ARRAY_SIZE(_items), .alloc=ARRAY_SIZE(_items)}
+
+#define IGNORE(x) {__typeof__(x) __attribute__((unused)) d=(x);}
+
 
 G_BEGIN_DECLS
 
