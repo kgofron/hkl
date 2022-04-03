@@ -1028,9 +1028,11 @@ void hkl_geometry_list_add(HklGeometryList *self, const HklGeometry *geometry)
 			return;
 	}
 
-	list_add_tail(&self->items,
-		      &hkl_geometry_list_item_new(geometry)->list);
-	self->n_items += 1;
+        item = hkl_geometry_list_item_new(geometry);
+        if (NULL != item){
+                list_add_tail(&self->items, &item->list);
+                self->n_items += 1;
+        }
 }
 
 /**
@@ -1158,6 +1160,10 @@ void hkl_geometry_list_fprintf(FILE *f, const HklGeometryList *self)
 		HklGeometryListItem *item;
 		HklParameter **axis;
 
+                item = list_top(&self->items, HklGeometryListItem, list);
+                if(!item)
+                        return;
+
 		fprintf(f, "    ");
 		darray_foreach(axis, list_top(&self->items, HklGeometryListItem, list)->geometry->axes){
 			fprintf(f, "%19s", (*axis)->name);
@@ -1268,6 +1274,9 @@ void hkl_geometry_list_multiply_from_range(HklGeometryList *self)
 		HklParameter **axis;
 		int *perm;
 		size_t j = 0;
+
+                if(!item)
+                        return;
 
 		geometry = hkl_geometry_new_copy(item->geometry);
 		perm = alloca(darray_size(geometry->axes) * sizeof(*perm));
