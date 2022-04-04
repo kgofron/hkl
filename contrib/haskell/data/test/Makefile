@@ -25,8 +25,9 @@ ord05133:
 #	$(PROCESS) ~/src/repo.or.cz/hkl/contrib/haskell/data/test/config_ord05133_flymedh.ini 1303-1312
 #	$(PROCESS) data/test/config_ord05133_flymedh.ini 1303-1312
 #	$(PROCESS) data/test/config_ord05133_ruche_mars_flyscan.ini
-	$(PROCESS) data/test/config_ord05133_ruche_uhv_big.ini
+#	$(PROCESS) data/test/config_ord05133_ruche_uhv_big.ini
 #	$(PROCESS) data/test/config_ord05133_ruche_flymedv_3.ini
+	$(PROCESS) data/test/config_ord05133_ruche_limit_18KeV.ini 815-818
 
 sixs:
 #	$(PROCESS) hkl/contrib/haskell/dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process data/test/config_sixs_ruche_uhv.ini
