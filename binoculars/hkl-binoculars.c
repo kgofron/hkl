@@ -512,58 +512,106 @@ static inline ptrdiff_t compute_offset0(const darray_axis *axes)
 	return offset;
 }
 
-static inline HklBinocularsCube *empty_cube(const darray_axis *axes)
+static inline HklBinocularsCube *empty_cube(void)
+{
+        HklBinocularsCube *self = malloc(sizeof(HklBinocularsCube));
+
+        if(NULL == self)
+                return NULL;
+
+        self->type = EmptyCube();
+
+        return self;
+}
+
+static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes) HKL_ARG_NONNULL(1);
+static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes)
 {
         HklBinocularsAxis *axis;
         HklBinocularsCube *self = malloc(sizeof(HklBinocularsCube));
 
+        if((NULL == self) || (0 == darray_size(*axes)))
+                return NULL;
+
 	/* compute the final cube dimensions and the index offset */
-        darray_init(self->axes);
-        if (NULL != axes){
+        if (0 == darray_size(*axes)){
+                self->type = EmptyCube();
+        } else {
+                self->type = NonEmptyCube();
+                darray_init(self->axes);
                 darray_foreach(axis, *axes){
                         darray_append(self->axes, *axis);
                 }
+                self->offset0 = compute_offset0(&self->axes);
+                self->photons = NULL;
+                self->contributions = NULL;
         }
-        self->offset0 = compute_offset0(&self->axes);
-        self->photons = NULL;
-        self->contributions = NULL;
 
         return self;
 }
 
 static inline int cube_is_empty(const HklBinocularsCube *self)
 {
-        return 0 == darray_size(self->axes);
+        int res = 0;
+        match(self->type){
+                of(EmptyCube) res = 1;
+                of(NonEmptyCube) res = 0;
+        }
+
+        return res;
 }
 
 static inline size_t cube_size(const HklBinocularsCube *self)
 {
-	HklBinocularsAxis *axis;
-	size_t n = 1;
+        size_t n = 0;
 
-        darray_foreach(axis, self->axes){
-		n *= axis_size(axis);
+        match(self->type){
+                of(EmptyCube) {}
+                of(NonEmptyCube) {
+                        HklBinocularsAxis *axis;
+
+                        n = 1;
+                        darray_foreach(axis, self->axes){
+                                n *= axis_size(axis);
+                        }
+                }
         }
 
 	return n;
 }
 
+static inline size_t malloc_cube(HklBinocularsCube *self) HKL_ARG_NONNULL(1);
 static inline size_t malloc_cube(HklBinocularsCube *self)
 {
-        size_t n = cube_size(self);
+        size_t n = 0;
 
-	self->photons = malloc(n * sizeof(*self->photons));
-	self->contributions = malloc(n * sizeof(*self->contributions));
+        match(self->type){
+                of(EmptyCube) {}
+                of(NonEmptyCube){
+                        n = cube_size(self);
+
+                        self->photons = malloc(n * sizeof(*self->photons));
+                        self->contributions = malloc(n * sizeof(*self->contributions));
+                }
+        }
 
         return n;
 }
 
+static inline size_t calloc_cube(HklBinocularsCube *self) HKL_ARG_NONNULL(1);
 static inline size_t calloc_cube(HklBinocularsCube *self)
 {
-        size_t n = cube_size(self);
+        size_t n = 0;
 
-	self->photons = calloc(n, sizeof(*self->photons));
-	self->contributions = calloc(n, sizeof(*self->contributions));
+        match(self->type){
+                of(EmptyCube) {}
+                of(NonEmptyCube){
+                        n = cube_size(self);
+
+                        self->photons = calloc(n, sizeof(*self->photons));
+                        self->contributions = calloc(n, sizeof(*self->contributions));
+                }
+        }
 
         return n;
 }
@@ -572,9 +620,14 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
 {
         /* fprintf(stdout, "\nHklBinocularsCube: deallocated %p\n", self); */
 
-	free(self->contributions);
-	free(self->photons);
-	darray_free(self->axes);
+        match(self->type){
+                of(EmptyCube) {}
+                of(NonEmptyCube){
+                        free(self->contributions);
+                        free(self->photons);
+                        darray_free(self->axes);
+                }
+        }
 	free(self);
 }
 
@@ -584,54 +637,71 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
 static inline void add_non_empty_space(HklBinocularsCube *cube,
                                        const HklBinocularsSpace *space)
 {
-	size_t i;
-        size_t n_axes = darray_size(cube->axes);
-	ptrdiff_t lens[n_axes];
-        HklBinocularsSpaceItem *item;
+        match(cube->type){
+                of(EmptyCube) { assert(0 != 0); }
+                of(NonEmptyCube){
+                        size_t i;
+                        size_t n_axes = darray_size(cube->axes);
+                        ptrdiff_t lens[n_axes];
+                        HklBinocularsSpaceItem *item;
 
-        assert(n_axes == darray_size(space->axes));
+                        assert(n_axes == darray_size(space->axes));
 
-        /* compute the lens */
-        lens[0] = 1;
+                        /* compute the lens */
+                        lens[0] = 1;
 
-	for(i=1; i<n_axes; ++i){
-                lens[i] = lens[i - 1] * axis_size(&darray_item(cube->axes, n_axes - i));
-	}
+                        for(i=1; i<n_axes; ++i){
+                                lens[i] = lens[i - 1] * axis_size(&darray_item(cube->axes, n_axes - i));
+                        }
 
-        darray_foreach(item, space->items){
-                ptrdiff_t w = -cube->offset0;
+                        darray_foreach(item, space->items){
+                                ptrdiff_t w = -cube->offset0;
 
-                for(i=0; i<n_axes; ++i){
-                        w += lens[i] * item->indexes_0[n_axes - 1 - i];
-                        /* fprintf(stdout, " %ld %ld", lens[i], item->indexes_0[n_axes - 1 - i]); */
+                                for(i=0; i<n_axes; ++i){
+                                        w += lens[i] * item->indexes_0[n_axes - 1 - i];
+                                        /* fprintf(stdout, " %ld %ld", lens[i], item->indexes_0[n_axes - 1 - i]); */
+                                }
+
+                                /* fprintf(stdout, " w: %ld %ld\n", w, cube_size(cube)); */
+                                cube->photons[w] += item->intensity;
+                                cube->contributions[w] += 1;
+                        }
                 }
-
-                /* fprintf(stdout, " w: %ld %ld\n", w, cube_size(cube)); */
-                cube->photons[w] += item->intensity;
-                cube->contributions[w] += 1;
         }
 }
 
 void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube *self)
 {
-        HklBinocularsAxis *axis;
+	fprintf(f, "HklBinocularsCube: %p", self);
+        match(self->type){
+                of(EmptyCube) { fprintf(f, "\nempty cube"); }
+                of(NonEmptyCube) {
+                        HklBinocularsAxis *axis;
 
-	fprintf(f, "HklBinocularsCube: %p\n", self);
-	fprintf(f, "n_axes: %ld", darray_size(self->axes));
-        darray_foreach(axis, self->axes){
-		fprintf(f, "\n");
-		hkl_binoculars_axis_fprintf(f, axis);
-	}
-	fprintf(f, "\nphotons: %p", self->photons);
-	fprintf(f, "\ncontributions: %p", self->contributions);
+                        fprintf(f, "\nn_axes: %ld", darray_size(self->axes));
+                        darray_foreach(axis, self->axes){
+                                fprintf(f, "\n");
+                                hkl_binoculars_axis_fprintf(f, axis);
+                        }
+                        fprintf(f, "\nphotons: %p", self->photons);
+                        fprintf(f, "\ncontributions: %p", self->contributions);
+                }
+        }
 }
 
-void hkl_binoculars_cube_dims(const HklBinocularsCube *self, size_t ndim, size_t *dims)
+void hkl_binoculars_cube_dims(const HklBinocularsCube *self, size_t ndims, size_t *dims)
 {
-        HklBinocularsAxis *axis;
+        match(self->type){
+                of(EmptyCube) { assert(0 == ndims); }
+                of(NonEmptyCube) {
+                        HklBinocularsAxis *axis;
 
-        darray_foreach(axis, self->axes){
-                *(dims++) = axis_size(axis);
+                        assert(ndims == darray_size(self->axes));
+
+                        darray_foreach(axis, self->axes){
+                                *(dims++) = axis_size(axis);
+                        }
+                }
         }
 }
 
@@ -656,9 +726,9 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
         i0 = find_first_non_empty_space_index(n_spaces, spaces);
 
         if (i0 == n_spaces){ /* all spaces are empty */
-                self = empty_cube(NULL);
+                self = empty_cube();
         } else {
-                self = empty_cube(&spaces[i0]->axes);
+                self = empty_cube_from_axes(&spaces[i0]->axes);
 
                 /* compute the final cube dimensions and the index offset */
                 for(i=i0; i<n_spaces; ++i){
@@ -690,15 +760,20 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
 
 HklBinocularsCube *hkl_binoculars_cube_new_empty(void)
 {
-        return empty_cube(NULL);
+        return empty_cube();
 }
 
 HklBinocularsCube *hkl_binoculars_cube_new_empty_from_cube(const HklBinocularsCube *cube)
 {
-	HklBinocularsCube *self = empty_cube(&cube->axes);
+	HklBinocularsCube *self;
 
-	/* allocated the final cube */
-        calloc_cube(self);
+        match(cube->type){
+                of(EmptyCube) { self = empty_cube(); }
+                of(NonEmptyCube) {
+                        self = empty_cube_from_axes(&cube->axes);
+                        calloc_cube(self);
+                }
+        }
 
 	return self;
 }
@@ -708,11 +783,9 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *
 	HklBinocularsCube *self;
 
         if(space_is_empty(space)){
-                self = empty_cube(NULL);
+                self = empty_cube();
         } else {
-                self = empty_cube(&space->axes);
-
-                /* allocated the final cube */
+                self = empty_cube_from_axes(&space->axes);
                 calloc_cube(self);
 
                 add_non_empty_space(self, space);
@@ -724,7 +797,7 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *
 HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src)
 {
         size_t n;
-	HklBinocularsCube *self = empty_cube(&src->axes);
+	HklBinocularsCube *self = empty_cube_from_axes(&src->axes);
 
 	/* allocate the final cube */
         n = malloc_cube(self);
@@ -733,8 +806,9 @@ HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src)
         memcpy(self->photons, src->photons, n * sizeof(*self->photons));
         memcpy(self->contributions, src->contributions, n * sizeof(*self->contributions));
 
-        hkl_binoculars_cube_fprintf(stdout, src);
-        hkl_binoculars_cube_fprintf(stdout, self);
+        /* hkl_binoculars_cube_fprintf(stdout, src); */
+        /* hkl_binoculars_cube_fprintf(stdout, self); */
+
         return self;
 }
 
@@ -801,17 +875,24 @@ static inline void cube_add_cube_3(HklBinocularsCube *self,
 static inline void cube_add_cube(HklBinocularsCube *self,
                                  const HklBinocularsCube *other)
 {
-        if ((NULL == other->photons) || (NULL == other->contributions))
-                return;
+        match(self->type){
+                of(EmptyCube){ assert(0); }
+                of(NonEmptyCube) {
+                        match(other->type){
+                                of(EmptyCube) {}
+                                of(NonEmptyCube) {
+                                        assert(darray_size(self->axes) == darray_size(other->axes));
 
-        assert(darray_size(self->axes) == darray_size(other->axes));
-
-        switch(darray_size(self->axes)){
-        case 2: cube_add_cube_2(self, other);
-                break;
-        case 3: cube_add_cube_3(self, other);
-                break;
-        default: assert(0);
+                                        switch(darray_size(self->axes)){
+                                        case 2: cube_add_cube_2(self, other);
+                                                break;
+                                        case 3: cube_add_cube_3(self, other);
+                                                break;
+                                        default: assert(0);
+                                        }
+                                }
+                        }
+                }
         }
 }
 
@@ -827,14 +908,35 @@ static inline void compute_strides(const darray_axis *axes, size_t strides[], si
 HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
                                                  const HklBinocularsCube *cube2)
 {
-        HklBinocularsCube *self = empty_cube(&cube1->axes);
+        HklBinocularsCube *self;
 
-        merge_axes(&self->axes, &cube2->axes);
-        self->offset0 = compute_offset0(&self->axes);
-        calloc_cube(self);
+        match(cube1->type){
+                of(EmptyCube){
+                        match(cube2->type){
+                                of(EmptyCube){
+                                        self = empty_cube();
+                                }
+                                of(NonEmptyCube){
+                                        self = hkl_binoculars_cube_new_copy(cube2);
+                                }
+                        }
+                }
+                of(NonEmptyCube){
+                        match(cube2->type){
+                                of(EmptyCube){
+                                        self = hkl_binoculars_cube_new_copy(cube1);
+                                }
+                                of(NonEmptyCube){
+                                        self = empty_cube_from_axes(&cube1->axes);
+                                        merge_axes(&self->axes, &cube2->axes);
+                                        calloc_cube(self);
 
-        cube_add_cube(self, cube1);
-        cube_add_cube(self, cube2);
+                                        cube_add_cube(self, cube1);
+                                        cube_add_cube(self, cube2);
+                                }
+                        }
+                }
+        }
 
         return self;
 }
@@ -845,6 +947,7 @@ static inline void switch_content(HklBinocularsCube *self,
         unsigned int *ptr;
         darray_axis tmp;
         ptrdiff_t offset0;
+        HklBinocularsCubeType type;
 
         tmp = self->axes;
         self->axes = other->axes;
@@ -861,6 +964,10 @@ static inline void switch_content(HklBinocularsCube *self,
         ptr = self->contributions;
         self->contributions = other->contributions;
         other->contributions = ptr;
+
+        type = self->type;
+        self->type = other->type;
+        other->type = type;
 }
 
 void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
@@ -888,7 +995,7 @@ void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
 #ifdef DEBUG
                                 fprintf(stdout, "\nthe Cube does not contain the space, so create a new cube.");
 #endif
-                                HklBinocularsCube *cube = empty_cube(&self->axes);
+                                HklBinocularsCube *cube = empty_cube_from_axes(&self->axes);
 
                                 merge_axes(&cube->axes, &space->axes); /* circonscript */
                                 cube->offset0 = compute_offset0(&cube->axes);

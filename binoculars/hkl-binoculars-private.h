@@ -22,6 +22,8 @@
 #ifndef __HKL_BINOCULARS_PRIVATE_H__
 #define __HKL_BINOCULARS_PRIVATE_H__
 
+#include "datatype99.h"
+
 #include "hkl-binoculars.h"
 
 /********/
@@ -66,8 +68,14 @@ struct _HklBinocularsSpace
 /* Cube */
 /********/
 
+datatype(HklBinocularsCubeType,
+         (EmptyCube),
+         (NonEmptyCube)
+        );
+
 struct _HklBinocularsCube
 {
+        HklBinocularsCubeType type;
         darray_axis axes;
         ptrdiff_t offset0;
 	unsigned int *photons;
