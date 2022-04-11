@@ -19,6 +19,8 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+#include <stdlib.h>
+
 #include "datatype99.h"
 
 #include "hkl-binoculars.h"
@@ -496,10 +498,12 @@ void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
                        detector.shape.height,
                        detector.shape.width);
 
-
         arr = hkl_binoculars_detector_2d_coordinates_get(n);
+
         npy_save(fname, arr, HklBinocularsNpyDouble(), &shape);
+
         free(arr);
+        darray_free(shape);
 }
 
 uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
@@ -543,7 +547,6 @@ uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
 {
         uint8_t *arr = NULL;
         const struct detector_t detector = get_detector(n);
-
         darray_int shape = darray_new();
 
         darray_appends(shape,
@@ -560,15 +563,36 @@ uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
 void hkl_binoculars_detector_2d_mask_save(HklBinocularsDetectorEnum n,
                                           const char *fname)
 {
-        const struct detector_t detector = get_detector(n);
         uint8_t *arr = NULL;
+        const struct detector_t detector = get_detector(n);
         darray_int shape = darray_new();
 
         darray_appends(shape,
                        detector.shape.height,
-                       detector.shape.width);
+                       detector.shape.width );
 
         arr = hkl_binoculars_detector_2d_mask_get(n);
         npy_save(fname, arr, HklBinocularsNpyBool(), &shape);
+
+        darray_free(shape);
         free(arr);
+}
+
+
+uint32_t *hkl_binoculars_detector_2d_fake_image_uint32(HklBinocularsDetectorEnum n,
+                                                       size_t *n_pixels)
+{
+        size_t i;
+        uint32_t *arr = NULL;
+        const struct detector_t detector = get_detector(n);
+
+        *n_pixels = detector.shape.width * detector.shape.height;
+        arr = malloc(*n_pixels * sizeof(uint32_t));
+        if (NULL != arr){
+                for(i=0; i<*n_pixels; ++i){
+                        arr[i] = rand();
+                }
+        }
+
+        return arr;
 }

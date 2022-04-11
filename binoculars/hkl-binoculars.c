@@ -497,6 +497,7 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
 
 /* this method compute the linear coordinates of the first element in
  * the absolute coordinates of the bin */
+static inline ptrdiff_t compute_offset0(const darray_axis *axes) HKL_ARG_NONNULL(1);
 static inline ptrdiff_t compute_offset0(const darray_axis *axes)
 {
 	size_t i;
@@ -780,15 +781,17 @@ HklBinocularsCube *hkl_binoculars_cube_new_empty_from_cube(const HklBinocularsCu
 
 HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space)
 {
-	HklBinocularsCube *self;
+	HklBinocularsCube *self = NULL;
 
         if(space_is_empty(space)){
                 self = empty_cube();
         } else {
                 self = empty_cube_from_axes(&space->axes);
-                calloc_cube(self);
+                if(NULL != self){
+                        calloc_cube(self);
 
-                add_non_empty_space(self, space);
+                        add_non_empty_space(self, space);
+                }
         }
 
         return self;
@@ -799,15 +802,18 @@ HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src)
         size_t n;
 	HklBinocularsCube *self = empty_cube_from_axes(&src->axes);
 
-	/* allocate the final cube */
-        n = malloc_cube(self);
+        if(NULL != self){
 
-        /* copy the data */
-        memcpy(self->photons, src->photons, n * sizeof(*self->photons));
-        memcpy(self->contributions, src->contributions, n * sizeof(*self->contributions));
+                /* allocate the final cube */
+                n = malloc_cube(self);
 
-        /* hkl_binoculars_cube_fprintf(stdout, src); */
-        /* hkl_binoculars_cube_fprintf(stdout, self); */
+                /* copy the data */
+                memcpy(self->photons, src->photons, n * sizeof(*self->photons));
+                memcpy(self->contributions, src->contributions, n * sizeof(*self->contributions));
+
+                /* hkl_binoculars_cube_fprintf(stdout, src); */
+                /* hkl_binoculars_cube_fprintf(stdout, self); */
+        }
 
         return self;
 }

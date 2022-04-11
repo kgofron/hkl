@@ -70,6 +70,9 @@ HKLAPI extern void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDete
                                                                int ix0, int iy0, double sdd,
                                                                double detrot);
 
+HKLAPI extern uint32_t *hkl_binoculars_detector_2d_fake_image_uint32(HklBinocularsDetectorEnum n,
+                                                                     size_t *n_pixels);
+
 /***********/
 /* Limits  */
 /***********/

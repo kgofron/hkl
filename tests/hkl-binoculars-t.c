@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -24,6 +24,7 @@
 #include <tap/float.h>
 #include <tap/hkl-tap.h>
 
+#include <hkl-geometry-private.h>
 #include <hkl-axis-private.h>
 
 static void coordinates_get(void)
@@ -83,14 +84,78 @@ static void mask_save(void)
 /*         hkl_binoculars_detector_2d_mask_load(1, fname); */
 /* } */
 
+static void hkl_projection(void)
+{
+        size_t n;
+        int res = TRUE;
+        HklFactory *factory = hkl_factory_get_by_name("ZAXIS", NULL);
+        HklGeometry *geometry = hkl_factory_create_new_geometry(factory);
+        HklSample *sample = hkl_sample_new("hkl projection");
+
+        for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
+                size_t i;
+                int height;
+                int width;
+                HklBinocularsCube *cube;
+                HklBinocularsSpace *space;
+                double *pixels_coordinates;
+
+                hkl_binoculars_detector_2d_shape_get(n, &width, &height);
+                space = hkl_binoculars_space_new(width * height, 3);
+                cube = hkl_binoculars_cube_new_empty();
+                pixels_coordinates = hkl_binoculars_detector_2d_coordinates_get(n);
+
+                for(i=0; i<10; ++i){
+                        size_t arr_size;
+                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
+                        size_t pixels_coordinates_dims[] = {3, height, width};
+                        double resolutions[] = {0.05, 0.05, 0.05};
+
+                        hkl_geometry_randomize(geometry);
+
+                        hkl_binoculars_space_hkl_uint32_t (space,
+                                                           geometry,
+                                                           sample,
+                                                           img,
+                                                           arr_size,
+                                                           1.0,
+                                                           pixels_coordinates,
+                                                           ARRAY_SIZE(pixels_coordinates_dims),
+                                                           pixels_coordinates_dims,
+                                                           resolutions,
+                                                           ARRAY_SIZE(resolutions),
+                                                           NULL, // const uint8_t *masked,
+                                                           NULL, // const HklBinocularsAxisLimits **limits,
+                                                           0); // size_t n_limits);
+
+                        hkl_binoculars_cube_add_space(cube, space);
+
+                        free(img);
+                }
+
+                free(pixels_coordinates);
+                hkl_binoculars_cube_free(cube);
+                hkl_binoculars_space_free(space);
+        }
+
+        // create fake images
+        // add them to a cube
+
+        hkl_sample_free(sample);
+        hkl_geometry_free(geometry);
+
+        ok(res == TRUE, __func__);
+}
+
 int main(void)
 {
-	plan(4);
+	plan(5);
 
 	coordinates_get();
         coordinates_save();
 	mask_get();
         mask_save();
+        hkl_projection();
 
 	return 0;
 }
