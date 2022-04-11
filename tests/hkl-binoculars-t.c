@@ -99,11 +99,13 @@ static void hkl_projection(void)
                 HklBinocularsCube *cube;
                 HklBinocularsSpace *space;
                 double *pixels_coordinates;
+                uint8_t *mask;
 
                 hkl_binoculars_detector_2d_shape_get(n, &width, &height);
                 space = hkl_binoculars_space_new(width * height, 3);
                 cube = hkl_binoculars_cube_new_empty();
                 pixels_coordinates = hkl_binoculars_detector_2d_coordinates_get(n);
+                mask = hkl_binoculars_detector_2d_mask_get(n);
 
                 for(i=0; i<10; ++i){
                         size_t arr_size;
@@ -124,7 +126,7 @@ static void hkl_projection(void)
                                                            pixels_coordinates_dims,
                                                            resolutions,
                                                            ARRAY_SIZE(resolutions),
-                                                           NULL, // const uint8_t *masked,
+                                                           mask, // const uint8_t *masked,
                                                            NULL, // const HklBinocularsAxisLimits **limits,
                                                            0); // size_t n_limits);
 
@@ -133,6 +135,7 @@ static void hkl_projection(void)
                         free(img);
                 }
 
+                free(mask);
                 free(pixels_coordinates);
                 hkl_binoculars_cube_free(cube);
                 hkl_binoculars_space_free(space);
