@@ -45,11 +45,6 @@ typedef darray(HklBinocularsAxis) darray_axis;
 /* Space */
 /*********/
 
-datatype(HklBinocularsSpaceType,
-         (EmptySpace),
-         (NonEmptySpace)
-        );
-
 /* TODO how to avoid hardcoding the size of indexes_0 */
 typedef struct _HklBinocularsSpaceItem HklBinocularsSpaceItem;
 struct _HklBinocularsSpaceItem
@@ -64,7 +59,6 @@ typedef darray(HklBinocularsSpaceItem) darray_HklBinocularsSpaceItem;
 
 struct _HklBinocularsSpace
 {
-        // HklBinocularsSpaceType type;
         darray_axis axes;
         size_t max_items;
         darray_HklBinocularsSpaceItem items;
