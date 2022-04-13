@@ -513,18 +513,6 @@ static inline ptrdiff_t compute_offset0(const darray_axis *axes)
 	return offset;
 }
 
-static inline HklBinocularsCube *empty_cube(void)
-{
-        HklBinocularsCube *self = malloc(sizeof(HklBinocularsCube));
-
-        if(NULL == self)
-                return NULL;
-
-        self->type = EmptyCube();
-
-        return self;
-}
-
 static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes) HKL_ARG_NONNULL(1);
 static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes)
 {
@@ -618,6 +606,18 @@ static inline size_t calloc_cube(HklBinocularsCube *self)
 
         return n;
 }
+
+HklBinocularsCube *hkl_binoculars_cube_new_empty(void)
+{
+        HklBinocularsCube *self = NULL;
+
+        self = malloc(sizeof(HklBinocularsCube));
+        if(NULL != self)
+                self->type = EmptyCube();
+
+        return self;
+}
+
 
 void hkl_binoculars_cube_free(HklBinocularsCube *self)
 {
@@ -729,7 +729,7 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
         i0 = find_first_non_empty_space_index(n_spaces, spaces);
 
         if (i0 == n_spaces){ /* all spaces are empty */
-                self = empty_cube();
+                self = hkl_binoculars_cube_new_empty();
         } else {
                 self = empty_cube_from_axes(&spaces[i0]->axes);
 
@@ -761,17 +761,12 @@ HklBinocularsCube *hkl_binoculars_cube_new(size_t n_spaces,
 	return self;
 }
 
-HklBinocularsCube *hkl_binoculars_cube_new_empty(void)
-{
-        return empty_cube();
-}
-
 HklBinocularsCube *hkl_binoculars_cube_new_empty_from_cube(const HklBinocularsCube *cube)
 {
 	HklBinocularsCube *self = NULL;
 
         match(cube->type){
-                of(EmptyCube) { self = empty_cube(); }
+                of(EmptyCube) { self =  hkl_binoculars_cube_new_empty(); }
                 of(NonEmptyCube) {
                         self = empty_cube_from_axes(&cube->axes);
                         calloc_cube(self);
@@ -786,7 +781,7 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *
 	HklBinocularsCube *self = NULL;
 
         if(space_is_empty(space)){
-                self = empty_cube();
+                self =  hkl_binoculars_cube_new_empty();
         } else {
                 self = empty_cube_from_axes(&space->axes);
                 if(NULL != self){
@@ -921,7 +916,7 @@ HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
                 of(EmptyCube){
                         match(cube2->type){
                                 of(EmptyCube){
-                                        self = empty_cube();
+                                        self = hkl_binoculars_cube_new_empty();
                                 }
                                 of(NonEmptyCube){
                                         self = hkl_binoculars_cube_new_copy(cube2);
