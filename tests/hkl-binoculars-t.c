@@ -140,7 +140,7 @@ static void hkl_projection(void)
                                                            mask, // const uint8_t *masked,
                                                            // NULL,
                                                            limits, // const HklBinocularsAxisLimits **limits,
-                                                           3); // size_t n_limits);
+                                                           ARRAY_SIZE(limits)); // size_t n_limits);
 
                         hkl_binoculars_cube_add_space(cube, space);
 

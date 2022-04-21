@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -410,7 +410,7 @@ int hkl_mode_set_hkl_real(HklMode *self,
 
 		/* we will add solution to the geometries so save its length before */
 		for(i=0, item=list_top(&engine->engines->geometries->items, HklGeometryListItem, list);
-		    i<len;
+		    i<len && NULL != item;
 		    ++i, item=list_next(&engine->engines->geometries->items, item, list)){
 			int j;
 			HklVector ki;

@@ -68,14 +68,8 @@ struct _HklBinocularsSpace
 /* Cube */
 /********/
 
-datatype(HklBinocularsCubeType,
-         (EmptyCube),
-         (NonEmptyCube)
-        );
-
 struct _HklBinocularsCube
 {
-        HklBinocularsCubeType type;
         darray_axis axes;
         ptrdiff_t offset0;
 	unsigned int *photons;

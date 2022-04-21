@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -291,6 +291,8 @@ static int fit_slits_orientation(HklSlitsFit *params)
 	return res;
 }
 
+static void hkl_geometry_list_multiply_soleil_sixs_med_2_3(HklGeometryList *self,
+							   HklGeometryListItem *item) HKL_ARG_NONNULL(1, 2);
 static void hkl_geometry_list_multiply_soleil_sixs_med_2_3(HklGeometryList *self,
 							   HklGeometryListItem *item)
 {
@@ -671,7 +673,7 @@ static inline int hkl_engine_list_post_engine_set_med_2_3_v2_real(HklEngineList 
 		 * before using the recursive perm_r calls
 		 */
 		for(i=0, item=list_top(&self->geometries->items, HklGeometryListItem, list);
-		    i<len;
+		    i<len && NULL != item;
 		    ++i, item=list_next(&self->geometries->items, item, list))
 			hkl_geometry_list_multiply_soleil_sixs_med_2_3(self->geometries, item);
 	}

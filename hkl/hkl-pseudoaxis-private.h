@@ -192,24 +192,32 @@ static inline int hkl_mode_set_real(UNUSED HklMode *self,
 static inline int hkl_mode_init(HklMode *self,
 				const HklModeInfo *info,
 				const HklModeOperations *ops,
+				int initialized) HKL_ARG_NONNULL(1, 2, 3);
+static inline int hkl_mode_init(HklMode *self,
+				const HklModeInfo *info,
+				const HklModeOperations *ops,
 				int initialized)
 {
 	const HklParameter *parameter;
+        HklParameter *p;
 
 	self->info = info;
 	self->ops = ops;
 
 	/* parameters */
-	darray_init(self->parameters);
+	darray_init(self->parameters) ;
 	darray_init(self->parameters_names);
 	darray_foreach(parameter, self->info->parameters){
-		darray_append(self->parameters, hkl_parameter_new_copy(parameter));
+                if(NULL == (p = hkl_parameter_new_copy(parameter)))
+                        break;
+
+		darray_append(self->parameters, p);
 		darray_append(self->parameters_names, parameter->name);
 	}
 
 	self->initialized = initialized;
 
-	return TRUE;
+        return TRUE;
 }
 
 
@@ -436,8 +444,8 @@ out:
  *
  * add an HklMode to the self HklEngine
  **/
-static inline void hkl_engine_add_mode(HklEngine *self,
-				       HklMode *mode)
+static inline void hkl_engine_add_mode(HklEngine *self, HklMode *mode) HKL_ARG_NONNULL(1, 2);
+static inline void hkl_engine_add_mode(HklEngine *self, HklMode *mode)
 {
 	darray_append(self->modes, mode);
 	darray_append(self->mode_names, mode->info->name);

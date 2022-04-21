@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -204,17 +204,22 @@ static HklMode *mode_eulerians()
 		.get = hkl_mode_get_eulerians_real,
 		.set = hkl_mode_set_eulerians_real,
 	};
-
+        HklMode *mode = NULL;
 	HklModeEulerians *self = HKL_MALLOC(HklModeEulerians);
 
-	/* the base constructor; */
-	hkl_mode_init(&self->parent,
-		      &info,
-		      &operations, TRUE);
+        if(NULL == self)
+                goto error;
 
-	self->solutions = register_mode_parameter(&self->parent, 0);
+        /* the base constructor; */
+        mode = &self->parent;
+        hkl_mode_init(mode,
+                      &info,
+                      &operations, TRUE);
 
-	return &self->parent;
+        self->solutions = register_mode_parameter(mode, 0);
+
+error:
+	return mode;
 };
 
 /*************/
@@ -233,6 +238,7 @@ static void hkl_engine_eulerians_free_real(HklEngine *base)
 HklEngine *hkl_engine_eulerians_new(HklEngineList *engines)
 {
 	HklEngineEulerians *self;
+        HklEngine *engine = NULL;
 	HklMode *mode;
 	static const HklParameter omega = {
 		HKL_PARAMETER_DEFAULTS_ANGLE, .name = "omega",
@@ -258,6 +264,9 @@ HklEngine *hkl_engine_eulerians_new(HklEngineList *engines)
 	};
 
 	self = HKL_MALLOC(HklEngineEulerians);
+        if(NULL == self)
+                goto error;
+
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 
 	/* add the pseudo axes with the new API */
@@ -267,8 +276,16 @@ HklEngine *hkl_engine_eulerians_new(HklEngineList *engines)
 
 	/* eulerians [default] */
 	mode = mode_eulerians();
+        if(NULL == mode)
+                goto error;
+
 	hkl_engine_add_mode(&self->engine, mode);
 	hkl_engine_mode_set(&self->engine, mode);
 
-	return &self->engine;
+        engine =  &self->engine;
+        return engine;
+
+error:
+        free(self);
+	return engine;
 }
