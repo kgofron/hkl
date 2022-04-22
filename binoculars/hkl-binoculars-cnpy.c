@@ -60,7 +60,7 @@ static char *extract_as_string(const char *header, regmatch_t match)
 {
         int size = match.rm_eo - match.rm_so;
 
-        char *buffer = malloc(size + 1);
+        char *buffer = g_new(char, size + 1);
         strncpy(buffer, &header[match.rm_so], size);
         buffer[size] = 0x0;
 
@@ -161,7 +161,7 @@ static struct npy_t *parse_npy(FILE* fp,
                                HklBinocularsNpyDataType type,
                                const darray_int *shape)
 {
-        struct npy_t *npy = calloc(1, sizeof(struct npy_t));
+        struct npy_t *npy = g_new0(struct npy_t, 1);
         size_t res;
         regex_t preg;
         regmatch_t matches[4];
