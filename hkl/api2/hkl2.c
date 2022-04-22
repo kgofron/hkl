@@ -29,7 +29,7 @@
 
 static const HklFactory *getFactory(struct Geometry geometry)
 {
-        HklFactory *res = NULL;
+        HklFactory *res;
 
         match(geometry){
                 of(E4ch) res = hkl_factory_get_by_name("E4CH", NULL);
@@ -43,6 +43,7 @@ static const HklFactory *getFactory(struct Geometry geometry)
                 of(SoleilSixsMed2_3) res = hkl_factory_get_by_name("SOLEIL SIXS MED2+3", NULL);
                 of(SoleilSixsMed2_3_v2) res = hkl_factory_get_by_name("SOLEIL SIXS MED2+3 v2", NULL);
                 of(Zaxis) res = hkl_factory_get_by_name("ZAXIS", NULL);
+                otherwise res = hkl_factory_get_by_name("E4CH", NULL);
 	}
         return res;
 }
@@ -93,7 +94,7 @@ failed:
 
 HklLattice *newLattice(const Lattice lattice)
 {
-	HklLattice *self = NULL;
+	HklLattice *self;
 
         match(lattice){
                 of(Cubic, a){
@@ -123,6 +124,9 @@ HklLattice *newLattice(const Lattice lattice)
                                                90*HKL_DEGTORAD,
                                                NULL);
                 }
+                otherwise {
+                        self = hkl_lattice_new_default();
+                }
         };
 
 	return self;
@@ -151,7 +155,7 @@ HklSample *newSample(struct Sample sample)
 
 const char *getModeName(struct Mode mode)
 {
-        const char *res = NULL;
+        const char *res;
 
         match(mode){
                 of(ModeHklBissectorVertical){
@@ -159,6 +163,9 @@ const char *getModeName(struct Mode mode)
                 }
                 of(ModeHklE4CHConstantPhi){
                         res = "constant_phi";
+                }
+                otherwise{
+                        res = "bissector_vertical";
                 }
 	};
         return res;

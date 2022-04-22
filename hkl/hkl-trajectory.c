@@ -59,7 +59,6 @@ HklTrajectoryStats *hkl_trajectory_stats_new(int n)
 	darray_init(self->axes_min);
 	darray_init(self->axes_max);
 	darray_init(self->axes_range);
-	darray_resize0(self->axes_range, n);
 
 	return self;
 }
