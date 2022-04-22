@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -35,7 +35,7 @@
  */
 HklMatrix *hkl_matrix_new()
 {
-	return HKL_MALLOC(HklMatrix);
+	return g_new(HklMatrix, 1);
 }
 
 /**
@@ -92,10 +92,9 @@ HklMatrix *hkl_matrix_new_euler(double euler_x, double euler_y, double euler_z)
  **/
 HklMatrix *hkl_matrix_dup(const HklMatrix* self)
 {
-	HklMatrix *dup;
+	HklMatrix *dup = g_new(HklMatrix, 1);
 
-	dup = HKL_MALLOC(HklMatrix);
-	memcpy(dup, self, sizeof(*self));
+        *dup = *self;
 
 	return dup;
 }

@@ -43,7 +43,7 @@ static inline HklParameter *hkl_axis_copy_real(const HklParameter *base)
 	HklAxis *self = container_of(base, HklAxis, parameter);
 	HklAxis *dup;
 
-	dup = HKL_MALLOC(HklAxis);
+	dup = g_new(HklAxis, 1);
 
 	*dup = *self;
 
@@ -293,7 +293,7 @@ HklParameter *hkl_parameter_new_rotation(const char *name, HklVector const *axis
 		.q = {{1., 0., 0., 0.}},
 	};
 
-	HklAxis *self =  HKL_MALLOC(HklAxis);
+	HklAxis *self =  g_new(HklAxis, 1);
 
 	*self = axis0;
 
@@ -310,7 +310,7 @@ static inline HklParameter *hkl_rotation_with_origin_copy_real(const HklParamete
 						   HklRotationWithOrigin, axis);
 	HklRotationWithOrigin *dup;
 
-	dup = HKL_MALLOC(HklRotationWithOrigin);
+	dup = g_new(HklRotationWithOrigin, 1);
 
 	*dup = *self;
 
@@ -396,7 +396,7 @@ HklParameter *hkl_parameter_new_rotation_with_origin(const char *name,
 		.origin = *origin,
 	};
 
-	HklRotationWithOrigin *self =  HKL_MALLOC(HklRotationWithOrigin);
+	HklRotationWithOrigin *self =  g_new(HklRotationWithOrigin, 1);
 
 	*self = rotation0;
 
@@ -412,7 +412,7 @@ static inline HklParameter *hkl_translation_copy_real(const HklParameter *base)
 	HklTranslation *self = container_of(base, HklTranslation, parameter);
 	HklTranslation *dup;
 
-	dup = HKL_MALLOC(HklTranslation);
+	dup = g_new(HklTranslation, 1);
 
 	*dup = *self;
 
@@ -501,7 +501,7 @@ HklParameter *hkl_parameter_new_translation(const char *name, HklVector const *a
 		.axis_v = *axis_v,
 	};
 
-	HklTranslation *self =  HKL_MALLOC(HklTranslation);
+	HklTranslation *self =  g_new(HklTranslation, 1);
 
 	*self = translation0;
 

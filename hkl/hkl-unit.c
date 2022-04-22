@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -40,7 +40,7 @@ HklUnit* hkl_unit_dup(const HklUnit *self)
 	if (!self)
 		return NULL;
 
-	HklUnit *dup = HKL_MALLOC(HklUnit);
+	HklUnit *dup = g_new(HklUnit, 1);
 	*dup = *self;
 
 	return dup;

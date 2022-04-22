@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -136,7 +136,7 @@ static void hkl_engine_tth2_free_real(HklEngine *base)
 
 HklEngine *hkl_engine_tth2_new(HklEngineList *engines)
 {
-	HklEngineTth2 *self;
+	HklEngineTth2 *self = g_new(HklEngineTth2, 1);
 	HklMode *mode;
 
 	static const HklParameter tth = {
@@ -157,8 +157,6 @@ HklEngine *hkl_engine_tth2_new(HklEngineList *engines)
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
 		.free=hkl_engine_tth2_free_real,
 	};
-
-	self = HKL_MALLOC(HklEngineTth2);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 	self->tth = register_pseudo_axis(&self->engine, engines, &tth);

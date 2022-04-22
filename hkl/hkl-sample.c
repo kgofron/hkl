@@ -335,9 +335,7 @@ static int minimize(HklSample *sample,
  **/
 HklSample* hkl_sample_new(const char *name)
 {
-	HklSample *self = NULL;
-
-	self = HKL_MALLOC(HklSample);
+	HklSample *self = g_new(HklSample, 1);
 
 	self->name = strdup(name);
 	self->lattice = hkl_lattice_new_default();
@@ -377,9 +375,7 @@ HklSample* hkl_sample_new(const char *name)
  **/
 HklSample *hkl_sample_new_copy(const HklSample *self)
 {
-	HklSample *dup = NULL;
-
-	dup = HKL_MALLOC(HklSample);
+	HklSample *dup = g_new(HklSample, 1);
 
 	dup->name = strdup(self->name);
 	dup->lattice = hkl_lattice_new_copy(self->lattice);
@@ -910,9 +906,7 @@ HklSampleReflection *hkl_sample_reflection_new(const HklGeometry *geometry,
 					       double h, double k, double l,
 					       GError **error)
 {
-	HklSampleReflection *self = NULL;
-
-	self = HKL_MALLOC(HklSampleReflection);
+	HklSampleReflection *self = g_new(HklSampleReflection, 1);
 
 	self->geometry = hkl_geometry_new_copy(geometry);
 	self->detector = hkl_detector_new_copy(detector);
@@ -935,9 +929,7 @@ HklSampleReflection *hkl_sample_reflection_new(const HklGeometry *geometry,
  **/
 HklSampleReflection *hkl_sample_reflection_new_copy(const HklSampleReflection *self)
 {
-	HklSampleReflection *dup = NULL;
-
-	dup = HKL_MALLOC(HklSampleReflection);
+	HklSampleReflection *dup = g_new(HklSampleReflection, 1);
 
 	dup->geometry = hkl_geometry_new_copy(self->geometry);
 	dup->detector = hkl_detector_new_copy(self->detector);

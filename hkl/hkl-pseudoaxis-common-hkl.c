@@ -806,7 +806,7 @@ HklMode *hkl_mode_hkl_emergence_fixed_new(const HklModeAutoInfo *auto_info)
 		exit(128);
 	}
 
-	self = HKL_MALLOC(HklModeAutoHklEmergenceFixed);
+	self = g_new(HklModeAutoHklEmergenceFixed, 1);
 
 	/* the base constructor; */
 	hkl_mode_auto_init(&self->parent,
@@ -834,7 +834,7 @@ static void hkl_engine_hkl_free_real(HklEngine *base)
 
 HklEngine *hkl_engine_hkl_new(HklEngineList *engines)
 {
-	HklEngineHkl *self;
+	HklEngineHkl *self = g_new(HklEngineHkl, 1);
 	static const HklParameter h = {
 		HKL_PARAMETER_DEFAULTS, .name = "h",
 		.description = "h coordinate of the diffracting plan",
@@ -860,8 +860,6 @@ HklEngine *hkl_engine_hkl_new(HklEngineList *engines)
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
 		.free=hkl_engine_hkl_free_real,
 	};
-
-	self = HKL_MALLOC(HklEngineHkl);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 

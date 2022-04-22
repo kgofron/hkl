@@ -205,7 +205,7 @@ static HklMode *mode_eulerians()
 		.set = hkl_mode_set_eulerians_real,
 	};
         HklMode *mode = NULL;
-	HklModeEulerians *self = HKL_MALLOC(HklModeEulerians);
+	HklModeEulerians *self = g_new(HklModeEulerians, 1);
 
         if(NULL == self)
                 goto error;
@@ -263,9 +263,7 @@ HklEngine *hkl_engine_eulerians_new(HklEngineList *engines)
 		.free=hkl_engine_eulerians_free_real,
 	};
 
-	self = HKL_MALLOC(HklEngineEulerians);
-        if(NULL == self)
-                goto error;
+	self = g_new(HklEngineEulerians, 1);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 

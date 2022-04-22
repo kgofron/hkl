@@ -70,20 +70,18 @@ void hkl_binoculars_axis_limits_free(HklBinocularsAxisLimits *self)
 HklBinocularsAxisLimits *hkl_binoculars_axis_limits_new(const ptrdiff_t *imin,
                                                         const ptrdiff_t *imax)
 {
-	HklBinocularsAxisLimits *self = malloc(sizeof(*self));
+	HklBinocularsAxisLimits *self = g_new(HklBinocularsAxisLimits, 1);
 
-        if (NULL != self){
-                if (NULL == imin){
-                        self->imin = NoLimit();
-                } else {
-                        self->imin = Limit(*imin);
-                }
+        if (NULL == imin){
+                self->imin = NoLimit();
+        } else {
+                self->imin = Limit(*imin);
+        }
 
-                if (NULL == imax){
-                        self->imax = NoLimit();
-                } else {
-                        self->imax = Limit(*imax);
-                }
+        if (NULL == imax){
+                self->imax = NoLimit();
+        } else {
+                self->imax = Limit(*imax);
         }
 
         return self;
@@ -117,16 +115,14 @@ static inline void hkl_binoculars_axis_init(HklBinocularsAxis *self,
 
 double *hkl_binoculars_axis_array(const HklBinocularsAxis *self)
 {
-	double *arr = malloc(6 * sizeof(*arr));
+	double *arr = g_new0(double, 6);
 
-        if(NULL != arr){
-                arr[0] = self->index;
-                arr[1] = axis_min(self);
-                arr[2] = axis_max(self);
-                arr[3] = self->resolution;
-                arr[4] = self->imin;
-                arr[5] = self->imax;
-        }
+        arr[0] = self->index;
+        arr[1] = axis_min(self);
+        arr[2] = axis_max(self);
+        arr[3] = self->resolution;
+        arr[4] = self->imin;
+        arr[5] = self->imax;
 
 	return arr;
 }
@@ -265,15 +261,13 @@ static inline int item_in_the_limits(const HklBinocularsSpaceItem *item,
 
 HklBinocularsSpace *hkl_binoculars_space_new(size_t max_items, size_t n_axes)
 {
-	HklBinocularsSpace *self = malloc(sizeof(*self));
+	HklBinocularsSpace *self = g_new(HklBinocularsSpace, 1);
 
-        if(NULL != self){
-                self->max_items = max_items;
-                darray_init(self->items);
-                darray_resize(self->items, max_items);
-                darray_init(self->axes);
-                darray_resize(self->axes, n_axes);
-        }
+        self->max_items = max_items;
+        darray_init(self->items);
+        darray_resize(self->items, max_items);
+        darray_init(self->axes);
+        darray_resize(self->axes, n_axes);
 
 	return self;
 }
@@ -531,16 +525,14 @@ static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes)
         if (0 != darray_size(*axes)){
                 HklBinocularsAxis *axis;
 
-                self = malloc(sizeof(HklBinocularsCube));
-                if(NULL != self){
-                        darray_init(self->axes);
-                        darray_foreach(axis, *axes){
-                                darray_append(self->axes, *axis);
-                        }
-                        self->offset0 = compute_offset0(&self->axes);
-                        self->photons = NULL;
-                        self->contributions = NULL;
+                self = g_new(HklBinocularsCube, 1);
+                darray_init(self->axes);
+                darray_foreach(axis, *axes){
+                        darray_append(self->axes, *axis);
                 }
+                self->offset0 = compute_offset0(&self->axes);
+                self->photons = NULL;
+                self->contributions = NULL;
         }
 
         return self;
@@ -620,14 +612,12 @@ static inline int cube_is_empty(const HklBinocularsCube *self)
 
 HklBinocularsCube *hkl_binoculars_cube_new_empty(void)
 {
-        HklBinocularsCube *self = malloc(sizeof(*self));
+        HklBinocularsCube *self = g_new(HklBinocularsCube, 1);
 
-        if(NULL != self){
-                darray_init(self->axes);
-                self->offset0 = 0;
-                self->photons = NULL;
-                self->contributions = NULL;
-        }
+        darray_init(self->axes);
+        self->offset0 = 0;
+        self->photons = NULL;
+        self->contributions = NULL;
 
         return self;
 }

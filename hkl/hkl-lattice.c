@@ -98,7 +98,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
 	}
 	hkl_assert (error == NULL || *error == NULL);
 
-	self = HKL_MALLOC(HklLattice);
+	self = g_new(HklLattice, 1);
 
 	self->a = hkl_parameter_new("a", "The length of the first lattice vector",
 				    0, a, a+10,
@@ -153,9 +153,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
  **/
 HklLattice *hkl_lattice_new_copy(const HklLattice *self)
 {
-	HklLattice *copy = NULL;
-
-	copy = HKL_MALLOC(HklLattice);
+	HklLattice *copy = g_new(HklLattice, 1);
 
 	copy->a = hkl_parameter_new_copy(self->a);
 	copy->b = hkl_parameter_new_copy(self->b);

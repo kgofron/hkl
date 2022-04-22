@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -123,7 +123,7 @@ HklMode *hkl_mode_incidence_new(const HklModeInfo *info)
 		.get = hkl_mode_incidence_get_real,
 		.set = hkl_mode_readonly_set_real,
 	};
-	HklModeIncidence *self = HKL_MALLOC(HklModeIncidence);
+	HklModeIncidence *self = g_new(HklModeIncidence, 1);
 
 	/* the base constructor; */
 	hkl_mode_init(&self->parent,
@@ -166,7 +166,7 @@ HklEngine *hkl_engine_incidence_new(HklEngineList *engines)
 		.free=hkl_engine_incidence_free_real,
 	};
 
-	self = HKL_MALLOC(HklEngineIncidence);
+	self = g_new(HklEngineIncidence, 1);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 
@@ -266,7 +266,7 @@ HklMode *hkl_mode_emergence_new(const HklModeInfo *info)
 		.get = hkl_mode_emergence_get_real,
 		.set = hkl_mode_readonly_set_real,
 	};
-	HklModeIncidence *self = HKL_MALLOC(HklModeIncidence);
+	HklModeIncidence *self = g_new(HklModeIncidence, 1);
 
 	/* the base constructor; */
 	hkl_mode_init(&self->parent,
@@ -289,7 +289,8 @@ static void hkl_engine_emergence_free_real(HklEngine *base)
 
 HklEngine *hkl_engine_emergence_new(HklEngineList *engines)
 {
-	HklEngineEmergence *self;
+	HklEngineEmergence *self = g_new(HklEngineEmergence, 1);
+
 	static const HklParameter emergence = {
 		HKL_PARAMETER_DEFAULTS_ANGLE, .name = "emergence",
 		.description = "incidence of the outgoing beam.",
@@ -309,8 +310,6 @@ HklEngine *hkl_engine_emergence_new(HklEngineList *engines)
 		.free=hkl_engine_emergence_free_real,
 
 	};
-
-	self = HKL_MALLOC(HklEngineEmergence);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 

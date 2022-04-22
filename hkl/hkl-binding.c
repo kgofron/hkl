@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2012-2019 Synchrotron SOLEIL
+ * Copyright (C) 2012-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -125,7 +125,7 @@ double *hkl_geometry_axis_values_get_binding(const HklGeometry *self, guint *len
 		return NULL;
 
 	*len = darray_size(self->axes);
-	values = malloc(darray_size(self->axes) * sizeof(*values));
+	values = g_new(double, darray_size(self->axes));
 
 	darray_foreach(axis, self->axes){
 		values[i++] = hkl_parameter_value_get(*axis, unit_type);
@@ -273,7 +273,7 @@ double *hkl_engine_parameters_values_get_binding(const HklEngine *self, guint *l
 		return NULL;
 
 	*len = darray_size(self->mode->parameters);
-	values = malloc(*len * sizeof(*values));
+	values = g_new(double, *len);
 
 	darray_foreach(parameter, self->mode->parameters){
 		values[i++] = hkl_parameter_value_get(*parameter, unit_type);
@@ -302,7 +302,7 @@ double *hkl_engine_pseudo_axis_values_get_binding(const HklEngine *self, guint *
 		return NULL;
 
 	*len = darray_size(self->pseudo_axes);
-	values = malloc(darray_size(self->pseudo_axes) * sizeof(*values));
+	values = g_new(double, *len);
 
 	darray_foreach(axis, self->pseudo_axes){
 		values[i++] = hkl_parameter_value_get(*axis, unit_type);
@@ -367,7 +367,7 @@ double *hkl_engine_list_parameters_values_get_binding(const HklEngineList *self,
 		return NULL;
 
 	*len = darray_size(self->parameters);
-	values = malloc(*len * sizeof(*values));
+	values = g_new(double, *len);
 
 	darray_foreach(parameter, self->parameters){
 		values[i++] = hkl_parameter_value_get(*parameter, unit_type);

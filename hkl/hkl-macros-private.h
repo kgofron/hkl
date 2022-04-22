@@ -94,7 +94,4 @@ extern void hkl_printbt(void);
 
 G_END_DECLS
 
-/* malloc method */
-#define HKL_MALLOC(type) g_new0(type, 1)
-
 #endif

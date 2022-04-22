@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -264,7 +264,7 @@ HklMode *hkl_mode_psi_new(const HklModeAutoInfo *auto_info)
 		exit(128);
 	}
 
-	self = HKL_MALLOC(HklModePsi);
+	self = g_new(HklModePsi, 1);
 
 	/* the base constructor; */
 	hkl_mode_auto_init(&self->parent,
@@ -287,7 +287,7 @@ static void hkl_engine_psi_free_real(HklEngine *base)
 
 HklEngine *hkl_engine_psi_new(HklEngineList *engines)
 {
-	HklEnginePsi *self;
+	HklEnginePsi *self = g_new(HklEnginePsi, 1);
 	static const HklParameter psi = {
 		HKL_PARAMETER_DEFAULTS_ANGLE, .name = "psi",
 		.description = "angle between the reference vector and the diffraction plan",
@@ -302,8 +302,6 @@ HklEngine *hkl_engine_psi_new(HklEngineList *engines)
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
 		.free=hkl_engine_psi_free_real,
 	};
-
-	self = HKL_MALLOC(HklEnginePsi);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 

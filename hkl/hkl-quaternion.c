@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -40,10 +40,9 @@
  **/
 HklQuaternion *hkl_quaternion_dup(const HklQuaternion* self)
 {
-	HklQuaternion *dup;
+	HklQuaternion *dup = g_new(HklQuaternion, 1);
 
-	dup = HKL_MALLOC(HklQuaternion);
-	memcpy(dup, self, sizeof(*self));
+        *dup = *self;
 
 	return dup;
 }

@@ -86,7 +86,7 @@ static struct HklHolderConfig *hkl_holder_config_new(void)
 {
 	struct HklHolderConfig *self;
 
-	self = HKL_MALLOC(struct HklHolderConfig);
+	self = g_new(struct HklHolderConfig, 1);
 
 	self->gc = 1;
 	self->idx = NULL;
@@ -124,7 +124,7 @@ static void hkl_holder_config_unref(struct HklHolderConfig *self)
 static HklHolder *hkl_holder_new(HklGeometry *geometry)
 {
 	static HklQuaternion q0 = {{1, 0, 0, 0}};
-	HklHolder *self = HKL_MALLOC(HklHolder);
+	HklHolder *self = g_new(HklHolder, 1);
 
 	self->config = hkl_holder_config_new();
 	self->geometry = geometry;
@@ -135,7 +135,7 @@ static HklHolder *hkl_holder_new(HklGeometry *geometry)
 
 static HklHolder *hkl_holder_new_copy(HklHolder *src, HklGeometry *geometry)
 {
-	HklHolder *self = HKL_MALLOC(HklHolder);
+	HklHolder *self = g_new(HklHolder, 1);
 
 	self->config = hkl_holder_config_ref(src->config);
 	self->geometry = geometry;
@@ -287,11 +287,9 @@ const HklGeometryOperations hkl_geometry_operations_defaults = { HKL_GEOMETRY_OP
 HklGeometry *hkl_geometry_new(const HklFactory *factory,
 			      const HklGeometryOperations *ops)
 {
-	HklGeometry *g = NULL;
+	HklGeometry *g = g_new(HklGeometry, 1);
 
-	g = HKL_MALLOC(HklGeometry);
 	g->ops = ops;
-
 	g->factory = factory;
 	hkl_source_init(&g->source, 1.54, 1, 0, 0);
 	darray_init(g->axes);
@@ -310,11 +308,9 @@ HklGeometry *hkl_geometry_new(const HklFactory *factory,
  **/
 HklGeometry *hkl_geometry_new_copy(const HklGeometry *src)
 {
-	HklGeometry *self = NULL;
+	HklGeometry *self = g_new(HklGeometry, 1);
 	HklParameter **axis;
 	HklHolder **holder;
-
-	self = HKL_MALLOC(HklGeometry);
 
 	*self = *src;
 
@@ -952,9 +948,7 @@ HklVector hkl_geometry_kf_get(const HklGeometry *self,
  **/
 HklGeometryList *hkl_geometry_list_new(void)
 {
-	HklGeometryList *self;
-
-	self = HKL_MALLOC(HklGeometryList);
+	HklGeometryList *self = g_new(HklGeometryList, 1);
 
 	list_head_init(&self->items);
 	self->n_items = 0;
@@ -979,7 +973,7 @@ HklGeometryList *hkl_geometry_list_new_copy(const HklGeometryList *self)
 	if (!self)
 		return NULL;
 
-	dup = HKL_MALLOC(HklGeometryList);
+	dup = g_new(HklGeometryList, 1);
 
 	list_head_init(&dup->items);
 	/* now copy the item arrays */
@@ -1336,7 +1330,7 @@ HklGeometryListItem *hkl_geometry_list_item_new(const HklGeometry *geometry)
 	if(!geometry)
 		return NULL;
 
-	self = HKL_MALLOC(HklGeometryListItem);
+	self = g_new(HklGeometryListItem, 1);
 
 	self->geometry = hkl_geometry_new_copy(geometry);
 
@@ -1358,7 +1352,7 @@ HklGeometryListItem *hkl_geometry_list_item_new_copy(const HklGeometryListItem *
 	if(!self)
 		return NULL;
 
-	dup = HKL_MALLOC(HklGeometryListItem);
+	dup = g_new(HklGeometryListItem, 1);
 
 	dup->geometry = hkl_geometry_new_copy(self->geometry);
 

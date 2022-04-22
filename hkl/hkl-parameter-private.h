@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -119,7 +119,7 @@ struct _HklParameterOperations {
 
 static inline HklParameter *hkl_parameter_copy_real(const HklParameter *self)
 {
-	HklParameter *dup = HKL_MALLOC(HklParameter);
+	HklParameter *dup = g_new(HklParameter, 1);
 
 	*dup = *self;
 

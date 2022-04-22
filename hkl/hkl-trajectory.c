@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -26,7 +26,7 @@
 
 HklTrajectoryResult * hkl_trajectory_result_new(void)
 {
-	HklTrajectoryResult *self = HKL_MALLOC(HklTrajectoryResult);
+	HklTrajectoryResult *self = g_new(HklTrajectoryResult, 1);
 
 	darray_init(self->geometries);
 
@@ -52,7 +52,7 @@ void hkl_trajectory_add_geometry(HklTrajectoryResult *self, const HklGeometry *g
 
 HklTrajectoryStats *hkl_trajectory_stats_new(int n)
 {
-	HklTrajectoryStats *self = HKL_MALLOC(HklTrajectoryStats);
+	HklTrajectoryStats *self = g_new(HklTrajectoryStats, 1);
 
 	self->n = 0;
 	darray_init(self->nb_solutions);

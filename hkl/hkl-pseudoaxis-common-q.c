@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -148,7 +148,7 @@ static void hkl_engine_q_free_real(HklEngine *base)
 
 HklEngine *hkl_engine_q_new(HklEngineList *engines)
 {
-	HklEngineQ *self;
+	HklEngineQ *self = g_new(HklEngineQ, 1);
 	HklMode *mode;
 	static const HklParameter *pseudo_axes[] = {&q};
 	static const HklEngineInfo info = {
@@ -160,8 +160,6 @@ HklEngine *hkl_engine_q_new(HklEngineList *engines)
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
 		.free=hkl_engine_q_free_real,
 	};
-
-	self = HKL_MALLOC(HklEngineQ);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 	self->q = register_pseudo_axis(&self->engine, engines, &q);
@@ -275,7 +273,7 @@ static void hkl_engine_q2_free_real(HklEngine *base)
 
 HklEngine *hkl_engine_q2_new(HklEngineList *engines)
 {
-	HklEngineQ2 *self;
+	HklEngineQ2 *self = g_new(HklEngineQ2, 1);
 	HklMode *mode;
 	static const HklParameter *pseudo_axes[] = {&q, &alpha};
 	static const HklEngineInfo info = {
@@ -287,8 +285,6 @@ HklEngine *hkl_engine_q2_new(HklEngineList *engines)
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
 		.free=hkl_engine_q2_free_real,
 	};
-
-	self = HKL_MALLOC(HklEngineQ2);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 	self->q = register_pseudo_axis(&self->engine, engines, &q);
@@ -424,7 +420,7 @@ static HklMode *mode_qper_qpar(void)
 		.get = get_qper_qpar_real,
 	};
 
-	HklModeQperQpar *self = HKL_MALLOC(HklModeQperQpar);
+	HklModeQperQpar *self = g_new(HklModeQperQpar, 1);
 
 	/* the base constructor; */
 	hkl_mode_auto_init(&self->parent,
@@ -447,6 +443,8 @@ static void hkl_engine_qper_qpar_free_real(HklEngine *base)
 
 HklEngine *hkl_engine_qper_qpar_new(HklEngineList *engines)
 {
+	HklEngineQperQpar *self = g_new(HklEngineQperQpar, 1);
+	HklMode *mode;
 	static const HklParameter qper = {
 		HKL_PARAMETER_DEFAULTS, .name = "qper",
 		.description = "perpendicular component of $\\vec{q}$ along the normal of the sample surface",
@@ -467,10 +465,6 @@ HklEngine *hkl_engine_qper_qpar_new(HklEngineList *engines)
 		HKL_ENGINE_OPERATIONS_DEFAULTS,
 		.free = hkl_engine_qper_qpar_free_real,
 	};
-	HklEngineQperQpar *self;
-	HklMode *mode;
-
-	self = HKL_MALLOC(HklEngineQperQpar);
 
 	hkl_engine_init(&self->engine, &info, &operations, engines);
 	self->qper = register_pseudo_axis(&self->engine, engines, &qper);

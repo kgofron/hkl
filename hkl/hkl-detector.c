@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -38,9 +38,7 @@
  **/
 HklDetector *hkl_detector_new(void)
 {
-	HklDetector *self = NULL;
-
-	self = HKL_MALLOC(HklDetector);
+	HklDetector *self = g_new(HklDetector, 1);
 
 	self->idx = HKL_HOLDER_DETECTOR_IDX;
 	self->holder = NULL;
@@ -58,9 +56,7 @@ HklDetector *hkl_detector_new(void)
  **/
 HklDetector *hkl_detector_new_copy(const HklDetector *src)
 {
-	HklDetector *self;
-
-	self = HKL_MALLOC(HklDetector);
+	HklDetector *self = g_new(HklDetector, 1);
 
 	*self = *src;
 

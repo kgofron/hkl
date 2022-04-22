@@ -192,7 +192,7 @@ static inline int hkl_mode_set_real(UNUSED HklMode *self,
 static inline int hkl_mode_init(HklMode *self,
 				const HklModeInfo *info,
 				const HklModeOperations *ops,
-				int initialized) HKL_ARG_NONNULL(1, 2, 3);
+				int initialized) HKL_ARG_NONNULL(1, 2, 3) HKL_WARN_UNUSED_RESULT;
 static inline int hkl_mode_init(HklMode *self,
 				const HklModeInfo *info,
 				const HklModeOperations *ops,
@@ -225,9 +225,7 @@ static inline HklMode *hkl_mode_new(const HklModeInfo *info,
 				    const HklModeOperations *op,
 				    int initialized)
 {
-	HklMode *self = NULL;
-
-	self = HKL_MALLOC(HklMode);
+	HklMode *self = g_new(HklMode, 1);
 
 	hkl_mode_init(self, info, op, initialized);
 
@@ -395,18 +393,18 @@ static inline void hkl_engine_init(HklEngine *self,
 {
 	self->info = info;
 	self->ops = ops;
-	darray_init(self->modes);
-	darray_init(self->pseudo_axes);
-	darray_init(self->pseudo_axis_names);
-	darray_init(self->mode_names);
 	self->geometry = NULL;
 	self->detector = NULL;
 	self->sample = NULL;
 	self->engines = engines;
+        darray_init(self->axes);
+	darray_init(self->pseudo_axes);
+	darray_init(self->pseudo_axis_names);
+	darray_init(self->modes);
+	darray_init(self->mode_names);
 
 	darray_append(*engines, self);
 }
-
 
 static inline HklParameter *register_mode_parameter(HklMode *mode, unsigned int index)
 {
@@ -714,10 +712,8 @@ static inline int hkl_engine_list_post_engine_set_real(UNUSED HklEngineList *sel
 static inline HklEngineList *hkl_engine_list_new_with_info(const HklEngineListInfo *info,
 							   const HklEngineListOperations *ops)
 {
-	HklEngineList *self = NULL;
 	const HklParameter **parameter;
-
-	self = HKL_MALLOC(HklEngineList);
+	HklEngineList *self = g_new(HklEngineList, 1);
 
 	/* This code needs _darray to be at start of HklEngineList */
 	BUILD_ASSERT(offsetof(HklEngineList, item) == 0);

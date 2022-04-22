@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -80,9 +80,7 @@ HklParameter *hkl_parameter_new(const char *name, const char *description,
 				int fit, int changed,
 				const HklUnit *unit, const HklUnit *punit)
 {
-	HklParameter *self;
-
-	self = HKL_MALLOC(HklParameter);
+	HklParameter *self = g_new(HklParameter, 1);
 
 	if (!hkl_parameter_init(self,
 				name, description,

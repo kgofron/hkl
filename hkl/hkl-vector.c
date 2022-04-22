@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -38,10 +38,10 @@
  * Returns: A copy of self which need to be free using hkl_vector_free
  **/
 HklVector* hkl_vector_dup (const HklVector* self) {
-        HklVector* dup;
+        HklVector* dup = g_new(HklVector, 1);
 
-	dup = HKL_MALLOC(HklVector);
-        memcpy(dup, self, sizeof (HklVector));
+        *dup = *self;
+
         return dup;
 }
 
