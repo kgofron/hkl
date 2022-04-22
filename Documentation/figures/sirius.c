@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021, 2022 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -44,6 +44,9 @@ static void GeometryList_save_as_dat(const char *filename,  const struct Traject
 
 	/* print the header */
 	econfig = generator_next(gen);
+        if (NULL == econfig)
+                goto error;
+
 	fprintf(f, "#");
 	Engine_header(f, *econfig);
 
@@ -63,6 +66,8 @@ static void GeometryList_save_as_dat(const char *filename,  const struct Traject
 		item = hkl_geometry_list_items_next_get(geometries, item);
 		hkl_geometry_save_as_dat(f, item->geometry);
 	}
+
+error:
 	fclose(f);
 
 	generator_free(gen);
