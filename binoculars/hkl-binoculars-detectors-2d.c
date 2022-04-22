@@ -158,15 +158,7 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
 
 static inline double *coordinates_new(const struct shape_t *shape)
 {
-        double *arr;
-        int n = shape_size(*shape) * sizeof(*arr);
-
-        arr = malloc(3 * n);
-
-        /* x set to zero for all 2d detectors */
-        memset(arr, 0, n);
-
-        return arr;
+        return g_new0(double, 3 * shape_size(*shape));
 }
 
 static inline double imxpad_coordinates_pattern(int i, int chip, double s)
@@ -256,7 +248,7 @@ static inline double *coordinates_get_square(const struct shape_t *shape,
 
 static inline uint8_t *no_mask(const struct shape_t *shape)
 {
-        return calloc(shape_size(*shape), sizeof(uint8_t));
+        return g_new0(uint8_t, shape_size(*shape));
 }
 
 static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
@@ -493,10 +485,9 @@ void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
 
         darray_int shape = darray_new();
 
-        darray_appends(shape,
-                       3,
-                       detector.shape.height,
-                       detector.shape.width);
+        darray_append(shape, 3);
+        darray_append(shape, detector.shape.height);
+        darray_append(shape, detector.shape.width);
 
         arr = hkl_binoculars_detector_2d_coordinates_get(n);
 
@@ -549,9 +540,8 @@ uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
         const struct detector_t detector = get_detector(n);
         darray_int shape = darray_new();
 
-        darray_appends(shape,
-                       detector.shape.height,
-                       detector.shape.width);
+        darray_append(shape, detector.shape.height);
+        darray_append(shape, detector.shape.width);
 
         arr = npy_load(fname, HklBinocularsNpyBool(), &shape);
 
@@ -567,9 +557,8 @@ void hkl_binoculars_detector_2d_mask_save(HklBinocularsDetectorEnum n,
         const struct detector_t detector = get_detector(n);
         darray_int shape = darray_new();
 
-        darray_appends(shape,
-                       detector.shape.height,
-                       detector.shape.width );
+        darray_append(shape, detector.shape.height);
+        darray_append(shape, detector.shape.width);
 
         arr = hkl_binoculars_detector_2d_mask_get(n);
         npy_save(fname, arr, HklBinocularsNpyBool(), &shape);
@@ -583,15 +572,13 @@ uint32_t *hkl_binoculars_detector_2d_fake_image_uint32(HklBinocularsDetectorEnum
                                                        size_t *n_pixels)
 {
         size_t i;
-        uint32_t *arr = NULL;
+        uint32_t *arr;
         const struct detector_t detector = get_detector(n);
 
         *n_pixels = detector.shape.width * detector.shape.height;
-        arr = malloc(*n_pixels * sizeof(uint32_t));
-        if (NULL != arr){
-                for(i=0; i<*n_pixels; ++i){
-                        arr[i] = rand();
-                }
+        arr = g_new(uint32_t, *n_pixels);
+        for(i=0; i<*n_pixels; ++i){
+                arr[i] = rand();
         }
 
         return arr;
