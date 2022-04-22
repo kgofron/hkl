@@ -31,7 +31,7 @@
 #include "hkl-sample-private.h"
 #include "hkl-vector-private.h"
 
-#define DEBUG
+/* #define DEBUG */
 
 /* mark the masked pixels with this value */
 #define MASKED PTRDIFF_MAX
