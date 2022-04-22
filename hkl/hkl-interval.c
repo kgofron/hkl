@@ -37,9 +37,6 @@
  **/
 HklInterval *hkl_interval_dup(const HklInterval *self)
 {
-	if(!self)
-		return NULL;
-
 	HklInterval *dup = g_new(HklInterval, 1);
 
 	*dup = *self;
@@ -55,8 +52,7 @@ HklInterval *hkl_interval_dup(const HklInterval *self)
  **/
 void hkl_interval_free(HklInterval *self)
 {
-	if(self)
-		free(self);
+        free(self);
 }
 
 /**

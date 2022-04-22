@@ -764,7 +764,7 @@ static inline HklEngineList *hkl_engine_list_new(void)
  *
  * Returns: (transfer none): NULL all the time the structure is non-copyable
  **/
-static inline const HklEngineList *hkl_engine_list_new_copy(UNUSED const HklEngineList *self)
+static inline HklEngineList *hkl_engine_list_new_copy(UNUSED const HklEngineList *self)
 {
 	return NULL;
 }
