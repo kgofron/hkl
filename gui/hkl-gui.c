@@ -116,9 +116,7 @@ struct diffractometer_t {
 static struct diffractometer_t *
 create_diffractometer(HklFactory *factory)
 {
-	struct diffractometer_t *self;
-
-	self = malloc(sizeof(*self));
+	struct diffractometer_t *self = g_new(struct diffractometer_t, 1);
 
 	self->factory = factory;
 	self->geometry = hkl_factory_create_new_geometry (factory);
@@ -500,6 +498,7 @@ raise_error(HklGuiWindow *self, GError **error)
 	HklGuiWindowPrivate *priv =  hkl_gui_window_get_instance_private(self);
 
 	g_return_if_fail (error != NULL);
+	g_return_if_fail (*error != NULL);
 
 	/* show an error message */
 	gtk_label_set_text (GTK_LABEL (priv->info_message),
@@ -983,7 +982,7 @@ hkl_gui_window_combobox1_changed_cb(GtkComboBox *combobox, gpointer *user_data)
 				   DIFFRACTOMETER_COL_DIFFRACTOMETER, &dif,
 				   -1);
 
-		if (!dif){
+		if (NULL == dif){
 			dif = create_diffractometer(factory);
 			gtk_list_store_set(priv->liststore_diffractometer,
 					   &iter,
@@ -991,7 +990,7 @@ hkl_gui_window_combobox1_changed_cb(GtkComboBox *combobox, gpointer *user_data)
 					   -1);
 		}
 	}
-	if(dif != priv->diffractometer){
+	if(NULL != dif && dif != priv->diffractometer){
 		priv->diffractometer = dif;
 
 		diffractometer_set_sample(dif, priv->sample);
