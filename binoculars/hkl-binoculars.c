@@ -501,7 +501,6 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
 
 /* this method compute the linear coordinates of the first element in
  * the absolute coordinates of the bin */
-static inline ptrdiff_t compute_offset0(const darray_axis *axes) HKL_ARG_NONNULL(1);
 static inline ptrdiff_t compute_offset0(const darray_axis *axes)
 {
 	size_t i;
@@ -517,7 +516,6 @@ static inline ptrdiff_t compute_offset0(const darray_axis *axes)
 	return offset;
 }
 
-static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes) HKL_ARG_NONNULL(1);
 static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes)
 {
         HklBinocularsCube *self = NULL;
@@ -550,7 +548,6 @@ static inline size_t cube_size(const HklBinocularsCube *self)
 	return n;
 }
 
-static inline size_t malloc_cube(HklBinocularsCube *self) HKL_ARG_NONNULL(1);
 static inline size_t malloc_cube(HklBinocularsCube *self)
 {
         size_t n = cube_size(self);
@@ -561,7 +558,6 @@ static inline size_t malloc_cube(HklBinocularsCube *self)
         return n;
 }
 
-static inline size_t calloc_cube(HklBinocularsCube *self) HKL_ARG_NONNULL(1);
 static inline size_t calloc_cube(HklBinocularsCube *self)
 {
         size_t n = cube_size(self);
@@ -781,7 +777,6 @@ static inline void cube_add_cube_2(HklBinocularsCube *self,
                 }
         }
 }
-
 
 static inline void cube_add_cube_3(HklBinocularsCube *self,
                                    const HklBinocularsCube *other)
