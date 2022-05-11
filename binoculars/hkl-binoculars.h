@@ -148,6 +148,263 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /* Projections */
 /***************/
 
+/* class RealSpace(backend.ProjectionBase): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         pixels = pdataframe.pixels */
+/*         P = pdataframe.P */
+/*         timestamp = pdataframe.timestamp */
+
+/*         if P is not None: */
+/*             pixels_ = numpy.tensordot(P, pixels, axes=1) */
+/*         else: */
+/*             pixels_ = pixels */
+/*         x = pixels_[1] */
+/*         y = pixels_[2] */
+/*         if timestamp is not None: */
+/*             z = numpy.ones_like(x) * timestamp */
+/*         else: */
+/*             z = pixels_[0] */
+
+/*         return (x, y, z) */
+
+/*     def get_axis_labels(self): */
+/*         return ("x", "y", "z") */
+
+
+/* class Pixels(backend.ProjectionBase): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         pixels = pdataframe.pixels */
+
+/*         return numpy.meshgrid( */
+/*             numpy.arange(pixels[0].shape[1]), numpy.arange(pixels[0].shape[0]) */
+/*         ) */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "x", "y" */
+
+
+/* class QxQyIndexProjection(QxQyQzProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         timestamp = pdataframe.timestamp */
+
+/*         qx, qy, qz = super(QxQyIndexProjection, self).project(index, pdataframe) */
+/*         return qx, qy, numpy.ones_like(qx) * timestamp */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Qx", "Qy", "t" */
+
+
+/* class QxQzIndexProjection(QxQyQzProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         timestamp = pdataframe.timestamp */
+
+/*         qx, qy, qz = super(QxQzIndexProjection, self).project(index, pdataframe) */
+/*         return qx, qz, numpy.ones_like(qx) * timestamp */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Qx", "Qz", "t" */
+
+
+/* class QyQzIndexProjection(QxQyQzProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         timestamp = pdataframe.timestamp */
+
+/*         qx, qy, qz = super(QyQzIndexProjection, self).project(index, pdataframe) */
+/*         return qy, qz, numpy.ones_like(qy) * timestamp */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Qy", "Qz", "t" */
+
+
+/* class QparQperIndexProjection(QparQperProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         timestamp = pdataframe.timestamp */
+
+/*         qpar, qper = super(QparQperIndexProjection, self).project(index, pdataframe) */
+/*         return qpar, qper, numpy.ones_like(qpar) * timestamp */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Qpar", "Qper", "t" */
+
+
+/* class Stereo(QxQyQzProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         qx, qy, qz = super(Stereo, self).project(index, pdataframe) */
+/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
+/*         ratio = qz + q */
+/*         xp = qx / ratio */
+/*         yp = qy / ratio */
+/*         return q, xp, yp */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Q", "xp", "yp" */
+
+
+/* class QzPolarProjection(QxQyQzProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         qx, qy, qz = super(QzPolarProjection, self).project(index, pdataframe) */
+/*         phi = numpy.rad2deg(numpy.arctan2(qx, qy)) */
+/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
+/*         return phi, q, qz */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Phi", "Q", "Qz" */
+
+
+/* class QyPolarProjection(QxQyQzProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         qx, qy, qz = super(QyPolarProjection, self).project(index, pdataframe) */
+/*         phi = numpy.rad2deg(numpy.arctan2(qz, qx)) */
+/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
+/*         return phi, q, qy */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Phi", "Q", "Qy" */
+
+
+/* class QxPolarProjection(QxQyQzProjection): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         qx, qy, qz = super(QxPolarProjection, self).project(index, pdataframe) */
+/*         phi = numpy.rad2deg(numpy.arctan2(qz, -qy)) */
+/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
+/*         return phi, q, qx */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Phi", "Q", "Qx" */
+
+
+/* class QIndex(Stereo): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         timestamp = pdataframe.timestamp */
+
+/*         q, qx, qy = super(QIndex, self).project(index, pdataframe) */
+/*         return q, numpy.ones_like(q) * timestamp */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return "Q", "Index" */
+
+/* class AnglesProjection(backend.ProjectionBase): */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         # put the detector at the right position */
+
+/*         pixels = pdataframe.pixels */
+/*         geometry = pdataframe.dataframe.diffractometer.geometry */
+/*         detrot = pdataframe.input_config.detrot */
+/*         sdd = pdataframe.input_config.sdd */
+
+/*         try: */
+/*             axis = geometry.axis_get("eta_a") */
+/*             eta_a = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             eta_a = 0 */
+/*         try: */
+/*             axis = geometry.axis_get("omega") */
+/*             omega0 = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             omega0 = 0 */
+/*         try: */
+/*             axis = geometry.axis_get("delta") */
+/*             delta0 = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             delta0 = 0 */
+/*         try: */
+/*             axis = geometry.axis_get("gamma") */
+/*             gamma0 = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             gamma0 = 0 */
+
+/*         P = M(math.radians(eta_a), [1, 0, 0]) */
+/*         if detrot is not None: */
+/*             P = numpy.dot(P, M(math.radians(detrot), [1, 0, 0])) */
+
+/*         x, y, z = numpy.tensordot(P, pixels, axes=1) */
+
+/*         delta = numpy.rad2deg(numpy.arctan(z / sdd)) + delta0 */
+/*         gamma = numpy.rad2deg(numpy.arctan(y / sdd)) + gamma0 */
+/*         omega = numpy.ones_like(delta) * omega0 */
+
+/*         return (delta, gamma, omega) */
+
+/*         # # on calcule le vecteur de l'axes de rotation de l'angle qui */
+/*         # # nous interesse. (ici delta et gamma). example delta (0, 1, */
+/*         # # 0) (dans le repere du detecteur). Il faut donc calculer la */
+/*         # # matrice de transformation pour un axe donnée. C'est la liste */
+/*         # # de transformations qui sont entre cet axe et le detecteur. */
+/*         # axis_delta = None */
+/*         # axis_gamma = None */
+
+/*         # # il nous faut ensuite calculer la normale du plan dans lequel */
+/*         # # nous allons projeter les pixels. (C'est le produit vectoriel */
+/*         # # de k0, axis_xxx). */
+/*         # n_delta = None */
+/*         # n_gamma = None */
+
+/*         # # On calcule la projection sur la normale des plans en */
+/*         # # question. */
+/*         # p_delta = None */
+/*         # p_gamma = None */
+
+/*         # # On calcule la norme de chaque pixel. (qui pourra etre */
+/*         # # calcule une seule fois pour toutes les images). */
+/*         # l2 = numpy.linalg.norm(pixels, order=2, axis=-1) */
+
+/*         # # xxx0 is the angles of the diffractometer for the given */
+/*         # # image. */
+/*         # delta = numpy.arcsin(p_delta / l2) + delta0 */
+/*         # gamma = numpy.arcsin(p_gamma / l2) + gamma0 */
+/*         # omega = numpy.ones_like(delta) * omega0 */
+
+/*         # return (omega, delta, gamma) */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return 'delta', 'gamma', 'omega' */
+
+
+/* class AnglesProjection2(backend.ProjectionBase):    # omega <> mu */
+/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
+/*         # put the detector at the right position */
+
+/*         pixels = pdataframe.pixels */
+/*         geometry = pdataframe.dataframe.diffractometer.geometry */
+/*         detrot = pdataframe.input_config.detrot */
+/*         sdd = pdataframe.input_config.sdd */
+
+/*         try: */
+/*             axis = geometry.axis_get("eta_a") */
+/*             eta_a = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             eta_a = 0 */
+/*         try: */
+/*             axis = geometry.axis_get("mu") */
+/*             mu0 = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             mu0 = 0 */
+/*         try: */
+/*             axis = geometry.axis_get("delta") */
+/*             delta0 = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             delta0 = 0 */
+/*         try: */
+/*             axis = geometry.axis_get("gamma") */
+/*             gamma0 = axis.value_get(Hkl.UnitEnum.USER) */
+/*         except GLib.GError as err: */
+/*             gamma0 = 0 */
+
+/*         P = M(math.radians(eta_a), [1, 0, 0]) */
+/*         if detrot is not None: */
+/*             P = numpy.dot(P, M(math.radians(detrot), [1, 0, 0])) */
+
+/*         x, y, z = numpy.tensordot(P, pixels, axes=1) */
+
+/*         delta = numpy.rad2deg(numpy.arctan(z / sdd)) + delta0 */
+/*         gamma = numpy.rad2deg(numpy.arctan(y / sdd)) + gamma0 */
+/*         mu = numpy.ones_like(delta) * mu0 */
+
+/*         return (delta, gamma, mu) */
+
+/*     def get_axis_labels(self) -> Tuple[str]: */
+/*         return 'delta', 'gamma', 'mu' */
+
 /* qparqper */
 
 #define HKL_BINOCULARS_SPACE_QPARQPER_DECL(image_t)                            \
