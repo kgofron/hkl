@@ -283,83 +283,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*     def get_axis_labels(self) -> Tuple[str]: */
 /*         return "Q", "Index" */
 
-/* class AnglesProjection(backend.ProjectionBase): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         # put the detector at the right position */
-
-/*         pixels = pdataframe.pixels */
-/*         geometry = pdataframe.dataframe.diffractometer.geometry */
-/*         detrot = pdataframe.input_config.detrot */
-/*         sdd = pdataframe.input_config.sdd */
-
-/*         try: */
-/*             axis = geometry.axis_get("eta_a") */
-/*             eta_a = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             eta_a = 0 */
-/*         try: */
-/*             axis = geometry.axis_get("omega") */
-/*             omega0 = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             omega0 = 0 */
-/*         try: */
-/*             axis = geometry.axis_get("delta") */
-/*             delta0 = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             delta0 = 0 */
-/*         try: */
-/*             axis = geometry.axis_get("gamma") */
-/*             gamma0 = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             gamma0 = 0 */
-
-/*         P = M(math.radians(eta_a), [1, 0, 0]) */
-/*         if detrot is not None: */
-/*             P = numpy.dot(P, M(math.radians(detrot), [1, 0, 0])) */
-
-/*         x, y, z = numpy.tensordot(P, pixels, axes=1) */
-
-/*         delta = numpy.rad2deg(numpy.arctan(z / sdd)) + delta0 */
-/*         gamma = numpy.rad2deg(numpy.arctan(y / sdd)) + gamma0 */
-/*         omega = numpy.ones_like(delta) * omega0 */
-
-/*         return (delta, gamma, omega) */
-
-/*         # # on calcule le vecteur de l'axes de rotation de l'angle qui */
-/*         # # nous interesse. (ici delta et gamma). example delta (0, 1, */
-/*         # # 0) (dans le repere du detecteur). Il faut donc calculer la */
-/*         # # matrice de transformation pour un axe donnée. C'est la liste */
-/*         # # de transformations qui sont entre cet axe et le detecteur. */
-/*         # axis_delta = None */
-/*         # axis_gamma = None */
-
-/*         # # il nous faut ensuite calculer la normale du plan dans lequel */
-/*         # # nous allons projeter les pixels. (C'est le produit vectoriel */
-/*         # # de k0, axis_xxx). */
-/*         # n_delta = None */
-/*         # n_gamma = None */
-
-/*         # # On calcule la projection sur la normale des plans en */
-/*         # # question. */
-/*         # p_delta = None */
-/*         # p_gamma = None */
-
-/*         # # On calcule la norme de chaque pixel. (qui pourra etre */
-/*         # # calcule une seule fois pour toutes les images). */
-/*         # l2 = numpy.linalg.norm(pixels, order=2, axis=-1) */
-
-/*         # # xxx0 is the angles of the diffractometer for the given */
-/*         # # image. */
-/*         # delta = numpy.arcsin(p_delta / l2) + delta0 */
-/*         # gamma = numpy.arcsin(p_gamma / l2) + gamma0 */
-/*         # omega = numpy.ones_like(delta) * omega0 */
-
-/*         # return (omega, delta, gamma) */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return 'delta', 'gamma', 'omega' */
-
-
 /* class AnglesProjection2(backend.ProjectionBase):    # omega <> mu */
 /*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
 /*         # put the detector at the right position */
@@ -404,6 +327,27 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 
 /*     def get_axis_labels(self) -> Tuple[str]: */
 /*         return 'delta', 'gamma', 'mu' */
+
+/* angles */
+
+#define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)                            \
+        void hkl_binoculars_space_angles_ ## image_t (HklBinocularsSpace *space, \
+                                                      const HklGeometry *geometry, \
+                                                      const image_t *image, \
+                                                      size_t n_pixels,  \
+                                                      double weight,    \
+                                                      const double *pixels_coordinates, \
+                                                      size_t pixels_coordinates_ndim, \
+                                                      const size_t *pixels_coordinates_dims, \
+                                                      const double *resolutions, \
+                                                      size_t n_resolutions, \
+                                                      const uint8_t *masked, \
+                                                      const HklBinocularsAxisLimits **limits, \
+                                                      size_t n_limits)
+
+HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(int32_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint16_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint32_t);
 
 /* qparqper */
 

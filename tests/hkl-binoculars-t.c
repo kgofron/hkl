@@ -84,6 +84,81 @@ static void mask_save(void)
 /*         hkl_binoculars_detector_2d_mask_load(1, fname); */
 /* } */
 
+static void angles_projection(void)
+{
+        size_t n;
+        int res = TRUE;
+        HklFactory *factory = hkl_factory_get_by_name("ZAXIS", NULL);
+        HklGeometry *geometry = hkl_factory_create_new_geometry(factory);
+
+        for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
+                size_t i;
+                int height;
+                int width;
+                HklBinocularsCube *cube;
+                HklBinocularsSpace *space;
+                double *pixels_coordinates;
+                uint8_t *mask;
+                ptrdiff_t min, max;
+                HklBinocularsAxisLimits *delta_lims, *gamma_lims, *omega_lims;
+
+                min = 0 / 0.05, max = 0.4 / 0.05;
+                delta_lims = hkl_binoculars_axis_limits_new(&min, &max);
+                min = -0.4 / 0.05, max = 0.4 / 0.05;
+                gamma_lims = hkl_binoculars_axis_limits_new(&min, &max);
+                min = -0.4 / 0.05, max = 0.4 / 0.05;
+                omega_lims = hkl_binoculars_axis_limits_new(&min, &max);
+
+                const HklBinocularsAxisLimits *limits[] = {delta_lims, gamma_lims, omega_lims};
+
+                hkl_binoculars_detector_2d_shape_get(n, &width, &height);
+                space = hkl_binoculars_space_new(width * height, 3);
+                cube = hkl_binoculars_cube_new_empty();
+                pixels_coordinates = hkl_binoculars_detector_2d_coordinates_get(n);
+                mask = hkl_binoculars_detector_2d_mask_get(n);
+
+                for(i=0; i<3; ++i){
+                        size_t arr_size;
+                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
+                        size_t pixels_coordinates_dims[] = {3, height, width};
+                        double resolutions[] = {1, 1, 1};
+
+                        hkl_geometry_randomize(geometry);
+
+                        hkl_binoculars_space_angles_uint32_t (space,
+                                                              geometry,
+                                                              img,
+                                                              arr_size,
+                                                              1.0,
+                                                              pixels_coordinates,
+                                                              ARRAY_SIZE(pixels_coordinates_dims),
+                                                              pixels_coordinates_dims,
+                                                              resolutions,
+                                                              ARRAY_SIZE(resolutions),
+                                                              mask,
+                                                              limits,
+                                                              ARRAY_SIZE(limits));
+
+                        hkl_binoculars_cube_add_space(cube, space);
+
+                        free(img);
+                }
+
+                free(mask);
+                free(pixels_coordinates);
+                hkl_binoculars_cube_fprintf(stderr, cube);
+                hkl_binoculars_cube_free(cube);
+                hkl_binoculars_space_free(space);
+                hkl_binoculars_axis_limits_free(omega_lims);
+                hkl_binoculars_axis_limits_free(gamma_lims);
+                hkl_binoculars_axis_limits_free(delta_lims);
+        }
+
+        hkl_geometry_free(geometry);
+
+        ok(res == TRUE, __func__);
+}
+
 static void qparqper_projection(void)
 {
         size_t n;
@@ -314,12 +389,13 @@ static void hkl_projection(void)
 
 int main(void)
 {
-	plan(7);
+	plan(8);
 
 	coordinates_get();
         coordinates_save();
 	mask_get();
         mask_save();
+        angles_projection();
         qparqper_projection();
         qxqyqz_projection();
         hkl_projection();
