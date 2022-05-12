@@ -34,6 +34,9 @@ module Hkl.C.Binoculars
        , c'hkl_binoculars_cube_new_empty
        , c'hkl_binoculars_cube_new_empty_from_cube
        , c'hkl_binoculars_cube_save_hdf5
+       , c'hkl_binoculars_space_angles_int32_t
+       , c'hkl_binoculars_space_angles_uint16_t
+       , c'hkl_binoculars_space_angles_uint32_t
        , c'hkl_binoculars_space_hkl_int32_t
        , c'hkl_binoculars_space_hkl_uint16_t
        , c'hkl_binoculars_space_hkl_uint32_t
@@ -166,6 +169,31 @@ newSpace d n = do
 #ccall hkl_binoculars_space_free, \
   Ptr <HklBinocularsSpace> -> IO ()
 
+type C'ProjectionTypeAngles t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
+ -> Ptr Geometry -- const HklGeometry *geometry
+ -> Ptr t --  const uint16_t *image
+ -> CSize -- size_t n_pixels
+ -> CDouble -- double weight
+ -> Ptr Double -- const double *pixels_coordinates
+ -> CSize -- int32_t pixels_coordinates_ndim
+ -> Ptr CSize --  const int32_t *pixels_coordinates_dims
+ -> Ptr Double --  const double *resolutions
+ -> CSize -- size_t n_resolutions
+ -> Ptr CBool -- const uint8_t *mask
+ -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
+ -> CInt -- size_t n_limits
+ -> IO ()
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_int32_t" \
+c'hkl_binoculars_space_angles_int32_t :: C'ProjectionTypeAngles Int32
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_uint16_t" \
+c'hkl_binoculars_space_angles_uint16_t :: C'ProjectionTypeAngles Word16
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_uint32_t" \
+c'hkl_binoculars_space_angles_uint32_t :: C'ProjectionTypeAngles Word32
+
+
 type C'ProjectionTypeQ t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
  -> Ptr Geometry -- const HklGeometry *geometry
  -> Ptr t --  const uint16_t *image
@@ -190,7 +218,6 @@ c'hkl_binoculars_space_qparqper_uint16_t :: C'ProjectionTypeQ Word16
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qparqper_uint32_t" \
 c'hkl_binoculars_space_qparqper_uint32_t :: C'ProjectionTypeQ Word32
-
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qxqyqz_int32_t" \
 c'hkl_binoculars_space_qxqyqz_int32_t :: C'ProjectionTypeQ Int32

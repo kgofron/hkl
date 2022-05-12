@@ -27,6 +27,7 @@ import           Path.IO                             (getCurrentDir)
 import           Path.Posix                          (parseAbsDir)
 
 import           Hkl.Binoculars.Config
+import           Hkl.Binoculars.Projections.Angles
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QparQper
 import           Hkl.Binoculars.Projections.QxQyQz
@@ -40,9 +41,10 @@ process mf mr = do
   case epreconf of
     Left e        -> $(logErrorSH) e
     Right preconf -> case (_binocularsPreConfigProjectionType preconf) of
-                       HklProjection      -> processHkl mf mr
-                       QparQperProjection -> processQparQper mf mr
-                       QxQyQzProjection   -> processQxQyQz mf mr
+                      AnglesProjection   -> processAngles mf mr
+                      HklProjection      -> processHkl mf mr
+                      QparQperProjection -> processQparQper mf mr
+                      QxQyQzProjection   -> processQxQyQz mf mr
 
 new :: (MonadIO m, MonadLogger m, MonadThrow m)
     => ProjectionType -> Maybe FilePath -> m ()
@@ -51,6 +53,7 @@ new p mf = do
           (Just f) -> parseAbsDir f
           Nothing  -> getCurrentDir
   case p of
+    AnglesProjection   -> newAngles cwd
     HklProjection      -> newHkl cwd
     QparQperProjection -> newQparQper cwd
     QxQyQzProjection   -> newQxQyQz cwd
@@ -63,6 +66,7 @@ update f = do
   case epreconf of
     Left e        -> $(logErrorSH) e
     Right preconf -> case (_binocularsPreConfigProjectionType preconf) of
+                      AnglesProjection   -> updateAngles (Just f)
                       HklProjection      -> updateHkl (Just f)
                       QparQperProjection -> updateQparQper (Just f)
                       QxQyQzProjection   -> updateQxQyQz (Just f)

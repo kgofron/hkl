@@ -156,6 +156,8 @@ instance Enum SurfaceOrientation where
 data ProjectionType = QparQperProjection
                     | QxQyQzProjection
                     | HklProjection
+                    | AnglesProjection
+
   deriving (Eq, Show)
 
 data Limits = Limits (Maybe Double) (Maybe Double)
@@ -382,7 +384,8 @@ auto :: HasFieldValue a => FieldValue a
 auto = fieldvalue
 
 projectionTypeP :: Parser ProjectionType
-projectionTypeP = "hkl" $> HklProjection
+projectionTypeP = "angles" $> AnglesProjection
+                  <|> "hkl" $> HklProjection
                   <|> "qparqper" $> QparQperProjection
                   <|> "qxqyqz" $> QxQyQzProjection
                   <|> "sixs:qxqyqzprojection" $> QxQyQzProjection
@@ -394,6 +397,7 @@ instance FieldParsable ProjectionType where
   fieldEmitter QparQperProjection = "qparqper"
   fieldEmitter QxQyQzProjection   = "qxqyqz"
   fieldEmitter HklProjection      = "hkl"
+  fieldEmitter AnglesProjection   = "angles"
 
 instance FieldParsable InputRange where
   fieldParser = inputRangeP
