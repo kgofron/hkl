@@ -303,7 +303,7 @@ static void qxqyqz_projection(void)
                 hkl_binoculars_axis_limits_free(qx_lims);
         }
 
-         hkl_geometry_free(geometry);
+	hkl_geometry_free(geometry);
 
         ok(res == TRUE, __func__);
 }
