@@ -283,51 +283,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*     def get_axis_labels(self) -> Tuple[str]: */
 /*         return "Q", "Index" */
 
-/* class AnglesProjection2(backend.ProjectionBase):    # omega <> mu */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         # put the detector at the right position */
-
-/*         pixels = pdataframe.pixels */
-/*         geometry = pdataframe.dataframe.diffractometer.geometry */
-/*         detrot = pdataframe.input_config.detrot */
-/*         sdd = pdataframe.input_config.sdd */
-
-/*         try: */
-/*             axis = geometry.axis_get("eta_a") */
-/*             eta_a = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             eta_a = 0 */
-/*         try: */
-/*             axis = geometry.axis_get("mu") */
-/*             mu0 = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             mu0 = 0 */
-/*         try: */
-/*             axis = geometry.axis_get("delta") */
-/*             delta0 = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             delta0 = 0 */
-/*         try: */
-/*             axis = geometry.axis_get("gamma") */
-/*             gamma0 = axis.value_get(Hkl.UnitEnum.USER) */
-/*         except GLib.GError as err: */
-/*             gamma0 = 0 */
-
-/*         P = M(math.radians(eta_a), [1, 0, 0]) */
-/*         if detrot is not None: */
-/*             P = numpy.dot(P, M(math.radians(detrot), [1, 0, 0])) */
-
-/*         x, y, z = numpy.tensordot(P, pixels, axes=1) */
-
-/*         delta = numpy.rad2deg(numpy.arctan(z / sdd)) + delta0 */
-/*         gamma = numpy.rad2deg(numpy.arctan(y / sdd)) + gamma0 */
-/*         mu = numpy.ones_like(delta) * mu0 */
-
-/*         return (delta, gamma, mu) */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return 'delta', 'gamma', 'mu' */
-
 /* angles */
 
 #define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)                            \
