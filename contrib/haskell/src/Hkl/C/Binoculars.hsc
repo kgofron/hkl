@@ -182,6 +182,7 @@ type C'ProjectionTypeAngles t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *
  -> Ptr CBool -- const uint8_t *mask
  -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
  -> CInt -- size_t n_limits
+ -> CString -- const char *sample_axis
  -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_int32_t" \

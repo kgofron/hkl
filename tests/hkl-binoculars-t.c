@@ -137,7 +137,8 @@ static void angles_projection(void)
                                                               ARRAY_SIZE(resolutions),
                                                               mask,
                                                               limits,
-                                                              ARRAY_SIZE(limits));
+                                                              ARRAY_SIZE(limits),
+                                                              "omega");
 
                         hkl_binoculars_cube_add_space(cube, space);
 
