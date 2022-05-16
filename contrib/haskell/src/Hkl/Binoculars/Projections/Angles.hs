@@ -51,7 +51,6 @@ import           Data.Text                         (pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Typeable                     (typeOf)
-import           Foreign.C.String                  (withCString)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
@@ -118,6 +117,7 @@ data instance Config 'AnglesProjection = BinocularsConfigAngles
   , _binocularsConfigAnglesProjectionResolution   :: [Double]
   , _binocularsConfigAnglesProjectionLimits       :: Maybe [Limits]
   , _binocularsConfigAnglesDataPath               :: Maybe (DataPath 'AnglesProjection)
+  , _binocularsConfigAnglesSampleAxis             :: Maybe SampleAxis
   } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigAngles
@@ -142,6 +142,7 @@ instance HasIniConfig 'AnglesProjection where
     , _binocularsConfigAnglesProjectionResolution = [1, 1, 1]
     , _binocularsConfigAnglesProjectionLimits  = Nothing
     , _binocularsConfigAnglesDataPath = Just defaultDataPathAngles
+    , _binocularsConfigAnglesSampleAxis = Nothing
     }
 
   specConfig = do
@@ -162,6 +163,7 @@ instance HasIniConfig 'AnglesProjection where
       binocularsConfigAnglesMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigAnglesWavelength .=? field "wavelength" auto
       binocularsConfigAnglesDataPath .=? field "datapath" auto
+      binocularsConfigAnglesSampleAxis .=? field "sample_axis" auto
     section "projection" $ do
       binocularsConfigAnglesProjectionType .= field "type" auto
       binocularsConfigAnglesProjectionResolution .= field "resolution" auto
@@ -171,6 +173,15 @@ instance HasIniConfig 'AnglesProjection where
                                Nothing  -> c
                                (Just _) -> c{_binocularsConfigAnglesInputRange = mr}
 
+getSampleAxis :: Config 'AnglesProjection -> SampleAxis
+getSampleAxis c = case _binocularsConfigAnglesSampleAxis c of
+                    (Just n) -> n
+                    Nothing -> case _binocularsConfigAnglesProjectionType c of
+                                AnglesProjection   -> SampleAxis "omega"
+                                Angles2Projection  -> SampleAxis "mu"
+                                HklProjection      -> undefined
+                                QparQperProjection -> undefined
+                                QxQyQzProjection   -> undefined
 
 -------------------------
 -- Angles Projection --
@@ -179,8 +190,8 @@ instance HasIniConfig 'AnglesProjection where
 newtype DataFrameAngles = DataFrameAngles DataFrameQxQyQz
 
 {-# INLINE spaceAngles #-}
-spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM2 -> DataFrameAngles -> IO (DataFrameSpace DIM2)
-spaceAngles det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameAngles (DataFrameQxQyQz _ att g img)) =
+spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> SampleAxis -> Space DIM2 -> DataFrameAngles -> IO (DataFrameSpace DIM2)
+spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameAngles (DataFrameQxQyQz _ att g img)) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -188,7 +199,7 @@ spaceAngles det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameAngles (
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
   withMaybeLimits mlimits rs $ \nlimits limits ->
-  withCString "omega" $ \sampleAxis ->
+  withSampleAxis sAxis $ \sampleAxis ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
@@ -224,6 +235,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
     let (Meter sampleDetectorDistance) = _binocularsConfigAnglesSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigAnglesDetrot conf)
     let mlimits = _binocularsConfigAnglesProjectionLimits conf
+    let sAxis = getSampleAxis conf
 
     h5d <- mkPaths
     filenames <- InputList
@@ -256,7 +268,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
       >-> framesAnglesP h5d det
-      >-> project det 2 (spaceAngles det pixels res mask' mlimits)
+      >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
       >-> accumulateP c
 
     $(logDebug) "stop gessing final cube size"
@@ -272,7 +284,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                >-> framesAnglesP h5d det
                                -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
-                               >-> project det 2 (spaceAngles det pixels res mask' mlimits)
+                               >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
                                >-> tee (accumulateP c)
                                >-> progress pb
                            ) jobs

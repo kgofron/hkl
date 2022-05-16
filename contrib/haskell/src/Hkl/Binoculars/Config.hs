@@ -39,6 +39,7 @@ module Hkl.Binoculars.Config
     , MaskLocation(..)
     , Meter(..)
     , ProjectionType(..)
+    , SampleAxis(..)
     , SurfaceOrientation(..)
     , auto
     , configRangeP
@@ -145,6 +146,9 @@ data SurfaceOrientation = SurfaceOrientationVertical
                         | SurfaceOrientationHorizontal
   deriving (Eq, Show)
 
+newtype SampleAxis = SampleAxis { unSampleAxis :: Text }
+  deriving (Eq, Show)
+
 instance Enum SurfaceOrientation where
   fromEnum SurfaceOrientationVertical   = 0
   fromEnum SurfaceOrientationHorizontal = 1
@@ -157,6 +161,7 @@ data ProjectionType = QparQperProjection
                     | QxQyQzProjection
                     | HklProjection
                     | AnglesProjection
+                    | Angles2Projection
 
   deriving (Eq, Show)
 
@@ -354,6 +359,11 @@ instance HasFieldValue (Path Abs Dir) where
 instance HasFieldValue ProjectionType where
   fieldvalue = parsable
 
+instance HasFieldValue SampleAxis where
+  fieldvalue = FieldValue { fvParse = Right . SampleAxis . uncomment
+                          , fvEmit = \(SampleAxis t) -> t
+                          }
+
 instance HasFieldValue SurfaceOrientation where
   fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
     where
@@ -385,6 +395,7 @@ auto = fieldvalue
 
 projectionTypeP :: Parser ProjectionType
 projectionTypeP = "angles" $> AnglesProjection
+                  <|> "angles2" $> Angles2Projection
                   <|> "hkl" $> HklProjection
                   <|> "qparqper" $> QparQperProjection
                   <|> "qxqyqz" $> QxQyQzProjection
@@ -398,6 +409,7 @@ instance FieldParsable ProjectionType where
   fieldEmitter QxQyQzProjection   = "qxqyqz"
   fieldEmitter HklProjection      = "hkl"
   fieldEmitter AnglesProjection   = "angles"
+  fieldEmitter Angles2Projection  = "angles2"
 
 instance FieldParsable InputRange where
   fieldParser = inputRangeP

@@ -24,6 +24,7 @@ module Hkl.Binoculars.Projections
   , withMaybeMask
   , withNPixels
   , withPixelsDims
+  , withSampleAxis
   ) where
 
 import           Control.Exception               (Exception)
@@ -32,9 +33,11 @@ import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
 import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3, Z)
 import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
+import           Data.ByteString                 (useAsCString)
 import           Data.Text                       (Text)
+import           Data.Text.Encoding              (encodeUtf8)
 import           Data.Word                       (Word16)
-import           Foreign.C.String                (withCString)
+import           Foreign.C.String                (CString, withCString)
 import           Foreign.C.Types                 (CBool, CSize (..))
 import           Foreign.ForeignPtr              (withForeignPtr)
 import           Foreign.Marshal.Array           (withArrayLen)
@@ -72,6 +75,9 @@ withMaybeMask :: Maybe Mask -> (Ptr CBool -> IO r) -> IO r
 withMaybeMask mm f = case mm of
                        Nothing  -> f nullPtr
                        (Just m) -> withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
+
+withSampleAxis :: SampleAxis -> (CString -> IO r) -> IO r
+withSampleAxis (SampleAxis t) =  useAsCString (encodeUtf8 t)
 
 -- DetectorPath
 

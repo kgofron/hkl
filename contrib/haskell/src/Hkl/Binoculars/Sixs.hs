@@ -42,6 +42,7 @@ process mf mr = do
     Left e        -> $(logErrorSH) e
     Right preconf -> case (_binocularsPreConfigProjectionType preconf) of
                       AnglesProjection   -> processAngles mf mr
+                      Angles2Projection  -> processAngles mf mr
                       HklProjection      -> processHkl mf mr
                       QparQperProjection -> processQparQper mf mr
                       QxQyQzProjection   -> processQxQyQz mf mr
@@ -54,6 +55,7 @@ new p mf = do
           Nothing  -> getCurrentDir
   case p of
     AnglesProjection   -> newAngles cwd
+    Angles2Projection  -> newAngles cwd
     HklProjection      -> newHkl cwd
     QparQperProjection -> newQparQper cwd
     QxQyQzProjection   -> newQxQyQz cwd
@@ -67,6 +69,7 @@ update f = do
     Left e        -> $(logErrorSH) e
     Right preconf -> case (_binocularsPreConfigProjectionType preconf) of
                       AnglesProjection   -> updateAngles (Just f)
+                      Angles2Projection  -> updateAngles (Just f)
                       HklProjection      -> updateHkl (Just f)
                       QparQperProjection -> updateQparQper (Just f)
                       QxQyQzProjection   -> updateQxQyQz (Just f)
