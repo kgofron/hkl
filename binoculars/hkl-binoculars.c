@@ -306,7 +306,7 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
         HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)                       \
         {                                                               \
                 size_t i, j;                                            \
-                const char * names[] = {"delta", "gamma", "sample"};     \
+                const char * names[] = {"delta", "gamma", "sample"};	\
                 const HklParameter *p;                                  \
                 double delta0;                                          \
                 double gamma0;                                          \
@@ -322,23 +322,23 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
                 const double *p_y = &pixels_coordinates[1 * n_pixels];  \
                 const double *p_z = &pixels_coordinates[2 * n_pixels];  \
                                                                         \
-                p = hkl_geometry_axis_get(geometry, "delta", NULL);    \
+                p = hkl_geometry_axis_get(geometry, "delta", NULL);	\
                 if(p){                                                  \
                         delta0 = hkl_parameter_value_get(p, HKL_UNIT_USER); \
                 } else {                                                \
-                        delta0 = 0;                                      \
+                        delta0 = 0;					\
                 }                                                       \
-                p = hkl_geometry_axis_get(geometry, "gamma", NULL);    \
+                p = hkl_geometry_axis_get(geometry, "gamma", NULL);	\
                 if(p){                                                  \
                         gamma0 = hkl_parameter_value_get(p, HKL_UNIT_USER); \
                 } else {                                                \
                         gamma0 = 0;                                     \
                 }                                                       \
-                p = hkl_geometry_axis_get(geometry, sample_axis, NULL);    \
+                p = hkl_geometry_axis_get(geometry, sample_axis, NULL);	\
                 if(p){                                                  \
                         sample0 = hkl_parameter_value_get(p, HKL_UNIT_USER); \
                 } else {                                                \
-                        sample0 = 0;                                     \
+                        sample0 = 0;					\
                 }                                                       \
                                                                         \
                 HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
@@ -444,8 +444,8 @@ HKL_BINOCULARS_SPACE_QPARQPER_IMPL(uint32_t);
 
 /* qxqyqz */
 
-#define HKL_BINOCULARS_SPACE_QXQYQZ_IMPL(image_t)                            \
-        HKL_BINOCULARS_SPACE_QXQYQZ_DECL(image_t)                            \
+#define HKL_BINOCULARS_SPACE_QXQYQZ_IMPL(image_t)			\
+        HKL_BINOCULARS_SPACE_QXQYQZ_DECL(image_t)			\
         {                                                               \
                 size_t i, j;                                            \
                 const char * names[] = {"qx", "qy", "qz"};              \

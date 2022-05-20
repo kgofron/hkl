@@ -292,29 +292,29 @@ static inline char map_type(HklBinocularsNpyDataType type)
                 of(HklBinocularsNpyDouble) res = 'f';
         }
 
-    /* if(t == typeid(float) ) return 'f'; */
-    /* if(t == typeid(double) ) return 'f'; */
-    /* if(t == typeid(long double) ) return 'f'; */
+	/* if(t == typeid(float) ) return 'f'; */
+	/* if(t == typeid(double) ) return 'f'; */
+	/* if(t == typeid(long double) ) return 'f'; */
 
-    /* if(t == typeid(int) ) return 'i'; */
-    /* if(t == typeid(char) ) return 'i'; */
-    /* if(t == typeid(short) ) return 'i'; */
-    /* if(t == typeid(long) ) return 'i'; */
-    /* if(t == typeid(long long) ) return 'i'; */
+	/* if(t == typeid(int) ) return 'i'; */
+	/* if(t == typeid(char) ) return 'i'; */
+	/* if(t == typeid(short) ) return 'i'; */
+	/* if(t == typeid(long) ) return 'i'; */
+	/* if(t == typeid(long long) ) return 'i'; */
 
-    /* if(t == typeid(unsigned char) ) return 'u'; */
-    /* if(t == typeid(unsigned short) ) return 'u'; */
-    /* if(t == typeid(unsigned long) ) return 'u'; */
-    /* if(t == typeid(unsigned long long) ) return 'u'; */
-    /* if(t == typeid(unsigned int) ) return 'u'; */
+	/* if(t == typeid(unsigned char) ) return 'u'; */
+	/* if(t == typeid(unsigned short) ) return 'u'; */
+	/* if(t == typeid(unsigned long) ) return 'u'; */
+	/* if(t == typeid(unsigned long long) ) return 'u'; */
+	/* if(t == typeid(unsigned int) ) return 'u'; */
 
-    /* if(t == typeid(bool) ) return 'b'; */
+	/* if(t == typeid(bool) ) return 'b'; */
 
-    /* if(t == typeid(std::complex<float>) ) return 'c'; */
-    /* if(t == typeid(std::complex<double>) ) return 'c'; */
-    /* if(t == typeid(std::complex<long double>) ) return 'c'; */
+	/* if(t == typeid(std::complex<float>) ) return 'c'; */
+	/* if(t == typeid(std::complex<double>) ) return 'c'; */
+	/* if(t == typeid(std::complex<long double>) ) return 'c'; */
 
-    /* else return '?'; */
+	/* else return '?'; */
         return res;
 }
 

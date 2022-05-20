@@ -46,10 +46,10 @@
                 }                                                       \
         } while(0)
 
-#define fill_row(row, shape, val) do{                      \
-                for(int i_=0; i_<(shape).width; ++i_){     \
-                        (row)[i_] = (val);                 \
-                }                                          \
+#define fill_row(row, shape, val) do{			\
+                for(int i_=0; i_<(shape).width; ++i_){	\
+                        (row)[i_] = (val);		\
+                }					\
         } while(0)
 
 #define replicate_column(col, shape, n) do{                             \
@@ -86,7 +86,7 @@ struct square_t {
         double pixel_size;
 };
 
-#define SQUARE(pixel_size_) (struct square_t) \
+#define SQUARE(pixel_size_) (struct square_t)	\
         {.pixel_size=pixel_size_}
 
 struct imxpad_t {
@@ -95,7 +95,7 @@ struct imxpad_t {
         int chip_h;
 };
 
-#define IMXPAD(pixel_size_, chip_w_, chip_h_) (struct imxpad_t) \
+#define IMXPAD(pixel_size_, chip_w_, chip_h_) (struct imxpad_t)		\
         {.square=SQUARE(pixel_size_), .chip_w=chip_w_, .chip_h=chip_h_}
 
 struct tiling_t {
@@ -279,13 +279,13 @@ static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
         for(int module=0; module<n_modules; ++module){
                 if (module != 0){
                         uint8_t *first = get_row(arr, *shape,
-                                                      module * imxpad->chip_h);
+						 module * imxpad->chip_h);
                         fill_row(first, *shape, 1);
                 }
 
                 if (module != (n_modules - 1)){
                         uint8_t *last = get_row(arr, *shape,
-                                                     (module + 1) * imxpad->chip_h - 1);
+						(module + 1) * imxpad->chip_h - 1);
                         fill_row(last, *shape, 1);
                 }
         }
@@ -509,7 +509,7 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 }
                 of(ImXpadS140, imxpad){
                         arr = mask_get_imxpad(&detector.shape,
-                                               imxpad);
+					      imxpad);
                 }
                 of(XpadFlatCorrected){
                         arr = mask_get_xpad_flat_corrected(&detector.shape);

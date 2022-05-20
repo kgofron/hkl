@@ -285,7 +285,7 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 
 /* angles */
 
-#define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)                            \
+#define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)			\
         void hkl_binoculars_space_angles_ ## image_t (HklBinocularsSpace *space, \
                                                       const HklGeometry *geometry, \
                                                       const image_t *image, \
@@ -298,7 +298,7 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
                                                       size_t n_resolutions, \
                                                       const uint8_t *masked, \
                                                       const HklBinocularsAxisLimits **limits, \
-                                                      size_t n_limits, \
+                                                      size_t n_limits,	\
                                                       const char *sample_axis)
 
 HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(int32_t);
@@ -307,7 +307,7 @@ HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint32_t);
 
 /* qparqper */
 
-#define HKL_BINOCULARS_SPACE_QPARQPER_DECL(image_t)                            \
+#define HKL_BINOCULARS_SPACE_QPARQPER_DECL(image_t)			\
         void hkl_binoculars_space_qparqper_ ## image_t (HklBinocularsSpace *space, \
                                                         const HklGeometry *geometry, \
                                                         const image_t *image, \
@@ -329,7 +329,7 @@ HKLAPI extern HKL_BINOCULARS_SPACE_QPARQPER_DECL(uint32_t);
 
 /* qxqyqz */
 
-#define HKL_BINOCULARS_SPACE_QXQYQZ_DECL(image_t)                            \
+#define HKL_BINOCULARS_SPACE_QXQYQZ_DECL(image_t)			\
         void hkl_binoculars_space_qxqyqz_ ## image_t (HklBinocularsSpace *space, \
                                                       const HklGeometry *geometry, \
                                                       const image_t *image, \
