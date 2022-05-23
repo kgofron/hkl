@@ -308,8 +308,6 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
                 size_t i, j;                                            \
                 const char * names[] = {"delta", "gamma", "sample"};	\
                 const HklParameter *p;                                  \
-                double delta0;                                          \
-                double gamma0;                                          \
                 double sample0;                                         \
                                                                         \
                 assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
@@ -322,18 +320,6 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
                 const double *p_y = &pixels_coordinates[1 * n_pixels];  \
                 const double *p_z = &pixels_coordinates[2 * n_pixels];  \
                                                                         \
-                p = hkl_geometry_axis_get(geometry, "delta", NULL);	\
-                if(p){                                                  \
-                        delta0 = hkl_parameter_value_get(p, HKL_UNIT_USER); \
-                } else {                                                \
-                        delta0 = 0;					\
-                }                                                       \
-                p = hkl_geometry_axis_get(geometry, "gamma", NULL);	\
-                if(p){                                                  \
-                        gamma0 = hkl_parameter_value_get(p, HKL_UNIT_USER); \
-                } else {                                                \
-                        gamma0 = 0;                                     \
-                }                                                       \
                 p = hkl_geometry_axis_get(geometry, sample_axis, NULL);	\
                 if(p){                                                  \
                         sample0 = hkl_parameter_value_get(p, HKL_UNIT_USER); \
@@ -350,8 +336,8 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
                                 HklVector v = {{p_x[i], p_y[i], p_z[i]}}; \
                                                                         \
                                 hkl_vector_rotated_quaternion(&v, &q);  \
-                                v.data[0] = atan(v.data[2]) / M_PI * 180.0 + delta0; \
-                                v.data[1] = atan(v.data[1]) / M_PI * 180.0 + gamma0; \
+                                v.data[0] = atan(v.data[2]) / M_PI * 180.0; \
+                                v.data[1] = atan(v.data[1]) / M_PI * 180.0; \
                                 v.data[2] = sample0;                    \
                                                                         \
                                 for(j=0; j<ARRAY_SIZE(names); ++j){     \

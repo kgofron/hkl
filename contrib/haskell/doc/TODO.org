@@ -170,3 +170,5 @@
      to be available for more users than just Python developers. We
      should have at least the detector name, the physical
      characterisation, the geometry of the detector.
+** TODO outoput name
+   rajouter un truc du type {limits} dans le output name (pour michel et les autres :)

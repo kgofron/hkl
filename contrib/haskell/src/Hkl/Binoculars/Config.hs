@@ -399,6 +399,8 @@ projectionTypeP = "angles" $> AnglesProjection
                   <|> "hkl" $> HklProjection
                   <|> "qparqper" $> QparQperProjection
                   <|> "qxqyqz" $> QxQyQzProjection
+                  <|> "sixs:anglesprojection" $> AnglesProjection
+                  <|> "sixs:angles2projection" $> Angles2Projection
                   <|> "sixs:qxqyqzprojection" $> QxQyQzProjection
                   <|> "sixs:hklprojection" $> HklProjection
 

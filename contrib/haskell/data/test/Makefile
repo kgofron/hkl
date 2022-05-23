@@ -40,6 +40,8 @@ sixs:
 #	$(PROCESS) data/test/config_sixs_ruche_flymedv_3.ini 698-734 735-736
 	$(PROCESS) data/test/config_sixs_ruche_limits.txt 338
 #	$(PROCESS) data/test/config_sixs_ruche_flyscanuhvtest.txt 550
+#	$(PROCESS) data/test/config_sixs_ruche_angles.ini 274-279
+# TODO /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_Andreazza/binoculars/config3_ech1.txt 77-78 -> realspace
 
 ssd:
 	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini
