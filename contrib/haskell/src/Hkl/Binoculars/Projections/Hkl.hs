@@ -340,13 +340,14 @@ class (FramesHklP a, Show a) => ProcessHklP a where
   processHklP mkPaths = do
     conf :: Config 'HklProjection <- ask
     let det = fromMaybe defaultDetector (_binocularsConfigHklDetector conf)
+    let mlimits = _binocularsConfigHklProjectionLimits conf
+    let destination = _binocularsConfigHklDestination conf
     let output' = case _binocularsConfigHklInputRange conf of
-                   Just r  -> destination' r (_binocularsConfigHklDestination conf)
-                   Nothing -> destination' (ConfigRange []) (_binocularsConfigHklDestination conf)
+                   Just r  -> destination' r mlimits destination
+                   Nothing -> destination' (ConfigRange []) mlimits destination
     let centralPixel' = _binocularsConfigHklCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigHklSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigHklDetrot conf)
-    let mlimits = _binocularsConfigHklProjectionLimits conf
 
     filenames <- InputList
                 <$> files (_binocularsConfigHklNexusdir conf)

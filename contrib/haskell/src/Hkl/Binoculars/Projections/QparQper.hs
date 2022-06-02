@@ -218,14 +218,15 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
   processQparQperP mkPaths = do
     (conf :: (Config 'QparQperProjection)) <- ask
     let det = fromMaybe defaultDetector (_binocularsConfigQparQperDetector conf)
+    let mlimits = _binocularsConfigQparQperProjectionLimits conf
+    let destination = _binocularsConfigQparQperDestination conf
     let output' = case _binocularsConfigQparQperInputRange conf of
-                   Just r  -> destination' r (_binocularsConfigQparQperDestination conf)
-                   Nothing -> destination' (ConfigRange []) (_binocularsConfigQparQperDestination conf)
+                   Just r  -> destination' r mlimits destination
+                   Nothing -> destination' (ConfigRange []) mlimits destination
     let centralPixel' = _binocularsConfigQparQperCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQparQperSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQparQperDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQparQperSurfaceOrientation conf)
-    let mlimits = _binocularsConfigQparQperProjectionLimits conf
 
     h5d <- mkPaths
     filenames <- InputList

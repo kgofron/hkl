@@ -228,13 +228,14 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
   processAnglesP mkPaths = do
     (conf :: (Config 'AnglesProjection)) <- ask
     let det = fromMaybe defaultDetector (_binocularsConfigAnglesDetector conf)
+    let mlimits = _binocularsConfigAnglesProjectionLimits conf
+    let destination = _binocularsConfigAnglesDestination conf
     let output' = case _binocularsConfigAnglesInputRange conf of
-                   Just r  -> destination' r (_binocularsConfigAnglesDestination conf)
-                   Nothing -> destination' (ConfigRange []) (_binocularsConfigAnglesDestination conf)
+                   Just r  -> destination' r mlimits destination
+                   Nothing -> destination' (ConfigRange []) mlimits destination
     let centralPixel' = _binocularsConfigAnglesCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigAnglesSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigAnglesDetrot conf)
-    let mlimits = _binocularsConfigAnglesProjectionLimits conf
     let sAxis = getSampleAxis conf
 
     h5d <- mkPaths

@@ -510,14 +510,15 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
   processQxQyQzP mkPaths = do
     (conf :: Config 'QxQyQzProjection) <- ask
     let det = fromMaybe defaultDetector (_binocularsConfigQxQyQzDetector conf)
+    let mlimits = _binocularsConfigQxQyQzProjectionLimits conf
+    let destination = _binocularsConfigQxQyQzDestination conf
     let output' = case _binocularsConfigQxQyQzInputRange conf of
-                   Just r  -> destination' r (_binocularsConfigQxQyQzDestination conf)
-                   Nothing -> destination' (ConfigRange []) (_binocularsConfigQxQyQzDestination conf)
+                   Just r  -> destination' r mlimits destination
+                   Nothing -> destination' (ConfigRange []) mlimits destination
     let centralPixel' = _binocularsConfigQxQyQzCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQxQyQzSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQxQyQzDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQxQyQzSurfaceOrientation conf)
-    let mlimits = _binocularsConfigQxQyQzProjectionLimits conf
 
     h5d <- mkPaths
     filenames <- InputList

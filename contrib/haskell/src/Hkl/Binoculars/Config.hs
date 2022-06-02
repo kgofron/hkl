@@ -521,13 +521,21 @@ files md mr mt = do
 
 
 
-replace' :: Int -> Int -> DestinationTmpl -> FilePath
-replace' f t = unpack . replace "{last}" (pack . show $ t) . replace "{first}" (pack . show $ f) . unDestinationTmpl
+replace' :: Int -> Int -> Text -> DestinationTmpl -> FilePath
+replace' f t l = unpack
+                 . replace "{last}" (pack . show $ t)
+                 . replace "{first}" (pack . show $ f)
+                 . replace "{limits}" l
+                 . unDestinationTmpl
 
-destination' :: ConfigRange -> DestinationTmpl -> FilePath
-destination' (ConfigRange rs) = replace' from to
+destination' :: ConfigRange -> Maybe [Limits] -> DestinationTmpl -> FilePath
+destination' (ConfigRange rs) ml = replace' from to limits
   where
     (from,to) = hull rs
+
+    limits = case ml of
+               Nothing   -> "nolimits"
+               (Just ls) -> fieldEmitter ls
 
     froms :: [Int]
     froms = [ case r of
