@@ -498,9 +498,9 @@ static HklEngineList *hkl_engine_list_new_soleil_sixs_med_1_2(const HklFactory *
 REGISTER_DIFFRACTOMETER(soleil_sixs_med_1_2, "SOLEIL SIXS MED1+2", HKL_GEOMETRY_TYPE_SOLEIL_SIXS_MED_1_2_DESCRIPTION);
 
 
-/***********************/
-/* SOLEIL SIXS MED 2+3 */
-/***********************/
+/******************************/
+/* SOLEIL SIXS MED 2+3 (MedV) */
+/******************************/
 
 #define HKL_GEOMETRY_TYPE_SOLEIL_SIXS_MED_2_3_DESCRIPTION		\
 	"+ xrays source fix allong the :math:`\\vec{x}` direction (1, 0, 0)\n" \
