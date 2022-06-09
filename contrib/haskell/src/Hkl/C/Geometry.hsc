@@ -142,7 +142,7 @@ instance Storable Geometry where
 
   poke ptr (Geometry _ s vs _) = do
     pokeSource ptr s
-    (DArray n _) <- peek =<< c_hkl_geometry_axis_names_get ptr
+    let n = toEnum . V.length $ vs
     V.unsafeWith vs $ \values ->
       c_hkl_geometry_axis_values_set ptr values n unit nullPtr
 
