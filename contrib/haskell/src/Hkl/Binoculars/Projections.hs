@@ -103,7 +103,12 @@ data GeometryPath
                      , geometryPathAxes       :: [Hdf5Path DIM1 Double]
                      }
   | GeometryPathMedV { geometryPathWavelength :: Hdf5Path Z Double
-                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                     , geometryPathBeta       :: Hdf5Path DIM1 Double
+                     , geometryPathMu         :: Hdf5Path DIM1 Double
+                     , geometryPathOmega      :: Hdf5Path DIM1 Double
+                     , geometryPathGamma      :: Hdf5Path DIM1 Double
+                     , geometryPathDelta      :: Hdf5Path DIM1 Double
+                     , geometryPathEtaa       :: Hdf5Path DIM1 Double
                      }
   | GeometryPathMedVEiger { geometryPathWavelength :: Hdf5Path Z Double
                           , geometryPathAxes       :: [Hdf5Path DIM1 Double]

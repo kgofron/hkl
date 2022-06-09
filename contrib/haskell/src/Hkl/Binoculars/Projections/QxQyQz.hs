@@ -294,13 +294,13 @@ h5dpathQxQyQz i ma =
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")))
                        <*> pure (GeometryPathMedV
                                  (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                                 [ -- hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta" it was not saved in the file
-                                   hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                                 , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
-                                 ])
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta") --  it was not saved in the file
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
+                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa")
+                                )
          SixsFlyMedVEiger -> DataPathQxQyQz
                             <$> mkAttenuation ma (AttenuationPath
                                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
@@ -330,13 +330,13 @@ h5dpathQxQyQz i ma =
                                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image"))
                           <*> pure (GeometryPathMedV
                                     (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                                    [ hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta"
-                                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"
-                                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"
-                                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"
-                                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"
-                                    , hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"
-                                    ])
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta")
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa")
+                                   )
          SixsFlyScanUhv -> DataPathQxQyQz
                           <$> mkAttenuation ma (AttenuationPath
                                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation")
@@ -424,13 +424,13 @@ h5dpathQxQyQz i ma =
                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")))
                        <*> pure (GeometryPathMedV
                                  (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                                 [ hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"
-                                 , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")
-                                 , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")
-                                 , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")
-                                 , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")
-                                 , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")
-                                 ])
+                                 (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")
+                                 (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu"))
+                                 (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega"))
+                                 (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma"))
+                                 (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta"))
+                                 (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))
+                                )
          SixsSbsMedVFixDetector -> DataPathQxQyQz
                                   <$> mkAttenuation ma (AttenuationPath
                                                        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
@@ -439,13 +439,13 @@ h5dpathQxQyQz i ma =
                                             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image")))
                                   <*> pure (GeometryPathMedV
                                             (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")
-                                            [ hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"
-                                            , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")
-                                            , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")
-                                            , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")
-                                            , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")
-                                            , hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")
-                                            ])
+                                            (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")
+                                            (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu"))
+                                            (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega"))
+                                            (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma"))
+                                            (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta"))
+                                            (hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))
+                                           )
 
 getResolution' :: MonadThrow m => Config 'QxQyQzProjection -> m [Double]
 getResolution' c = getResolution (_binocularsConfigQxQyQzProjectionResolution c) 3

@@ -198,9 +198,9 @@ withGeometryPathP f (GeometryPathMedH w as) gg =
                  <$> extract1DStreamValue w' 0
                  <*> extract1DStreamValue as' j
                  <*> pure Nothing)
-withGeometryPathP f (GeometryPathMedV w as) gg =
+withGeometryPathP f (GeometryPathMedV w b m o g d e) gg =
     withHdf5PathP f w $ \w' ->
-    withAxesPathP f as $ \as' ->
+    withAxesPathP f [b, m, o, g, d, e] $ \as' ->
         gg (\j -> Geometry MedV
                  <$> extract1DStreamValue w' 0
                  <*> extract1DStreamValue as' j
