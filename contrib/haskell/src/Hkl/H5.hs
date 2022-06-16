@@ -1,8 +1,10 @@
 {-# LANGUAGE DeriveAnyClass            #-}
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE ForeignFunctionInterface  #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE UnicodeSyntax             #-}
 
 {-
@@ -20,6 +22,7 @@ module Hkl.H5
     , File
     , H5
     , H5Path
+    , Is1DStreamable(..)
     , check_ndims
     , closeDataset
     , closeFile
@@ -417,3 +420,11 @@ withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f
 
 -- TODO
 -- http://book.realworldhaskell.org/read/io-case-study-a-library-for-searching-the-filesystem.html
+
+-- IsStreamable
+
+class Is1DStreamable a e where
+  extract1DStreamValue :: a -> Int -> IO e
+
+instance  NativeType t => Is1DStreamable Dataset t where
+  extract1DStreamValue = get_position

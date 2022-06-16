@@ -155,7 +155,7 @@ withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
 
 getValueWithUnit :: Dataset -> Int -> Unit m d Double -> IO (Quantity d Double)
 getValueWithUnit d j u = do
-  v <- get_position d j
+  v <- extract1DStreamValue d j
   return $ v *~ u
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
@@ -168,13 +168,13 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
     withHdf5PathP f g $ \gamma' ->
     withHdf5PathP f d $ \delta' -> do
       wavelength <- liftIO $ getValueWithUnit w' 0 angstrom
-      mu <- liftIO $ get_position mu' 0
-      komega <- liftIO $ get_position komega' 0
-      kappa <- liftIO $ get_position kappa' 0
-      gamma <- liftIO $ get_position gamma' 0
-      delta <- liftIO $ get_position delta' 0
+      mu <- liftIO $ extract1DStreamValue mu' 0
+      komega <- liftIO $ extract1DStreamValue komega' 0
+      kappa <- liftIO $ extract1DStreamValue kappa' 0
+      gamma <- liftIO $ extract1DStreamValue gamma' 0
+      delta <- liftIO $ extract1DStreamValue delta' 0
       gg (\j -> do
-            kphi <- get_position kphi' j
+            kphi <- extract1DStreamValue kphi' j
             return (Geometry
                     K6c
                     (Source wavelength)
@@ -192,7 +192,7 @@ withGeometryPathP f (GeometryPathMars as) gg =
         gg (\j -> Geometry Mars
                  <$> (Source <$> (return $ 1.537591 *~ angstrom))
                  <*> (fromList <$> do
-                         vs <- Prelude.mapM (`get_position` j) as'
+                         vs <- Prelude.mapM (`extract1DStreamValue` j) as'
                          return (0.0 : vs))
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedH w as) gg =
@@ -200,14 +200,14 @@ withGeometryPathP f (GeometryPathMedH w as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedH
                  <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> Prelude.mapM (`get_position` j) as')
+                 <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedV w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedV
                  <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> Prelude.mapM (`get_position` j) as')
+                 <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
                  <*> pure Nothing)
 withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
 withGeometryPathP f (GeometryPathUhv w as) gg =
@@ -215,12 +215,12 @@ withGeometryPathP f (GeometryPathUhv w as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Uhv
                  <$> (Source <$> getValueWithUnit w' 0 angstrom)
-                 <*> (fromList <$> Prelude.mapM (`get_position` j) as')
+                 <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathUhvTest w as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Uhv (Source (unAngstrom w))
-                 <$> (fromList <$> Prelude.mapM (`get_position` j) as')
+                 <$> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
                  <*> pure Nothing)
 
 withAttenuationPathP :: (MonadSafe m, Location l) =>
@@ -233,12 +233,12 @@ withAttenuationPathP f matt g =
     NoAttenuation -> g (const $ returnIO 1)
     (AttenuationPath p offset coef) ->
       withHdf5PathP f p $ \p' -> g (\j -> do
-                                       v <-  get_position p' (j + offset)
+                                       v <-  extract1DStreamValue p' (j + offset)
                                        if v == badAttenuation
                                          then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
                                          else return  (coef ** float2Double v))
     (ApplyedAttenuationFactorPath p) ->
-      withHdf5PathP f p $ \p' -> g (\j -> get_position p' j)
+      withHdf5PathP f p $ \p' -> g (\j -> extract1DStreamValue p' j)
 
 
 tryYield :: MonadSafe m
