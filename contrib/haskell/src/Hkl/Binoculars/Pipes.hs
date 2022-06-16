@@ -49,7 +49,7 @@ import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
-import           Data.Vector.Storable              (fromList)
+import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
@@ -154,6 +154,8 @@ nest xs = runCont (Prelude.mapM cont xs)
 withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([Dataset] -> m a) -> m a
 withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
 
+-- IsStreamable (instances)
+
 instance Is1DStreamable Dataset Degree where
   extract1DStreamValue d i = Degree <$> do
     v <- extract1DStreamValue d i
@@ -171,6 +173,9 @@ instance Is1DStreamable Dataset WaveLength where
 
 instance Is1DStreamable Dataset Source where
   extract1DStreamValue d i = Source <$> extract1DStreamValue d i
+
+instance Is1DStreamable [Dataset] (Data.Vector.Storable.Vector Double) where
+  extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
@@ -214,14 +219,14 @@ withGeometryPathP f (GeometryPathMedH w as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedH
                  <$> extract1DStreamValue w' 0
-                 <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
+                 <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedV w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedV
                  <$> extract1DStreamValue w' 0
-                 <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
+                 <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
 withGeometryPathP f (GeometryPathUhv w as) gg =
@@ -229,12 +234,12 @@ withGeometryPathP f (GeometryPathUhv w as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Uhv
                  <$> extract1DStreamValue w' 0
-                 <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
+                 <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathUhvTest w as) gg =
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Uhv (Source (unAngstrom w))
-                 <$> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
+                 <$> extract1DStreamValue as' j
                  <*> pure Nothing)
 
 withAttenuationPathP :: (MonadSafe m, Location l) =>
