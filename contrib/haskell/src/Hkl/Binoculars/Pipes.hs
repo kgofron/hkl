@@ -1,9 +1,11 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
-
+{-# LANGUAGE TypeSynonymInstances  #-}
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -20,7 +22,6 @@ module Hkl.Binoculars.Pipes
   , ChunkP(..)
   , accumulateP
   , condM
-  , getValueWithUnit
   , nest
   , progress
   , project
@@ -53,7 +54,7 @@ import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (Quantity, Unit, (*~))
+import           Numeric.Units.Dimensional.Prelude (degree, (*~))
 import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, yield)
 import           Pipes.Prelude                     (mapM)
@@ -153,10 +154,23 @@ nest xs = runCont (Prelude.mapM cont xs)
 withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([Dataset] -> m a) -> m a
 withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
 
-getValueWithUnit :: (Dataset,  Unit m d Double) -> Int -> IO (Quantity d Double)
-getValueWithUnit (d, u) j = do
-  v <- extract1DStreamValue d j
-  return $ v *~ u
+instance Is1DStreamable Dataset Degree where
+  extract1DStreamValue d i = Degree <$> do
+    v <- extract1DStreamValue d i
+    return $ v *~ degree
+
+instance Is1DStreamable Dataset NanoMeter where
+  extract1DStreamValue d i = NanoMeter <$> do
+    v <- extract1DStreamValue d i
+    return $ v *~ angstrom
+
+instance Is1DStreamable Dataset WaveLength where
+  extract1DStreamValue d i = do
+    v <- extract1DStreamValue d i
+    return $ v *~ angstrom
+
+instance Is1DStreamable Dataset Source where
+  extract1DStreamValue d i = Source <$> extract1DStreamValue d i
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
@@ -167,7 +181,7 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
     withHdf5PathP f kp $ \kphi' ->
     withHdf5PathP f g $ \gamma' ->
     withHdf5PathP f d $ \delta' -> do
-      wavelength <- liftIO $ getValueWithUnit (w', angstrom) 0
+      wavelength <- liftIO $ extract1DStreamValue w' 0
       mu <- liftIO $ extract1DStreamValue mu' 0
       komega <- liftIO $ extract1DStreamValue komega' 0
       kappa <- liftIO $ extract1DStreamValue kappa' 0
@@ -184,7 +198,7 @@ withGeometryPathP f (GeometryPathFix w) gg =
   withHdf5PathP f w $ \w' ->
                         gg (const $
                              Geometry Fixe
-                             <$> (Source <$> getValueWithUnit (w', angstrom) 0)
+                             <$> extract1DStreamValue w' 0
                              <*> pure (fromList [])
                              <*> pure Nothing)
 withGeometryPathP f (GeometryPathMars as) gg =
@@ -199,14 +213,14 @@ withGeometryPathP f (GeometryPathMedH w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedH
-                 <$> (Source <$> getValueWithUnit (w', angstrom) 0)
+                 <$> extract1DStreamValue w' 0
                  <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedV w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedV
-                 <$> (Source <$> getValueWithUnit (w', angstrom) 0)
+                 <$> extract1DStreamValue w' 0
                  <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
                  <*> pure Nothing)
 withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
@@ -214,7 +228,7 @@ withGeometryPathP f (GeometryPathUhv w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Uhv
-                 <$> (Source <$> getValueWithUnit (w', angstrom) 0)
+                 <$> extract1DStreamValue w' 0
                  <*> (fromList <$> Prelude.mapM (`extract1DStreamValue` j) as')
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathUhvTest w as) gg =

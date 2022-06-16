@@ -426,5 +426,8 @@ withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f
 class Is1DStreamable a e where
   extract1DStreamValue :: a -> Int -> IO e
 
-instance  NativeType t => Is1DStreamable Dataset t where
+instance Is1DStreamable Dataset Float where
+  extract1DStreamValue = get_position
+
+instance Is1DStreamable Dataset Double where
   extract1DStreamValue = get_position

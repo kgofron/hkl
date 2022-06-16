@@ -64,7 +64,6 @@ import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
 import           GHC.Conc                          (getNumCapabilities)
 import           GHC.Generics                      (Generic)
-import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~), (/~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, await, each,
@@ -403,7 +402,6 @@ instance ProcessHklP (DataPath 'HklProjection)
 
 -- FramesHklP
 
-
 withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> (IO Sample -> m r) -> m r
 withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
     withHdf5PathP f a $ \a' ->
@@ -417,12 +415,12 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
     withHdf5PathP f uz $ \uz' ->
         g (Sample "test"
            <$> (Triclinic
-                <$> (NanoMeter <$> getValueWithUnit (a', angstrom) 0)
-                <*> (NanoMeter <$> getValueWithUnit (b', angstrom) 0)
-                <*> (NanoMeter <$> getValueWithUnit (c', angstrom) 0)
-                <*> (Degree <$> getValueWithUnit (alpha', degree) 0)
-                <*> (Degree <$> getValueWithUnit (beta', degree) 0)
-                <*> (Degree <$> getValueWithUnit (gamma', degree) 0))
+                <$> extract1DStreamValue a' 0
+                <*> extract1DStreamValue b' 0
+                <*> extract1DStreamValue c' 0
+                <*> extract1DStreamValue alpha' 0
+                <*> extract1DStreamValue beta' 0
+                <*> extract1DStreamValue gamma' 0)
            <*> (Parameter "ux"
                 <$> extract1DStreamValue ux' 0
                 <*> pure (Range 0 0))
