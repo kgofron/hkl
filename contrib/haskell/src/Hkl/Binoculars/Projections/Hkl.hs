@@ -417,20 +417,20 @@ withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
     withHdf5PathP f uz $ \uz' ->
         g (Sample "test"
            <$> (Triclinic
-                <$> (NanoMeter <$> getValueWithUnit a' 0 angstrom)
-                <*> (NanoMeter <$> getValueWithUnit b' 0 angstrom)
-                <*> (NanoMeter <$> getValueWithUnit c' 0 angstrom)
-                <*> (Degree <$> getValueWithUnit alpha' 0 degree)
-                <*> (Degree <$> getValueWithUnit beta' 0 degree)
-                <*> (Degree <$> getValueWithUnit gamma' 0 degree))
+                <$> (NanoMeter <$> getValueWithUnit (a', angstrom) 0)
+                <*> (NanoMeter <$> getValueWithUnit (b', angstrom) 0)
+                <*> (NanoMeter <$> getValueWithUnit (c', angstrom) 0)
+                <*> (Degree <$> getValueWithUnit (alpha', degree) 0)
+                <*> (Degree <$> getValueWithUnit (beta', degree) 0)
+                <*> (Degree <$> getValueWithUnit (gamma', degree) 0))
            <*> (Parameter "ux"
-                <$> get_position ux' 0
+                <$> extract1DStreamValue ux' 0
                 <*> pure (Range 0 0))
            <*> (Parameter "uy"
-                <$> get_position uy' 0
+                <$> extract1DStreamValue uy' 0
                 <*> pure (Range 0 0))
            <*> (Parameter "uz"
-                <$> get_position uz' 0
+                <$> extract1DStreamValue uz' 0
                 <*> pure (Range 0 0)))
 withSamplePathP _ (SamplePath2 s) g = g (return s)
 
