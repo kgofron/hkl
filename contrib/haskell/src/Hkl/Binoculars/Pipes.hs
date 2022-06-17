@@ -49,12 +49,12 @@ import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2)
 import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
-import           Data.Vector.Storable              (Vector, fromList)
+import           Data.Vector.Storable              (fromList)
 import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (degree, (*~))
+import           Numeric.Units.Dimensional.Prelude ((*~))
 import           Pipes                             (Consumer, Pipe, Proxy,
                                                     await, yield)
 import           Pipes.Prelude                     (mapM)
@@ -75,12 +75,12 @@ import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.H5                            hiding (File)
 import           Hkl.Image
 import           Hkl.Pipes
 import           Hkl.Types
-
 
 -- ChunkP
 
@@ -153,32 +153,6 @@ nest xs = runCont (Prelude.mapM cont xs)
 
 withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([Dataset] -> m a) -> m a
 withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
-
--- IsStreamable (instances)
-
-instance Is1DStreamable Dataset Attenuation where
-  extract1DStreamValue d i = Attenuation <$> extract1DStreamValue d i
-
-instance Is1DStreamable Dataset Degree where
-  extract1DStreamValue d i = Degree <$> do
-    v <- extract1DStreamValue d i
-    return $ v *~ degree
-
-instance Is1DStreamable Dataset NanoMeter where
-  extract1DStreamValue d i = NanoMeter <$> do
-    v <- extract1DStreamValue d i
-    return $ v *~ angstrom
-
-instance Is1DStreamable Dataset WaveLength where
-  extract1DStreamValue d i = do
-    v <- extract1DStreamValue d i
-    return $ v *~ angstrom
-
-instance Is1DStreamable Dataset Source where
-  extract1DStreamValue d i = Source <$> extract1DStreamValue d i
-
-instance Is1DStreamable [Dataset] (Data.Vector.Storable.Vector Double) where
-  extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =

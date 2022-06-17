@@ -80,12 +80,12 @@ import           Hkl.Binoculars.Projections
 import           Hkl.Binoculars.Projections.QxQyQz
 import           Hkl.C.Binoculars
 import           Hkl.C.Sample
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.H5
 import           Hkl.Image
 import           Hkl.Pipes
 import           Hkl.Types
-
 
 ----------------
 -- Exceptions --

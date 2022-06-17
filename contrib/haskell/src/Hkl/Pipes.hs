@@ -5,6 +5,7 @@ module Hkl.Pipes
     ( withBytes
     , withFileP
     , withDatasetP
+    , withDataSourceP
     , withDataspaceP
     , withHdf5PathP
     )
@@ -18,6 +19,7 @@ import           Foreign.ForeignPtr      (ForeignPtr, mallocForeignPtrBytes,
                                           touchForeignPtr)
 import           Pipes.Safe              (MonadSafe, bracket, catchAll)
 
+import           Hkl.DataSource
 import           Hkl.H5
 
 --  Deal with hdf5 object in a safe way
@@ -52,3 +54,6 @@ withHdf5PathP loc (H5GroupAtPath i subpath) f = withGroupAtP loc i $ \g -> withH
 withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset' loc n Nothing) f
 withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = withDatasetP (openDatasetWithAttr loc a c) f
 withHdf5PathP loc (H5Or l r) f = withHdf5PathP loc l f `catchAll` const (withHdf5PathP loc r f)
+
+withDataSourceP :: (MonadSafe m, DataSource a) => DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+withDataSourceP p = bracket (liftIO . dataSourceAcquire $ p) (liftIO . dataSourceRelease)

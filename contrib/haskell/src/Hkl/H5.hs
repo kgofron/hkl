@@ -22,7 +22,6 @@ module Hkl.H5
     , File
     , H5
     , H5Path
-    , Is1DStreamable(..)
     , check_ndims
     , closeDataset
     , closeFile
@@ -100,8 +99,7 @@ import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   h5s_ALL)
 import           Control.Exception               (Exception, bracket, throwIO)
 import           Control.Monad.Extra             (fromMaybeM)
-import           Data.Aeson                      (FromJSON (..), ToJSON (..),
-                                                  Value (..))
+import           Data.Aeson                      (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   linearIndex, listOfShape,
                                                   size)
@@ -110,7 +108,6 @@ import           Data.ByteString.Char8           (ByteString, pack, packCString,
                                                   unpack)
 import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
-import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   head, unsafeFromForeignPtr0)
 import           Data.Vector.Storable.Mutable    (new)
@@ -132,6 +129,7 @@ import           GHC.Generics                    (Generic)
 import           Numeric.LinearAlgebra           (Matrix, reshape)
 
 import           Hkl.Detector
+import           Hkl.Orphan                      ()
 
 import           Prelude                         hiding (head)
 
@@ -383,15 +381,6 @@ data Hdf5Path sh e
   | H5Or (Hdf5Path sh e) (Hdf5Path sh e)
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-instance ToJSON ByteString where
-    toJSON = String . decodeUtf8
-    {-# INLINE toJSON #-}
-
-instance FromJSON ByteString where
-    parseJSON (String t) = pure . encodeUtf8 $ t
-    parseJSON _          = GHC.Base.empty
-    {-# INLINE parseJSON #-}
-
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
 hdf5p = H5RootPath
 
@@ -420,14 +409,3 @@ withHdf5Path fn path f = withH5File fn $ \fn' -> withHdf5Path' fn' path f
 
 -- TODO
 -- http://book.realworldhaskell.org/read/io-case-study-a-library-for-searching-the-filesystem.html
-
--- IsStreamable
-
-class Is1DStreamable a e where
-  extract1DStreamValue :: a -> Int -> IO e
-
-instance Is1DStreamable Dataset Float where
-  extract1DStreamValue = get_position
-
-instance Is1DStreamable Dataset Double where
-  extract1DStreamValue = get_position
