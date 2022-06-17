@@ -23,6 +23,7 @@
 
 module Hkl.Binoculars.Config
     ( Angstrom(..)
+    , Attenuation(..)
     , BinocularsPreConfig(..)
     , Config
     , ConfigContent(..)
@@ -108,6 +109,9 @@ data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
                                   | ResolutionNotCompatibleWithProjectionNbOfCoordinates [Double] Int
     deriving (Show)
 instance Exception HklBinocularsConfigException
+
+newtype Attenuation = Attenuation { unAttenuation :: Double }
+  deriving (Eq, Show)
 
 newtype ConfigContent = ConfigContent Text
 

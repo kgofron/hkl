@@ -32,6 +32,7 @@ import           Foreign.Marshal.Array (withArrayLen)
 import           Path                  (Abs, File, Path, fromAbsFile)
 import           Text.Printf           (printf)
 
+import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
 import           Hkl.Image
 import           Hkl.Orphan            ()
@@ -76,7 +77,7 @@ toList (InputList fs)        = map fromAbsFile fs
 
 --  DataFrameSpace
 
-data DataFrameSpace sh = DataFrameSpace Image (Space sh) Double
+data DataFrameSpace sh = DataFrameSpace Image (Space sh) Attenuation
   deriving Show
 
 --  Create the Cube

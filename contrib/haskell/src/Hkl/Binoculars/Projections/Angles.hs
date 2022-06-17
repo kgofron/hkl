@@ -203,11 +203,11 @@ spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameAn
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_angles_int32_t" #-} c'hkl_binoculars_space_angles_int32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
+      {-# SCC "hkl_binoculars_space_angles_int32_t" #-} c'hkl_binoculars_space_angles_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
     (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_angles_uint16_t" #-} c'hkl_binoculars_space_angles_uint16_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
+      {-# SCC "hkl_binoculars_space_angles_uint16_t" #-} c'hkl_binoculars_space_angles_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
     (ImageWord32 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_angles_uint32_t" #-} c'hkl_binoculars_space_angles_uint32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
+      {-# SCC "hkl_binoculars_space_angles_uint32_t" #-} c'hkl_binoculars_space_angles_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
 
   return (DataFrameSpace img space att)
 

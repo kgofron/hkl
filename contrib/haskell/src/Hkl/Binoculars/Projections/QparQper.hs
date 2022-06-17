@@ -193,11 +193,11 @@ spaceQparQper det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQ
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_qparqper_int32_t" #-} c'hkl_binoculars_space_qparqper_int32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
+      {-# SCC "hkl_binoculars_space_qparqper_int32_t" #-} c'hkl_binoculars_space_qparqper_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
     (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_qparqper_uint16_t" #-} c'hkl_binoculars_space_qparqper_uint16_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
+      {-# SCC "hkl_binoculars_space_qparqper_uint16_t" #-} c'hkl_binoculars_space_qparqper_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
     (ImageWord32 fp) -> withForeignPtr fp $ \i -> do
-      {-# SCC "hkl_binoculars_space_qparqper_uint32_t" #-} c'hkl_binoculars_space_qparqper_uint32_t pSpace geometry i nPixels (CDouble att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
+      {-# SCC "hkl_binoculars_space_qparqper_uint32_t" #-} c'hkl_binoculars_space_qparqper_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
 
   return (DataFrameSpace img space att)
 

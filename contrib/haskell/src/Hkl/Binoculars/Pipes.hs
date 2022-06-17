@@ -156,6 +156,9 @@ withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
 
 -- IsStreamable (instances)
 
+instance Is1DStreamable Dataset Attenuation where
+  extract1DStreamValue d i = Attenuation <$> extract1DStreamValue d i
+
 instance Is1DStreamable Dataset Degree where
   extract1DStreamValue d i = Degree <$> do
     v <- extract1DStreamValue d i
@@ -245,17 +248,17 @@ withGeometryPathP f (GeometryPathUhvTest w as) gg =
 withAttenuationPathP :: (MonadSafe m, Location l) =>
                        l
                      -> AttenuationPath
-                     -> ((Int -> IO Double) -> m r)
+                     -> ((Int -> IO Attenuation) -> m r)
                      -> m r
 withAttenuationPathP f matt g =
   case matt of
-    NoAttenuation -> g (const $ returnIO 1)
+    NoAttenuation -> g (const $ returnIO $ Attenuation 1)
     (AttenuationPath p offset coef) ->
       withHdf5PathP f p $ \p' -> g (\j -> do
                                        v <-  extract1DStreamValue p' (j + offset)
                                        if v == badAttenuation
                                          then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
-                                         else return  (coef ** float2Double v))
+                                         else return  $ Attenuation (coef ** float2Double v))
     (ApplyedAttenuationFactorPath p) ->
       withHdf5PathP f p $ \p' -> g (\j -> extract1DStreamValue p' j)
 
