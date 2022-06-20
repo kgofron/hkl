@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -5,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
@@ -21,6 +24,7 @@
 
 module Hkl.DataSource
   ( DataSource(..)
+  , DataSourcePath(..)
   , Is1DStreamable(..)
   ) where
 
@@ -34,6 +38,7 @@ import           Control.Monad.Catch               (tryJust)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
+import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, Z)
 import           Data.IORef                        (IORef, readIORef)
@@ -42,6 +47,7 @@ import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
+import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~))
 import           Pipes                             (Consumer, Pipe, Proxy,
@@ -61,14 +67,13 @@ import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
-import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
 import           Hkl.Detector
-import           Hkl.H5                            hiding (File)
+import           Hkl.H5
 import           Hkl.Image
+import           Hkl.Pipes
 import           Hkl.Types
-
 
 -- IsStreamable
 
@@ -109,10 +114,22 @@ instance Is1DStreamable  [Dataset] (Data.Vector.Storable.Vector Double) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 
+-- DataSource
+
+data family DataSourcePath a :: *
+type family DataSourceAcq a :: *
+
 class DataSource a where
-  data DataSourcePath a :: *
-  data DataSourceAcq a :: *
+  withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
-  dataSourceAcquire :: DataSourcePath a -> IO (DataSourceAcq a)
+-- DataSource (instances)
 
-  dataSourceRelease :: DataSourceAcq a -> IO ()
+data instance DataSourcePath WaveLength = DataPathWaveLength (Hdf5Path Z Double)
+  deriving (Eq, Generic, Show)
+deriving instance FromJSON (DataSourcePath WaveLength)
+deriving instance ToJSON (DataSourcePath WaveLength)
+
+type instance DataSourceAcq WaveLength = Dataset
+
+instance DataSource WaveLength where
+  withDataSourceP f (DataPathWaveLength p) g = withHdf5PathP f p g

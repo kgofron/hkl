@@ -82,6 +82,7 @@ import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.H5
 import           Hkl.Image
@@ -239,7 +240,7 @@ h5dpathQxQyQz i ma =
                       <*> pure (DetectorPath
                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")) -- medipix
                       <*> pure (GeometryPathCristalK6C
-                                (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda")
+                                (DataPathWaveLength (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda"))
                                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position")
                                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-komega" $ datasetp "position")
                                 (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-kappa" $ datasetp "position")

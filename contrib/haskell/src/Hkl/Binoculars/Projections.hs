@@ -49,9 +49,11 @@ import           Prelude                         hiding (drop)
 import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.H5                          hiding (File)
 import           Hkl.Orphan                      ()
+import           Hkl.Types
 
 --  Common
 
@@ -88,7 +90,7 @@ newtype DetectorPath = DetectorPath
 -- GeometryPath
 
 data GeometryPath
-  = GeometryPathCristalK6C { geometryPathWavelength :: Hdf5Path Z Double
+  = GeometryPathCristalK6C { geometryPathWavelengthNew :: DataSourcePath WaveLength -- Hdf5Path Z Double
                            , geometryPathMu         :: Hdf5Path DIM1 Double
                            , geometryPathKomega     :: Hdf5Path DIM1 Double
                            , geometryPathKappa      :: Hdf5Path DIM1 Double
