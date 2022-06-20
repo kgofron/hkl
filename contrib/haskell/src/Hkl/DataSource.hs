@@ -25,6 +25,7 @@
 module Hkl.DataSource
   ( DataSource(..)
   , DataSourcePath(..)
+  , Is0DStreamable(..)
   , Is1DStreamable(..)
   ) where
 
@@ -75,12 +76,25 @@ import           Hkl.Image
 import           Hkl.Pipes
 import           Hkl.Types
 
--- IsStreamable
+-- Is0DStreamable
+
+class Is0DStreamable a e where
+  extract0DStreamValue :: a -> IO e
+
+instance Is0DStreamable Dataset Double where
+  extract0DStreamValue d = get_position d 0
+
+instance Is0DStreamable Dataset WaveLength where
+  extract0DStreamValue d = do
+    v <- extract0DStreamValue d
+    return $ v *~ angstrom
+
+-- Is1DStreamable
 
 class Is1DStreamable a e where
   extract1DStreamValue :: a -> Int -> IO e
 
--- IsStreamable (instances)
+-- Is1DStreamable (instances)
 
 instance Is1DStreamable Dataset Attenuation where
   extract1DStreamValue d i = Attenuation <$> extract1DStreamValue d i
@@ -92,7 +106,6 @@ instance Is1DStreamable Dataset Degree where
 
 instance Is1DStreamable Dataset Double where
   extract1DStreamValue = get_position
-
 
 instance Is1DStreamable Dataset Float where
   extract1DStreamValue = get_position
@@ -112,7 +125,6 @@ instance Is1DStreamable Dataset Source where
 
 instance Is1DStreamable  [Dataset] (Data.Vector.Storable.Vector Double) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
-
 
 -- DataSource
 

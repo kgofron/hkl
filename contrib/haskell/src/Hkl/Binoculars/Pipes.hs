@@ -163,12 +163,12 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
     withHdf5PathP f kp $ \kphi' ->
     withHdf5PathP f g $ \gamma' ->
     withHdf5PathP f d $ \delta' -> do
-      wavelength <- liftIO $ extract1DStreamValue w' 0
-      mu <- liftIO $ extract1DStreamValue mu' 0
-      komega <- liftIO $ extract1DStreamValue komega' 0
-      kappa <- liftIO $ extract1DStreamValue kappa' 0
-      gamma <- liftIO $ extract1DStreamValue gamma' 0
-      delta <- liftIO $ extract1DStreamValue delta' 0
+      wavelength <- liftIO $ extract0DStreamValue w'
+      mu <- liftIO $ extract0DStreamValue mu'
+      komega <- liftIO $ extract0DStreamValue komega'
+      kappa <- liftIO $ extract0DStreamValue kappa'
+      gamma <- liftIO $ extract0DStreamValue gamma'
+      delta <- liftIO $ extract0DStreamValue delta'
       gg (\j -> do
             kphi <- extract1DStreamValue kphi' j
             return (Geometry
