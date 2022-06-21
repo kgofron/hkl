@@ -180,7 +180,7 @@ withGeometryPathP f (GeometryPathFix w) gg =
   withHdf5PathP f w $ \w' ->
                         gg (const $
                              Geometry Fixe
-                             <$> extract1DStreamValue w' 0
+                             <$> extract0DStreamValue w'
                              <*> pure (fromList [])
                              <*> pure Nothing)
 withGeometryPathP f (GeometryPathMars as) gg =
@@ -195,14 +195,14 @@ withGeometryPathP f (GeometryPathMedH w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedH
-                 <$> extract1DStreamValue w' 0
+                 <$> extract0DStreamValue w'
                  <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedV w b m o g d e) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f [b, m, o, g, d, e] $ \as' ->
         gg (\j -> Geometry MedV
-                 <$> extract1DStreamValue w' 0
+                 <$> extract0DStreamValue w'
                  <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
@@ -210,7 +210,7 @@ withGeometryPathP f (GeometryPathUhv w as) gg =
     withHdf5PathP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Uhv
-                 <$> extract1DStreamValue w' 0
+                 <$> extract0DStreamValue w'
                  <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathUhvTest w as) gg =

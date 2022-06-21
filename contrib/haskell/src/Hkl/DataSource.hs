@@ -89,6 +89,9 @@ instance Is0DStreamable Dataset WaveLength where
     v <- extract0DStreamValue d
     return $ v *~ angstrom
 
+instance Is0DStreamable Dataset Source where
+  extract0DStreamValue d = Source <$> extract0DStreamValue d
+
 -- Is1DStreamable
 
 class Is1DStreamable a e where
