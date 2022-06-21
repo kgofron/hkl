@@ -157,12 +157,12 @@ withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
     withDataSourceP f w $ \w' ->
-    withHdf5PathP f m $ \mu' ->
-    withHdf5PathP f ko $ \komega' ->
-    withHdf5PathP f ka $ \kappa' ->
-    withHdf5PathP f kp $ \kphi' ->
-    withHdf5PathP f g $ \gamma' ->
-    withHdf5PathP f d $ \delta' -> do
+    withDataSourceP f m $ \mu' ->
+    withDataSourceP f ko $ \komega' ->
+    withDataSourceP f ka $ \kappa' ->
+    withDataSourceP f kp $ \kphi' ->
+    withDataSourceP f g $ \gamma' ->
+    withDataSourceP f d $ \delta' -> do
       wavelength <- liftIO $ extract0DStreamValue w'
       mu <- liftIO $ extract0DStreamValue mu'
       komega <- liftIO $ extract0DStreamValue komega'

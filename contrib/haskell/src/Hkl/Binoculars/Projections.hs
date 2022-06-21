@@ -90,13 +90,13 @@ newtype DetectorPath = DetectorPath
 -- GeometryPath
 
 data GeometryPath
-  = GeometryPathCristalK6C { geometryPathWavelengthNew :: DataSourcePath WaveLength -- Hdf5Path Z Double
-                           , geometryPathMu         :: Hdf5Path DIM1 Double
-                           , geometryPathKomega     :: Hdf5Path DIM1 Double
-                           , geometryPathKappa      :: Hdf5Path DIM1 Double
-                           , geometryPathKphi       :: Hdf5Path DIM1 Double
-                           , geometryPathGamma      :: Hdf5Path DIM1 Double
-                           , geometryPathDelta      :: Hdf5Path DIM1 Double
+  = GeometryPathCristalK6C { geometryPathWavelengthNew :: DataSourcePath WaveLength
+                           , geometryPathMuNew         :: DataSourcePath Degree
+                           , geometryPathKomegaNew     :: DataSourcePath Degree
+                           , geometryPathKappaNew      :: DataSourcePath Degree
+                           , geometryPathKphiNew       :: DataSourcePath Degree
+                           , geometryPathGammaNew      :: DataSourcePath Degree
+                           , geometryPathDeltaNew      :: DataSourcePath Degree
                            }
   | GeometryPathFix { geometryPathWavelength :: Hdf5Path Z Double }
   | GeometryPathMars { geometryPathAxes       :: [Hdf5Path DIM1 Double]

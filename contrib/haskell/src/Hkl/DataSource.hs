@@ -134,7 +134,18 @@ type family DataSourceAcq a :: *
 class DataSource a where
   withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
--- DataSource (instances)
+-- | DataSource (instances)
+
+data instance DataSourcePath Degree = DataPathDegree (Hdf5Path DIM1 Double)
+  deriving (Eq, Generic, Show)
+deriving instance FromJSON (DataSourcePath Degree)
+deriving instance ToJSON (DataSourcePath Degree)
+
+type instance DataSourceAcq Degree = Dataset
+
+instance DataSource Degree where
+  withDataSourceP f (DataPathDegree p) g = withHdf5PathP f p g
+
 
 data instance DataSourcePath WaveLength = DataPathWaveLength (Hdf5Path Z Double)
   deriving (Eq, Generic, Show)
