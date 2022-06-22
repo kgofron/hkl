@@ -177,7 +177,7 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
                     (fromList [mu, komega, kappa, kphi, gamma, delta])
                     Nothing))
 withGeometryPathP f (GeometryPathFix w) gg =
-  withHdf5PathP f w $ \w' ->
+  withDataSourceP f w $ \w' ->
                         gg (const $
                              Geometry Fixe
                              <$> extract0DStreamValue w'
@@ -192,14 +192,14 @@ withGeometryPathP f (GeometryPathMars as) gg =
                          return (0.0 : vs))
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedH w as) gg =
-    withHdf5PathP f w $ \w' ->
+    withDataSourceP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry MedH
                  <$> extract0DStreamValue w'
                  <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathMedV w b m o g d e) gg =
-    withHdf5PathP f w $ \w' ->
+    withDataSourceP f w $ \w' ->
     withAxesPathP f [b, m, o, g, d, e] $ \as' ->
         gg (\j -> Geometry MedV
                  <$> extract0DStreamValue w'
@@ -207,16 +207,18 @@ withGeometryPathP f (GeometryPathMedV w b m o g d e) gg =
                  <*> pure Nothing)
 withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
 withGeometryPathP f (GeometryPathUhv w as) gg =
-    withHdf5PathP f w $ \w' ->
+    withDataSourceP f w $ \w' ->
     withAxesPathP f as $ \as' ->
         gg (\j -> Geometry Uhv
                  <$> extract0DStreamValue w'
                  <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 withGeometryPathP f (GeometryPathUhvTest w as) gg =
+    withDataSourceP f w $ \w' ->
     withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry Uhv (Source (unAngstrom w))
-                 <$> extract1DStreamValue as' j
+        gg (\j -> Geometry Uhv
+                 <$> extract0DStreamValue w' -- (Source (unAngstrom w))
+                 <*> extract1DStreamValue as' j
                  <*> pure Nothing)
 
 withAttenuationPathP :: (MonadSafe m, Location l) =>

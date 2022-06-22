@@ -8,9 +8,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -84,12 +82,28 @@ class Is0DStreamable a e where
 instance Is0DStreamable Dataset Double where
   extract0DStreamValue d = get_position d 0
 
-instance Is0DStreamable Dataset WaveLength where
-  extract0DStreamValue d = do
+instance Is0DStreamable (DataSourceAcq Degree) Degree where
+    extract0DStreamValue (DataSourceAcq'Degree d) =
+        Degree <$> do
+          v <- extract0DStreamValue d
+          return $ v *~ degree
+
+instance Is0DStreamable (DataSourceAcq Degree) Double where
+  extract0DStreamValue (DataSourceAcq'Degree d) = extract0DStreamValue d
+
+instance Is0DStreamable (DataSourceAcq NanoMeter) NanoMeter where
+    extract0DStreamValue (DataSourceAcq'NanoMeter d) =
+        NanoMeter <$> do
+          v <- extract0DStreamValue d
+          return $ v *~ angstrom
+
+instance Is0DStreamable (DataSourceAcq WaveLength) WaveLength where
+  extract0DStreamValue (DataSourceAcq'WaveLength d) = do
     v <- extract0DStreamValue d
     return $ v *~ angstrom
+  extract0DStreamValue (DataSourceAcq'WaveLengthConst a) = return $ unAngstrom a
 
-instance Is0DStreamable Dataset Source where
+instance Is0DStreamable (DataSourceAcq WaveLength) Source where
   extract0DStreamValue d = Source <$> extract0DStreamValue d
 
 -- Is1DStreamable
@@ -102,10 +116,13 @@ class Is1DStreamable a e where
 instance Is1DStreamable Dataset Attenuation where
   extract1DStreamValue d i = Attenuation <$> extract1DStreamValue d i
 
-instance Is1DStreamable Dataset Degree where
-  extract1DStreamValue d i = Degree <$> do
-    v <- extract1DStreamValue d i
-    return $ v *~ degree
+-- instance Is1DStreamable (DataSourceAcq Degree) Degree where
+--   extract1DStreamValue (DataSourceAcqDegree d) i = Degree <$> do
+--     v <- extract1DStreamValue d i
+--     return $ v *~ degree
+
+instance Is1DStreamable (DataSourceAcq Degree) Double where
+  extract1DStreamValue (DataSourceAcq'Degree d) = extract1DStreamValue d
 
 instance Is1DStreamable Dataset Double where
   extract1DStreamValue = get_position
@@ -113,8 +130,8 @@ instance Is1DStreamable Dataset Double where
 instance Is1DStreamable Dataset Float where
   extract1DStreamValue = get_position
 
-instance Is1DStreamable Dataset NanoMeter where
-  extract1DStreamValue d i = NanoMeter <$> do
+instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
+  extract1DStreamValue (DataSourceAcq'NanoMeter d) i = NanoMeter <$> do
     v <- extract1DStreamValue d i
     return $ v *~ angstrom
 
@@ -132,30 +149,48 @@ instance Is1DStreamable  [Dataset] (Data.Vector.Storable.Vector Double) where
 -- DataSource
 
 data family DataSourcePath a :: *
-type family DataSourceAcq a :: *
+data family DataSourceAcq a :: *
 
 class DataSource a where
   withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
 -- | DataSource (instances)
 
-data instance DataSourcePath Degree = DataPathDegree (Hdf5Path DIM1 Double)
+-- Degree
+
+data instance DataSourcePath Degree = DataSourcePath'Degree (Hdf5Path DIM1 Double)
   deriving (Eq, Generic, Show)
 deriving instance FromJSON (DataSourcePath Degree)
 deriving instance ToJSON (DataSourcePath Degree)
 
-type instance DataSourceAcq Degree = Dataset
+data instance DataSourceAcq Degree = DataSourceAcq'Degree Dataset
 
 instance DataSource Degree where
-  withDataSourceP f (DataPathDegree p) g = withHdf5PathP f p g
+  withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
 
+-- NanoMeter
 
-data instance DataSourcePath WaveLength = DataPathWaveLength (Hdf5Path Z Double)
+data instance DataSourcePath NanoMeter = DataSourcePath'NanoMeter (Hdf5Path Z Double)
+  deriving (Eq, Generic, Show)
+deriving instance FromJSON (DataSourcePath NanoMeter)
+deriving instance ToJSON (DataSourcePath NanoMeter)
+
+data instance DataSourceAcq NanoMeter = DataSourceAcq'NanoMeter Dataset
+
+instance DataSource NanoMeter where
+  withDataSourceP f (DataSourcePath'NanoMeter p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'NanoMeter ds)
+
+-- WaveLength
+
+data instance DataSourcePath WaveLength = DataSourcePath'WaveLength (Hdf5Path Z Double)
+                                        | DataSourcePath'WaveLengthConst Angstrom
   deriving (Eq, Generic, Show)
 deriving instance FromJSON (DataSourcePath WaveLength)
 deriving instance ToJSON (DataSourcePath WaveLength)
 
-type instance DataSourceAcq WaveLength = Dataset
+data instance DataSourceAcq WaveLength = DataSourceAcq'WaveLength Dataset
+                                       | DataSourceAcq'WaveLengthConst Angstrom
 
 instance DataSource WaveLength where
-  withDataSourceP f (DataPathWaveLength p) g = withHdf5PathP f p g
+    withDataSourceP f (DataSourcePath'WaveLength p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'WaveLength ds)
+    withDataSourceP _ (DataSourcePath'WaveLengthConst a) g = g (DataSourceAcq'WaveLengthConst a)

@@ -48,7 +48,7 @@ import           Control.Monad.Reader              (MonadReader, ask, forM_,
 import           Control.Monad.Trans.Reader        (runReaderT)
 import           Data.Aeson                        (FromJSON, ToJSON,
                                                     eitherDecode', encode)
-import           Data.Array.Repa                   (Array, Z)
+import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
@@ -103,29 +103,29 @@ instance Exception HklBinocularsProjectionsHklException
 
 data SamplePath
     = SamplePath
-      (Hdf5Path Z Double) -- a
-      (Hdf5Path Z Double) -- b
-      (Hdf5Path Z Double) -- c
-      (Hdf5Path Z Double) -- alpha
-      (Hdf5Path Z Double) -- beta
-      (Hdf5Path Z Double) -- gamma
-      (Hdf5Path Z Double) -- ux
-      (Hdf5Path Z Double) -- uy
-      (Hdf5Path Z Double) -- yz
+      (DataSourcePath NanoMeter) -- a
+      (DataSourcePath NanoMeter) -- b
+      (DataSourcePath NanoMeter) -- c
+      (DataSourcePath Degree) -- alpha
+      (DataSourcePath Degree) -- beta
+      (DataSourcePath Degree) -- gamma
+      (DataSourcePath Degree) -- ux
+      (DataSourcePath Degree) -- uy
+      (DataSourcePath Degree) -- uz
     | SamplePath2 Sample
     deriving (Eq, FromJSON, Generic, Show, ToJSON)
 
 defaultDataPathHklSample :: SamplePath
 defaultDataPathHklSample = SamplePath
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Alpha")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Beta")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Gamma")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Ux")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uy")
-  (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uz")
+  (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A"))
+  (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B"))
+  (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C"))
+  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Alpha"))
+  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Beta"))
+  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Gamma"))
+  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Ux"))
+  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uy"))
+  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uz"))
 
 data instance DataPath 'HklProjection = DataPathHkl
   { dataPathHklQxQyQz :: DataPath 'QxQyQzProjection
@@ -404,31 +404,31 @@ instance ProcessHklP (DataPath 'HklProjection)
 
 withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> (IO Sample -> m r) -> m r
 withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
-    withHdf5PathP f a $ \a' ->
-    withHdf5PathP f b $ \b' ->
-    withHdf5PathP f c $ \c' ->
-    withHdf5PathP f alpha $ \alpha' ->
-    withHdf5PathP f beta $ \beta' ->
-    withHdf5PathP f gamma $ \gamma' ->
-    withHdf5PathP f ux $ \ux' ->
-    withHdf5PathP f uy $ \uy' ->
-    withHdf5PathP f uz $ \uz' ->
+    withDataSourceP f a $ \a' ->
+    withDataSourceP f b $ \b' ->
+    withDataSourceP f c $ \c' ->
+    withDataSourceP f alpha $ \alpha' ->
+    withDataSourceP f beta $ \beta' ->
+    withDataSourceP f gamma $ \gamma' ->
+    withDataSourceP f ux $ \ux' ->
+    withDataSourceP f uy $ \uy' ->
+    withDataSourceP f uz $ \uz' ->
         g (Sample "test"
            <$> (Triclinic
-                <$> extract1DStreamValue a' 0
-                <*> extract1DStreamValue b' 0
-                <*> extract1DStreamValue c' 0
-                <*> extract1DStreamValue alpha' 0
-                <*> extract1DStreamValue beta' 0
-                <*> extract1DStreamValue gamma' 0)
+                <$> extract0DStreamValue a'
+                <*> extract0DStreamValue b'
+                <*> extract0DStreamValue c'
+                <*> extract0DStreamValue alpha'
+                <*> extract0DStreamValue beta'
+                <*> extract0DStreamValue gamma')
            <*> (Parameter "ux"
-                <$> extract1DStreamValue ux' 0
+                <$> extract0DStreamValue ux'
                 <*> pure (Range 0 0))
            <*> (Parameter "uy"
-                <$> extract1DStreamValue uy' 0
+                <$> extract0DStreamValue uy'
                 <*> pure (Range 0 0))
            <*> (Parameter "uz"
-                <$> extract1DStreamValue uz' 0
+                <$> extract0DStreamValue uz'
                 <*> pure (Range 0 0)))
 withSamplePathP _ (SamplePath2 s) g = g (return s)
 
@@ -458,26 +458,26 @@ h5dpathHkl c =
      let ma = _binocularsConfigHklAttenuationCoefficient c
      let samplePath beamline device =
            SamplePath
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Ux")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uy")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uz")
+           (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A"))
+           (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B"))
+           (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Ux"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uy"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uz"))
      let sampleMarsPath beamline device =
            SamplePath
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_x")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_y")
-           (hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_z")
+           (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a"))
+           (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b"))
+           (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_x"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_y"))
+           (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_z"))
      let marsSamplePath = sampleMarsPath "MARS" "d03-1-cx2__ex__dif-cm_#1"
      let medHSamplePath = samplePath "SIXS" "i14-c-cx1-ex-cm-med.h"
      let medVSamplePath = samplePath "SIXS" "i14-c-cx1-ex-cm-med.v"

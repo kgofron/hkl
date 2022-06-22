@@ -31,7 +31,7 @@ import           Control.Exception               (Exception)
 import           Data.Aeson                      (FromJSON, ToJSON)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
-import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3, Z)
+import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import           Data.ByteString                 (useAsCString)
 import           Data.Text                       (Text)
@@ -90,21 +90,21 @@ newtype DetectorPath = DetectorPath
 -- GeometryPath
 
 data GeometryPath
-  = GeometryPathCristalK6C { geometryPathWavelengthNew :: DataSourcePath WaveLength
-                           , geometryPathMuNew         :: DataSourcePath Degree
-                           , geometryPathKomegaNew     :: DataSourcePath Degree
-                           , geometryPathKappaNew      :: DataSourcePath Degree
-                           , geometryPathKphiNew       :: DataSourcePath Degree
-                           , geometryPathGammaNew      :: DataSourcePath Degree
-                           , geometryPathDeltaNew      :: DataSourcePath Degree
+  = GeometryPathCristalK6C { geometryPathWavelength :: DataSourcePath WaveLength
+                           , geometryPathMuNew      :: DataSourcePath Degree
+                           , geometryPathKomegaNew  :: DataSourcePath Degree
+                           , geometryPathKappaNew   :: DataSourcePath Degree
+                           , geometryPathKphiNew    :: DataSourcePath Degree
+                           , geometryPathGammaNew   :: DataSourcePath Degree
+                           , geometryPathDeltaNew   :: DataSourcePath Degree
                            }
-  | GeometryPathFix { geometryPathWavelength :: Hdf5Path Z Double }
+  | GeometryPathFix { geometryPathWavelength :: DataSourcePath WaveLength }
   | GeometryPathMars { geometryPathAxes       :: [Hdf5Path DIM1 Double]
                      }
-  | GeometryPathMedH { geometryPathWavelength :: Hdf5Path Z Double
+  | GeometryPathMedH { geometryPathWavelength :: DataSourcePath WaveLength
                      , geometryPathAxes       :: [Hdf5Path DIM1 Double]
                      }
-  | GeometryPathMedV { geometryPathWavelength :: Hdf5Path Z Double
+  | GeometryPathMedV { geometryPathWavelength :: DataSourcePath WaveLength
                      , geometryPathBeta       :: Hdf5Path DIM1 Double
                      , geometryPathMu         :: Hdf5Path DIM1 Double
                      , geometryPathOmega      :: Hdf5Path DIM1 Double
@@ -112,15 +112,15 @@ data GeometryPath
                      , geometryPathDelta      :: Hdf5Path DIM1 Double
                      , geometryPathEtaa       :: Hdf5Path DIM1 Double
                      }
-  | GeometryPathMedVEiger { geometryPathWavelength :: Hdf5Path Z Double
+  | GeometryPathMedVEiger { geometryPathWavelength :: DataSourcePath WaveLength
                           , geometryPathAxes       :: [Hdf5Path DIM1 Double]
                           , geometryPathEix        :: Hdf5Path DIM1 Double
                           , geometryPathEiz        :: Hdf5Path DIM1 Double
                           }
-  | GeometryPathUhv { geometryPathWavelength :: Hdf5Path Z Double
+  | GeometryPathUhv { geometryPathWavelength :: DataSourcePath WaveLength
                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
                     }
-  | GeometryPathUhvTest { geometryPathWavelengthTest :: Angstrom
+  | GeometryPathUhvTest { geometryPathWavelengthTest :: DataSourcePath WaveLength
                         , geometryPathAxes           :: [Hdf5Path DIM1 Double]
                         }
                   deriving (Eq, Generic, Show, FromJSON, ToJSON)
