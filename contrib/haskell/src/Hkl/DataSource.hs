@@ -26,6 +26,7 @@ module Hkl.DataSource
   , DataSourcePath(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
+  , withAxesPathP
   ) where
 
 import           Bindings.HDF5.Core                (Location)
@@ -160,21 +161,117 @@ class DataSource a where
 -- Degree
 
 data instance DataSourcePath Degree = DataSourcePath'Degree (Hdf5Path DIM1 Double)
-  deriving (Eq, Generic, Show)
-deriving instance FromJSON (DataSourcePath Degree)
-deriving instance ToJSON (DataSourcePath Degree)
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DataSourceAcq Degree = DataSourceAcq'Degree Dataset
 
 instance DataSource Degree where
   withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
 
+-- Geometry
+
+data instance DataSourcePath Geometry =
+  DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath WaveLength
+                                     , geometryPathMu         :: DataSourcePath Degree
+                                     , geometryPathKomega     :: DataSourcePath Degree
+                                     , geometryPathKappa      :: DataSourcePath Degree
+                                     , geometryPathKphi       :: DataSourcePath Degree
+                                     , geometryPathGamma      :: DataSourcePath Degree
+                                     , geometryPathDelta      :: DataSourcePath Degree
+                                     }
+  | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath WaveLength }
+  | DataSourcePath'Geometry'Mars { geometryPathAxes       :: [DataSourcePath Degree] }
+  | DataSourcePath'Geometry'MedH { geometryPathWavelength :: DataSourcePath WaveLength
+                                 , geometryPathAxes       :: [DataSourcePath Degree]
+                                 }
+  | DataSourcePath'Geometry'MedV { geometryPathWavelength :: DataSourcePath WaveLength
+                                 , geometryPathBeta       :: DataSourcePath Degree
+                                 , geometryPathMu         :: DataSourcePath Degree
+                                 , geometryPathOmega      :: DataSourcePath Degree
+                                 , geometryPathGamma      :: DataSourcePath Degree
+                                 , geometryPathDelta      :: DataSourcePath Degree
+                                 , geometryPathEtaa       :: DataSourcePath Degree
+                                 }
+  | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath WaveLength
+                                      , geometryPathAxes       :: [DataSourcePath Degree]
+                                      , geometryPathEix        :: DataSourcePath Degree
+                                      , geometryPathEiz        :: DataSourcePath Degree
+                                      }
+  | DataSourcePath'Geometry'Uhv { geometryPathWavelength :: DataSourcePath WaveLength
+                                , geometryPathAxes       :: [DataSourcePath Degree]
+                                }
+  | DataSourcePath'Geometry'UhvTest { geometryPathWavelengthTest :: DataSourcePath WaveLength
+                                    , geometryPathAxes           :: [DataSourcePath Degree]
+                                    }
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq Geometry = DataSourceAcq'Geometry'CristalK6C
+                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Degree)
+                                       (DataSourceAcq Degree)
+                                       (DataSourceAcq Degree)
+                                       (DataSourceAcq Degree)
+                                       (DataSourceAcq Degree)
+                                       (DataSourceAcq Degree)
+                                     | DataSourceAcq'Geometry'Fix
+                                       (DataSourceAcq WaveLength)
+                                     | DataSourceAcq'Geometry'Mars
+                                       [DataSourceAcq Degree]
+                                     | DataSourceAcq'Geometry'MedH
+                                       (DataSourceAcq WaveLength)
+                                       [DataSourceAcq Degree]
+                                     | DataSourceAcq'Geometry'MedV
+                                       (DataSourceAcq WaveLength)
+                                       [DataSourceAcq Degree]
+                                     | DataSourceAcq'Geometry'MedVEiger
+                                       (DataSourceAcq WaveLength)
+                                       [DataSourceAcq Degree]
+                                       (DataSourceAcq Degree)
+                                       (DataSourceAcq Degree)
+                                     | DataSourceAcq'Geometry'Uhv
+                                       (DataSourceAcq WaveLength)
+                                       [DataSourceAcq Degree]
+                                     | DataSourceAcq'Geometry'UhvTest
+                                       (DataSourceAcq WaveLength)
+                                       [DataSourceAcq Degree]
+
+nest :: [(r -> a) -> a] -> ([r] -> a) -> a
+nest xs = runCont (Prelude.mapM cont xs)
+
+withAxesPathP :: (MonadSafe m, Location l) => l -> [DataSourcePath Degree] -> ([DataSourceAcq Degree] -> m a) -> m a
+withAxesPathP f dpaths = nest (Prelude.map (withDataSourceP f) dpaths)
+
+instance DataSource Geometry where
+  withDataSourceP f (DataSourcePath'Geometry'CristalK6C w m ko ka kp g d) gg =
+    withDataSourceP f w $ \w' ->
+    withDataSourceP f m $ \mu' ->
+    withDataSourceP f ko $ \komega' ->
+    withDataSourceP f ka $ \kappa' ->
+    withDataSourceP f kp $ \kphi' ->
+    withDataSourceP f g $ \gamma' ->
+    withDataSourceP f d $ \delta' -> gg (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta')
+  withDataSourceP f (DataSourcePath'Geometry'Fix w) gg =
+    withDataSourceP f w $ \w' -> gg (DataSourceAcq'Geometry'Fix w')
+  withDataSourceP f (DataSourcePath'Geometry'Mars as) gg =
+    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'Mars as')
+  withDataSourceP f (DataSourcePath'Geometry'MedH w as) gg =
+    withDataSourceP f w $ \w' ->
+    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'MedH w' as')
+  withDataSourceP f (DataSourcePath'Geometry'MedV w b m o g d e) gg =
+    withDataSourceP f w $ \w' ->
+    withAxesPathP f [b, m, o, g, d, e] $ \as' -> gg (DataSourceAcq'Geometry'MedV w' as')
+  withDataSourceP _f (DataSourcePath'Geometry'MedVEiger _w _as _eix _eiz) _gg = undefined
+  withDataSourceP f (DataSourcePath'Geometry'Uhv w as) gg =
+    withDataSourceP f w $ \w' ->
+    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'Uhv w' as')
+  withDataSourceP f (DataSourcePath'Geometry'UhvTest w as) gg =
+    withDataSourceP f w $ \w' ->
+    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'UhvTest w' as')
+
 -- NanoMeter
 
 data instance DataSourcePath NanoMeter = DataSourcePath'NanoMeter (Hdf5Path Z Double)
-  deriving (Eq, Generic, Show)
-deriving instance FromJSON (DataSourcePath NanoMeter)
-deriving instance ToJSON (DataSourcePath NanoMeter)
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DataSourceAcq NanoMeter = DataSourceAcq'NanoMeter Dataset
 
@@ -185,9 +282,7 @@ instance DataSource NanoMeter where
 
 data instance DataSourcePath WaveLength = DataSourcePath'WaveLength (Hdf5Path Z Double)
                                         | DataSourcePath'WaveLengthConst Angstrom
-  deriving (Eq, Generic, Show)
-deriving instance FromJSON (DataSourcePath WaveLength)
-deriving instance ToJSON (DataSourcePath WaveLength)
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DataSourceAcq WaveLength = DataSourceAcq'WaveLength Dataset
                                        | DataSourceAcq'WaveLengthConst Angstrom

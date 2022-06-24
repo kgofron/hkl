@@ -22,7 +22,6 @@ module Hkl.Binoculars.Pipes
   , ChunkP(..)
   , accumulateP
   , condM
-  , nest
   , progress
   , project
   , skipMalformed
@@ -147,12 +146,6 @@ withDetectorPathP f det (DetectorPath p) g = do
           , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16))), (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)))
           , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
           ]
-
-nest :: [(r -> a) -> a] -> ([r] -> a) -> a
-nest xs = runCont (Prelude.mapM cont xs)
-
-withAxesPathP :: (MonadSafe m, Location l) => l -> [DataSourcePath Degree] -> ([DataSourceAcq Degree] -> m a) -> m a
-withAxesPathP f dpaths = nest (Prelude.map (withDataSourceP f) dpaths)
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
