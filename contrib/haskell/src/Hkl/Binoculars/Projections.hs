@@ -91,37 +91,37 @@ newtype DetectorPath = DetectorPath
 
 data GeometryPath
   = GeometryPathCristalK6C { geometryPathWavelength :: DataSourcePath WaveLength
-                           , geometryPathMuNew      :: DataSourcePath Degree
-                           , geometryPathKomegaNew  :: DataSourcePath Degree
-                           , geometryPathKappaNew   :: DataSourcePath Degree
-                           , geometryPathKphiNew    :: DataSourcePath Degree
-                           , geometryPathGammaNew   :: DataSourcePath Degree
-                           , geometryPathDeltaNew   :: DataSourcePath Degree
+                           , geometryPathMu         :: DataSourcePath Degree
+                           , geometryPathKomega     :: DataSourcePath Degree
+                           , geometryPathKappa      :: DataSourcePath Degree
+                           , geometryPathKphi       :: DataSourcePath Degree
+                           , geometryPathGamma      :: DataSourcePath Degree
+                           , geometryPathDelta      :: DataSourcePath Degree
                            }
   | GeometryPathFix { geometryPathWavelength :: DataSourcePath WaveLength }
-  | GeometryPathMars { geometryPathAxes       :: [Hdf5Path DIM1 Double]
+  | GeometryPathMars { geometryPathAxes       :: [DataSourcePath Degree]
                      }
   | GeometryPathMedH { geometryPathWavelength :: DataSourcePath WaveLength
-                     , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                     , geometryPathAxes       :: [DataSourcePath Degree]
                      }
   | GeometryPathMedV { geometryPathWavelength :: DataSourcePath WaveLength
-                     , geometryPathBeta       :: Hdf5Path DIM1 Double
-                     , geometryPathMu         :: Hdf5Path DIM1 Double
-                     , geometryPathOmega      :: Hdf5Path DIM1 Double
-                     , geometryPathGamma      :: Hdf5Path DIM1 Double
-                     , geometryPathDelta      :: Hdf5Path DIM1 Double
-                     , geometryPathEtaa       :: Hdf5Path DIM1 Double
+                     , geometryPathBeta       :: DataSourcePath Degree
+                     , geometryPathMu         :: DataSourcePath Degree
+                     , geometryPathOmega      :: DataSourcePath Degree
+                     , geometryPathGamma      :: DataSourcePath Degree
+                     , geometryPathDelta      :: DataSourcePath Degree
+                     , geometryPathEtaa       :: DataSourcePath Degree
                      }
   | GeometryPathMedVEiger { geometryPathWavelength :: DataSourcePath WaveLength
-                          , geometryPathAxes       :: [Hdf5Path DIM1 Double]
-                          , geometryPathEix        :: Hdf5Path DIM1 Double
-                          , geometryPathEiz        :: Hdf5Path DIM1 Double
+                          , geometryPathAxes       :: [DataSourcePath Degree]
+                          , geometryPathEix        :: DataSourcePath Degree
+                          , geometryPathEiz        :: DataSourcePath Degree
                           }
   | GeometryPathUhv { geometryPathWavelength :: DataSourcePath WaveLength
-                    , geometryPathAxes       :: [Hdf5Path DIM1 Double]
+                    , geometryPathAxes       :: [DataSourcePath Degree]
                     }
   | GeometryPathUhvTest { geometryPathWavelengthTest :: DataSourcePath WaveLength
-                        , geometryPathAxes           :: [Hdf5Path DIM1 Double]
+                        , geometryPathAxes           :: [DataSourcePath Degree]
                         }
                   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 

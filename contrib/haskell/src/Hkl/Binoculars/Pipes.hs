@@ -46,7 +46,7 @@ import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Array.Repa                   (Shape, size)
-import           Data.Array.Repa.Index             (DIM1, DIM2)
+import           Data.Array.Repa.Index             (DIM2)
 import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
 import           Data.Vector.Storable              (fromList)
@@ -151,8 +151,8 @@ withDetectorPathP f det (DetectorPath p) g = do
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
 
-withAxesPathP :: (MonadSafe m, Location l) => l -> [Hdf5Path DIM1 Double] -> ([Dataset] -> m a) -> m a
-withAxesPathP f dpaths = nest (Prelude.map (withHdf5PathP f) dpaths)
+withAxesPathP :: (MonadSafe m, Location l) => l -> [DataSourcePath Degree] -> ([DataSourceAcq Degree] -> m a) -> m a
+withAxesPathP f dpaths = nest (Prelude.map (withDataSourceP f) dpaths)
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
 withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =

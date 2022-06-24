@@ -22,6 +22,7 @@
 
 module Hkl.DataSource
   ( DataSource(..)
+  , DataSourceAcq(..)
   , DataSourcePath(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
@@ -143,7 +144,7 @@ instance Is1DStreamable Dataset WaveLength where
 instance Is1DStreamable Dataset Source where
   extract1DStreamValue d i = Source <$> extract1DStreamValue d i
 
-instance Is1DStreamable  [Dataset] (Data.Vector.Storable.Vector Double) where
+instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector Double) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 -- DataSource
