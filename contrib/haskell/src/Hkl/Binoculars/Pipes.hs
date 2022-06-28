@@ -26,7 +26,6 @@ module Hkl.Binoculars.Pipes
   , project
   , skipMalformed
   , tryYield
-  , withAttenuationPathP
   , withAxesPathP
   , withDetectorPathP
   , withGeometryPathP
@@ -175,7 +174,7 @@ withGeometryPathP f p gg = withDataSourceP f p $ \r ->
 
     (DataSourceAcq'Geometry'Mars w' as') -> do
       gg (\j -> Geometry Mars
-               <$> extract0DStreamValue w' -- TODO (Source <$> (return $ 1.537591 *~ angstrom))
+               <$> extract0DStreamValue w'
                <*> (fromList <$> do
                        vs <- Prelude.mapM (`extract1DStreamValue` j) as'
                        return (0.0 : vs)) -- TODO check
@@ -206,24 +205,6 @@ withGeometryPathP f p gg = withDataSourceP f p $ \r ->
                <$> extract0DStreamValue w' -- (Source (unAngstrom w))
                <*> extract1DStreamValue as' j
                <*> pure Nothing)
-
-withAttenuationPathP :: (MonadSafe m, Location l) =>
-                       l
-                     -> AttenuationPath
-                     -> ((Int -> IO Attenuation) -> m r)
-                     -> m r
-withAttenuationPathP f matt g =
-  case matt of
-    NoAttenuation -> g (const $ returnIO $ Attenuation 1)
-    (AttenuationPath p offset coef) ->
-      withHdf5PathP f p $ \p' -> g (\j -> do
-                                       v <-  extract1DStreamValue p' (j + offset)
-                                       if v == badAttenuation
-                                         then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
-                                         else return  $ Attenuation (coef ** float2Double v))
-    (ApplyedAttenuationFactorPath p) ->
-      withHdf5PathP f p $ \p' -> g (\j -> extract1DStreamValue p' j)
-
 
 tryYield :: MonadSafe m
          => IO r -> Proxy x' x () r m ()

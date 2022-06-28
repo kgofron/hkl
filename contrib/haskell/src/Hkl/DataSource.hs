@@ -24,8 +24,11 @@ module Hkl.DataSource
   ( DataSource(..)
   , DataSourceAcq(..)
   , DataSourcePath(..)
+  , HklBinocularsException(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
+  , badAttenuation
+  , withAttenuationPathP
   , withAxesPathP
   ) where
 
@@ -33,7 +36,7 @@ import           Bindings.HDF5.Core                (Location)
 import           Bindings.HDF5.Dataset             (getDatasetType)
 import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
                                                     typeIDsEqual)
-import           Control.Exception                 (throwIO)
+import           Control.Exception                 (Exception, throw, throwIO)
 import           Control.Monad                     (forever)
 import           Control.Monad.Catch               (tryJust)
 import           Control.Monad.Extra               (ifM)
@@ -44,6 +47,7 @@ import           Data.Array.Repa                   (Shape, size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, Z)
 import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
+import           Data.Text                         (Text)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
@@ -132,6 +136,12 @@ instance Is1DStreamable Dataset Double where
 instance Is1DStreamable Dataset Float where
   extract1DStreamValue = get_position
 
+instance Is1DStreamable (DataSourceAcq Float) Float where
+  extract1DStreamValue (DataSourceAcq'Float ds) = extract1DStreamValue ds
+
+instance Is1DStreamable (DataSourceAcq Float) Attenuation where
+  extract1DStreamValue (DataSourceAcq'Float ds) i = Attenuation <$> extract1DStreamValue ds i
+
 instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
   extract1DStreamValue (DataSourceAcq'NanoMeter d) i = NanoMeter <$> do
     v <- extract1DStreamValue d i
@@ -158,6 +168,55 @@ class DataSource a where
 
 -- | DataSource (instances)
 
+-- Attenuation
+
+data HklBinocularsException
+    = WrongAttenuation Text Int Double
+    deriving (Show)
+instance Exception HklBinocularsException
+
+data instance DataSourcePath Attenuation =
+  DataSourcePath'Attenuation { attenuationPath        :: DataSourcePath Float
+                             , attenuationOffset      :: Int
+                             , attenuationCoefficient :: Double
+                             }
+  | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourcePath Float }
+  | DataSourcePath'NoAttenuation
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq Attenuation =
+  DataSourceAcq'Attenuation { attenuationPath        :: DataSourceAcq Float
+                            , attenuationOffset      :: Int
+                            , attenuationCoefficient :: Double
+                            }
+  | DataSourceAcq'ApplyedAttenuationFactor { attenuationPath :: DataSourceAcq Float }
+  | DataSourceAcq'NoAttenuation
+
+instance DataSource Attenuation where
+  withDataSourceP f (DataSourcePath'Attenuation p o c) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'Attenuation ds o c)
+  withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
+  withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
+
+badAttenuation :: Float
+badAttenuation = -100
+
+withAttenuationPathP :: (MonadSafe m, Location l) =>
+                       l
+                     -> DataSourcePath Attenuation
+                     -> ((Int -> IO Attenuation) -> m r)
+                     -> m r
+withAttenuationPathP f p g = withDataSourceP f p $ \a ->
+  case a of
+    (DataSourceAcq'Attenuation ds offset coef) -> g (\j -> do
+                                                     v <-  extract1DStreamValue ds (j + offset)
+                                                     if v == badAttenuation
+                                                       then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
+                                                       else return  $ Attenuation (coef ** float2Double v))
+    (DataSourceAcq'ApplyedAttenuationFactor ds) -> g (\j -> extract1DStreamValue ds j)
+
+    DataSourceAcq'NoAttenuation -> g (const $ returnIO $ Attenuation 1)
+
+
 -- Degree
 
 data instance DataSourcePath Degree = DataSourcePath'Degree (Hdf5Path DIM1 Double)
@@ -167,6 +226,16 @@ data instance DataSourceAcq Degree = DataSourceAcq'Degree Dataset
 
 instance DataSource Degree where
   withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
+
+-- Float
+
+data instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq Float = DataSourceAcq'Float Dataset
+
+instance DataSource Float where
+  withDataSourceP f (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
 
 -- Geometry
 

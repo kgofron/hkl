@@ -14,10 +14,7 @@
     Portability: GHC only (not tested)
 -}
 module Hkl.Binoculars.Projections
-  ( AttenuationPath(..)
-  , DetectorPath(..)
-  , HklBinocularsException(..)
-  , badAttenuation
+  ( DetectorPath(..)
   , saveCube
   , withGeometry
   , withMaybeMask
@@ -26,14 +23,12 @@ module Hkl.Binoculars.Projections
   , withSampleAxis
   ) where
 
-import           Control.Exception               (Exception)
 import           Data.Aeson                      (FromJSON, ToJSON)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
 import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import           Data.ByteString                 (useAsCString)
-import           Data.Text                       (Text)
 import           Data.Text.Encoding              (encodeUtf8)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString, withCString)
@@ -83,22 +78,3 @@ withSampleAxis (SampleAxis t) =  useAsCString (encodeUtf8 t)
 newtype DetectorPath = DetectorPath
     { detectorPathImage    :: Hdf5Path DIM3 Word16
     } deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
--- AttenuationPath
-
-data HklBinocularsException
-    = WrongAttenuation Text Int Double
-    deriving (Show)
-instance Exception HklBinocularsException
-
-data AttenuationPath
-    = AttenuationPath { attenuationPath        :: Hdf5Path DIM1 Float
-                      , attenuationOffset      :: Int
-                      , attenuationCoefficient :: Double
-                      }
-    | ApplyedAttenuationFactorPath { attenuationPath :: Hdf5Path DIM1 Float }
-    | NoAttenuation
-    deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-badAttenuation :: Float
-badAttenuation = -100
