@@ -16,7 +16,6 @@
 module Hkl.Binoculars.Projections
   ( AttenuationPath(..)
   , DetectorPath(..)
-  , GeometryPath(..)
   , HklBinocularsException(..)
   , badAttenuation
   , saveCube
@@ -49,11 +48,9 @@ import           Prelude                         hiding (drop)
 import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
-import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.H5                          hiding (File)
 import           Hkl.Orphan                      ()
-import           Hkl.Types
 
 --  Common
 
@@ -86,45 +83,6 @@ withSampleAxis (SampleAxis t) =  useAsCString (encodeUtf8 t)
 newtype DetectorPath = DetectorPath
     { detectorPathImage    :: Hdf5Path DIM3 Word16
     } deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
--- GeometryPath
-
-data GeometryPath
-  = GeometryPathCristalK6C { geometryPathWavelength :: DataSourcePath WaveLength
-                           , geometryPathMu         :: DataSourcePath Degree
-                           , geometryPathKomega     :: DataSourcePath Degree
-                           , geometryPathKappa      :: DataSourcePath Degree
-                           , geometryPathKphi       :: DataSourcePath Degree
-                           , geometryPathGamma      :: DataSourcePath Degree
-                           , geometryPathDelta      :: DataSourcePath Degree
-                           }
-  | GeometryPathFix { geometryPathWavelength :: DataSourcePath WaveLength }
-  | GeometryPathMars { geometryPathAxes       :: [DataSourcePath Degree]
-                     }
-  | GeometryPathMedH { geometryPathWavelength :: DataSourcePath WaveLength
-                     , geometryPathAxes       :: [DataSourcePath Degree]
-                     }
-  | GeometryPathMedV { geometryPathWavelength :: DataSourcePath WaveLength
-                     , geometryPathBeta       :: DataSourcePath Degree
-                     , geometryPathMu         :: DataSourcePath Degree
-                     , geometryPathOmega      :: DataSourcePath Degree
-                     , geometryPathGamma      :: DataSourcePath Degree
-                     , geometryPathDelta      :: DataSourcePath Degree
-                     , geometryPathEtaa       :: DataSourcePath Degree
-                     }
-  | GeometryPathMedVEiger { geometryPathWavelength :: DataSourcePath WaveLength
-                          , geometryPathAxes       :: [DataSourcePath Degree]
-                          , geometryPathEix        :: DataSourcePath Degree
-                          , geometryPathEiz        :: DataSourcePath Degree
-                          }
-  | GeometryPathUhv { geometryPathWavelength :: DataSourcePath WaveLength
-                    , geometryPathAxes       :: [DataSourcePath Degree]
-                    }
-  | GeometryPathUhvTest { geometryPathWavelengthTest :: DataSourcePath WaveLength
-                        , geometryPathAxes           :: [DataSourcePath Degree]
-                        }
-                  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
 
 -- AttenuationPath
 

@@ -103,7 +103,7 @@ instance Is0DStreamable (DataSourceAcq WaveLength) WaveLength where
   extract0DStreamValue (DataSourceAcq'WaveLength d) = do
     v <- extract0DStreamValue d
     return $ v *~ angstrom
-  extract0DStreamValue (DataSourceAcq'WaveLengthConst a) = return $ unAngstrom a
+  extract0DStreamValue (DataSourceAcq'WaveLength'Const a) = return $ unAngstrom a
 
 instance Is0DStreamable (DataSourceAcq WaveLength) Source where
   extract0DStreamValue d = Source <$> extract0DStreamValue d
@@ -180,7 +180,8 @@ data instance DataSourcePath Geometry =
                                      , geometryPathDelta      :: DataSourcePath Degree
                                      }
   | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath WaveLength }
-  | DataSourcePath'Geometry'Mars { geometryPathAxes       :: [DataSourcePath Degree] }
+  | DataSourcePath'Geometry'Mars { geometryPathWavelength :: DataSourcePath WaveLength
+                                 , geometryPathAxes       :: [DataSourcePath Degree] }
   | DataSourcePath'Geometry'MedH { geometryPathWavelength :: DataSourcePath WaveLength
                                  , geometryPathAxes       :: [DataSourcePath Degree]
                                  }
@@ -216,6 +217,7 @@ data instance DataSourceAcq Geometry = DataSourceAcq'Geometry'CristalK6C
                                      | DataSourceAcq'Geometry'Fix
                                        (DataSourceAcq WaveLength)
                                      | DataSourceAcq'Geometry'Mars
+                                       (DataSourceAcq WaveLength)
                                        [DataSourceAcq Degree]
                                      | DataSourceAcq'Geometry'MedH
                                        (DataSourceAcq WaveLength)
@@ -252,8 +254,9 @@ instance DataSource Geometry where
     withDataSourceP f d $ \delta' -> gg (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta')
   withDataSourceP f (DataSourcePath'Geometry'Fix w) gg =
     withDataSourceP f w $ \w' -> gg (DataSourceAcq'Geometry'Fix w')
-  withDataSourceP f (DataSourcePath'Geometry'Mars as) gg =
-    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'Mars as')
+  withDataSourceP f (DataSourcePath'Geometry'Mars w as) gg =
+    withDataSourceP f w $ \w' ->
+    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'Mars w' as')
   withDataSourceP f (DataSourcePath'Geometry'MedH w as) gg =
     withDataSourceP f w $ \w' ->
     withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'MedH w' as')
@@ -281,12 +284,12 @@ instance DataSource NanoMeter where
 -- WaveLength
 
 data instance DataSourcePath WaveLength = DataSourcePath'WaveLength (Hdf5Path Z Double)
-                                        | DataSourcePath'WaveLengthConst Angstrom
+                                        | DataSourcePath'WaveLength'Const Angstrom
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DataSourceAcq WaveLength = DataSourceAcq'WaveLength Dataset
-                                       | DataSourceAcq'WaveLengthConst Angstrom
+                                       | DataSourceAcq'WaveLength'Const Angstrom
 
 instance DataSource WaveLength where
     withDataSourceP f (DataSourcePath'WaveLength p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'WaveLength ds)
-    withDataSourceP _ (DataSourcePath'WaveLengthConst a) g = g (DataSourceAcq'WaveLengthConst a)
+    withDataSourceP _ (DataSourcePath'WaveLength'Const a) g = g (DataSourceAcq'WaveLength'Const a)

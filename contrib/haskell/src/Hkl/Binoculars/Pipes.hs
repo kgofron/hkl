@@ -147,15 +147,10 @@ withDetectorPathP f det (DetectorPath p) g = do
           , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
           ]
 
-withGeometryPathP :: (MonadSafe m, Location l) => l -> GeometryPath -> ((Int -> IO Geometry) -> m r) -> m r
-withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
-    withDataSourceP f w $ \w' ->
-    withDataSourceP f m $ \mu' ->
-    withDataSourceP f ko $ \komega' ->
-    withDataSourceP f ka $ \kappa' ->
-    withDataSourceP f kp $ \kphi' ->
-    withDataSourceP f g $ \gamma' ->
-    withDataSourceP f d $ \delta' -> do
+withGeometryPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Geometry -> ((Int -> IO Geometry) -> m r) -> m r
+withGeometryPathP f p gg = withDataSourceP f p $ \r ->
+  case r of
+    (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta') -> do
       wavelength <- liftIO $ extract0DStreamValue w'
       mu <- liftIO $ extract0DStreamValue mu'
       komega <- liftIO $ extract0DStreamValue komega'
@@ -163,56 +158,54 @@ withGeometryPathP f (GeometryPathCristalK6C w m ko ka kp g d) gg =
       gamma <- liftIO $ extract0DStreamValue gamma'
       delta <- liftIO $ extract0DStreamValue delta'
       gg (\j -> do
-            kphi <- extract1DStreamValue kphi' j
-            return (Geometry
-                    K6c
-                    (Source wavelength)
-                    (fromList [mu, komega, kappa, kphi, gamma, delta])
-                    Nothing))
-withGeometryPathP f (GeometryPathFix w) gg =
-  withDataSourceP f w $ \w' ->
-                        gg (const $
-                             Geometry Fixe
-                             <$> extract0DStreamValue w'
-                             <*> pure (fromList [])
-                             <*> pure Nothing)
-withGeometryPathP f (GeometryPathMars as) gg =
-    withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry Mars
-                 <$> (Source <$> (return $ 1.537591 *~ angstrom))
-                 <*> (fromList <$> do
-                         vs <- Prelude.mapM (`extract1DStreamValue` j) as'
-                         return (0.0 : vs))
-                 <*> pure Nothing)
-withGeometryPathP f (GeometryPathMedH w as) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry MedH
-                 <$> extract0DStreamValue w'
-                 <*> extract1DStreamValue as' j
-                 <*> pure Nothing)
-withGeometryPathP f (GeometryPathMedV w b m o g d e) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f [b, m, o, g, d, e] $ \as' ->
-        gg (\j -> Geometry MedV
-                 <$> extract0DStreamValue w'
-                 <*> extract1DStreamValue as' j
-                 <*> pure Nothing)
-withGeometryPathP _f (GeometryPathMedVEiger _w _as _eix _eiz) _gg = undefined
-withGeometryPathP f (GeometryPathUhv w as) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry Uhv
-                 <$> extract0DStreamValue w'
-                 <*> extract1DStreamValue as' j
-                 <*> pure Nothing)
-withGeometryPathP f (GeometryPathUhvTest w as) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' ->
-        gg (\j -> Geometry Uhv
-                 <$> extract0DStreamValue w' -- (Source (unAngstrom w))
-                 <*> extract1DStreamValue as' j
-                 <*> pure Nothing)
+             kphi <- extract1DStreamValue kphi' j
+             return (Geometry
+                      K6c
+                      (Source wavelength)
+                      (fromList [mu, komega, kappa, kphi, gamma, delta])
+                      Nothing))
+
+    (DataSourceAcq'Geometry'Fix w') -> do
+      gg (const $
+          Geometry Fixe
+          <$> extract0DStreamValue w'
+          <*> pure (fromList [])
+          <*> pure Nothing)
+
+
+    (DataSourceAcq'Geometry'Mars w' as') -> do
+      gg (\j -> Geometry Mars
+               <$> extract0DStreamValue w' -- TODO (Source <$> (return $ 1.537591 *~ angstrom))
+               <*> (fromList <$> do
+                       vs <- Prelude.mapM (`extract1DStreamValue` j) as'
+                       return (0.0 : vs)) -- TODO check
+               <*> pure Nothing)
+
+    (DataSourceAcq'Geometry'MedH w' as') -> do
+      gg (\j -> Geometry MedH
+               <$> extract0DStreamValue w'
+               <*> extract1DStreamValue as' j
+               <*> pure Nothing)
+
+    (DataSourceAcq'Geometry'MedV w' as') -> do
+      gg (\j -> Geometry MedV
+               <$> extract0DStreamValue w'
+               <*> extract1DStreamValue as' j
+               <*> pure Nothing)
+
+    (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') -> undefined
+
+    (DataSourceAcq'Geometry'Uhv w' as') -> do
+      gg (\j -> Geometry Uhv
+               <$> extract0DStreamValue w'
+               <*> extract1DStreamValue as' j
+               <*> pure Nothing)
+
+    (DataSourceAcq'Geometry'UhvTest w' as') -> do
+      gg (\j -> Geometry Uhv
+               <$> extract0DStreamValue w' -- (Source (unAngstrom w))
+               <*> extract1DStreamValue as' j
+               <*> pure Nothing)
 
 withAttenuationPathP :: (MonadSafe m, Location l) =>
                        l
