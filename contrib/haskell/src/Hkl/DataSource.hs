@@ -29,13 +29,14 @@ module Hkl.DataSource
   , Is1DStreamable(..)
   , withAttenuationPathP
   , withGeometryPathP
+  , withDetectorPathP
   ) where
 
 import           Bindings.HDF5.Core                (Location)
 import           Bindings.HDF5.Dataset             (getDatasetType)
 import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
                                                     typeIDsEqual)
-import           Control.Exception                 (Exception, throw, throwIO)
+import           Control.Exception                 (Exception, throwIO)
 import           Control.Monad                     (forever)
 import           Control.Monad.Catch               (tryJust)
 import           Control.Monad.Extra               (ifM)
@@ -43,7 +44,7 @@ import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa                   (Shape, size)
-import           Data.Array.Repa.Index             (DIM1, DIM2, Z)
+import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
 import           Data.Text                         (Text)
@@ -398,6 +399,31 @@ withGeometryPathP f p gg = withDataSourceP f p $ \r ->
                <$> extract0DStreamValue w' -- (Source (unAngstrom w))
                <*> extract1DStreamValue as' j
                <*> pure Nothing)
+
+-- Image
+
+data instance DataSourcePath Image = DataSourcePath'Image (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq Image = DataSourceAcq'Image Dataset
+
+instance DataSource Image where
+  withDataSourceP f (DataSourcePath'Image p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Image ds)
+
+condM :: (Monad m) => [(m Bool, m a)] -> m a
+condM []          = undefined
+condM ((p, v):ls) = ifM p v (condM ls)
+
+withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DataSourcePath Image -> ((Int -> IO Image) -> m r) -> m r
+withDetectorPathP f det (DataSourcePath'Image p) g = do
+  withHdf5PathP f p $ \p' -> do
+    t <- liftIO $ getDatasetType p'
+    s <- liftIO $ getTypeSize t
+    let n = (size . shape $ det) * fromEnum s
+    condM [ ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32))), (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i)))
+          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16))), (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)))
+          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
+          ]
 
 -- NanoMeter
 

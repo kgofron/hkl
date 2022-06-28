@@ -21,62 +21,35 @@ module Hkl.Binoculars.Pipes
   ( Chunk(..)
   , ChunkP(..)
   , accumulateP
-  , condM
   , progress
   , project
   , skipMalformed
   , tryYield
-  , withDetectorPathP
   , withProgressBar
   , withSpace
   ) where
 
-import           Bindings.HDF5.Core                (Location)
-import           Bindings.HDF5.Dataset             (getDatasetType)
-import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
-                                                    typeIDsEqual)
-import           Control.Exception                 (throwIO)
-import           Control.Monad                     (forever)
-import           Control.Monad.Catch               (tryJust)
-import           Control.Monad.Extra               (ifM)
-import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Trans.Cont          (cont, runCont)
-import           Data.Array.Repa                   (Shape, size)
-import           Data.Array.Repa.Index             (DIM2)
-import           Data.IORef                        (IORef, readIORef)
-import           Data.Int                          (Int32)
-import           Data.Vector.Storable              (fromList)
-import           Data.Word                         (Word16, Word32)
-import           GHC.Base                          (returnIO)
-import           GHC.Float                         (float2Double)
-import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude ((*~))
-import           Pipes                             (Consumer, Pipe, Proxy,
-                                                    await, yield)
-import           Pipes.Prelude                     (mapM)
-import           Pipes.Safe                        (MonadSafe, SomeException,
-                                                    bracket, catchP,
-                                                    displayException)
-import           System.ProgressBar                (Progress (..), ProgressBar,
-                                                    Style (..), defStyle,
-                                                    elapsedTime, incProgress,
-                                                    newProgressBar,
-                                                    renderDuration,
-                                                    updateProgress)
+import           Control.Monad          (forever)
+import           Control.Monad.Catch    (tryJust)
+import           Control.Monad.IO.Class (MonadIO (liftIO))
+import           Data.Array.Repa        (Shape)
+import           Data.Array.Repa.Index  (DIM2)
+import           Data.IORef             (IORef, readIORef)
+import           Pipes                  (Consumer, Pipe, Proxy, await, yield)
+import           Pipes.Prelude          (mapM)
+import           Pipes.Safe             (MonadSafe, SomeException, bracket,
+                                         catchP, displayException)
+import           System.ProgressBar     (Progress (..), ProgressBar, Style (..),
+                                         defStyle, elapsedTime, incProgress,
+                                         newProgressBar, renderDuration,
+                                         updateProgress)
 
-import           Prelude                           hiding (filter)
+import           Prelude                hiding (filter)
 
 import           Hkl.Binoculars.Common
-import           Hkl.Binoculars.Config
-import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
-import           Hkl.C.Geometry
 import           Hkl.DataSource
 import           Hkl.Detector
-import           Hkl.H5                            hiding (File)
-import           Hkl.Image
-import           Hkl.Pipes
-import           Hkl.Types
 
 -- ChunkP
 
@@ -126,24 +99,6 @@ progress :: MonadIO m => ProgressBar s -> Consumer a m ()
 progress p = forever $ do
   _ <- await
   liftIO $ p `incProgress` 1
-
--- Instances
-
-condM :: (Monad m) => [(m Bool, m a)] -> m a
-condM []          = undefined
-condM ((p, v):ls) = ifM p v (condM ls)
-
-withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DetectorPath -> ((Int -> IO Image) -> m r) -> m r
-withDetectorPathP f det (DetectorPath p) g = do
-  withHdf5PathP f p $ \p' -> do
-    t <- liftIO $ getDatasetType p'
-    s <- liftIO $ getTypeSize t
-    let n = (size . shape $ det) * fromEnum s
-    condM [ ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32))), (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i)))
-          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16))), (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)))
-          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
-          ]
-
 
 tryYield :: MonadSafe m
          => IO r -> Proxy x' x () r m ()
