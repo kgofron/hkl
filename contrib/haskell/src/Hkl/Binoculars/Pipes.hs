@@ -26,9 +26,7 @@ module Hkl.Binoculars.Pipes
   , project
   , skipMalformed
   , tryYield
-  , withAxesPathP
   , withDetectorPathP
-  , withGeometryPathP
   , withProgressBar
   , withSpace
   ) where
@@ -146,65 +144,6 @@ withDetectorPathP f det (DetectorPath p) g = do
           , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
           ]
 
-withGeometryPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Geometry -> ((Int -> IO Geometry) -> m r) -> m r
-withGeometryPathP f p gg = withDataSourceP f p $ \r ->
-  case r of
-    (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta') -> do
-      wavelength <- liftIO $ extract0DStreamValue w'
-      mu <- liftIO $ extract0DStreamValue mu'
-      komega <- liftIO $ extract0DStreamValue komega'
-      kappa <- liftIO $ extract0DStreamValue kappa'
-      gamma <- liftIO $ extract0DStreamValue gamma'
-      delta <- liftIO $ extract0DStreamValue delta'
-      gg (\j -> do
-             kphi <- extract1DStreamValue kphi' j
-             return (Geometry
-                      K6c
-                      (Source wavelength)
-                      (fromList [mu, komega, kappa, kphi, gamma, delta])
-                      Nothing))
-
-    (DataSourceAcq'Geometry'Fix w') -> do
-      gg (const $
-          Geometry Fixe
-          <$> extract0DStreamValue w'
-          <*> pure (fromList [])
-          <*> pure Nothing)
-
-
-    (DataSourceAcq'Geometry'Mars w' as') -> do
-      gg (\j -> Geometry Mars
-               <$> extract0DStreamValue w'
-               <*> (fromList <$> do
-                       vs <- Prelude.mapM (`extract1DStreamValue` j) as'
-                       return (0.0 : vs)) -- TODO check
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'MedH w' as') -> do
-      gg (\j -> Geometry MedH
-               <$> extract0DStreamValue w'
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'MedV w' as') -> do
-      gg (\j -> Geometry MedV
-               <$> extract0DStreamValue w'
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') -> undefined
-
-    (DataSourceAcq'Geometry'Uhv w' as') -> do
-      gg (\j -> Geometry Uhv
-               <$> extract0DStreamValue w'
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'UhvTest w' as') -> do
-      gg (\j -> Geometry Uhv
-               <$> extract0DStreamValue w' -- (Source (unAngstrom w))
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
 
 tryYield :: MonadSafe m
          => IO r -> Proxy x' x () r m ()
