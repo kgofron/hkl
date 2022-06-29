@@ -164,6 +164,7 @@ data instance Config 'HklProjection = BinocularsConfigHkl
   , _binocularsConfigHklSdd                    :: Meter
   , _binocularsConfigHklDetrot                 :: Maybe Degree
   , _binocularsConfigHklAttenuationCoefficient :: Maybe Double
+  , _binocularsConfigHklAttenuationMax         :: Maybe Float
   , _binocularsConfigHklMaskmatrix             :: Maybe MaskLocation
   , _binocularsConfigHklA                      :: Maybe Angstrom
   , _binocularsConfigHklB                      :: Maybe Angstrom
@@ -197,6 +198,7 @@ instance HasIniConfig 'HklProjection where
     , _binocularsConfigHklSdd = Meter (1 *~ meter)
     , _binocularsConfigHklDetrot = Nothing
     , _binocularsConfigHklAttenuationCoefficient = Nothing
+    , _binocularsConfigHklAttenuationMax = Nothing
     , _binocularsConfigHklMaskmatrix = Nothing
     , _binocularsConfigHklA  = Nothing
     , _binocularsConfigHklB = Nothing
@@ -229,6 +231,7 @@ instance HasIniConfig 'HklProjection where
       binocularsConfigHklSdd .= field "sdd" auto
       binocularsConfigHklDetrot .=? field "detrot" auto
       binocularsConfigHklAttenuationCoefficient .=? field "attenuation_coefficient" auto
+      binocularsConfigHklAttenuationMax .=? field "attenuation_max" auto
       binocularsConfigHklMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigHklA .=? field "a" auto
       binocularsConfigHklB .=? field "b" auto
@@ -456,6 +459,7 @@ h5dpathHkl :: (MonadLogger m, MonadThrow m)
 h5dpathHkl c =
   do let i = _binocularsConfigHklInputType c
      let ma = _binocularsConfigHklAttenuationCoefficient c
+     let mm = _binocularsConfigHklAttenuationMax c
      let samplePath beamline device =
            SamplePath
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A"))
@@ -484,7 +488,7 @@ h5dpathHkl c =
      let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
      let uhvSamplePath2 = samplePath "SIXS" "i14-c-cx2-ex-diff-uhv"
      let uhvSamplePath3 = samplePath "SIXS" "i14-c-cx2-ex-cm-uhv"
-     qxqyqz <- h5dpathQxQyQz i ma
+     qxqyqz <- h5dpathQxQyQz i ma mm
      case i of
        CristalK6C -> do
          let ms = sampleConfig c

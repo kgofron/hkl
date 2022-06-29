@@ -179,6 +179,7 @@ data instance DataSourcePath Attenuation =
   DataSourcePath'Attenuation { attenuationPath        :: DataSourcePath Float
                              , attenuationOffset      :: Int
                              , attenuationCoefficient :: Double
+                             , attenuationMax         :: Maybe Float
                              }
   | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourcePath Float }
   | DataSourcePath'NoAttenuation
@@ -188,12 +189,13 @@ data instance DataSourceAcq Attenuation =
   DataSourceAcq'Attenuation { attenuationPath        :: DataSourceAcq Float
                             , attenuationOffset      :: Int
                             , attenuationCoefficient :: Double
+                            , attenuationMax         :: Maybe Float
                             }
   | DataSourceAcq'ApplyedAttenuationFactor { attenuationPath :: DataSourceAcq Float }
   | DataSourceAcq'NoAttenuation
 
 instance DataSource Attenuation where
-  withDataSourceP f (DataSourcePath'Attenuation p o c) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'Attenuation ds o c)
+  withDataSourceP f (DataSourcePath'Attenuation p o c m) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'Attenuation ds o c m)
   withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
   withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
 
@@ -207,11 +209,16 @@ withAttenuationPathP :: (MonadSafe m, Location l) =>
                      -> m r
 withAttenuationPathP f p g = withDataSourceP f p $ \a ->
   case a of
-    (DataSourceAcq'Attenuation ds offset coef) -> g (\j -> do
-                                                     v <-  extract1DStreamValue ds (j + offset)
-                                                     if v == badAttenuation
-                                                       then throwIO (WrongAttenuation "file" (j + offset) (float2Double v))
-                                                       else return  $ Attenuation (coef ** float2Double v))
+    (DataSourceAcq'Attenuation ds offset coef mmax) -> g (\j -> do
+                                                          v <-  extract1DStreamValue ds (j + offset)
+                                                          if v == badAttenuation
+                                                          then throwIO (WrongAttenuation "attenuation is wrong" (j + offset) (float2Double v))
+                                                          else case mmax of
+                                                                 Just m -> if v > m
+                                                                            then throwIO (WrongAttenuation "max inserted filters exceeded" (j + offset) (float2Double v))
+                                                                            else return  $ Attenuation (coef ** float2Double v)
+                                                                 Nothing -> return  $ Attenuation (coef ** float2Double v))
+
     (DataSourceAcq'ApplyedAttenuationFactor ds) -> g (\j -> extract1DStreamValue ds j)
 
     DataSourceAcq'NoAttenuation -> g (const $ returnIO $ Attenuation 1)

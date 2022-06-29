@@ -103,7 +103,7 @@ defaultDataPathQxQyQz :: DataPath 'QxQyQzProjection
 defaultDataPathQxQyQz = DataPathQxQyQz
                         (DataSourcePath'Attenuation
                           (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
-                          2 0)
+                          2 0 Nothing)
                         (DataSourcePath'Image
                           (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image"))
                         (DataSourcePath'Geometry'Uhv
@@ -137,6 +137,7 @@ data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     , _binocularsConfigQxQyQzSdd                    :: Meter
     , _binocularsConfigQxQyQzDetrot                 :: Maybe Degree
     , _binocularsConfigQxQyQzAttenuationCoefficient :: Maybe Double
+    , _binocularsConfigQxQyQzAttenuationMax         :: Maybe Float
     , _binocularsConfigQxQyQzSurfaceOrientation     :: Maybe SurfaceOrientation
     , _binocularsConfigQxQyQzMaskmatrix             :: Maybe MaskLocation
     , _binocularsConfigQxQyQzWavelength             :: Maybe Angstrom
@@ -163,6 +164,7 @@ instance HasIniConfig 'QxQyQzProjection where
     , _binocularsConfigQxQyQzSdd = Meter (1 *~ meter)
     , _binocularsConfigQxQyQzDetrot = Nothing
     , _binocularsConfigQxQyQzAttenuationCoefficient = Nothing
+    , _binocularsConfigQxQyQzAttenuationMax = Nothing
     , _binocularsConfigQxQyQzSurfaceOrientation = Just SurfaceOrientationVertical
     , _binocularsConfigQxQyQzMaskmatrix = Nothing
     , _binocularsConfigQxQyQzWavelength = Nothing
@@ -187,6 +189,7 @@ instance HasIniConfig 'QxQyQzProjection where
       binocularsConfigQxQyQzSdd .= field "sdd" auto
       binocularsConfigQxQyQzDetrot .=? field "detrot" auto
       binocularsConfigQxQyQzAttenuationCoefficient .=? field "attenuation_coefficient" auto
+      binocularsConfigQxQyQzAttenuationMax .=? field "attenuation_max" auto
       binocularsConfigQxQyQzSurfaceOrientation .=? field "surface_orientation" auto
       binocularsConfigQxQyQzMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigQxQyQzWavelength .=? field "wavelength" auto
@@ -225,15 +228,16 @@ mkAttenuation ma att =
                   applyed@DataSourcePath'ApplyedAttenuationFactor{} -> return applyed
       (Just coef) -> return $ case att of
                                DataSourcePath'NoAttenuation           -> DataSourcePath'NoAttenuation
-                               (DataSourcePath'Attenuation p o _) -> DataSourcePath'Attenuation p o coef
+                               (DataSourcePath'Attenuation p o _ m) -> DataSourcePath'Attenuation p o coef m
                                (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
 
 
 h5dpathQxQyQz ::  (MonadLogger m, MonadThrow m)
               => InputType
               -> Maybe Double
+              -> Maybe Float
               -> m (DataPath 'QxQyQzProjection)
-h5dpathQxQyQz i ma =
+h5dpathQxQyQz i ma mm =
     do case i of
          CristalK6C -> DataPathQxQyQz
                       <$> mkAttenuation ma DataSourcePath'NoAttenuation
@@ -275,7 +279,7 @@ h5dpathQxQyQz i ma =
          SixsFlyMedH -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                             2 0)
+                                             2 0 mm)
                        <*> pure (DataSourcePath'Image
                                  (H5Or
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
@@ -290,7 +294,7 @@ h5dpathQxQyQz i ma =
          SixsFlyMedV -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                             2 0)
+                                             2 0 mm)
                        <*> pure (DataSourcePath'Image
                                  (H5Or
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
@@ -307,7 +311,7 @@ h5dpathQxQyQz i ma =
          SixsFlyMedVEiger -> DataPathQxQyQz
                             <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                   (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                                  2 0)
+                                                  2 0 mm)
                             <*> pure (DataSourcePath'Image
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiger_image"))
                             <*> pure (DataSourcePath'Geometry'MedVEiger
@@ -328,7 +332,7 @@ h5dpathQxQyQz i ma =
          SixsFlyMedVS70 -> DataPathQxQyQz
                           <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                                2 0)
+                                                2 0 mm)
                           <*> pure (DataSourcePath'Image
                                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image"))
                           <*> pure (DataSourcePath'Geometry'MedV
@@ -343,7 +347,7 @@ h5dpathQxQyQz i ma =
          SixsFlyScanUhv -> DataPathQxQyQz
                           <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                                 2 0)
+                                                 2 0 mm)
                           <*> pure (DataSourcePath'Image
                                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
                           <*> pure (DataSourcePath'Geometry'Uhv
@@ -356,7 +360,7 @@ h5dpathQxQyQz i ma =
          SixsFlyScanUhv2 -> DataPathQxQyQz
                            <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                  (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                                 2 0)
+                                                 2 0 mm)
                            <*> pure (DataSourcePath'Image
                                      (H5Or
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
@@ -373,7 +377,7 @@ h5dpathQxQyQz i ma =
          SixsFlyScanUhvTest -> DataPathQxQyQz
                            <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                  (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                                 2 0)
+                                                 2 0 mm)
                            <*> pure (DataSourcePath'Image
                                      (H5Or
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
@@ -388,7 +392,7 @@ h5dpathQxQyQz i ma =
          SixsFlyScanUhvUfxc -> DataPathQxQyQz
                               <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                     (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                                    2 0)
+                                                    2 0 mm)
                               <*> pure (DataSourcePath'Image
                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "ufxc_sixs_image"))
                               <*> pure (DataSourcePath'Geometry'Uhv
@@ -401,7 +405,7 @@ h5dpathQxQyQz i ma =
          SixsSbsFixedDetector -> DataPathQxQyQz
                                 <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                       (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
-                                                      2 0)
+                                                      2 0 mm)
                                 <*> pure (DataSourcePath'Image
                                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_11"))
                                 <*> pure (DataSourcePath'Geometry'Fix
@@ -409,7 +413,7 @@ h5dpathQxQyQz i ma =
          SixsSbsMedH -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
-                                             0 0)
+                                             0 0 mm)
                        <*> pure (DataSourcePath'Image
                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")))
                        <*> pure (DataSourcePath'Geometry'MedH
@@ -422,7 +426,7 @@ h5dpathQxQyQz i ma =
          SixsSbsMedV -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
-                                             0 0)
+                                             0 0 mm)
                        <*> pure (DataSourcePath'Image
                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")))
                        <*> pure (DataSourcePath'Geometry'MedV
@@ -437,7 +441,7 @@ h5dpathQxQyQz i ma =
          SixsSbsMedVFixDetector -> DataPathQxQyQz
                                   <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                         (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
-                                                        0 0)
+                                                        0 0 mm)
                                   <*> pure (DataSourcePath'Image
                                             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image")))
                                   <*> pure (DataSourcePath'Geometry'MedV
@@ -589,7 +593,7 @@ instance ChunkP (DataPath 'QxQyQzProjection) where
         case head ss of
           (Just n) -> yield $ case ma of
             DataSourcePath'NoAttenuation             -> Chunk fp 0 (fromIntegral n - 1)
-            (DataSourcePath'Attenuation _ off _) -> Chunk fp 0 (fromIntegral n - 1 - off)
+            (DataSourcePath'Attenuation _ off _ _) -> Chunk fp 0 (fromIntegral n - 1 - off)
             (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk fp 0 (fromIntegral n -1)
           Nothing  -> error "can not extract length"
 
@@ -625,7 +629,7 @@ process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'QxQyQz
          => m ()
 process' = do
   c <- ask
-  processQxQyQzP (h5dpathQxQyQz (_binocularsConfigQxQyQzInputType c) (_binocularsConfigQxQyQzAttenuationCoefficient c))
+  processQxQyQzP (h5dpathQxQyQz (_binocularsConfigQxQyQzInputType c) (_binocularsConfigQxQyQzAttenuationCoefficient c) (_binocularsConfigQxQyQzAttenuationMax c) )
 
 processQxQyQz :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQxQyQz mf mr = do

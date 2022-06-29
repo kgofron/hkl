@@ -111,6 +111,7 @@ data instance Config 'QparQperProjection = BinocularsConfigQparQper
   , _binocularsConfigQparQperSdd                    :: Meter
   , _binocularsConfigQparQperDetrot                 :: Maybe Degree
   , _binocularsConfigQparQperAttenuationCoefficient :: Maybe Double
+  , _binocularsConfigQparQperAttenuationMax         :: Maybe Float
   , _binocularsConfigQparQperSurfaceOrientation     :: Maybe SurfaceOrientation
   , _binocularsConfigQparQperMaskmatrix             :: Maybe MaskLocation
   , _binocularsConfigQparQperWavelength             :: Maybe Angstrom
@@ -136,6 +137,7 @@ instance HasIniConfig 'QparQperProjection where
     , _binocularsConfigQparQperSdd = Meter (1 *~ meter)
     , _binocularsConfigQparQperDetrot = Nothing
     , _binocularsConfigQparQperAttenuationCoefficient = Nothing
+    , _binocularsConfigQparQperAttenuationMax = Nothing
     , _binocularsConfigQparQperSurfaceOrientation = Just SurfaceOrientationVertical
     , _binocularsConfigQparQperMaskmatrix = Nothing
     , _binocularsConfigQparQperWavelength = Nothing
@@ -160,6 +162,7 @@ instance HasIniConfig 'QparQperProjection where
       binocularsConfigQparQperSdd .= field "sdd" auto
       binocularsConfigQparQperDetrot .=? field "detrot" auto
       binocularsConfigQparQperAttenuationCoefficient .=? field "attenuation_coefficient" auto
+      binocularsConfigQparQperAttenuationMax .=? field "attenuation_max" auto
       binocularsConfigQparQperSurfaceOrientation .=? field "surface_orientation" auto
       binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigQparQperWavelength .=? field "wavelength" auto
@@ -296,8 +299,9 @@ instance FramesQxQyQzP (DataPath 'QparQperProjection) where
 h5dpathQparQper :: (MonadLogger m, MonadThrow m)
                 => InputType
                 -> Maybe Double
+                -> Maybe Float
                 -> m (DataPath 'QparQperProjection)
-h5dpathQparQper i ma = DataPathQparQper <$> (h5dpathQxQyQz i ma)
+h5dpathQparQper i ma mm = DataPathQparQper <$> (h5dpathQxQyQz i ma mm)
 
 
 ---------
@@ -308,7 +312,10 @@ process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'QparQp
          => m ()
 process' = do
   c <- ask
-  processQparQperP (h5dpathQparQper (_binocularsConfigQparQperInputType c) (_binocularsConfigQparQperAttenuationCoefficient c))
+  let i = _binocularsConfigQparQperInputType c
+  let mc = _binocularsConfigQparQperAttenuationCoefficient c
+  let mm = _binocularsConfigQparQperAttenuationMax c
+  processQparQperP (h5dpathQparQper i mc mm)
 
 processQparQper :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQparQper mf mr = do

@@ -299,6 +299,9 @@ instance  HasFieldValue (Detector Hkl DIM2) where
                , fvEmit = \(Detector2D _ name _) -> pack name
                }
 
+instance HasFieldValue Float where
+  fieldvalue = number'
+
 instance HasFieldValue InputTmpl where
   fieldvalue = FieldValue { fvParse = Right . InputTmpl . uncomment
                           , fvEmit = \(InputTmpl t) -> t

@@ -1,7 +1,7 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE DataKinds   #-}
 
 module BinocularsSpec
   (spec)
@@ -74,6 +74,7 @@ spec = do
                                           , _binocularsConfigHklSdd = Meter (1.1083 *~ meter)
                                           , _binocularsConfigHklDetrot = Just (Degree (1.5707963267948966 *~ radian))
                                           , _binocularsConfigHklAttenuationCoefficient = Just 1.825
+                                          , _binocularsConfigHklAttenuationMax = Nothing
                                           , _binocularsConfigHklMaskmatrix = Just "/nfs/ruche-sixs/sixs-soleil/com-sixs/2018/Run3/Corentin/Al13Co4/binoculars/mask8.npy"
                                           , _binocularsConfigHklA = Just (Angstrom (1.4452000000000001e-9 *~ meter))
                                           , _binocularsConfigHklB = Just (Angstrom (8.158e-10 *~ meter))

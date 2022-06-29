@@ -111,6 +111,7 @@ data instance Config 'AnglesProjection = BinocularsConfigAngles
   , _binocularsConfigAnglesSdd                    :: Meter
   , _binocularsConfigAnglesDetrot                 :: Maybe Degree
   , _binocularsConfigAnglesAttenuationCoefficient :: Maybe Double
+  , _binocularsConfigAnglesAttenuationMax         :: Maybe Float
   , _binocularsConfigAnglesMaskmatrix             :: Maybe MaskLocation
   , _binocularsConfigAnglesWavelength             :: Maybe Angstrom
   , _binocularsConfigAnglesProjectionType         :: ProjectionType
@@ -136,6 +137,7 @@ instance HasIniConfig 'AnglesProjection where
     , _binocularsConfigAnglesSdd = Meter (1 *~ meter)
     , _binocularsConfigAnglesDetrot = Nothing
     , _binocularsConfigAnglesAttenuationCoefficient = Nothing
+    , _binocularsConfigAnglesAttenuationMax = Nothing
     , _binocularsConfigAnglesMaskmatrix = Nothing
     , _binocularsConfigAnglesWavelength = Nothing
     , _binocularsConfigAnglesProjectionType = AnglesProjection
@@ -160,6 +162,7 @@ instance HasIniConfig 'AnglesProjection where
       binocularsConfigAnglesSdd .= field "sdd" auto
       binocularsConfigAnglesDetrot .=? field "detrot" auto
       binocularsConfigAnglesAttenuationCoefficient .=? field "attenuation_coefficient" auto
+      binocularsConfigAnglesAttenuationMax .=? field "attenuation_max" auto
       binocularsConfigAnglesMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigAnglesWavelength .=? field "wavelength" auto
       binocularsConfigAnglesDataPath .=? field "datapath" auto
@@ -306,8 +309,9 @@ instance FramesQxQyQzP (DataPath 'AnglesProjection) where
 h5dpathAngles :: (MonadLogger m, MonadThrow m)
                 => InputType
                 -> Maybe Double
+                -> Maybe Float
                 -> m (DataPath 'AnglesProjection)
-h5dpathAngles i ma = DataPathAngles <$> (h5dpathQxQyQz i ma)
+h5dpathAngles i ma mm = DataPathAngles <$> (h5dpathQxQyQz i ma mm)
 
 
 ---------
@@ -318,7 +322,10 @@ process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'Angles
          => m ()
 process' = do
   c <- ask
-  processAnglesP (h5dpathAngles (_binocularsConfigAnglesInputType c) (_binocularsConfigAnglesAttenuationCoefficient c))
+  let i = _binocularsConfigAnglesInputType c
+  let mc = _binocularsConfigAnglesAttenuationCoefficient c
+  let mm = _binocularsConfigAnglesAttenuationMax c
+  processAnglesP (h5dpathAngles i mc mm)
 
 processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processAngles mf mr = do
