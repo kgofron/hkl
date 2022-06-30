@@ -37,15 +37,12 @@ import           Bindings.HDF5.Dataset             (getDatasetType)
 import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
                                                     typeIDsEqual)
 import           Control.Exception                 (Exception, throwIO)
-import           Control.Monad                     (forever)
-import           Control.Monad.Catch               (tryJust)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
-import           Data.Array.Repa                   (Shape, size)
+import           Data.Array.Repa                   (size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
-import           Data.IORef                        (IORef, readIORef)
 import           Data.Int                          (Int32)
 import           Data.Text                         (Text)
 import           Data.Vector.Storable              (Vector, fromList)
@@ -55,24 +52,11 @@ import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~))
-import           Pipes                             (Consumer, Pipe, Proxy,
-                                                    await, yield)
-import           Pipes.Prelude                     (mapM)
-import           Pipes.Safe                        (MonadSafe, SomeException,
-                                                    bracket, catchP,
-                                                    displayException)
-import           System.ProgressBar                (Progress (..), ProgressBar,
-                                                    Style (..), defStyle,
-                                                    elapsedTime, incProgress,
-                                                    newProgressBar,
-                                                    renderDuration,
-                                                    updateProgress)
+import           Pipes.Safe                        (MonadSafe)
 
 import           Prelude                           hiding (filter)
 
-import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
-import           Hkl.C.Binoculars
 import           Hkl.C.Geometry
 import           Hkl.Detector
 import           Hkl.H5
@@ -160,12 +144,12 @@ instance Is1DStreamable (DataSourceAcq Float) Attenuation where
 
 instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
     extract1DStreamValue (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta') i =
-        do wavelength <- liftIO $ extract0DStreamValue w'
-           mu <- liftIO $ extract0DStreamValue mu'
-           komega <- liftIO $ extract0DStreamValue komega'
-           kappa <- liftIO $ extract0DStreamValue kappa'
-           gamma <- liftIO $ extract0DStreamValue gamma'
-           delta <- liftIO $ extract0DStreamValue delta'
+        do wavelength <- extract0DStreamValue w'
+           mu <- extract0DStreamValue mu'
+           komega <- extract0DStreamValue komega'
+           kappa <- extract0DStreamValue kappa'
+           gamma <- extract0DStreamValue gamma'
+           delta <- extract0DStreamValue delta'
            kphi <- extract1DStreamValue kphi' i
            return (Geometry
                    K6c
@@ -173,7 +157,7 @@ instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
                    (fromList [mu, komega, kappa, kphi, gamma, delta])
                    Nothing)
 
-    extract1DStreamValue (DataSourceAcq'Geometry'Fix w') i =
+    extract1DStreamValue (DataSourceAcq'Geometry'Fix w') _i =
         Geometry Fixe <$> extract0DStreamValue w'
                       <*> pure (fromList [])
                       <*> pure Nothing
@@ -184,29 +168,29 @@ instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
                       <*> (fromList <$> do
                              vs <- Prelude.mapM (`extract1DStreamValue` i) as'
                              return (0.0 : vs)) -- TODO check
-                      <*> pure Nothing)
+                      <*> pure Nothing
 
     extract1DStreamValue (DataSourceAcq'Geometry'MedH w' as') i =
         Geometry MedH <$> extract0DStreamValue w'
                       <*> extract1DStreamValue as' i
-                      <*> pure Nothing)
+                      <*> pure Nothing
 
     extract1DStreamValue (DataSourceAcq'Geometry'MedV w' as') i =
         Geometry MedV <$> extract0DStreamValue w'
                       <*> extract1DStreamValue as' i
-                      <*> pure Nothing)
+                      <*> pure Nothing
 
-    extract1DStreamValue (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') -> undefined
+    extract1DStreamValue (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') _i = undefined
 
-    extract1DStreamValue (DataSourceAcq'Geometry'Uhv w' as') =
+    extract1DStreamValue (DataSourceAcq'Geometry'Uhv w' as') i =
         Geometry Uhv <$> extract0DStreamValue w'
                      <*> extract1DStreamValue as' i
-                     <*> pure Nothing)
+                     <*> pure Nothing
 
     extract1DStreamValue (DataSourceAcq'Geometry'UhvTest w' as') i =
         Geometry Uhv <$> extract0DStreamValue w' -- (Source (unAngstrom w))
-                     <*> extract1DStreamValue as' j
-                     <*> pure Nothing)
+                     <*> extract1DStreamValue as' i
+                     <*> pure Nothing
 
 instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
   extract1DStreamValue (DataSourceAcq'NanoMeter d) i = NanoMeter <$> do
@@ -224,7 +208,9 @@ instance Is1DStreamable Dataset Source where
 instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector Double) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
--- DataSource
+----------------
+-- DataSource --
+----------------
 
 data family DataSourcePath a :: *
 data family DataSourceAcq a :: *
@@ -232,7 +218,7 @@ data family DataSourceAcq a :: *
 class DataSource a where
   withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
--- | DataSource (instances)
+-- DataSource (instances)
 
 -- Attenuation
 
@@ -397,7 +383,7 @@ instance DataSource Geometry where
     withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'UhvTest w' as')
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Geometry -> ((Int -> IO Geometry) -> m r) -> m r
-withGeometryPathP f p gg = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
+withGeometryPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
 
 -- Image
 
