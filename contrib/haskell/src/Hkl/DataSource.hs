@@ -80,7 +80,9 @@ import           Hkl.Image
 import           Hkl.Pipes
 import           Hkl.Types
 
--- Is0DStreamable
+--------------------
+-- Is0DStreamable --
+--------------------
 
 class Is0DStreamable a e where
   extract0DStreamValue :: a -> IO e
@@ -112,20 +114,34 @@ instance Is0DStreamable (DataSourceAcq WaveLength) WaveLength where
 instance Is0DStreamable (DataSourceAcq WaveLength) Source where
   extract0DStreamValue d = Source <$> extract0DStreamValue d
 
--- Is1DStreamable
+--------------------
+-- Is1DStreamable --
+--------------------
 
 class Is1DStreamable a e where
   extract1DStreamValue :: a -> Int -> IO e
 
 -- Is1DStreamable (instances)
 
-instance Is1DStreamable Dataset Attenuation where
-  extract1DStreamValue d i = Attenuation <$> extract1DStreamValue d i
+badAttenuation :: Float
+badAttenuation = -100
 
--- instance Is1DStreamable (DataSourceAcq Degree) Degree where
---   extract1DStreamValue (DataSourceAcqDegree d) i = Degree <$> do
---     v <- extract1DStreamValue d i
---     return $ v *~ degree
+instance Is1DStreamable (DataSourceAcq Attenuation) Attenuation where
+    extract1DStreamValue (DataSourceAcq'Attenuation ds offset coef mmax) i =
+        Attenuation <$> do
+          v <-  extract1DStreamValue ds (i + offset)
+          if v == badAttenuation
+          then throwIO (WrongAttenuation "attenuation is wrong" (i + offset) (float2Double v))
+          else case mmax of
+                 Just m -> if v > m
+                          then throwIO (WrongAttenuation "max inserted filters exceeded" (i + offset) (float2Double v))
+                          else return (coef ** float2Double v)
+                 Nothing -> return (coef ** float2Double v)
+
+    extract1DStreamValue (DataSourceAcq'ApplyedAttenuationFactor ds) i = extract1DStreamValue ds i
+
+    extract1DStreamValue DataSourceAcq'NoAttenuation _ = returnIO $ Attenuation 1
+
 
 instance Is1DStreamable (DataSourceAcq Degree) Double where
   extract1DStreamValue (DataSourceAcq'Degree d) = extract1DStreamValue d
@@ -141,6 +157,56 @@ instance Is1DStreamable (DataSourceAcq Float) Float where
 
 instance Is1DStreamable (DataSourceAcq Float) Attenuation where
   extract1DStreamValue (DataSourceAcq'Float ds) i = Attenuation <$> extract1DStreamValue ds i
+
+instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
+    extract1DStreamValue (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta') i =
+        do wavelength <- liftIO $ extract0DStreamValue w'
+           mu <- liftIO $ extract0DStreamValue mu'
+           komega <- liftIO $ extract0DStreamValue komega'
+           kappa <- liftIO $ extract0DStreamValue kappa'
+           gamma <- liftIO $ extract0DStreamValue gamma'
+           delta <- liftIO $ extract0DStreamValue delta'
+           kphi <- extract1DStreamValue kphi' i
+           return (Geometry
+                   K6c
+                   (Source wavelength)
+                   (fromList [mu, komega, kappa, kphi, gamma, delta])
+                   Nothing)
+
+    extract1DStreamValue (DataSourceAcq'Geometry'Fix w') i =
+        Geometry Fixe <$> extract0DStreamValue w'
+                      <*> pure (fromList [])
+                      <*> pure Nothing
+
+
+    extract1DStreamValue (DataSourceAcq'Geometry'Mars w' as') i =
+        Geometry Mars <$> extract0DStreamValue w'
+                      <*> (fromList <$> do
+                             vs <- Prelude.mapM (`extract1DStreamValue` i) as'
+                             return (0.0 : vs)) -- TODO check
+                      <*> pure Nothing)
+
+    extract1DStreamValue (DataSourceAcq'Geometry'MedH w' as') i =
+        Geometry MedH <$> extract0DStreamValue w'
+                      <*> extract1DStreamValue as' i
+                      <*> pure Nothing)
+
+    extract1DStreamValue (DataSourceAcq'Geometry'MedV w' as') i =
+        Geometry MedV <$> extract0DStreamValue w'
+                      <*> extract1DStreamValue as' i
+                      <*> pure Nothing)
+
+    extract1DStreamValue (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') -> undefined
+
+    extract1DStreamValue (DataSourceAcq'Geometry'Uhv w' as') =
+        Geometry Uhv <$> extract0DStreamValue w'
+                     <*> extract1DStreamValue as' i
+                     <*> pure Nothing)
+
+    extract1DStreamValue (DataSourceAcq'Geometry'UhvTest w' as') i =
+        Geometry Uhv <$> extract0DStreamValue w' -- (Source (unAngstrom w))
+                     <*> extract1DStreamValue as' j
+                     <*> pure Nothing)
 
 instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
   extract1DStreamValue (DataSourceAcq'NanoMeter d) i = NanoMeter <$> do
@@ -199,29 +265,12 @@ instance DataSource Attenuation where
   withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
   withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
 
-badAttenuation :: Float
-badAttenuation = -100
-
 withAttenuationPathP :: (MonadSafe m, Location l) =>
                        l
                      -> DataSourcePath Attenuation
                      -> ((Int -> IO Attenuation) -> m r)
                      -> m r
-withAttenuationPathP f p g = withDataSourceP f p $ \a ->
-  case a of
-    (DataSourceAcq'Attenuation ds offset coef mmax) -> g (\j -> do
-                                                          v <-  extract1DStreamValue ds (j + offset)
-                                                          if v == badAttenuation
-                                                          then throwIO (WrongAttenuation "attenuation is wrong" (j + offset) (float2Double v))
-                                                          else case mmax of
-                                                                 Just m -> if v > m
-                                                                            then throwIO (WrongAttenuation "max inserted filters exceeded" (j + offset) (float2Double v))
-                                                                            else return  $ Attenuation (coef ** float2Double v)
-                                                                 Nothing -> return  $ Attenuation (coef ** float2Double v))
-
-    (DataSourceAcq'ApplyedAttenuationFactor ds) -> g (\j -> extract1DStreamValue ds j)
-
-    DataSourceAcq'NoAttenuation -> g (const $ returnIO $ Attenuation 1)
+withAttenuationPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
 
 
 -- Degree
@@ -348,64 +397,7 @@ instance DataSource Geometry where
     withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'UhvTest w' as')
 
 withGeometryPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Geometry -> ((Int -> IO Geometry) -> m r) -> m r
-withGeometryPathP f p gg = withDataSourceP f p $ \r ->
-  case r of
-    (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta') -> do
-      wavelength <- liftIO $ extract0DStreamValue w'
-      mu <- liftIO $ extract0DStreamValue mu'
-      komega <- liftIO $ extract0DStreamValue komega'
-      kappa <- liftIO $ extract0DStreamValue kappa'
-      gamma <- liftIO $ extract0DStreamValue gamma'
-      delta <- liftIO $ extract0DStreamValue delta'
-      gg (\j -> do
-             kphi <- extract1DStreamValue kphi' j
-             return (Geometry
-                      K6c
-                      (Source wavelength)
-                      (fromList [mu, komega, kappa, kphi, gamma, delta])
-                      Nothing))
-
-    (DataSourceAcq'Geometry'Fix w') -> do
-      gg (const $
-          Geometry Fixe
-          <$> extract0DStreamValue w'
-          <*> pure (fromList [])
-          <*> pure Nothing)
-
-
-    (DataSourceAcq'Geometry'Mars w' as') -> do
-      gg (\j -> Geometry Mars
-               <$> extract0DStreamValue w'
-               <*> (fromList <$> do
-                       vs <- Prelude.mapM (`extract1DStreamValue` j) as'
-                       return (0.0 : vs)) -- TODO check
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'MedH w' as') -> do
-      gg (\j -> Geometry MedH
-               <$> extract0DStreamValue w'
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'MedV w' as') -> do
-      gg (\j -> Geometry MedV
-               <$> extract0DStreamValue w'
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') -> undefined
-
-    (DataSourceAcq'Geometry'Uhv w' as') -> do
-      gg (\j -> Geometry Uhv
-               <$> extract0DStreamValue w'
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
-
-    (DataSourceAcq'Geometry'UhvTest w' as') -> do
-      gg (\j -> Geometry Uhv
-               <$> extract0DStreamValue w' -- (Source (unAngstrom w))
-               <*> extract1DStreamValue as' j
-               <*> pure Nothing)
+withGeometryPathP f p gg = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
 
 -- Image
 
