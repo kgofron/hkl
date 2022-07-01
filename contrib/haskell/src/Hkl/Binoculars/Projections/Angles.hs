@@ -223,7 +223,7 @@ getResolution' c = getResolution (_binocularsConfigAnglesProjectionResolution c)
 
 class ChunkP a => FramesAnglesP a where
   framesAnglesP :: MonadSafe m
-                  => a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameAngles m ()
+                  => a -> Pipe (FilePath, [Int]) DataFrameAngles m ()
 
 class (FramesAnglesP a, Show a) => ProcessAnglesP a where
   processAnglesP :: (MonadIO m, MonadLogger m, MonadReader (Config 'AnglesProjection) m, MonadThrow m)
@@ -271,7 +271,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
-      >-> framesAnglesP h5d det
+      >-> framesAnglesP h5d
       >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
       >-> accumulateP c
 
@@ -286,7 +286,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
                                runSafeT $ runEffect $
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                               >-> framesAnglesP h5d det
+                               >-> framesAnglesP h5d
                                -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
                                >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
                                >-> tee (accumulateP c)
@@ -300,18 +300,19 @@ instance ChunkP (DataPath 'AnglesProjection) where
   chunkP (DataPathAngles p) = chunkP p
 
 instance FramesAnglesP (DataPath 'AnglesProjection) where
-  framesAnglesP (DataPathAngles qxqyqz) det = framesQxQyQzP qxqyqz det
-                                              >->  Pipes.Prelude.map DataFrameAngles
+  framesAnglesP (DataPathAngles qxqyqz) = framesQxQyQzP qxqyqz
+                                          >->  Pipes.Prelude.map DataFrameAngles
 
 instance FramesQxQyQzP (DataPath 'AnglesProjection) where
-  framesQxQyQzP (DataPathAngles p) det = framesQxQyQzP p det
+  framesQxQyQzP (DataPathAngles p) = framesQxQyQzP p
 
 h5dpathAngles :: (MonadLogger m, MonadThrow m)
                 => InputType
                 -> Maybe Double
                 -> Maybe Float
+                -> Maybe (Detector Hkl DIM2)
                 -> m (DataPath 'AnglesProjection)
-h5dpathAngles i ma mm = DataPathAngles <$> (h5dpathQxQyQz i ma mm)
+h5dpathAngles i ma mm mdet = DataPathAngles <$> (h5dpathQxQyQz i ma mm mdet)
 
 
 ---------
@@ -325,7 +326,8 @@ process' = do
   let i = _binocularsConfigAnglesInputType c
   let mc = _binocularsConfigAnglesAttenuationCoefficient c
   let mm = _binocularsConfigAnglesAttenuationMax c
-  processAnglesP (h5dpathAngles i mc mm)
+  let mdet = _binocularsConfigAnglesDetector c
+  processAnglesP (h5dpathAngles i mc mm mdet)
 
 processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processAngles mf mr = do

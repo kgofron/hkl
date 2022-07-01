@@ -387,20 +387,20 @@ withGeometryPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamVal
 
 -- Image
 
-data instance DataSourcePath Image = DataSourcePath'Image (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
+data instance DataSourcePath Image = DataSourcePath'Image (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-data instance DataSourceAcq Image = DataSourceAcq'Image Dataset
+data instance DataSourceAcq Image = DataSourceAcq'Image Dataset (Detector Hkl DIM2)
 
 instance DataSource Image where
-  withDataSourceP f (DataSourcePath'Image p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Image ds)
+  withDataSourceP f (DataSourcePath'Image p sh) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Image ds sh)
 
 condM :: (Monad m) => [(m Bool, m a)] -> m a
 condM []          = undefined
 condM ((p, v):ls) = ifM p v (condM ls)
 
-withDetectorPathP :: (MonadSafe m, Location l) => l -> Detector a DIM2 -> DataSourcePath Image -> ((Int -> IO Image) -> m r) -> m r
-withDetectorPathP f det (DataSourcePath'Image p) g = do
+withDetectorPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Image -> ((Int -> IO Image) -> m r) -> m r
+withDetectorPathP f (DataSourcePath'Image p det) g = do
   withHdf5PathP f p $ \p' -> do
     t <- liftIO $ getDatasetType p'
     s <- liftIO $ getTypeSize t

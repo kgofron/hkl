@@ -26,7 +26,7 @@ module Hkl.Binoculars.Projections
 import           Data.Aeson                      (FromJSON, ToJSON)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
-import           Data.Array.Repa.Index           (DIM1, DIM2, DIM3)
+import           Data.Array.Repa.Index           (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import           Data.ByteString                 (useAsCString)
 import           Data.Text.Encoding              (encodeUtf8)

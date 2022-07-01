@@ -333,7 +333,7 @@ spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl
 
 class ChunkP a => FramesHklP a where
   framesHklP :: MonadSafe m
-             => a -> Detector b DIM2 -> Pipe (FilePath, [Int]) (DataFrameHkl b) m ()
+             => a -> Pipe (FilePath, [Int]) (DataFrameHkl b) m ()
 
 
 class (FramesHklP a, Show a) => ProcessHklP a where
@@ -379,7 +379,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
-      >-> framesHklP h5d det
+      >-> framesHklP h5d
       >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
       >-> accumulateP c
 
@@ -393,7 +393,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                -- >-> tee Pipes.Prelude.print
-                               >-> framesHklP h5d det
+                               >-> framesHklP h5d
                                -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
                                >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
                                >-> tee (accumulateP c)
@@ -439,10 +439,10 @@ instance ChunkP (DataPath 'HklProjection) where
   chunkP (DataPathHkl p _)           = chunkP p
 
 instance FramesHklP (DataPath 'HklProjection) where
-  framesHklP (DataPathHkl qp samp) det = skipMalformed $ forever $ do
+  framesHklP (DataPathHkl qp samp) = skipMalformed $ forever $ do
     (fp, js) <- await
     withFileP (openH5 fp) $ \f ->
-      withDataPathQxQyQz f det qp $ \getDataFrameQxQyQz ->
+      withDataPathQxQyQz f qp $ \getDataFrameQxQyQz ->
       withSamplePathP f samp $ \getSample ->
       forM_ js (\j -> tryYield ( DataFrameHkl
                                 <$> getDataFrameQxQyQz j
@@ -459,6 +459,7 @@ h5dpathHkl :: (MonadLogger m, MonadThrow m)
 h5dpathHkl c =
   do let i = _binocularsConfigHklInputType c
      let ma = _binocularsConfigHklAttenuationCoefficient c
+     let mdet = _binocularsConfigHklDetector c
      let mm = _binocularsConfigHklAttenuationMax c
      let samplePath beamline device =
            SamplePath
@@ -488,7 +489,7 @@ h5dpathHkl c =
      let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
      let uhvSamplePath2 = samplePath "SIXS" "i14-c-cx2-ex-diff-uhv"
      let uhvSamplePath3 = samplePath "SIXS" "i14-c-cx2-ex-cm-uhv"
-     qxqyqz <- h5dpathQxQyQz i ma mm
+     qxqyqz <- h5dpathQxQyQz i ma mm mdet
      case i of
        CristalK6C -> do
          let ms = sampleConfig c

@@ -27,6 +27,9 @@ import           Control.Monad                     ((<=<))
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.IO.Class            (MonadIO, liftIO)
+import           Data.Aeson                        (FromJSON (..), ToJSON (..),
+                                                    object, pairs, withObject,
+                                                    (.:), (.=))
 import           Data.Array.Repa                   (Array, Shape)
 import           Data.Array.Repa.Index             (DIM0, DIM2, DIM3, Z (..),
                                                     ix2, ix3, (:.) (..))
@@ -64,6 +67,22 @@ data Detector a sh where
 
 deriving instance Show (Detector a sh)
 deriving instance Eq (Detector a sh)
+
+instance FromJSON (Detector Hkl DIM2) where
+    parseJSON = withObject "Detector2D" $ \v ->
+                do n <- v .: "detector"
+                   case parseDetector2D n of
+                     Left e  -> fail e
+                     Right d -> pure d
+
+instance ToJSON (Detector Hkl DIM2) where
+    -- this generates a Value
+    toJSON (Detector2D _ name _) =
+        object ["detector" .= name]
+
+    -- this encodes directly to a bytestring Builder
+    toEncoding (Detector2D _ name _) =
+        pairs ("detector" .= name)
 
 type Mask = Array F DIM2 CBool
 

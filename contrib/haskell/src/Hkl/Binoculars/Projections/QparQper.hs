@@ -213,7 +213,7 @@ getResolution' c = getResolution (_binocularsConfigQparQperProjectionResolution 
 
 class ChunkP a => FramesQparQperP a where
   framesQparQperP :: MonadSafe m
-                  => a -> Detector b DIM2 -> Pipe (FilePath, [Int]) DataFrameQparQper m ()
+                  => a -> Pipe (FilePath, [Int]) DataFrameQparQper m ()
 
 class (FramesQparQperP a, Show a) => ProcessQparQperP a where
   processQparQperP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QparQperProjection) m, MonadThrow m)
@@ -261,7 +261,7 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
-      >-> framesQparQperP h5d det
+      >-> framesQparQperP h5d
       >-> project det 2 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
       >-> accumulateP c
 
@@ -276,7 +276,7 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
                                runSafeT $ runEffect $
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                               >-> framesQparQperP h5d det
+                               >-> framesQparQperP h5d
                                -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
                                >-> project det 2 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
                                >-> tee (accumulateP c)
@@ -290,18 +290,19 @@ instance ChunkP (DataPath 'QparQperProjection) where
   chunkP (DataPathQparQper p) = chunkP p
 
 instance FramesQparQperP (DataPath 'QparQperProjection) where
-  framesQparQperP (DataPathQparQper qxqyqz) det = framesQxQyQzP qxqyqz det
+  framesQparQperP (DataPathQparQper qxqyqz) = framesQxQyQzP qxqyqz
                                               >->  Pipes.Prelude.map DataFrameQparQper
 
 instance FramesQxQyQzP (DataPath 'QparQperProjection) where
-  framesQxQyQzP (DataPathQparQper p) det = framesQxQyQzP p det
+  framesQxQyQzP (DataPathQparQper p) = framesQxQyQzP p
 
 h5dpathQparQper :: (MonadLogger m, MonadThrow m)
                 => InputType
                 -> Maybe Double
                 -> Maybe Float
+                -> Maybe (Detector Hkl DIM2)
                 -> m (DataPath 'QparQperProjection)
-h5dpathQparQper i ma mm = DataPathQparQper <$> (h5dpathQxQyQz i ma mm)
+h5dpathQparQper i ma mm mdet = DataPathQparQper <$> (h5dpathQxQyQz i ma mm mdet)
 
 
 ---------
@@ -315,7 +316,8 @@ process' = do
   let i = _binocularsConfigQparQperInputType c
   let mc = _binocularsConfigQparQperAttenuationCoefficient c
   let mm = _binocularsConfigQparQperAttenuationMax c
-  processQparQperP (h5dpathQparQper i mc mm)
+  let mdet = _binocularsConfigQparQperDetector c
+  processQparQperP (h5dpathQparQper i mc mm mdet)
 
 processQparQper :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQparQper mf mr = do
