@@ -51,6 +51,7 @@ import           Data.Text                         (pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Typeable                     (typeOf)
+import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
@@ -205,11 +206,11 @@ spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameAn
   withSampleAxis sAxis $ \sampleAxis ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
-    (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
+    (ImageInt32 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_angles_int32_t" #-} c'hkl_binoculars_space_angles_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
-    (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
+    (ImageWord16 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_angles_uint16_t" #-} c'hkl_binoculars_space_angles_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
-    (ImageWord32 fp) -> withForeignPtr fp $ \i -> do
+    (ImageWord32 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_angles_uint32_t" #-} c'hkl_binoculars_space_angles_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
 
   return (DataFrameSpace img space att)

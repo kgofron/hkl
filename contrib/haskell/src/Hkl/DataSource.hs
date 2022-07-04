@@ -46,6 +46,7 @@ import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Int                          (Int32)
 import           Data.Text                         (Text)
 import           Data.Vector.Storable              (Vector, fromList)
+import           Data.Vector.Storable.Mutable      (IOVector, unsafeNew)
 import           Data.Word                         (Word16, Word32)
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
@@ -191,6 +192,11 @@ instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
         Geometry Uhv <$> extract0DStreamValue w' -- (Source (unAngstrom w))
                      <*> extract1DStreamValue as' i
                      <*> pure Nothing
+
+instance Is1DStreamable (DataSourceAcq Image) Image where
+  extract1DStreamValue (DataSourceAcq'Image'Int32 ds det buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
+  extract1DStreamValue (DataSourceAcq'Image'Word16 ds det buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
+  extract1DStreamValue (DataSourceAcq'Image'Word32 ds det buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
 
 instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
   extract1DStreamValue (DataSourceAcq'NanoMeter d) i = NanoMeter <$> do
@@ -390,25 +396,32 @@ withGeometryPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamVal
 data instance DataSourcePath Image = DataSourcePath'Image (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-data instance DataSourceAcq Image = DataSourceAcq'Image Dataset (Detector Hkl DIM2)
-
-instance DataSource Image where
-  withDataSourceP f (DataSourcePath'Image p sh) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Image ds sh)
+data instance DataSourceAcq Image = DataSourceAcq'Image'Int32 Dataset (Detector Hkl DIM2) (IOVector Int32)
+                                  | DataSourceAcq'Image'Word16 Dataset (Detector Hkl DIM2) (IOVector Word16)
+                                  | DataSourceAcq'Image'Word32 Dataset (Detector Hkl DIM2) (IOVector Word32)
 
 condM :: (Monad m) => [(m Bool, m a)] -> m a
 condM []          = undefined
 condM ((p, v):ls) = ifM p v (condM ls)
 
-withDetectorPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Image -> ((Int -> IO Image) -> m r) -> m r
-withDetectorPathP f (DataSourcePath'Image p det) g = do
-  withHdf5PathP f p $ \p' -> do
-    t <- liftIO $ getDatasetType p'
+instance DataSource Image where
+  withDataSourceP f (DataSourcePath'Image p det) g = withHdf5PathP f p $ \ds -> do
+    t <- liftIO $ getDatasetType ds
     s <- liftIO $ getTypeSize t
     let n = (size . shape $ det) * fromEnum s
-    condM [ ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32))), (withBytes n $ \buf -> g (\i -> ImageInt32 <$> getArrayInBuffer buf det p' i)))
-          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16))), (withBytes n $ \buf -> g (\i -> ImageWord16 <$> getArrayInBuffer buf det p' i)))
-          , ((liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32))), (withBytes n $ \buf -> g (\i -> ImageWord32 <$> getArrayInBuffer buf det p' i)))
+    condM [ (liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32)), do
+                arr <- liftIO $ unsafeNew n
+                g (DataSourceAcq'Image'Int32 ds det arr))
+          , (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16)), do
+                arr <- liftIO $ unsafeNew n
+                g (DataSourceAcq'Image'Word16 ds det arr))
+          , (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32)), do
+                arr <- liftIO $ unsafeNew n
+                g (DataSourceAcq'Image'Word32 ds det arr))
           ]
+
+withDetectorPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Image -> ((Int -> IO Image) -> m r) -> m r
+withDetectorPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
 
 -- NanoMeter
 

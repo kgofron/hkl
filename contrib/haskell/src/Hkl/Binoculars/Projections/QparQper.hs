@@ -51,6 +51,7 @@ import           Data.Text                         (pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Typeable                     (typeOf)
+import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
@@ -195,11 +196,11 @@ spaceQparQper det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQ
   withMaybeLimits mlimits rs $ \nlimits limits ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
-    (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
+    (ImageInt32 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_qparqper_int32_t" #-} c'hkl_binoculars_space_qparqper_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
-    (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
+    (ImageWord16 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_qparqper_uint16_t" #-} c'hkl_binoculars_space_qparqper_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
-    (ImageWord32 fp) -> withForeignPtr fp $ \i -> do
+    (ImageWord32 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_qparqper_uint32_t" #-} c'hkl_binoculars_space_qparqper_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits)
 
   return (DataFrameSpace img space att)

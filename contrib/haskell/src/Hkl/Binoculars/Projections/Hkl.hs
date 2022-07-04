@@ -59,6 +59,7 @@ import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
+import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           Foreign.Marshal.Array             (withArrayLen)
@@ -319,11 +320,11 @@ spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl
     withMaybeLimits mlimits rs $ \nlimits limits ->
     withForeignPtr fSpace $ \pSpace -> do
     case img of
-      (ImageInt32 fp) -> withForeignPtr fp $ \i -> do
+      (ImageInt32 arr) -> unsafeWith arr $ \i -> do
         {-# SCC "hkl_binoculars_space_hkl_int32_t" #-} c'hkl_binoculars_space_hkl_int32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
-      (ImageWord16 fp) -> withForeignPtr fp $ \i -> do
+      (ImageWord16 arr) -> unsafeWith arr $ \i -> do
         {-# SCC "hkl_binoculars_space_hkl_uint16_t" #-} c'hkl_binoculars_space_hkl_uint16_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
-      (ImageWord32 fp) -> withForeignPtr fp $ \i -> do
+      (ImageWord32 arr) -> unsafeWith arr $ \i -> do
         {-# SCC "hkl_binoculars_space_hkl_uint32_t" #-} c'hkl_binoculars_space_hkl_uint32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
     return (DataFrameSpace img space att)
 

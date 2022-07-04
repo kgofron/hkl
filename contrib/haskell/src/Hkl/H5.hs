@@ -110,7 +110,7 @@ import           Data.IORef                      (modifyIORef', newIORef,
                                                   readIORef)
 import           Data.Vector.Storable            (Storable, Vector, freeze,
                                                   head, unsafeFromForeignPtr0)
-import           Data.Vector.Storable.Mutable    (new)
+import           Data.Vector.Storable.Mutable    (IOVector, new)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
 import           Foreign.C.Types                 (CInt (CInt))
@@ -163,15 +163,14 @@ createDataspaceFromShape sh = createSimpleDataspace [HSize (fromIntegral s) | s 
 castToVector :: (Shape sh, Storable e) => Array F sh e -> Vector e
 castToVector arr = unsafeFromForeignPtr0 (toForeignPtr arr) (size . extent $ arr)
 
-getArrayInBuffer :: (NativeType t, Shape sh) => ForeignPtr t -> Detector a sh -> Dataset -> Int -> IO (ForeignPtr t)
-getArrayInBuffer fbuf det d n = withDataspace (getDatasetSpace d) $ \dataspace -> do
-      let s = shape det
-          h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
-      selectHyperslab dataspace Set h
-      withDataspace (createDataspaceFromShape s) $ \memspace ->
-          withForeignPtr fbuf $ \buf -> do
-            _ <- readDatasetInto' d (Just memspace) (Just dataspace) Nothing buf
-            return fbuf
+getArrayInBuffer :: (NativeType t, Shape sh) => IOVector t -> Detector a sh -> Dataset -> Int -> IO (IOVector t)
+getArrayInBuffer arr det d n = withDataspace (getDatasetSpace d) $ \dataspace ->
+  do let s = shape det
+         h = (HSize (fromIntegral n), Nothing,  HSize 1, Nothing) : shapeAsRangeToHyperslab s
+     selectHyperslab dataspace Set h
+     withDataspace (createDataspaceFromShape s) $ \memspace ->
+       do readDatasetInto d (Just memspace) (Just dataspace) Nothing arr
+          return arr
 
 set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
 set_image det d dataspace n arr =  do
