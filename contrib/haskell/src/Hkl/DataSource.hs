@@ -27,9 +27,6 @@ module Hkl.DataSource
   , HklBinocularsException(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
-  , withAttenuationPathP
-  , withGeometryPathP
-  , withDetectorPathP
   ) where
 
 import           Bindings.HDF5.Core                (Location)
@@ -257,14 +254,6 @@ instance DataSource Attenuation where
   withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
   withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
 
-withAttenuationPathP :: (MonadSafe m, Location l) =>
-                       l
-                     -> DataSourcePath Attenuation
-                     -> ((Int -> IO Attenuation) -> m r)
-                     -> m r
-withAttenuationPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
-
-
 -- Degree
 
 data instance DataSourcePath Degree = DataSourcePath'Degree (Hdf5Path DIM1 Double)
@@ -388,9 +377,6 @@ instance DataSource Geometry where
     withDataSourceP f w $ \w' ->
     withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'UhvTest w' as')
 
-withGeometryPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Geometry -> ((Int -> IO Geometry) -> m r) -> m r
-withGeometryPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
-
 -- Image
 
 data instance DataSourcePath Image = DataSourcePath'Image (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
@@ -419,9 +405,6 @@ instance DataSource Image where
                 arr <- liftIO $ unsafeNew n
                 g (DataSourceAcq'Image'Word32 ds det arr))
           ]
-
-withDetectorPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Image -> ((Int -> IO Image) -> m r) -> m r
-withDetectorPathP f p g = withDataSourceP f p $ \a -> g (\j-> extract1DStreamValue a j)
 
 -- NanoMeter
 

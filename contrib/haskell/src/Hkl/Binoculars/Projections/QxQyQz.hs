@@ -96,8 +96,8 @@ import           Hkl.Pipes
 
 data instance DataPath 'QxQyQzProjection = DataPathQxQyQz
   { dataPathQxQyQzAttenuation :: DataSourcePath Attenuation
-  , dataPathQxQyQzDetector :: DataSourcePath Image
   , dataPathQxQyQzGeometry :: DataSourcePath Geometry
+  , dataPathQxQyQzDetector :: DataSourcePath Image
   } deriving (Eq, Generic, Show, ToJSON, FromJSON)
 
 defaultDataPathQxQyQz :: DataPath 'QxQyQzProjection
@@ -105,9 +105,6 @@ defaultDataPathQxQyQz = DataPathQxQyQz
                         (DataSourcePath'Attenuation
                           (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
                           2 0 Nothing)
-                        (DataSourcePath'Image
-                          (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
-                          (defaultDetector))
                         (DataSourcePath'Geometry'Uhv
                           (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
                           [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
@@ -115,6 +112,9 @@ defaultDataPathQxQyQz = DataPathQxQyQz
                           , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
                           , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
                           ])
+                        (DataSourcePath'Image
+                          (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
+                          (defaultDetector))
 
 instance HasFieldValue (DataPath 'QxQyQzProjection) where
   fieldvalue = FieldValue
@@ -245,9 +245,6 @@ h5dpathQxQyQz i ma mm mdet =
        case i of
          CristalK6C -> DataPathQxQyQz
                       <$> mkAttenuation ma DataSourcePath'NoAttenuation
-                      <*> pure (DataSourcePath'Image
-                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")
-                                det) -- medipix
                       <*> pure (DataSourcePath'Geometry'CristalK6C
                                 (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda"))
                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-mu" $ datasetp "position"))
@@ -256,14 +253,12 @@ h5dpathQxQyQz i ma mm mdet =
                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "actuator_1_1"))
                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-gamma" $ datasetp "position"))
                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Diffractometer" $ groupp "i06-c-c07-ex-dif-delta" $ datasetp "position")))
+                      <*> pure (DataSourcePath'Image
+                                (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")
+                                det) -- medipix
          MarsFlyscan -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'ApplyedAttenuationFactor
                                              (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "applied_att")))
-                       <*> pure (DataSourcePath'Image
-                                 (H5Or
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image")
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_quad_image"))
-                                 det)
                        <*> pure (DataSourcePath'Geometry'Mars
                                  (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom)))
                                  [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
@@ -271,11 +266,13 @@ h5dpathQxQyQz i ma mm mdet =
                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi")
                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth")
                                  ])
+                       <*> pure (DataSourcePath'Image
+                                 (H5Or
+                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_image")
+                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_quad_image"))
+                                 det)
          MarsSbs -> DataPathQxQyQz
                    <$> mkAttenuation ma DataSourcePath'NoAttenuation
-                   <*> pure (DataSourcePath'Image
-                             (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
-                             det)
                    <*> pure (DataSourcePath'Geometry'Mars
                              (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom)))
                              [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega")
@@ -283,15 +280,13 @@ h5dpathQxQyQz i ma mm mdet =
                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "phi")
                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "tth")
                              ])
+                   <*> pure (DataSourcePath'Image
+                             (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
+                             det)
          SixsFlyMedH -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                              2 0 mm)
-                       <*> pure (DataSourcePath'Image
-                                 (H5Or
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
-                                 det)
                        <*> pure (DataSourcePath'Geometry'MedH
                                  (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                                  [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta") -- should be optional
@@ -299,15 +294,15 @@ h5dpathQxQyQz i ma mm mdet =
                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                  ])
-         SixsFlyMedV -> DataPathQxQyQz
-                       <$> mkAttenuation ma (DataSourcePath'Attenuation
-                                             (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                             2 0 mm)
                        <*> pure (DataSourcePath'Image
                                  (H5Or
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
                                  det)
+         SixsFlyMedV -> DataPathQxQyQz
+                       <$> mkAttenuation ma (DataSourcePath'Attenuation
+                                             (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
+                                             2 0 mm)
                        <*> pure (DataSourcePath'Geometry'MedV
                                  (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta")) --  it was not saved in the file
@@ -317,13 +312,15 @@ h5dpathQxQyQz i ma mm mdet =
                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"))
                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"))
                                 )
+                       <*> pure (DataSourcePath'Image
+                                 (H5Or
+                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
+                                 det)
          SixsFlyMedVEiger -> DataPathQxQyQz
                             <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                   (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                   2 0 mm)
-                            <*> pure (DataSourcePath'Image
-                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiger_image")
-                                      det)
                             <*> pure (DataSourcePath'Geometry'MedVEiger
                                       (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                                       [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta") -- maybe nothing
@@ -339,13 +336,13 @@ h5dpathQxQyQz i ma mm mdet =
                                       (DataSourcePath'Degree(((hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
                                                              `H5Or`
                                                              (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre")))))
+                            <*> pure (DataSourcePath'Image
+                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiger_image")
+                                      det)
          SixsFlyMedVS70 -> DataPathQxQyQz
                           <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                 2 0 mm)
-                          <*> pure (DataSourcePath'Image
-                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")
-                                    det)
                           <*> pure (DataSourcePath'Geometry'MedV
                                     (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta"))
@@ -355,13 +352,13 @@ h5dpathQxQyQz i ma mm mdet =
                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"))
                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"))
                                    )
+                          <*> pure (DataSourcePath'Image
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")
+                                    det)
          SixsFlyScanUhv -> DataPathQxQyQz
                           <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                  2 0 mm)
-                          <*> pure (DataSourcePath'Image
-                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                    det)
                           <*> pure (DataSourcePath'Geometry'Uhv
                                     (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength"))
                                     [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_MU")
@@ -369,15 +366,13 @@ h5dpathQxQyQz i ma mm mdet =
                                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
                                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
                                     ])
+                          <*> pure (DataSourcePath'Image
+                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                                    det)
          SixsFlyScanUhv2 -> DataPathQxQyQz
                            <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                  (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                  2 0 mm)
-                           <*> pure (DataSourcePath'Image
-                                     (H5Or
-                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
-                                     det)
                            <*> pure (DataSourcePath'Geometry'Uhv
                                      (DataSourcePath'WaveLength (H5Or
                                                           (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength")
@@ -387,15 +382,15 @@ h5dpathQxQyQz i ma mm mdet =
                                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                      ])
-         SixsFlyScanUhvTest -> DataPathQxQyQz
-                           <$> mkAttenuation ma (DataSourcePath'Attenuation
-                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                                 2 0 mm)
                            <*> pure (DataSourcePath'Image
                                      (H5Or
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
                                      det)
+         SixsFlyScanUhvTest -> DataPathQxQyQz
+                           <$> mkAttenuation ma (DataSourcePath'Attenuation
+                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
+                                                 2 0 mm)
                            <*> pure (DataSourcePath'Geometry'UhvTest
                                      (DataSourcePath'WaveLength'Const (Angstrom (0.672494 *~ angstrom)))
                                      [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
@@ -403,13 +398,15 @@ h5dpathQxQyQz i ma mm mdet =
                                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                      ])
+                           <*> pure (DataSourcePath'Image
+                                     (H5Or
+                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
+                                     det)
          SixsFlyScanUhvUfxc -> DataPathQxQyQz
                               <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                     (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                     2 0 mm)
-                              <*> pure (DataSourcePath'Image
-                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "ufxc_sixs_image")
-                                        det)
                               <*> pure (DataSourcePath'Geometry'Uhv
                                         (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "Monochromator" $ datasetp "wavelength"))
                                         [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu")
@@ -417,22 +414,22 @@ h5dpathQxQyQz i ma mm mdet =
                                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                         ])
+                              <*> pure (DataSourcePath'Image
+                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "ufxc_sixs_image")
+                                        det)
          SixsSbsFixedDetector -> DataPathQxQyQz
                                 <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                       (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                                       2 0 mm)
+                                <*> pure (DataSourcePath'Geometry'Fix
+                                          (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")))
                                 <*> pure (DataSourcePath'Image
                                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_11")
                                           det)
-                                <*> pure (DataSourcePath'Geometry'Fix
-                                          (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")))
          SixsSbsMedH -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                              0 0 mm)
-                       <*> pure (DataSourcePath'Image
-                                 (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
-                                 det)
                        <*> pure (DataSourcePath'Geometry'MedH
                                  (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                                  [ DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch"))
@@ -440,13 +437,13 @@ h5dpathQxQyQz i ma mm mdet =
                                  , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/gamma"))
                                  , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/delta"))
                                  ])
+                       <*> pure (DataSourcePath'Image
+                                 (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
+                                 det)
          SixsSbsMedV -> DataPathQxQyQz
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                              0 0 mm)
-                       <*> pure (DataSourcePath'Image
-                                 (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
-                                 det)
                        <*> pure (DataSourcePath'Geometry'MedV
                                  (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"))
@@ -456,13 +453,13 @@ h5dpathQxQyQz i ma mm mdet =
                                  (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
                                  (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")))
                                 )
+                       <*> pure (DataSourcePath'Image
+                                 (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
+                                 det)
          SixsSbsMedVFixDetector -> DataPathQxQyQz
                                   <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                         (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                                         0 0 mm)
-                                  <*> pure (DataSourcePath'Image
-                                            (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
-                                            det)
                                   <*> pure (DataSourcePath'Geometry'MedV
                                             (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                                             (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"))
@@ -472,6 +469,9 @@ h5dpathQxQyQz i ma mm mdet =
                                             (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
                                             (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")))
                                            )
+                                  <*> pure (DataSourcePath'Image
+                                            (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
+                                            det)
 
 getResolution' :: MonadThrow m => Config 'QxQyQzProjection -> m [Double]
 getResolution' c = getResolution (_binocularsConfigQxQyQzProjectionResolution c) 3
@@ -603,7 +603,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
 instance ProcessQxQyQzP (DataPath 'QxQyQzProjection)
 
 instance ChunkP (DataPath 'QxQyQzProjection) where
-    chunkP (DataPathQxQyQz ma (DataSourcePath'Image i _) _) =
+    chunkP (DataPathQxQyQz ma _ (DataSourcePath'Image i _)) =
       skipMalformed $ forever $ do
       fp <- await
       withFileP (openH5 fp) $ \f ->
@@ -621,15 +621,14 @@ withDataPathQxQyQz :: (MonadSafe m, Location l) =>
                -> DataPath 'QxQyQzProjection
                -> ((Int -> IO DataFrameQxQyQz) -> m r)
                -> m r
-withDataPathQxQyQz f (DataPathQxQyQz att d dif) g =
-  withAttenuationPathP f att $ \getAttenuation ->
-  withDetectorPathP f d $ \getImage ->
-  withGeometryPathP f dif $ \getDiffractometer ->
+withDataPathQxQyQz f (DataPathQxQyQz att det dif) g =
+  withDataSourceP f att $ \att' ->
+  withDataSourceP f det $ \det' ->
+  withDataSourceP f dif $ \dif' ->
   g (\j -> DataFrameQxQyQz j
-          <$> getAttenuation j
-          <*> getDiffractometer j
-          <*> getImage j
-    )
+          <$> extract1DStreamValue att' j
+          <*> extract1DStreamValue det' j
+          <*> extract1DStreamValue dif' j)
 
 instance FramesQxQyQzP (DataPath 'QxQyQzProjection) where
     framesQxQyQzP p =
