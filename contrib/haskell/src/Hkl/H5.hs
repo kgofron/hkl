@@ -79,9 +79,7 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   getSimpleDataspaceExtentNDims,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
-import           Bindings.HDF5.Datatype.Internal (NativeType, hdfTypeOf1,
-                                                  nativeTypeOf)
-import           Bindings.HDF5.Error             (withErrorCheck_)
+import           Bindings.HDF5.Datatype.Internal (NativeType, nativeTypeOf)
 import           Bindings.HDF5.File              (AccFlags (ReadOnly, Truncate),
                                                   File, closeFile, createFile,
                                                   openFile)
@@ -92,11 +90,8 @@ import           Bindings.HDF5.Object            (ObjectId, ObjectType (..),
                                                   closeObject, getObjectType,
                                                   openObject)
 import           Bindings.HDF5.PropertyList.DAPL (DAPL)
-import           Bindings.HDF5.PropertyList.DXPL (DXPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
-                                                  HId_t (HId_t), h5d_read,
-                                                  h5l_iterate, h5p_DEFAULT,
-                                                  h5s_ALL)
+                                                  HId_t (HId_t), h5l_iterate)
 import           Control.Exception               (Exception, bracket, throwIO)
 import           Control.Monad.Extra             (fromMaybeM)
 import           Data.Aeson                      (FromJSON (..), ToJSON (..))
@@ -114,12 +109,9 @@ import           Data.Vector.Storable.Mutable    (IOVector, new)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString)
 import           Foreign.C.Types                 (CInt (CInt))
-import           Foreign.ForeignPtr              (ForeignPtr, withForeignPtr)
-import           Foreign.Ptr                     (FunPtr, Ptr,
-                                                  freeHaskellFunPtr)
+import           Foreign.Ptr                     (FunPtr, freeHaskellFunPtr)
 import           Foreign.Ptr.Conventions         (In (In), InOut (InOut),
-                                                  OutArray (..), castWrappedPtr,
-                                                  withInOut_)
+                                                  castWrappedPtr, withInOut_)
 import           Foreign.StablePtr               (StablePtr, castPtrToStablePtr,
                                                   castStablePtrToPtr,
                                                   deRefStablePtr, freeStablePtr,
@@ -255,16 +247,6 @@ openDataset' = openDataset
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
-
-readDatasetInto' :: NativeType t =>
-                   Dataset ->
-                   Maybe Dataspace ->
-                   Maybe Dataspace ->
-                   Maybe DXPL ->
-                   Ptr t ->
-                   IO ()
-readDatasetInto' dset mem_space_id file_space_id plist_id buf =
-    withErrorCheck_ $ h5d_read (hid dset) (hdfTypeOf1 buf) (maybe h5s_ALL hid mem_space_id) (maybe h5s_ALL hid file_space_id) (maybe h5p_DEFAULT hid plist_id) (OutArray buf)
 
 --  WIP until I have decided what is the right way to go
 
