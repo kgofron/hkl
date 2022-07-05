@@ -406,6 +406,16 @@ instance DataSource Image where
                 g (DataSourceAcq'Image'Word32 ds det arr))
           ]
 
+-- Int
+
+data instance DataSourcePath Int = DataSourcePath'Int Int
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq Int = DataSourceAcq'Int Int
+
+instance DataSource Int where
+  withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)
+
 -- NanoMeter
 
 data instance DataSourcePath NanoMeter = DataSourcePath'NanoMeter (Hdf5Path Z Double)

@@ -490,6 +490,26 @@ data DataFrameQxQyQz
       Image -- image
     deriving Show
 
+data instance DataSourcePath DataFrameQxQyQz = DataSourcePath'DataFrameQxQyQz
+                                               (DataSourcePath Int)
+                                               (DataSourcePath Attenuation)
+                                               (DataSourcePath Geometry)
+                                               (DataSourcePath Image)
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq DataFrameQxQyQz = DataSourceAcq'DataFrameQxQyQz
+                                              (DataSourceAcq Int)
+                                              (DataSourceAcq Attenuation)
+                                              (DataSourceAcq Geometry)
+                                              (DataSourceAcq Image)
+
+instance DataSource DataFrameQxQyQz where
+  withDataSourceP f (DataSourcePath'DataFrameQxQyQz j a g i) gg =
+    withDataSourceP f j $ \j' ->
+    withDataSourceP f a $ \a' ->
+    withDataSourceP f g $ \g' ->
+    withDataSourceP f i $ \i' -> gg (DataSourceAcq'DataFrameQxQyQz j' a' g' i')
+
 withMaybeLimits :: Maybe [Limits]
                 -> Resolutions
                 -> (Int -> Ptr (Ptr C'HklBinocularsAxisLimits) -> IO r)
