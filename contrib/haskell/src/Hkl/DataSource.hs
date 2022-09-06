@@ -163,9 +163,7 @@ instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
 
     extract1DStreamValue (DataSourceAcq'Geometry'Mars w' as') i =
         Geometry Mars <$> extract0DStreamValue w'
-                      <*> (fromList <$> do
-                             vs <- Prelude.mapM (`extract1DStreamValue` i) as'
-                             return (0.0 : vs)) -- TODO check
+                      <*> extract1DStreamValue as' i
                       <*> pure Nothing
 
     extract1DStreamValue (DataSourceAcq'Geometry'MedH w' as') i =
