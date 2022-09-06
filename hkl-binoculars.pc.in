@@ -8,6 +8,7 @@ Description: Library for multi dimensional detector Diffraction computation
 Version: @VERSION@
 URL: http://repo.or.cz/w/hkl.git
 Requires: hkl
+Requires.private: hdf5-serial
 Libs: -L${libdir} -lhkl-binoculars
 Libs.private: -lm
 Cflags: -I${includedir}/hkl-@VMAJ@

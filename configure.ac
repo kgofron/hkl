@@ -62,7 +62,7 @@ AX_CXXFLAGS_WARN_ALL
 # Checks for libraries.
 AX_PATH_GSL
 AM_PATH_GLIB_2_0
-PKG_CHECK_MODULES([HDF5], [hdf5 >= 1.8.13])
+PKG_CHECK_MODULES([HDF5], [hdf5-serial >= 1.8.13])
 
 # Checks for header files.
 AC_HEADER_STDC
