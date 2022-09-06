@@ -41,6 +41,7 @@ import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa                   (size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Int                          (Int32)
+import           Data.Kind                         (Type)
 import           Data.Text                         (Text)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, unsafeNew)
@@ -213,8 +214,8 @@ instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector Dou
 -- DataSource --
 ----------------
 
-data family DataSourcePath a :: *
-data family DataSourceAcq a :: *
+data family DataSourcePath a :: Type
+data family DataSourceAcq a :: Type
 
 class DataSource a where
   withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
