@@ -73,7 +73,8 @@ import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, await, each,
                                                     runEffect, yield, (>->))
-import           Pipes.Prelude                     (map, tee, toListM)
+import           Pipes.Prelude                     (filter, map, print, tee,
+                                                    toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
 import           Text.Printf                       (printf)
 
@@ -147,6 +148,7 @@ data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     , _binocularsConfigQxQyQzProjectionResolution   :: [Double]
     , _binocularsConfigQxQyQzProjectionLimits       :: Maybe [Limits]
     , _binocularsConfigQxQyQzDataPath               :: Maybe (DataPath 'QxQyQzProjection)
+    , _binocularsConfigQxQyQzImageSumMax            :: Maybe Double
     } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigQxQyQz
@@ -174,6 +176,7 @@ instance HasIniConfig 'QxQyQzProjection where
     , _binocularsConfigQxQyQzProjectionResolution = [0.01, 0.01, 0.01]
     , _binocularsConfigQxQyQzProjectionLimits  = Nothing
     , _binocularsConfigQxQyQzDataPath = (Just defaultDataPathQxQyQz)
+    , _binocularsConfigQxQyQzImageSumMax = Nothing
     }
 
   specConfig = do
@@ -196,6 +199,7 @@ instance HasIniConfig 'QxQyQzProjection where
       binocularsConfigQxQyQzMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigQxQyQzWavelength .=? field "wavelength" auto
       binocularsConfigQxQyQzDataPath .=? field "datapath" auto
+      binocularsConfigQxQyQzImageSumMax .=? field "image_sum_max" auto
     section "projection" $ do
       binocularsConfigQxQyQzProjectionType .= field "type" auto
       binocularsConfigQxQyQzProjectionResolution .= field "resolution" auto
@@ -305,7 +309,10 @@ h5dpathQxQyQz i ma mm mdet =
                                              2 0 mm)
                        <*> pure (DataSourcePath'Geometry'MedV
                                  (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
-                                 (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta")) --  it was not saved in the file
+                                 (DataSourcePath'Degree'Const (Degree (0 *~ degree)))
+                                 -- (DataSourcePath'Degree(H5Or
+                                 --                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta")
+                                 --                         (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")))
                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "mu"))
                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "omega"))
                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma"))
@@ -314,8 +321,8 @@ h5dpathQxQyQz i ma mm mdet =
                                 )
                        <*> pure (DataSourcePath'Image
                                  (H5Or
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
+                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")
+                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
                                  det)
          SixsFlyMedVEiger -> DataPathQxQyQz
                             <$> mkAttenuation ma (DataSourcePath'Attenuation
@@ -565,6 +572,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
     let (Meter sampleDetectorDistance) = _binocularsConfigQxQyQzSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQxQyQzDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQxQyQzSurfaceOrientation conf)
+    let mImageSumMax = _binocularsConfigQxQyQzImageSumMax conf
 
     h5d <- mkPaths
     filenames <- InputList
@@ -588,6 +596,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
 
     $(logDebugSH) filenames
     $(logDebugSH) h5d
+    $(logDebugSH) chunks
     $(logDebug) "start gessing final cube size"
 
     -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
@@ -596,7 +605,9 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
+      >-> tee Pipes.Prelude.print
       >-> framesQxQyQzP h5d
+      >-> tee Pipes.Prelude.print
       >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
       >-> accumulateP c
 
@@ -612,7 +623,13 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                >-> framesQxQyQzP h5d
-                               -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                               >-> Pipes.Prelude.filter (\(DataFrameQxQyQz _ _ _ img) ->
+                                                           case mImageSumMax of
+                                                             Nothing -> True
+                                                             (Just m) -> if sumImage img < m
+                                                                        then True
+                                                                        else False
+                                                       )
                                >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb

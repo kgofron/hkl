@@ -50,7 +50,7 @@ import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (degree, (*~))
+import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe)
 
 import           Prelude                           hiding (filter)
@@ -73,14 +73,19 @@ class Is0DStreamable a e where
 instance Is0DStreamable Dataset Double where
   extract0DStreamValue d = get_position d 0
 
+instance Is0DStreamable Degree Double where
+  extract0DStreamValue (Degree d) = pure $ d /~ degree
+
 instance Is0DStreamable (DataSourceAcq Degree) Degree where
     extract0DStreamValue (DataSourceAcq'Degree d) =
         Degree <$> do
           v <- extract0DStreamValue d
           return $ v *~ degree
+    extract0DStreamValue (DataSourceAcq'Degree'Const d) = pure d
 
 instance Is0DStreamable (DataSourceAcq Degree) Double where
-  extract0DStreamValue (DataSourceAcq'Degree d) = extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
 instance Is0DStreamable (DataSourceAcq NanoMeter) NanoMeter where
     extract0DStreamValue (DataSourceAcq'NanoMeter d) =
@@ -127,7 +132,8 @@ instance Is1DStreamable (DataSourceAcq Attenuation) Attenuation where
 
 
 instance Is1DStreamable (DataSourceAcq Degree) Double where
-  extract1DStreamValue (DataSourceAcq'Degree d) = extract1DStreamValue d
+  extract1DStreamValue (DataSourceAcq'Degree d)       = extract1DStreamValue d
+  extract1DStreamValue (DataSourceAcq'Degree'Const d) = const $ extract0DStreamValue d
 
 instance Is1DStreamable Dataset Double where
   extract1DStreamValue = get_position
@@ -256,13 +262,15 @@ instance DataSource Attenuation where
 -- Degree
 
 data instance DataSourcePath Degree = DataSourcePath'Degree (Hdf5Path DIM1 Double)
+                                    | DataSourcePath'Degree'Const Degree
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DataSourceAcq Degree = DataSourceAcq'Degree Dataset
+                                   | DataSourceAcq'Degree'Const Degree
 
 instance DataSource Degree where
   withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
-
+  withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
 -- Float
 
 data instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)

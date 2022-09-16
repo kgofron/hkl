@@ -38,10 +38,11 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run1/20211017_resta/Binoculars/T450C/config_map2h.txt 1596-1635
 #	$(PROCESS) data/test/config_sixs_ruche_flymedv_2.ini
 #	$(PROCESS) data/test/config_sixs_ruche_flymedv_3.ini 698-734 735-736
-	$(PROCESS) data/test/config_sixs_ruche_limits.txt 338
+#	$(PROCESS) data/test/config_sixs_ruche_limits.txt 338
 #	$(PROCESS) data/test/config_sixs_ruche_flyscanuhvtest.txt 550
 #	$(PROCESS) data/test/config_sixs_ruche_angles.ini 274-279
 # TODO /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_Andreazza/binoculars/config3_ech1.txt 77-78 -> realspace
+	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run5/20200672_Guinebretiere/binoculars/config_6D5b_Qxyz.txt 412-417
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini
