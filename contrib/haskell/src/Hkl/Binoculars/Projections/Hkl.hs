@@ -69,7 +69,7 @@ import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~), (/~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, await, each,
                                                     runEffect, (>->))
-import           Pipes.Prelude                     (map, tee, toListM)
+import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeP,
                                                     runSafeT)
 import           Text.Printf                       (printf)
@@ -181,6 +181,7 @@ data instance Config 'HklProjection = BinocularsConfigHkl
   , _binocularsConfigHklProjectionResolution   :: [Double]
   , _binocularsConfigHklProjectionLimits       :: Maybe [Limits]
   , _binocularsConfigHklDataPath               :: Maybe (DataPath 'HklProjection)
+  , _binocularsConfigHklImageSumMax            :: Maybe Double
   } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigHkl
@@ -215,6 +216,7 @@ instance HasIniConfig 'HklProjection where
     , _binocularsConfigHklProjectionResolution = [0.01, 0.01, 0.01]
     , _binocularsConfigHklProjectionLimits  = Nothing
     , _binocularsConfigHklDataPath = Just defaultDataPathHkl
+    , _binocularsConfigHklImageSumMax = Nothing
     }
 
   specConfig = do
@@ -245,6 +247,7 @@ instance HasIniConfig 'HklProjection where
       binocularsConfigHklUz .=? field "uz" auto
       binocularsConfigHklWavelength .=? field "wavelength" auto
       binocularsConfigHklDataPath .=? field "datapath" auto
+      binocularsConfigHklImageSumMax .=? field "image_sum_max" auto
     section "projection" $ do
       binocularsConfigHklProjectionType .= field "type" auto
       binocularsConfigHklProjectionResolution .= field "resolution" auto
@@ -351,6 +354,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let centralPixel' = _binocularsConfigHklCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigHklSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigHklDetrot conf)
+    let mImageSumMax = _binocularsConfigHklImageSumMax conf
 
     filenames <- InputList
                 <$> files (_binocularsConfigHklNexusdir conf)
@@ -395,7 +399,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                -- >-> tee Pipes.Prelude.print
                                >-> framesHklP h5d
-                               -- >-> filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ ma) _) -> isJust ma)
+                               >-> Pipes.Prelude.filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ img) _) -> filterSumImage mImageSumMax img)
                                >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb

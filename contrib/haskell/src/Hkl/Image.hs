@@ -3,7 +3,7 @@
 
 module Hkl.Image
     ( Image(..)
-    , sumImage )
+    , filterSumImage )
     where
 
 import           Data.Int                     (Int32)
@@ -77,3 +77,11 @@ sumImage :: Image -> Double
 sumImage (ImageInt32 i)  = sum' i
 sumImage (ImageWord16 i) = sum' i
 sumImage (ImageWord32 i) = sum' i
+
+
+filterSumImage :: Maybe Double -> Image -> Bool
+filterSumImage mMax img = case mMax of
+                            Nothing -> True
+                            (Just m) -> if sumImage img < m
+                                       then True
+                                       else False

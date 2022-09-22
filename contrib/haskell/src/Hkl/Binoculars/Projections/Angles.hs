@@ -61,7 +61,7 @@ import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, each, runEffect,
                                                     (>->))
-import           Pipes.Prelude                     (map, tee, toListM)
+import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
 import           Text.Printf                       (printf)
 
@@ -120,7 +120,8 @@ data instance Config 'AnglesProjection = BinocularsConfigAngles
   , _binocularsConfigAnglesProjectionLimits       :: Maybe [Limits]
   , _binocularsConfigAnglesDataPath               :: Maybe (DataPath 'AnglesProjection)
   , _binocularsConfigAnglesSampleAxis             :: Maybe SampleAxis
-  } deriving (Eq, Show)
+  , _binocularsConfigAnglesImageSumMax            :: Maybe Double
+ } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigAngles
 
@@ -146,6 +147,7 @@ instance HasIniConfig 'AnglesProjection where
     , _binocularsConfigAnglesProjectionLimits  = Nothing
     , _binocularsConfigAnglesDataPath = Just defaultDataPathAngles
     , _binocularsConfigAnglesSampleAxis = Nothing
+    , _binocularsConfigAnglesImageSumMax = Nothing
     }
 
   specConfig = do
@@ -168,6 +170,7 @@ instance HasIniConfig 'AnglesProjection where
       binocularsConfigAnglesWavelength .=? field "wavelength" auto
       binocularsConfigAnglesDataPath .=? field "datapath" auto
       binocularsConfigAnglesSampleAxis .=? field "sample_axis" auto
+      binocularsConfigAnglesImageSumMax .=? field "image_sum_max" auto
     section "projection" $ do
       binocularsConfigAnglesProjectionType .= field "type" auto
       binocularsConfigAnglesProjectionResolution .= field "resolution" auto
@@ -241,6 +244,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
     let (Meter sampleDetectorDistance) = _binocularsConfigAnglesSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigAnglesDetrot conf)
     let sAxis = getSampleAxis conf
+    let mImageSumMax = _binocularsConfigAnglesImageSumMax conf
 
     h5d <- mkPaths
     filenames <- InputList
@@ -288,7 +292,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                >-> framesAnglesP h5d
-                               -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                               >-> Pipes.Prelude.filter (\(DataFrameAngles (DataFrameQxQyQz _ _ _ img)) -> filterSumImage mImageSumMax img)
                                >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
                                >-> tee (accumulateP c)
                                >-> progress pb

@@ -73,8 +73,7 @@ import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, await, each,
                                                     runEffect, yield, (>->))
-import           Pipes.Prelude                     (filter, map, print, tee,
-                                                    toListM)
+import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
 import           Text.Printf                       (printf)
 
@@ -605,9 +604,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
-      >-> tee Pipes.Prelude.print
       >-> framesQxQyQzP h5d
-      >-> tee Pipes.Prelude.print
       >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
       >-> accumulateP c
 
@@ -623,13 +620,7 @@ class (FramesQxQyQzP a, Show a) => ProcessQxQyQzP a where
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                >-> framesQxQyQzP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameQxQyQz _ _ _ img) ->
-                                                           case mImageSumMax of
-                                                             Nothing -> True
-                                                             (Just m) -> if sumImage img < m
-                                                                        then True
-                                                                        else False
-                                                       )
+                               >-> Pipes.Prelude.filter (\(DataFrameQxQyQz _ _ _ img) -> filterSumImage mImageSumMax img)
                                >-> project det 3 (spaceQxQyQz det pixels res mask' surfaceOrientation mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb
@@ -648,7 +639,7 @@ instance ChunkP (DataPath 'QxQyQzProjection) where
         (_, ss) <- liftIO $ datasetShape i'
         case head ss of
           (Just n) -> yield $ case ma of
-            DataSourcePath'NoAttenuation             -> Chunk fp 0 (fromIntegral n - 1)
+            DataSourcePath'NoAttenuation -> Chunk fp 0 (fromIntegral n - 1)
             (DataSourcePath'Attenuation _ off _ _) -> Chunk fp 0 (fromIntegral n - 1 - off)
             (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk fp 0 (fromIntegral n -1)
           Nothing  -> error "can not extract length"

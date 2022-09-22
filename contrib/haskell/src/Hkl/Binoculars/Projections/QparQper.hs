@@ -61,7 +61,7 @@ import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, each, runEffect,
                                                     (>->))
-import           Pipes.Prelude                     (map, tee, toListM)
+import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
 import           Text.Printf                       (printf)
 
@@ -120,6 +120,7 @@ data instance Config 'QparQperProjection = BinocularsConfigQparQper
   , _binocularsConfigQparQperProjectionResolution   :: [Double]
   , _binocularsConfigQparQperProjectionLimits       :: Maybe [Limits]
   , _binocularsConfigQparQperDataPath               :: Maybe (DataPath 'QparQperProjection)
+  , _binocularsConfigQparQperImageSumMax            :: Maybe Double
   } deriving (Eq, Show)
 
 makeLenses 'BinocularsConfigQparQper
@@ -146,6 +147,7 @@ instance HasIniConfig 'QparQperProjection where
     , _binocularsConfigQparQperProjectionResolution = [0.01, 0.01]
     , _binocularsConfigQparQperProjectionLimits  = Nothing
     , _binocularsConfigQparQperDataPath = Just defaultDataPathQparQper
+    , _binocularsConfigQparQperImageSumMax = Nothing
     }
 
   specConfig = do
@@ -168,6 +170,7 @@ instance HasIniConfig 'QparQperProjection where
       binocularsConfigQparQperMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigQparQperWavelength .=? field "wavelength" auto
       binocularsConfigQparQperDataPath .=? field "datapath" auto
+      binocularsConfigQparQperImageSumMax .=? field "image_sum_max" auto
     section "projection" $ do
       binocularsConfigQparQperProjectionType .= field "type" auto
       binocularsConfigQparQperProjectionResolution .= field "resolution" auto
@@ -231,6 +234,7 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
     let (Meter sampleDetectorDistance) = _binocularsConfigQparQperSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQparQperDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQparQperSurfaceOrientation conf)
+    let mImageSumMax = _binocularsConfigQparQperImageSumMax conf
 
     h5d <- mkPaths
     filenames <- InputList
@@ -278,7 +282,7 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                >-> framesQparQperP h5d
-                               -- >-> filter (\(DataFrameQxQyQz _ _ _ ma) -> isJust ma)
+                               >-> Pipes.Prelude.filter (\(DataFrameQparQper (DataFrameQxQyQz _ _ _ img)) -> filterSumImage mImageSumMax img)
                                >-> project det 2 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb
