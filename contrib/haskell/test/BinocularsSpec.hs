@@ -90,5 +90,6 @@ spec = do
                                           , _binocularsConfigHklProjectionResolution = [1.0e-2,1.0e-2,1.0e-2]
                                           , _binocularsConfigHklProjectionLimits = Just [Limits (Just 4.45) (Just 4.95),Limits (Just 4.75) (Just 5.25),Limits Nothing Nothing]
                                           , _binocularsConfigHklDataPath = Nothing
+                                          , _binocularsConfigHklImageSumMax = Nothing
                                           }
                    )
