@@ -391,7 +391,9 @@ h5dpathQxQyQz i ma mm mdet =
                            <*> pure (DataSourcePath'Image
                                      (H5Or
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
+                                      (H5Or
+                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")
+                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")))
                                      det)
          SixsFlyScanUhvTest -> DataPathQxQyQz
                            <$> mkAttenuation ma (DataSourcePath'Attenuation
