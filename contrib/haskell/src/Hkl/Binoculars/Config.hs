@@ -65,9 +65,8 @@ import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, satisfy,
-                                                    sepBy, sepBy1')
+                                                    sepBy, sepBy1', takeText)
 import           Data.Either.Extra                 (mapLeft, mapRight)
-import           Data.Functor                      (($>))
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -401,16 +400,21 @@ auto :: HasFieldValue a => FieldValue a
 auto = fieldvalue
 
 projectionTypeP :: Parser ProjectionType
-projectionTypeP = "angles" $> AnglesProjection
-                  <|> "angles2" $> Angles2Projection
-                  <|> "hkl" $> HklProjection
-                  <|> "qparqper" $> QparQperProjection
-                  <|> "qxqyqz" $> QxQyQzProjection
-                  <|> "sixs:anglesprojection" $> AnglesProjection
-                  <|> "sixs:angles2projection" $> Angles2Projection
-                  <|> "sixs:qxqyqzprojection" $> QxQyQzProjection
-                  <|> "sixs:hklprojection" $> HklProjection
-                  <|> "sixs:HKLProjection" $> HklProjection
+projectionTypeP = go =<< takeText
+  where
+    go :: Text -> Parser ProjectionType
+    go t
+      | toLower t == fieldEmitter QparQperProjection = return QparQperProjection
+      | toLower t == fieldEmitter QxQyQzProjection = return QxQyQzProjection
+      | toLower t == fieldEmitter HklProjection = return HklProjection
+      | toLower t == fieldEmitter AnglesProjection = return AnglesProjection
+      | toLower t == fieldEmitter Angles2Projection = return Angles2Projection
+      | toLower t == "sixs:anglesprojection" = return AnglesProjection
+      | toLower t == "sixs:angles2projection" = return Angles2Projection
+      | toLower t == "sixs:qxqyqzprojection" = return QxQyQzProjection
+      | toLower t == "sixs:qparqperprojection" = return QparQperProjection
+      | toLower t == "sixs:hklprojection" = return HklProjection
+      | otherwise = fail ("Unsupported \"" ++ unpack t ++ "\" projection type format")
 
 instance FieldParsable ProjectionType where
   fieldParser = projectionTypeP
