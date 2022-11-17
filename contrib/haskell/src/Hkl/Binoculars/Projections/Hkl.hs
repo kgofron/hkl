@@ -466,6 +466,7 @@ h5dpathHkl c =
      let ma = _binocularsConfigHklAttenuationCoefficient c
      let mdet = _binocularsConfigHklDetector c
      let mm = _binocularsConfigHklAttenuationMax c
+     let mw = _binocularsConfigHklWavelength c
      let samplePath beamline device =
            SamplePath
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A"))
@@ -494,7 +495,7 @@ h5dpathHkl c =
      let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
      let uhvSamplePath2 = samplePath "SIXS" "i14-c-cx2-ex-diff-uhv"
      let uhvSamplePath3 = samplePath "SIXS" "i14-c-cx2-ex-cm-uhv"
-     qxqyqz <- h5dpathQxQyQz i ma mm mdet
+     qxqyqz <- h5dpathQxQyQz i ma mm mdet mw
      case i of
        CristalK6C -> do
          let ms = sampleConfig c

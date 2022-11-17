@@ -306,8 +306,9 @@ h5dpathQparQper :: (MonadLogger m, MonadThrow m)
                 -> Maybe Double
                 -> Maybe Float
                 -> Maybe (Detector Hkl DIM2)
+                -> Maybe Angstrom
                 -> m (DataPath 'QparQperProjection)
-h5dpathQparQper i ma mm mdet = DataPathQparQper <$> (h5dpathQxQyQz i ma mm mdet)
+h5dpathQparQper i ma mm mdet mw = DataPathQparQper <$> (h5dpathQxQyQz i ma mm mdet mw)
 
 
 ---------
@@ -322,7 +323,8 @@ process' = do
   let mc = _binocularsConfigQparQperAttenuationCoefficient c
   let mm = _binocularsConfigQparQperAttenuationMax c
   let mdet = _binocularsConfigQparQperDetector c
-  processQparQperP (h5dpathQparQper i mc mm mdet)
+  let mw = _binocularsConfigQparQperWavelength c
+  processQparQperP (h5dpathQparQper i mc mm mdet mw)
 
 processQparQper :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQparQper mf mr = do

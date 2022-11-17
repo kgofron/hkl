@@ -317,7 +317,7 @@ h5dpathAngles :: (MonadLogger m, MonadThrow m)
                 -> Maybe Float
                 -> Maybe (Detector Hkl DIM2)
                 -> m (DataPath 'AnglesProjection)
-h5dpathAngles i ma mm mdet = DataPathAngles <$> (h5dpathQxQyQz i ma mm mdet)
+h5dpathAngles i ma mm mdet = DataPathAngles <$> (h5dpathQxQyQz i ma mm mdet Nothing)
 
 
 ---------

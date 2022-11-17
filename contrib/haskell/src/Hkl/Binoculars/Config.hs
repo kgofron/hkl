@@ -410,6 +410,7 @@ projectionTypeP = "angles" $> AnglesProjection
                   <|> "sixs:angles2projection" $> Angles2Projection
                   <|> "sixs:qxqyqzprojection" $> QxQyQzProjection
                   <|> "sixs:hklprojection" $> HklProjection
+                  <|> "sixs:HKLProjection" $> HklProjection
 
 instance FieldParsable ProjectionType where
   fieldParser = projectionTypeP
