@@ -306,9 +306,9 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
         HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)                       \
         {                                                               \
                 size_t i, j;                                            \
-                const char * names[] = {"delta", "gamma", "sample"};	\
+                const char * names[] = {"delta_lab", "gamma_lab", "tth"};	\
                 const HklParameter *p;                                  \
-                double sample0;                                         \
+                double delta0, gamma0, tth, sample0;                    \
                                                                         \
                 assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
                 assert(ARRAY_SIZE(names) == n_resolutions);             \
@@ -336,9 +336,13 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
                                 HklVector v = {{p_x[i], p_y[i], p_z[i]}}; \
                                                                         \
                                 hkl_vector_rotated_quaternion(&v, &q);  \
-                                v.data[0] = atan(v.data[2]) / M_PI * 180.0; \
-                                v.data[1] = atan(v.data[1]) / M_PI * 180.0; \
-                                v.data[2] = sample0;                    \
+                                delta0 = atan2(v.data[2], v.data[0]);   \
+                                gamma0 = M_PI_2 - atan2(sqrt(v.data[2] * v.data[2] + v.data[0] * v.data[0]), v.data[1]); \
+                                tth = acos(v.data[0]);                  \
+                                                                        \
+                                v.data[0] = delta0 / M_PI * 180.0;      \
+                                v.data[1] = gamma0 / M_PI * 180.0;      \
+                                v.data[2] = tth / M_PI * 180.0;         \
                                                                         \
                                 for(j=0; j<ARRAY_SIZE(names); ++j){     \
                                         item.indexes_0[j] = rint(v.data[j] / resolutions[j]); \
