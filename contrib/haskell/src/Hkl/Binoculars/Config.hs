@@ -160,11 +160,12 @@ instance Enum SurfaceOrientation where
   toEnum 1         = SurfaceOrientationHorizontal
   toEnum unmatched = error ("Key.toEnum: Cannot match " ++ show unmatched)
 
-data ProjectionType = QparQperProjection
-                    | QxQyQzProjection
-                    | HklProjection
-                    | AnglesProjection
+data ProjectionType = AnglesProjection
                     | Angles2Projection
+                    | HklProjection
+                    | QIndexProjection
+                    | QparQperProjection
+                    | QxQyQzProjection
 
   deriving (Eq, Show)
 
@@ -404,13 +405,15 @@ projectionTypeP = go =<< takeText
   where
     go :: Text -> Parser ProjectionType
     go t
-      | toLower t == fieldEmitter QparQperProjection = return QparQperProjection
-      | toLower t == fieldEmitter QxQyQzProjection = return QxQyQzProjection
-      | toLower t == fieldEmitter HklProjection = return HklProjection
       | toLower t == fieldEmitter AnglesProjection = return AnglesProjection
       | toLower t == fieldEmitter Angles2Projection = return Angles2Projection
+      | toLower t == fieldEmitter HklProjection = return HklProjection
+      | toLower t == fieldEmitter QIndexProjection = return QIndexProjection
+      | toLower t == fieldEmitter QparQperProjection = return QparQperProjection
+      | toLower t == fieldEmitter QxQyQzProjection = return QxQyQzProjection
       | toLower t == "sixs:anglesprojection" = return AnglesProjection
       | toLower t == "sixs:angles2projection" = return Angles2Projection
+      | toLower t == "sixs:qindexprojection" = return QIndexProjection
       | toLower t == "sixs:qxqyqzprojection" = return QxQyQzProjection
       | toLower t == "sixs:qparqperprojection" = return QparQperProjection
       | toLower t == "sixs:hklprojection" = return HklProjection
@@ -419,11 +422,12 @@ projectionTypeP = go =<< takeText
 instance FieldParsable ProjectionType where
   fieldParser = projectionTypeP
 
-  fieldEmitter QparQperProjection = "qparqper"
-  fieldEmitter QxQyQzProjection   = "qxqyqz"
-  fieldEmitter HklProjection      = "hkl"
   fieldEmitter AnglesProjection   = "angles"
   fieldEmitter Angles2Projection  = "angles2"
+  fieldEmitter HklProjection      = "hkl"
+  fieldEmitter QIndexProjection   = "qindex"
+  fieldEmitter QparQperProjection = "qparqper"
+  fieldEmitter QxQyQzProjection   = "qxqyqz"
 
 instance FieldParsable InputRange where
   fieldParser = inputRangeP

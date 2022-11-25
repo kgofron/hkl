@@ -9,6 +9,7 @@ module Hkl.Types ( AbsDirPath
                  , beamlineUpper
                  , Mode(..)
                  , Engine(..)
+                 , Index(..)
                  , SampleName
                  , Sample(..)
                  , Source(..)
@@ -58,6 +59,11 @@ data Engine
     [Parameter] --  pseudo axes values of the @Engine@
     Mode --  current Mode
   deriving (Show)
+
+-- Index
+
+newtype Index = Index { unIndex :: Double }
+  deriving Show
 
 --  Sample
 

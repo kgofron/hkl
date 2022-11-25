@@ -205,6 +205,9 @@ instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
     v <- extract1DStreamValue d i
     return $ v *~ angstrom
 
+instance Is1DStreamable (DataSourceAcq Index) Index where
+  extract1DStreamValue (DataSourceAcq'Index ds) i = Index <$> extract1DStreamValue ds i
+
 instance Is1DStreamable Dataset WaveLength where
   extract1DStreamValue d i = do
     v <- extract1DStreamValue d i
@@ -271,6 +274,7 @@ data instance DataSourceAcq Degree = DataSourceAcq'Degree Dataset
 instance DataSource Degree where
   withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
   withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
+
 -- Float
 
 data instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)
@@ -412,6 +416,16 @@ instance DataSource Image where
                 arr <- liftIO $ unsafeNew n
                 g (DataSourceAcq'Image'Word32 ds det arr))
           ]
+
+-- Index
+
+data instance DataSourcePath Index = DataSourcePath'Index (Hdf5Path DIM1 Double)
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq Index = DataSourceAcq'Index Dataset
+
+instance DataSource Index where
+  withDataSourceP f (DataSourcePath'Index p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Index ds)
 
 -- Int
 

@@ -307,8 +307,7 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
         {                                                               \
                 size_t i, j;                                            \
                 const char * names[] = {"delta_lab", "gamma_lab", "tth"};	\
-                const HklParameter *p;                                  \
-                double delta0, gamma0, tth, sample0;                    \
+                double delta0, gamma0, tth;                             \
                                                                         \
                 assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
                 assert(ARRAY_SIZE(names) == n_resolutions);             \
@@ -319,13 +318,6 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
                 const double *p_x = &pixels_coordinates[0 * n_pixels];  \
                 const double *p_y = &pixels_coordinates[1 * n_pixels];  \
                 const double *p_z = &pixels_coordinates[2 * n_pixels];  \
-                                                                        \
-                p = hkl_geometry_axis_get(geometry, sample_axis, NULL);	\
-                if(p){                                                  \
-                        sample0 = hkl_parameter_value_get(p, HKL_UNIT_USER); \
-                } else {                                                \
-                        sample0 = 0;					\
-                }                                                       \
                                                                         \
                 HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
                 const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector); \
@@ -363,6 +355,62 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
 HKL_BINOCULARS_SPACE_ANGLES_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
+
+/* qindex */
+
+#define HKL_BINOCULARS_SPACE_QINDEX_IMPL(image_t)			\
+        HKL_BINOCULARS_SPACE_QINDEX_DECL(image_t)			\
+        {                                                               \
+                size_t i;                                            \
+                const char * names[] = {"q", "index"};                  \
+                                                                        \
+                assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
+                assert(ARRAY_SIZE(names) == n_resolutions);             \
+                assert(n_pixels == space->max_items);                   \
+                                                                        \
+                const double *q_x = &pixels_coordinates[0 * n_pixels];  \
+                const double *q_y = &pixels_coordinates[1 * n_pixels];  \
+                const double *q_z = &pixels_coordinates[2 * n_pixels];  \
+                                                                        \
+                HklSample *sample = hkl_sample_new("test");             \
+                HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
+                const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector); \
+                const HklVector ki = hkl_geometry_ki_get(geometry);     \
+                double k = hkl_vector_norm2(&ki);                       \
+                HklQuaternion qs_1 = hkl_geometry_sample_rotation_get(geometry, sample); \
+                hkl_quaternion_conjugate(&qs_1);                        \
+                                                                        \
+                darray_size(space->items) = 0;                          \
+                                                                        \
+                for(i=0;i<n_pixels;++i){                                \
+                        if(NULL == masked || 0 == masked[i]){           \
+                                HklBinocularsSpaceItem item;            \
+                                HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                hkl_vector_rotated_quaternion(&v, &q);  \
+                                hkl_vector_times_double(&v, k);         \
+                                hkl_vector_minus_vector(&v, &ki);       \
+                                hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                                                        \
+                                item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                item.indexes_0[1] = rint(index / resolutions[1]); \
+                                item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                                                        \
+                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                        darray_append(space->items, item); \
+                        }                                               \
+                }                                                       \
+                                                                        \
+                space_update_axes(space, names, n_pixels, resolutions); \
+                                                                        \
+                hkl_detector_free(detector);                            \
+                hkl_sample_free(sample);                                \
+        }
+
+HKL_BINOCULARS_SPACE_QINDEX_IMPL(int32_t);
+HKL_BINOCULARS_SPACE_QINDEX_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_QINDEX_IMPL(uint32_t);
 
 /* qparqper */
 
