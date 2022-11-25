@@ -46,7 +46,8 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run4/cervasio_20220528/binoculars/config_hkl_s70.cfg 170-178
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Lundgren_20220155/binoculars21/config_hkl.cfg 570-599
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Lundgren_20220155/binoculars21/config_hkl_3.cfg 570-599
-	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/20220739_kutyla/binoculars/config_angles.cfg-ng 26-41
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/20220739_kutyla/binoculars/config_angles.cfg-ng 26-41
+	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/20220739_kutyla/binoculars/config_q-index.cfg 210-286
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini

@@ -156,7 +156,7 @@ instance HasIniConfig 'QIndexProjection where
     , _binocularsConfigQIndexMaskmatrix = Nothing
     , _binocularsConfigQIndexWavelength = Nothing
     , _binocularsConfigQIndexProjectionType = QIndexProjection
-    , _binocularsConfigQIndexProjectionResolution = [1, 1, 1]
+    , _binocularsConfigQIndexProjectionResolution = [0.01, 1]
     , _binocularsConfigQIndexProjectionLimits  = Nothing
     , _binocularsConfigQIndexDataPath = Just defaultDataPathQIndex
     , _binocularsConfigQIndexImageSumMax = Nothing

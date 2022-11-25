@@ -214,13 +214,13 @@ type C'ProjectionTypeQIndex t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *
  -> CDouble -- double index
  -> IO ()
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_int32_t" \
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qindex_int32_t" \
 c'hkl_binoculars_space_qindex_int32_t :: C'ProjectionTypeQIndex Int32
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_uint16_t" \
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qindex_uint16_t" \
 c'hkl_binoculars_space_qindex_uint16_t :: C'ProjectionTypeQIndex Word16
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_uint32_t" \
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qindex_uint32_t" \
 c'hkl_binoculars_space_qindex_uint32_t :: C'ProjectionTypeQIndex Word32
 
 

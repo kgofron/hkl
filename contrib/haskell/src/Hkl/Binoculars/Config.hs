@@ -413,7 +413,7 @@ projectionTypeP = go =<< takeText
       | toLower t == fieldEmitter QxQyQzProjection = return QxQyQzProjection
       | toLower t == "sixs:anglesprojection" = return AnglesProjection
       | toLower t == "sixs:angles2projection" = return Angles2Projection
-      | toLower t == "sixs:qindexprojection" = return QIndexProjection
+      | toLower t == "sixs:qindex" = return QIndexProjection
       | toLower t == "sixs:qxqyqzprojection" = return QxQyQzProjection
       | toLower t == "sixs:qparqperprojection" = return QparQperProjection
       | toLower t == "sixs:hklprojection" = return HklProjection
