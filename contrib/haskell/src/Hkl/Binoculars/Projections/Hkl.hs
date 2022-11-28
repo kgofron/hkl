@@ -72,6 +72,7 @@ import           Pipes                             (Pipe, await, each,
 import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeP,
                                                     runSafeT)
+import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
@@ -116,6 +117,9 @@ data SamplePath
     | SamplePath2 Sample
     deriving (Eq, FromJSON, Generic, Show, ToJSON)
 
+instance Arbitrary SamplePath where
+  arbitrary = SamplePath <$> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary
+
 defaultDataPathHklSample :: SamplePath
 defaultDataPathHklSample = SamplePath
   (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A"))
@@ -133,6 +137,9 @@ data instance DataPath 'HklProjection = DataPathHkl
   , dataPathHklSample :: SamplePath
   }
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+instance Arbitrary (DataPath 'HklProjection) where
+  arbitrary = DataPathHkl <$> arbitrary  <*> arbitrary
 
 defaultDataPathHkl :: DataPath 'HklProjection
 defaultDataPathHkl = DataPathHkl

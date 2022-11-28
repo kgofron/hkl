@@ -91,6 +91,7 @@ import           Path                              (Abs, Dir, File, Path, Rel,
                                                     fromAbsDir, parseAbsDir,
                                                     toFilePath)
 import           Path.IO                           (getCurrentDir, listDir)
+import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (drop, length, lines,
@@ -256,6 +257,9 @@ instance FromJSON Angstrom where
 
 instance ToJSON Angstrom where
   toJSON = toJSON . (/~ angstrom) . unAngstrom
+
+instance Arbitrary Angstrom where
+  arbitrary = Angstrom . (*~ angstrom) <$> arbitrary
 
 newtype Meter = Meter { unMeter :: Length Double }
     deriving (Eq, Show)

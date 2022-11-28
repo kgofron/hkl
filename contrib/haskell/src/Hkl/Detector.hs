@@ -48,6 +48,8 @@ import           Foreign.Storable                  (peek)
 import           GHC.IO.Unsafe                     (unsafePerformIO)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
                                                     radian, (/~))
+import           Test.QuickCheck                   (Arbitrary (..), oneof)
+
 
 data HklDetectorException = MaskShapeNotcompatible Text
                           | NoDefaultMask
@@ -83,6 +85,9 @@ instance ToJSON (Detector Hkl DIM2) where
     -- this encodes directly to a bytestring Builder
     toEncoding (Detector2D _ name _) =
         pairs ("detector" .= name)
+
+instance Arbitrary (Detector Hkl DIM2) where
+  arbitrary = oneof (map pure detectors)
 
 type Mask = Array F DIM2 CBool
 

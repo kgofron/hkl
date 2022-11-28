@@ -11,6 +11,7 @@ import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
                                                     meter, nano, (*~), (/~))
+import           Test.QuickCheck                   (Arbitrary (..))
 
 newtype NanoMeter = NanoMeter { unNanoMeter :: Length Double }
     deriving (Eq, Show)
@@ -23,6 +24,9 @@ instance ToJSON NanoMeter where
 
 newtype Degree = Degree { unDegree :: Angle Double }
     deriving (Eq, Show)
+
+instance Arbitrary Degree where
+  arbitrary = Degree . (*~ degree) <$> arbitrary
 
 instance FromJSON Degree where
   parseJSON = fmap (Degree . (*~ degree)) . parseJSON

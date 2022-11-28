@@ -8,12 +8,14 @@ module BinocularsSpec
   where
 
 
+import           Data.Aeson                        (Result (..), fromJSON,
+                                                    toJSON)
 import           Data.Attoparsec.Text              (parseOnly)
 import           Numeric.Units.Dimensional.Prelude (meter, radian, (*~))
 import           Path                              (mkAbsDir)
 
-
 import           Test.Hspec
+import           Test.Hspec.QuickCheck             (prop)
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Projections.Hkl
@@ -93,3 +95,15 @@ spec = do
                                           , _binocularsConfigHklImageSumMax = Nothing
                                           }
                    )
+
+  describe "quickcheck config json parsing" $ do
+    prop "angles projection" $
+      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'AnglesProjection))
+    prop "hkl projection" $
+      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'HklProjection))
+    prop "qindex projection" $
+      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'QIndexProjection))
+    prop "qparqper projection" $
+      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'QparQperProjection))
+    prop "qxqyqz projection" $
+      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'QxQyQzProjection))

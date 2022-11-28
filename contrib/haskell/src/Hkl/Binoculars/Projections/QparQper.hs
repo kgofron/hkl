@@ -63,6 +63,7 @@ import           Pipes                             (Pipe, each, runEffect,
                                                     (>->))
 import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
+import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
@@ -91,6 +92,10 @@ instance HasFieldValue (DataPath 'QparQperProjection) where
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
                }
+
+instance Arbitrary (DataPath 'QparQperProjection) where
+  arbitrary = DataPathQparQper <$> arbitrary
+
 
 defaultDataPathQparQper :: DataPath 'QparQperProjection
 defaultDataPathQparQper = DataPathQparQper defaultDataPathQxQyQz

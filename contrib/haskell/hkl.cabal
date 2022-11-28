@@ -40,6 +40,7 @@ library
   build-depends: hdf5
   build-depends: hmatrix >= 0.17
   build-depends: hmatrix-gsl >= 0.17
+  build-depends: QuickCheck
   build-depends: lens
   build-depends: monad-logger
   build-depends: monad-loops >= 0.4.2
@@ -138,6 +139,7 @@ executable binoculars-ng
 
 
 test-suite hkl-test
+  build-depends: aeson
   build-depends: attoparsec
   build-depends: base >= 4.6
   build-depends: config-ini

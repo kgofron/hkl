@@ -52,6 +52,7 @@ import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe)
+import           Test.QuickCheck                   (Arbitrary (..), oneof)
 
 import           Prelude                           hiding (filter)
 
@@ -248,6 +249,13 @@ data instance DataSourcePath Attenuation =
   | DataSourcePath'NoAttenuation
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
+instance Arbitrary (DataSourcePath Attenuation) where
+  arbitrary = oneof
+    [ DataSourcePath'Attenuation <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    , DataSourcePath'ApplyedAttenuationFactor <$> arbitrary
+    , pure DataSourcePath'NoAttenuation
+    ]
+
 data instance DataSourceAcq Attenuation =
   DataSourceAcq'Attenuation { attenuationPath        :: DataSourceAcq Float
                             , attenuationOffset      :: Int
@@ -268,6 +276,12 @@ data instance DataSourcePath Degree = DataSourcePath'Degree (Hdf5Path DIM1 Doubl
                                     | DataSourcePath'Degree'Const Degree
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
+instance Arbitrary (DataSourcePath Degree) where
+  arbitrary = oneof
+    [ DataSourcePath'Degree <$> arbitrary
+    , DataSourcePath'Degree'Const <$> arbitrary
+    ]
+
 data instance DataSourceAcq Degree = DataSourceAcq'Degree Dataset
                                    | DataSourceAcq'Degree'Const Degree
 
@@ -279,6 +293,9 @@ instance DataSource Degree where
 
 data instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+instance Arbitrary (DataSourcePath Float) where
+  arbitrary = DataSourcePath'Float <$> arbitrary
 
 data instance DataSourceAcq Float = DataSourceAcq'Float Dataset
 
@@ -322,6 +339,18 @@ data instance DataSourcePath Geometry =
                                     , geometryPathAxes           :: [DataSourcePath Degree]
                                     }
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+instance Arbitrary (DataSourcePath Geometry) where
+  arbitrary = oneof
+    [ DataSourcePath'Geometry'CristalK6C <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'Fix <$> arbitrary
+    , DataSourcePath'Geometry'Mars <$> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'MedH <$> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'MedV <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'MedVEiger <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'Uhv <$> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'UhvTest <$> arbitrary <*> arbitrary
+    ]
 
 data instance DataSourceAcq Geometry = DataSourceAcq'Geometry'CristalK6C
                                        (DataSourceAcq WaveLength)
@@ -393,6 +422,10 @@ instance DataSource Geometry where
 data instance DataSourcePath Image = DataSourcePath'Image (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
+instance Arbitrary (DataSourcePath Image) where
+  arbitrary = DataSourcePath'Image <$> arbitrary <*> arbitrary
+
+
 data instance DataSourceAcq Image = DataSourceAcq'Image'Int32 Dataset (Detector Hkl DIM2) (IOVector Int32)
                                   | DataSourceAcq'Image'Word16 Dataset (Detector Hkl DIM2) (IOVector Word16)
                                   | DataSourceAcq'Image'Word32 Dataset (Detector Hkl DIM2) (IOVector Word32)
@@ -427,6 +460,9 @@ data instance DataSourceAcq Index = DataSourceAcq'Index Dataset
 instance DataSource Index where
   withDataSourceP f (DataSourcePath'Index p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Index ds)
 
+instance Arbitrary (DataSourcePath Index) where
+  arbitrary = DataSourcePath'Index <$> arbitrary
+
 -- Int
 
 data instance DataSourcePath Int = DataSourcePath'Int Int
@@ -447,11 +483,20 @@ data instance DataSourceAcq NanoMeter = DataSourceAcq'NanoMeter Dataset
 instance DataSource NanoMeter where
   withDataSourceP f (DataSourcePath'NanoMeter p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'NanoMeter ds)
 
+instance Arbitrary (DataSourcePath NanoMeter) where
+  arbitrary = DataSourcePath'NanoMeter <$> arbitrary
+
 -- WaveLength
 
 data instance DataSourcePath WaveLength = DataSourcePath'WaveLength (Hdf5Path Z Double)
                                         | DataSourcePath'WaveLength'Const Angstrom
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+instance Arbitrary (DataSourcePath WaveLength) where
+  arbitrary = oneof
+    [ DataSourcePath'WaveLength <$> arbitrary
+    , DataSourcePath'WaveLength'Const <$> arbitrary
+    ]
 
 data instance DataSourceAcq WaveLength = DataSourceAcq'WaveLength Dataset
                                        | DataSourceAcq'WaveLength'Const Angstrom

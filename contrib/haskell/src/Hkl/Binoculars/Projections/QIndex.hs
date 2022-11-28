@@ -65,6 +65,7 @@ import           Pipes                             (Pipe, await, each,
                                                     runEffect, (>->))
 import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
+import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
@@ -99,6 +100,9 @@ instance HasFieldValue (DataPath 'QIndexProjection) where
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
                }
+
+instance Arbitrary (DataPath 'QIndexProjection) where
+  arbitrary = DataPathQIndex <$> arbitrary <*> arbitrary
 
 defaultDataPathIndex :: DataSourcePath Index
 defaultDataPathIndex = DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch")

@@ -63,6 +63,7 @@ import           Pipes                             (Pipe, each, runEffect,
                                                     (>->))
 import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
+import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
@@ -82,6 +83,9 @@ import           Hkl.Image
 data instance DataPath 'AnglesProjection = DataPathAngles
   { dataPathAnglesQxQyQz :: DataPath 'QxQyQzProjection }
   deriving (Eq, Generic, ToJSON, FromJSON)
+
+instance Arbitrary (DataPath 'AnglesProjection) where
+  arbitrary = DataPathAngles <$> arbitrary
 
 instance Show (DataPath 'AnglesProjection) where
   show = show . typeOf

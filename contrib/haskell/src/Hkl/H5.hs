@@ -5,6 +5,7 @@
 {-# LANGUAGE ForeignFunctionInterface  #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE UnicodeSyntax             #-}
 
 {-
@@ -119,13 +120,14 @@ import           Foreign.StablePtr               (StablePtr, castPtrToStablePtr,
 import           GHC.Base                        (Alternative (..))
 import           GHC.Generics                    (Generic)
 import           Numeric.LinearAlgebra           (Matrix, reshape)
+import           Test.QuickCheck                 (Arbitrary (..), oneof)
 
 import           Hkl.Detector
 import           Hkl.Orphan                      ()
 
 import           Prelude                         hiding (head)
 
-{-# ANN module "HLint: ignore Use camelCase" #-}
+-- {-# ANN module "HLint: ignore Use camelCase" #-}
 
 data HklH5Exception
   = CanNotFindDatasetWithAttributContent ByteString ByteString
@@ -361,6 +363,16 @@ data Hdf5Path sh e
   | H5DatasetPathAttr (ByteString, ByteString)
   | H5Or (Hdf5Path sh e) (Hdf5Path sh e)
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+instance Arbitrary (Hdf5Path sh e) where
+  arbitrary = oneof
+    [ H5RootPath <$> arbitrary
+    , H5GroupPath <$> pure "group" <*> arbitrary
+    , H5GroupAtPath <$> arbitrary <*> arbitrary
+    , H5DatasetPath <$> pure "dataset"
+    , H5DatasetPathAttr <$> pure ("attibute", "value")
+    , H5Or <$> arbitrary <*> arbitrary
+    ]
 
 hdf5p :: Hdf5Path sh e -> Hdf5Path sh e
 hdf5p = H5RootPath

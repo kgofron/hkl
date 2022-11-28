@@ -75,6 +75,7 @@ import           Pipes                             (Pipe, await, each,
                                                     runEffect, yield, (>->))
 import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (MonadSafe, runSafeT)
+import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
@@ -100,6 +101,9 @@ data instance DataPath 'QxQyQzProjection = DataPathQxQyQz
   , dataPathQxQyQzGeometry :: DataSourcePath Geometry
   , dataPathQxQyQzDetector :: DataSourcePath Image
   } deriving (Eq, Generic, Show, ToJSON, FromJSON)
+
+instance Arbitrary (DataPath 'QxQyQzProjection) where
+  arbitrary = DataPathQxQyQz <$> arbitrary <*> arbitrary <*> arbitrary
 
 defaultDataPathQxQyQz :: DataPath 'QxQyQzProjection
 defaultDataPathQxQyQz = DataPathQxQyQz
