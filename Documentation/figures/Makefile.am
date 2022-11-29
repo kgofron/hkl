@@ -1,8 +1,8 @@
 .asy.png:
-	-@ASY@ -config "" -render=4 -f png -o $@ $<
+	-@ASY@ -config "" -d -render=4 -f png -o $@ $<
 
 .asy.pdf:
-	-@ASY@ -config "" -render=0 -f pdf -noprc -o $@ $<
+	-@ASY@ -config "" -d -render=0 -f pdf -noprc -o $@ $<
 
 .gnuplot.svg:
 	-@GNUPLOT@ $<
