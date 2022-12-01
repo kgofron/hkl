@@ -272,17 +272,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*     def get_axis_labels(self) -> Tuple[str]: */
 /*         return "Phi", "Q", "Qx" */
 
-
-/* class QIndex(Stereo): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         timestamp = pdataframe.timestamp */
-
-/*         q, qx, qy = super(QIndex, self).project(index, pdataframe) */
-/*         return q, numpy.ones_like(q) * timestamp */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Q", "Index" */
-
 /* angles */
 
 #define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)			\
