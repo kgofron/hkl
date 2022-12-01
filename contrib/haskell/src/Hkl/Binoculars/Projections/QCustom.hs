@@ -263,6 +263,7 @@ mkTimeStamp msub idx =
                    QCustomSubProjection'QPhiQx -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QPhiQy -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QPhiQz -> DataSourcePath'Index'NoIndex
+                   QCustomSubProjection'QStereo -> DataSourcePath'Index'NoIndex
 
 h5dpathQCustom ::  (MonadLogger m, MonadThrow m)
               => InputType

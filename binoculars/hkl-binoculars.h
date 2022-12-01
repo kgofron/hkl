@@ -183,19 +183,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*         return "x", "y" */
 
 
-/* class Stereo(QxQyQzProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         qx, qy, qz = super(Stereo, self).project(index, pdataframe) */
-/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
-/*         ratio = qz + q */
-/*         xp = qx / ratio */
-/*         yp = qy / ratio */
-/*         return q, xp, yp */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Q", "xp", "yp" */
-
-
 /* angles */
 
 #define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)			\
@@ -228,6 +215,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;

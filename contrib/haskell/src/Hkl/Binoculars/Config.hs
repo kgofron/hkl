@@ -275,6 +275,7 @@ data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QPhiQx
                           | QCustomSubProjection'QPhiQy
                           | QCustomSubProjection'QPhiQz
+                          | QCustomSubProjection'QStereo
   deriving (Enum, Eq, Show)
 
 instance HasFieldValue QCustomSubProjection where
@@ -288,6 +289,7 @@ instance HasFieldValue QCustomSubProjection where
           | toLower t == emit QCustomSubProjection'QPhiQx = Right QCustomSubProjection'QPhiQx
           | toLower t == emit QCustomSubProjection'QPhiQy = Right QCustomSubProjection'QPhiQy
           | toLower t == emit QCustomSubProjection'QPhiQz = Right QCustomSubProjection'QPhiQz
+          | toLower t == emit QCustomSubProjection'QStereo = Right QCustomSubProjection'QStereo
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: QCustomSubProjection -> Text
@@ -297,6 +299,7 @@ instance HasFieldValue QCustomSubProjection where
       emit QCustomSubProjection'QPhiQx            = "q_phi_qx"
       emit QCustomSubProjection'QPhiQy            = "q_phi_qy"
       emit QCustomSubProjection'QPhiQz            = "q_phi_qz"
+      emit QCustomSubProjection'QStereo           = "q_stereo"
 
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}

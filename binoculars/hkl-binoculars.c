@@ -368,6 +368,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
                 const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
                 const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
+                const char *names_q_stereo[] = {"q", "xp", "yp"};       \
                                                                         \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
@@ -458,6 +459,14 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                         item.indexes_0[2] = rint(v.data[2] / resolutions[2] / 10); \
                                         break;                          \
                                 }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        double ratio = v.data[2] + item.indexes_0[0]; \
+                                        item.indexes_0[1] = rint(v.data[0] / ratio / resolutions[1]); \
+                                        item.indexes_0[2] = rint(v.data[1] / ratio / resolutions[2]); \
+                                        break;                          \
+                                }                                       \
                                 }                                       \
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -496,6 +505,11 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ: \
                 {                                                       \
                         space_update_axes(space, names_q_phi_qz, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO:    \
+                {                                                       \
+                        space_update_axes(space, names_q_stereo, n_pixels, resolutions); \
                         break;                                          \
                 }                                                       \
                 }                                                       \
