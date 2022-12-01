@@ -208,6 +208,7 @@ instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
 
 instance Is1DStreamable (DataSourceAcq Index) Index where
   extract1DStreamValue (DataSourceAcq'Index ds) i = Index <$> extract1DStreamValue ds i
+  extract1DStreamValue DataSourceAcq'Index'NoIndex _ = returnIO $ Index 0
 
 instance Is1DStreamable Dataset WaveLength where
   extract1DStreamValue d i = do
@@ -453,12 +454,15 @@ instance DataSource Image where
 -- Index
 
 data instance DataSourcePath Index = DataSourcePath'Index (Hdf5Path DIM1 Double)
+                                   | DataSourcePath'Index'NoIndex
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DataSourceAcq Index = DataSourceAcq'Index Dataset
+                                  | DataSourceAcq'Index'NoIndex
 
 instance DataSource Index where
   withDataSourceP f (DataSourcePath'Index p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Index ds)
+  withDataSourceP _ DataSourcePath'Index'NoIndex g = g DataSourceAcq'Index'NoIndex
 
 instance Arbitrary (DataSourcePath Index) where
   arbitrary = DataSourcePath'Index <$> arbitrary

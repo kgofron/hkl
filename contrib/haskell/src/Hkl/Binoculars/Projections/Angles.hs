@@ -191,6 +191,7 @@ getSampleAxis c = case _binocularsConfigAnglesSampleAxis c of
                                 AnglesProjection   -> SampleAxis "omega"
                                 Angles2Projection  -> SampleAxis "mu"
                                 HklProjection      -> undefined
+                                QCustomProjection  -> undefined
                                 QIndexProjection   -> undefined
                                 QparQperProjection -> undefined
                                 QxQyQzProjection   -> undefined

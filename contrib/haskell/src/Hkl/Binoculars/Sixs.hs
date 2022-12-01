@@ -29,6 +29,7 @@ import           Path.Posix                          (parseAbsDir)
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Angles
 import           Hkl.Binoculars.Projections.Hkl
+import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.Binoculars.Projections.QIndex
 import           Hkl.Binoculars.Projections.QparQper
 import           Hkl.Binoculars.Projections.QxQyQz
@@ -45,6 +46,7 @@ process mf mr = do
                       AnglesProjection   -> processAngles mf mr
                       Angles2Projection  -> processAngles mf mr
                       HklProjection      -> processHkl mf mr
+                      QCustomProjection  -> processQCustom mf mr
                       QIndexProjection   -> processQIndex mf mr
                       QparQperProjection -> processQparQper mf mr
                       QxQyQzProjection   -> processQxQyQz mf mr
@@ -59,6 +61,7 @@ new p mf = do
     AnglesProjection   -> newAngles cwd
     Angles2Projection  -> newAngles cwd
     HklProjection      -> newHkl cwd
+    QCustomProjection  -> newQCustom cwd
     QIndexProjection   -> newQIndex cwd
     QparQperProjection -> newQparQper cwd
     QxQyQzProjection   -> newQxQyQz cwd
@@ -74,6 +77,7 @@ update f = do
                       AnglesProjection   -> updateAngles (Just f)
                       Angles2Projection  -> updateAngles (Just f)
                       HklProjection      -> updateHkl (Just f)
+                      QCustomProjection  -> updateQCustom (Just f)
                       QIndexProjection   -> updateQIndex (Just f)
                       QparQperProjection -> updateQparQper (Just f)
                       QxQyQzProjection   -> updateQxQyQz (Just f)

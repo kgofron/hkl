@@ -294,6 +294,31 @@ HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint32_t);
 
+/* qcustom */
+
+#define HKL_BINOCULARS_SPACE_QCUSTOM_DECL(image_t)			\
+        void hkl_binoculars_space_qcustom_ ## image_t (HklBinocularsSpace *space, \
+                                                       const HklGeometry *geometry, \
+                                                       const image_t *image, \
+                                                       size_t n_pixels, \
+                                                       double weight,   \
+                                                       const double *pixels_coordinates, \
+                                                       size_t pixels_coordinates_ndim, \
+                                                       const size_t *pixels_coordinates_dims, \
+                                                       const double *resolutions, \
+                                                       size_t n_resolutions, \
+                                                       const uint8_t *masked, \
+                                                       HklBinocularsSurfaceOrientationEnum surf, \
+                                                       const HklBinocularsAxisLimits **limits, \
+                                                       size_t n_limits, \
+                                                       double timestamp, \
+                                                       int subprojection)
+
+
+HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(int32_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint16_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint32_t);
+
 /* qindex */
 
 #define HKL_BINOCULARS_SPACE_QINDEX_DECL(image_t)			\

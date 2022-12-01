@@ -40,6 +40,7 @@ module Hkl.Binoculars.Config
     , MaskLocation(..)
     , Meter(..)
     , ProjectionType(..)
+    , QCustomSubProjection(..)
     , SampleAxis(..)
     , SurfaceOrientation(..)
     , auto
@@ -164,6 +165,7 @@ instance Enum SurfaceOrientation where
 data ProjectionType = AnglesProjection
                     | Angles2Projection
                     | HklProjection
+                    | QCustomProjection
                     | QIndexProjection
                     | QparQperProjection
                     | QxQyQzProjection
@@ -266,6 +268,20 @@ newtype Meter = Meter { unMeter :: Length Double }
 
 newtype MaskLocation = MaskLocation { unMaskLocation :: Text }
     deriving (Eq, Show, IsString)
+
+data QCustomSubProjection = QCustomSubProjection'QxQyQz
+  deriving (Enum, Eq, Show)
+
+instance HasFieldValue QCustomSubProjection where
+  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
+    where
+      parse :: Text -> Either String QCustomSubProjection
+      parse t
+          | toLower t == emit QCustomSubProjection'QxQyQz = Right QCustomSubProjection'QxQyQz
+          | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
+
+      emit :: QCustomSubProjection -> Text
+      emit QCustomSubProjection'QxQyQz = "qxqyqz"
 
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
@@ -412,6 +428,7 @@ projectionTypeP = go =<< takeText
       | toLower t == fieldEmitter AnglesProjection = return AnglesProjection
       | toLower t == fieldEmitter Angles2Projection = return Angles2Projection
       | toLower t == fieldEmitter HklProjection = return HklProjection
+      | toLower t == fieldEmitter QCustomProjection = return QCustomProjection
       | toLower t == fieldEmitter QIndexProjection = return QIndexProjection
       | toLower t == fieldEmitter QparQperProjection = return QparQperProjection
       | toLower t == fieldEmitter QxQyQzProjection = return QxQyQzProjection
@@ -429,6 +446,7 @@ instance FieldParsable ProjectionType where
   fieldEmitter AnglesProjection   = "angles"
   fieldEmitter Angles2Projection  = "angles2"
   fieldEmitter HklProjection      = "hkl"
+  fieldEmitter QCustomProjection  = "qcustom"
   fieldEmitter QIndexProjection   = "qindex"
   fieldEmitter QparQperProjection = "qparqper"
   fieldEmitter QxQyQzProjection   = "qxqyqz"
