@@ -138,6 +138,7 @@ data InputType = CristalK6C
                | SixsSbsMedH
                | SixsSbsMedV
                | SixsSbsMedVFixDetector
+               | SixsSbsUhv
   deriving (Eq, Show)
 
 data InputRange = InputRangeSingle Int
@@ -364,6 +365,7 @@ instance HasFieldValue InputType where
           | toLower t == emit SixsSbsMedH = Right SixsSbsMedH
           | toLower t == emit SixsSbsMedV = Right SixsSbsMedV
           | toLower t == emit SixsSbsMedVFixDetector = Right SixsSbsMedVFixDetector
+          | toLower t == emit SixsSbsUhv = Right SixsSbsUhv
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: InputType -> Text
@@ -382,6 +384,7 @@ instance HasFieldValue InputType where
       emit SixsSbsMedH            = "sixs:sbsmedh"
       emit SixsSbsMedV            = "sixs:sbsmedv"
       emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
+      emit SixsSbsUhv             = "sixs:sbsuhv"
 
 instance HasFieldValue Int where
   fieldvalue = number'

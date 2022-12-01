@@ -523,6 +523,7 @@ h5dpathHkl c =
        SixsSbsMedH -> return $ DataPathHkl qxqyqz medHSamplePath
        SixsSbsMedV -> return $ DataPathHkl qxqyqz medVSamplePath
        SixsSbsMedVFixDetector -> return $ DataPathHkl qxqyqz medVSamplePath
+       SixsSbsUhv -> return $ DataPathHkl qxqyqz uhvSamplePath
 
          -- SixsSbsMedV -> DataPathHkl
          --               hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")  -- xpad

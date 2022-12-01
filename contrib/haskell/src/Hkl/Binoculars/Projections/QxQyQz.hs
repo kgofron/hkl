@@ -491,6 +491,22 @@ h5dpathQxQyQz i ma mm mdet mw =
                                   <*> pure (DataSourcePath'Image
                                             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
                                             det)
+         SixsSbsUhv -> DataPathQxQyQz
+                      <$> mkAttenuation ma (DataSourcePath'Attenuation
+                                            (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
+                                             0 0 mm)
+                      <*> (DataSourcePath'Geometry'Uhv
+                            <$> mkWaveLength mw (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
+                            <*> pure [ (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")))
+                                     , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega")))
+                                     , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")))
+                                     , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma")))
+                                     ])
+                      <*> pure (DataSourcePath'Image
+                                (H5Or
+                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s140/image"))
+                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s70/image")))
+                                det)
 
 getResolution' :: MonadThrow m => Config 'QxQyQzProjection -> m [Double]
 getResolution' c = getResolution (_binocularsConfigQxQyQzProjectionResolution c) 3
