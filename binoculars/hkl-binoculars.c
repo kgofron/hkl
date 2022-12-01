@@ -365,6 +365,9 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
                 const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
                 const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
+                const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
+                const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
+                const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
                                                                         \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
@@ -434,9 +437,29 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                         item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         break;                          \
                                 }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[1] = rint((atan2(v.data[2], -v.data[1])) / M_PI * 180 / resolutions[1]); \
+                                        item.indexes_0[2] = rint(v.data[0] / resolutions[2] / 10); \
+                                        break;                          \
+                                }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[1] = rint((atan2(v.data[2], v.data[0])) / M_PI * 180 / resolutions[1]); \
+                                        item.indexes_0[2] = rint(v.data[1] / resolutions[2] / 10); \
+                                        break;                          \
+                                }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[1] = rint((atan2(v.data[0], v.data[1])) / M_PI * 180 / resolutions[1]); \
+                                        item.indexes_0[2] = rint(v.data[2] / resolutions[2] / 10); \
+                                        break;                          \
+                                }                                       \
                                 }                                       \
                                 item.intensity = rint((double)image[i] * weight); \
-                                                                        \
                                                                         \
                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                         darray_append(space->items, item); \
@@ -458,6 +481,21 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP: \
                 {                                                       \
                         space_update_axes(space, names_qpar_qper_timestamp, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX: \
+                {                                                       \
+                        space_update_axes(space, names_q_phi_qx, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY: \
+                {                                                       \
+                        space_update_axes(space, names_q_phi_qy, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ: \
+                {                                                       \
+                        space_update_axes(space, names_q_phi_qz, n_pixels, resolutions); \
                         break;                                          \
                 }                                                       \
                 }                                                       \

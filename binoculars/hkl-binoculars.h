@@ -183,50 +183,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*         return "x", "y" */
 
 
-/* class QxQyIndexProjection(QxQyQzProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         timestamp = pdataframe.timestamp */
-
-/*         qx, qy, qz = super(QxQyIndexProjection, self).project(index, pdataframe) */
-/*         return qx, qy, numpy.ones_like(qx) * timestamp */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Qx", "Qy", "t" */
-
-
-/* class QxQzIndexProjection(QxQyQzProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         timestamp = pdataframe.timestamp */
-
-/*         qx, qy, qz = super(QxQzIndexProjection, self).project(index, pdataframe) */
-/*         return qx, qz, numpy.ones_like(qx) * timestamp */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Qx", "Qz", "t" */
-
-
-/* class QyQzIndexProjection(QxQyQzProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         timestamp = pdataframe.timestamp */
-
-/*         qx, qy, qz = super(QyQzIndexProjection, self).project(index, pdataframe) */
-/*         return qy, qz, numpy.ones_like(qy) * timestamp */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Qy", "Qz", "t" */
-
-
-/* class QparQperIndexProjection(QparQperProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         timestamp = pdataframe.timestamp */
-
-/*         qpar, qper = super(QparQperIndexProjection, self).project(index, pdataframe) */
-/*         return qpar, qper, numpy.ones_like(qpar) * timestamp */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Qpar", "Qper", "t" */
-
-
 /* class Stereo(QxQyQzProjection): */
 /*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
 /*         qx, qy, qz = super(Stereo, self).project(index, pdataframe) */
@@ -239,38 +195,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*     def get_axis_labels(self) -> Tuple[str]: */
 /*         return "Q", "xp", "yp" */
 
-
-/* class QzPolarProjection(QxQyQzProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         qx, qy, qz = super(QzPolarProjection, self).project(index, pdataframe) */
-/*         phi = numpy.rad2deg(numpy.arctan2(qx, qy)) */
-/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
-/*         return phi, q, qz */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Phi", "Q", "Qz" */
-
-
-/* class QyPolarProjection(QxQyQzProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         qx, qy, qz = super(QyPolarProjection, self).project(index, pdataframe) */
-/*         phi = numpy.rad2deg(numpy.arctan2(qz, qx)) */
-/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
-/*         return phi, q, qy */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Phi", "Q", "Qy" */
-
-
-/* class QxPolarProjection(QxQyQzProjection): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         qx, qy, qz = super(QxPolarProjection, self).project(index, pdataframe) */
-/*         phi = numpy.rad2deg(numpy.arctan2(qz, -qy)) */
-/*         q = numpy.sqrt(qx * qx + qy * qy + qz * qz) */
-/*         return phi, q, qx */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "Phi", "Q", "Qx" */
 
 /* angles */
 
@@ -301,6 +225,9 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ = 0,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;
