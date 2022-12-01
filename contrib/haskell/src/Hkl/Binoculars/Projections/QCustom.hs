@@ -259,6 +259,7 @@ mkTimeStamp msub idx =
     (Just sub) -> return $ case sub of
                    QCustomSubProjection'QxQyQz -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QTthTimestamp -> idx
+                   QCustomSubProjection'QparQperTimestamp -> idx
 
 h5dpathQCustom ::  (MonadLogger m, MonadThrow m)
               => InputType

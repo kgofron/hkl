@@ -300,6 +300,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
 {
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ = 0,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;

@@ -271,6 +271,7 @@ newtype MaskLocation = MaskLocation { unMaskLocation :: Text }
 
 data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QTthTimestamp
+                          | QCustomSubProjection'QparQperTimestamp
   deriving (Enum, Eq, Show)
 
 instance HasFieldValue QCustomSubProjection where
@@ -280,11 +281,13 @@ instance HasFieldValue QCustomSubProjection where
       parse t
           | toLower t == emit QCustomSubProjection'QxQyQz = Right QCustomSubProjection'QxQyQz
           | toLower t == emit QCustomSubProjection'QTthTimestamp = Right QCustomSubProjection'QTthTimestamp
+          | toLower t == emit QCustomSubProjection'QparQperTimestamp = Right QCustomSubProjection'QparQperTimestamp
           | otherwise = Left ("Unsupported \"" ++ unpack t ++ "\" input format")
 
       emit :: QCustomSubProjection -> Text
-      emit QCustomSubProjection'QxQyQz        = "qx_qy_qz"
-      emit QCustomSubProjection'QTthTimestamp = "q_tth_timestamp"
+      emit QCustomSubProjection'QxQyQz            = "qx_qy_qz"
+      emit QCustomSubProjection'QTthTimestamp     = "q_tth_timestamp"
+      emit QCustomSubProjection'QparQperTimestamp = "qpar_qper_timestamp"
 
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}

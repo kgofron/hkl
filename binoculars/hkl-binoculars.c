@@ -364,11 +364,14 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 size_t i;                                               \
                 const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
                 const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
+                const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
                                                                         \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
                 assert(ARRAY_SIZE(names_q_tth_timestamp) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_tth_timestamp) == n_resolutions); \
+                assert(ARRAY_SIZE(names_qpar_qper_timestamp) == darray_size(space->axes)); \
+                assert(ARRAY_SIZE(names_qpar_qper_timestamp) == n_resolutions); \
                 assert(n_pixels == space->max_items);                   \
                                                                         \
                 const double *q_x = &pixels_coordinates[0 * n_pixels];  \
@@ -424,6 +427,13 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                         item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         break;                          \
                                 }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP: \
+                                {                                       \
+                                        item.indexes_0[0] = sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0] / 10; \
+                                        item.indexes_0[1] = v.data[2] / resolutions[1] / 10; \
+                                        item.indexes_0[2] = rint(timestamp / resolutions[2]); \
+                                        break;                          \
+                                }                                       \
                                 }                                       \
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -443,6 +453,11 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP: \
                 {                                                       \
                         space_update_axes(space, names_q_tth_timestamp, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP: \
+                {                                                       \
+                        space_update_axes(space, names_qpar_qper_timestamp, n_pixels, resolutions); \
                         break;                                          \
                 }                                                       \
                 }                                                       \
