@@ -253,11 +253,12 @@ mkWaveLength ma wp =
       (Just a) -> return $ DataSourcePath'WaveLength'Const a
 
 mkTimeStamp :: (MonadLogger m, MonadThrow m) => Maybe QCustomSubProjection -> DataSourcePath Index -> m (DataSourcePath Index)
-mkTimeStamp msub _idx =
+mkTimeStamp msub idx =
   case msub of
     Nothing -> return DataSourcePath'Index'NoIndex
     (Just sub) -> return $ case sub of
                    QCustomSubProjection'QxQyQz -> DataSourcePath'Index'NoIndex
+                   QCustomSubProjection'QTthTimestamp -> idx
 
 h5dpathQCustom ::  (MonadLogger m, MonadThrow m)
               => InputType

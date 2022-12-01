@@ -296,6 +296,14 @@ HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint32_t);
 
 /* qcustom */
 
+typedef enum _HklBinocularsQCustomSubProjectionEnum
+{
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ = 0,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP,
+        /* Add new your subprojection in the same order than the haskell order here */
+        HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
+} HklBinocularsQCustomSubProjectionEnum;
+
 #define HKL_BINOCULARS_SPACE_QCUSTOM_DECL(image_t)			\
         void hkl_binoculars_space_qcustom_ ## image_t (HklBinocularsSpace *space, \
                                                        const HklGeometry *geometry, \
@@ -312,7 +320,7 @@ HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint32_t);
                                                        const HklBinocularsAxisLimits **limits, \
                                                        size_t n_limits, \
                                                        double timestamp, \
-                                                       int subprojection)
+                                                       const HklBinocularsQCustomSubProjectionEnum subprojection)
 
 
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(int32_t);

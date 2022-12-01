@@ -361,11 +361,14 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
 #define HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(image_t)			\
         HKL_BINOCULARS_SPACE_QCUSTOM_DECL(image_t)			\
         {                                                               \
-                size_t i, j;                                            \
-                const char * names[] = {"qx", "qy", "qz"};              \
+                size_t i;                                               \
+                const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
+                const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
                                                                         \
-                assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
-                assert(ARRAY_SIZE(names) == n_resolutions);             \
+                assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
+                assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
+                assert(ARRAY_SIZE(names_q_tth_timestamp) == darray_size(space->axes)); \
+                assert(ARRAY_SIZE(names_q_tth_timestamp) == n_resolutions); \
                 assert(n_pixels == space->max_items);                   \
                                                                         \
                 const double *q_x = &pixels_coordinates[0 * n_pixels];  \
@@ -386,11 +389,11 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                         hkl_quaternion_init_from_angle_and_axe(&q_ub, -M_PI_2, &v_s); \
                         hkl_quaternion_times_quaternion(&qs_1, &q_ub);  \
                         break;                                          \
-                };                                                      \
+                }                                                       \
                 case HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL:     \
                 case HKL_BINOCULARS_SURFACE_ORIENTATION_NUM_ORIENTATION: \
                         break;                                          \
-                };                                                      \
+                }                                                       \
                 hkl_quaternion_conjugate(&qs_1);                        \
                                                                         \
                 darray_size(space->items) = 0;                          \
@@ -405,8 +408,22 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                 hkl_vector_minus_vector(&v, &ki);       \
                                 hkl_vector_rotated_quaternion(&v, &qs_1); \
                                                                         \
-                                for(j=0; j<ARRAY_SIZE(names); ++j){     \
-                                        item.indexes_0[j] = rint(v.data[j] / resolutions[j] / 10); \
+                                switch(subprojection){                  \
+                                case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS: \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(v.data[0] / resolutions[0] / 10); \
+                                        item.indexes_0[1] = rint(v.data[1] / resolutions[1] / 10); \
+                                        item.indexes_0[2] = rint(v.data[2] / resolutions[2] / 10); \
+                                        break;                          \
+                                }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[1] = rint(asin(hkl_vector_norm2(&v) / 2 / k) * 2 / M_PI * 180 / resolutions[1]); \
+                                        item.indexes_0[2] = rint(timestamp / resolutions[2]); \
+                                        break;                          \
+                                }                                       \
                                 }                                       \
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -416,7 +433,19 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                         }                                               \
                 }                                                       \
                                                                         \
-                space_update_axes(space, names, n_pixels, resolutions); \
+                switch(subprojection){                                  \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ:    \
+                case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS:         \
+                {                                                       \
+                        space_update_axes(space, names_qx_qy_qz, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP: \
+                {                                                       \
+                        space_update_axes(space, names_q_tth_timestamp, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                }                                                       \
                                                                         \
                 hkl_detector_free(detector);                            \
                 hkl_sample_free(sample);                                \

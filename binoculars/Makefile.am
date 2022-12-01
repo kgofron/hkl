@@ -5,10 +5,10 @@ AM_CFLAGS = \
 	-I$(top_srcdir)/hkl \
 	-I$(top_srcdir)/third-party \
 	-DPKGDATA=\""$(pkgdatadir)"\" \
-	-ftrack-macro-expansion=0 \
 	-fPIC -DPIC \
 	$(GLIB_CFLAGS) \
 	$(HDF5_CFLAGS)
+#	-ftrack-macro-expansion=0
 
 AM_LDFLAGS = -version-info 0:0:0 \
 	$(GLIB_LIBS) \
