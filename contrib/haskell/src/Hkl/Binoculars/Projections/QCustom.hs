@@ -1,12 +1,13 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveAnyClass      #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -23,17 +24,15 @@
 
 module Hkl.Binoculars.Projections.QCustom
     ( Config(..)
-    , DataPath(..)
     , DataFrameQCustom(..)
     , FramesQCustomP(..)
     , Resolutions
-    , defaultDataPathQCustom
+    , defaultDataSourcePath'DataFrameQCustom
     , h5dpathQCustom
     , newQCustom
     , processQCustom
     , updateQCustom
     , withMaybeLimits
-    , withDataPathQCustom
     ) where
 
 import           Bindings.HDF5.Core                (Location)
@@ -92,38 +91,73 @@ import           Hkl.Orphan                        ()
 import           Hkl.Pipes
 import           Hkl.Types
 
---------------
--- DataPath --
---------------
+-----------------------
+-- QCustom Projection --
+-----------------------
 
-data instance DataPath 'QCustomProjection = DataPathQCustom
-  { dataPathQCustomAttenuation :: DataSourcePath Attenuation
-  , dataPathQCustomGeometry :: DataSourcePath Geometry
-  , dataPathQCustomDetector :: DataSourcePath Image
-  , dataPathQCustonTimestamp :: DataSourcePath Index
-  } deriving (Eq, Generic, Show, ToJSON, FromJSON)
+type Resolutions = [Double]
 
-instance Arbitrary (DataPath 'QCustomProjection) where
-  arbitrary = DataPathQCustom <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+data DataFrameQCustom
+    = DataFrameQCustom
+      Attenuation -- attenuation
+      Geometry -- geometry
+      Image -- image
+      Index -- timestamp in double
+    deriving Show
 
-defaultDataPathQCustom :: DataPath 'QCustomProjection
-defaultDataPathQCustom = DataPathQCustom
-                        (DataSourcePath'Attenuation
-                          (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
-                          2 0 Nothing)
-                        (DataSourcePath'Geometry'Uhv
-                          (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
-                          [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
-                          , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
-                          , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
-                          , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
-                          ])
-                        (DataSourcePath'Image
-                          (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
-                          (defaultDetector))
-                        (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+data instance DataSourcePath DataFrameQCustom
+  = DataSourcePath'DataFrameQCustom
+    (DataSourcePath Attenuation)
+    (DataSourcePath Geometry)
+    (DataSourcePath Image)
+    (DataSourcePath Index)
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-instance HasFieldValue (DataPath 'QCustomProjection) where
+data instance DataSourceAcq DataFrameQCustom
+  = DataSourceAcq'DataFrameQCustom
+    (DataSourceAcq Attenuation)
+    (DataSourceAcq Geometry)
+    (DataSourceAcq Image)
+    (DataSourceAcq Index)
+
+instance Arbitrary (DataSourcePath DataFrameQCustom) where
+  arbitrary = DataSourcePath'DataFrameQCustom <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+instance DataSource DataFrameQCustom where
+  withDataSourceP f (DataSourcePath'DataFrameQCustom a g i idx) gg =
+    withDataSourceP f a $ \a' ->
+    withDataSourceP f g $ \g' ->
+    withDataSourceP f i $ \i' ->
+    withDataSourceP f idx $ \idx' -> gg (DataSourceAcq'DataFrameQCustom a' g' i' idx')
+
+instance Is1DStreamable (DataSourceAcq DataFrameQCustom) DataFrameQCustom where
+    extract1DStreamValue (DataSourceAcq'DataFrameQCustom att geom img idx) i =
+      DataFrameQCustom
+      <$> extract1DStreamValue att i
+      <*> extract1DStreamValue geom i
+      <*> extract1DStreamValue img i
+      <*> extract1DStreamValue idx i
+
+
+defaultDataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
+defaultDataSourcePath'DataFrameQCustom
+  = DataSourcePath'DataFrameQCustom
+    (DataSourcePath'Attenuation
+      (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
+      2 0 Nothing)
+    (DataSourcePath'Geometry'Uhv
+      (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
+      [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
+      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
+      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
+      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
+      ])
+    (DataSourcePath'Image
+      (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
+      (defaultDetector))
+    (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+
+instance HasFieldValue (DataSourcePath DataFrameQCustom) where
   fieldvalue = FieldValue
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
@@ -153,7 +187,7 @@ data instance Config 'QCustomProjection = BinocularsConfigQCustom
     , _binocularsConfigQCustomProjectionType         :: ProjectionType
     , _binocularsConfigQCustomProjectionResolution   :: [Double]
     , _binocularsConfigQCustomProjectionLimits       :: Maybe [Limits]
-    , _binocularsConfigQCustomDataPath               :: Maybe (DataPath 'QCustomProjection)
+    , _binocularsConfigQCustomDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
     , _binocularsConfigQCustomImageSumMax            :: Maybe Double
     , _binocularsConfigQCustomSubProjection          :: Maybe QCustomSubProjection
     } deriving (Eq, Show)
@@ -182,7 +216,7 @@ instance HasIniConfig 'QCustomProjection where
     , _binocularsConfigQCustomProjectionType = QCustomProjection
     , _binocularsConfigQCustomProjectionResolution = [0.01, 0.01, 0.01]
     , _binocularsConfigQCustomProjectionLimits  = Nothing
-    , _binocularsConfigQCustomDataPath = (Just defaultDataPathQCustom)
+    , _binocularsConfigQCustomDataPath = (Just defaultDataSourcePath'DataFrameQCustom)
     , _binocularsConfigQCustomImageSumMax = Nothing
     , _binocularsConfigQCustomSubProjection = Nothing
     }
@@ -272,11 +306,11 @@ h5dpathQCustom ::  (MonadLogger m, MonadThrow m)
               -> Maybe (Detector Hkl DIM2)
               -> Maybe Angstrom
               -> Maybe QCustomSubProjection
-              -> m (DataPath 'QCustomProjection)
+              -> m (DataSourcePath DataFrameQCustom)
 h5dpathQCustom i ma mm mdet mw msub =
     do let det = fromMaybe defaultDetector mdet
        case i of
-         CristalK6C -> DataPathQCustom
+         CristalK6C -> DataSourcePath'DataFrameQCustom
                       <$> mkAttenuation ma DataSourcePath'NoAttenuation
                       <*> (DataSourcePath'Geometry'CristalK6C
                           <$> mkWaveLength mw (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "CRISTAL" $ groupp "Monochromator" $ datasetp "lambda"))
@@ -290,7 +324,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                 (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_05")
                                 det) -- medipix
                       <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
-         MarsFlyscan -> DataPathQCustom
+         MarsFlyscan -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma (DataSourcePath'ApplyedAttenuationFactor
                                              (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "applied_att")))
                        <*> (DataSourcePath'Geometry'Mars
@@ -306,7 +340,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "merlin_quad_image"))
                                  det)
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         MarsSbs -> DataPathQCustom
+         MarsSbs -> DataSourcePath'DataFrameQCustom
                    <$> mkAttenuation ma DataSourcePath'NoAttenuation
                    <*> (DataSourcePath'Geometry'Mars
                        <$> mkWaveLength mw (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom)))
@@ -319,7 +353,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                              (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
                              det)
                    <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
-         SixsFlyMedH -> DataPathQCustom
+         SixsFlyMedH -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                              2 0 mm)
@@ -336,7 +370,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
                                  det)
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsFlyMedV -> DataPathQCustom
+         SixsFlyMedV -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                              2 0 mm)
@@ -358,7 +392,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                   (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
                                  det)
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsFlyMedVEiger -> DataPathQCustom
+         SixsFlyMedVEiger -> DataSourcePath'DataFrameQCustom
                             <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                   (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                   2 0 mm)
@@ -381,7 +415,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiger_image")
                                       det)
                             <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsFlyMedVS70 -> DataPathQCustom
+         SixsFlyMedVS70 -> DataSourcePath'DataFrameQCustom
                           <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                 2 0 mm)
@@ -398,7 +432,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")
                                     det)
                           <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsFlyScanUhv -> DataPathQCustom
+         SixsFlyScanUhv -> DataSourcePath'DataFrameQCustom
                           <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                 (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                  2 0 mm)
@@ -413,7 +447,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                     (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
                                     det)
                           <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsFlyScanUhv2 -> DataPathQCustom
+         SixsFlyScanUhv2 -> DataSourcePath'DataFrameQCustom
                            <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                  (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                  2 0 mm)
@@ -434,7 +468,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")))
                                      det)
                            <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsFlyScanUhvTest -> DataPathQCustom
+         SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
                            <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                  (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                  2 0 mm)
@@ -451,7 +485,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                       (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
                                      det)
                            <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsFlyScanUhvUfxc -> DataPathQCustom
+         SixsFlyScanUhvUfxc -> DataSourcePath'DataFrameQCustom
                               <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                     (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
                                                     2 0 mm)
@@ -466,7 +500,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "ufxc_sixs_image")
                                         det)
                               <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-         SixsSbsFixedDetector -> DataPathQCustom
+         SixsSbsFixedDetector -> DataSourcePath'DataFrameQCustom
                                 <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                       (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                                       2 0 mm)
@@ -476,7 +510,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_11")
                                           det)
                                 <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
-         SixsSbsMedH -> DataPathQCustom
+         SixsSbsMedH -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                              0 0 mm)
@@ -491,7 +525,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
                                  det)
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
-         SixsSbsMedV -> DataPathQCustom
+         SixsSbsMedV -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma (DataSourcePath'Attenuation
                                              (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                              0 0 mm)
@@ -508,7 +542,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
                                  det)
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
-         SixsSbsMedVFixDetector -> DataPathQCustom
+         SixsSbsMedVFixDetector -> DataSourcePath'DataFrameQCustom
                                   <$> mkAttenuation ma (DataSourcePath'Attenuation
                                                         (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                                         0 0 mm)
@@ -525,7 +559,7 @@ h5dpathQCustom i ma mm mdet mw msub =
                                             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
                                             det)
                                   <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
-         SixsSbsUhv -> DataPathQCustom
+         SixsSbsUhv -> DataSourcePath'DataFrameQCustom
                       <$> mkAttenuation ma (DataSourcePath'Attenuation
                                             (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
                                              0 0 mm)
@@ -546,43 +580,6 @@ h5dpathQCustom i ma mm mdet mw msub =
 getResolution' :: MonadThrow m => Config 'QCustomProjection -> m [Double]
 getResolution' c = getResolution (_binocularsConfigQCustomProjectionResolution c) 3
 
------------------------
--- QCustom Projection --
------------------------
-
-type Resolutions = [Double]
-
-data DataFrameQCustom
-    = DataFrameQCustom
-      Int -- n
-      Attenuation -- attenuation
-      Geometry -- geometry
-      Image -- image
-      Index -- timestamp in double
-    deriving Show
-
-data instance DataSourcePath DataFrameQCustom = DataSourcePath'DataFrameQCustom
-                                               (DataSourcePath Int)
-                                               (DataSourcePath Attenuation)
-                                               (DataSourcePath Geometry)
-                                               (DataSourcePath Image)
-                                               (DataSourcePath Index)
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-data instance DataSourceAcq DataFrameQCustom = DataSourceAcq'DataFrameQCustom
-                                              (DataSourceAcq Int)
-                                              (DataSourceAcq Attenuation)
-                                              (DataSourceAcq Geometry)
-                                              (DataSourceAcq Image)
-                                              (DataSourceAcq Index)
-
-instance DataSource DataFrameQCustom where
-  withDataSourceP f (DataSourcePath'DataFrameQCustom j a g i idx) gg =
-    withDataSourceP f j $ \j' ->
-    withDataSourceP f a $ \a' ->
-    withDataSourceP f g $ \g' ->
-    withDataSourceP f i $ \i' ->
-    withDataSourceP f idx $ \idx' -> gg (DataSourceAcq'DataFrameQCustom j' a' g' i' idx')
 
 withMaybeLimits :: Maybe [Limits]
                 -> Resolutions
@@ -597,7 +594,7 @@ withMaybeLimits mls rs f = case mls of
 
 {-# INLINE spaceQCustom #-}
 spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
-spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom _ att g img index) =
+spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -689,7 +686,7 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                >-> framesQCustomP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ _ img _) -> filterSumImage mImageSumMax img)
+                               >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
                                >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
                                >-> tee (accumulateP c)
                                >-> progress pb
@@ -697,10 +694,10 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
       saveCube output' r'
 
 
-instance ProcessQCustomP (DataPath 'QCustomProjection)
+instance ProcessQCustomP (DataSourcePath DataFrameQCustom)
 
-instance ChunkP (DataPath 'QCustomProjection) where
-    chunkP (DataPathQCustom ma _ (DataSourcePath'Image i _) _) =
+instance ChunkP (DataSourcePath DataFrameQCustom) where
+    chunkP (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _) =
       skipMalformed $ forever $ do
       fp <- await
       withFileP (openH5 fp) $ \f ->
@@ -713,30 +710,13 @@ instance ChunkP (DataPath 'QCustomProjection) where
             (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk fp 0 (fromIntegral n -1)
           Nothing  -> error "can not extract length"
 
-withDataPathQCustom :: (MonadSafe m, Location l) =>
-                 l
-               -> DataPath 'QCustomProjection
-               -> ((Int -> IO DataFrameQCustom) -> m r)
-               -> m r
-withDataPathQCustom f (DataPathQCustom att det dif timestamp) g =
-  withDataSourceP f att $ \att' ->
-  withDataSourceP f det $ \det' ->
-  withDataSourceP f dif $ \dif' ->
-  withDataSourceP f timestamp $ \timestamp' ->
-  g (\j -> DataFrameQCustom j
-          <$> extract1DStreamValue att' j
-          <*> extract1DStreamValue det' j
-          <*> extract1DStreamValue dif' j
-          <*> extract1DStreamValue timestamp' j
-    )
-
-instance FramesQCustomP (DataPath 'QCustomProjection) where
+instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
     framesQCustomP p =
         skipMalformed $ forever $ do
           (fn, js) <- await
           withFileP (openH5 fn) $ \f ->
-            withDataPathQCustom f p $ \getDataFrameQCustom ->
-            forM_ js (tryYield . getDataFrameQCustom)
+            withDataSourceP f p $ \ g ->
+            forM_ js (tryYield . (extract1DStreamValue g))
 
 ---------
 -- Cmd --
