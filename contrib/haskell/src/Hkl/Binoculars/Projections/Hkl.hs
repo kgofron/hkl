@@ -1,12 +1,13 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveAnyClass      #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -24,9 +25,7 @@
 module Hkl.Binoculars.Projections.Hkl
     ( Config(..)
     , DataFrameHkl(..)
-    , DataPath(..)
-    , SamplePath(..)
-    , defaultDataPathHkl
+    , defaultDataSourcePath'DataFrameHkl
     , newHkl
     , processHkl
     , spaceHkl
@@ -34,52 +33,51 @@ module Hkl.Binoculars.Projections.Hkl
     ) where
 
 
-import           Bindings.HDF5.Core                (Location)
-import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses)
-import           Control.Monad.Catch               (Exception, MonadThrow,
-                                                    throwM)
-import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Logger              (MonadLogger, logDebug,
-                                                    logDebugSH, logErrorSH,
-                                                    logInfo)
-import           Control.Monad.Reader              (MonadReader, ask, forM_,
-                                                    forever)
-import           Control.Monad.Trans.Reader        (runReaderT)
-import           Data.Aeson                        (FromJSON, ToJSON,
-                                                    eitherDecode', encode)
-import           Data.Array.Repa                   (Array)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.ByteString.Lazy              (fromStrict, toStrict)
-import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
-                                                    section, serializeIni, (.=),
-                                                    (.=?))
-import           Data.Maybe                        (fromMaybe)
-import           Data.Text                         (pack)
-import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
-import           Data.Text.IO                      (putStr)
-import           Data.Vector.Storable.Mutable      (unsafeWith)
-import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (withForeignPtr)
-import           Foreign.Marshal.Array             (withArrayLen)
-import           GHC.Conc                          (getNumCapabilities)
-import           GHC.Generics                      (Generic)
-import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~), (/~))
-import           Path                              (Abs, Dir, Path)
-import           Pipes                             (Pipe, await, each,
-                                                    runEffect, (>->))
-import           Pipes.Prelude                     (filter, map, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, runSafeP,
-                                                    runSafeT)
-import           Test.QuickCheck                   (Arbitrary (..))
-import           Text.Printf                       (printf)
+import           Control.Concurrent.Async           (mapConcurrently)
+import           Control.Lens                       (makeLenses)
+import           Control.Monad.Catch                (Exception, MonadThrow,
+                                                     throwM)
+import           Control.Monad.IO.Class             (MonadIO (liftIO))
+import           Control.Monad.Logger               (MonadLogger, logDebug,
+                                                     logDebugSH, logErrorSH,
+                                                     logInfo)
+import           Control.Monad.Reader               (MonadReader, ask, forM_,
+                                                     forever)
+import           Control.Monad.Trans.Reader         (runReaderT)
+import           Data.Aeson                         (FromJSON, ToJSON,
+                                                     eitherDecode', encode)
+import           Data.Array.Repa                    (Array)
+import           Data.Array.Repa.Index              (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
+import           Data.ByteString.Lazy               (fromStrict, toStrict)
+import           Data.Ini.Config.Bidir              (FieldValue (..), field,
+                                                     ini, section, serializeIni,
+                                                     (.=), (.=?))
+import           Data.Maybe                         (fromMaybe)
+import           Data.Text                          (pack)
+import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
+import           Data.Text.IO                       (putStr)
+import           Data.Vector.Storable.Mutable       (unsafeWith)
+import           Foreign.C.Types                    (CDouble (..))
+import           Foreign.ForeignPtr                 (withForeignPtr)
+import           Foreign.Marshal.Array              (withArrayLen)
+import           GHC.Conc                           (getNumCapabilities)
+import           GHC.Generics                       (Generic)
+import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~), (/~))
+import           Path                               (Abs, Dir, Path)
+import           Pipes                              (Pipe, await, each,
+                                                     runEffect, (>->))
+import           Pipes.Prelude                      (filter, map, tee, toListM)
+import           Pipes.Safe                         (MonadSafe, runSafeP,
+                                                     runSafeT)
+import           Test.QuickCheck                    (Arbitrary (..))
+import           Text.Printf                        (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
-import           Hkl.Binoculars.Projections.QxQyQz
+import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
 import           Hkl.C.Sample
 import           Hkl.DataSource
@@ -103,8 +101,12 @@ instance Exception HklBinocularsProjectionsHklException
 -- DataPath's --
 ----------------
 
-data SamplePath
-    = SamplePath
+data DataFrameHkl
+  = DataFrameHkl DataFrameQCustom Sample
+  deriving Show
+
+data instance DataSourcePath Sample
+    = DataSourcePath'Sample
       (DataSourcePath NanoMeter) -- a
       (DataSourcePath NanoMeter) -- b
       (DataSourcePath NanoMeter) -- c
@@ -114,14 +116,63 @@ data SamplePath
       (DataSourcePath Degree) -- ux
       (DataSourcePath Degree) -- uy
       (DataSourcePath Degree) -- uz
-    | SamplePath2 Sample
+    | DataSourcePath'Sample'Const
+      Sample
     deriving (Eq, FromJSON, Generic, Show, ToJSON)
 
-instance Arbitrary SamplePath where
-  arbitrary = SamplePath <$> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary
+data instance DataSourceAcq Sample
+  = DataSourceAcq'Sample
+    (DataSourceAcq NanoMeter)
+    (DataSourceAcq NanoMeter)
+    (DataSourceAcq NanoMeter)
+    (DataSourceAcq Degree)
+    (DataSourceAcq Degree)
+    (DataSourceAcq Degree)
+    (DataSourceAcq Degree)
+    (DataSourceAcq Degree)
+    (DataSourceAcq Degree)
+  | DataSourceAcq'Sample'Const
+    Sample
 
-defaultDataPathHklSample :: SamplePath
-defaultDataPathHklSample = SamplePath
+instance DataSource Sample where
+  withDataSourceP f (DataSourcePath'Sample a b c alpha beta gamma ux uy uz) g =
+    withDataSourceP f a $ \a' ->
+    withDataSourceP f b $ \b' ->
+    withDataSourceP f c $ \c' ->
+    withDataSourceP f alpha $ \alpha' ->
+    withDataSourceP f beta $ \beta' ->
+    withDataSourceP f gamma $ \gamma' ->
+    withDataSourceP f ux $ \ux' ->
+    withDataSourceP f uy $ \uy' ->
+    withDataSourceP f uz $ \uz' -> g (DataSourceAcq'Sample a' b' c' alpha' beta' gamma' ux' uy' uz')
+  withDataSourceP _ (DataSourcePath'Sample'Const s) g = g (DataSourceAcq'Sample'Const s)
+
+instance Is0DStreamable (DataSourceAcq Sample) Sample where
+  extract0DStreamValue (DataSourceAcq'Sample a b c alpha beta gamma ux uy uz) =
+    Sample "test"
+    <$> (Triclinic
+         <$> extract0DStreamValue a
+         <*> extract0DStreamValue b
+         <*> extract0DStreamValue c
+         <*> extract0DStreamValue alpha
+         <*> extract0DStreamValue beta
+         <*> extract0DStreamValue gamma)
+    <*> (Parameter "ux"
+         <$> extract0DStreamValue ux
+         <*> pure (Range 0 0))
+    <*> (Parameter "uy"
+         <$> extract0DStreamValue uy
+         <*> pure (Range 0 0))
+    <*> (Parameter "uz"
+         <$> extract0DStreamValue uz
+         <*> pure (Range 0 0))
+  extract0DStreamValue (DataSourceAcq'Sample'Const s) = pure s
+
+instance Arbitrary (DataSourcePath Sample) where
+  arbitrary = DataSourcePath'Sample <$> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary
+
+defaultDataSourcePath'Sample :: DataSourcePath Sample
+defaultDataSourcePath'Sample = DataSourcePath'Sample
   (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A"))
   (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B"))
   (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C"))
@@ -132,22 +183,22 @@ defaultDataPathHklSample = SamplePath
   (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uy"))
   (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uz"))
 
-data instance DataPath 'HklProjection = DataPathHkl
-  { dataPathHklQxQyQz :: DataPath 'QxQyQzProjection
-  , dataPathHklSample :: SamplePath
+data instance DataSourcePath DataFrameHkl = DataSourcePath'DataFrameHkl
+  { dataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
+  , dataSourcePath'Sample :: DataSourcePath Sample
   }
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-instance Arbitrary (DataPath 'HklProjection) where
-  arbitrary = DataPathHkl <$> arbitrary  <*> arbitrary
+instance Arbitrary (DataSourcePath DataFrameHkl) where
+  arbitrary = DataSourcePath'DataFrameHkl <$> arbitrary  <*> arbitrary
 
-defaultDataPathHkl :: DataPath 'HklProjection
-defaultDataPathHkl = DataPathHkl
-  { dataPathHklQxQyQz = defaultDataPathQxQyQz
-  , dataPathHklSample = defaultDataPathHklSample
+defaultDataSourcePath'DataFrameHkl :: DataSourcePath DataFrameHkl
+defaultDataSourcePath'DataFrameHkl = DataSourcePath'DataFrameHkl
+  { dataSourcePath'DataFrameQCustom = defaultDataSourcePath'DataFrameQCustom
+  , dataSourcePath'Sample = defaultDataSourcePath'Sample
   }
 
-instance HasFieldValue (DataPath 'HklProjection) where
+instance HasFieldValue (DataSourcePath DataFrameHkl) where
   fieldvalue = FieldValue
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
@@ -187,7 +238,7 @@ data instance Config 'HklProjection = BinocularsConfigHkl
   , _binocularsConfigHklProjectionType         :: ProjectionType
   , _binocularsConfigHklProjectionResolution   :: [Double]
   , _binocularsConfigHklProjectionLimits       :: Maybe [Limits]
-  , _binocularsConfigHklDataPath               :: Maybe (DataPath 'HklProjection)
+  , _binocularsConfigHklDataPath               :: Maybe (DataSourcePath DataFrameHkl)
   , _binocularsConfigHklImageSumMax            :: Maybe Double
   } deriving (Eq, Show)
 
@@ -222,7 +273,7 @@ instance HasIniConfig 'HklProjection where
     , _binocularsConfigHklProjectionType = HklProjection
     , _binocularsConfigHklProjectionResolution = [0.01, 0.01, 0.01]
     , _binocularsConfigHklProjectionLimits  = Nothing
-    , _binocularsConfigHklDataPath = Just defaultDataPathHkl
+    , _binocularsConfigHklDataPath = Just defaultDataSourcePath'DataFrameHkl
     , _binocularsConfigHklImageSumMax = Nothing
     }
 
@@ -311,14 +362,9 @@ sampleConfig cf = do
 -- Projection --
 ----------------
 
-data DataFrameHkl a
-    = DataFrameHkl DataFrameQxQyQz Sample
-      deriving Show
-
-
 {-# INLINE spaceHkl #-}
-spaceHkl :: (Config 'HklProjection) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl b -> IO (DataFrameSpace DIM3)
-spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQxQyQz _ att g img) samp) = do
+spaceHkl :: (Config 'HklProjection) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl -> IO (DataFrameSpace DIM3)
+spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img _) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
@@ -344,7 +390,7 @@ spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl
 
 class ChunkP a => FramesHklP a where
   framesHklP :: MonadSafe m
-             => a -> Pipe (FilePath, [Int]) (DataFrameHkl b) m ()
+             => a -> Pipe (FilePath, [Int]) DataFrameHkl m ()
 
 
 class (FramesHklP a, Show a) => ProcessHklP a where
@@ -406,59 +452,29 @@ class (FramesHklP a, Show a) => ProcessHklP a where
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                                -- >-> tee Pipes.Prelude.print
                                >-> framesHklP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameHkl (DataFrameQxQyQz _ _ _ img) _) -> filterSumImage mImageSumMax img)
+                               >-> Pipes.Prelude.filter (\(DataFrameHkl (DataFrameQCustom _ _ img _) _) -> filterSumImage mImageSumMax img)
                                >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb
                            ) jobs
       saveCube output' r'
 
-instance ProcessHklP (DataPath 'HklProjection)
+instance ProcessHklP (DataSourcePath DataFrameHkl)
 
 -- FramesHklP
 
-withSamplePathP :: (MonadSafe m, Location l) => l -> SamplePath -> (IO Sample -> m r) -> m r
-withSamplePathP f (SamplePath a b c alpha beta gamma ux uy uz) g =
-    withDataSourceP f a $ \a' ->
-    withDataSourceP f b $ \b' ->
-    withDataSourceP f c $ \c' ->
-    withDataSourceP f alpha $ \alpha' ->
-    withDataSourceP f beta $ \beta' ->
-    withDataSourceP f gamma $ \gamma' ->
-    withDataSourceP f ux $ \ux' ->
-    withDataSourceP f uy $ \uy' ->
-    withDataSourceP f uz $ \uz' ->
-        g (Sample "test"
-           <$> (Triclinic
-                <$> extract0DStreamValue a'
-                <*> extract0DStreamValue b'
-                <*> extract0DStreamValue c'
-                <*> extract0DStreamValue alpha'
-                <*> extract0DStreamValue beta'
-                <*> extract0DStreamValue gamma')
-           <*> (Parameter "ux"
-                <$> extract0DStreamValue ux'
-                <*> pure (Range 0 0))
-           <*> (Parameter "uy"
-                <$> extract0DStreamValue uy'
-                <*> pure (Range 0 0))
-           <*> (Parameter "uz"
-                <$> extract0DStreamValue uz'
-                <*> pure (Range 0 0)))
-withSamplePathP _ (SamplePath2 s) g = g (return s)
+instance ChunkP (DataSourcePath DataFrameHkl) where
+  chunkP (DataSourcePath'DataFrameHkl p _) = chunkP p
 
-instance ChunkP (DataPath 'HklProjection) where
-  chunkP (DataPathHkl p _)           = chunkP p
-
-instance FramesHklP (DataPath 'HklProjection) where
-  framesHklP (DataPathHkl qp samp) = skipMalformed $ forever $ do
+instance FramesHklP (DataSourcePath DataFrameHkl) where
+  framesHklP (DataSourcePath'DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
     withFileP (openH5 fp) $ \f ->
-      withDataPathQxQyQz f qp $ \getDataFrameQxQyQz ->
-      withSamplePathP f samp $ \getSample ->
+      withDataSourceP f qcustom $ \qcustomAcq ->
+      withDataSourceP f sample $ \sampleAcq ->
       forM_ js (\j -> tryYield ( DataFrameHkl
-                                <$> getDataFrameQxQyQz j
-                                <*> getSample
+                                <$> extract1DStreamValue qcustomAcq j
+                                <*> extract0DStreamValue sampleAcq
                               ))
 
 ------------
@@ -467,7 +483,7 @@ instance FramesHklP (DataPath 'HklProjection) where
 
 h5dpathHkl :: (MonadLogger m, MonadThrow m)
            => (Config 'HklProjection)
-           -> m (DataPath 'HklProjection)
+           -> m (DataSourcePath DataFrameHkl)
 h5dpathHkl c =
   do let i = _binocularsConfigHklInputType c
      let ma = _binocularsConfigHklAttenuationCoefficient c
@@ -475,7 +491,7 @@ h5dpathHkl c =
      let mm = _binocularsConfigHklAttenuationMax c
      let mw = _binocularsConfigHklWavelength c
      let samplePath beamline device =
-           SamplePath
+           DataSourcePath'Sample
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A"))
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B"))
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C"))
@@ -486,7 +502,7 @@ h5dpathHkl c =
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uy"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uz"))
      let sampleMarsPath beamline device =
-           SamplePath
+           DataSourcePath'Sample
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a"))
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b"))
            (DataSourcePath'NanoMeter(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c"))
@@ -502,30 +518,30 @@ h5dpathHkl c =
      let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
      let uhvSamplePath2 = samplePath "SIXS" "i14-c-cx2-ex-diff-uhv"
      let uhvSamplePath3 = samplePath "SIXS" "i14-c-cx2-ex-cm-uhv"
-     qxqyqz <- h5dpathQxQyQz i ma mm mdet mw
+     qcustom <- h5dpathQCustom i ma mm mdet mw Nothing
      case i of
        CristalK6C -> do
          let ms = sampleConfig c
          case ms of
-           (Just s) -> return (DataPathHkl qxqyqz (SamplePath2 s))
+           (Just s) -> return (DataSourcePath'DataFrameHkl qcustom (DataSourcePath'Sample'Const s))
            Nothing  -> throwM (MissingSampleParameters c)
-       MarsFlyscan -> return $ DataPathHkl qxqyqz marsSamplePath
-       MarsSbs -> return $ DataPathHkl qxqyqz marsSamplePath
-       SixsFlyMedH -> return $ DataPathHkl qxqyqz medHSamplePath
-       SixsFlyMedV -> return $ DataPathHkl qxqyqz medVSamplePath
-       SixsFlyMedVEiger -> return $ DataPathHkl qxqyqz medVSamplePath
-       SixsFlyMedVS70 -> return $ DataPathHkl qxqyqz medVSamplePath
-       SixsFlyScanUhv -> return $ DataPathHkl qxqyqz uhvSamplePath
-       SixsFlyScanUhv2 -> return $ DataPathHkl qxqyqz uhvSamplePath3
-       SixsFlyScanUhvTest -> return $ DataPathHkl qxqyqz uhvSamplePath3
-       SixsFlyScanUhvUfxc -> return $ DataPathHkl qxqyqz uhvSamplePath
+       MarsFlyscan -> return $ DataSourcePath'DataFrameHkl qcustom marsSamplePath
+       MarsSbs -> return $ DataSourcePath'DataFrameHkl qcustom marsSamplePath
+       SixsFlyMedH -> return $ DataSourcePath'DataFrameHkl qcustom medHSamplePath
+       SixsFlyMedV -> return $ DataSourcePath'DataFrameHkl qcustom medVSamplePath
+       SixsFlyMedVEiger -> return $ DataSourcePath'DataFrameHkl qcustom medVSamplePath
+       SixsFlyMedVS70 -> return $ DataSourcePath'DataFrameHkl qcustom medVSamplePath
+       SixsFlyScanUhv -> return $ DataSourcePath'DataFrameHkl qcustom uhvSamplePath
+       SixsFlyScanUhv2 -> return $ DataSourcePath'DataFrameHkl qcustom uhvSamplePath3
+       SixsFlyScanUhvTest -> return $ DataSourcePath'DataFrameHkl qcustom uhvSamplePath3
+       SixsFlyScanUhvUfxc -> return $ DataSourcePath'DataFrameHkl qcustom uhvSamplePath
        SixsSbsFixedDetector -> undefined -- TODO this must not be possible.
-       SixsSbsMedH -> return $ DataPathHkl qxqyqz medHSamplePath
-       SixsSbsMedV -> return $ DataPathHkl qxqyqz medVSamplePath
-       SixsSbsMedVFixDetector -> return $ DataPathHkl qxqyqz medVSamplePath
-       SixsSbsUhv -> return $ DataPathHkl qxqyqz uhvSamplePath
+       SixsSbsMedH -> return $ DataSourcePath'DataFrameHkl qcustom medHSamplePath
+       SixsSbsMedV -> return $ DataSourcePath'DataFrameHkl qcustom medVSamplePath
+       SixsSbsMedVFixDetector -> return $ DataSourcePath'DataFrameHkl qcustom medVSamplePath
+       SixsSbsUhv -> return $ DataSourcePath'DataFrameHkl qcustom uhvSamplePath
 
-         -- SixsSbsMedV -> DataPathHkl
+         -- SixsSbsMedV -> DataSourcePath'DataFrameHkl
          --               hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")  -- xpad
          --               (GeometryPath
          --                hdf5p -- TODO wavelength

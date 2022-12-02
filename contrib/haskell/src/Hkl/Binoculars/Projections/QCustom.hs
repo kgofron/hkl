@@ -35,7 +35,6 @@ module Hkl.Binoculars.Projections.QCustom
     , withMaybeLimits
     ) where
 
-import           Bindings.HDF5.Core                (Location)
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Lens                      (makeLenses)
 import           Control.Monad                     (zipWithM)

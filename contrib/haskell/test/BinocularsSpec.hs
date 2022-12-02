@@ -8,20 +8,22 @@ module BinocularsSpec
   where
 
 
-import           Data.Aeson                        (Result (..), fromJSON,
-                                                    toJSON)
-import           Data.Attoparsec.Text              (parseOnly)
-import           Numeric.Units.Dimensional.Prelude (meter, radian, (*~))
-import           Path                              (mkAbsDir)
+import           Data.Aeson                         (Result (..), fromJSON,
+                                                     toJSON)
+import           Data.Attoparsec.Text               (parseOnly)
+import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
+import           Path                               (mkAbsDir)
 
 import           Test.Hspec
-import           Test.Hspec.QuickCheck             (prop)
+import           Test.Hspec.QuickCheck              (prop)
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Projections.Hkl
+import           Hkl.Binoculars.Projections.QCustom
+import           Hkl.DataSource
 import           Paths_hkl
 
-import           Prelude                           hiding (readFile)
+import           Prelude                            hiding (readFile)
 
 
 spec :: Spec
@@ -100,7 +102,9 @@ spec = do
     prop "angles projection" $
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'AnglesProjection))
     prop "hkl projection" $
-      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'HklProjection))
+      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameHkl))
+    prop "qcustom projection" $
+      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameQCustom))
     prop "qindex projection" $
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'QIndexProjection))
     prop "qparqper projection" $
