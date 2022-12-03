@@ -22,82 +22,49 @@
 -}
 
 module Hkl.Binoculars.Projections.Angles
-    ( DataPath(..)
-    , newAngles
+    ( newAngles
     , processAngles
     , updateAngles
     ) where
 
-import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses)
-import           Control.Monad.Catch               (MonadThrow)
-import           Control.Monad.IO.Class            (MonadIO (liftIO), liftIO)
-import           Control.Monad.Logger              (MonadLogger, logDebug,
-                                                    logDebugSH, logErrorSH,
-                                                    logInfo)
-import           Control.Monad.Reader              (MonadReader, ask)
-import           Control.Monad.Trans.Reader        (runReaderT)
-import           Data.Aeson                        (FromJSON, ToJSON,
-                                                    eitherDecode', encode)
-import           Data.Array.Repa                   (Array)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.ByteString.Lazy              (fromStrict, toStrict)
-import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
-                                                    section, serializeIni, (.=),
-                                                    (.=?))
-import           Data.Maybe                        (fromMaybe)
-import           Data.Text                         (pack)
-import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
-import           Data.Text.IO                      (putStr)
-import           Data.Typeable                     (typeOf)
-import           Data.Vector.Storable.Mutable      (unsafeWith)
-import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (withForeignPtr)
-import           Foreign.Marshal.Array             (withArrayLen)
-import           GHC.Conc                          (getNumCapabilities)
-import           GHC.Generics                      (Generic)
-import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
-import           Path                              (Abs, Dir, Path)
-import           Pipes                             (Pipe, each, runEffect,
-                                                    (>->))
-import           Pipes.Prelude                     (filter, map, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, runSafeT)
-import           Test.QuickCheck                   (Arbitrary (..))
-import           Text.Printf                       (printf)
+import           Control.Concurrent.Async           (mapConcurrently)
+import           Control.Lens                       (makeLenses)
+import           Control.Monad.Catch                (MonadThrow)
+import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
+import           Control.Monad.Logger               (MonadLogger, logDebug,
+                                                     logDebugSH, logErrorSH,
+                                                     logInfo)
+import           Control.Monad.Reader               (MonadReader, ask)
+import           Control.Monad.Trans.Reader         (runReaderT)
+import           Data.Array.Repa                    (Array)
+import           Data.Array.Repa.Index              (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
+import           Data.Ini.Config.Bidir              (field, ini, section,
+                                                     serializeIni, (.=), (.=?))
+import           Data.Maybe                         (fromMaybe)
+import           Data.Text                          (pack)
+import           Data.Text.IO                       (putStr)
+import           Data.Vector.Storable.Mutable       (unsafeWith)
+import           Foreign.C.Types                    (CDouble (..))
+import           Foreign.ForeignPtr                 (withForeignPtr)
+import           Foreign.Marshal.Array              (withArrayLen)
+import           GHC.Conc                           (getNumCapabilities)
+import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~))
+import           Path                               (Abs, Dir, Path)
+import           Pipes                              (each, runEffect, (>->))
+import           Pipes.Prelude                      (filter, map, tee, toListM)
+import           Pipes.Safe                         (runSafeT)
+import           Text.Printf                        (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
-import           Hkl.Binoculars.Projections.QxQyQz
+import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Image
-
-
---------------
--- DataPath --
---------------
-
-data instance DataPath 'AnglesProjection = DataPathAngles
-  { dataPathAnglesQxQyQz :: DataPath 'QxQyQzProjection }
-  deriving (Eq, Generic, ToJSON, FromJSON)
-
-instance Arbitrary (DataPath 'AnglesProjection) where
-  arbitrary = DataPathAngles <$> arbitrary
-
-instance Show (DataPath 'AnglesProjection) where
-  show = show . typeOf
-
-instance HasFieldValue (DataPath 'AnglesProjection) where
-  fieldvalue = FieldValue
-               { fvParse = eitherDecode' . fromStrict . encodeUtf8
-               , fvEmit = decodeUtf8 . toStrict . encode
-               }
-
-defaultDataPathAngles :: DataPath 'AnglesProjection
-defaultDataPathAngles = DataPathAngles defaultDataPathQxQyQz
 
 ------------
 -- Config --
@@ -122,7 +89,7 @@ data instance Config 'AnglesProjection = BinocularsConfigAngles
   , _binocularsConfigAnglesProjectionType         :: ProjectionType
   , _binocularsConfigAnglesProjectionResolution   :: [Double]
   , _binocularsConfigAnglesProjectionLimits       :: Maybe [Limits]
-  , _binocularsConfigAnglesDataPath               :: Maybe (DataPath 'AnglesProjection)
+  , _binocularsConfigAnglesDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
   , _binocularsConfigAnglesSampleAxis             :: Maybe SampleAxis
   , _binocularsConfigAnglesImageSumMax            :: Maybe Double
  } deriving (Eq, Show)
@@ -149,7 +116,7 @@ instance HasIniConfig 'AnglesProjection where
     , _binocularsConfigAnglesProjectionType = AnglesProjection
     , _binocularsConfigAnglesProjectionResolution = [1, 1, 1]
     , _binocularsConfigAnglesProjectionLimits  = Nothing
-    , _binocularsConfigAnglesDataPath = Just defaultDataPathAngles
+    , _binocularsConfigAnglesDataPath = Just defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigAnglesSampleAxis = Nothing
     , _binocularsConfigAnglesImageSumMax = Nothing
     }
@@ -200,11 +167,9 @@ getSampleAxis c = case _binocularsConfigAnglesSampleAxis c of
 -- Angles Projection --
 -------------------------
 
-newtype DataFrameAngles = DataFrameAngles DataFrameQxQyQz
-
 {-# INLINE spaceAngles #-}
-spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> SampleAxis -> Space DIM2 -> DataFrameAngles -> IO (DataFrameSpace DIM2)
-spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameAngles (DataFrameQxQyQz _ att g img)) =
+spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> SampleAxis -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
+spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQCustom att g img _) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -231,11 +196,7 @@ spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameAn
 getResolution' :: MonadThrow m => (Config 'AnglesProjection) -> m [Double]
 getResolution' c = getResolution (_binocularsConfigAnglesProjectionResolution c) 3
 
-class ChunkP a => FramesAnglesP a where
-  framesAnglesP :: MonadSafe m
-                  => a -> Pipe (FilePath, [Int]) DataFrameAngles m ()
-
-class (FramesAnglesP a, Show a) => ProcessAnglesP a where
+class (FramesQCustomP a, Show a) => ProcessAnglesP a where
   processAnglesP :: (MonadIO m, MonadLogger m, MonadReader (Config 'AnglesProjection) m, MonadThrow m)
                    => m a -> m ()
   processAnglesP mkPaths = do
@@ -282,7 +243,7 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
-      >-> framesAnglesP h5d
+      >-> framesQCustomP h5d
       >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
       >-> accumulateP c
 
@@ -297,34 +258,15 @@ class (FramesAnglesP a, Show a) => ProcessAnglesP a where
                                runSafeT $ runEffect $
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                               >-> framesAnglesP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameAngles (DataFrameQxQyQz _ _ _ img)) -> filterSumImage mImageSumMax img)
+                               >-> framesQCustomP h5d
+                               >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
                                >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
                                >-> tee (accumulateP c)
                                >-> progress pb
                            ) jobs
       saveCube output' r'
 
-instance ProcessAnglesP (DataPath 'AnglesProjection)
-
-instance ChunkP (DataPath 'AnglesProjection) where
-  chunkP (DataPathAngles p) = chunkP p
-
-instance FramesAnglesP (DataPath 'AnglesProjection) where
-  framesAnglesP (DataPathAngles qxqyqz) = framesQxQyQzP qxqyqz
-                                          >->  Pipes.Prelude.map DataFrameAngles
-
-instance FramesQxQyQzP (DataPath 'AnglesProjection) where
-  framesQxQyQzP (DataPathAngles p) = framesQxQyQzP p
-
-h5dpathAngles :: (MonadLogger m, MonadThrow m)
-                => InputType
-                -> Maybe Double
-                -> Maybe Float
-                -> Maybe (Detector Hkl DIM2)
-                -> m (DataPath 'AnglesProjection)
-h5dpathAngles i ma mm mdet = DataPathAngles <$> (h5dpathQxQyQz i ma mm mdet Nothing)
-
+instance ProcessAnglesP (DataSourcePath DataFrameQCustom)
 
 ---------
 -- Cmd --
@@ -338,7 +280,7 @@ process' = do
   let mc = _binocularsConfigAnglesAttenuationCoefficient c
   let mm = _binocularsConfigAnglesAttenuationMax c
   let mdet = _binocularsConfigAnglesDetector c
-  processAnglesP (h5dpathAngles i mc mm mdet)
+  processAnglesP (h5dpathQCustom i mc mm mdet Nothing Nothing)
 
 processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processAngles mf mr = do

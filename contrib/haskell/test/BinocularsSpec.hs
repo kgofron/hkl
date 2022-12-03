@@ -100,8 +100,6 @@ spec = do
 
   describe "quickcheck config json parsing" $ do
     prop "angles projection" $
-      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'AnglesProjection))
-    prop "hkl projection" $
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameHkl))
     prop "qcustom projection" $
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameQCustom))
