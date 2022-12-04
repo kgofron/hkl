@@ -22,96 +22,50 @@
 -}
 
 module Hkl.Binoculars.Projections.QIndex
-    ( DataPath(..)
-    , newQIndex
+    ( newQIndex
     , processQIndex
     , updateQIndex
     ) where
 
-import           Bindings.HDF5.Core                (Location)
-import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses)
-import           Control.Monad.Catch               (MonadThrow)
-import           Control.Monad.IO.Class            (MonadIO (liftIO), liftIO)
-import           Control.Monad.Logger              (MonadLogger, logDebug,
-                                                    logDebugSH, logErrorSH,
-                                                    logInfo)
-import           Control.Monad.Reader              (MonadReader, ask, forM_,
-                                                    forever)
-import           Control.Monad.Trans.Reader        (runReaderT)
-import           Data.Aeson                        (FromJSON, ToJSON,
-                                                    eitherDecode', encode)
-import           Data.Array.Repa                   (Array)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.ByteString.Lazy              (fromStrict, toStrict)
-import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
-                                                    section, serializeIni, (.=),
-                                                    (.=?))
-import           Data.Maybe                        (fromMaybe)
-import           Data.Text                         (pack)
-import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
-import           Data.Text.IO                      (putStr)
-import           Data.Typeable                     (typeOf)
-import           Data.Vector.Storable.Mutable      (unsafeWith)
-import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (withForeignPtr)
-import           Foreign.Marshal.Array             (withArrayLen)
-import           GHC.Conc                          (getNumCapabilities)
-import           GHC.Generics                      (Generic)
-import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
-import           Path                              (Abs, Dir, Path)
-import           Pipes                             (Pipe, await, each,
-                                                    runEffect, (>->))
-import           Pipes.Prelude                     (filter, map, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, runSafeT)
-import           Test.QuickCheck                   (Arbitrary (..))
-import           Text.Printf                       (printf)
+import           Control.Concurrent.Async           (mapConcurrently)
+import           Control.Lens                       (makeLenses)
+import           Control.Monad.Catch                (MonadThrow)
+import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
+import           Control.Monad.Logger               (MonadLogger, logDebug,
+                                                     logDebugSH, logErrorSH,
+                                                     logInfo)
+import           Control.Monad.Reader               (MonadReader, ask)
+import           Control.Monad.Trans.Reader         (runReaderT)
+import           Data.Array.Repa                    (Array)
+import           Data.Array.Repa.Index              (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
+import           Data.Ini.Config.Bidir              (field, ini, section,
+                                                     serializeIni, (.=), (.=?))
+import           Data.Maybe                         (fromMaybe)
+import           Data.Text                          (pack)
+import           Data.Text.IO                       (putStr)
+import           Data.Vector.Storable.Mutable       (unsafeWith)
+import           Foreign.C.Types                    (CDouble (..))
+import           Foreign.ForeignPtr                 (withForeignPtr)
+import           Foreign.Marshal.Array              (withArrayLen)
+import           GHC.Conc                           (getNumCapabilities)
+import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~))
+import           Path                               (Abs, Dir, Path)
+import           Pipes                              (each, runEffect, (>->))
+import           Pipes.Prelude                      (filter, map, tee, toListM)
+import           Pipes.Safe                         (runSafeT)
+import           Text.Printf                        (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
-import           Hkl.Binoculars.Projections.QxQyQz
+import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
-import           Hkl.H5
 import           Hkl.Image
-import           Hkl.Pipes
 import           Hkl.Types
-
-
---------------
--- DataPath --
---------------
-
-data instance DataPath 'QIndexProjection = DataPathQIndex
-  { dataPathQIndexQxQyQz :: DataPath 'QxQyQzProjection
-  , dataPathIndex :: DataSourcePath Index
-  }
-  deriving (Eq, Generic, ToJSON, FromJSON)
-
-instance Show (DataPath 'QIndexProjection) where
-  show = show . typeOf
-
-instance HasFieldValue (DataPath 'QIndexProjection) where
-  fieldvalue = FieldValue
-               { fvParse = eitherDecode' . fromStrict . encodeUtf8
-               , fvEmit = decodeUtf8 . toStrict . encode
-               }
-
-instance Arbitrary (DataPath 'QIndexProjection) where
-  arbitrary = DataPathQIndex <$> arbitrary <*> arbitrary
-
-defaultDataPathIndex :: DataSourcePath Index
-defaultDataPathIndex = DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch")
-
-defaultDataPathQIndex :: DataPath 'QIndexProjection
-defaultDataPathQIndex = DataPathQIndex
-                        { dataPathQIndexQxQyQz = defaultDataPathQxQyQz
-                        , dataPathIndex = defaultDataPathIndex
-                        }
 
 ------------
 -- Config --
@@ -136,7 +90,7 @@ data instance Config 'QIndexProjection = BinocularsConfigQIndex
   , _binocularsConfigQIndexProjectionType         :: ProjectionType
   , _binocularsConfigQIndexProjectionResolution   :: [Double]
   , _binocularsConfigQIndexProjectionLimits       :: Maybe [Limits]
-  , _binocularsConfigQIndexDataPath               :: Maybe (DataPath 'QIndexProjection)
+  , _binocularsConfigQIndexDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
   , _binocularsConfigQIndexImageSumMax            :: Maybe Double
  } deriving (Eq, Show)
 
@@ -162,7 +116,7 @@ instance HasIniConfig 'QIndexProjection where
     , _binocularsConfigQIndexProjectionType = QIndexProjection
     , _binocularsConfigQIndexProjectionResolution = [0.01, 1]
     , _binocularsConfigQIndexProjectionLimits  = Nothing
-    , _binocularsConfigQIndexDataPath = Just defaultDataPathQIndex
+    , _binocularsConfigQIndexDataPath = Just defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigQIndexImageSumMax = Nothing
     }
 
@@ -199,11 +153,9 @@ instance HasIniConfig 'QIndexProjection where
 -- QIndex Projection --
 -------------------------
 
-data DataFrameQIndex = DataFrameQIndex DataFrameQxQyQz Index
-
 {-# INLINE spaceQIndex #-}
-spaceQIndex :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM2 -> DataFrameQIndex -> IO (DataFrameSpace DIM2)
-spaceQIndex det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameQIndex (DataFrameQxQyQz _ att g img) index) =
+spaceQIndex :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
+spaceQIndex det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -229,11 +181,7 @@ spaceQIndex det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameQIndex (
 getResolution' :: MonadThrow m => (Config 'QIndexProjection) -> m [Double]
 getResolution' c = getResolution (_binocularsConfigQIndexProjectionResolution c) 2
 
-class ChunkP a => FramesQIndexP a where
-  framesQIndexP :: MonadSafe m
-                  => a -> Pipe (FilePath, [Int]) DataFrameQIndex m ()
-
-class (FramesQIndexP a, Show a) => ProcessQIndexP a where
+class (FramesQCustomP a, Show a) => ProcessQIndexP a where
   processQIndexP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QIndexProjection) m, MonadThrow m)
                    => m a -> m ()
   processQIndexP mkPaths = do
@@ -279,7 +227,7 @@ class (FramesQIndexP a, Show a) => ProcessQIndexP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
-      >-> framesQIndexP h5d
+      >-> framesQCustomP h5d
       >-> project det 2 (spaceQIndex det pixels res mask' mlimits)
       >-> accumulateP c
 
@@ -294,46 +242,15 @@ class (FramesQIndexP a, Show a) => ProcessQIndexP a where
                                runSafeT $ runEffect $
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                               >-> framesQIndexP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameQIndex (DataFrameQxQyQz _ _ _ img) _) -> filterSumImage mImageSumMax img)
+                               >-> framesQCustomP h5d
+                               >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
                                >-> project det 2 (spaceQIndex det pixels res mask' mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb
                            ) jobs
       saveCube output' r'
 
-instance ProcessQIndexP (DataPath 'QIndexProjection)
-
--- FramesQIndexP
-
-withIndexPathP :: (MonadSafe m, Location l) => l -> DataSourcePath Index -> ((Int -> IO Index) -> m r) -> m r
-withIndexPathP f p g =
-    withDataSourceP f p $ \p' -> g (\j -> extract1DStreamValue p' j)
-
-instance ChunkP (DataPath 'QIndexProjection) where
-  chunkP (DataPathQIndex p _) = chunkP p
-
-instance FramesQIndexP (DataPath 'QIndexProjection) where
-  framesQIndexP (DataPathQIndex qp ip) = skipMalformed $ forever $ do
-    (fp, js) <- await
-    withFileP (openH5 fp) $ \f ->
-      withDataPathQxQyQz f qp $ \getDataFrameQxQyQz ->
-      withIndexPathP f ip $ \getIndex ->
-      forM_ js (\j -> tryYield ( DataFrameQIndex
-                                <$> getDataFrameQxQyQz j
-                                <*> getIndex j
-                              ))
-
-h5dpathQIndex :: (MonadLogger m, MonadThrow m)
-                => InputType
-                -> Maybe Double
-                -> Maybe Float
-                -> Maybe (Detector Hkl DIM2)
-                -> m (DataPath 'QIndexProjection)
-h5dpathQIndex i ma mm mdet = DataPathQIndex
-                             <$> (h5dpathQxQyQz i ma mm mdet Nothing)
-                             <*> pure defaultDataPathIndex
-
+instance ProcessQIndexP (DataSourcePath DataFrameQCustom)
 
 ---------
 -- Cmd --
@@ -347,7 +264,8 @@ process' = do
   let mc = _binocularsConfigQIndexAttenuationCoefficient c
   let mm = _binocularsConfigQIndexAttenuationMax c
   let mdet = _binocularsConfigQIndexDetector c
-  processQIndexP (h5dpathQIndex i mc mm mdet)
+  let mwavelength = _binocularsConfigQIndexWavelength c
+  processQIndexP (h5dpathQCustom i mc mm mdet mwavelength Nothing)
 
 processQIndex :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQIndex mf mr = do

@@ -103,8 +103,6 @@ spec = do
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameHkl))
     prop "qcustom projection" $
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameQCustom))
-    prop "qindex projection" $
-      \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'QIndexProjection))
     prop "qparqper projection" $
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataPath 'QparQperProjection))
     prop "qxqyqz projection" $
