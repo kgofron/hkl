@@ -22,83 +22,49 @@
 -}
 
 module Hkl.Binoculars.Projections.QparQper
-    ( DataPath(..)
-    , newQparQper
+    ( newQparQper
     , processQparQper
     , updateQparQper
     ) where
 
-import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses)
-import           Control.Monad.Catch               (MonadThrow)
-import           Control.Monad.IO.Class            (MonadIO (liftIO), liftIO)
-import           Control.Monad.Logger              (MonadLogger, logDebug,
-                                                    logDebugSH, logErrorSH,
-                                                    logInfo)
-import           Control.Monad.Reader              (MonadReader, ask)
-import           Control.Monad.Trans.Reader        (runReaderT)
-import           Data.Aeson                        (FromJSON, ToJSON,
-                                                    eitherDecode', encode)
-import           Data.Array.Repa                   (Array)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.ByteString.Lazy              (fromStrict, toStrict)
-import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
-                                                    section, serializeIni, (.=),
-                                                    (.=?))
-import           Data.Maybe                        (fromMaybe)
-import           Data.Text                         (pack)
-import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
-import           Data.Text.IO                      (putStr)
-import           Data.Typeable                     (typeOf)
-import           Data.Vector.Storable.Mutable      (unsafeWith)
-import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (withForeignPtr)
-import           Foreign.Marshal.Array             (withArrayLen)
-import           GHC.Conc                          (getNumCapabilities)
-import           GHC.Generics                      (Generic)
-import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
-import           Path                              (Abs, Dir, Path)
-import           Pipes                             (Pipe, each, runEffect,
-                                                    (>->))
-import           Pipes.Prelude                     (filter, map, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, runSafeT)
-import           Test.QuickCheck                   (Arbitrary (..))
-import           Text.Printf                       (printf)
+import           Control.Concurrent.Async           (mapConcurrently)
+import           Control.Lens                       (makeLenses)
+import           Control.Monad.Catch                (MonadThrow)
+import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
+import           Control.Monad.Logger               (MonadLogger, logDebug,
+                                                     logDebugSH, logErrorSH,
+                                                     logInfo)
+import           Control.Monad.Reader               (MonadReader, ask)
+import           Control.Monad.Trans.Reader         (runReaderT)
+import           Data.Array.Repa                    (Array)
+import           Data.Array.Repa.Index              (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
+import           Data.Ini.Config.Bidir              (field, ini, section,
+                                                     serializeIni, (.=), (.=?))
+import           Data.Maybe                         (fromMaybe)
+import           Data.Text                          (pack)
+import           Data.Text.IO                       (putStr)
+import           Data.Vector.Storable.Mutable       (unsafeWith)
+import           Foreign.C.Types                    (CDouble (..))
+import           Foreign.ForeignPtr                 (withForeignPtr)
+import           Foreign.Marshal.Array              (withArrayLen)
+import           GHC.Conc                           (getNumCapabilities)
+import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~))
+import           Path                               (Abs, Dir, Path)
+import           Pipes                              (each, runEffect, (>->))
+import           Pipes.Prelude                      (filter, map, tee, toListM)
+import           Pipes.Safe                         (runSafeT)
+import           Text.Printf                        (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
-import           Hkl.Binoculars.Projections.QxQyQz
+import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Image
-
-
---------------
--- DataPath --
---------------
-
-data instance DataPath 'QparQperProjection = DataPathQparQper
-  { dataPathQparQperQxQyQz :: DataPath 'QxQyQzProjection }
-  deriving (Eq, Generic, ToJSON, FromJSON)
-
-instance Show (DataPath 'QparQperProjection) where
-  show = show . typeOf
-
-instance HasFieldValue (DataPath 'QparQperProjection) where
-  fieldvalue = FieldValue
-               { fvParse = eitherDecode' . fromStrict . encodeUtf8
-               , fvEmit = decodeUtf8 . toStrict . encode
-               }
-
-instance Arbitrary (DataPath 'QparQperProjection) where
-  arbitrary = DataPathQparQper <$> arbitrary
-
-
-defaultDataPathQparQper :: DataPath 'QparQperProjection
-defaultDataPathQparQper = DataPathQparQper defaultDataPathQxQyQz
 
 ------------
 -- Config --
@@ -124,7 +90,7 @@ data instance Config 'QparQperProjection = BinocularsConfigQparQper
   , _binocularsConfigQparQperProjectionType         :: ProjectionType
   , _binocularsConfigQparQperProjectionResolution   :: [Double]
   , _binocularsConfigQparQperProjectionLimits       :: Maybe [Limits]
-  , _binocularsConfigQparQperDataPath               :: Maybe (DataPath 'QparQperProjection)
+  , _binocularsConfigQparQperDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
   , _binocularsConfigQparQperImageSumMax            :: Maybe Double
   } deriving (Eq, Show)
 
@@ -151,7 +117,7 @@ instance HasIniConfig 'QparQperProjection where
     , _binocularsConfigQparQperProjectionType = QparQperProjection
     , _binocularsConfigQparQperProjectionResolution = [0.01, 0.01]
     , _binocularsConfigQparQperProjectionLimits  = Nothing
-    , _binocularsConfigQparQperDataPath = Just defaultDataPathQparQper
+    , _binocularsConfigQparQperDataPath = Just defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigQparQperImageSumMax = Nothing
     }
 
@@ -190,11 +156,9 @@ instance HasIniConfig 'QparQperProjection where
 -- QparQper Projection --
 -------------------------
 
-newtype DataFrameQparQper = DataFrameQparQper DataFrameQxQyQz
-
 {-# INLINE spaceQparQper #-}
-spaceQparQper :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM2 -> DataFrameQparQper -> IO (DataFrameSpace DIM2)
-spaceQparQper det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQparQper (DataFrameQxQyQz _ att g img)) =
+spaceQparQper :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
+spaceQparQper det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQCustom att g img _) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -220,11 +184,7 @@ spaceQparQper det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQ
 getResolution' :: MonadThrow m => (Config 'QparQperProjection) -> m [Double]
 getResolution' c = getResolution (_binocularsConfigQparQperProjectionResolution c) 2
 
-class ChunkP a => FramesQparQperP a where
-  framesQparQperP :: MonadSafe m
-                  => a -> Pipe (FilePath, [Int]) DataFrameQparQper m ()
-
-class (FramesQparQperP a, Show a) => ProcessQparQperP a where
+class (FramesQCustomP a, Show a) => ProcessQparQperP a where
   processQparQperP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QparQperProjection) m, MonadThrow m)
                    => m a -> m ()
   processQparQperP mkPaths = do
@@ -271,7 +231,7 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
       runSafeT $ runEffect $
       each chunks
       >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
-      >-> framesQparQperP h5d
+      >-> framesQCustomP h5d
       >-> project det 2 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
       >-> accumulateP c
 
@@ -286,35 +246,15 @@ class (FramesQparQperP a, Show a) => ProcessQparQperP a where
                                runSafeT $ runEffect $
                                each job
                                >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                               >-> framesQparQperP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameQparQper (DataFrameQxQyQz _ _ _ img)) -> filterSumImage mImageSumMax img)
+                               >-> framesQCustomP h5d
+                               >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
                                >-> project det 2 (spaceQparQper det pixels res mask' surfaceOrientation mlimits)
                                >-> tee (accumulateP c)
                                >-> progress pb
                            ) jobs
       saveCube output' r'
 
-instance ProcessQparQperP (DataPath 'QparQperProjection)
-
-instance ChunkP (DataPath 'QparQperProjection) where
-  chunkP (DataPathQparQper p) = chunkP p
-
-instance FramesQparQperP (DataPath 'QparQperProjection) where
-  framesQparQperP (DataPathQparQper qxqyqz) = framesQxQyQzP qxqyqz
-                                              >->  Pipes.Prelude.map DataFrameQparQper
-
-instance FramesQxQyQzP (DataPath 'QparQperProjection) where
-  framesQxQyQzP (DataPathQparQper p) = framesQxQyQzP p
-
-h5dpathQparQper :: (MonadLogger m, MonadThrow m)
-                => InputType
-                -> Maybe Double
-                -> Maybe Float
-                -> Maybe (Detector Hkl DIM2)
-                -> Maybe Angstrom
-                -> m (DataPath 'QparQperProjection)
-h5dpathQparQper i ma mm mdet mw = DataPathQparQper <$> (h5dpathQxQyQz i ma mm mdet mw)
-
+instance ProcessQparQperP (DataSourcePath DataFrameQCustom)
 
 ---------
 -- Cmd --
@@ -329,7 +269,7 @@ process' = do
   let mm = _binocularsConfigQparQperAttenuationMax c
   let mdet = _binocularsConfigQparQperDetector c
   let mw = _binocularsConfigQparQperWavelength c
-  processQparQperP (h5dpathQparQper i mc mm mdet mw)
+  processQparQperP (h5dpathQCustom i mc mm mdet mw Nothing)
 
 processQparQper :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
 processQparQper mf mr = do
