@@ -7,27 +7,18 @@
 module Hkl.Types ( AbsDirPath
                  , Beamline(..)
                  , beamlineUpper
-                 , Mode(..)
-                 , Engine(..)
                  , Index(..)
                  , SampleName
-                 , Sample(..)
-                 , Source(..)
                  , Trajectory
-                 , WaveLength
                    -- hdf5
                  , H5Path
                  , module X
                  ) where
 
-import           Data.Aeson                        (FromJSON, ToJSON)
-import           Data.Char                         (toUpper)
-import           GHC.Generics                      (Generic)
+import           Data.Char   (toUpper)
 
 import           Hkl.H5
-import           Hkl.Lattice                       as X
-import           Hkl.Types.Parameter               as X
-import           Numeric.Units.Dimensional.Prelude (Length)
+import           Hkl.Lattice as X
 
 -- Common
 
@@ -45,42 +36,10 @@ instance Show Beamline where
 beamlineUpper ∷ Beamline → String
 beamlineUpper b = [toUpper x | x ← show b]
 
---  Engine
-
-data Mode
-  = Mode
-    String --  name
-    [Parameter] --  parameters of the @Mode@
-  deriving (Show)
-
-data Engine
-  = Engine
-    String --  name
-    [Parameter] --  pseudo axes values of the @Engine@
-    Mode --  current Mode
-  deriving (Show)
-
 -- Index
 
 newtype Index = Index { unIndex :: Double }
   deriving Show
-
---  Sample
-
-data Sample
-    = Sample { sampleName    :: SampleName
-             , sampleLattice :: Lattice
-             , sampleUx      :: Parameter
-             , sampleUy      :: Parameter
-             , sampleUz      :: Parameter
-             }
-  deriving (Eq, FromJSON, Generic, Show, ToJSON)
-
---  Source
-
-type WaveLength = Length Double
-
-newtype Source = Source WaveLength deriving (Show)
 
 --  Trajectory
 

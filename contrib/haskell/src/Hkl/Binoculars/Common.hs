@@ -24,18 +24,19 @@ module Hkl.Binoculars.Common
   , withCubeAccumulator
   ) where
 
-import           Control.Exception     (bracket)
-import           Data.Array.Repa       (Shape)
-import           Data.IORef            (IORef, newIORef, readIORef)
-import           Foreign.ForeignPtr    (withForeignPtr)
-import           Foreign.Marshal.Array (withArrayLen)
-import           Path                  (Abs, File, Path, fromAbsFile)
-import           Text.Printf           (printf)
+import           Control.Exception          (bracket)
+import           Data.Array.Repa            (Shape)
+import           Data.IORef                 (IORef, newIORef, readIORef)
+import           Foreign.ForeignPtr         (withForeignPtr)
+import           Foreign.Marshal.Array      (withArrayLen)
+import           Path                       (Abs, File, Path, fromAbsFile)
+import           Text.Printf                (printf)
 
 import           Hkl.Binoculars.Config
+import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.Image
-import           Hkl.Orphan            ()
+import           Hkl.Orphan                 ()
 
 data Chunk n a = Chunk !a !n !n
 deriving instance (Show n, Show a) => Show (Chunk n a)

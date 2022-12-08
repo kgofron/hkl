@@ -46,6 +46,7 @@ import           Data.Text                         (Text)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, unsafeNew)
 import           Data.Word                         (Word16, Word32)
+import           Foreign.C.Types                   (CDouble (..))
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
@@ -57,8 +58,8 @@ import           Test.QuickCheck                   (Arbitrary (..), oneof)
 import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Config
-import           Hkl.C.Geometry
 import           Hkl.Detector
+import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.Image
 import           Hkl.Pipes
@@ -71,11 +72,17 @@ import           Hkl.Types
 class Is0DStreamable a e where
   extract0DStreamValue :: a -> IO e
 
+instance Is0DStreamable Dataset CDouble where
+  extract0DStreamValue d = get_position d 0
+
 instance Is0DStreamable Dataset Double where
   extract0DStreamValue d = get_position d 0
 
 instance Is0DStreamable Degree Double where
-  extract0DStreamValue (Degree d) = pure $ d /~ degree
+  extract0DStreamValue (Degree d) = pure (d /~ degree)
+
+instance Is0DStreamable Degree CDouble where
+  extract0DStreamValue (Degree d) = pure $ CDouble (d /~ degree)
 
 instance Is0DStreamable (DataSourceAcq Degree) Degree where
     extract0DStreamValue (DataSourceAcq'Degree d) =
@@ -85,6 +92,10 @@ instance Is0DStreamable (DataSourceAcq Degree) Degree where
     extract0DStreamValue (DataSourceAcq'Degree'Const d) = pure d
 
 instance Is0DStreamable (DataSourceAcq Degree) Double where
+  extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
+
+instance Is0DStreamable (DataSourceAcq Degree) CDouble where
   extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
@@ -132,9 +143,12 @@ instance Is1DStreamable (DataSourceAcq Attenuation) Attenuation where
     extract1DStreamValue DataSourceAcq'NoAttenuation _ = returnIO $ Attenuation 1
 
 
-instance Is1DStreamable (DataSourceAcq Degree) Double where
+instance Is1DStreamable (DataSourceAcq Degree) CDouble where
   extract1DStreamValue (DataSourceAcq'Degree d)       = extract1DStreamValue d
   extract1DStreamValue (DataSourceAcq'Degree'Const d) = const $ extract0DStreamValue d
+
+instance Is1DStreamable Dataset CDouble where
+  extract1DStreamValue = get_position
 
 instance Is1DStreamable Dataset Double where
   extract1DStreamValue = get_position
@@ -218,7 +232,7 @@ instance Is1DStreamable Dataset WaveLength where
 instance Is1DStreamable Dataset Source where
   extract1DStreamValue d i = Source <$> extract1DStreamValue d i
 
-instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector Double) where
+instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector CDouble) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 ----------------

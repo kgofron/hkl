@@ -41,6 +41,7 @@ library
   build-depends: hmatrix >= 0.17
   build-depends: hmatrix-gsl >= 0.17
   build-depends: QuickCheck
+  build-depends: quickcheck-text
   build-depends: lens
   build-depends: monad-logger
   build-depends: monad-loops >= 0.4.2
@@ -72,25 +73,21 @@ library
   exposed-modules: Hkl.Binoculars.Sixs
   exposed-modules: Hkl.C
   exposed-modules: Hkl.C.Binoculars
-  exposed-modules: Hkl.C.DArray
-  exposed-modules: Hkl.C.Detector
-  exposed-modules: Hkl.C.Engine
-  exposed-modules: Hkl.C.EngineList
-  exposed-modules: Hkl.C.Geometry
-  exposed-modules: Hkl.C.GeometryList
-  exposed-modules: Hkl.C.Lattice
-  exposed-modules: Hkl.C.Sample
+  exposed-modules: Hkl.C.Hkl
+  exposed-modules: Hkl.DArray
   exposed-modules: Hkl.DataSource
   exposed-modules: Hkl.Detector
   exposed-modules: Hkl.Engine
+  exposed-modules: Hkl.Geometry
   exposed-modules: Hkl.H5
   exposed-modules: Hkl.Image
   exposed-modules: Hkl.Lattice
   exposed-modules: Hkl.MyMatrix
   exposed-modules: Hkl.Orphan
+  exposed-modules: Hkl.Parameter
   exposed-modules: Hkl.Pipes
+  exposed-modules: Hkl.Sample
   exposed-modules: Hkl.Types
-  exposed-modules: Hkl.Types.Parameter
   exposed-modules: Hkl.Utils
 
   extra-libraries: hkl-binoculars
@@ -148,6 +145,7 @@ test-suite hkl-test
   build-depends: hkl
   build-depends: hspec
   build-depends: path
+  build-depends: temporary
   build-depends: text
 
   default-language: Haskell2010

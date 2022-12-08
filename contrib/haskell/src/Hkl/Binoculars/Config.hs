@@ -51,6 +51,7 @@ module Hkl.Binoculars.Config
     , getPreConfig
     , getResolution
     , limitsP
+    , newLimits
     , projectionTypeP
     , readConfig
     ) where
@@ -83,6 +84,10 @@ import           Data.Text                         (Text, breakOn, drop, empty,
                                                     unlines, unpack, unwords)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Typeable)
+import           Foreign.ForeignPtr                (ForeignPtr, newForeignPtr)
+import           Foreign.Marshal.Alloc             (alloca)
+import           Foreign.Ptr                       (nullPtr)
+import           Foreign.Storable                  (poke)
 import           GHC.Exts                          (IsList)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Length, degree, meter, (*~),
@@ -99,6 +104,7 @@ import           Prelude                           hiding (drop, length, lines,
                                                     putStr, readFile, take,
                                                     takeWhile, unlines, unwords)
 
+import           Hkl.C
 import           Hkl.Detector
 import           Hkl.Lattice
 import           Paths_hkl
@@ -173,8 +179,30 @@ data ProjectionType = AnglesProjection
 
   deriving (Eq, Show)
 
+------------
+-- Limits --
+------------
+
 data Limits = Limits (Maybe Double) (Maybe Double)
   deriving (Eq, Show)
+
+newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
+newLimits (Limits mmin mmax) res =
+    alloca $ \imin' ->
+        alloca $ \imax' -> do
+          imin'' <- case mmin of
+                    Nothing -> pure nullPtr
+                    (Just d) -> do
+                              poke imin' (round (d / res))
+                              pure imin'
+          imax'' <- case mmax of
+                    Nothing -> pure nullPtr
+                    (Just d) -> do
+                              poke imax' (round (d / res))
+                              pure imax'
+          newForeignPtr p'hkl_binoculars_axis_limits_free
+                        =<< c'hkl_binoculars_axis_limits_new imin'' imax''
+
 
 class FieldParsable a where
   fieldParser :: Parser a
@@ -612,7 +640,7 @@ destination' (ConfigRange rs) ml = replace' from to limits
     hull [] = (0, 0)
     hull _  = (minimum froms, maximum tos)
 
-getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector a DIM2 -> m (Maybe Mask)
+getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> m (Maybe Mask)
 getMask ml d = case ml of
                 Nothing          -> return Nothing
                 (Just "default") -> Just <$> getDetectorDefaultMask d

@@ -183,7 +183,7 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*         return "x", "y" */
 
 
-/* subprojection for QCustom
+/* subprojection for QCustom */
 
 /* - delta_gamma_[omega|mu]_uhv for the uhv gemetry */
 

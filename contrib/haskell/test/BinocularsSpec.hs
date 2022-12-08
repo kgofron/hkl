@@ -11,9 +11,11 @@ module BinocularsSpec
 import           Data.Aeson                         (Result (..), fromJSON,
                                                      toJSON)
 import           Data.Attoparsec.Text               (parseOnly)
+import           Data.Ini.Config.Bidir              (ini, serializeIni)
+import           Data.Text.IO                       (hPutStr)
 import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
 import           Path                               (mkAbsDir)
-
+import           System.IO.Temp                     (withTempFile)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck              (prop)
 
@@ -103,3 +105,10 @@ spec = do
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameHkl))
     prop "DataFrameQCustom" $
       \x -> (fromJSON . toJSON) x `shouldBe` (Success x :: Result (DataSourcePath DataFrameQCustom))
+
+  describe "quickcheck config parsing" $ do
+    prop "qxqyqz" $
+      \x -> withTempFile "." "conf.cfg" $ \p f -> do
+        hPutStr f (serializeIni (ini x specConfig))
+        ec <- getConfig (Just p)
+        ec `shouldBe` (Right x :: Either String (Config 'QxQyQzProjection))

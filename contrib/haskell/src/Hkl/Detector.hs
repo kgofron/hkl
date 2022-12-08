@@ -18,8 +18,10 @@ module Hkl.Detector
        , getDetectorMask
        , getDetectorDefaultMask
        , getPixelsCoordinates
+       , newDetector
        , parseDetector2D
        , shape
+       , withDetector
        ) where
 
 
@@ -36,12 +38,11 @@ import           Data.Array.Repa.Index             (DIM0, DIM2, DIM3, Z (..),
 import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr)
 import           Data.List                         (find, sort)
 import           Data.Text                         (Text, pack, unpack, unwords)
-import           Foreign.C.String                  (CString, peekCString,
-                                                    withCString)
-import           Foreign.C.Types                   (CBool, CDouble (..),
-                                                    CInt (..))
-import           Foreign.ForeignPtr                (castForeignPtr,
-                                                    newForeignPtr)
+import           Foreign.C.String                  (peekCString, withCString)
+import           Foreign.C.Types                   (CBool, CDouble (..))
+import           Foreign.ForeignPtr                (ForeignPtr, castForeignPtr,
+                                                    newForeignPtr,
+                                                    withForeignPtr)
 import           Foreign.Marshal.Alloc             (alloca, finalizerFree)
 import           Foreign.Ptr                       (Ptr, nullPtr)
 import           Foreign.Storable                  (peek)
@@ -50,6 +51,9 @@ import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
                                                     radian, (/~))
 import           Test.QuickCheck                   (Arbitrary (..), oneof)
 
+
+import           Hkl.C.Binoculars
+import           Hkl.C.Hkl
 
 data HklDetectorException = MaskShapeNotcompatible Text
                           | NoDefaultMask
@@ -65,7 +69,7 @@ data Detector a sh where
   Xpad32 :: Detector PyFAI DIM2
   XpadFlatCorrected :: Detector PyFAI DIM2
   ZeroD :: Detector ZeroD DIM0
-  Detector2D :: CInt -> String -> DIM2 -> Detector Hkl DIM2
+  Detector2D :: C'HklBinocularsDetectorEnum -> String -> DIM2 -> Detector Hkl DIM2
 
 deriving instance Show (Detector a sh)
 deriving instance Eq (Detector a sh)
@@ -91,18 +95,29 @@ instance Arbitrary (Detector Hkl DIM2) where
 
 type Mask = Array F DIM2 CBool
 
+-- Detector
+
+withDetector :: Detector a sh -> (Ptr C'HklDetector -> IO b) -> IO b
+withDetector d func = do
+  fptr <- newDetector d
+  withForeignPtr fptr func
+
+newDetector :: Detector a sh -> IO (ForeignPtr C'HklDetector)
+newDetector ZeroD = c'hkl_detector_factory_new 0 >>= newForeignPtr p'hkl_detector_free
+newDetector _ = error "Can not use 2D detector with the hkl library"
+
 {-# NOINLINE detectors #-}
 detectors :: [Detector Hkl DIM2]
 detectors = unsafePerformIO $ do
-  nd <- hkl_binoculars_detector_2d_number_of_detectors
-  mapM mkDetector [0..nd-1]
+  nd <- c'hkl_binoculars_detector_2d_number_of_detectors
+  mapM mkDetector [0..toEnum . fromEnum $ nd - 1]
        where
-         mkDetector :: CInt -> IO (Detector Hkl DIM2)
+         mkDetector :: C'HklBinocularsDetectorEnum -> IO (Detector Hkl DIM2)
          mkDetector n = Detector2D n
-                        <$> (peekCString =<< hkl_binoculars_detector_2d_name_get n)
+                        <$> (peekCString =<< c'hkl_binoculars_detector_2d_name_get n)
                         <*> alloca (\width ->
                                  alloca $ \height -> do
-                                   hkl_binoculars_detector_2d_shape_get n width height
+                                   c'hkl_binoculars_detector_2d_shape_get n width height
                                    w <- peek width
                                    h <- peek height
                                    return $ ix2 (fromEnum h) (fromEnum w))
@@ -110,21 +125,6 @@ detectors = unsafePerformIO $ do
 -- TODO s140 should be the default
 defaultDetector :: Detector Hkl DIM2
 defaultDetector = head detectors
-
-foreign import ccall unsafe
-  "hkl-binoculars.h hkl_binoculars_detector_2d_number_of_detectors"
-  hkl_binoculars_detector_2d_number_of_detectors :: IO CInt
-
-foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_name_get"
- hkl_binoculars_detector_2d_name_get :: CInt -> IO CString
-
-foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_shape_get"
- hkl_binoculars_detector_2d_shape_get :: CInt -- HklBinocularsDetector2DEnum n
-                                      -> Ptr CInt -- int *width
-                                      -> Ptr CInt -- int *height
-                                      -> IO ()
 
 parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
 parseDetector2D t = case find (\(Detector2D _ n _) -> n == unpack t) detectors of
@@ -152,28 +152,11 @@ shape (Detector2D _ _ s) = s
 
 getPixelsCoordinates :: Detector Hkl DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
 getPixelsCoordinates (Detector2D n _ sh) (ix0, iy0) sdd detrot = do
-  parr <- hkl_binoculars_detector_2d_coordinates_get n
+  parr <- c'hkl_binoculars_detector_2d_coordinates_get n
   let Z :. height :. width = sh
-  hkl_binoculars_detector_2d_sixs_calibration n parr (toEnum width) (toEnum height) (toEnum ix0) (toEnum iy0) (CDouble (sdd /~ meter)) (CDouble (detrot /~ radian))
+  c'hkl_binoculars_detector_2d_sixs_calibration n parr (toEnum width) (toEnum height) (toEnum ix0) (toEnum iy0) (CDouble (sdd /~ meter)) (CDouble (detrot /~ radian))
   arr <- newForeignPtr finalizerFree parr
   return $ fromForeignPtr (ix3 3 height width) (castForeignPtr arr)
-
-foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_coordinates_get"
- hkl_binoculars_detector_2d_coordinates_get :: CInt -- HklBinocularsDetector2DEnum n
-                                            -> IO (Ptr CDouble)
-
-foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_sixs_calibration"
- hkl_binoculars_detector_2d_sixs_calibration :: CInt -- HklBinocularsDetector2DEnum n
-                                             -> Ptr CDouble -- double *arr
-                                             -> CInt -- int width
-                                             -> CInt -- int height
-                                             -> CInt -- int ix0
-                                             -> CInt  -- int iy0
-                                             -> CDouble -- double sdd
-                                             -> CDouble -- double detrot
-                                             -> IO ()
 
 fromPtr :: (MonadThrow m, MonadIO m, Shape sh) => sh -> HklDetectorException -> Ptr a -> m (Array F sh a)
 fromPtr sh err ptr =
@@ -183,23 +166,12 @@ fromPtr sh err ptr =
       arr <- liftIO $ newForeignPtr finalizerFree ptr
       return $ fromForeignPtr sh (castForeignPtr arr)
 
-getDetectorDefaultMask :: (MonadThrow m, MonadIO m) => Detector a DIM2 -> m Mask
+getDetectorDefaultMask :: (MonadThrow m, MonadIO m) => Detector Hkl DIM2 -> m Mask
 getDetectorDefaultMask (Detector2D n _ sh) =
-    fromPtr sh NoDefaultMask =<< liftIO (hkl_binoculars_detector_2d_mask_get n)
+    fromPtr sh NoDefaultMask =<< liftIO (c'hkl_binoculars_detector_2d_mask_get n)
 
-foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_mask_get"
- hkl_binoculars_detector_2d_mask_get :: CInt -- HklBinocularsDetector2DEnum n
-                                     -> IO (Ptr CBool)
-
-getDetectorMask :: (MonadThrow m, MonadIO m) => Detector a DIM2 -> Text -> m Mask
+getDetectorMask :: (MonadThrow m, MonadIO m) => Detector Hkl DIM2 -> Text -> m Mask
 getDetectorMask (Detector2D n name sh)  mask = do
   let  err = MaskShapeNotcompatible (Data.Text.unwords [pack name, ": ", mask])
   liftIO $ withCString (unpack mask) $
-         fromPtr sh err <=< hkl_binoculars_detector_2d_mask_load n
-
-foreign import ccall unsafe
- "hkl-binoculars.h hkl_binoculars_detector_2d_mask_load"
- hkl_binoculars_detector_2d_mask_load :: CInt -- HklBinocularsDetector2DEnum n
-                                      -> CString
-                                      -> IO (Ptr CBool)
+         fromPtr sh err <=< c'hkl_binoculars_detector_2d_mask_load n

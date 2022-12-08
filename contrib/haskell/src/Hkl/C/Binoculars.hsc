@@ -23,56 +23,21 @@
     Portability: GHC only (not tested)
 -}
 
-module Hkl.C.Binoculars
-       ( C'HklBinocularsAxisLimits
-       , Cube(..)
-       , Space(..)
-       , c'hkl_binoculars_axis_limits_free
-       , c'hkl_binoculars_axis_limits_new
-       , c'hkl_binoculars_cube_add_space
-       , c'hkl_binoculars_cube_new
-       , c'hkl_binoculars_cube_new_empty
-       , c'hkl_binoculars_cube_new_empty_from_cube
-       , c'hkl_binoculars_cube_save_hdf5
-       , c'hkl_binoculars_space_angles_int32_t
-       , c'hkl_binoculars_space_angles_uint16_t
-       , c'hkl_binoculars_space_angles_uint32_t
-       , c'hkl_binoculars_space_hkl_int32_t
-       , c'hkl_binoculars_space_hkl_uint16_t
-       , c'hkl_binoculars_space_hkl_uint32_t
-       , c'hkl_binoculars_space_qcustom_int32_t
-       , c'hkl_binoculars_space_qcustom_uint16_t
-       , c'hkl_binoculars_space_qcustom_uint32_t
-       , c'hkl_binoculars_space_qindex_int32_t
-       , c'hkl_binoculars_space_qindex_uint16_t
-       , c'hkl_binoculars_space_qindex_uint32_t
-       , c'hkl_binoculars_space_qparqper_int32_t
-       , c'hkl_binoculars_space_qparqper_uint16_t
-       , c'hkl_binoculars_space_qparqper_uint32_t
-       , c'hkl_binoculars_space_qxqyqz_int32_t
-       , c'hkl_binoculars_space_qxqyqz_uint16_t
-       , c'hkl_binoculars_space_qxqyqz_uint32_t
-       , newCube
-       , newLimits
-       , newSpace
-       , withForeignPtrs
-       ) where
+module Hkl.C.Binoculars where
 
-import           Data.Array.Repa       (Shape, size)
+import           Data.Array.Repa       (Shape)
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
-import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CPtrdiff)
+import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.C.String      (CString)
-import           Foreign.Marshal.Alloc (alloca)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, withForeignPtr)
-import           Foreign.Ptr           (FunPtr, Ptr, nullPtr)
-import           Foreign.Storable      (Storable (..))
+import           Foreign.Ptr           (FunPtr, Ptr)
 import           System.IO.Unsafe      (unsafePerformIO)
 
-import           Hkl.Binoculars.Config
-import           Hkl.Detector
-import           Hkl.C.Geometry
-import           Hkl.C.Sample
+-- import           Hkl.Binoculars.Config
+-- import           Hkl.Detector
+import           Hkl.C.Hkl
+-- import           Hkl.C.Sample
 import           Hkl.Orphan ()
 
 withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
@@ -82,26 +47,11 @@ withForeignPtrs (fp:fps) f =
   withForeignPtrs fps $ \ps -> f (p:ps)
 
 
--- AxisLimits
+----------------
+-- AxisLimits --
+----------------
 
 #opaque_t HklBinocularsAxisLimits
-
-newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
-newLimits (Limits mmin mmax) res =
-    alloca $ \imin' ->
-        alloca $ \imax' -> do
-          imin'' <- case mmin of
-                    Nothing -> pure nullPtr
-                    (Just d) -> do
-                              poke imin' (round (d / res))
-                              pure imin'
-          imax'' <- case mmax of
-                    Nothing -> pure nullPtr
-                    (Just d) -> do
-                              poke imax' (round (d / res))
-                              pure imax'
-          newForeignPtr p'hkl_binoculars_axis_limits_free
-                        =<< c'hkl_binoculars_axis_limits_new imin'' imax''
 
 #ccall hkl_binoculars_axis_limits_free, \
   Ptr <HklBinocularsAxisLimits> -> IO ()
@@ -109,7 +59,9 @@ newLimits (Limits mmin mmax) res =
 #ccall hkl_binoculars_axis_limits_new, \
   Ptr CPtrdiff -> Ptr CPtrdiff -> IO (Ptr <HklBinocularsAxisLimits>)
 
---  Cube
+----------
+-- Cube --
+----------
 
 #opaque_t HklBinocularsCube
 
@@ -136,38 +88,42 @@ instance Shape sh => Monoid (Cube sh) where
   {-# INLINE mempty #-}
   mempty = EmptyCube
 
+#ccall hkl_binoculars_cube_add_space, Ptr <HklBinocularsCube> -> Ptr <HklBinocularsSpace> -> IO ()
 #ccall hkl_binoculars_cube_free, Ptr <HklBinocularsCube> -> IO ()
+#ccall hkl_binoculars_cube_new, CSize -> Ptr (Ptr <HklBinocularsSpace>) -> IO (Ptr <HklBinocularsCube>)
+#ccall hkl_binoculars_cube_new_empty, IO (Ptr <HklBinocularsCube>)
+#ccall hkl_binoculars_cube_new_empty_from_cube, Ptr <HklBinocularsCube> -> IO (Ptr <HklBinocularsCube>)
+#ccall hkl_binoculars_cube_save_hdf5, CString -> Ptr <HklBinocularsCube> -> IO ()
 
-#ccall hkl_binoculars_cube_add_space, \
-  Ptr <HklBinocularsCube> -> Ptr <HklBinocularsSpace> -> IO ()
+--------------
+-- Detector --
+--------------
 
-#ccall hkl_binoculars_cube_new, \
-  CSize -> Ptr (Ptr <HklBinocularsSpace>) -> IO (Ptr <HklBinocularsCube>)
+#integral_t HklBinocularsDetectorEnum
 
-#ccall hkl_binoculars_cube_new_empty, \
-  IO (Ptr <HklBinocularsCube>)
+#num HKL_BINOCULARS_DETECTOR_IMXPAD_S140
+#num HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED
+#num HKL_BINOCULARS_DETECTOR_IMXPAD_S70
+#num HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M
+#num HKL_BINOCULARS_DETECTOR_UFXC
+#num HKL_BINOCULARS_DETECTOR_MERLIN
+#num HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
 
-#ccall hkl_binoculars_cube_new_empty_from_cube, \
-  Ptr <HklBinocularsCube> -> IO (Ptr <HklBinocularsCube>)
+#ccall hkl_binoculars_detector_2d_coordinates_get, <HklBinocularsDetectorEnum> -> IO (Ptr CDouble)
+#ccall hkl_binoculars_detector_2d_mask_get, <HklBinocularsDetectorEnum> -> IO (Ptr CBool)
+#ccall hkl_binoculars_detector_2d_mask_load, <HklBinocularsDetectorEnum> -> CString -> IO (Ptr CBool)
+#ccall hkl_binoculars_detector_2d_name_get, <HklBinocularsDetectorEnum> -> IO CString
+#ccall hkl_binoculars_detector_2d_number_of_detectors, IO CInt
+#ccall hkl_binoculars_detector_2d_shape_get, <HklBinocularsDetectorEnum> -> Ptr CInt -> Ptr CInt -> IO ()
+#ccall hkl_binoculars_detector_2d_sixs_calibration, <HklBinocularsDetectorEnum> -> Ptr CDouble -> CInt -> CInt -> CInt -> CInt -> CDouble -> CDouble -> IO ()
 
-#ccall hkl_binoculars_cube_save_hdf5, \
-  CString -> Ptr <HklBinocularsCube> -> IO ()
 
---  Space
+
+-----------
+-- Space --
+-----------
 
 #opaque_t HklBinocularsSpace
-
-newtype Space sh = Space (ForeignPtr C'HklBinocularsSpace)
-  deriving Show
-
-newSpace' :: Ptr C'HklBinocularsSpace -> IO (Space sh)
-newSpace' p = Space <$> (newForeignPtr p'hkl_binoculars_space_free p)
-
-newSpace :: (Shape sh1, Shape sh) => Detector a sh1 -> Int -> IO (Space sh)
-newSpace d n = do
-  let nPixels = toEnum . size . shape $ d
-  let nDims = toEnum n
-  newSpace' =<< c'hkl_binoculars_space_new nPixels nDims
 
 #ccall hkl_binoculars_space_new, \
   CSize -> CSize -> IO (Ptr <HklBinocularsSpace>)
@@ -176,7 +132,7 @@ newSpace d n = do
   Ptr <HklBinocularsSpace> -> IO ()
 
 type C'ProjectionTypeAngles t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
- -> Ptr Geometry -- const HklGeometry *geometry
+ -> Ptr C'HklGeometry -- const HklGeometry *geometry
  -> Ptr t --  const uint16_t *image
  -> CSize -- size_t n_pixels
  -> CDouble -- double weight
@@ -202,7 +158,7 @@ c'hkl_binoculars_space_angles_uint32_t :: C'ProjectionTypeAngles Word32
 
 
 type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
- -> Ptr Geometry -- const HklGeometry *geometry
+ -> Ptr C'HklGeometry -- const HklGeometry *geometry
  -> Ptr t --  const uint16_t *image
  -> CSize -- size_t n_pixels
  -> CDouble -- double weight
@@ -230,7 +186,7 @@ c'hkl_binoculars_space_qcustom_uint32_t :: C'ProjectionTypeQCustom Word32
 
 
 type C'ProjectionTypeQIndex t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
- -> Ptr Geometry -- const HklGeometry *geometry
+ -> Ptr C'HklGeometry -- const HklGeometry *geometry
  -> Ptr t --  const uint16_t *image
  -> CSize -- size_t n_pixels
  -> CDouble -- double weight
@@ -256,7 +212,7 @@ c'hkl_binoculars_space_qindex_uint32_t :: C'ProjectionTypeQIndex Word32
 
 
 type C'ProjectionTypeQ t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
- -> Ptr Geometry -- const HklGeometry *geometry
+ -> Ptr C'HklGeometry -- const HklGeometry *geometry
  -> Ptr t --  const uint16_t *image
  -> CSize -- size_t n_pixels
  -> CDouble -- double weight
@@ -291,8 +247,8 @@ c'hkl_binoculars_space_qxqyqz_uint32_t :: C'ProjectionTypeQ Word32
 
 
 type C'ProjectionTypeHkl t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
-  -> Ptr Geometry -- const HklGeometry *geometry
-  -> Ptr HklSample -- const HklSample *sample
+  -> Ptr C'HklGeometry -- const HklGeometry *geometry
+  -> Ptr C'HklSample -- const HklSample *sample
   -> Ptr t --  const <t> *image
   -> CSize -- size_t n_pixels
   -> CDouble -- double weight

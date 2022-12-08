@@ -81,9 +81,9 @@ import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
-import           Hkl.C.Geometry
 import           Hkl.DataSource
 import           Hkl.Detector
+import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.Image
 import           Hkl.Orphan                        ()
@@ -280,11 +280,52 @@ mkAttenuation ma att =
                                (DataSourcePath'Attenuation p o _ m) -> DataSourcePath'Attenuation p o coef m
                                (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
 
-mkWaveLength :: (MonadLogger m, MonadThrow m) => Maybe Angstrom -> DataSourcePath WaveLength -> m (DataSourcePath WaveLength)
-mkWaveLength ma wp =
-    case ma of
-      Nothing  -> return wp
-      (Just a) -> return $ DataSourcePath'WaveLength'Const a
+mkDetector'Sixs'Fly :: (MonadLogger m, MonadThrow m) => Detector Hkl DIM2 -> m (DataSourcePath Image)
+mkDetector'Sixs'Fly det@(Detector2D n _ _)
+  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140 =
+      pure (DataSourcePath'Image
+            (H5Or
+             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
+             (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
+            det)
+  | n == c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED = undefined
+  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70 =
+      pure (DataSourcePath'Image
+            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")
+            det)
+  | n == c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M =
+      pure (DataSourcePath'Image
+            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiger_image")
+            det)
+  | n == c'HKL_BINOCULARS_DETECTOR_UFXC =
+      pure (DataSourcePath'Image
+            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "ufxc_sixs_image")
+            det)
+  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = undefined
+  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = undefined
+  | otherwise = undefined
+
+mkDetector'Sixs'Sbs :: (MonadLogger m, MonadThrow m) => Detector Hkl DIM2 -> m (DataSourcePath Image)
+mkDetector'Sixs'Sbs det@(Detector2D n _ _)
+  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140 =
+      pure (DataSourcePath'Image
+            (H5Or
+             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s140/image"))
+             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")))
+            det)
+  | n == c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED = undefined
+  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70 =
+      pure (DataSourcePath'Image
+            (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s70/image"))
+            det)
+  | n == c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M =
+      pure (DataSourcePath'Image
+             (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
+             det)
+  | n == c'HKL_BINOCULARS_DETECTOR_UFXC = undefined
+  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = undefined
+  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = undefined
+  | otherwise = undefined
 
 mkTimeStamp :: (MonadLogger m, MonadThrow m) => Maybe QCustomSubProjection -> DataSourcePath Index -> m (DataSourcePath Index)
 mkTimeStamp msub idx =
@@ -298,6 +339,13 @@ mkTimeStamp msub idx =
                    QCustomSubProjection'QPhiQy -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QPhiQz -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QStereo -> DataSourcePath'Index'NoIndex
+
+mkWaveLength :: (MonadLogger m, MonadThrow m) => Maybe Angstrom -> DataSourcePath WaveLength -> m (DataSourcePath WaveLength)
+mkWaveLength ma wp =
+    case ma of
+      Nothing  -> return wp
+      (Just a) -> return $ DataSourcePath'WaveLength'Const a
+
 
 h5dpathQCustom ::  (MonadLogger m, MonadThrow m)
               => InputType
@@ -386,11 +434,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                     ])
-                       <*> pure (DataSourcePath'Image
-                                 (H5Or
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
-                                 det)
+                       <*> mkDetector'Sixs'Fly det
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyMedV -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
@@ -406,11 +450,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                            <*> pure (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"))
                            <*> pure (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"))
                            )
-                       <*> pure (DataSourcePath'Image
-                                 (H5Or
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")
-                                  (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image"))
-                                 det)
+                       <*> mkDetector'Sixs'Fly det
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyMedVEiger -> DataSourcePath'DataFrameQCustom
                             <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
@@ -429,9 +469,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                 <*> pure (DataSourcePath'Degree(((hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
                                                                  `H5Or`
                                                                  (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre")))))
-                            <*> pure (DataSourcePath'Image
-                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiger_image")
-                                      det)
+                            <*> mkDetector'Sixs'Fly det
                             <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyMedVS70 -> DataSourcePath'DataFrameQCustom
                           <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
@@ -444,9 +482,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                               <*> pure (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta"))
                               <*> pure (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa"))
                               )
-                          <*> pure (DataSourcePath'Image
-                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")
-                                    det)
+                          <*> mkDetector'Sixs'Fly det
                           <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyScanUhv -> DataSourcePath'DataFrameQCustom
                           <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
@@ -457,9 +493,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                        , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_DELTA")
                                        , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "UHV_GAMMA")
                                        ])
-                          <*> pure (DataSourcePath'Image
-                                    (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                    det)
+                          <*> mkDetector'Sixs'Fly det
                           <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyScanUhv2 -> DataSourcePath'DataFrameQCustom
                            <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
@@ -472,13 +506,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                         ])
-                           <*> pure (DataSourcePath'Image
-                                     (H5Or
-                                      (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                      (H5Or
-                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image")
-                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s70_image")))
-                                     det)
+                           <*> mkDetector'Sixs'Fly det
                            <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
                               <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
@@ -489,11 +517,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                             , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                             , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                             ])
-                              <*> pure (DataSourcePath'Image
-                                        (H5Or
-                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_image")
-                                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "xpad_s140_image"))
-                                        det)
+                              <*> mkDetector'Sixs'Fly det
                               <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyScanUhvUfxc -> DataSourcePath'DataFrameQCustom
                               <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
@@ -504,17 +528,13 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                            , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                            , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "gamma")
                                            ])
-                              <*> pure (DataSourcePath'Image
-                                        (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "ufxc_sixs_image")
-                                        det)
+                              <*> mkDetector'Sixs'Fly det
                               <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsSbsFixedDetector -> DataSourcePath'DataFrameQCustom
                                 <$> mkAttenuation ma dataSourcePath'Attenuation'SixsSBS
                                 <*> (DataSourcePath'Geometry'Fix
                                     <$> mkWaveLength mw (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda")))
-                                <*> pure (DataSourcePath'Image
-                                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "data_11")
-                                          det)
+                                <*> mkDetector'Sixs'Fly det
                                 <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
          SixsSbsMedH -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma dataSourcePath'Attenuation'SixsSBS
@@ -525,9 +545,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                     , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/gamma"))
                                     , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/delta"))
                                     ])
-                       <*> pure (DataSourcePath'Image
-                                 (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
-                                 det)
+                       <*> mkDetector'Sixs'Sbs det
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
          SixsSbsMedV -> DataSourcePath'DataFrameQCustom
                        <$> mkAttenuation ma dataSourcePath'Attenuation'SixsSBS
@@ -540,9 +558,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                            <*> pure (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
                            <*> pure (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")))
                            )
-                       <*> pure (DataSourcePath'Image
-                                 (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image"))
-                                 det)
+                       <*> mkDetector'Sixs'Sbs det
                        <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
          SixsSbsMedVFixDetector -> DataSourcePath'DataFrameQCustom
                                   <$> mkAttenuation ma dataSourcePath'Attenuation'SixsSBS
@@ -555,9 +571,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                       <*> pure (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
                                       <*> pure (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")))
                                       )
-                                  <*> pure (DataSourcePath'Image
-                                            (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
-                                            det)
+                                  <*> mkDetector'Sixs'Sbs det
                                   <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
          SixsSbsUhv -> DataSourcePath'DataFrameQCustom
                       <$> mkAttenuation ma dataSourcePath'Attenuation'SixsSBS
@@ -568,11 +582,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                      , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")))
                                      , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma")))
                                      ])
-                      <*> pure (DataSourcePath'Image
-                                (H5Or
-                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s140/image"))
-                                  (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s70/image")))
-                                det)
+                      <*> mkDetector'Sixs'Sbs det
                       <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
 
 getResolution' :: MonadThrow m => Config 'QCustomProjection -> m [Double]

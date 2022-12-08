@@ -29,24 +29,26 @@ module Hkl.Binoculars.Pipes
   , withSpace
   ) where
 
-import           Control.Monad          (forever)
-import           Control.Monad.Catch    (tryJust)
-import           Control.Monad.IO.Class (MonadIO (liftIO))
-import           Data.Array.Repa        (Shape)
-import           Data.Array.Repa.Index  (DIM2)
-import           Data.IORef             (IORef, readIORef)
-import           Pipes                  (Consumer, Pipe, Proxy, await, yield)
-import           Pipes.Prelude          (mapM)
-import           Pipes.Safe             (MonadSafe, SomeException, bracket,
-                                         catchP, displayException)
-import           System.ProgressBar     (Progress (..), ProgressBar, Style (..),
-                                         defStyle, elapsedTime, incProgress,
-                                         newProgressBar, renderDuration,
-                                         updateProgress)
+import           Control.Monad              (forever)
+import           Control.Monad.Catch        (tryJust)
+import           Control.Monad.IO.Class     (MonadIO (liftIO))
+import           Data.Array.Repa            (Shape)
+import           Data.Array.Repa.Index      (DIM2)
+import           Data.IORef                 (IORef, readIORef)
+import           Pipes                      (Consumer, Pipe, Proxy, await,
+                                             yield)
+import           Pipes.Prelude              (mapM)
+import           Pipes.Safe                 (MonadSafe, SomeException, bracket,
+                                             catchP, displayException)
+import           System.ProgressBar         (Progress (..), ProgressBar,
+                                             Style (..), defStyle, elapsedTime,
+                                             incProgress, newProgressBar,
+                                             renderDuration, updateProgress)
 
-import           Prelude                hiding (filter)
+import           Prelude                    hiding (filter)
 
 import           Hkl.Binoculars.Common
+import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector

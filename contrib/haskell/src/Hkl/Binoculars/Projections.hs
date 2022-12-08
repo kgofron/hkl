@@ -15,6 +15,8 @@
 -}
 module Hkl.Binoculars.Projections
   ( DetectorPath(..)
+  , Space(..)
+  , newSpace
   , saveCube
   , withGeometry
   , withMaybeMask
@@ -33,7 +35,8 @@ import           Data.Text.Encoding              (encodeUtf8)
 import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString, withCString)
 import           Foreign.C.Types                 (CBool, CSize (..))
-import           Foreign.ForeignPtr              (withForeignPtr)
+import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr,
+                                                  withForeignPtr)
 import           Foreign.Marshal.Array           (withArrayLen)
 import           Foreign.Ptr                     (Ptr, nullPtr)
 import           GHC.Generics                    (Generic)
@@ -41,9 +44,9 @@ import           GHC.Generics                    (Generic)
 import           Prelude                         hiding (drop)
 
 import           Hkl.Binoculars.Config
-import           Hkl.C.Binoculars
-import           Hkl.C.Geometry
+import           Hkl.C
 import           Hkl.Detector
+import           Hkl.Geometry
 import           Hkl.H5                          hiding (File)
 import           Hkl.Orphan                      ()
 
@@ -78,3 +81,20 @@ withSampleAxis (SampleAxis t) =  useAsCString (encodeUtf8 t)
 newtype DetectorPath = DetectorPath
     { detectorPathImage    :: Hdf5Path DIM3 Word16
     } deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+
+-----------
+-- Space --
+-----------
+
+newtype Space sh = Space (ForeignPtr C'HklBinocularsSpace)
+  deriving Show
+
+newSpace' :: Ptr C'HklBinocularsSpace -> IO (Space sh)
+newSpace' p = Space <$> (newForeignPtr p'hkl_binoculars_space_free p)
+
+newSpace :: (Shape sh1, Shape sh) => Detector a sh1 -> Int -> IO (Space sh)
+newSpace d n = do
+  let nPixels = toEnum . size . shape $ d
+  let nDims = toEnum n
+  newSpace' =<< c'hkl_binoculars_space_new nPixels nDims
