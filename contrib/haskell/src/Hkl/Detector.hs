@@ -107,6 +107,7 @@ detectors = unsafePerformIO $ do
                                    h <- peek height
                                    return $ ix2 (fromEnum h) (fromEnum w))
 
+-- TODO s140 should be the default
 defaultDetector :: Detector Hkl DIM2
 defaultDetector = head detectors
 
