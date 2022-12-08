@@ -183,6 +183,22 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*         return "x", "y" */
 
 
+/* subprojection for QCustom
+
+/* - delta_gamma_[omega|mu]_uhv for the uhv gemetry */
+
+/*   delta = arctan2(qy, qx) */
+/*   gamma = arcsin(qz / sqrt(qx**2 + qy**2)) */
+/*   omega or mu */
+
+/* subprojection of angles */
+
+/* - delta_gamma_[omega|mu|beta]_med */
+
+/*   delta = arcsin(z / sqrt(x**2 + y**2)) - beta */
+/*   gamma = arctan2(y, x) */
+/*   omega or mu or beta */
+
 /* angles */
 
 #define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)			\
