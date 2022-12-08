@@ -320,7 +320,15 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
        let dataSourcePath'Attenuation'SixsSBS :: DataSourcePath Attenuation
            dataSourcePath'Attenuation'SixsSBS =
              DataSourcePath'Attenuation
-             (DataSourcePath'Float (hdf5p $ datasetpattr ("long_name", "i14-c-c00/ex/roic/att")))
+             (DataSourcePath'Float (hdf5p $ (H5Or
+                                              (datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
+                                              (H5Or
+                                                (datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att"))
+                                                (H5Or
+                                                  (datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att_old"))
+                                                  (H5Or
+                                                    (datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att"))
+                                                    (datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att_old"))))))))
              0 0 mMaxAtt
 
        case i of
