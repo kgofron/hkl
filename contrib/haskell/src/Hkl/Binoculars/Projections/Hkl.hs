@@ -540,7 +540,7 @@ h5dpathHkl c =
        SixsSbsMedH -> return $ DataSourcePath'DataFrameHkl qcustom medHSamplePath
        SixsSbsMedV -> return $ DataSourcePath'DataFrameHkl qcustom medVSamplePath
        SixsSbsMedVFixDetector -> return $ DataSourcePath'DataFrameHkl qcustom medVSamplePath
-       SixsSbsUhv -> return $ DataSourcePath'DataFrameHkl qcustom uhvSamplePath
+       SixsSbsUhv -> return $ DataSourcePath'DataFrameHkl qcustom uhvSamplePath3
 
          -- SixsSbsMedV -> DataSourcePath'DataFrameHkl
          --               hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")  -- xpad
