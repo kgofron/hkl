@@ -66,6 +66,7 @@ import           Foreign.Marshal.Array             (withArrayLen)
 import           Foreign.Ptr                       (Ptr, nullPtr)
 import           GHC.Conc                          (getNumCapabilities)
 import           GHC.Generics                      (Generic)
+import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
@@ -189,9 +190,12 @@ data instance Config 'QCustomProjection = BinocularsConfigQCustom
     , _binocularsConfigQCustomDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
     , _binocularsConfigQCustomImageSumMax            :: Maybe Double
     , _binocularsConfigQCustomSubProjection          :: Maybe QCustomSubProjection
-    } deriving (Eq, Show)
+    } deriving (Eq, Show, Generic)
 
 makeLenses 'BinocularsConfigQCustom
+
+instance Arbitrary (Config 'QCustomProjection) where
+  arbitrary = genericArbitraryU
 
 instance HasIniConfig 'QCustomProjection where
 

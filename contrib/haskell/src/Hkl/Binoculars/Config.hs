@@ -97,7 +97,8 @@ import           Path                              (Abs, Dir, File, Path, Rel,
                                                     fromAbsDir, parseAbsDir,
                                                     toFilePath)
 import           Path.IO                           (getCurrentDir, listDir)
-import           Test.QuickCheck                   (Arbitrary (..))
+import           Test.QuickCheck                   (Arbitrary (..), elements,
+                                                    oneof)
 import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (drop, length, lines,
@@ -126,8 +127,14 @@ newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
   deriving (Eq, Show)
 
+instance Arbitrary DestinationTmpl where
+  arbitrary = pure $ DestinationTmpl "{first}_{last}.h5"
+
 newtype InputTmpl = InputTmpl { unInputTmpl :: Text }
   deriving (Eq, Show)
+
+instance Arbitrary InputTmpl where
+  arbitrary = pure $ InputTmpl "inputfiles%04.nxs"
 
 data InputType = CristalK6C
                | MarsFlyscan
@@ -145,29 +152,37 @@ data InputType = CristalK6C
                | SixsSbsMedV
                | SixsSbsMedVFixDetector
                | SixsSbsUhv
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
+
+instance Arbitrary InputType where
+  arbitrary = elements ([minBound .. maxBound] :: [InputType])
+
 
 data InputRange = InputRangeSingle Int
                 | InputRangeFromTo Int Int
                 deriving (Eq, Show)
 
+instance Arbitrary InputRange where
+  arbitrary = oneof
+    [ InputRangeSingle <$> arbitrary
+    , InputRangeFromTo <$> arbitrary <*> arbitrary
+    ]
+
 newtype ConfigRange = ConfigRange [InputRange]
   deriving (Eq, Show, IsList)
 
+instance Arbitrary ConfigRange where
+  arbitrary = ConfigRange <$> arbitrary
+
 data SurfaceOrientation = SurfaceOrientationVertical
                         | SurfaceOrientationHorizontal
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
+
+instance Arbitrary SurfaceOrientation where
+  arbitrary = elements ([minBound .. maxBound] :: [SurfaceOrientation])
 
 newtype SampleAxis = SampleAxis { unSampleAxis :: Text }
   deriving (Eq, Show)
-
-instance Enum SurfaceOrientation where
-  fromEnum SurfaceOrientationVertical   = 0
-  fromEnum SurfaceOrientationHorizontal = 1
-
-  toEnum 0         = SurfaceOrientationVertical
-  toEnum 1         = SurfaceOrientationHorizontal
-  toEnum unmatched = error ("Key.toEnum: Cannot match " ++ show unmatched)
 
 data ProjectionType = AnglesProjection
                     | Angles2Projection
@@ -177,7 +192,10 @@ data ProjectionType = AnglesProjection
                     | QparQperProjection
                     | QxQyQzProjection
 
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
+
+instance Arbitrary ProjectionType where
+  arbitrary = elements ([minBound .. maxBound] :: [ProjectionType])
 
 ------------
 -- Limits --
@@ -185,6 +203,9 @@ data ProjectionType = AnglesProjection
 
 data Limits = Limits (Maybe Double) (Maybe Double)
   deriving (Eq, Show)
+
+instance Arbitrary Limits where
+  arbitrary = Limits <$> arbitrary <*> arbitrary
 
 newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
 newLimits (Limits mmin mmax) res =
@@ -295,8 +316,14 @@ instance Arbitrary Angstrom where
 newtype Meter = Meter { unMeter :: Length Double }
     deriving (Eq, Show)
 
+instance Arbitrary Meter where
+  arbitrary = Meter . (*~ meter) <$> arbitrary
+
 newtype MaskLocation = MaskLocation { unMaskLocation :: Text }
     deriving (Eq, Show, IsString)
+
+instance Arbitrary MaskLocation where
+  arbitrary = pure $ MaskLocation "mask location"
 
 data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QTthTimestamp
@@ -305,7 +332,10 @@ data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QPhiQy
                           | QCustomSubProjection'QPhiQz
                           | QCustomSubProjection'QStereo
-  deriving (Enum, Eq, Show)
+  deriving (Enum, Bounded, Eq, Show)
+
+instance Arbitrary QCustomSubProjection where
+  arbitrary = elements ([minBound .. maxBound] :: [QCustomSubProjection])
 
 instance HasFieldValue QCustomSubProjection where
   fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }

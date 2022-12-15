@@ -37,6 +37,7 @@ library
   build-depends: exceptions
   build-depends: extra
   build-depends: filepath >= 1.3.0
+  build-depends: generic-random
   build-depends: hdf5
   build-depends: hmatrix >= 0.17
   build-depends: hmatrix-gsl >= 0.17
