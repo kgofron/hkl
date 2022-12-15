@@ -11,21 +11,22 @@ module BinocularsSpec
 import           Data.Aeson                         (Result (..), fromJSON,
                                                      toJSON)
 import           Data.Attoparsec.Text               (parseOnly)
-import           Data.Ini.Config.Bidir              (ini, serializeIni)
-import           Data.Text.IO                       (hPutStr)
+import           Data.Ini.Config.Bidir              (ini)
+import           Data.List.NonEmpty                 (NonEmpty (..))
+import           Data.Text.IO                       (putStrLn)
 import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
 import           Path                               (mkAbsDir)
-import           System.IO.Temp                     (withTempFile)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck              (prop)
 
 import           Hkl.Binoculars
+import           Hkl.Binoculars.Bidir               (serializeIni')
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
 import           Paths_hkl
 
-import           Prelude                            hiding (readFile)
+import           Prelude                            hiding (putStrLn, readFile)
 
 
 spec :: Spec
@@ -50,19 +51,19 @@ spec = do
   describe "parseConfigRange" $ do
     it "parse a range" $ do
       let p = parseOnly configRangeP "120 123-453"
-      p `shouldBe` (Right (ConfigRange [InputRangeSingle 120, InputRangeFromTo 123 453]))
+      p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
     it "parse a range" $ do
       let p = parseOnly configRangeP "120,123-453"
-      p `shouldBe` (Right (ConfigRange [InputRangeSingle 120, InputRangeFromTo 123 453]))
+      p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
     it "parse a range" $ do
       let p = parseOnly configRangeP "120,,,123-453"
-      p `shouldBe` (Right (ConfigRange [InputRangeSingle 120, InputRangeFromTo 123 453]))
+      p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
     it "parse a range" $ do
       let p = parseOnly configRangeP "120-135 137-453"
-      p `shouldBe` (Right (ConfigRange [InputRangeFromTo 120 135, InputRangeFromTo 137 453]))
+      p `shouldBe` (Right (ConfigRange (InputRangeFromTo 120 135 :| [InputRangeFromTo 137 453])))
     it "parse a range" $ do
       let p = parseOnly configRangeP "120-135, 137-453"
-      p `shouldBe` (Right (ConfigRange [InputRangeFromTo 120 135, InputRangeFromTo 137 453]))
+      p `shouldBe` (Right (ConfigRange (InputRangeFromTo 120 135 :| [InputRangeFromTo 137 453])))
 
   describe "read and parse binoculars Configuration" $ do
     it "hkl projection" $ do
@@ -74,7 +75,7 @@ spec = do
                                           , _binocularsConfigHklInputType = SixsFlyScanUhv2
                                           , _binocularsConfigHklNexusdir = Just $(mkAbsDir "/nfs/ruche-sixs/sixs-soleil/com-sixs/2018/Run3/Corentin/Al13Co4/")
                                           , _binocularsConfigHklTmpl = Nothing
-                                          , _binocularsConfigHklInputRange = Just (ConfigRange [InputRangeFromTo 4 5])
+                                          , _binocularsConfigHklInputRange = Just (ConfigRange (InputRangeFromTo 4 5 :| []))
                                           , _binocularsConfigHklDetector = Nothing
                                           , _binocularsConfigHklCentralpixel = (293,141)
                                           , _binocularsConfigHklSdd = Meter (1.1083 *~ meter)
@@ -93,7 +94,7 @@ spec = do
                                           , _binocularsConfigHklUz = Just (Degree ((-0.19054917649924238) *~ radian))
                                           , _binocularsConfigHklWavelength = Nothing
                                           , _binocularsConfigHklProjectionType = HklProjection
-                                          , _binocularsConfigHklProjectionResolution = [1.0e-2,1.0e-2,1.0e-2]
+                                          , _binocularsConfigHklProjectionResolution = Resolutions3 1.0e-2 1.0e-2 1.0e-2
                                           , _binocularsConfigHklProjectionLimits = Just [Limits (Just 4.45) (Just 4.95),Limits (Just 4.75) (Just 5.25),Limits Nothing Nothing]
                                           , _binocularsConfigHklDataPath = Nothing
                                           , _binocularsConfigHklImageSumMax = Nothing
@@ -108,7 +109,7 @@ spec = do
 
   describe "quickcheck config parsing" $ do
     prop "Config 'QCustomProjection" $
-      \x -> withTempFile "." "conf.cfg" $ \p f -> do
-        hPutStr f (serializeIni (ini x specConfig))
-        ec <- getConfig (Just p)
-        ec `shouldBe` (Right x :: Either String (Config 'QCustomProjection))
+      \x -> do
+        let cfg = serializeIni' (ini x specConfig)
+        putStrLn cfg
+        (parseConfig cfg) `shouldBe` (Right (x :: Config 'QCustomProjection))

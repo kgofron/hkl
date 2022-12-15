@@ -29,7 +29,8 @@ module Hkl.Binoculars.Projections.QIndex
 
 import           Control.Concurrent.Async           (mapConcurrently)
 import           Control.Lens                       (makeLenses)
-import           Control.Monad.Catch                (MonadThrow)
+import           Control.Monad.Catch                (Exception, MonadThrow,
+                                                     throwM)
 import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
 import           Control.Monad.Logger               (MonadLogger, logDebug,
                                                      logDebugSH, logErrorSH,
@@ -47,7 +48,6 @@ import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
 import           Foreign.C.Types                    (CDouble (..))
 import           Foreign.ForeignPtr                 (withForeignPtr)
-import           Foreign.Marshal.Array              (withArrayLen)
 import           GHC.Conc                           (getNumCapabilities)
 import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~))
 import           Path                               (Abs, Dir, Path)
@@ -66,6 +66,14 @@ import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Image
 import           Hkl.Types
+
+
+data HklBinocularsProjectionsQIndexException
+    = MissingAttenuationCoefficient
+    | MissingInputRange
+    deriving (Show)
+
+instance Exception HklBinocularsProjectionsQIndexException
 
 ------------
 -- Config --
@@ -88,7 +96,7 @@ data instance Config 'QIndexProjection = BinocularsConfigQIndex
   , _binocularsConfigQIndexMaskmatrix             :: Maybe MaskLocation
   , _binocularsConfigQIndexWavelength             :: Maybe Angstrom
   , _binocularsConfigQIndexProjectionType         :: ProjectionType
-  , _binocularsConfigQIndexProjectionResolution   :: [Double]
+  , _binocularsConfigQIndexProjectionResolution   :: Resolutions2
   , _binocularsConfigQIndexProjectionLimits       :: Maybe [Limits]
   , _binocularsConfigQIndexDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
   , _binocularsConfigQIndexImageSumMax            :: Maybe Double
@@ -114,7 +122,7 @@ instance HasIniConfig 'QIndexProjection where
     , _binocularsConfigQIndexMaskmatrix = Nothing
     , _binocularsConfigQIndexWavelength = Nothing
     , _binocularsConfigQIndexProjectionType = QIndexProjection
-    , _binocularsConfigQIndexProjectionResolution = [0.01, 1]
+    , _binocularsConfigQIndexProjectionResolution = Resolutions2 0.01 1
     , _binocularsConfigQIndexProjectionLimits  = Nothing
     , _binocularsConfigQIndexDataPath = Just defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigQIndexImageSumMax = Nothing
@@ -154,15 +162,15 @@ instance HasIniConfig 'QIndexProjection where
 -------------------------
 
 {-# INLINE spaceQIndex #-}
-spaceQIndex :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
+spaceQIndex :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions2 -> Maybe Mask -> Maybe [Limits] -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
 spaceQIndex det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
-  withArrayLen rs $ \nr r ->
+  withResolutions2 rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
-  withMaybeLimits mlimits rs $ \nlimits limits ->
+  withMaybeLimits2 mlimits rs $ \nlimits limits ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
@@ -178,9 +186,6 @@ spaceQIndex det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameQCustom 
 -- Pipe --
 ----------
 
-getResolution' :: MonadThrow m => (Config 'QIndexProjection) -> m [Double]
-getResolution' c = getResolution (_binocularsConfigQIndexProjectionResolution c) 2
-
 class (FramesQCustomP a, Show a) => ProcessQIndexP a where
   processQIndexP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QIndexProjection) m, MonadThrow m)
                    => m a -> m ()
@@ -191,11 +196,12 @@ class (FramesQCustomP a, Show a) => ProcessQIndexP a where
     let destination = _binocularsConfigQIndexDestination conf
     let output' = case _binocularsConfigQIndexInputRange conf of
                    Just r  -> destination' r mlimits destination
-                   Nothing -> destination' (ConfigRange []) mlimits destination
+                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQIndexCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQIndexSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQIndexDetrot conf)
     let mImageSumMax = _binocularsConfigQIndexImageSumMax conf
+    let res = _binocularsConfigQIndexProjectionResolution conf
 
     h5d <- mkPaths
     filenames <- InputList
@@ -204,7 +210,6 @@ class (FramesQCustomP a, Show a) => ProcessQIndexP a where
                           (_binocularsConfigQIndexTmpl conf)
     mask' <- getMask (_binocularsConfigQIndexMaskmatrix conf) det
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
-    res <- getResolution' conf
 
     -- compute the jobs
 

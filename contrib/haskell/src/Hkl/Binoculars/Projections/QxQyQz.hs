@@ -30,7 +30,8 @@ module Hkl.Binoculars.Projections.QxQyQz
 
 import           Control.Concurrent.Async           (mapConcurrently)
 import           Control.Lens                       (makeLenses)
-import           Control.Monad.Catch                (Exception, MonadThrow)
+import           Control.Monad.Catch                (Exception, MonadThrow,
+                                                     throwM)
 import           Control.Monad.IO.Class             (MonadIO (liftIO))
 import           Control.Monad.Logger               (MonadLogger, logDebug,
                                                      logDebugSH, logErrorSH,
@@ -48,7 +49,6 @@ import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
 import           Foreign.C.Types                    (CDouble (..))
 import           Foreign.ForeignPtr                 (withForeignPtr)
-import           Foreign.Marshal.Array              (withArrayLen)
 import           GHC.Conc                           (getNumCapabilities)
 import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~))
 import           Path                               (Abs, Dir, Path)
@@ -90,7 +90,7 @@ data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     , _binocularsConfigQxQyQzMaskmatrix             :: Maybe MaskLocation
     , _binocularsConfigQxQyQzWavelength             :: Maybe Angstrom
     , _binocularsConfigQxQyQzProjectionType         :: ProjectionType
-    , _binocularsConfigQxQyQzProjectionResolution   :: [Double]
+    , _binocularsConfigQxQyQzProjectionResolution   :: Resolutions3
     , _binocularsConfigQxQyQzProjectionLimits       :: Maybe [Limits]
     , _binocularsConfigQxQyQzDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
     , _binocularsConfigQxQyQzImageSumMax            :: Maybe Double
@@ -118,7 +118,7 @@ instance HasIniConfig 'QxQyQzProjection where
     , _binocularsConfigQxQyQzMaskmatrix = Nothing
     , _binocularsConfigQxQyQzWavelength = Nothing
     , _binocularsConfigQxQyQzProjectionType = QxQyQzProjection
-    , _binocularsConfigQxQyQzProjectionResolution = [0.01, 0.01, 0.01]
+    , _binocularsConfigQxQyQzProjectionResolution = Resolutions3 0.01 0.01 0.01
     , _binocularsConfigQxQyQzProjectionLimits  = Nothing
     , _binocularsConfigQxQyQzDataPath = (Just defaultDataSourcePath'DataFrameQCustom)
     , _binocularsConfigQxQyQzImageSumMax = Nothing
@@ -161,27 +161,25 @@ instance HasIniConfig 'QxQyQzProjection where
 
 data HklBinocularsProjectionsQxQyQzException
     = MissingAttenuationCoefficient
+    | MissingInputRange
     deriving (Show)
 
 instance Exception HklBinocularsProjectionsQxQyQzException
-
-getResolution' :: MonadThrow m => Config 'QxQyQzProjection -> m [Double]
-getResolution' c = getResolution (_binocularsConfigQxQyQzProjectionResolution c) 3
 
 -----------------------
 -- QxQyQz Projection --
 -----------------------
 
 {-# INLINE spaceQxQyQz #-}
-spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
+spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions3 -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQxQyQz det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQCustom att g img _) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
-  withArrayLen rs $ \nr r ->
+  withResolutions3 rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
-  withMaybeLimits mlimits rs $ \nlimits limits ->
+  withMaybeLimits3 mlimits rs $ \nlimits limits ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
@@ -207,12 +205,13 @@ class (FramesQCustomP a, Show a) => ProcessQxQyQzP a where
     let destination = _binocularsConfigQxQyQzDestination conf
     let output' = case _binocularsConfigQxQyQzInputRange conf of
                    Just r  -> destination' r mlimits destination
-                   Nothing -> destination' (ConfigRange []) mlimits destination
+                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQxQyQzCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQxQyQzSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQxQyQzDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQxQyQzSurfaceOrientation conf)
     let mImageSumMax = _binocularsConfigQxQyQzImageSumMax conf
+    let res = _binocularsConfigQxQyQzProjectionResolution conf
 
     h5d <- mkPaths
     filenames <- InputList
@@ -221,7 +220,6 @@ class (FramesQCustomP a, Show a) => ProcessQxQyQzP a where
                           (_binocularsConfigQxQyQzTmpl conf)
     mask' <- getMask (_binocularsConfigQxQyQzMaskmatrix conf) det
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
-    res <- getResolution' conf
 
     -- compute the jobs
 

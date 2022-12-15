@@ -29,7 +29,8 @@ module Hkl.Binoculars.Projections.Angles
 
 import           Control.Concurrent.Async           (mapConcurrently)
 import           Control.Lens                       (makeLenses)
-import           Control.Monad.Catch                (MonadThrow)
+import           Control.Monad.Catch                (Exception, MonadThrow,
+                                                     throwM)
 import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
 import           Control.Monad.Logger               (MonadLogger, logDebug,
                                                      logDebugSH, logErrorSH,
@@ -47,7 +48,6 @@ import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
 import           Foreign.C.Types                    (CDouble (..))
 import           Foreign.ForeignPtr                 (withForeignPtr)
-import           Foreign.Marshal.Array              (withArrayLen)
 import           GHC.Conc                           (getNumCapabilities)
 import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~))
 import           Path                               (Abs, Dir, Path)
@@ -65,6 +65,14 @@ import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Image
+
+
+
+data HklBinocularsProjectionsAnglesException
+    = MissingInputRange
+    deriving (Show)
+
+instance Exception HklBinocularsProjectionsAnglesException
 
 ------------
 -- Config --
@@ -87,7 +95,7 @@ data instance Config 'AnglesProjection = BinocularsConfigAngles
   , _binocularsConfigAnglesMaskmatrix             :: Maybe MaskLocation
   , _binocularsConfigAnglesWavelength             :: Maybe Angstrom
   , _binocularsConfigAnglesProjectionType         :: ProjectionType
-  , _binocularsConfigAnglesProjectionResolution   :: [Double]
+  , _binocularsConfigAnglesProjectionResolution   :: Resolutions3
   , _binocularsConfigAnglesProjectionLimits       :: Maybe [Limits]
   , _binocularsConfigAnglesDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
   , _binocularsConfigAnglesSampleAxis             :: Maybe SampleAxis
@@ -114,7 +122,7 @@ instance HasIniConfig 'AnglesProjection where
     , _binocularsConfigAnglesMaskmatrix = Nothing
     , _binocularsConfigAnglesWavelength = Nothing
     , _binocularsConfigAnglesProjectionType = AnglesProjection
-    , _binocularsConfigAnglesProjectionResolution = [1, 1, 1]
+    , _binocularsConfigAnglesProjectionResolution = Resolutions3 1 1 1
     , _binocularsConfigAnglesProjectionLimits  = Nothing
     , _binocularsConfigAnglesDataPath = Just defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigAnglesSampleAxis = Nothing
@@ -168,15 +176,15 @@ getSampleAxis c = case _binocularsConfigAnglesSampleAxis c of
 -------------------------
 
 {-# INLINE spaceAngles #-}
-spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> SampleAxis -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
+spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions3 -> Maybe Mask -> Maybe [Limits] -> SampleAxis -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
 spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQCustom att g img _) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
-  withArrayLen rs $ \nr r ->
+  withResolutions3 rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
-  withMaybeLimits mlimits rs $ \nlimits limits ->
+  withMaybeLimits3 mlimits rs $ \nlimits limits ->
   withSampleAxis sAxis $ \sampleAxis ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
@@ -193,9 +201,6 @@ spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQC
 -- Pipe --
 ----------
 
-getResolution' :: MonadThrow m => (Config 'AnglesProjection) -> m [Double]
-getResolution' c = getResolution (_binocularsConfigAnglesProjectionResolution c) 3
-
 class (FramesQCustomP a, Show a) => ProcessAnglesP a where
   processAnglesP :: (MonadIO m, MonadLogger m, MonadReader (Config 'AnglesProjection) m, MonadThrow m)
                    => m a -> m ()
@@ -206,12 +211,13 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
     let destination = _binocularsConfigAnglesDestination conf
     let output' = case _binocularsConfigAnglesInputRange conf of
                    Just r  -> destination' r mlimits destination
-                   Nothing -> destination' (ConfigRange []) mlimits destination
+                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigAnglesCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigAnglesSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigAnglesDetrot conf)
     let sAxis = getSampleAxis conf
     let mImageSumMax = _binocularsConfigAnglesImageSumMax conf
+    let res = _binocularsConfigAnglesProjectionResolution conf
 
     h5d <- mkPaths
     filenames <- InputList
@@ -220,7 +226,6 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
                           (_binocularsConfigAnglesTmpl conf)
     mask' <- getMask (_binocularsConfigAnglesMaskmatrix conf) det
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
-    res <- getResolution' conf
 
     -- compute the jobs
 

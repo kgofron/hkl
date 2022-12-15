@@ -60,7 +60,6 @@ import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
 import           Foreign.C.Types                    (CDouble (..))
 import           Foreign.ForeignPtr                 (withForeignPtr)
-import           Foreign.Marshal.Array              (withArrayLen)
 import           GHC.Conc                           (getNumCapabilities)
 import           GHC.Generics                       (Generic)
 import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~), (/~))
@@ -94,6 +93,7 @@ import           Hkl.Types
 
 data HklBinocularsProjectionsHklException
     = MissingSampleParameters (Config 'HklProjection)
+    | MissingInputRange
     deriving (Show)
 
 instance Exception HklBinocularsProjectionsHklException
@@ -237,7 +237,7 @@ data instance Config 'HklProjection = BinocularsConfigHkl
   , _binocularsConfigHklUz                     :: Maybe Degree
   , _binocularsConfigHklWavelength             :: Maybe Angstrom
   , _binocularsConfigHklProjectionType         :: ProjectionType
-  , _binocularsConfigHklProjectionResolution   :: [Double]
+  , _binocularsConfigHklProjectionResolution   :: Resolutions3
   , _binocularsConfigHklProjectionLimits       :: Maybe [Limits]
   , _binocularsConfigHklDataPath               :: Maybe (DataSourcePath DataFrameHkl)
   , _binocularsConfigHklImageSumMax            :: Maybe Double
@@ -272,7 +272,7 @@ instance HasIniConfig 'HklProjection where
     , _binocularsConfigHklUz = Nothing
     , _binocularsConfigHklWavelength = Nothing
     , _binocularsConfigHklProjectionType = HklProjection
-    , _binocularsConfigHklProjectionResolution = [0.01, 0.01, 0.01]
+    , _binocularsConfigHklProjectionResolution = Resolutions3 0.01 0.01 0.01
     , _binocularsConfigHklProjectionLimits  = Nothing
     , _binocularsConfigHklDataPath = Just defaultDataSourcePath'DataFrameHkl
     , _binocularsConfigHklImageSumMax = Nothing
@@ -339,9 +339,6 @@ overloadSampleWithConfig conf (Sample
           nuy = go uy ((/~ degree) . unDegree <$> _binocularsConfigHklUy conf)
           nuz = go uz ((/~ degree) . unDegree <$> _binocularsConfigHklUz conf)
 
-getResolution' :: MonadThrow m => (Config 'HklProjection) -> m [Double]
-getResolution' c = getResolution (_binocularsConfigHklProjectionResolution c) 3
-
 sampleConfig ::  (Config 'HklProjection) -> Maybe Sample
 sampleConfig cf = do
   (Angstrom a) <- _binocularsConfigHklA cf
@@ -364,17 +361,17 @@ sampleConfig cf = do
 ----------------
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: (Config 'HklProjection) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl -> IO (DataFrameSpace DIM3)
+spaceHkl :: (Config 'HklProjection) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions3 -> Maybe Mask -> Maybe [Limits] -> Space DIM3 -> DataFrameHkl -> IO (DataFrameSpace DIM3)
 spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img _) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withSample sample' $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
-    withArrayLen rs $ \nr r ->
+    withResolutions3 rs $ \nr r ->
     withMaybeMask mmask' $ \ mask'' ->
     withPixelsDims pixels $ \ndim dims ->
-    withMaybeLimits mlimits rs $ \nlimits limits ->
+    withMaybeLimits3 mlimits rs $ \nlimits limits ->
     withForeignPtr fSpace $ \pSpace -> do
     case img of
       (ImageInt32 arr) -> unsafeWith arr $ \i -> do
@@ -404,18 +401,18 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let destination = _binocularsConfigHklDestination conf
     let output' = case _binocularsConfigHklInputRange conf of
                    Just r  -> destination' r mlimits destination
-                   Nothing -> destination' (ConfigRange []) mlimits destination
+                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigHklCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigHklSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigHklDetrot conf)
     let mImageSumMax = _binocularsConfigHklImageSumMax conf
+    let res = _binocularsConfigHklProjectionResolution conf
 
     filenames <- InputList
                 <$> files (_binocularsConfigHklNexusdir conf)
                           (_binocularsConfigHklInputRange conf)
                           (_binocularsConfigHklTmpl conf)
     mask' <- getMask (_binocularsConfigHklMaskmatrix conf) det
-    res <- getResolution' conf
     h5d <- mkPaths
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
 

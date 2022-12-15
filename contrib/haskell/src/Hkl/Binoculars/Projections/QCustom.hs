@@ -26,19 +26,17 @@ module Hkl.Binoculars.Projections.QCustom
     ( Config(..)
     , DataFrameQCustom(..)
     , FramesQCustomP(..)
-    , Resolutions
     , defaultDataSourcePath'DataFrameQCustom
     , h5dpathQCustom
     , newQCustom
     , processQCustom
     , updateQCustom
-    , withMaybeLimits
     ) where
 
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses)
-import           Control.Monad                     (zipWithM)
-import           Control.Monad.Catch               (Exception, MonadThrow)
+import           Control.Lens                      (makeLenses, (.~))
+import           Control.Monad.Catch               (Exception, MonadThrow,
+                                                    throwM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Logger              (MonadLogger, logDebug,
                                                     logDebugSH, logErrorSH,
@@ -53,7 +51,8 @@ import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
-                                                    section, serializeIni, (.=),
+                                                    optional, section,
+                                                    serializeIni, (&), (.=),
                                                     (.=?))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, pack)
@@ -62,8 +61,6 @@ import           Data.Text.IO                      (putStr)
 import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
-import           Foreign.Marshal.Array             (withArrayLen)
-import           Foreign.Ptr                       (Ptr, nullPtr)
 import           GHC.Conc                          (getNumCapabilities)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
@@ -94,8 +91,6 @@ import           Hkl.Types
 -----------------------
 -- QCustom Projection --
 -----------------------
-
-type Resolutions = [Double]
 
 data DataFrameQCustom
     = DataFrameQCustom
@@ -185,7 +180,7 @@ data instance Config 'QCustomProjection = BinocularsConfigQCustom
     , _binocularsConfigQCustomMaskmatrix             :: Maybe MaskLocation
     , _binocularsConfigQCustomWavelength             :: Maybe Angstrom
     , _binocularsConfigQCustomProjectionType         :: ProjectionType
-    , _binocularsConfigQCustomProjectionResolution   :: [Double]
+    , _binocularsConfigQCustomProjectionResolution   :: Resolutions3
     , _binocularsConfigQCustomProjectionLimits       :: Maybe [Limits]
     , _binocularsConfigQCustomDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
     , _binocularsConfigQCustomImageSumMax            :: Maybe Double
@@ -217,7 +212,7 @@ instance HasIniConfig 'QCustomProjection where
     , _binocularsConfigQCustomMaskmatrix = Nothing
     , _binocularsConfigQCustomWavelength = Nothing
     , _binocularsConfigQCustomProjectionType = QCustomProjection
-    , _binocularsConfigQCustomProjectionResolution = [0.01, 0.01, 0.01]
+    , _binocularsConfigQCustomProjectionResolution = Resolutions3 0.01 0.01 0.01
     , _binocularsConfigQCustomProjectionLimits  = Nothing
     , _binocularsConfigQCustomDataPath = (Just defaultDataSourcePath'DataFrameQCustom)
     , _binocularsConfigQCustomImageSumMax = Nothing
@@ -244,6 +239,7 @@ instance HasIniConfig 'QCustomProjection where
       binocularsConfigQCustomMaskmatrix .=? field "maskmatrix" auto
       binocularsConfigQCustomWavelength .=? field "wavelength" auto
       binocularsConfigQCustomDataPath .=? field "datapath" auto
+        & optional
       binocularsConfigQCustomImageSumMax .=? field "image_sum_max" auto
     section "projection" $ do
       binocularsConfigQCustomProjectionType .= field "type" auto
@@ -262,6 +258,7 @@ instance HasIniConfig 'QCustomProjection where
 
 data HklBinocularsProjectionsQCustomException
     = MissingAttenuationCoefficient
+    | MissingInputRange
     deriving (Show)
 
 instance Exception HklBinocularsProjectionsQCustomException
@@ -589,31 +586,16 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                       <*> mkDetector'Sixs'Sbs det
                       <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
 
-getResolution' :: MonadThrow m => Config 'QCustomProjection -> m [Double]
-getResolution' c = getResolution (_binocularsConfigQCustomProjectionResolution c) 3
-
-
-withMaybeLimits :: Maybe [Limits]
-                -> Resolutions
-                -> (Int -> Ptr (Ptr C'HklBinocularsAxisLimits) -> IO r)
-                -> IO r
-withMaybeLimits mls rs f = case mls of
-                             Nothing   -> f 0 nullPtr
-                             (Just ls) -> do
-                                      ptrs <- zipWithM newLimits ls rs
-                                      withForeignPtrs ptrs $ \pts ->
-                                          withArrayLen pts f
-
 {-# INLINE spaceQCustom #-}
-spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
+spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions3 -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
-  withArrayLen rs $ \nr r ->
+  withResolutions3 rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
-  withMaybeLimits mlimits rs $ \nlimits limits ->
+  withMaybeLimits3 mlimits rs $ \nlimits limits ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
@@ -643,14 +625,14 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
     let destination = _binocularsConfigQCustomDestination conf
     let output' = case _binocularsConfigQCustomInputRange conf of
                    Just r  -> destination' r mlimits destination
-                   Nothing -> destination' (ConfigRange []) mlimits destination
+                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQCustomCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQCustomSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQCustomDetrot conf)
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQCustomSurfaceOrientation conf)
     let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
     let subprojection = fromMaybe QCustomSubProjection'QxQyQz (_binocularsConfigQCustomSubProjection conf)
-
+    let res = _binocularsConfigQCustomProjectionResolution conf
     h5d <- mkPaths
     filenames <- InputList
                 <$> files (_binocularsConfigQCustomNexusdir conf)
@@ -658,7 +640,6 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
                           (_binocularsConfigQCustomTmpl conf)
     mask' <- getMask (_binocularsConfigQCustomMaskmatrix conf) det
     pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
-    res <- getResolution' conf
 
     -- compute the jobs
 
@@ -754,7 +735,9 @@ processQCustom mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteInputRange mr conf
+      let conf' = case mr of
+                    Nothing  -> conf
+                    (Just _) -> (binocularsConfigQCustomInputRange .~ mr) conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'

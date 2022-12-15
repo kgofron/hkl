@@ -19,12 +19,17 @@ module Hkl.Binoculars.Projections
   , newSpace
   , saveCube
   , withGeometry
+  , withMaybeLimits2
+  , withMaybeLimits3
   , withMaybeMask
   , withNPixels
   , withPixelsDims
+  , withResolutions2
+  , withResolutions3
   , withSampleAxis
   ) where
 
+import           Control.Monad                   (zipWithM)
 import           Data.Aeson                      (FromJSON, ToJSON)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
@@ -68,10 +73,39 @@ saveCube o rs = do
             c'hkl_binoculars_cube_save_hdf5 fn p
     EmptyCube -> return ()
 
+withMaybeLimits2 :: Maybe [Limits]
+                -> Resolutions2
+                -> (Int -> Ptr (Ptr C'HklBinocularsAxisLimits) -> IO r)
+                -> IO r
+withMaybeLimits2 mls (Resolutions2 r1 r2) f = case mls of
+                             Nothing   -> f 0 nullPtr
+                             (Just ls) -> do
+                                      ptrs <- zipWithM newLimits ls [r1, r2]
+                                      withForeignPtrs ptrs $ \pts ->
+                                          withArrayLen pts f
+
+withMaybeLimits3 :: Maybe [Limits]
+                -> Resolutions3
+                -> (Int -> Ptr (Ptr C'HklBinocularsAxisLimits) -> IO r)
+                -> IO r
+withMaybeLimits3 mls (Resolutions3 r1 r2 r3) f = case mls of
+                             Nothing   -> f 0 nullPtr
+                             (Just ls) -> do
+                                      ptrs <- zipWithM newLimits ls [r1, r2, r3]
+                                      withForeignPtrs ptrs $ \pts ->
+                                          withArrayLen pts f
+
 withMaybeMask :: Maybe Mask -> (Ptr CBool -> IO r) -> IO r
 withMaybeMask mm f = case mm of
                        Nothing  -> f nullPtr
                        (Just m) -> withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
+
+withResolutions2 :: Resolutions2 -> (Int -> Ptr Double -> IO r) -> IO r
+withResolutions2 (Resolutions2 r1 r2) = withArrayLen [r1, r2]
+
+
+withResolutions3 :: Resolutions3 -> (Int -> Ptr Double -> IO r) -> IO r
+withResolutions3 (Resolutions3 r1 r2 r3) = withArrayLen [r1, r2, r3]
 
 withSampleAxis :: SampleAxis -> (CString -> IO r) -> IO r
 withSampleAxis (SampleAxis t) =  useAsCString (encodeUtf8 t)

@@ -49,7 +49,7 @@ import           Foreign.Storable                  (peek)
 import           GHC.IO.Unsafe                     (unsafePerformIO)
 import           Numeric.Units.Dimensional.Prelude (Angle, Length, meter,
                                                     radian, (/~))
-import           Test.QuickCheck                   (Arbitrary (..), oneof)
+import           Test.QuickCheck                   (Arbitrary (..), elements)
 
 
 import           Hkl.C.Binoculars
@@ -91,7 +91,7 @@ instance ToJSON (Detector Hkl DIM2) where
         pairs ("detector" .= name)
 
 instance Arbitrary (Detector Hkl DIM2) where
-  arbitrary = oneof (map pure detectors)
+  arbitrary = elements detectors
 
 type Mask = Array F DIM2 CBool
 
