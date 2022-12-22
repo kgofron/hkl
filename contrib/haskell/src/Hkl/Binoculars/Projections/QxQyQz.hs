@@ -91,8 +91,8 @@ data instance Config 'QxQyQzProjection = BinocularsConfigQxQyQz
     , _binocularsConfigQxQyQzMaskmatrix             :: Maybe MaskLocation
     , _binocularsConfigQxQyQzWavelength             :: Maybe Angstrom
     , _binocularsConfigQxQyQzProjectionType         :: ProjectionType
-    , _binocularsConfigQxQyQzProjectionResolution   :: Resolutions3
-    , _binocularsConfigQxQyQzProjectionLimits       :: Maybe [Limits]
+    , _binocularsConfigQxQyQzProjectionResolution   :: Resolutions DIM3
+    , _binocularsConfigQxQyQzProjectionLimits       :: Maybe (RLimits DIM3)
     , _binocularsConfigQxQyQzDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
     , _binocularsConfigQxQyQzImageSumMax            :: Maybe Double
     } deriving (Eq, Show)
@@ -169,15 +169,15 @@ instance Exception HklBinocularsProjectionsQxQyQzException
 -----------------------
 
 {-# INLINE spaceQxQyQz #-}
-spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions3 -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
+spaceQxQyQz :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> SurfaceOrientation -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQxQyQz det pixels rs mmask' surf mlimits space@(Space fSpace) (DataFrameQCustom att g img _) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
-  withResolutions3 rs $ \nr r ->
+  withResolutions rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
-  withMaybeLimits3 mlimits rs $ \nlimits limits ->
+  withMaybeLimits mlimits rs $ \nlimits limits ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
@@ -202,7 +202,7 @@ class (FramesQCustomP a, Show a) => ProcessQxQyQzP a where
     let mlimits = _binocularsConfigQxQyQzProjectionLimits conf
     let destination = _binocularsConfigQxQyQzDestination conf
     let output' = case _binocularsConfigQxQyQzInputRange conf of
-                   Just r  -> destination' r mlimits destination
+                   Just r  -> destination'3 r mlimits destination
                    Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQxQyQzCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQxQyQzSdd conf

@@ -10,6 +10,7 @@ module BinocularsSpec
 
 import           Data.Aeson                         (Result (..), fromJSON,
                                                      toJSON)
+import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Attoparsec.Text               (parseOnly)
 import           Data.Ini.Config.Bidir              (ini)
 import           Data.List.NonEmpty                 (NonEmpty (..))
@@ -21,6 +22,7 @@ import           Test.Hspec.QuickCheck              (prop)
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Bidir               (serializeIni')
+import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
@@ -31,24 +33,17 @@ import           Prelude                            hiding (putStrLn, readFile)
 
 spec :: Spec
 spec = do
-  describe "parseProjectionLimits" $ do
-    it "parse a limits" $ do
-      let p = parseOnly limitsP "[-1.0:1.0]"
-      p `shouldBe` (Right [Limits (Just (-1)) (Just 1)])
-    it "parse a limits with no limits" $ do
-      let p = parseOnly limitsP "[-1.0:1.0,:]"
-      p `shouldBe` (Right [Limits (Just (-1)) (Just 1), Limits Nothing Nothing])
-    it "parse a limits with no limits" $ do
-      let p = parseOnly limitsP "[:1,-1:]"
-      p `shouldBe` (Right [Limits Nothing (Just 1), Limits (Just (-1)) Nothing])
-    it "parse a limits with no limits" $ do
-      let p = parseOnly limitsP "[-1.0:,:]"
-      p `shouldBe` (Right [Limits (Just (-1)) Nothing, Limits Nothing Nothing])
-    it "parse a limits with no limits" $ do
-      let p = parseOnly limitsP "[:,:]"
-      p `shouldBe` (Right [Limits Nothing Nothing, Limits Nothing Nothing])
+  describe "Limits" $ do
+    prop "quickcheck Limits2" $
+      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM2))
 
-  describe "parseConfigRange" $ do
+    prop "quickcheck Limits3" $
+      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM3))
+
+  describe "ConfigRange" $ do
+    prop "quickcheck" $
+      \x -> (parseOnly configRangeP . fieldEmitter $ x) `shouldBe` (Right x)
+
     it "parse a range" $ do
       let p = parseOnly configRangeP "120 123-453"
       p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
@@ -64,6 +59,9 @@ spec = do
     it "parse a range" $ do
       let p = parseOnly configRangeP "120-135, 137-453"
       p `shouldBe` (Right (ConfigRange (InputRangeFromTo 120 135 :| [InputRangeFromTo 137 453])))
+    it "parse a range" $ do
+      let p = parseOnly configRangeP "0 1--1 0-0"
+      p  `shouldBe` (Right (ConfigRange (InputRangeSingle 0 :| [InputRangeFromTo 1 (-1), InputRangeFromTo 0 0])))
 
   describe "read and parse binoculars Configuration" $ do
     it "hkl projection" $ do
@@ -95,7 +93,10 @@ spec = do
                                           , _binocularsConfigHklWavelength = Nothing
                                           , _binocularsConfigHklProjectionType = HklProjection
                                           , _binocularsConfigHklProjectionResolution = Resolutions3 1.0e-2 1.0e-2 1.0e-2
-                                          , _binocularsConfigHklProjectionLimits = Just [Limits (Just 4.45) (Just 4.95),Limits (Just 4.75) (Just 5.25),Limits Nothing Nothing]
+                                          , _binocularsConfigHklProjectionLimits = Just (Limits3
+                                                                                         (Limits (Just 4.45) (Just 4.95))
+                                                                                         (Limits (Just 4.75) (Just 5.25))
+                                                                                         (Limits Nothing Nothing))
                                           , _binocularsConfigHklDataPath = Nothing
                                           , _binocularsConfigHklImageSumMax = Nothing
                                           }
@@ -111,5 +112,5 @@ spec = do
     prop "Config 'QCustomProjection" $
       \x -> do
         let cfg = serializeIni' (ini x specConfig)
-        putStrLn cfg
+        -- putStrLn cfg
         (parseConfig cfg) `shouldBe` (Right (x :: Config 'QCustomProjection))

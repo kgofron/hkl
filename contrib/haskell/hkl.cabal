@@ -150,6 +150,7 @@ test-suite hkl-test
   build-depends: hkl
   build-depends: hspec
   build-depends: path
+  build-depends: repa
   build-depends: temporary
   build-depends: text
 

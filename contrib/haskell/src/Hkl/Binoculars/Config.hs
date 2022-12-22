@@ -31,6 +31,7 @@ module Hkl.Binoculars.Config
     , DataPath
     , Degree(..)
     , DestinationTmpl(..)
+    , FieldParsable(..)
     , HasFieldValue(..)
     , HasIniConfig(..)
     , InputRange(..)
@@ -41,17 +42,17 @@ module Hkl.Binoculars.Config
     , Meter(..)
     , ProjectionType(..)
     , QCustomSubProjection(..)
-    , Resolutions2(..)
-    , Resolutions3(..)
+    , Resolutions(..)
+    , RLimits(..)
     , SampleAxis(..)
     , SurfaceOrientation(..)
     , auto
     , configRangeP
-    , destination'
+    , destination'2
+    , destination'3
     , files
     , getMask
     , getPreConfig
-    , limitsP
     , newLimits
     , projectionTypeP
     , readConfig
@@ -65,10 +66,10 @@ import           Control.Monad.Catch               (Exception, MonadThrow,
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
-import           Data.Array.Repa.Index             (DIM2)
+import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, satisfy,
-                                                    sepBy, sepBy1', takeText)
+                                                    sepBy, signed, takeText)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
@@ -180,16 +181,17 @@ newtype ConfigRange = ConfigRange (NonEmpty InputRange)
 instance Arbitrary ConfigRange where
   arbitrary = ConfigRange <$> ((:|) <$> arbitrary <*> arbitrary)
 
-data Resolutions2 = Resolutions2 Double Double
-  deriving (Eq, Show)
+data Resolutions a where
+  Resolutions2 :: Double -> Double -> Resolutions DIM2
+  Resolutions3 :: Double -> Double -> Double -> Resolutions DIM3
 
-instance Arbitrary Resolutions2 where
+deriving instance Eq (Resolutions a)
+deriving instance Show (Resolutions a)
+
+instance Arbitrary (Resolutions DIM2) where
   arbitrary = Resolutions2 <$> arbitrary <*> arbitrary
 
-data Resolutions3 = Resolutions3 Double Double Double
-  deriving (Eq, Show)
-
-instance Arbitrary Resolutions3 where
+instance Arbitrary (Resolutions DIM3) where
   arbitrary = Resolutions3 <$> arbitrary <*> arbitrary <*> arbitrary
 
 data SurfaceOrientation = SurfaceOrientationVertical
@@ -241,6 +243,19 @@ newLimits (Limits mmin mmax) res =
                               pure imax'
           newForeignPtr p'hkl_binoculars_axis_limits_free
                         =<< c'hkl_binoculars_axis_limits_new imin'' imax''
+
+data RLimits a where
+  Limits2 :: Limits -> Limits -> RLimits DIM2
+  Limits3 :: Limits -> Limits -> Limits -> RLimits DIM3
+
+deriving instance Eq (RLimits a)
+deriving instance Show (RLimits a)
+
+instance Arbitrary (RLimits DIM2) where
+  arbitrary = Limits2 <$> arbitrary <*> arbitrary
+
+instance Arbitrary (RLimits DIM3) where
+  arbitrary = Limits3 <$> arbitrary <*> arbitrary <*> arbitrary
 
 
 class FieldParsable a where
@@ -449,6 +464,12 @@ instance HasFieldValue InputType where
 instance HasFieldValue Int where
   fieldvalue = number'
 
+instance HasFieldValue (RLimits DIM2) where
+  fieldvalue = parsable
+
+instance HasFieldValue (RLimits DIM3) where
+  fieldvalue = parsable
+
 instance HasFieldValue MaskLocation where
     fieldvalue = FieldValue { fvParse = mapRight MaskLocation . fvParse text
                             , fvEmit = \(MaskLocation m) -> fvEmit text $ m
@@ -464,10 +485,10 @@ instance HasFieldValue (Path Abs Dir) where
                           , fvEmit = pack . fromAbsDir
                           }
 
-instance HasFieldValue Resolutions2 where
+instance HasFieldValue (Resolutions DIM2) where
   fieldvalue = FieldValue { fvParse = parse, fvEmit = emit }
     where
-      parse :: Text -> Either String Resolutions2
+      parse :: Text -> Either String (Resolutions DIM2)
       parse t = do
         rs <- (fvParse $ listWithSeparator "," auto) t
         case Data.List.length rs of
@@ -475,13 +496,13 @@ instance HasFieldValue Resolutions2 where
           2 -> Right (Resolutions2 (rs !! 0) (rs !! 1))
           _ -> Left ("Need one or two resolutions values for this projection")
 
-      emit :: Resolutions2 -> Text
+      emit :: Resolutions DIM2 -> Text
       emit (Resolutions2 r1 r2) = intercalate "," (Prelude.map (pack . show) [r1, r2])
 
-instance HasFieldValue Resolutions3 where
+instance HasFieldValue (Resolutions DIM3) where
   fieldvalue = FieldValue { fvParse = parse, fvEmit = emit }
     where
-      parse :: Text -> Either String Resolutions3
+      parse :: Text -> Either String (Resolutions DIM3)
       parse t = do
         rs <- (fvParse $ listWithSeparator "," auto) t
         case Data.List.length rs of
@@ -489,7 +510,7 @@ instance HasFieldValue Resolutions3 where
           3 -> Right (Resolutions3 (rs !! 0) (rs !! 1) (rs !! 2))
           _ -> Left ("Need one or three resolutions values for this projection")
 
-      emit :: Resolutions3 -> Text
+      emit :: Resolutions DIM3 -> Text
       emit (Resolutions3 r1 r2 r3) = intercalate "," (Prelude.map (pack . show) [r1, r2, r3])
 
 instance HasFieldValue ProjectionType where
@@ -515,9 +536,6 @@ instance HasFieldValue Text where
 
 instance HasFieldValue [Double] where
   fieldvalue = listWithSeparator "," auto
-
-instance HasFieldValue [Limits] where
-  fieldvalue = parsable
 
 instance HasFieldValue (Int, Int) where
   fieldvalue = pairWithSeparator' number' "," number'
@@ -563,11 +581,11 @@ inputRangeP = inputRangeFromToP <|> inputRangeP'
   where
     inputRangeFromToP :: Parser InputRange
     inputRangeFromToP =  InputRangeFromTo
-                         <$> decimal <* char '-'
-                         <*> decimal
+                         <$> signed decimal <* char '-'
+                         <*> signed decimal
 
     inputRangeP' :: Parser InputRange
-    inputRangeP' = InputRangeSingle <$> decimal
+    inputRangeP' = InputRangeSingle <$> signed decimal
 
 instance FieldParsable ConfigRange where
   fieldParser = configRangeP
@@ -605,19 +623,37 @@ limitsP' = Limits
     lim :: Parser (Maybe Double)
     lim = (Just <$> double) <|> return Nothing
 
-limitsP :: Parser [Limits]
-limitsP = char '[' *> limitsP' `sepBy1'` char ',' <* char ']'
+showLimit :: Maybe Double -> Text
+showLimit (Just l) = pack $ printf "%f" l
+showLimit Nothing  = Data.Text.empty
 
+showLimits :: Limits -> Text
+showLimits (Limits f t) = showLimit f <> Data.Text.singleton ':' <> showLimit t
 
-instance (FieldParsable [Limits]) where
-  fieldParser = limitsP
-  fieldEmitter ls = Data.Text.singleton '['  <> intercalate "," (Prelude.map emit' ls) <> Data.Text.singleton ']'
-    where
-      emit' :: Limits -> Text
-      emit' (Limits from to) = tolim from <> Data.Text.singleton ':' <> tolim to
+instance (FieldParsable (RLimits DIM2)) where
+  fieldParser = Limits2
+                <$> (char '[' *> limitsP')
+                <*> (char ',' *> limitsP' <* char ']')
 
-      tolim (Just l) = pack $ printf "%f" l
-      tolim Nothing  = Data.Text.empty
+  fieldEmitter (Limits2 l1 l2) = Data.Text.singleton '['
+                                 <> showLimits l1
+                                 <> ","
+                                 <> showLimits l2
+                                 <> Data.Text.singleton ']'
+
+instance (FieldParsable (RLimits DIM3)) where
+  fieldParser = Limits3
+                <$> (char '[' *> limitsP')
+                <*> (char ',' *> limitsP')
+                <*> (char ',' *> limitsP' <* char ']')
+
+  fieldEmitter (Limits3 l1 l2 l3) = Data.Text.singleton '['
+                                    <> showLimits l1
+                                    <> ","
+                                    <> showLimits l2
+                                    <> ","
+                                    <> showLimits l3
+                                    <> Data.Text.singleton ']'
 
 files :: (MonadThrow m, MonadIO m)
       => Maybe (Path Abs Dir)
@@ -669,8 +705,8 @@ replace' i l = unpack
                  . replace "{limits}" l
                  . unDestinationTmpl
 
-destination' :: ConfigRange -> Maybe [Limits] -> DestinationTmpl -> FilePath
-destination' (ConfigRange rs) ml = replace' interval limits
+destination'2 :: ConfigRange -> Maybe (RLimits DIM2) -> DestinationTmpl -> FilePath
+destination'2 (ConfigRange rs) ml = replace' interval limits
   where
     interval = foldl' hull Numeric.Interval.empty intervals
 
@@ -684,6 +720,20 @@ destination' (ConfigRange rs) ml = replace' interval limits
                         (InputRangeFromTo f t) -> f ... t
                 ) rs
 
+destination'3 :: ConfigRange -> Maybe (RLimits DIM3) -> DestinationTmpl -> FilePath
+destination'3 (ConfigRange rs) ml = replace' interval limits
+  where
+    interval = foldl' hull Numeric.Interval.empty intervals
+
+    limits = case ml of
+               Nothing   -> "nolimits"
+               (Just ls) -> fieldEmitter ls
+
+    intervals = Data.List.NonEmpty.map
+                (\r -> case r of
+                        (InputRangeSingle f)   -> Numeric.Interval.singleton f
+                        (InputRangeFromTo f t) -> f ... t
+                ) rs
 
 getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> m (Maybe Mask)
 getMask ml d = case ml of

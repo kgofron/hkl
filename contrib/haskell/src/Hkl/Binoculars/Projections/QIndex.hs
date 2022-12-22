@@ -97,8 +97,8 @@ data instance Config 'QIndexProjection = BinocularsConfigQIndex
   , _binocularsConfigQIndexMaskmatrix             :: Maybe MaskLocation
   , _binocularsConfigQIndexWavelength             :: Maybe Angstrom
   , _binocularsConfigQIndexProjectionType         :: ProjectionType
-  , _binocularsConfigQIndexProjectionResolution   :: Resolutions2
-  , _binocularsConfigQIndexProjectionLimits       :: Maybe [Limits]
+  , _binocularsConfigQIndexProjectionResolution   :: Resolutions DIM2
+  , _binocularsConfigQIndexProjectionLimits       :: Maybe (RLimits DIM2)
   , _binocularsConfigQIndexDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
   , _binocularsConfigQIndexImageSumMax            :: Maybe Double
  } deriving (Eq, Show)
@@ -161,15 +161,15 @@ instance HasIniConfig 'QIndexProjection where
 -------------------------
 
 {-# INLINE spaceQIndex #-}
-spaceQIndex :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions2 -> Maybe Mask -> Maybe [Limits] -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
+spaceQIndex :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM2 -> Maybe Mask -> Maybe (RLimits DIM2) -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
 spaceQIndex det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
-  withResolutions2 rs $ \nr r ->
+  withResolutions rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
-  withMaybeLimits2 mlimits rs $ \nlimits limits ->
+  withMaybeLimits mlimits rs $ \nlimits limits ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
@@ -194,7 +194,7 @@ class (FramesQCustomP a, Show a) => ProcessQIndexP a where
     let mlimits = _binocularsConfigQIndexProjectionLimits conf
     let destination = _binocularsConfigQIndexDestination conf
     let output' = case _binocularsConfigQIndexInputRange conf of
-                   Just r  -> destination' r mlimits destination
+                   Just r  -> destination'2 r mlimits destination
                    Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQIndexCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQIndexSdd conf

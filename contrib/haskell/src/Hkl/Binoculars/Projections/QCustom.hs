@@ -181,8 +181,8 @@ data instance Config 'QCustomProjection = BinocularsConfigQCustom
     , _binocularsConfigQCustomMaskmatrix             :: Maybe MaskLocation
     , _binocularsConfigQCustomWavelength             :: Maybe Angstrom
     , _binocularsConfigQCustomProjectionType         :: ProjectionType
-    , _binocularsConfigQCustomProjectionResolution   :: Resolutions3
-    , _binocularsConfigQCustomProjectionLimits       :: Maybe [Limits]
+    , _binocularsConfigQCustomProjectionResolution   :: Resolutions DIM3
+    , _binocularsConfigQCustomProjectionLimits       :: Maybe (RLimits DIM3)
     , _binocularsConfigQCustomDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
     , _binocularsConfigQCustomImageSumMax            :: Maybe Double
     , _binocularsConfigQCustomSubProjection          :: Maybe QCustomSubProjection
@@ -585,15 +585,15 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                       <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
 
 {-# INLINE spaceQCustom #-}
-spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions3 -> Maybe Mask -> SurfaceOrientation -> Maybe [Limits] -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
+spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> SurfaceOrientation -> Maybe (RLimits DIM3) -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
-  withResolutions3 rs $ \nr r ->
+  withResolutions rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
-  withMaybeLimits3 mlimits rs $ \nlimits limits ->
+  withMaybeLimits mlimits rs $ \nlimits limits ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
@@ -622,7 +622,7 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
     let mlimits = _binocularsConfigQCustomProjectionLimits conf
     let destination = _binocularsConfigQCustomDestination conf
     let output' = case _binocularsConfigQCustomInputRange conf of
-                   Just r  -> destination' r mlimits destination
+                   Just r  -> destination'3 r mlimits destination
                    Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQCustomCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQCustomSdd conf
