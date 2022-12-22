@@ -33,8 +33,9 @@ module Hkl.Binoculars.Projections.QCustom
     , updateQCustom
     ) where
 
+import           Control.Applicative               ((<|>))
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses, (.~))
+import           Control.Lens                      (makeLenses, over)
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
@@ -247,10 +248,7 @@ instance HasIniConfig 'QCustomProjection where
       binocularsConfigQCustomProjectionLimits .=? field "limits" auto
       binocularsConfigQCustomSubProjection .=? field "subprojection" auto
 
-  overwriteInputRange mr c = case mr of
-                               Nothing  -> c
-                               (Just _) -> c{_binocularsConfigQCustomInputRange = mr}
-
+  overwriteWithCmd mr = over binocularsConfigQCustomInputRange (mr <|>)
 
 ------------------
 -- Input Path's --
@@ -735,9 +733,7 @@ processQCustom mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = case mr of
-                    Nothing  -> conf
-                    (Just _) -> (binocularsConfigQCustomInputRange .~ mr) conf
+      let conf' = overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'

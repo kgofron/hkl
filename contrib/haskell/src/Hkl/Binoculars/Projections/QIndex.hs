@@ -27,8 +27,9 @@ module Hkl.Binoculars.Projections.QIndex
     , updateQIndex
     ) where
 
+import           Control.Applicative                ((<|>))
 import           Control.Concurrent.Async           (mapConcurrently)
-import           Control.Lens                       (makeLenses)
+import           Control.Lens                       (makeLenses, over)
 import           Control.Monad.Catch                (Exception, MonadThrow,
                                                      throwM)
 import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
@@ -153,9 +154,7 @@ instance HasIniConfig 'QIndexProjection where
       binocularsConfigQIndexProjectionResolution .= field "resolution" auto
       binocularsConfigQIndexProjectionLimits .=? field "limits" auto
 
-  overwriteInputRange mr c = case mr of
-                               Nothing  -> c
-                               (Just _) -> c{_binocularsConfigQIndexInputRange = mr}
+  overwriteWithCmd mr = over binocularsConfigQIndexInputRange (mr <|>)
 
 -------------------------
 -- QIndex Projection --
@@ -279,7 +278,7 @@ processQIndex mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteInputRange mr conf
+      let conf' = overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'

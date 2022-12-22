@@ -28,8 +28,9 @@ module Hkl.Binoculars.Projections.QxQyQz
     , updateQxQyQz
     ) where
 
+import           Control.Applicative                ((<|>))
 import           Control.Concurrent.Async           (mapConcurrently)
-import           Control.Lens                       (makeLenses)
+import           Control.Lens                       (makeLenses, over)
 import           Control.Monad.Catch                (Exception, MonadThrow,
                                                      throwM)
 import           Control.Monad.IO.Class             (MonadIO (liftIO))
@@ -150,10 +151,7 @@ instance HasIniConfig 'QxQyQzProjection where
       binocularsConfigQxQyQzProjectionResolution .= field "resolution" auto
       binocularsConfigQxQyQzProjectionLimits .=? field "limits" auto
 
-  overwriteInputRange mr c = case mr of
-                               Nothing  -> c
-                               (Just _) -> c{_binocularsConfigQxQyQzInputRange = mr}
-
+  overwriteWithCmd mr = over binocularsConfigQxQyQzInputRange (mr <|>)
 
 ------------------
 -- Input Path's --
@@ -293,7 +291,7 @@ processQxQyQz mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteInputRange mr conf
+      let conf' = overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'

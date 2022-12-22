@@ -287,7 +287,7 @@ class HasIniConfig (a :: ProjectionType) where
 
   specConfig :: IniSpec (Config a) ()
 
-  overwriteInputRange :: Maybe ConfigRange -> Config a -> Config a
+  overwriteWithCmd :: Maybe ConfigRange -> Config a -> Config a
 
   parseConfig :: Text -> Either String (Config a)
   parseConfig cfg = mapRight getIniValue (parseIni cfg (ini defaultConfig specConfig))

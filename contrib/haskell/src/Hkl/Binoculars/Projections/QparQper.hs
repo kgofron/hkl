@@ -27,8 +27,9 @@ module Hkl.Binoculars.Projections.QparQper
     , updateQparQper
     ) where
 
+import           Control.Applicative                ((<|>))
 import           Control.Concurrent.Async           (mapConcurrently)
-import           Control.Lens                       (makeLenses)
+import           Control.Lens                       (makeLenses, over)
 import           Control.Monad.Catch                (Exception, MonadThrow,
                                                      throwM)
 import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
@@ -147,9 +148,7 @@ instance HasIniConfig 'QparQperProjection where
       binocularsConfigQparQperProjectionResolution .= field "resolution" auto
       binocularsConfigQparQperProjectionLimits .=? field "limits" auto
 
-  overwriteInputRange mr c = case mr of
-                               Nothing  -> c
-                               (Just _) -> c{_binocularsConfigQparQperInputRange = mr}
+  overwriteWithCmd mr = over binocularsConfigQparQperInputRange (mr <|>)
 
 data HklBinocularsProjectionsQparQperException
     = MissingAttenuationCoefficient
@@ -281,7 +280,7 @@ processQparQper mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteInputRange mr conf
+      let conf' = overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'
