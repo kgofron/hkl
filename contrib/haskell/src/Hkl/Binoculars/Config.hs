@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
@@ -87,7 +88,8 @@ import           Data.Text                         (Text, breakOn, drop, empty,
                                                     takeWhile, toLower, unpack,
                                                     unwords)
 import           Data.Text.IO                      (readFile)
-import           Data.Typeable                     (Typeable, typeOf)
+import           Data.Typeable                     (Proxy (..), Typeable,
+                                                    typeRep)
 import           Foreign.ForeignPtr                (ForeignPtr, newForeignPtr)
 import           Foreign.Marshal.Alloc             (alloca)
 import           Foreign.Ptr                       (nullPtr)
@@ -209,7 +211,7 @@ class HasIniConfig (a :: ProjectionType) where
   getConfig ::  Maybe FilePath -> IO (Either String (Config a))
   getConfig mf = do
     (ConfigContent cfg) <- readConfig mf
-    parseConfig <$> pure cfg
+    pure $ parseConfig cfg
 
 -- Angstrom
 
@@ -360,7 +362,7 @@ instance HasFieldValue InputType where
   fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String InputType
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: InputType))) t
+      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy InputType))) t
 
       emit :: InputType -> Text
       emit CristalK6C             = "cristal:k6c"
@@ -416,7 +418,7 @@ instance Arbitrary MaskLocation where
 instance HasFieldValue MaskLocation where
   fieldvalue = FieldValue
     { fvParse = mapRight MaskLocation . fvParse text
-    , fvEmit = \(MaskLocation m) -> fvEmit text $ m
+    , fvEmit = \(MaskLocation m) -> fvEmit text m
     }
 
 -- Meter
@@ -482,7 +484,7 @@ parseEnum :: (Bounded a, Enum a, HasFieldValue a)
 parseEnum err t = maybeToRight err (find match [minBound..maxBound])
   where
     match :: HasFieldValue a => a -> Bool
-    match i = toLower t == (fvEmit $ fieldvalue) i
+    match i = toLower t == fvEmit fieldvalue i
 
 projectionTypeP :: Parser ProjectionType
 projectionTypeP = go =<< takeText
@@ -495,7 +497,7 @@ projectionTypeP = go =<< takeText
       | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
       | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
       | toLower t == "sixs:hklprojection" = pure HklProjection
-    go t = case parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: ProjectionType))) t of
+    go t = case parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy ProjectionType))) t of
       Right p  -> pure p
       Left err -> fail err
 
@@ -517,7 +519,7 @@ instance HasFieldValue QCustomSubProjection where
   fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String QCustomSubProjection
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: QCustomSubProjection))) t
+      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy QCustomSubProjection))) t
 
       emit :: QCustomSubProjection -> Text
       emit QCustomSubProjection'QxQyQz            = "qx_qy_qz"
@@ -559,8 +561,8 @@ instance HasFieldValue (Resolutions DIM2) where
         rs <- (fvParse $ listWithSeparator "," auto) t
         case Data.List.length rs of
           1 -> Right (Resolutions2 (head rs) (head rs))
-          2 -> Right (Resolutions2 (rs !! 0) (rs !! 1))
-          _ -> Left ("Need one or two resolutions values for this projection")
+          2 -> Right (Resolutions2 (head rs) (rs !! 1))
+          _ -> Left "Need one or two resolutions values for this projection"
 
       emit :: Resolutions DIM2 -> Text
       emit (Resolutions2 r1 r2) = intercalate "," (Prelude.map (pack . show) [r1, r2])
@@ -573,8 +575,8 @@ instance HasFieldValue (Resolutions DIM3) where
         rs <- (fvParse $ listWithSeparator "," auto) t
         case Data.List.length rs of
           1 -> Right (Resolutions3 (head rs) (head rs) (head rs))
-          3 -> Right (Resolutions3 (rs !! 0) (rs !! 1) (rs !! 2))
-          _ -> Left ("Need one or three resolutions values for this projection")
+          3 -> Right (Resolutions3 (head rs) (rs !! 1) (rs !! 2))
+          _ -> Left "Need one or three resolutions values for this projection"
 
       emit :: Resolutions DIM3 -> Text
       emit (Resolutions3 r1 r2 r3) = intercalate "," (Prelude.map (pack . show) [r1, r2, r3])
@@ -673,7 +675,7 @@ instance HasFieldValue SurfaceOrientation where
   fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String SurfaceOrientation
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: SurfaceOrientation))) t
+      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy SurfaceOrientation))) t
 
       emit :: SurfaceOrientation -> Text
       emit SurfaceOrientationVertical   = "vertical"
@@ -681,7 +683,7 @@ instance HasFieldValue SurfaceOrientation where
 
 -- BinocularsPreConfig
 
-data BinocularsPreConfig =
+newtype BinocularsPreConfig =
   BinocularsPreConfig { _binocularsPreConfigProjectionType :: ProjectionType }
                          deriving (Eq, Show)
 
@@ -711,9 +713,9 @@ destination'2 (ConfigRange rs) ml = replace' interval limits
                (Just ls) -> fieldEmitter ls
 
     intervals = Data.List.NonEmpty.map
-                (\r -> case r of
-                        (InputRangeSingle f)   -> Numeric.Interval.singleton f
-                        (InputRangeFromTo f t) -> f ... t
+                (\case
+                    (InputRangeSingle f)   -> Numeric.Interval.singleton f
+                    (InputRangeFromTo f t) -> f ... t
                 ) rs
 
 destination'3 :: ConfigRange -> Maybe (RLimits DIM3) -> DestinationTmpl -> FilePath
@@ -726,9 +728,9 @@ destination'3 (ConfigRange rs) ml = replace' interval limits
                (Just ls) -> fieldEmitter ls
 
     intervals = Data.List.NonEmpty.map
-                (\r -> case r of
-                        (InputRangeSingle f)   -> Numeric.Interval.singleton f
-                        (InputRangeFromTo f t) -> f ... t
+                (\case
+                    (InputRangeSingle f)   -> Numeric.Interval.singleton f
+                    (InputRangeFromTo f t) -> f ... t
                 ) rs
 
 files :: (MonadThrow m, MonadIO m)
