@@ -32,6 +32,7 @@ module Hkl.Binoculars.Config
     , DataPath
     , Degree(..)
     , DestinationTmpl(..)
+    , FieldEmitter(..)
     , FieldParsable(..)
     , HasFieldValue(..)
     , HasIniConfig(..)
@@ -121,9 +122,11 @@ import           Paths_hkl
 
 -- Class FieldParsable
 
-class FieldParsable a where
-  fieldParser :: Parser a
+class FieldEmitter a where
   fieldEmitter :: a -> Text
+
+class FieldEmitter a => FieldParsable a where
+  fieldParser :: Parser a
 
 -- Class HasFieldValue
 
@@ -250,11 +253,11 @@ newtype ConfigRange = ConfigRange (NonEmpty InputRange)
 instance Arbitrary ConfigRange where
   arbitrary = ConfigRange <$> ((:|) <$> arbitrary <*> arbitrary)
 
-instance FieldParsable ConfigRange where
-  fieldParser = configRangeP
-
+instance FieldEmitter ConfigRange where
   fieldEmitter (ConfigRange is) = unwords . toList $ Data.List.NonEmpty.map fieldEmitter is
 
+instance FieldParsable ConfigRange where
+  fieldParser = configRangeP
 
 configRangeP :: Parser ConfigRange
 configRangeP = ConfigRange <$> ((:|)
@@ -304,11 +307,12 @@ instance Arbitrary InputRange where
     , InputRangeFromTo <$> arbitrary <*> arbitrary
     ]
 
-instance FieldParsable InputRange where
-  fieldParser = inputRangeP
-
+instance FieldEmitter InputRange where
   fieldEmitter (InputRangeSingle f)   = pack $ printf "%d" f
   fieldEmitter (InputRangeFromTo f t) = pack $ printf "%d-%d" f t
+
+instance FieldParsable InputRange where
+  fieldParser = inputRangeP
 
 inputRangeP :: Parser InputRange
 inputRangeP = inputRangeFromToP <|> inputRangeP'
@@ -450,9 +454,7 @@ data ProjectionType = AnglesProjection
 instance Arbitrary ProjectionType where
   arbitrary = elements ([minBound .. maxBound] :: [ProjectionType])
 
-instance FieldParsable ProjectionType where
-  fieldParser = projectionTypeP
-
+instance FieldEmitter ProjectionType where
   fieldEmitter AnglesProjection   = "angles"
   fieldEmitter Angles2Projection  = "angles2"
   fieldEmitter HklProjection      = "hkl"
@@ -460,6 +462,9 @@ instance FieldParsable ProjectionType where
   fieldEmitter QIndexProjection   = "qindex"
   fieldEmitter QparQperProjection = "qparqper"
   fieldEmitter QxQyQzProjection   = "qxqyqz"
+
+instance FieldParsable ProjectionType where
+  fieldParser = projectionTypeP
 
 instance HasFieldValue ProjectionType where
   fieldvalue = parsable
@@ -613,23 +618,18 @@ showLimit Nothing  = Data.Text.empty
 showLimits :: Limits -> Text
 showLimits (Limits f t) = showLimit f <> Data.Text.singleton ':' <> showLimit t
 
-instance (FieldParsable (RLimits DIM2)) where
-  fieldParser = Limits2
-                <$> (char '[' *> limitsP')
-                <*> (char ',' *> limitsP' <* char ']')
-
+instance (FieldEmitter (RLimits DIM2)) where
   fieldEmitter (Limits2 l1 l2) = Data.Text.singleton '['
                                  <> showLimits l1
                                  <> ","
                                  <> showLimits l2
                                  <> Data.Text.singleton ']'
-
-instance (FieldParsable (RLimits DIM3)) where
-  fieldParser = Limits3
+instance (FieldParsable (RLimits DIM2)) where
+  fieldParser = Limits2
                 <$> (char '[' *> limitsP')
-                <*> (char ',' *> limitsP')
                 <*> (char ',' *> limitsP' <* char ']')
 
+instance (FieldEmitter (RLimits DIM3)) where
   fieldEmitter (Limits3 l1 l2 l3) = Data.Text.singleton '['
                                     <> showLimits l1
                                     <> ","
@@ -637,6 +637,12 @@ instance (FieldParsable (RLimits DIM3)) where
                                     <> ","
                                     <> showLimits l3
                                     <> Data.Text.singleton ']'
+
+instance (FieldParsable (RLimits DIM3)) where
+  fieldParser = Limits3
+                <$> (char '[' *> limitsP')
+                <*> (char ',' *> limitsP')
+                <*> (char ',' *> limitsP' <* char ']')
 
 instance HasFieldValue (RLimits DIM2) where
   fieldvalue = parsable
