@@ -203,7 +203,7 @@ class (FramesQCustomP a, Show a) => ProcessQIndexP a where
     let res = _binocularsConfigQIndexProjectionResolution conf
 
     h5d <- mkPaths
-    filenames <- InputList
+    filenames <- InputFn'List
                 <$> files (_binocularsConfigQIndexNexusdir conf)
                           (_binocularsConfigQIndexInputRange conf)
                           (_binocularsConfigQIndexTmpl conf)

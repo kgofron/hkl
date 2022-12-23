@@ -14,6 +14,7 @@ import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Attoparsec.Text               (parseOnly)
 import           Data.Ini.Config.Bidir              (ini)
 import           Data.List.NonEmpty                 (NonEmpty (..))
+import           Numeric.Interval                   (singleton, (...))
 import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
 import           Path                               (mkAbsDir)
 import           Test.Hspec
@@ -39,27 +40,27 @@ spec = do
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM3))
 
   describe "ConfigRange" $ do
-    prop "quickcheck" $
-      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
-
     it "parse a range" $ do
       let p = parseOnly fieldParser "120 123-453"
-      p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
+      p `shouldBe` (Right (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)])))
     it "parse a range" $ do
       let p = parseOnly fieldParser "120,123-453"
-      p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
+      p `shouldBe` (Right (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)])))
     it "parse a range" $ do
       let p = parseOnly fieldParser "120,,,123-453"
-      p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
+      p `shouldBe` (Right (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)])))
     it "parse a range" $ do
       let p = parseOnly fieldParser "120-135 137-453"
-      p `shouldBe` (Right (ConfigRange (InputRangeFromTo 120 135 :| [InputRangeFromTo 137 453])))
+      p `shouldBe` (Right (ConfigRange (InputRange (120...135) :| [InputRange (137...453)])))
     it "parse a range" $ do
       let p = parseOnly fieldParser "120-135, 137-453"
-      p `shouldBe` (Right (ConfigRange (InputRangeFromTo 120 135 :| [InputRangeFromTo 137 453])))
+      p `shouldBe` (Right (ConfigRange (InputRange (120...135) :| [InputRange (137...453)])))
     it "parse a range" $ do
       let p = parseOnly fieldParser "0 1--1 0-0"
-      p  `shouldBe` (Right (ConfigRange (InputRangeSingle 0 :| [InputRangeFromTo 1 (-1), InputRangeFromTo 0 0])))
+      p  `shouldBe` (Right (ConfigRange (InputRange (singleton 0) :| [InputRange (1...(-1)), InputRange (singleton 0)])))
+
+    prop "quickcheck" $
+      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
 
   describe "read and parse binoculars Configuration" $ do
     it "hkl projection" $ do
@@ -71,7 +72,7 @@ spec = do
                                           , _binocularsConfigHklInputType = SixsFlyScanUhv2
                                           , _binocularsConfigHklNexusdir = Just $(mkAbsDir "/nfs/ruche-sixs/sixs-soleil/com-sixs/2018/Run3/Corentin/Al13Co4/")
                                           , _binocularsConfigHklTmpl = Nothing
-                                          , _binocularsConfigHklInputRange = Just (ConfigRange (InputRangeFromTo 4 5 :| []))
+                                          , _binocularsConfigHklInputRange = Just (ConfigRange (InputRange (4...5) :| []))
                                           , _binocularsConfigHklDetector = Nothing
                                           , _binocularsConfigHklCentralpixel = (293,141)
                                           , _binocularsConfigHklSdd = Meter (1.1083 *~ meter)

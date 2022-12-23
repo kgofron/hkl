@@ -219,7 +219,7 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
     let res = _binocularsConfigAnglesProjectionResolution conf
 
     h5d <- mkPaths
-    filenames <- InputList
+    filenames <- InputFn'List
                 <$> files (_binocularsConfigAnglesNexusdir conf)
                           (_binocularsConfigAnglesInputRange conf)
                           (_binocularsConfigAnglesTmpl conf)

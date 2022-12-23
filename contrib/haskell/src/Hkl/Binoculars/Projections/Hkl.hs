@@ -407,7 +407,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let mImageSumMax = _binocularsConfigHklImageSumMax conf
     let res = _binocularsConfigHklProjectionResolution conf
 
-    filenames <- InputList
+    filenames <- InputFn'List
                 <$> files (_binocularsConfigHklNexusdir conf)
                           (_binocularsConfigHklInputRange conf)
                           (_binocularsConfigHklTmpl conf)

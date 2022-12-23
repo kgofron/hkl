@@ -72,9 +72,9 @@ chunk target = go target target
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
 
 toList :: InputFn -> [FilePath]
-toList (InputFn f)           = [f]
-toList (InputRange tmpl f t) = [printf tmpl i | i <- [f..t]]
-toList (InputList fs)        = map fromAbsFile fs
+toList (InputFn f)              = [f]
+toList (InputFn'Range tmpl f t) = [printf tmpl i | i <- [f..t]]
+toList (InputFn'List fs)        = map fromAbsFile fs
 
 --  DataFrameSpace
 
@@ -103,8 +103,8 @@ addSpace (DataFrameSpace _ (Space fs) _) (Cube fp) =
 type Template = String
 
 data InputFn = InputFn FilePath
-             | InputRange Template Int Int
-             | InputList [Path Abs File]
+             | InputFn'Range Template Int Int
+             | InputFn'List [Path Abs File]
   deriving Show
 
 withCubeAccumulator :: Shape sh => Cube sh -> (IORef (Cube sh)  -> IO ()) -> IO (Cube sh)

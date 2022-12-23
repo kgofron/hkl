@@ -205,7 +205,7 @@ class (FramesQCustomP a, Show a) => ProcessQparQperP a where
     let res = _binocularsConfigQparQperProjectionResolution conf
 
     h5d <- mkPaths
-    filenames <- InputList
+    filenames <- InputFn'List
                 <$> files (_binocularsConfigQparQperNexusdir conf)
                           (_binocularsConfigQparQperInputRange conf)
                           (_binocularsConfigQparQperTmpl conf)

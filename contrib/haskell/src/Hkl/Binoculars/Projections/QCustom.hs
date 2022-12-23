@@ -644,7 +644,7 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
     let subprojection = fromMaybe QCustomSubProjection'QxQyQz (_binocularsConfigQCustomSubProjection conf)
     let res = _binocularsConfigQCustomProjectionResolution conf
     h5d <- mkPaths
-    filenames <- InputList
+    filenames <- InputFn'List
                 <$> files (_binocularsConfigQCustomNexusdir conf)
                           (_binocularsConfigQCustomInputRange conf)
                           (_binocularsConfigQCustomTmpl conf)

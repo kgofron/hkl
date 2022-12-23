@@ -89,7 +89,8 @@ import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
 import           GHC.Exts                          (IsList (..))
 import           Numeric.Interval                  (Interval, empty, hull, inf,
-                                                    singleton, sup, (...))
+                                                    singleton, singular, sup,
+                                                    (...))
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Length, degree, meter, (*~),
                                                     (/~))
@@ -287,30 +288,34 @@ instance Exception HklBinocularsConfigException
 
 -- InputRange
 
-data InputRange = InputRangeSingle Int
-                | InputRangeFromTo Int Int
-                deriving (Eq, Show)
+newtype InputRange = InputRange {unInputRange :: Interval Int }
+                   deriving (Eq, Show)
 
 instance Arbitrary InputRange where
-  arbitrary = oneof
-    [ InputRangeSingle <$> arbitrary
-    , InputRangeFromTo <$> arbitrary <*> arbitrary
-    ]
+  arbitrary = InputRange <$> oneof [ Numeric.Interval.singleton <$> arbitrary
+                                   , do
+                                       f <- arbitrary
+                                       t <- arbitrary
+                                       pure $ if f < t then (f...t) else (t...f)
+                                   ]
 
 instance FieldEmitter InputRange where
-  fieldEmitter (InputRangeSingle f)   = pack $ printf "%d" f
-  fieldEmitter (InputRangeFromTo f t) = pack $ printf "%d-%d" f t
+  fieldEmitter (InputRange i) = pack $ if singular i
+                                       then printf "%d" (sup i)
+                                       else printf "%d-%d" (inf i) (sup i)
 
 instance FieldParsable InputRange where
   fieldParser = inputRangeFromToP <|> inputRangeP'
     where
       inputRangeFromToP :: Parser InputRange
-      inputRangeFromToP =  InputRangeFromTo
-                           <$> signed decimal <* char '-'
-                           <*> signed decimal
+      inputRangeFromToP =  InputRange
+                           <$> ((...)
+                                <$> signed decimal <* char '-'
+                                <*> signed decimal)
 
       inputRangeP' :: Parser InputRange
-      inputRangeP' = InputRangeSingle <$> signed decimal
+      inputRangeP' = InputRange
+                     <$> (Numeric.Interval.singleton <$> (signed decimal))
 
 -- InputTmpl
 
@@ -675,11 +680,7 @@ destination' (ConfigRange rs) ml = replace' interval limits
                Nothing   -> "nolimits"
                (Just ls) -> fieldEmitter ls
 
-    intervals = Data.List.NonEmpty.map
-                (\case
-                    (InputRangeSingle f)   -> Numeric.Interval.singleton f
-                    (InputRangeFromTo f t) -> f ... t
-                ) rs
+    intervals = Data.List.NonEmpty.map unInputRange rs
 
 files :: (MonadThrow m, MonadIO m)
       => Maybe (Path Abs Dir)
@@ -715,8 +716,7 @@ files md mr mt = do
       matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
 
       isInInputRange :: Path Rel File -> String -> InputRange -> Bool
-      isInInputRange p tmpl (InputRangeSingle i) = any (matchIndex p tmpl) [i]
-      isInInputRange p tmpl (InputRangeFromTo from to) = any (matchIndex p tmpl) [from..to]
+      isInInputRange p tmpl (InputRange i) = any (matchIndex p tmpl) [inf(i) .. sup(i)]
 
       isInConfigRange :: String -> ConfigRange -> Path Abs File -> Bool
       isInConfigRange tmpl (ConfigRange rs) p = any (isInInputRange (filename p) tmpl) rs

@@ -148,6 +148,7 @@ test-suite hkl-test
   build-depends: dimensional
   build-depends: hkl
   build-depends: hspec
+  build-depends: intervals
   build-depends: path
   build-depends: repa
   build-depends: temporary
