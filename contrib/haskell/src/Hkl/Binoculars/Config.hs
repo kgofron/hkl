@@ -79,21 +79,20 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     number, parseIni, section,
                                                     text, (.=))
 import           Data.List                         (find, isInfixOf, length)
-import           Data.List.NonEmpty                (NonEmpty (..), map, toList)
+import           Data.List.NonEmpty                (NonEmpty (..), map)
 import           Data.String                       (IsString)
 import           Data.Text                         (Text, breakOn, drop, empty,
-                                                    findIndex, intercalate,
-                                                    length, lines, pack,
+                                                    intercalate, length, pack,
                                                     replace, singleton, strip,
-                                                    take, takeWhile, toLower,
-                                                    unlines, unpack, unwords)
+                                                    takeWhile, toLower, unpack,
+                                                    unwords)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Typeable, typeOf)
 import           Foreign.ForeignPtr                (ForeignPtr, newForeignPtr)
 import           Foreign.Marshal.Alloc             (alloca)
 import           Foreign.Ptr                       (nullPtr)
 import           Foreign.Storable                  (poke)
-import           GHC.Exts                          (IsList)
+import           GHC.Exts                          (IsList (..))
 import           Numeric.Interval                  (Interval, empty, hull, inf,
                                                     singleton, sup, (...))
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
@@ -125,10 +124,16 @@ data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
     deriving (Show)
 instance Exception HklBinocularsConfigException
 
+-- Attenuation
+
 newtype Attenuation = Attenuation { unAttenuation :: Double }
   deriving (Eq, Show)
 
+-- ConfigContent
+
 newtype ConfigContent = ConfigContent Text
+
+-- DestinationTmpl
 
 newtype DestinationTmpl =
   DestinationTmpl { unDestinationTmpl :: Text }
@@ -137,11 +142,15 @@ newtype DestinationTmpl =
 instance Arbitrary DestinationTmpl where
   arbitrary = pure $ DestinationTmpl "{first}_{last}.h5"
 
+-- InputTmpl
+
 newtype InputTmpl = InputTmpl { unInputTmpl :: Text }
   deriving (Eq, Show)
 
 instance Arbitrary InputTmpl where
   arbitrary = pure $ InputTmpl "inputfiles%04.nxs"
+
+-- InputType
 
 data InputType = CristalK6C
                | MarsFlyscan
@@ -164,6 +173,7 @@ data InputType = CristalK6C
 instance Arbitrary InputType where
   arbitrary = elements ([minBound .. maxBound] :: [InputType])
 
+-- InputRange
 
 data InputRange = InputRangeSingle Int
                 | InputRangeFromTo Int Int
@@ -175,51 +185,15 @@ instance Arbitrary InputRange where
     , InputRangeFromTo <$> arbitrary <*> arbitrary
     ]
 
+-- ConfigRange
+
 newtype ConfigRange = ConfigRange (NonEmpty InputRange)
   deriving (Eq, Show, IsList)
 
 instance Arbitrary ConfigRange where
   arbitrary = ConfigRange <$> ((:|) <$> arbitrary <*> arbitrary)
 
-data Resolutions a where
-  Resolutions2 :: Double -> Double -> Resolutions DIM2
-  Resolutions3 :: Double -> Double -> Double -> Resolutions DIM3
-
-deriving instance Eq (Resolutions a)
-deriving instance Show (Resolutions a)
-
-instance Arbitrary (Resolutions DIM2) where
-  arbitrary = Resolutions2 <$> arbitrary <*> arbitrary
-
-instance Arbitrary (Resolutions DIM3) where
-  arbitrary = Resolutions3 <$> arbitrary <*> arbitrary <*> arbitrary
-
-data SurfaceOrientation = SurfaceOrientationVertical
-                        | SurfaceOrientationHorizontal
-  deriving (Eq, Show, Enum, Bounded)
-
-instance Arbitrary SurfaceOrientation where
-  arbitrary = elements ([minBound .. maxBound] :: [SurfaceOrientation])
-
-newtype SampleAxis = SampleAxis { unSampleAxis :: Text }
-  deriving (Eq, Show)
-
-data ProjectionType = AnglesProjection
-                    | Angles2Projection
-                    | HklProjection
-                    | QCustomProjection
-                    | QIndexProjection
-                    | QparQperProjection
-                    | QxQyQzProjection
-
-  deriving (Eq, Show, Enum, Bounded)
-
-instance Arbitrary ProjectionType where
-  arbitrary = elements ([minBound .. maxBound] :: [ProjectionType])
-
-------------
--- Limits --
-------------
+-- Limits
 
 data Limits = Limits (Maybe Double) (Maybe Double)
   deriving (Eq, Show)
@@ -244,7 +218,48 @@ newLimits (Limits mmin mmax) res =
           newForeignPtr p'hkl_binoculars_axis_limits_free
                         =<< c'hkl_binoculars_axis_limits_new imin'' imax''
 
-data RLimits a where
+-- ProjectionType
+
+data ProjectionType = AnglesProjection
+                    | Angles2Projection
+                    | HklProjection
+                    | QCustomProjection
+                    | QIndexProjection
+                    | QparQperProjection
+                    | QxQyQzProjection
+
+  deriving (Eq, Show, Enum, Bounded)
+
+instance Arbitrary ProjectionType where
+  arbitrary = elements ([minBound .. maxBound] :: [ProjectionType])
+
+
+-- Resolutions
+
+data Resolutions a where
+  Resolutions2 :: Double -> Double -> Resolutions DIM2
+  Resolutions3 :: Double -> Double -> Double -> Resolutions DIM3
+
+deriving instance Eq (Resolutions a)
+deriving instance Show (Resolutions a)
+
+instance Arbitrary (Resolutions DIM2) where
+  arbitrary = Resolutions2 <$> arbitrary <*> arbitrary
+
+instance Arbitrary (Resolutions DIM3) where
+  arbitrary = Resolutions3 <$> arbitrary <*> arbitrary <*> arbitrary
+
+instance IsList (Resolutions a) where
+  type Item (Resolutions a) = Double
+
+  toList (Resolutions2 r1 r2)    = [r1, r2]
+  toList (Resolutions3 r1 r2 r3) = [r1, r2, r3]
+
+  fromList = undefined
+
+-- RLimits
+
+data RLimits sh where
   Limits2 :: Limits -> Limits -> RLimits DIM2
   Limits3 :: Limits -> Limits -> Limits -> RLimits DIM3
 
@@ -254,9 +269,38 @@ deriving instance Show (RLimits a)
 instance Arbitrary (RLimits DIM2) where
   arbitrary = Limits2 <$> arbitrary <*> arbitrary
 
+
 instance Arbitrary (RLimits DIM3) where
   arbitrary = Limits3 <$> arbitrary <*> arbitrary <*> arbitrary
 
+
+instance IsList (RLimits a) where
+  type Item (RLimits a) = Limits
+
+  toList (Limits2 l1 l2)    = [l1, l2]
+  toList (Limits3 l1 l2 l3) = [l1, l2, l3]
+
+  fromList = undefined
+
+-- SurfaceOrientation
+
+data SurfaceOrientation = SurfaceOrientationVertical
+                        | SurfaceOrientationHorizontal
+  deriving (Eq, Show, Enum, Bounded)
+
+instance Arbitrary SurfaceOrientation where
+  arbitrary = elements ([minBound .. maxBound] :: [SurfaceOrientation])
+
+-- SampleAxis
+
+newtype SampleAxis = SampleAxis { unSampleAxis :: Text }
+  deriving (Eq, Show)
+
+-----------
+-- Class --
+-----------
+
+-- Class FieldParsable
 
 class FieldParsable a where
   fieldParser :: Parser a
@@ -283,16 +327,8 @@ readConfig mf = do
                        Nothing  -> getDataFileName "data/test/config_manip1.cfg"
                        (Just f) -> pure f
   return $ ConfigContent cfg
-  -- return $ ConfigContent $ unlines $ [fixHeader l | l <- lines cfg]
-    where
-      fixHeader :: Text -> Text
-      fixHeader l = case findIndex (== ']' ) l of
-        Nothing  -> l
-        (Just n) -> take (n + 1) l
 
-------------------
--- HasIniConfig --
-------------------
+-- Class HasIniConfig
 
 data family Config (a :: ProjectionType)
 data family DataPath (a :: ProjectionType)

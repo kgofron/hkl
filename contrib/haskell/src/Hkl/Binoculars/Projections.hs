@@ -14,8 +14,7 @@
     Portability: GHC only (not tested)
 -}
 module Hkl.Binoculars.Projections
-  ( DetectorPath(..)
-  , Space(..)
+  ( Space(..)
   , newSpace
   , saveCube
   , withGeometry
@@ -28,21 +27,19 @@ module Hkl.Binoculars.Projections
   ) where
 
 import           Control.Monad                   (zipWithM)
-import           Data.Aeson                      (FromJSON, ToJSON)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
 import           Data.Array.Repa.Index           (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import           Data.ByteString                 (useAsCString)
 import           Data.Text.Encoding              (encodeUtf8)
-import           Data.Word                       (Word16)
 import           Foreign.C.String                (CString, withCString)
 import           Foreign.C.Types                 (CBool, CSize (..))
 import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr,
                                                   withForeignPtr)
 import           Foreign.Marshal.Array           (withArrayLen)
 import           Foreign.Ptr                     (Ptr, nullPtr)
-import           GHC.Generics                    (Generic)
+import           GHC.Exts                        (IsList (..))
 
 import           Prelude                         hiding (drop)
 
@@ -50,7 +47,6 @@ import           Hkl.Binoculars.Config
 import           Hkl.C
 import           Hkl.Detector
 import           Hkl.Geometry
-import           Hkl.H5                          hiding (File)
 import           Hkl.Orphan                      ()
 
 --  Common
@@ -71,42 +67,28 @@ saveCube o rs = do
             c'hkl_binoculars_cube_save_hdf5 fn p
     EmptyCube -> return ()
 
-withMaybeLimits :: Maybe (RLimits a)
-                -> Resolutions a
+withMaybeLimits :: Shape sh
+                => Maybe (RLimits sh)
+                -> Resolutions sh
                 -> (Int -> Ptr (Ptr C'HklBinocularsAxisLimits) -> IO r)
                 -> IO r
 withMaybeLimits mls rs f = do
-  let rs' = case rs of
-              (Resolutions2 r1 r2)    -> [r1, r2]
-              (Resolutions3 r1 r2 r3) -> [r1, r2, r3]
   case mls of
     Nothing   -> f 0 nullPtr
     (Just ls) -> do
-      let ls' = case ls of
-                  (Limits2 l1 l2)    -> [l1, l2]
-                  (Limits3 l1 l2 l3) -> [l1, l2, l3]
-      ptrs <- zipWithM newLimits ls' rs'
-      withForeignPtrs ptrs $ \pts ->
-        withArrayLen pts f
+      ptrs <- zipWithM newLimits (toList ls) (toList rs)
+      withForeignPtrs ptrs $ \pts -> withArrayLen pts f
 
 withMaybeMask :: Maybe Mask -> (Ptr CBool -> IO r) -> IO r
 withMaybeMask mm f = case mm of
                        Nothing  -> f nullPtr
                        (Just m) -> withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
 
-withResolutions :: Resolutions a -> (Int -> Ptr Double -> IO r) -> IO r
-withResolutions (Resolutions2 r1 r2)    = withArrayLen [r1, r2]
-withResolutions (Resolutions3 r1 r2 r3) = withArrayLen [r1, r2, r3]
+withResolutions :: Shape sh => Resolutions sh -> (Int -> Ptr Double -> IO r) -> IO r
+withResolutions r = withArrayLen . toList $ r
 
 withSampleAxis :: SampleAxis -> (CString -> IO r) -> IO r
 withSampleAxis (SampleAxis t) =  useAsCString (encodeUtf8 t)
-
--- DetectorPath
-
-newtype DetectorPath = DetectorPath
-    { detectorPathImage    :: Hdf5Path DIM3 Word16
-    } deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
 
 -----------
 -- Space --
