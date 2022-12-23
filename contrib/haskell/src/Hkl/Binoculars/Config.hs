@@ -117,12 +117,119 @@ import           Hkl.Lattice
 import           Paths_hkl
 
 
-data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
-                                  | NoDataFilesInTheGivenDirectory (Path Abs Dir)
-                                  | NoFilesInRangeInTheGivenDirectory (Path Abs Dir) ConfigRange
-                                  | ResolutionNotCompatibleWithProjectionNbOfCoordinates [Double] Int
-    deriving (Show)
-instance Exception HklBinocularsConfigException
+-- Class FieldParsable
+
+class FieldParsable a where
+  fieldParser :: Parser a
+  fieldEmitter :: a -> Text
+
+-- Class HasFieldValue
+
+class HasFieldValue a where
+  fieldvalue :: FieldValue a
+
+auto :: HasFieldValue a => FieldValue a
+auto = fieldvalue
+
+instance HasFieldValue Bool where
+  fieldvalue = bool
+
+instance HasFieldValue Degree where
+  fieldvalue = FieldValue
+    { fvParse =  mapRight (Degree . (*~ degree)) . fvParse auto
+    , fvEmit = \(Degree m) -> pack . show . (/~ degree) $ m
+    }
+
+number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
+number' = Data.Ini.Config.Bidir.number
+  { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
+
+instance HasFieldValue Double where
+  fieldvalue = number'
+
+instance  HasFieldValue (Detector Hkl DIM2) where
+  fieldvalue = FieldValue
+               { fvParse = parseDetector2D . strip . uncomment
+               , fvEmit = \(Detector2D _ name _) -> pack name
+               }
+
+instance HasFieldValue Float where
+  fieldvalue = number'
+
+instance HasFieldValue Int where
+  fieldvalue = number'
+
+instance HasFieldValue (Path Abs Dir) where
+  fieldvalue = FieldValue { fvParse = \t -> mapLeft show (runCatch . parseAbsDir . unpack $ t)
+                          , fvEmit = pack . fromAbsDir
+                          }
+
+instance HasFieldValue Text where
+  fieldvalue = text
+
+instance HasFieldValue [Double] where
+  fieldvalue = listWithSeparator "," auto
+
+pairWithSeparator' :: FieldValue l -> Text -> FieldValue r -> FieldValue (l, r)
+pairWithSeparator' left sep right = FieldValue
+  { fvParse = \ t ->
+      let (leftChunk, rightChunk) = breakOn sep t
+      in do
+        x <- fvParse left leftChunk
+        y <- fvParse right (drop (Data.Text.length sep) rightChunk)
+        return (x, y)
+  , fvEmit = \ (x, y) -> fvEmit left x <> sep <> fvEmit right y
+  }
+
+instance HasFieldValue (Int, Int) where
+  fieldvalue = pairWithSeparator' number' "," number'
+
+-- Class HasIniConfig
+
+data family Config (a :: ProjectionType)
+data family DataPath (a :: ProjectionType)
+
+readConfig :: Maybe FilePath -> IO ConfigContent
+readConfig mf = do
+  cfg <- readFile =<< case mf of
+                       Nothing  -> getDataFileName "data/test/config_manip1.cfg"
+                       (Just f) -> pure f
+  return $ ConfigContent cfg
+
+class HasIniConfig (a :: ProjectionType) where
+  defaultConfig :: Config a
+
+  specConfig :: IniSpec (Config a) ()
+
+  overwriteWithCmd :: Maybe ConfigRange -> Config a -> Config a
+
+  parseConfig :: Text -> Either String (Config a)
+  parseConfig cfg = mapRight getIniValue (parseIni cfg (ini defaultConfig specConfig))
+
+  getConfig ::  Maybe FilePath -> IO (Either String (Config a))
+  getConfig mf = do
+    (ConfigContent cfg) <- readConfig mf
+    parseConfig <$> pure cfg
+
+-- Angstrom
+
+newtype Angstrom = Angstrom { unAngstrom :: Length Double }
+    deriving (Eq, Show)
+
+instance FromJSON Angstrom where
+  parseJSON = fmap (Angstrom . (*~ angstrom)) . parseJSON
+
+instance ToJSON Angstrom where
+  toJSON = toJSON . (/~ angstrom) . unAngstrom
+
+instance Arbitrary Angstrom where
+  arbitrary = Angstrom . (*~ angstrom) <$> arbitrary
+
+instance HasFieldValue Angstrom where
+  fieldvalue = FieldValue
+    { fvParse =  mapRight (Angstrom . (*~ angstrom)) . fvParse auto
+    , fvEmit = \(Angstrom m) -> pack . show . (/~ angstrom) $ m
+    }
 
 -- Attenuation
 
@@ -133,6 +240,31 @@ newtype Attenuation = Attenuation { unAttenuation :: Double }
 
 newtype ConfigContent = ConfigContent Text
 
+-- ConfigRange
+
+newtype ConfigRange = ConfigRange (NonEmpty InputRange)
+  deriving (Eq, Show, IsList)
+
+instance Arbitrary ConfigRange where
+  arbitrary = ConfigRange <$> ((:|) <$> arbitrary <*> arbitrary)
+
+instance FieldParsable ConfigRange where
+  fieldParser = configRangeP
+
+  fieldEmitter (ConfigRange is) = unwords . toList $ Data.List.NonEmpty.map fieldEmitter is
+
+
+configRangeP :: Parser ConfigRange
+configRangeP = ConfigRange <$> ((:|)
+                                <$> inputRangeP <* many (satisfy isSep)
+                                <*> inputRangeP `sepBy` many (satisfy isSep))
+    where
+      isSep :: Char -> Bool
+      isSep c = c == ' ' || c == ','
+
+instance HasFieldValue ConfigRange where
+  fieldvalue = parsable
+
 -- DestinationTmpl
 
 newtype DestinationTmpl =
@@ -142,6 +274,51 @@ newtype DestinationTmpl =
 instance Arbitrary DestinationTmpl where
   arbitrary = pure $ DestinationTmpl "{first}_{last}.h5"
 
+instance HasFieldValue DestinationTmpl where
+  fieldvalue = FieldValue
+    { fvParse = Right . DestinationTmpl . uncomment
+    , fvEmit = \(DestinationTmpl t) -> t
+    }
+
+-- HklBinocularsConfigException
+
+data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
+                                  | NoDataFilesInTheGivenDirectory (Path Abs Dir)
+                                  | NoFilesInRangeInTheGivenDirectory (Path Abs Dir) ConfigRange
+                                  | ResolutionNotCompatibleWithProjectionNbOfCoordinates [Double] Int
+    deriving (Show)
+
+instance Exception HklBinocularsConfigException
+
+-- InputRange
+
+data InputRange = InputRangeSingle Int
+                | InputRangeFromTo Int Int
+                deriving (Eq, Show)
+
+instance Arbitrary InputRange where
+  arbitrary = oneof
+    [ InputRangeSingle <$> arbitrary
+    , InputRangeFromTo <$> arbitrary <*> arbitrary
+    ]
+
+instance FieldParsable InputRange where
+  fieldParser = inputRangeP
+
+  fieldEmitter (InputRangeSingle f)   = pack $ printf "%d" f
+  fieldEmitter (InputRangeFromTo f t) = pack $ printf "%d-%d" f t
+
+inputRangeP :: Parser InputRange
+inputRangeP = inputRangeFromToP <|> inputRangeP'
+  where
+    inputRangeFromToP :: Parser InputRange
+    inputRangeFromToP =  InputRangeFromTo
+                         <$> signed decimal <* char '-'
+                         <*> signed decimal
+
+    inputRangeP' :: Parser InputRange
+    inputRangeP' = InputRangeSingle <$> signed decimal
+
 -- InputTmpl
 
 newtype InputTmpl = InputTmpl { unInputTmpl :: Text }
@@ -149,6 +326,12 @@ newtype InputTmpl = InputTmpl { unInputTmpl :: Text }
 
 instance Arbitrary InputTmpl where
   arbitrary = pure $ InputTmpl "inputfiles%04.nxs"
+
+instance HasFieldValue InputTmpl where
+  fieldvalue = FieldValue
+    { fvParse = Right . InputTmpl . uncomment
+    , fvEmit = \(InputTmpl t) -> t
+    }
 
 -- InputType
 
@@ -173,25 +356,29 @@ data InputType = CristalK6C
 instance Arbitrary InputType where
   arbitrary = elements ([minBound .. maxBound] :: [InputType])
 
--- InputRange
+instance HasFieldValue InputType where
+  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
+    where
+      parse :: Text -> Either String InputType
+      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: InputType))) t
 
-data InputRange = InputRangeSingle Int
-                | InputRangeFromTo Int Int
-                deriving (Eq, Show)
-
-instance Arbitrary InputRange where
-  arbitrary = oneof
-    [ InputRangeSingle <$> arbitrary
-    , InputRangeFromTo <$> arbitrary <*> arbitrary
-    ]
-
--- ConfigRange
-
-newtype ConfigRange = ConfigRange (NonEmpty InputRange)
-  deriving (Eq, Show, IsList)
-
-instance Arbitrary ConfigRange where
-  arbitrary = ConfigRange <$> ((:|) <$> arbitrary <*> arbitrary)
+      emit :: InputType -> Text
+      emit CristalK6C             = "cristal:k6c"
+      emit MarsFlyscan            = "mars:flyscan"
+      emit MarsSbs                = "mars:sbs"
+      emit SixsFlyMedH            = "sixs:flymedh"
+      emit SixsFlyMedV            = "sixs:flymedv"
+      emit SixsFlyMedVEiger       = "sixs:flymedveiger"
+      emit SixsFlyMedVS70         = "sixs:flymedvs70"
+      emit SixsFlyScanUhv         = "sixs:flyscanuhv"
+      emit SixsFlyScanUhv2        = "sixs:flyscanuhv2"
+      emit SixsFlyScanUhvTest     = "sixs:flyscanuhvtest"
+      emit SixsFlyScanUhvUfxc     = "sixs:flyscanuhvufxc"
+      emit SixsSbsFixedDetector   = "sixs:sbsfixeddetector"
+      emit SixsSbsMedH            = "sixs:sbsmedh"
+      emit SixsSbsMedV            = "sixs:sbsmedv"
+      emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
+      emit SixsSbsUhv             = "sixs:sbsuhv"
 
 -- Limits
 
@@ -218,6 +405,34 @@ newLimits (Limits mmin mmax) res =
           newForeignPtr p'hkl_binoculars_axis_limits_free
                         =<< c'hkl_binoculars_axis_limits_new imin'' imax''
 
+-- MaskLocation
+
+newtype MaskLocation = MaskLocation { unMaskLocation :: Text }
+    deriving (Eq, Show, IsString)
+
+instance Arbitrary MaskLocation where
+  arbitrary = pure $ MaskLocation "mask location"
+
+instance HasFieldValue MaskLocation where
+  fieldvalue = FieldValue
+    { fvParse = mapRight MaskLocation . fvParse text
+    , fvEmit = \(MaskLocation m) -> fvEmit text $ m
+    }
+
+-- Meter
+
+newtype Meter = Meter { unMeter :: Length Double }
+    deriving (Eq, Show)
+
+instance Arbitrary Meter where
+  arbitrary = Meter . (*~ meter) <$> arbitrary
+
+instance HasFieldValue Meter where
+  fieldvalue = FieldValue
+    { fvParse =  mapRight (Meter . (*~ meter)) . fvParse auto
+    , fvEmit = \(Meter m) -> pack . show . (/~ meter) $ m
+    }
+
 -- ProjectionType
 
 data ProjectionType = AnglesProjection
@@ -233,78 +448,19 @@ data ProjectionType = AnglesProjection
 instance Arbitrary ProjectionType where
   arbitrary = elements ([minBound .. maxBound] :: [ProjectionType])
 
+instance FieldParsable ProjectionType where
+  fieldParser = projectionTypeP
 
--- Resolutions
+  fieldEmitter AnglesProjection   = "angles"
+  fieldEmitter Angles2Projection  = "angles2"
+  fieldEmitter HklProjection      = "hkl"
+  fieldEmitter QCustomProjection  = "qcustom"
+  fieldEmitter QIndexProjection   = "qindex"
+  fieldEmitter QparQperProjection = "qparqper"
+  fieldEmitter QxQyQzProjection   = "qxqyqz"
 
-data Resolutions a where
-  Resolutions2 :: Double -> Double -> Resolutions DIM2
-  Resolutions3 :: Double -> Double -> Double -> Resolutions DIM3
-
-deriving instance Eq (Resolutions a)
-deriving instance Show (Resolutions a)
-
-instance Arbitrary (Resolutions DIM2) where
-  arbitrary = Resolutions2 <$> arbitrary <*> arbitrary
-
-instance Arbitrary (Resolutions DIM3) where
-  arbitrary = Resolutions3 <$> arbitrary <*> arbitrary <*> arbitrary
-
-instance IsList (Resolutions a) where
-  type Item (Resolutions a) = Double
-
-  toList (Resolutions2 r1 r2)    = [r1, r2]
-  toList (Resolutions3 r1 r2 r3) = [r1, r2, r3]
-
-  fromList = undefined
-
--- RLimits
-
-data RLimits sh where
-  Limits2 :: Limits -> Limits -> RLimits DIM2
-  Limits3 :: Limits -> Limits -> Limits -> RLimits DIM3
-
-deriving instance Eq (RLimits a)
-deriving instance Show (RLimits a)
-
-instance Arbitrary (RLimits DIM2) where
-  arbitrary = Limits2 <$> arbitrary <*> arbitrary
-
-
-instance Arbitrary (RLimits DIM3) where
-  arbitrary = Limits3 <$> arbitrary <*> arbitrary <*> arbitrary
-
-
-instance IsList (RLimits a) where
-  type Item (RLimits a) = Limits
-
-  toList (Limits2 l1 l2)    = [l1, l2]
-  toList (Limits3 l1 l2 l3) = [l1, l2, l3]
-
-  fromList = undefined
-
--- SurfaceOrientation
-
-data SurfaceOrientation = SurfaceOrientationVertical
-                        | SurfaceOrientationHorizontal
-  deriving (Eq, Show, Enum, Bounded)
-
-instance Arbitrary SurfaceOrientation where
-  arbitrary = elements ([minBound .. maxBound] :: [SurfaceOrientation])
-
--- SampleAxis
-
-newtype SampleAxis = SampleAxis { unSampleAxis :: Text }
-  deriving (Eq, Show)
-
------------
--- Class --
------------
-
--- Class FieldParsable
-
-class FieldParsable a where
-  fieldParser :: Parser a
-  fieldEmitter :: a -> Text
+instance HasFieldValue ProjectionType where
+  fieldvalue = parsable
 
 ms :: String
 ms = "#;"
@@ -321,79 +477,29 @@ parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
     emit ::  FieldParsable a => a -> Text
     emit = fieldEmitter
 
-readConfig :: Maybe FilePath -> IO ConfigContent
-readConfig mf = do
-  cfg <- readFile =<< case mf of
-                       Nothing  -> getDataFileName "data/test/config_manip1.cfg"
-                       (Just f) -> pure f
-  return $ ConfigContent cfg
+parseEnum :: (Bounded a, Enum a, HasFieldValue a)
+          => String -> Text -> Either String a
+parseEnum err t = maybeToRight err (find match [minBound..maxBound])
+  where
+    match :: HasFieldValue a => a -> Bool
+    match i = toLower t == (fvEmit $ fieldvalue) i
 
--- Class HasIniConfig
+projectionTypeP :: Parser ProjectionType
+projectionTypeP = go =<< takeText
+  where
+    go :: Text -> Parser ProjectionType
+    go t
+      | toLower t == "sixs:anglesprojection" = pure AnglesProjection
+      | toLower t == "sixs:angles2projection" = pure Angles2Projection
+      | toLower t == "sixs:qindex" = pure QIndexProjection
+      | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
+      | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
+      | toLower t == "sixs:hklprojection" = pure HklProjection
+    go t = case parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: ProjectionType))) t of
+      Right p  -> pure p
+      Left err -> fail err
 
-data family Config (a :: ProjectionType)
-data family DataPath (a :: ProjectionType)
-
-class HasIniConfig (a :: ProjectionType) where
-  defaultConfig :: Config a
-
-  specConfig :: IniSpec (Config a) ()
-
-  overwriteWithCmd :: Maybe ConfigRange -> Config a -> Config a
-
-  parseConfig :: Text -> Either String (Config a)
-  parseConfig cfg = mapRight getIniValue (parseIni cfg (ini defaultConfig specConfig))
-
-  getConfig ::  Maybe FilePath -> IO (Either String (Config a))
-  getConfig mf = do
-    (ConfigContent cfg) <- readConfig mf
-    parseConfig <$> pure cfg
-
--------------------------
--- BinocularsPreConfig --
--------------------------
-
-data BinocularsPreConfig =
-  BinocularsPreConfig { _binocularsPreConfigProjectionType :: ProjectionType }
-                         deriving (Eq, Show)
-
-makeLenses ''BinocularsPreConfig
-
-binocularsPreConfigDefault :: BinocularsPreConfig
-binocularsPreConfigDefault = BinocularsPreConfig
-  { _binocularsPreConfigProjectionType = QxQyQzProjection }
-
-binocularsPreConfigSpec :: IniSpec BinocularsPreConfig ()
-binocularsPreConfigSpec = do
-  section "projection" $ do
-    binocularsPreConfigProjectionType .= field "type" parsable
-
-----------------------
--- BinocularsConfig --
-----------------------
-
-newtype Angstrom = Angstrom { unAngstrom :: Length Double }
-    deriving (Eq, Show)
-
-instance FromJSON Angstrom where
-  parseJSON = fmap (Angstrom . (*~ angstrom)) . parseJSON
-
-instance ToJSON Angstrom where
-  toJSON = toJSON . (/~ angstrom) . unAngstrom
-
-instance Arbitrary Angstrom where
-  arbitrary = Angstrom . (*~ angstrom) <$> arbitrary
-
-newtype Meter = Meter { unMeter :: Length Double }
-    deriving (Eq, Show)
-
-instance Arbitrary Meter where
-  arbitrary = Meter . (*~ meter) <$> arbitrary
-
-newtype MaskLocation = MaskLocation { unMaskLocation :: Text }
-    deriving (Eq, Show, IsString)
-
-instance Arbitrary MaskLocation where
-  arbitrary = pure $ MaskLocation "mask location"
+-- QCustomSubProjection
 
 data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QTthTimestamp
@@ -422,104 +528,28 @@ instance HasFieldValue QCustomSubProjection where
       emit QCustomSubProjection'QPhiQz            = "q_phi_qz"
       emit QCustomSubProjection'QStereo           = "q_stereo"
 
-number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
-number' = Data.Ini.Config.Bidir.number { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
+-- Resolutions
 
-class HasFieldValue a where
-  fieldvalue :: FieldValue a
+data Resolutions a where
+  Resolutions2 :: Double -> Double -> Resolutions DIM2
+  Resolutions3 :: Double -> Double -> Double -> Resolutions DIM3
 
-instance HasFieldValue Angstrom where
-  fieldvalue = FieldValue { fvParse =  mapRight (Angstrom . (*~ angstrom)) . fvParse auto
-                          , fvEmit = \(Angstrom m) -> pack . show . (/~ angstrom) $ m
-                          }
+deriving instance Eq (Resolutions a)
+deriving instance Show (Resolutions a)
 
-instance HasFieldValue Bool where
-  fieldvalue = bool
+instance Arbitrary (Resolutions DIM2) where
+  arbitrary = Resolutions2 <$> arbitrary <*> arbitrary
 
-instance HasFieldValue ConfigRange where
-  fieldvalue = parsable
+instance Arbitrary (Resolutions DIM3) where
+  arbitrary = Resolutions3 <$> arbitrary <*> arbitrary <*> arbitrary
 
-instance HasFieldValue Degree where
-  fieldvalue = FieldValue { fvParse =  mapRight (Degree . (*~ degree)) . fvParse auto
-                          , fvEmit = \(Degree m) -> pack . show . (/~ degree) $ m
-                          }
+instance IsList (Resolutions a) where
+  type Item (Resolutions a) = Double
 
-instance HasFieldValue Double where
-  fieldvalue = number'
+  toList (Resolutions2 r1 r2)    = [r1, r2]
+  toList (Resolutions3 r1 r2 r3) = [r1, r2, r3]
 
-instance HasFieldValue DestinationTmpl where
-  fieldvalue = FieldValue { fvParse = Right . DestinationTmpl . uncomment
-                          , fvEmit = \(DestinationTmpl t) -> t
-                          }
-
-instance  HasFieldValue (Detector Hkl DIM2) where
-  fieldvalue = FieldValue
-               { fvParse = parseDetector2D . strip . uncomment
-               , fvEmit = \(Detector2D _ name _) -> pack name
-               }
-
-instance HasFieldValue Float where
-  fieldvalue = number'
-
-instance HasFieldValue InputTmpl where
-  fieldvalue = FieldValue { fvParse = Right . InputTmpl . uncomment
-                          , fvEmit = \(InputTmpl t) -> t
-                          }
-
-parseEnum :: (Bounded a, Enum a, HasFieldValue a)
-          => String -> Text -> Either String a
-parseEnum err t = maybeToRight err (find match [minBound..maxBound])
-  where
-    match :: HasFieldValue a => a -> Bool
-    match i = toLower t == (fvEmit $ fieldvalue) i
-
-instance HasFieldValue InputType where
-  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
-    where
-      parse :: Text -> Either String InputType
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: InputType))) t
-
-      emit :: InputType -> Text
-      emit CristalK6C             = "cristal:k6c"
-      emit MarsFlyscan            = "mars:flyscan"
-      emit MarsSbs                = "mars:sbs"
-      emit SixsFlyMedH            = "sixs:flymedh"
-      emit SixsFlyMedV            = "sixs:flymedv"
-      emit SixsFlyMedVEiger       = "sixs:flymedveiger"
-      emit SixsFlyMedVS70         = "sixs:flymedvs70"
-      emit SixsFlyScanUhv         = "sixs:flyscanuhv"
-      emit SixsFlyScanUhv2        = "sixs:flyscanuhv2"
-      emit SixsFlyScanUhvTest     = "sixs:flyscanuhvtest"
-      emit SixsFlyScanUhvUfxc     = "sixs:flyscanuhvufxc"
-      emit SixsSbsFixedDetector   = "sixs:sbsfixeddetector"
-      emit SixsSbsMedH            = "sixs:sbsmedh"
-      emit SixsSbsMedV            = "sixs:sbsmedv"
-      emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
-      emit SixsSbsUhv             = "sixs:sbsuhv"
-
-instance HasFieldValue Int where
-  fieldvalue = number'
-
-instance HasFieldValue (RLimits DIM2) where
-  fieldvalue = parsable
-
-instance HasFieldValue (RLimits DIM3) where
-  fieldvalue = parsable
-
-instance HasFieldValue MaskLocation where
-    fieldvalue = FieldValue { fvParse = mapRight MaskLocation . fvParse text
-                            , fvEmit = \(MaskLocation m) -> fvEmit text $ m
-                            }
-
-instance HasFieldValue Meter where
-  fieldvalue = FieldValue { fvParse =  mapRight (Meter . (*~ meter)) . fvParse auto
-                          , fvEmit = \(Meter m) -> pack . show . (/~ meter) $ m
-                          }
-
-instance HasFieldValue (Path Abs Dir) where
-  fieldvalue = FieldValue { fvParse = \t -> mapLeft show (runCatch . parseAbsDir . unpack $ t)
-                          , fvEmit = pack . fromAbsDir
-                          }
+  fromList = undefined
 
 instance HasFieldValue (Resolutions DIM2) where
   fieldvalue = FieldValue { fvParse = parse, fvEmit = emit }
@@ -549,107 +579,22 @@ instance HasFieldValue (Resolutions DIM3) where
       emit :: Resolutions DIM3 -> Text
       emit (Resolutions3 r1 r2 r3) = intercalate "," (Prelude.map (pack . show) [r1, r2, r3])
 
-instance HasFieldValue ProjectionType where
-  fieldvalue = parsable
+-- RLimits
 
-instance HasFieldValue SampleAxis where
-  fieldvalue = FieldValue { fvParse = Right . SampleAxis . uncomment
-                          , fvEmit = \(SampleAxis t) -> t
-                          }
+data RLimits sh where
+  Limits2 :: Limits -> Limits -> RLimits DIM2
+  Limits3 :: Limits -> Limits -> Limits -> RLimits DIM3
 
-instance HasFieldValue SurfaceOrientation where
-  fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
-    where
-      parse :: Text -> Either String SurfaceOrientation
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: SurfaceOrientation))) t
+deriving instance Eq (RLimits a)
+deriving instance Show (RLimits a)
 
-      emit :: SurfaceOrientation -> Text
-      emit SurfaceOrientationVertical   = "vertical"
-      emit SurfaceOrientationHorizontal = "horizontal"
-
-instance HasFieldValue Text where
-  fieldvalue = text
-
-instance HasFieldValue [Double] where
-  fieldvalue = listWithSeparator "," auto
-
-instance HasFieldValue (Int, Int) where
-  fieldvalue = pairWithSeparator' number' "," number'
+instance Arbitrary (RLimits DIM2) where
+  arbitrary = Limits2 <$> arbitrary <*> arbitrary
 
 
-auto :: HasFieldValue a => FieldValue a
-auto = fieldvalue
+instance Arbitrary (RLimits DIM3) where
+  arbitrary = Limits3 <$> arbitrary <*> arbitrary <*> arbitrary
 
-projectionTypeP :: Parser ProjectionType
-projectionTypeP = go =<< takeText
-  where
-    go :: Text -> Parser ProjectionType
-    go t
-      | toLower t == "sixs:anglesprojection" = pure AnglesProjection
-      | toLower t == "sixs:angles2projection" = pure Angles2Projection
-      | toLower t == "sixs:qindex" = pure QIndexProjection
-      | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
-      | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
-      | toLower t == "sixs:hklprojection" = pure HklProjection
-    go t = case parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: ProjectionType))) t of
-      Right p  -> pure p
-      Left err -> fail err
-
-instance FieldParsable ProjectionType where
-  fieldParser = projectionTypeP
-
-  fieldEmitter AnglesProjection   = "angles"
-  fieldEmitter Angles2Projection  = "angles2"
-  fieldEmitter HklProjection      = "hkl"
-  fieldEmitter QCustomProjection  = "qcustom"
-  fieldEmitter QIndexProjection   = "qindex"
-  fieldEmitter QparQperProjection = "qparqper"
-  fieldEmitter QxQyQzProjection   = "qxqyqz"
-
-instance FieldParsable InputRange where
-  fieldParser = inputRangeP
-
-  fieldEmitter (InputRangeSingle f)   = pack $ printf "%d" f
-  fieldEmitter (InputRangeFromTo f t) = pack $ printf "%d-%d" f t
-
-inputRangeP :: Parser InputRange
-inputRangeP = inputRangeFromToP <|> inputRangeP'
-  where
-    inputRangeFromToP :: Parser InputRange
-    inputRangeFromToP =  InputRangeFromTo
-                         <$> signed decimal <* char '-'
-                         <*> signed decimal
-
-    inputRangeP' :: Parser InputRange
-    inputRangeP' = InputRangeSingle <$> signed decimal
-
-instance FieldParsable ConfigRange where
-  fieldParser = configRangeP
-
-  fieldEmitter (ConfigRange is) = unwords . toList $ Data.List.NonEmpty.map fieldEmitter is
-
-
-configRangeP :: Parser ConfigRange
-configRangeP = ConfigRange <$> ((:|)
-                                <$> inputRangeP <* many (satisfy isSep)
-                                <*> inputRangeP `sepBy` many (satisfy isSep))
-    where
-      isSep :: Char -> Bool
-      isSep c = c == ' ' || c == ','
-
---  Represents a field whose value is a pair of two other values
--- separated by a given string, whose individual values are described
--- by two different 'FieldValue' values.
-pairWithSeparator' :: FieldValue l -> Text -> FieldValue r -> FieldValue (l, r)
-pairWithSeparator' left sep right = FieldValue
-  { fvParse = \ t ->
-      let (leftChunk, rightChunk) = breakOn sep t
-      in do
-        x <- fvParse left leftChunk
-        y <- fvParse right (drop (Data.Text.length sep) rightChunk)
-        return (x, y)
-  , fvEmit = \ (x, y) -> fvEmit left x <> sep <> fvEmit right y
-  }
 
 limitsP' :: Parser Limits
 limitsP' = Limits
@@ -691,6 +636,101 @@ instance (FieldParsable (RLimits DIM3)) where
                                     <> showLimits l3
                                     <> Data.Text.singleton ']'
 
+instance HasFieldValue (RLimits DIM2) where
+  fieldvalue = parsable
+
+instance HasFieldValue (RLimits DIM3) where
+  fieldvalue = parsable
+
+instance IsList (RLimits a) where
+  type Item (RLimits a) = Limits
+
+  toList (Limits2 l1 l2)    = [l1, l2]
+  toList (Limits3 l1 l2 l3) = [l1, l2, l3]
+
+  fromList = undefined
+
+-- SampleAxis
+
+newtype SampleAxis = SampleAxis { unSampleAxis :: Text }
+  deriving (Eq, Show)
+
+instance HasFieldValue SampleAxis where
+  fieldvalue = FieldValue { fvParse = Right . SampleAxis . uncomment
+                          , fvEmit = \(SampleAxis t) -> t
+                          }
+
+-- SurfaceOrientation
+
+data SurfaceOrientation = SurfaceOrientationVertical
+                        | SurfaceOrientationHorizontal
+  deriving (Eq, Show, Enum, Bounded)
+
+instance Arbitrary SurfaceOrientation where
+  arbitrary = elements ([minBound .. maxBound] :: [SurfaceOrientation])
+
+instance HasFieldValue SurfaceOrientation where
+  fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+    where
+      parse :: Text -> Either String SurfaceOrientation
+      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ (show . typeOf $ (undefined :: SurfaceOrientation))) t
+
+      emit :: SurfaceOrientation -> Text
+      emit SurfaceOrientationVertical   = "vertical"
+      emit SurfaceOrientationHorizontal = "horizontal"
+
+-- BinocularsPreConfig
+
+data BinocularsPreConfig =
+  BinocularsPreConfig { _binocularsPreConfigProjectionType :: ProjectionType }
+                         deriving (Eq, Show)
+
+makeLenses ''BinocularsPreConfig
+
+binocularsPreConfigDefault :: BinocularsPreConfig
+binocularsPreConfigDefault = BinocularsPreConfig
+  { _binocularsPreConfigProjectionType = QxQyQzProjection }
+
+binocularsPreConfigSpec :: IniSpec BinocularsPreConfig ()
+binocularsPreConfigSpec = do
+  section "projection" $ do
+    binocularsPreConfigProjectionType .= field "type" parsable
+
+
+---------------
+-- functions --
+---------------
+
+destination'2 :: ConfigRange -> Maybe (RLimits DIM2) -> DestinationTmpl -> FilePath
+destination'2 (ConfigRange rs) ml = replace' interval limits
+  where
+    interval = foldl' hull Numeric.Interval.empty intervals
+
+    limits = case ml of
+               Nothing   -> "nolimits"
+               (Just ls) -> fieldEmitter ls
+
+    intervals = Data.List.NonEmpty.map
+                (\r -> case r of
+                        (InputRangeSingle f)   -> Numeric.Interval.singleton f
+                        (InputRangeFromTo f t) -> f ... t
+                ) rs
+
+destination'3 :: ConfigRange -> Maybe (RLimits DIM3) -> DestinationTmpl -> FilePath
+destination'3 (ConfigRange rs) ml = replace' interval limits
+  where
+    interval = foldl' hull Numeric.Interval.empty intervals
+
+    limits = case ml of
+               Nothing   -> "nolimits"
+               (Just ls) -> fieldEmitter ls
+
+    intervals = Data.List.NonEmpty.map
+                (\r -> case r of
+                        (InputRangeSingle f)   -> Numeric.Interval.singleton f
+                        (InputRangeFromTo f t) -> f ... t
+                ) rs
+
 files :: (MonadThrow m, MonadIO m)
       => Maybe (Path Abs Dir)
       -> Maybe ConfigRange
@@ -729,47 +769,7 @@ files md mr mt = do
       isInInputRange p tmpl (InputRangeFromTo from to) = any (matchIndex p tmpl) [from..to]
 
       isInConfigRange :: String -> ConfigRange -> Path Abs File -> Bool
-      -- isInConfigRange _ (ConfigRange []) _    = True
       isInConfigRange tmpl (ConfigRange rs) p = any (isInInputRange (filename p) tmpl) rs
-
-
-
-replace' :: Interval Int -> Text -> DestinationTmpl -> FilePath
-replace' i l = unpack
-                 . replace "{last}" (pack . show . sup $ i)
-                 . replace "{first}" (pack . show . inf $ i)
-                 . replace "{limits}" l
-                 . unDestinationTmpl
-
-destination'2 :: ConfigRange -> Maybe (RLimits DIM2) -> DestinationTmpl -> FilePath
-destination'2 (ConfigRange rs) ml = replace' interval limits
-  where
-    interval = foldl' hull Numeric.Interval.empty intervals
-
-    limits = case ml of
-               Nothing   -> "nolimits"
-               (Just ls) -> fieldEmitter ls
-
-    intervals = Data.List.NonEmpty.map
-                (\r -> case r of
-                        (InputRangeSingle f)   -> Numeric.Interval.singleton f
-                        (InputRangeFromTo f t) -> f ... t
-                ) rs
-
-destination'3 :: ConfigRange -> Maybe (RLimits DIM3) -> DestinationTmpl -> FilePath
-destination'3 (ConfigRange rs) ml = replace' interval limits
-  where
-    interval = foldl' hull Numeric.Interval.empty intervals
-
-    limits = case ml of
-               Nothing   -> "nolimits"
-               (Just ls) -> fieldEmitter ls
-
-    intervals = Data.List.NonEmpty.map
-                (\r -> case r of
-                        (InputRangeSingle f)   -> Numeric.Interval.singleton f
-                        (InputRangeFromTo f t) -> f ... t
-                ) rs
 
 getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> m (Maybe Mask)
 getMask ml d = case ml of
@@ -784,3 +784,10 @@ getPreConfig' (ConfigContent cfg) = do
 
 getPreConfig :: Maybe FilePath -> IO (Either String BinocularsPreConfig)
 getPreConfig mf = getPreConfig' <$> readConfig mf
+
+replace' :: Interval Int -> Text -> DestinationTmpl -> FilePath
+replace' i l = unpack
+                 . replace "{last}" (pack . show . sup $ i)
+                 . replace "{first}" (pack . show . inf $ i)
+                 . replace "{limits}" l
+                 . unDestinationTmpl
