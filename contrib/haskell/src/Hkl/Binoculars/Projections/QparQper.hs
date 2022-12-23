@@ -195,7 +195,7 @@ class (FramesQCustomP a, Show a) => ProcessQparQperP a where
     let mlimits = _binocularsConfigQparQperProjectionLimits conf
     let destination = _binocularsConfigQparQperDestination conf
     let output' = case _binocularsConfigQparQperInputRange conf of
-                   Just r  -> destination'2 r mlimits destination
+                   Just r  -> destination' r mlimits destination
                    Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQparQperCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQparQperSdd conf

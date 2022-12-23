@@ -50,8 +50,7 @@ module Hkl.Binoculars.Config
     , SurfaceOrientation(..)
     , auto
     , configRangeP
-    , destination'2
-    , destination'3
+    , destination'
     , files
     , getMask
     , getPreConfig
@@ -537,12 +536,12 @@ instance HasFieldValue QCustomSubProjection where
 
 -- Resolutions
 
-data Resolutions a where
+data Resolutions sh where
   Resolutions2 :: Double -> Double -> Resolutions DIM2
   Resolutions3 :: Double -> Double -> Double -> Resolutions DIM3
 
-deriving instance Eq (Resolutions a)
-deriving instance Show (Resolutions a)
+deriving instance Eq (Resolutions sh)
+deriving instance Show (Resolutions sh)
 
 instance Arbitrary (Resolutions DIM2) where
   arbitrary = Resolutions2 <$> arbitrary <*> arbitrary
@@ -550,8 +549,8 @@ instance Arbitrary (Resolutions DIM2) where
 instance Arbitrary (Resolutions DIM3) where
   arbitrary = Resolutions3 <$> arbitrary <*> arbitrary <*> arbitrary
 
-instance IsList (Resolutions a) where
-  type Item (Resolutions a) = Double
+instance IsList (Resolutions sh) where
+  type Item (Resolutions sh) = Double
 
   toList (Resolutions2 r1 r2)    = [r1, r2]
   toList (Resolutions3 r1 r2 r3) = [r1, r2, r3]
@@ -592,8 +591,8 @@ data RLimits sh where
   Limits2 :: Limits -> Limits -> RLimits DIM2
   Limits3 :: Limits -> Limits -> Limits -> RLimits DIM3
 
-deriving instance Eq (RLimits a)
-deriving instance Show (RLimits a)
+deriving instance Eq (RLimits sh)
+deriving instance Show (RLimits sh)
 
 instance Arbitrary (RLimits DIM2) where
   arbitrary = Limits2 <$> arbitrary <*> arbitrary
@@ -618,25 +617,15 @@ showLimit Nothing  = Data.Text.empty
 showLimits :: Limits -> Text
 showLimits (Limits f t) = showLimit f <> Data.Text.singleton ':' <> showLimit t
 
-instance (FieldEmitter (RLimits DIM2)) where
-  fieldEmitter (Limits2 l1 l2) = Data.Text.singleton '['
-                                 <> showLimits l1
-                                 <> ","
-                                 <> showLimits l2
-                                 <> Data.Text.singleton ']'
+instance (FieldEmitter (RLimits sh)) where
+  fieldEmitter ls = Data.Text.singleton '['
+                    <> intercalate "," (Prelude.map showLimits (toList ls))
+                    <> Data.Text.singleton ']'
+
 instance (FieldParsable (RLimits DIM2)) where
   fieldParser = Limits2
                 <$> (char '[' *> limitsP')
                 <*> (char ',' *> limitsP' <* char ']')
-
-instance (FieldEmitter (RLimits DIM3)) where
-  fieldEmitter (Limits3 l1 l2 l3) = Data.Text.singleton '['
-                                    <> showLimits l1
-                                    <> ","
-                                    <> showLimits l2
-                                    <> ","
-                                    <> showLimits l3
-                                    <> Data.Text.singleton ']'
 
 instance (FieldParsable (RLimits DIM3)) where
   fieldParser = Limits3
@@ -650,8 +639,8 @@ instance HasFieldValue (RLimits DIM2) where
 instance HasFieldValue (RLimits DIM3) where
   fieldvalue = parsable
 
-instance IsList (RLimits a) where
-  type Item (RLimits a) = Limits
+instance IsList (RLimits sh) where
+  type Item (RLimits sh) = Limits
 
   toList (Limits2 l1 l2)    = [l1, l2]
   toList (Limits3 l1 l2 l3) = [l1, l2, l3]
@@ -709,23 +698,8 @@ binocularsPreConfigSpec = do
 -- functions --
 ---------------
 
-destination'2 :: ConfigRange -> Maybe (RLimits DIM2) -> DestinationTmpl -> FilePath
-destination'2 (ConfigRange rs) ml = replace' interval limits
-  where
-    interval = foldl' hull Numeric.Interval.empty intervals
-
-    limits = case ml of
-               Nothing   -> "nolimits"
-               (Just ls) -> fieldEmitter ls
-
-    intervals = Data.List.NonEmpty.map
-                (\case
-                    (InputRangeSingle f)   -> Numeric.Interval.singleton f
-                    (InputRangeFromTo f t) -> f ... t
-                ) rs
-
-destination'3 :: ConfigRange -> Maybe (RLimits DIM3) -> DestinationTmpl -> FilePath
-destination'3 (ConfigRange rs) ml = replace' interval limits
+destination' :: ConfigRange -> Maybe (RLimits a) -> DestinationTmpl -> FilePath
+destination' (ConfigRange rs) ml = replace' interval limits
   where
     interval = foldl' hull Numeric.Interval.empty intervals
 

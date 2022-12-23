@@ -399,7 +399,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let mlimits = _binocularsConfigHklProjectionLimits conf
     let destination = _binocularsConfigHklDestination conf
     let output' = case _binocularsConfigHklInputRange conf of
-                   Just r  -> destination'3 r mlimits destination
+                   Just r  -> destination' r mlimits destination
                    Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigHklCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigHklSdd conf

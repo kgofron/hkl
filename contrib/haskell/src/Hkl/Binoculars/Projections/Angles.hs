@@ -209,7 +209,7 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
     let mlimits = _binocularsConfigAnglesProjectionLimits conf
     let destination = _binocularsConfigAnglesDestination conf
     let output' = case _binocularsConfigAnglesInputRange conf of
-                   Just r  -> destination'3 r mlimits destination
+                   Just r  -> destination' r mlimits destination
                    Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigAnglesCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigAnglesSdd conf
