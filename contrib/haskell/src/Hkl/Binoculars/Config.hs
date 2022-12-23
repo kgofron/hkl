@@ -54,7 +54,6 @@ module Hkl.Binoculars.Config
     , getMask
     , getPreConfig
     , newLimits
-    , projectionTypeP
     , readConfig
     ) where
 
@@ -456,7 +455,19 @@ instance FieldEmitter ProjectionType where
   fieldEmitter QxQyQzProjection   = "qxqyqz"
 
 instance FieldParsable ProjectionType where
-  fieldParser = projectionTypeP
+  fieldParser = go =<< takeText
+    where
+      go :: Text -> Parser ProjectionType
+      go t
+        | toLower t == "sixs:anglesprojection" = pure AnglesProjection
+        | toLower t == "sixs:angles2projection" = pure Angles2Projection
+        | toLower t == "sixs:qindex" = pure QIndexProjection
+        | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
+        | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
+        | toLower t == "sixs:hklprojection" = pure HklProjection
+      go t = case parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy ProjectionType))) t of
+        Right p  -> pure p
+        Left err -> fail err
 
 instance HasFieldValue ProjectionType where
   fieldvalue = parsable
@@ -482,21 +493,6 @@ parseEnum err t = maybeToRight err (find match [minBound..maxBound])
   where
     match :: HasFieldValue a => a -> Bool
     match i = toLower t == fvEmit fieldvalue i
-
-projectionTypeP :: Parser ProjectionType
-projectionTypeP = go =<< takeText
-  where
-    go :: Text -> Parser ProjectionType
-    go t
-      | toLower t == "sixs:anglesprojection" = pure AnglesProjection
-      | toLower t == "sixs:angles2projection" = pure Angles2Projection
-      | toLower t == "sixs:qindex" = pure QIndexProjection
-      | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
-      | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
-      | toLower t == "sixs:hklprojection" = pure HklProjection
-    go t = case parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy ProjectionType))) t of
-      Right p  -> pure p
-      Left err -> fail err
 
 -- QCustomSubProjection
 

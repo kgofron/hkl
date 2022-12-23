@@ -54,7 +54,7 @@ processCommand = command "process" (info processOptions (progDesc "process data'
 
 cfgNewOption :: Parser Options
 cfgNewOption = CfgNew
-               <$> argument (eitherReader (parseOnly projectionTypeP . pack)) (metavar "PROJECTION")
+               <$> argument (eitherReader (parseOnly fieldParser . pack)) (metavar "PROJECTION")
                <*> optional config
 
 cfgNewCommand :: Mod CommandFields Options
