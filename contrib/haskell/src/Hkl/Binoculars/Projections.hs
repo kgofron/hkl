@@ -37,8 +37,10 @@ import           Foreign.C.String                (CString, withCString)
 import           Foreign.C.Types                 (CBool, CSize (..))
 import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr,
                                                   withForeignPtr)
+import           Foreign.Marshal.Alloc           (alloca)
 import           Foreign.Marshal.Array           (withArrayLen)
 import           Foreign.Ptr                     (Ptr, nullPtr)
+import           Foreign.Storable                (poke)
 import           GHC.Exts                        (IsList (..))
 
 import           Prelude                         hiding (drop)
@@ -66,6 +68,23 @@ saveCube o rs = do
         withForeignPtr fp $ \p ->
             c'hkl_binoculars_cube_save_hdf5 fn p
     EmptyCube -> return ()
+
+newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
+newLimits (Limits mmin mmax) res =
+    alloca $ \imin' ->
+        alloca $ \imax' -> do
+          imin'' <- case mmin of
+                    Nothing -> pure nullPtr
+                    (Just d) -> do
+                              poke imin' (round (d / res))
+                              pure imin'
+          imax'' <- case mmax of
+                    Nothing -> pure nullPtr
+                    (Just d) -> do
+                              poke imax' (round (d / res))
+                              pure imax'
+          newForeignPtr p'hkl_binoculars_axis_limits_free
+                        =<< c'hkl_binoculars_axis_limits_new imin'' imax''
 
 withMaybeLimits :: Shape sh
                 => Maybe (RLimits sh)

@@ -53,7 +53,6 @@ module Hkl.Binoculars.Config
     , files
     , getMask
     , getPreConfig
-    , newLimits
     , readConfig
     ) where
 
@@ -88,10 +87,6 @@ import           Data.Text                         (Text, breakOn, drop, empty,
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
-import           Foreign.ForeignPtr                (ForeignPtr, newForeignPtr)
-import           Foreign.Marshal.Alloc             (alloca)
-import           Foreign.Ptr                       (nullPtr)
-import           Foreign.Storable                  (poke)
 import           GHC.Exts                          (IsList (..))
 import           Numeric.Interval                  (Interval, empty, hull, inf,
                                                     singleton, sup, (...))
@@ -111,16 +106,17 @@ import           Prelude                           hiding (drop, length, lines,
                                                     putStr, readFile, take,
                                                     takeWhile, unlines, unwords)
 
-import           Hkl.C
 import           Hkl.Detector
 import           Hkl.Lattice
 import           Paths_hkl
 
 
--- Class FieldParsable
+-- Class FieldEmitter
 
 class FieldEmitter a where
   fieldEmitter :: a -> Text
+
+-- Class FieldParsable
 
 class FieldEmitter a => FieldParsable a where
   fieldParser :: Parser a
@@ -384,23 +380,6 @@ data Limits = Limits (Maybe Double) (Maybe Double)
 
 instance Arbitrary Limits where
   arbitrary = Limits <$> arbitrary <*> arbitrary
-
-newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
-newLimits (Limits mmin mmax) res =
-    alloca $ \imin' ->
-        alloca $ \imax' -> do
-          imin'' <- case mmin of
-                    Nothing -> pure nullPtr
-                    (Just d) -> do
-                              poke imin' (round (d / res))
-                              pure imin'
-          imax'' <- case mmax of
-                    Nothing -> pure nullPtr
-                    (Just d) -> do
-                              poke imax' (round (d / res))
-                              pure imax'
-          newForeignPtr p'hkl_binoculars_axis_limits_free
-                        =<< c'hkl_binoculars_axis_limits_new imin'' imax''
 
 -- MaskLocation
 
