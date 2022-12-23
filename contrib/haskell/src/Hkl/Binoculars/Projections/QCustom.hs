@@ -248,7 +248,19 @@ instance HasIniConfig 'QCustomProjection where
       binocularsConfigQCustomProjectionLimits .=? field "limits" auto
       binocularsConfigQCustomSubProjection .=? field "subprojection" auto
 
-  overwriteWithCmd mr = over binocularsConfigQCustomInputRange (mr <|>)
+  overwriteWithCmd mr conf = over binocularsConfigQCustomInputRange (mr <|>)
+                             $ over binocularsConfigQCustomSubProjection (fmap sub) conf
+    where
+      sub :: QCustomSubProjection -> QCustomSubProjection
+      sub s = case _binocularsConfigQCustomProjectionType conf of
+                AnglesProjection   -> s
+                Angles2Projection  -> s
+                HklProjection      -> s
+                QCustomProjection  -> s
+                QIndexProjection   -> s
+                QparQperProjection -> s
+                QxQyQzProjection   -> QCustomSubProjection'QxQyQz
+
 
 ------------------
 -- Input Path's --

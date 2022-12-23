@@ -14,7 +14,6 @@ import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Attoparsec.Text               (parseOnly)
 import           Data.Ini.Config.Bidir              (ini)
 import           Data.List.NonEmpty                 (NonEmpty (..))
-import           Data.Text.IO                       (putStrLn)
 import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
 import           Path                               (mkAbsDir)
 import           Test.Hspec
@@ -22,7 +21,6 @@ import           Test.Hspec.QuickCheck              (prop)
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Bidir               (serializeIni')
-import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
@@ -112,5 +110,4 @@ spec = do
     prop "Config 'QCustomProjection" $
       \x -> do
         let cfg = serializeIni' (ini x specConfig)
-        -- putStrLn cfg
         (parseConfig cfg) `shouldBe` (Right (x :: Config 'QCustomProjection))

@@ -303,28 +303,6 @@ HKLAPI extern HKL_BINOCULARS_SPACE_QPARQPER_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QPARQPER_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QPARQPER_DECL(uint32_t);
 
-/* qxqyqz */
-
-#define HKL_BINOCULARS_SPACE_QXQYQZ_DECL(image_t)			\
-        void hkl_binoculars_space_qxqyqz_ ## image_t (HklBinocularsSpace *space, \
-                                                      const HklGeometry *geometry, \
-                                                      const image_t *image, \
-                                                      size_t n_pixels,  \
-                                                      double weight,    \
-                                                      const double *pixels_coordinates, \
-                                                      size_t pixels_coordinates_ndim, \
-                                                      const size_t *pixels_coordinates_dims, \
-                                                      const double *resolutions, \
-                                                      size_t n_resolutions, \
-                                                      const uint8_t *masked, \
-                                                      HklBinocularsSurfaceOrientationEnum surf, \
-                                                      const HklBinocularsAxisLimits **limits, \
-                                                      size_t n_limits)
-
-HKLAPI extern HKL_BINOCULARS_SPACE_QXQYQZ_DECL(int32_t);
-HKLAPI extern HKL_BINOCULARS_SPACE_QXQYQZ_DECL(uint16_t);
-HKLAPI extern HKL_BINOCULARS_SPACE_QXQYQZ_DECL(uint32_t);
-
 /* hkl */
 
 #define HKL_BINOCULARS_SPACE_HKL_DECL(image_t)                          \

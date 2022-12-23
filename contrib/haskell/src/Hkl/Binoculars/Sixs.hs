@@ -32,7 +32,6 @@ import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.Binoculars.Projections.QIndex
 import           Hkl.Binoculars.Projections.QparQper
-import           Hkl.Binoculars.Projections.QxQyQz
 
 process :: (MonadLogger m, MonadThrow m, MonadIO m)
         => Maybe FilePath -> Maybe (ConfigRange) -> m ()
@@ -49,7 +48,7 @@ process mf mr = do
                       QCustomProjection  -> processQCustom mf mr
                       QIndexProjection   -> processQIndex mf mr
                       QparQperProjection -> processQparQper mf mr
-                      QxQyQzProjection   -> processQxQyQz mf mr
+                      QxQyQzProjection   -> processQCustom mf mr
 
 new :: (MonadIO m, MonadLogger m, MonadThrow m)
     => ProjectionType -> Maybe FilePath -> m ()
@@ -64,7 +63,7 @@ new p mf = do
     QCustomProjection  -> newQCustom cwd
     QIndexProjection   -> newQIndex cwd
     QparQperProjection -> newQparQper cwd
-    QxQyQzProjection   -> newQxQyQz cwd
+    QxQyQzProjection   -> newQCustom cwd
 
 update :: (MonadIO m, MonadLogger m, MonadThrow m) => FilePath -> m ()
 update f = do
@@ -80,4 +79,4 @@ update f = do
                       QCustomProjection  -> updateQCustom (Just f)
                       QIndexProjection   -> updateQIndex (Just f)
                       QparQperProjection -> updateQparQper (Just f)
-                      QxQyQzProjection   -> updateQxQyQz (Just f)
+                      QxQyQzProjection   -> updateQCustom (Just f)
