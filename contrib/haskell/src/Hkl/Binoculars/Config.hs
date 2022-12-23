@@ -256,8 +256,8 @@ instance FieldEmitter ConfigRange where
 
 instance FieldParsable ConfigRange where
   fieldParser = ConfigRange <$> ((:|)
-                                 <$> inputRangeP <* many (satisfy isSep)
-                                 <*> inputRangeP `sepBy` many (satisfy isSep))
+                                 <$> fieldParser <* many (satisfy isSep)
+                                 <*> fieldParser `sepBy` many (satisfy isSep))
     where
       isSep :: Char -> Bool
       isSep c = c == ' ' || c == ','
@@ -307,18 +307,15 @@ instance FieldEmitter InputRange where
   fieldEmitter (InputRangeFromTo f t) = pack $ printf "%d-%d" f t
 
 instance FieldParsable InputRange where
-  fieldParser = inputRangeP
+  fieldParser = inputRangeFromToP <|> inputRangeP'
+    where
+      inputRangeFromToP :: Parser InputRange
+      inputRangeFromToP =  InputRangeFromTo
+                           <$> signed decimal <* char '-'
+                           <*> signed decimal
 
-inputRangeP :: Parser InputRange
-inputRangeP = inputRangeFromToP <|> inputRangeP'
-  where
-    inputRangeFromToP :: Parser InputRange
-    inputRangeFromToP =  InputRangeFromTo
-                         <$> signed decimal <* char '-'
-                         <*> signed decimal
-
-    inputRangeP' :: Parser InputRange
-    inputRangeP' = InputRangeSingle <$> signed decimal
+      inputRangeP' :: Parser InputRange
+      inputRangeP' = InputRangeSingle <$> signed decimal
 
 -- InputTmpl
 
