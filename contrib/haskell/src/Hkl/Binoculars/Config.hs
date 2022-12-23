@@ -49,7 +49,6 @@ module Hkl.Binoculars.Config
     , SampleAxis(..)
     , SurfaceOrientation(..)
     , auto
-    , configRangeP
     , destination'
     , files
     , getMask
@@ -256,12 +255,9 @@ instance FieldEmitter ConfigRange where
   fieldEmitter (ConfigRange is) = unwords . toList $ Data.List.NonEmpty.map fieldEmitter is
 
 instance FieldParsable ConfigRange where
-  fieldParser = configRangeP
-
-configRangeP :: Parser ConfigRange
-configRangeP = ConfigRange <$> ((:|)
-                                <$> inputRangeP <* many (satisfy isSep)
-                                <*> inputRangeP `sepBy` many (satisfy isSep))
+  fieldParser = ConfigRange <$> ((:|)
+                                 <$> inputRangeP <* many (satisfy isSep)
+                                 <*> inputRangeP `sepBy` many (satisfy isSep))
     where
       isSep :: Char -> Bool
       isSep c = c == ' ' || c == ','

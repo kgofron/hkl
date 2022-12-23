@@ -47,7 +47,7 @@ config = argument str (metavar "CONFIG")
 processOptions :: Parser Options
 processOptions = Process
                  <$> optional config
-                 <*> optional (argument (eitherReader (parseOnly configRangeP . pack)) (metavar "RANGE"))
+                 <*> optional (argument (eitherReader (parseOnly fieldParser . pack)) (metavar "RANGE"))
 
 processCommand :: Mod CommandFields Options
 processCommand = command "process" (info processOptions (progDesc "process data's"))

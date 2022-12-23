@@ -40,25 +40,25 @@ spec = do
 
   describe "ConfigRange" $ do
     prop "quickcheck" $
-      \x -> (parseOnly configRangeP . fieldEmitter $ x) `shouldBe` (Right x)
+      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
 
     it "parse a range" $ do
-      let p = parseOnly configRangeP "120 123-453"
+      let p = parseOnly fieldParser "120 123-453"
       p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
     it "parse a range" $ do
-      let p = parseOnly configRangeP "120,123-453"
+      let p = parseOnly fieldParser "120,123-453"
       p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
     it "parse a range" $ do
-      let p = parseOnly configRangeP "120,,,123-453"
+      let p = parseOnly fieldParser "120,,,123-453"
       p `shouldBe` (Right (ConfigRange (InputRangeSingle 120 :| [InputRangeFromTo 123 453])))
     it "parse a range" $ do
-      let p = parseOnly configRangeP "120-135 137-453"
+      let p = parseOnly fieldParser "120-135 137-453"
       p `shouldBe` (Right (ConfigRange (InputRangeFromTo 120 135 :| [InputRangeFromTo 137 453])))
     it "parse a range" $ do
-      let p = parseOnly configRangeP "120-135, 137-453"
+      let p = parseOnly fieldParser "120-135, 137-453"
       p `shouldBe` (Right (ConfigRange (InputRangeFromTo 120 135 :| [InputRangeFromTo 137 453])))
     it "parse a range" $ do
-      let p = parseOnly configRangeP "0 1--1 0-0"
+      let p = parseOnly fieldParser "0 1--1 0-0"
       p  `shouldBe` (Right (ConfigRange (InputRangeSingle 0 :| [InputRangeFromTo 1 (-1), InputRangeFromTo 0 0])))
 
   describe "read and parse binoculars Configuration" $ do
