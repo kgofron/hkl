@@ -2,7 +2,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
-{-# LANGUAGE ForeignFunctionInterface  #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE StandaloneDeriving        #-}

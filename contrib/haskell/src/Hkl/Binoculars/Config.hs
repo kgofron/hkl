@@ -296,7 +296,7 @@ instance Arbitrary InputRange where
                                    , do
                                        f <- arbitrary
                                        t <- arbitrary
-                                       pure $ if f < t then (f...t) else (t...f)
+                                       pure $ if f < t then f...t else t...f
                                    ]
 
 instance FieldEmitter InputRange where
@@ -315,7 +315,7 @@ instance FieldParsable InputRange where
 
       inputRangeP' :: Parser InputRange
       inputRangeP' = InputRange
-                     <$> (Numeric.Interval.singleton <$> (signed decimal))
+                     <$> (Numeric.Interval.singleton <$> signed decimal)
 
 -- InputTmpl
 
@@ -716,7 +716,7 @@ files md mr mt = do
       matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
 
       isInInputRange :: Path Rel File -> String -> InputRange -> Bool
-      isInInputRange p tmpl (InputRange i) = any (matchIndex p tmpl) [inf(i) .. sup(i)]
+      isInInputRange p tmpl (InputRange i) = any (matchIndex p tmpl) [inf i .. sup i]
 
       isInConfigRange :: String -> ConfigRange -> Path Abs File -> Bool
       isInConfigRange tmpl (ConfigRange rs) p = any (isInInputRange (filename p) tmpl) rs

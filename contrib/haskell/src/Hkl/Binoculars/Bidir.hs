@@ -1,9 +1,8 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE CPP                       #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 
 -- |
 -- Module     : Data.Ini.Config.Bidir

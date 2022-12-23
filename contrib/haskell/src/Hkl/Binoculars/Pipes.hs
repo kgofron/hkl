@@ -4,8 +4,7 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
+
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -111,4 +110,4 @@ tryYield io = do
     Right df -> yield df
   where
     selectHklBinocularsException :: HklBinocularsException -> Maybe HklBinocularsException
-    selectHklBinocularsException e = Just e
+    selectHklBinocularsException = Just

@@ -7,7 +7,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-
     Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
@@ -306,13 +305,13 @@ instance DataSource Degree where
 
 -- Float
 
-data instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)
+newtype instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 instance Arbitrary (DataSourcePath Float) where
   arbitrary = DataSourcePath'Float <$> arbitrary
 
-data instance DataSourceAcq Float = DataSourceAcq'Float Dataset
+newtype instance DataSourceAcq Float = DataSourceAcq'Float Dataset
 
 instance DataSource Float where
   withDataSourceP f (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
@@ -483,20 +482,20 @@ instance Arbitrary (DataSourcePath Index) where
 
 -- Int
 
-data instance DataSourcePath Int = DataSourcePath'Int Int
+newtype instance DataSourcePath Int = DataSourcePath'Int Int
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-data instance DataSourceAcq Int = DataSourceAcq'Int Int
+newtype instance DataSourceAcq Int = DataSourceAcq'Int Int
 
 instance DataSource Int where
   withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)
 
 -- NanoMeter
 
-data instance DataSourcePath NanoMeter = DataSourcePath'NanoMeter (Hdf5Path Z Double)
+newtype instance DataSourcePath NanoMeter = DataSourcePath'NanoMeter (Hdf5Path Z Double)
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-data instance DataSourceAcq NanoMeter = DataSourceAcq'NanoMeter Dataset
+newtype instance DataSourceAcq NanoMeter = DataSourceAcq'NanoMeter Dataset
 
 instance DataSource NanoMeter where
   withDataSourceP f (DataSourcePath'NanoMeter p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'NanoMeter ds)

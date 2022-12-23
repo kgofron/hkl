@@ -150,7 +150,7 @@ defaultDataSourcePath'DataFrameQCustom
       ])
     (DataSourcePath'Image
       (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
-      (defaultDetector))
+      defaultDetector)
     (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
 instance HasFieldValue (DataSourcePath DataFrameQCustom) where
@@ -215,7 +215,7 @@ instance HasIniConfig 'QCustomProjection where
     , _binocularsConfigQCustomProjectionType = QCustomProjection
     , _binocularsConfigQCustomProjectionResolution = Resolutions3 0.01 0.01 0.01
     , _binocularsConfigQCustomProjectionLimits  = Nothing
-    , _binocularsConfigQCustomDataPath = (Just defaultDataSourcePath'DataFrameQCustom)
+    , _binocularsConfigQCustomDataPath = Just defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigQCustomImageSumMax = Nothing
     , _binocularsConfigQCustomSubProjection = Nothing
     }
@@ -371,23 +371,23 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
        let dataSourcePath'Attenuation'Sixs :: DataSourcePath Attenuation
            dataSourcePath'Attenuation'Sixs =
              DataSourcePath'Attenuation
-             (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ (H5Or
-                                                                               (datasetp "attenuation")
-                                                                               (datasetp "attenuation_old")
-                                                                              )))
+             (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" (H5Or
+                                                                              (datasetp "attenuation")
+                                                                              (datasetp "attenuation_old")
+                                                                            )))
              2 0 mMaxAtt
        let dataSourcePath'Attenuation'SixsSBS :: DataSourcePath Attenuation
            dataSourcePath'Attenuation'SixsSBS =
              DataSourcePath'Attenuation
-             (DataSourcePath'Float (hdf5p $ (H5Or
-                                              (datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
+             (DataSourcePath'Float (hdf5p (H5Or
+                                            (datasetpattr ("long_name", "i14-c-c00/ex/roic/att"))
+                                            (H5Or
+                                              (datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att"))
                                               (H5Or
-                                                (datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att"))
+                                                (datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att_old"))
                                                 (H5Or
-                                                  (datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att_old"))
-                                                  (H5Or
-                                                    (datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att"))
-                                                    (datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att_old"))))))))
+                                                  (datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att"))
+                                                  (datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att_old"))))))))
              0 0 mMaxAtt
 
        case i of
@@ -474,12 +474,12 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                          , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "delta")
                                          , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "etaa")
                                          ]
-                                <*> pure (DataSourcePath'Degree(((hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eix")
-                                                                 `H5Or`
-                                                                 (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))))
-                                <*> pure (DataSourcePath'Degree(((hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
-                                                                 `H5Or`
-                                                                 (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre")))))
+                                <*> pure (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                                                `H5Or`
+                                                                hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre")))
+                                  <*> pure (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                                                                  `H5Or`
+                                                                  hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))))
                             <*> mkDetector'Sixs'Fly det
                             <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
          SixsFlyMedVS70 -> DataSourcePath'DataFrameQCustom
@@ -588,10 +588,10 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                       <$> mkAttenuation ma dataSourcePath'Attenuation'SixsSBS
                       <*> (DataSourcePath'Geometry'Uhv
                             <$> mkWaveLength mw (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
-                            <*> pure [ (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")))
-                                     , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega")))
-                                     , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")))
-                                     , (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma")))
+                            <*> pure [ DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu"))
+                                     , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega"))
+                                     , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta"))
+                                     , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma"))
                                      ])
                       <*> mkDetector'Sixs'Sbs det
                       <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
@@ -655,7 +655,7 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
 
     let fns = concatMap (replicate 1) (toList filenames)
     chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
-    cap' <-  liftIO $ getNumCapabilities
+    cap' <-  liftIO getNumCapabilities
     let ntot = sum (Prelude.map clength chunks)
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
@@ -672,7 +672,7 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
     guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
       runSafeT $ runEffect $
       each chunks
-      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
+      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
       >-> framesQCustomP h5d
       >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
       >-> accumulateP c
@@ -719,7 +719,7 @@ instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
           (fn, js) <- await
           withFileP (openH5 fn) $ \f ->
             withDataSourceP f p $ \ g ->
-            forM_ js (tryYield . (extract1DStreamValue g))
+            forM_ js (tryYield . extract1DStreamValue g)
 
 ---------
 -- Cmd --
@@ -738,7 +738,7 @@ process' = do
                   (_binocularsConfigQCustomSubProjection c)
                  )
 
-processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
+processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processQCustom mf mr = do
   econf <- liftIO $ getConfig mf
   case econf of

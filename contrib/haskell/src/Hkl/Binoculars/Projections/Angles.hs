@@ -230,7 +230,7 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
 
     let fns = concatMap (replicate 1) (toList filenames)
     chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
-    cap' <-  liftIO $ getNumCapabilities
+    cap' <-  liftIO getNumCapabilities
     let ntot = sum (Prelude.map clength chunks)
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
@@ -246,7 +246,7 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
     guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
       runSafeT $ runEffect $
       each chunks
-      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
+      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
       >-> framesQCustomP h5d
       >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
       >-> accumulateP c
@@ -286,7 +286,7 @@ process' = do
   let mdet = _binocularsConfigAnglesDetector c
   processAnglesP (h5dpathQCustom i mc mm mdet Nothing Nothing)
 
-processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
+processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processAngles mf mr = do
   econf <- liftIO $ getConfig mf
   case econf of

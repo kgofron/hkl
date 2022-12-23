@@ -34,14 +34,14 @@ import           Hkl.Binoculars.Projections.QIndex
 import           Hkl.Binoculars.Projections.QparQper
 
 process :: (MonadLogger m, MonadThrow m, MonadIO m)
-        => Maybe FilePath -> Maybe (ConfigRange) -> m ()
+        => Maybe FilePath -> Maybe ConfigRange -> m ()
 process mf mr = do
   epreconf <- liftIO $ getPreConfig mf
   $(logDebug) "pre-config red from the config file"
   $(logDebugSH) epreconf
   case epreconf of
     Left e        -> $(logErrorSH) e
-    Right preconf -> case (_binocularsPreConfigProjectionType preconf) of
+    Right preconf -> case _binocularsPreConfigProjectionType preconf of
                       AnglesProjection   -> processAngles mf mr
                       Angles2Projection  -> processAngles mf mr
                       HklProjection      -> processHkl mf mr
@@ -72,7 +72,7 @@ update f = do
   $(logDebugSH) epreconf
   case epreconf of
     Left e        -> $(logErrorSH) e
-    Right preconf -> case (_binocularsPreConfigProjectionType preconf) of
+    Right preconf -> case _binocularsPreConfigProjectionType preconf of
                       AnglesProjection   -> updateAngles (Just f)
                       Angles2Projection  -> updateAngles (Just f)
                       HklProjection      -> updateHkl (Just f)

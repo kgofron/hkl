@@ -26,13 +26,11 @@ data DArray a = DArray CSize [a] deriving Show
 peek'darray_engine :: Ptr C'darray_engine -> IO (DArray (Ptr C'HklEngine))
 peek'darray_engine ptr = do
   (C'darray_engine items n _) <- peek ptr
-  DArray
-    <$> pure n
-    <*> peekArray (fromEnum n) items
+  DArray n
+    <$> peekArray (fromEnum n) items
 
 peek'darray_string :: Ptr C'darray_string -> IO (DArray CString)
 peek'darray_string ptr = do
   (C'darray_string items n _) <- peek ptr
-  DArray
-    <$> pure n
-    <*> peekArray (fromEnum n) items
+  DArray n
+    <$> peekArray (fromEnum n) items

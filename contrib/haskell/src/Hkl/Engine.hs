@@ -44,7 +44,7 @@ peekMode e = do
   parameters <- mapM f ns
   return (Mode name parameters)
   where
-    f n = (c'hkl_engine_parameter_get e n nullPtr >>= peekParameter)
+    f n = c'hkl_engine_parameter_get e n nullPtr >>= peekParameter
 
 peekEngine :: Ptr C'HklEngine -> IO Engine
 peekEngine e = do

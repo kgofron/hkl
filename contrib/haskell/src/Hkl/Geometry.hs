@@ -185,4 +185,4 @@ peekHklGeometryList l = withForeignPtr l $ \ls -> do
   items <- peekItems ls
   mapM extract items
     where
-      extract it = c'hkl_geometry_list_item_geometry_get it
+      extract = c'hkl_geometry_list_item_geometry_get

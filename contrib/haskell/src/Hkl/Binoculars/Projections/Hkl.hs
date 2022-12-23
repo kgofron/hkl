@@ -316,7 +316,7 @@ instance HasIniConfig 'HklProjection where
   overwriteWithCmd mr = over binocularsConfigHklInputRange (mr <|>)
 
 
-overloadSampleWithConfig :: (Config 'HklProjection) -> Sample -> Sample
+overloadSampleWithConfig :: Config 'HklProjection -> Sample -> Sample
 overloadSampleWithConfig conf (Sample
                                name
                                (Triclinic a b c alpha beta gamma)
@@ -327,9 +327,9 @@ overloadSampleWithConfig conf (Sample
                  (maybe a (NanoMeter . unAngstrom) (_binocularsConfigHklA conf))
                  (maybe b (NanoMeter . unAngstrom) (_binocularsConfigHklB conf))
                  (maybe c (NanoMeter . unAngstrom) (_binocularsConfigHklC conf))
-                 (maybe alpha id (_binocularsConfigHklAlpha conf))
-                 (maybe beta id (_binocularsConfigHklBeta conf))
-                 (maybe gamma id (_binocularsConfigHklGamma conf))
+                 (fromMaybe alpha (_binocularsConfigHklAlpha conf))
+                 (fromMaybe beta (_binocularsConfigHklBeta conf))
+                 (fromMaybe gamma (_binocularsConfigHklGamma conf))
 
           go :: Parameter -> Maybe Double -> Parameter
           go p@(Parameter _ v _) nv = p{parameterValue=fromMaybe v nv}
@@ -338,7 +338,7 @@ overloadSampleWithConfig conf (Sample
           nuy = go uy ((/~ degree) . unDegree <$> _binocularsConfigHklUy conf)
           nuz = go uz ((/~ degree) . unDegree <$> _binocularsConfigHklUz conf)
 
-sampleConfig ::  (Config 'HklProjection) -> Maybe Sample
+sampleConfig ::  Config 'HklProjection -> Maybe Sample
 sampleConfig cf = do
   (Angstrom a) <- _binocularsConfigHklA cf
   (Angstrom b) <- _binocularsConfigHklB cf
@@ -360,7 +360,7 @@ sampleConfig cf = do
 ----------------
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: (Config 'HklProjection) -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameHkl -> IO (DataFrameSpace DIM3)
+spaceHkl :: Config 'HklProjection -> Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameHkl -> IO (DataFrameSpace DIM3)
 spaceHkl config' det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img _) samp) = do
   let sample' = overloadSampleWithConfig config' samp
   withNPixels det $ \nPixels ->
@@ -417,7 +417,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
 
     let fns = concatMap (replicate 1) (toList filenames)
     chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
-    cap' <-  liftIO $ getNumCapabilities
+    cap' <-  liftIO getNumCapabilities
     let ntot = sum (Prelude.map clength chunks)
     let cap = if cap' >= 2 then cap' - 1 else cap'
     let jobs = chunk (quot ntot cap) chunks
@@ -433,7 +433,7 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
       runSafeT $ runEffect $
       each chunks
-      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, (quot (f + t) 4), (quot (f + t) 4) * 2, (quot (f + t) 4) * 3, t]))
+      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
       >-> framesHklP h5d
       >-> project det 3 (spaceHkl conf det pixels res mask' mlimits)
       >-> accumulateP c
@@ -479,7 +479,7 @@ instance FramesHklP (DataSourcePath DataFrameHkl) where
 ------------
 
 h5dpathHkl :: (MonadLogger m, MonadThrow m)
-           => (Config 'HklProjection)
+           => Config 'HklProjection
            -> m (DataSourcePath DataFrameHkl)
 h5dpathHkl c =
   do let i = _binocularsConfigHklInputType c
@@ -563,7 +563,7 @@ process' = do
   c <- ask
   processHklP (h5dpathHkl c)
 
-processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe (ConfigRange) -> m ()
+processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processHkl mf mr = do
   econf <- liftIO $ getConfig mf
   case econf of

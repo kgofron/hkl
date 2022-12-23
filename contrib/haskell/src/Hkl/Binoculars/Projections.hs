@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass        #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs                 #-}
 
@@ -61,7 +59,7 @@ withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
 saveCube :: Shape sh => FilePath -> [Cube sh] -> IO ()
 saveCube o rs = do
-  let c = (mconcat rs)
+  let c = mconcat rs
   case c of
     (Cube fp) ->
         withCString o $ \fn ->
@@ -104,7 +102,7 @@ withMaybeMask mm f = case mm of
                        (Just m) -> withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
 
 withResolutions :: Shape sh => Resolutions sh -> (Int -> Ptr Double -> IO r) -> IO r
-withResolutions r = withArrayLen . toList $ r
+withResolutions = withArrayLen . toList
 
 withSampleAxis :: SampleAxis -> (CString -> IO r) -> IO r
 withSampleAxis (SampleAxis t) =  useAsCString (encodeUtf8 t)
@@ -117,7 +115,7 @@ newtype Space sh = Space (ForeignPtr C'HklBinocularsSpace)
   deriving Show
 
 newSpace' :: Ptr C'HklBinocularsSpace -> IO (Space sh)
-newSpace' p = Space <$> (newForeignPtr p'hkl_binoculars_space_free p)
+newSpace' p = Space <$> newForeignPtr p'hkl_binoculars_space_free p
 
 newSpace :: (Shape sh1, Shape sh) => Detector a sh1 -> Int -> IO (Space sh)
 newSpace d n = do
