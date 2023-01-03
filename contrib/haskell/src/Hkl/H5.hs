@@ -9,7 +9,7 @@
 {-# LANGUAGE UnicodeSyntax             #-}
 
 {-
-    Copyright  : Copyright (C) 2014-, 20222022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -23,7 +23,7 @@ module Hkl.H5
     , File
     , H5
     , H5Path
-    , check_ndims
+    , checkNdims
     , closeDataset
     , closeFile
     , getArrayInBuffer
@@ -139,8 +139,8 @@ data H5
 
 type H5Path = String
 
-check_ndims :: Dataset -> Int -> IO Bool
-check_ndims d expected = do
+checkNdims :: Dataset -> Int -> IO Bool
+checkNdims d expected = do
   space_id <- getDatasetSpace d
   (CInt ndims) <- getSimpleDataspaceExtentNDims space_id
   return $ expected == fromEnum ndims
