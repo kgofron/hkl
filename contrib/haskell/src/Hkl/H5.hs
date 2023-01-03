@@ -365,6 +365,7 @@ data Hdf5Path sh e
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 instance Arbitrary (Hdf5Path sh e) where
+  {- HLINT ignore "Redundant <$>" -}
   arbitrary = oneof
     [ H5RootPath <$> arbitrary
     , H5GroupPath <$> pure "group" <*> arbitrary
