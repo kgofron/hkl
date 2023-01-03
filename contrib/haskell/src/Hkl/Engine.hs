@@ -40,7 +40,7 @@ engineName (Engine name _ _) = name
 peekMode :: Ptr C'HklEngine -> IO Mode
 peekMode e = do
   name <- c'hkl_engine_current_mode_get e >>= peekCString
-  (DArray _ ns) <- peek'darray_string =<< c'hkl_engine_parameters_names_get e
+  (DArray _ ns) <- peekDarrayString =<< c'hkl_engine_parameters_names_get e
   parameters <- mapM f ns
   return (Mode name parameters)
   where
@@ -64,7 +64,7 @@ enginePseudoAxisGet e n = c'hkl_engine_pseudo_axis_get e n nullPtr >>= peekParam
 
 enginePseudoAxesGet :: Ptr C'HklEngine -> IO [Parameter]
 enginePseudoAxesGet ptr = do
-  (DArray _ ns) <- peek'darray_string =<< c'hkl_engine_pseudo_axis_names_get ptr
+  (DArray _ ns) <- peekDarrayString =<< c'hkl_engine_pseudo_axis_names_get ptr
   mapM (enginePseudoAxisGet ptr) ns
 
 engineSetValues :: Engine -> Vector Double -> Engine
