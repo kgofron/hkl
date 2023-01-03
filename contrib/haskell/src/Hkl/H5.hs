@@ -27,9 +27,9 @@ module Hkl.H5
     , closeDataset
     , closeFile
     , getArrayInBuffer
-    , get_position
-    , get_position_new
-    , get_ub
+    , getPosition
+    , getPositionNew
+    , getUB
     , lenH5Dataspace
     , datasetShape
     , nxEntries
@@ -37,7 +37,7 @@ module Hkl.H5
     , openDataset'
     , openDatasetWithAttr
     , openH5
-    , set_image
+    , setImage
     , withH5File
     -- new API
     , Hdf5
@@ -166,8 +166,8 @@ getArrayInBuffer arr det d n = withDataspace (getDatasetSpace d) $ \dataspace ->
        do readDatasetInto d (Just memspace) (Just dataspace) Nothing arr
           return arr
 
-set_image :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
-set_image det d dataspace n arr =  do
+setImage :: Shape sh => Detector a sh -> Dataset -> Dataspace -> Int -> Array F sh Word16 -> IO ()
+setImage det d dataspace n arr =  do
   selectNone dataspace
   selectHyperslab dataspace Set h
   withDataspace (createDataspaceFromShape s) $ \memspace ->
@@ -191,16 +191,16 @@ getPosition' dataset' h =
         readDatasetInto dataset' (Just memspace) (Just dataspace) Nothing data_out
         freeze data_out
 
-get_position_new :: Shape sh => Dataset -> sh -> IO (Vector Double)
-get_position_new dataset' s = getPosition' dataset' (shapeAsCoordinateToHyperslab s)
+getPositionNew :: Shape sh => Dataset -> sh -> IO (Vector Double)
+getPositionNew dataset' s = getPosition' dataset' (shapeAsCoordinateToHyperslab s)
 
-get_position :: NativeType t => Dataset -> Int -> IO t
-get_position dataset' n = do
+getPosition :: NativeType t => Dataset -> Int -> IO t
+getPosition dataset' n = do
   v <- getPosition' dataset' [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
   return $ head v
 
-get_ub :: Dataset -> IO (Matrix Double)
-get_ub dataset' = do
+getUB :: Dataset -> IO (Matrix Double)
+getUB dataset' = do
   v <- readDataset dataset' Nothing Nothing
   return $ reshape 3 v
 

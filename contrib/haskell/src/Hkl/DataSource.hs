@@ -9,7 +9,7 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -72,10 +72,10 @@ class Is0DStreamable a e where
   extract0DStreamValue :: a -> IO e
 
 instance Is0DStreamable Dataset CDouble where
-  extract0DStreamValue d = get_position d 0
+  extract0DStreamValue d = getPosition d 0
 
 instance Is0DStreamable Dataset Double where
-  extract0DStreamValue d = get_position d 0
+  extract0DStreamValue d = getPosition d 0
 
 instance Is0DStreamable Degree Double where
   extract0DStreamValue (Degree d) = pure (d /~ degree)
@@ -147,13 +147,13 @@ instance Is1DStreamable (DataSourceAcq Degree) CDouble where
   extract1DStreamValue (DataSourceAcq'Degree'Const d) = const $ extract0DStreamValue d
 
 instance Is1DStreamable Dataset CDouble where
-  extract1DStreamValue = get_position
+  extract1DStreamValue = getPosition
 
 instance Is1DStreamable Dataset Double where
-  extract1DStreamValue = get_position
+  extract1DStreamValue = getPosition
 
 instance Is1DStreamable Dataset Float where
-  extract1DStreamValue = get_position
+  extract1DStreamValue = getPosition
 
 instance Is1DStreamable (DataSourceAcq Float) Float where
   extract1DStreamValue (DataSourceAcq'Float ds) = extract1DStreamValue ds
