@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -83,9 +83,7 @@ main = do
   runStdoutLoggingT $ debugLogging d $ run opts'
     where
       debugLogging :: Bool -> LoggingT m a -> LoggingT m a
-      debugLogging d = case d of
-        True  -> id
-        False -> filterLogger (\_ l -> l /=LevelDebug)
+      debugLogging d = if d then id else filterLogger (\_ l -> l /=LevelDebug)
 
       opts = info (options <**> helper)
              ( fullDesc
