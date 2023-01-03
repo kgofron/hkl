@@ -61,7 +61,7 @@ ifoldM' f b0 v = loop 0 b0
 -- @since 0.12.3.0
 ifoldl' :: Storable a => (b -> Int -> a -> b) -> b -> IOVector a -> IO b
 {-# INLINE ifoldl' #-}
-ifoldl' f b0 v = ifoldM' (\b i a -> return $ f b i a) b0 v
+ifoldl' f = ifoldM' (\b i a -> return $ f b i a)
 
 -- | /O(n)/ Pure left fold with strict accumulator.
 --
@@ -81,7 +81,5 @@ sumImage (ImageWord32 i) = sum' i
 
 filterSumImage :: Maybe Double -> Image -> Bool
 filterSumImage mMax img = case mMax of
-                            Nothing -> True
-                            (Just m) -> if sumImage img < m
-                                       then True
-                                       else False
+                            Nothing  -> True
+                            (Just m) -> sumImage img < m
