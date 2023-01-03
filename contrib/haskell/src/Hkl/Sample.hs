@@ -51,7 +51,7 @@ newSample (Sample name l ux uy uz) =
           newForeignPtr p'hkl_sample_free sample
             where
               go s p getter setter = do
-                fptr <- copyParameter =<< (getter s)
+                fptr <- copyParameter =<< getter s
                 withForeignPtr fptr $ \ptr -> do
                   pokeParameter ptr p
                   void $ setter s ptr nullPtr

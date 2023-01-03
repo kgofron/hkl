@@ -1,7 +1,5 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric  #-}
-{-# LANGUAGE GADTs          #-}
-{-# LANGUAGE UnicodeSyntax  #-}
+{-# LANGUAGE GADTs         #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 
 module Hkl.Types ( AbsDirPath
