@@ -12,7 +12,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -55,7 +55,7 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
                                                     optional, section,
                                                     serializeIni, (&), (.=),
                                                     (.=?))
-import           Data.Maybe                        (fromMaybe)
+import           Data.Maybe                        (fromJust, fromMaybe)
 import           Data.Text                         (Text, pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
@@ -190,6 +190,17 @@ data instance Config 'QCustomProjection = BinocularsConfigQCustom
 
 makeLenses 'BinocularsConfigQCustom
 
+alternative :: Config 'QCustomProjection -> Config 'QCustomProjection -> Config 'QCustomProjection
+alternative l r = l { _binocularsConfigQCustomDetector = (_binocularsConfigQCustomDetector l)
+                                                         <|> (_binocularsConfigQCustomDetector r)
+                    , _binocularsConfigQCustomDetrot = (_binocularsConfigQCustomDetrot l)
+                                                       <|> (_binocularsConfigQCustomDetrot r)
+                    , _binocularsConfigQCustomSurfaceOrientation = (_binocularsConfigQCustomSurfaceOrientation l)
+                                                                   <|> (_binocularsConfigQCustomSurfaceOrientation r)
+                    , _binocularsConfigQCustomSubProjection = (_binocularsConfigQCustomSubProjection l)
+                                                              <|> (_binocularsConfigQCustomSubProjection r)
+                    }
+
 instance Arbitrary (Config 'QCustomProjection) where
   arbitrary = genericArbitraryU
 
@@ -203,10 +214,10 @@ instance HasIniConfig 'QCustomProjection where
     , _binocularsConfigQCustomNexusdir = Nothing
     , _binocularsConfigQCustomTmpl = Nothing
     , _binocularsConfigQCustomInputRange  = Nothing
-    , _binocularsConfigQCustomDetector = Nothing
+    , _binocularsConfigQCustomDetector = Just defaultDetector
     , _binocularsConfigQCustomCentralpixel = (0, 0)
     , _binocularsConfigQCustomSdd = Meter (1 *~ meter)
-    , _binocularsConfigQCustomDetrot = Nothing
+    , _binocularsConfigQCustomDetrot = Just (Degree (0 *~ degree))
     , _binocularsConfigQCustomAttenuationCoefficient = Nothing
     , _binocularsConfigQCustomAttenuationMax = Nothing
     , _binocularsConfigQCustomSurfaceOrientation = Just SurfaceOrientationVertical
@@ -217,7 +228,7 @@ instance HasIniConfig 'QCustomProjection where
     , _binocularsConfigQCustomProjectionLimits  = Nothing
     , _binocularsConfigQCustomDataPath = Just defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigQCustomImageSumMax = Nothing
-    , _binocularsConfigQCustomSubProjection = Nothing
+    , _binocularsConfigQCustomSubProjection = Just QCustomSubProjection'QxQyQz
     }
 
   specConfig = do
@@ -630,19 +641,26 @@ class (FramesQCustomP a, Show a) => ProcessQCustomP a where
                  => m a -> m ()
   processQCustomP mkPaths = do
     (conf :: Config 'QCustomProjection) <- ask
-    let det = fromMaybe defaultDetector (_binocularsConfigQCustomDetector conf)
+
+    -- should not be Maybe
+    let det = fromJust (_binocularsConfigQCustomDetector conf)
+    let (Degree detrot) = fromJust ( _binocularsConfigQCustomDetrot conf)
+    let surfaceOrientation = fromJust (_binocularsConfigQCustomSurfaceOrientation conf)
+    let subprojection = fromJust (_binocularsConfigQCustomSubProjection conf)
+
+    -- directly from the config
     let mlimits = _binocularsConfigQCustomProjectionLimits conf
     let destination = _binocularsConfigQCustomDestination conf
+    let centralPixel' = _binocularsConfigQCustomCentralpixel conf
+    let (Meter sampleDetectorDistance) = _binocularsConfigQCustomSdd conf
+    let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
+    let res = _binocularsConfigQCustomProjectionResolution conf
+
+    -- built from the config
     let output' = case _binocularsConfigQCustomInputRange conf of
                    Just r  -> destination' r mlimits destination
                    Nothing -> throwM MissingInputRange
-    let centralPixel' = _binocularsConfigQCustomCentralpixel conf
-    let (Meter sampleDetectorDistance) = _binocularsConfigQCustomSdd conf
-    let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQCustomDetrot conf)
-    let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQCustomSurfaceOrientation conf)
-    let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
-    let subprojection = fromMaybe QCustomSubProjection'QxQyQz (_binocularsConfigQCustomSubProjection conf)
-    let res = _binocularsConfigQCustomProjectionResolution conf
+
     h5d <- mkPaths
     filenames <- InputFn'List
                 <$> files (_binocularsConfigQCustomNexusdir conf)
@@ -745,10 +763,19 @@ processQCustom mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
+      $(logDebug) ""
+
       let conf' = overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
-      runReaderT process' conf'
+      $(logDebug) ""
+
+      let conf'' = alternative conf' defaultConfig
+      $(logDebug) "config once completed with the default configuration"
+      $(logDebugSH) conf''
+      $(logDebug) ""
+
+      runReaderT process' conf''
     Left e      -> $(logErrorSH) e
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
