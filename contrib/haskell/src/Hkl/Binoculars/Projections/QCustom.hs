@@ -446,9 +446,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                              det)
                    <*> mkTimeStamp msub (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
          SixsFlyMedH -> DataSourcePath'DataFrameQCustom
-                       <$> mkAttenuation ma (DataSourcePath'Attenuation
-                                             (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "attenuation"))
-                                             2 0 mMaxAtt)
+                       <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
                        <*> (DataSourcePath'Geometry'MedH
                            <$> mkWaveLength mw (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-c02-op-mono" $ datasetp "lambda"))
                            <*> pure [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta") -- should be optional
