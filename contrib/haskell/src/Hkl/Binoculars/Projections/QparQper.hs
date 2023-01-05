@@ -11,7 +11,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -148,7 +148,7 @@ instance HasIniConfig 'QparQperProjection where
       binocularsConfigQparQperProjectionResolution .= field "resolution" auto
       binocularsConfigQparQperProjectionLimits .=? field "limits" auto
 
-  overwriteWithCmd mr = over binocularsConfigQparQperInputRange (mr <|>)
+  overwriteWithCmd mr conf = return $ over binocularsConfigQparQperInputRange (mr <|>) conf
 
 data HklBinocularsProjectionsQparQperException
     = MissingAttenuationCoefficient
@@ -280,7 +280,7 @@ processQparQper mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteWithCmd mr conf
+      conf' <- overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'

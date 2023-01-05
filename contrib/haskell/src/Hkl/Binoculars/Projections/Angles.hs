@@ -11,7 +11,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -156,7 +156,7 @@ instance HasIniConfig 'AnglesProjection where
       binocularsConfigAnglesProjectionResolution .= field "resolution" auto
       binocularsConfigAnglesProjectionLimits .=? field "limits" auto
 
-  overwriteWithCmd mr = over binocularsConfigAnglesInputRange (mr <|>)
+  overwriteWithCmd mr conf = return $ over binocularsConfigAnglesInputRange (mr <|>) conf
 
 getSampleAxis :: Config 'AnglesProjection -> SampleAxis
 getSampleAxis c = case _binocularsConfigAnglesSampleAxis c of
@@ -293,7 +293,7 @@ processAngles mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteWithCmd mr conf
+      conf' <- overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'

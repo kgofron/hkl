@@ -63,6 +63,7 @@ import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
+import           Control.Monad.Logger              (MonadLogger)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
@@ -200,7 +201,7 @@ class HasIniConfig (a :: ProjectionType) where
 
   specConfig :: IniSpec (Config a) ()
 
-  overwriteWithCmd :: Maybe ConfigRange -> Config a -> Config a
+  overwriteWithCmd ::MonadLogger m =>  Maybe ConfigRange -> Config a -> m (Config a)
 
   parseConfig :: Text -> Either String (Config a)
   parseConfig cfg = mapRight getIniValue (parseIni cfg (ini defaultConfig specConfig))

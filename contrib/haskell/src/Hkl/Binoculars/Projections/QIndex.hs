@@ -11,7 +11,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -154,7 +154,7 @@ instance HasIniConfig 'QIndexProjection where
       binocularsConfigQIndexProjectionResolution .= field "resolution" auto
       binocularsConfigQIndexProjectionLimits .=? field "limits" auto
 
-  overwriteWithCmd mr = over binocularsConfigQIndexInputRange (mr <|>)
+  overwriteWithCmd mr conf = return $ over binocularsConfigQIndexInputRange (mr <|>) conf
 
 -------------------------
 -- QIndex Projection --
@@ -278,7 +278,7 @@ processQIndex mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteWithCmd mr conf
+      conf' <- overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'

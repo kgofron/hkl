@@ -33,9 +33,8 @@ module Hkl.Binoculars.Projections.QCustom
     , updateQCustom
     ) where
 
-import           Control.Applicative               ((<|>))
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses, over)
+import           Control.Lens                      (makeLenses)
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
@@ -190,17 +189,6 @@ data instance Config 'QCustomProjection = BinocularsConfigQCustom
 
 makeLenses 'BinocularsConfigQCustom
 
-alternative :: Config 'QCustomProjection -> Config 'QCustomProjection -> Config 'QCustomProjection
-alternative l r = l { _binocularsConfigQCustomDetector = (_binocularsConfigQCustomDetector l)
-                                                         <|> (_binocularsConfigQCustomDetector r)
-                    , _binocularsConfigQCustomDetrot = (_binocularsConfigQCustomDetrot l)
-                                                       <|> (_binocularsConfigQCustomDetrot r)
-                    , _binocularsConfigQCustomSurfaceOrientation = (_binocularsConfigQCustomSurfaceOrientation l)
-                                                                   <|> (_binocularsConfigQCustomSurfaceOrientation r)
-                    , _binocularsConfigQCustomSubProjection = (_binocularsConfigQCustomSubProjection l)
-                                                              <|> (_binocularsConfigQCustomSubProjection r)
-                    }
-
 instance Arbitrary (Config 'QCustomProjection) where
   arbitrary = genericArbitraryU
 
@@ -259,18 +247,53 @@ instance HasIniConfig 'QCustomProjection where
       binocularsConfigQCustomProjectionLimits .=? field "limits" auto
       binocularsConfigQCustomSubProjection .=? field "subprojection" auto
 
-  overwriteWithCmd mr conf = over binocularsConfigQCustomInputRange (mr <|>)
-                             $ over binocularsConfigQCustomSubProjection (fmap sub) conf
+  overwriteWithCmd mr conf
+    = overload mr conf
+      >>= sanitizeSubProjection
+      >>= default'Detector
+      >>= default'Detrot
+      >>= default'SurfaceOrientation
+      >>= default'SubProjection
+      -- >>= setDefault binocularsConfigQCustomDetrot
+
     where
-      sub :: QCustomSubProjection -> QCustomSubProjection
-      sub s = case _binocularsConfigQCustomProjectionType conf of
-                AnglesProjection   -> s
-                Angles2Projection  -> s
-                HklProjection      -> s
-                QCustomProjection  -> s
-                QIndexProjection   -> s
-                QparQperProjection -> s
-                QxQyQzProjection   -> QCustomSubProjection'QxQyQz
+      -- overload with command line
+      overload mr' conf'
+        = case mr' of
+            Nothing  -> pure conf'
+            r -> do
+               $(logDebug) "overloading config range with the command line arguments:"
+               $(logDebugSH) r
+               pure conf' {_binocularsConfigQCustomInputRange = r}
+
+      -- sanitize due to the evolution of the projection implementation
+      sanitizeSubProjection conf'
+        = case _binocularsConfigQCustomProjectionType conf of
+            QxQyQzProjection   -> do
+              $(logDebug) "overwrite subprojection QCustomSubProjection'QxQyQz for the QxQyQzProjection input type"
+              pure conf'{_binocularsConfigQCustomSubProjection = Just QCustomSubProjection'QxQyQz}
+            _ -> pure conf'
+
+      -- default values
+      default'Detector conf'
+        = case _binocularsConfigQCustomDetector conf' of
+            Nothing -> pure conf' {_binocularsConfigQCustomDetector = _binocularsConfigQCustomDetector defaultConfig}
+            (Just _) -> pure conf'
+
+      default'Detrot conf'
+        = case _binocularsConfigQCustomDetrot conf' of
+            Nothing -> pure conf' {_binocularsConfigQCustomDetrot = _binocularsConfigQCustomDetrot defaultConfig}
+            (Just _) -> pure conf'
+
+      default'SurfaceOrientation conf'
+        = case _binocularsConfigQCustomSurfaceOrientation conf' of
+            Nothing -> pure conf' {_binocularsConfigQCustomSurfaceOrientation = _binocularsConfigQCustomSurfaceOrientation defaultConfig}
+            (Just _) -> pure conf'
+
+      default'SubProjection conf'
+        = case _binocularsConfigQCustomSubProjection conf' of
+            Nothing -> pure conf'{ _binocularsConfigQCustomSubProjection =  _binocularsConfigQCustomSubProjection defaultConfig}
+            (Just _) -> pure conf'
 
 
 ------------------
@@ -763,17 +786,13 @@ processQCustom mf mr = do
       $(logDebugSH) conf
       $(logDebug) ""
 
-      let conf' = overwriteWithCmd mr conf
-      $(logDebug) "config once overloaded with the command line arguments"
+      conf' <- overwriteWithCmd mr conf
+
+      $(logDebug) "config once validated"
       $(logDebugSH) conf'
       $(logDebug) ""
 
-      let conf'' = alternative conf' defaultConfig
-      $(logDebug) "config once completed with the default configuration"
-      $(logDebugSH) conf''
-      $(logDebug) ""
-
-      runReaderT process' conf''
+      runReaderT process' conf'
     Left e      -> $(logErrorSH) e
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)

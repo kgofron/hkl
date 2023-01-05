@@ -12,7 +12,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -313,7 +313,7 @@ instance HasIniConfig 'HklProjection where
       binocularsConfigHklProjectionResolution .= field "resolution" auto
       binocularsConfigHklProjectionLimits .=? field "limits" auto
 
-  overwriteWithCmd mr = over binocularsConfigHklInputRange (mr <|>)
+  overwriteWithCmd mr conf = return $ over binocularsConfigHklInputRange (mr <|>) conf
 
 
 overloadSampleWithConfig :: Config 'HklProjection -> Sample -> Sample
@@ -570,7 +570,7 @@ processHkl mf mr = do
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
-      let conf' = overwriteWithCmd mr conf
+      conf' <- overwriteWithCmd mr conf
       $(logDebug) "config once overloaded with the command line arguments"
       $(logDebugSH) conf'
       runReaderT process' conf'
