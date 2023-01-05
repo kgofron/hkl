@@ -12,7 +12,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -98,7 +98,7 @@ import           Path                              (Abs, Dir, File, Path, Rel,
                                                     fileExtension, filename,
                                                     fromAbsDir, parseAbsDir,
                                                     toFilePath)
-import           Path.IO                           (getCurrentDir, listDir)
+import           Path.IO                           (getCurrentDir, walkDirAccum)
 import           Test.QuickCheck                   (Arbitrary (..), elements,
                                                     oneof)
 import           Text.Printf                       (printf)
@@ -278,9 +278,7 @@ instance HasFieldValue DestinationTmpl where
 
 -- HklBinocularsConfigException
 
-data HklBinocularsConfigException = NoFilesInTheGivenDirectory (Path Abs Dir)
-                                  | NoDataFilesInTheGivenDirectory (Path Abs Dir)
-                                  | NoFilesInRangeInTheGivenDirectory (Path Abs Dir) ConfigRange
+data HklBinocularsConfigException = NoDataFilesUnderTheGivenDirectory (Path Abs Dir)
                                   | ResolutionNotCompatibleWithProjectionNbOfCoordinates [Double] Int
     deriving (Show)
 
@@ -682,44 +680,47 @@ destination' (ConfigRange rs) ml = replace' interval limits
 
     intervals = Data.List.NonEmpty.map unInputRange rs
 
+isHdf5 :: Path Abs File -> Bool
+isHdf5 p = case (fileExtension p :: Maybe [Char]) of
+             Nothing    -> False
+             (Just ext) -> ext `elem` [".h5", ".nxs"]
+
+isInConfigRange :: Maybe InputTmpl -> Maybe ConfigRange ->  Path Abs File -> Bool
+isInConfigRange mtmpl mr f
+  = case mr of
+      (Just (ConfigRange rs)) -> do
+        let tmpl = maybe "%05d" (unpack . unInputTmpl) mtmpl
+        any (isInInputRange (filename f) tmpl) rs
+      Nothing -> True
+  where
+    matchIndex :: Path Rel File -> String -> Int -> Bool
+    matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
+
+    isInInputRange :: Path Rel File -> String -> InputRange -> Bool
+    isInInputRange p tmpl (InputRange i) = any (matchIndex p tmpl) [inf i .. sup i]
+
 files :: (MonadThrow m, MonadIO m)
-      => Maybe (Path Abs Dir)
-      -> Maybe ConfigRange
-      -> Maybe InputTmpl
-      -> m [Path Abs File]
-files md mr mt = do
+       => Maybe (Path Abs Dir)
+       -> Maybe ConfigRange
+       -> Maybe InputTmpl
+       -> m [Path Abs File]
+files md mr mt
+  = do
+  let filters = [ isHdf5
+                , isInConfigRange mt mr
+                ]
+
   dir <- case md of
-          Nothing  -> getCurrentDir
-          (Just d) -> pure d
-  (_, fs) <- listDir dir
+        Nothing  -> getCurrentDir
+        (Just d) -> pure d
+
+  fs <- walkDirAccum Nothing
+       (\_root _dirs fs -> return $ filter (\f -> all ($ f) filters) fs)
+       dir
+
   if null fs
-  then throwM (NoFilesInTheGivenDirectory dir)
-  else do
-    let fs' = filter isHdf5 fs
-    if null fs'
-    then throwM (NoDataFilesInTheGivenDirectory dir)
-    else case mr of
-           Just r  -> do
-             let tmpl = maybe "%05d" (unpack . unInputTmpl) mt
-             let fs'' = filter (isInConfigRange tmpl r) fs'
-             if null fs''
-             then throwM (NoFilesInRangeInTheGivenDirectory dir r)
-             else return fs''
-           Nothing -> return fs'
-    where
-      isHdf5 :: Path Abs File -> Bool
-      isHdf5 p = case (fileExtension p :: Maybe [Char]) of
-                   Nothing    -> False
-                   (Just ext) -> ext `elem` [".h5", ".nxs"]
-
-      matchIndex :: Path Rel File -> String -> Int -> Bool
-      matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
-
-      isInInputRange :: Path Rel File -> String -> InputRange -> Bool
-      isInInputRange p tmpl (InputRange i) = any (matchIndex p tmpl) [inf i .. sup i]
-
-      isInConfigRange :: String -> ConfigRange -> Path Abs File -> Bool
-      isInConfigRange tmpl (ConfigRange rs) p = any (isInInputRange (filename p) tmpl) rs
+    then throwM (NoDataFilesUnderTheGivenDirectory dir)
+    else return fs
 
 getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> m (Maybe Mask)
 getMask ml d = case ml of
