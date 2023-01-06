@@ -29,7 +29,7 @@ maskmatrix = /home/picca/tests-datas/binoculars/sixs/flymedv/mask_nxs00037_20211
 [projection]
 
 #type = sixs:qparqperprojection # refers to HKProjection in BINoculars/backends/sixs.py
-type = qcustome # refers to HKProjection in BINoculars/backends/sixs.py
+type = qcustom # refers to HKProjection in BINoculars/backends/sixs.py
 #type = sixs:qxqyqzprojection # refers to HKProjection in BINoculars/backends/sixs.py
 #type = sixs:qparqperprojection # refers to HKProjection in BINoculars/backends/sixs.py
 

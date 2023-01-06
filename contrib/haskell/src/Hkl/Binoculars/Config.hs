@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -356,8 +357,14 @@ instance Arbitrary InputType where
 instance HasFieldValue InputType where
   fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
+      err t =  ("Unsupported "
+                 ++ show (typeRep (Proxy :: Proxy InputType))
+                 ++ " :" ++ unpack t
+                 ++ " Supported ones are: "
+                 ++ unpack (unwords $ Prelude.map emit [minBound..maxBound]))
+
       parse :: Text -> Either String InputType
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy InputType))) t
+      parse t = parseEnum (err t) t
 
       emit :: InputType -> Text
       emit CristalK6C             = "cristal:k6c"
@@ -440,6 +447,12 @@ instance FieldEmitter ProjectionType where
 instance FieldParsable ProjectionType where
   fieldParser = go =<< takeText
     where
+      err t =  ("Unsupported "
+                 ++ show (typeRep (Proxy :: Proxy ProjectionType))
+                 ++ " :" ++ unpack t
+                 ++ " Supported ones are: "
+                 ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: ProjectionType]))
+
       go :: Text -> Parser ProjectionType
       go t
         | toLower t == "sixs:anglesprojection" = pure AnglesProjection
@@ -448,13 +461,9 @@ instance FieldParsable ProjectionType where
         | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
         | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
         | toLower t == "sixs:hklprojection" = pure HklProjection
-      go t = case parseEnum ("Unsupported "
-                             ++ show (typeRep (Proxy :: Proxy ProjectionType))
-                             ++ " :" ++ unpack t
-                             ++ " Supported ones are: "
-                             ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: ProjectionType])) t of
-        Right p  -> pure p
-        Left err -> fail err
+      go t = case parseEnum (err t) t of
+        Right p   -> pure p
+        Left err' -> fail err'
 
 instance HasFieldValue ProjectionType where
   fieldvalue = parsable
@@ -474,7 +483,7 @@ parsable = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
     emit ::  FieldParsable a => a -> Text
     emit = fieldEmitter
 
-parseEnum :: (Bounded a, Enum a, HasFieldValue a)
+parseEnum :: (Bounded a, Enum a, HasFieldValue a, Typeable a)
           => String -> Text -> Either String a
 parseEnum err t = maybeToRight err (find match [minBound..maxBound])
   where
@@ -499,7 +508,13 @@ instance HasFieldValue QCustomSubProjection where
   fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
       parse :: Text -> Either String QCustomSubProjection
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy QCustomSubProjection))) t
+      parse t = parseEnum (err t) t
+
+      err t = ("Unsupported "
+               ++ show (typeRep (Proxy :: Proxy QCustomSubProjection))
+               ++ " :" ++ unpack t
+               ++ " Supported ones are: "
+               ++ unpack (unwords $ Prelude.map emit [minBound..maxBound]))
 
       emit :: QCustomSubProjection -> Text
       emit QCustomSubProjection'QxQyQz            = "qx_qy_qz"
@@ -645,8 +660,14 @@ instance Arbitrary SurfaceOrientation where
 instance HasFieldValue SurfaceOrientation where
   fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
     where
+      err t = ("Unsupported "
+               ++ show (typeRep (Proxy :: Proxy SurfaceOrientation))
+               ++ " :" ++ unpack t
+               ++ " Supported ones are: "
+               ++ unpack (unwords $ Prelude.map emit [minBound..maxBound]))
+
       parse :: Text -> Either String SurfaceOrientation
-      parse t = parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy SurfaceOrientation))) t
+      parse t = parseEnum (err t) t
 
       emit :: SurfaceOrientation -> Text
       emit SurfaceOrientationVertical   = "vertical"
