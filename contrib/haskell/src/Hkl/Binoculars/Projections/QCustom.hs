@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -34,7 +35,8 @@ module Hkl.Binoculars.Projections.QCustom
     ) where
 
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (makeLenses)
+import           Control.Lens                      (Lens, makeLenses, set',
+                                                    (^.))
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
@@ -250,14 +252,14 @@ instance HasIniConfig 'QCustomProjection where
   overwriteWithCmd mr conf
     = overload mr conf
       >>= sanitizeSubProjection
-      >>= default'Detector
-      >>= default'Detrot
-      >>= default'SurfaceOrientation
-      >>= default'SubProjection
-      -- >>= setDefault binocularsConfigQCustomDetrot
+      >>= overloadMaybeDefault binocularsConfigQCustomDetector
+      >>= overloadMaybeDefault binocularsConfigQCustomDetrot
+      >>= overloadMaybeDefault binocularsConfigQCustomSurfaceOrientation
+      >>= overloadMaybeDefault binocularsConfigQCustomSubProjection
 
     where
       -- overload with command line
+      overload :: MonadLogger m => Maybe ConfigRange -> Config 'QCustomProjection -> m (Config 'QCustomProjection)
       overload mr' conf'
         = case mr' of
             Nothing  -> pure conf'
@@ -267,6 +269,7 @@ instance HasIniConfig 'QCustomProjection where
                pure conf' {_binocularsConfigQCustomInputRange = r}
 
       -- sanitize due to the evolution of the projection implementation
+      sanitizeSubProjection :: MonadLogger m => Config 'QCustomProjection -> m (Config 'QCustomProjection)
       sanitizeSubProjection conf'
         = case _binocularsConfigQCustomProjectionType conf of
             QxQyQzProjection   -> do
@@ -274,27 +277,18 @@ instance HasIniConfig 'QCustomProjection where
               pure conf'{_binocularsConfigQCustomSubProjection = Just QCustomSubProjection'QxQyQz}
             _ -> pure conf'
 
-      -- default values
-      default'Detector conf'
-        = case _binocularsConfigQCustomDetector conf' of
-            Nothing -> pure conf' {_binocularsConfigQCustomDetector = _binocularsConfigQCustomDetector defaultConfig}
+      -- set default values if relevant
+      overloadMaybeDefault :: (MonadLogger m, Show a)
+                 => Lens (Config 'QCustomProjection) (Config 'QCustomProjection) (Maybe a) (Maybe a)
+                 -> Config 'QCustomProjection -> m (Config 'QCustomProjection)
+      overloadMaybeDefault l conf'
+        = case conf' ^. l of
+            Nothing  -> do
+              let mv = defaultConfig ^. l
+              $(logDebug) "using default value:"
+              $(logDebugSH) (fromJust mv)
+              pure $ set' l mv conf'
             (Just _) -> pure conf'
-
-      default'Detrot conf'
-        = case _binocularsConfigQCustomDetrot conf' of
-            Nothing -> pure conf' {_binocularsConfigQCustomDetrot = _binocularsConfigQCustomDetrot defaultConfig}
-            (Just _) -> pure conf'
-
-      default'SurfaceOrientation conf'
-        = case _binocularsConfigQCustomSurfaceOrientation conf' of
-            Nothing -> pure conf' {_binocularsConfigQCustomSurfaceOrientation = _binocularsConfigQCustomSurfaceOrientation defaultConfig}
-            (Just _) -> pure conf'
-
-      default'SubProjection conf'
-        = case _binocularsConfigQCustomSubProjection conf' of
-            Nothing -> pure conf'{ _binocularsConfigQCustomSubProjection =  _binocularsConfigQCustomSubProjection defaultConfig}
-            (Just _) -> pure conf'
-
 
 ------------------
 -- Input Path's --
