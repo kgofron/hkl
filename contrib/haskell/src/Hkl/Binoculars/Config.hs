@@ -448,7 +448,11 @@ instance FieldParsable ProjectionType where
         | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
         | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
         | toLower t == "sixs:hklprojection" = pure HklProjection
-      go t = case parseEnum ("Unsupported \"" ++ unpack t ++ "\""  ++ show (typeRep (Proxy :: Proxy ProjectionType))) t of
+      go t = case parseEnum ("Unsupported "
+                             ++ show (typeRep (Proxy :: Proxy ProjectionType))
+                             ++ " :" ++ unpack t
+                             ++ " Supported ones are: "
+                             ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: ProjectionType])) t of
         Right p  -> pure p
         Left err -> fail err
 

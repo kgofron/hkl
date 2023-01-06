@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -22,7 +22,9 @@ module Hkl.Binoculars.Sixs
 import           Control.Monad.Catch                 (MonadThrow)
 import           Control.Monad.IO.Class              (MonadIO, liftIO)
 import           Control.Monad.Logger                (MonadLogger, logDebug,
-                                                      logDebugSH, logErrorSH)
+                                                      logDebugN, logDebugSH,
+                                                      logErrorSH)
+import           Data.Text                           (pack)
 import           Path.IO                             (getCurrentDir)
 import           Path.Posix                          (parseAbsDir)
 
@@ -37,8 +39,8 @@ process :: (MonadLogger m, MonadThrow m, MonadIO m)
         => Maybe FilePath -> Maybe ConfigRange -> m ()
 process mf mr = do
   epreconf <- liftIO $ getPreConfig mf
-  $(logDebug) "pre-config red from the config file"
-  $(logDebugSH) epreconf
+  logDebugN "pre-config red from the config file"
+  logDebugN (pack . show $ epreconf)
   case epreconf of
     Left e        -> $(logErrorSH) e
     Right preconf -> case _binocularsPreConfigProjectionType preconf of

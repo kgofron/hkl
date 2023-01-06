@@ -52,6 +52,7 @@ import           Data.Array.Repa                   (Array)
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
+import           Data.Ini                          (readIniFile)
 import           Data.Ini.Config.Bidir             (FieldValue (..), field, ini,
                                                     optional, section,
                                                     serializeIni, (&), (.=),
@@ -289,6 +290,16 @@ instance HasIniConfig 'QCustomProjection where
               $(logDebugSH) (fromJust mv)
               pure $ set' l mv conf'
             (Just _) -> pure conf'
+
+getConfig' ::  (MonadLogger m, MonadIO m)
+           => Maybe FilePath -> m (Either String (Config 'QCustomProjection))
+getConfig' mf = do
+  case mf of
+    (Just f) -> liftIO $ print =<< readIniFile f
+    Nothing  -> undefined
+
+  (ConfigContent cfg) <- liftIO $ readConfig mf
+  pure $ parseConfig cfg
 
 ------------------
 -- Input Path's --
@@ -773,7 +784,7 @@ process' = do
 
 processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processQCustom mf mr = do
-  econf <- liftIO $ getConfig mf
+  econf <- getConfig' mf
   case econf of
     Right conf -> do
       $(logDebug) "config red from the config file"
