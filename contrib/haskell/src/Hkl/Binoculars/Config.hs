@@ -50,6 +50,7 @@ module Hkl.Binoculars.Config
     , SampleAxis(..)
     , SurfaceOrientation(..)
     , auto
+    , auto'
     , destination'
     , files
     , getMask
@@ -131,6 +132,9 @@ class HasFieldValue a where
 
 auto :: HasFieldValue a => FieldValue a
 auto = fieldvalue
+
+auto' :: HasFieldValue a => Text -> Either String a
+auto' = fvParse $ fieldvalue
 
 instance HasFieldValue Bool where
   fieldvalue = bool

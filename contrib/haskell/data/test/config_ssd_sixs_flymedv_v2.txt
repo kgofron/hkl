@@ -34,8 +34,3 @@ type = qcustom # refers to HKProjection in BINoculars/backends/sixs.py
 #type = sixs:qparqperprojection # refers to HKProjection in BINoculars/backends/sixs.py
 
 resolution = 0.01, 0.01, 0.01
-#resolution = 0.008, 0.008, 0.01  # or just give 1 number for all dimensions
-#limits = [-3.53:-1.68,-0.59:0.68,0.98:1.06]
-
-#omega_offset = 0
-#source /usr/local/applications/diffractions/binoculars/v0.0.1/env.sh
