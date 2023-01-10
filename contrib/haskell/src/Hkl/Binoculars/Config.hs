@@ -64,7 +64,7 @@ import           Control.Lens                      (makeLenses)
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
-import           Control.Monad.IO.Class            (MonadIO)
+import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Control.Monad.Logger              (MonadLogger)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa.Index             (DIM2, DIM3)
@@ -74,6 +74,8 @@ import           Data.Attoparsec.Text              (Parser, char, decimal,
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
+import           Data.Ini                          (Ini, printIni)
+import           Data.Ini.Config                   (IniParser, parseIniFile)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -83,10 +85,11 @@ import           Data.List                         (find, isInfixOf, length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
 import           Data.String                       (IsString)
 import           Data.Text                         (Text, breakOn, drop, empty,
-                                                    intercalate, length, pack,
+                                                    findIndex, intercalate,
+                                                    length, lines, pack,
                                                     replace, singleton, strip,
-                                                    takeWhile, toLower, unpack,
-                                                    unwords)
+                                                    take, takeWhile, toLower,
+                                                    unlines, unpack, unwords)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
@@ -199,11 +202,19 @@ readConfig mf = do
   cfg <- readFile =<< case mf of
                        Nothing  -> getDataFileName "data/test/config_manip1.cfg"
                        (Just f) -> pure f
-  return $ ConfigContent cfg
+  -- return $ ConfigContent cfg
+  return $ ConfigContent $ unlines $ [fixHeader l | l <- lines cfg]
+    where
+      fixHeader :: Text -> Text
+      fixHeader l = case findIndex (== '#' ) l of
+        Nothing  -> l
+        (Just n) -> take n l
+
 
 class HasIniConfig (a :: ProjectionType) where
   defaultConfig :: Config a
 
+  -- BIDIR API
   specConfig :: IniSpec (Config a) ()
 
   overwriteWithCmd ::MonadLogger m =>  Maybe ConfigRange -> Config a -> m (Config a)
@@ -215,6 +226,23 @@ class HasIniConfig (a :: ProjectionType) where
   getConfig mf = do
     (ConfigContent cfg) <- readConfig mf
     pure $ parseConfig cfg
+
+  -- non BIDIR API
+  configParser :: IniParser (Config a)
+
+  toIni :: Config a -> Ini
+
+  parseConfig' ::  Text -> Either String (Config a)
+  parseConfig' cfg = parseIniFile cfg configParser
+
+  serializeConfig :: Config a -> Text
+  serializeConfig = printIni . toIni
+
+  getConfig' :: (MonadLogger m, MonadIO m)
+             => Maybe FilePath -> m (Either String (Config a))
+  getConfig' mf = do
+    (ConfigContent cfg) <- liftIO $ readConfig mf
+    pure $ parseIniFile cfg configParser
 
 -- Angstrom
 
