@@ -240,7 +240,7 @@ class HasIniConfig (a :: ProjectionType) where
   serializeConfig :: Config a -> Text
   serializeConfig = printIni . toIni
 
-  getConfig' :: (MonadLogger m, MonadIO m)
+  getConfig' :: (MonadThrow m, MonadLogger m, MonadIO m)
              => Maybe FilePath
              -> Args a
              -> m (Either String (Config a))

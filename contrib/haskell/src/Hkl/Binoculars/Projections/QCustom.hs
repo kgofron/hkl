@@ -277,10 +277,26 @@ instance HasIniConfig 'QCustomProjection where
                           _ -> case _binocularsConfigQCustomSubProjection conf of
                                 Nothing -> pure $ _binocularsConfigQCustomSubProjection defaultConfig
                                 (Just j) -> pure $ Just j
+        -- dataPath
+        dataPath <- case _binocularsConfigQCustomDataPath conf of
+                     Nothing -> do
+                       v <- (h5dpathQCustom
+                            (_binocularsConfigQCustomInputType conf)
+                            (_binocularsConfigQCustomAttenuationCoefficient conf)
+                            (_binocularsConfigQCustomAttenuationMax conf)
+                            (_binocularsConfigQCustomDetector conf)
+                            (_binocularsConfigQCustomWavelength conf)
+                            (_binocularsConfigQCustomSubProjection conf)
+                           )
+                       logDebugN "overwriting dataPath with default one"
+                       logDebugN (pack . show $ v)
+                       pure $ Just v
+                     v -> pure v
 
         pure $ Right conf { _binocularsConfigQCustomInputRange = inputRange
                           , _binocularsConfigQCustomDetector = detector
                           , _binocularsConfigQCustomDetrot = detrot
+                          , _binocularsConfigQCustomDataPath = dataPath
                           , _binocularsConfigQCustomSurfaceOrientation = surfaceOrientation
                           , _binocularsConfigQCustomSubProjection = subProjection
                           }
@@ -462,7 +478,7 @@ mkWaveLength ma wp =
       (Just a) -> return $ DataSourcePath'WaveLength'Const a
 
 
-h5dpathQCustom ::  (MonadLogger m, MonadThrow m)
+h5dpathQCustom :: (MonadLogger m, MonadThrow m)
               => InputType
               -> Maybe Double
               -> Maybe Float
@@ -725,88 +741,85 @@ spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace
 
 class ChunkP a => FramesQCustomP a where
   framesQCustomP :: MonadSafe m
-                => a -> Pipe (FilePath, [Int]) DataFrameQCustom m ()
+                 => a -> Pipe (FilePath, [Int]) DataFrameQCustom m ()
 
-class (FramesQCustomP a, Show a) => ProcessQCustomP a where
-  processQCustomP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QCustomProjection) m, MonadThrow m)
-                 => m a -> m ()
-  processQCustomP mkPaths = do
-    (conf :: Config 'QCustomProjection) <- ask
+processQCustomP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QCustomProjection) m, MonadThrow m)
+                => m ()
+processQCustomP = do
+  (conf :: Config 'QCustomProjection) <- ask
 
-    -- should not be Maybe
-    let det = fromJust (_binocularsConfigQCustomDetector conf)
-    let (Degree detrot) = fromJust ( _binocularsConfigQCustomDetrot conf)
-    let surfaceOrientation = fromJust (_binocularsConfigQCustomSurfaceOrientation conf)
-    let subprojection = fromJust (_binocularsConfigQCustomSubProjection conf)
+  -- should not be Maybe
+  let det = fromJust (_binocularsConfigQCustomDetector conf)
+  let (Degree detrot) = fromJust ( _binocularsConfigQCustomDetrot conf)
+  let surfaceOrientation = fromJust (_binocularsConfigQCustomSurfaceOrientation conf)
+  let subprojection = fromJust (_binocularsConfigQCustomSubProjection conf)
+  let h5d = fromJust (_binocularsConfigQCustomDataPath conf)
 
-    -- directly from the config
-    let mlimits = _binocularsConfigQCustomProjectionLimits conf
-    let destination = _binocularsConfigQCustomDestination conf
-    let centralPixel' = _binocularsConfigQCustomCentralpixel conf
-    let (Meter sampleDetectorDistance) = _binocularsConfigQCustomSdd conf
-    let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
-    let res = _binocularsConfigQCustomProjectionResolution conf
+  -- directly from the config
+  let mlimits = _binocularsConfigQCustomProjectionLimits conf
+  let destination = _binocularsConfigQCustomDestination conf
+  let centralPixel' = _binocularsConfigQCustomCentralpixel conf
+  let (Meter sampleDetectorDistance) = _binocularsConfigQCustomSdd conf
+  let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
+  let res = _binocularsConfigQCustomProjectionResolution conf
 
-    -- built from the config
-    let output' = case _binocularsConfigQCustomInputRange conf of
-                   Just r  -> destination' r mlimits destination
-                   Nothing -> throwM MissingInputRange
+  -- built from the config
+  let output' = case _binocularsConfigQCustomInputRange conf of
+                 Just r  -> destination' r mlimits destination
+                 Nothing -> throwM MissingInputRange
 
-    h5d <- mkPaths
-    filenames <- InputFn'List
-                <$> files (_binocularsConfigQCustomNexusdir conf)
-                          (_binocularsConfigQCustomInputRange conf)
-                          (_binocularsConfigQCustomTmpl conf)
-    mask' <- getMask (_binocularsConfigQCustomMaskmatrix conf) det
-    pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+  filenames <- InputFn'List
+              <$> files (_binocularsConfigQCustomNexusdir conf)
+                        (_binocularsConfigQCustomInputRange conf)
+                        (_binocularsConfigQCustomTmpl conf)
+  mask' <- getMask (_binocularsConfigQCustomMaskmatrix conf) det
+  pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
 
-    -- compute the jobs
+  -- compute the jobs
 
-    let fns = concatMap (replicate 1) (toList filenames)
-    chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
-    cap' <-  liftIO getNumCapabilities
-    let ntot = sum (Prelude.map clength chunks)
-    let cap = if cap' >= 2 then cap' - 1 else cap'
-    let jobs = chunk (quot ntot cap) chunks
+  let fns = concatMap (replicate 1) (toList filenames)
+  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
+  cap' <-  liftIO getNumCapabilities
+  let ntot = sum (Prelude.map clength chunks)
+  let cap = if cap' >= 2 then cap' - 1 else cap'
+  let jobs = chunk (quot ntot cap) chunks
 
-    -- log parameters
+  -- log parameters
 
-    $(logDebugSH) filenames
-    $(logDebugSH) h5d
-    $(logDebugSH) chunks
-    $(logDebug) "start gessing final cube size"
+  $(logDebugSH) filenames
+  $(logDebugSH) h5d
+  $(logDebugSH) chunks
+  $(logDebug) "start gessing final cube size"
 
-    -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
+  -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
-    guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
-      runSafeT $ runEffect $
-      each chunks
-      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
-      >-> framesQCustomP h5d
-      >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
-      >-> accumulateP c
+  guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
+    runSafeT $ runEffect $
+    each chunks
+    >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
+    >-> framesQCustomP h5d
+    >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
+    >-> accumulateP c
 
-    $(logDebug) "stop gessing final cube size"
+  $(logDebug) "stop gessing final cube size"
 
-    -- do the final projection
+  -- do the final projection
 
-    $(logInfo) (pack $ printf "let's do a QCustom projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
+  $(logInfo) (pack $ printf "let's do a QCustom projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
-    liftIO $ withProgressBar ntot $ \pb -> do
-      r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
-                               runSafeT $ runEffect $
-                               each job
-                               >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                               >-> framesQCustomP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
-                               >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
-                               >-> tee (accumulateP c)
-                               >-> progress pb
-                           ) jobs
-      saveCube output' r'
+  liftIO $ withProgressBar ntot $ \pb -> do
+    r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
+                             runSafeT $ runEffect $
+                             each job
+                             >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
+                             >-> framesQCustomP h5d
+                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
+                             >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
+                             >-> tee (accumulateP c)
+                             >-> progress pb
+                         ) jobs
+    saveCube output' r'
 
-
-instance ProcessQCustomP (DataSourcePath DataFrameQCustom)
 
 instance ChunkP (DataSourcePath DataFrameQCustom) where
     chunkP (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _) =
@@ -834,29 +847,14 @@ instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
 -- Cmd --
 ---------
 
-process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'QCustomProjection) m)
-         => m ()
-process' = do
-  c <- ask
-  processQCustomP (h5dpathQCustom
-                  (_binocularsConfigQCustomInputType c)
-                  (_binocularsConfigQCustomAttenuationCoefficient c)
-                  (_binocularsConfigQCustomAttenuationMax c)
-                  (_binocularsConfigQCustomDetector c)
-                  (_binocularsConfigQCustomWavelength c)
-                  (_binocularsConfigQCustomSubProjection c)
-                 )
-
 processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processQCustom mf mr = do
   econf :: Either String (Config 'QCustomProjection) <- getConfig' mf (Args'QCustomProjection mr)
   case econf of
     Right conf -> do
-      $(logDebug) "config red from the config file"
-      $(logDebugSH) conf
-      $(logDebug) ""
-
-      runReaderT process' conf
+      logDebugN "config red from the config file"
+      logDebugN $ serializeConfig conf
+      runReaderT processQCustomP conf
     Left e      -> $(logErrorSH) e
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
