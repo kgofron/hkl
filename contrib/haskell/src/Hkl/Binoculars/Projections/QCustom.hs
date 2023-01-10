@@ -24,7 +24,8 @@
 -}
 
 module Hkl.Binoculars.Projections.QCustom
-    ( Config(..)
+    ( Args(..)
+    , Config(..)
     , DataFrameQCustom(..)
     , FramesQCustomP(..)
     , defaultDataSourcePath'DataFrameQCustom
@@ -35,14 +36,13 @@ module Hkl.Binoculars.Projections.QCustom
     ) where
 
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Lens                      (Lens, makeLenses, set',
-                                                    (^.))
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Logger              (MonadLogger, logDebug,
-                                                    logDebugSH, logErrorSH,
-                                                    logInfo, logWarn, logWarnN)
+                                                    logDebugN, logDebugSH,
+                                                    logErrorSH, logInfo,
+                                                    logWarn, logWarnN)
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
 import           Control.Monad.Trans.Reader        (runReaderT)
@@ -54,7 +54,8 @@ import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
-import           Data.Ini.Config                   (fieldMbOf, fieldOf, section)
+import           Data.Ini.Config                   (fieldMbOf, fieldOf,
+                                                    parseIniFile, section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.Maybe                        (fromJust, fromMaybe)
 import           Data.Text                         (Text, pack)
@@ -189,10 +190,13 @@ data instance Config 'QCustomProjection = BinocularsConfigQCustom
     , _binocularsConfigQCustomSubProjection          :: Maybe QCustomSubProjection
     } deriving (Eq, Show, Generic)
 
-makeLenses 'BinocularsConfigQCustom
-
 instance Arbitrary (Config 'QCustomProjection) where
   arbitrary = genericArbitraryU
+
+newtype instance Args 'QCustomProjection = Args'QCustomProjection
+  {
+    argsQCustomInputRange :: Maybe ConfigRange
+  }
 
 instance HasIniConfig 'QCustomProjection where
 
@@ -223,48 +227,66 @@ instance HasIniConfig 'QCustomProjection where
 
   specConfig = undefined
 
-  overwriteWithCmd mr conf
-    = overload mr conf
-      >>= sanitizeSubProjection
-      >>= overloadMaybeDefault binocularsConfigQCustomDetector
-      >>= overloadMaybeDefault binocularsConfigQCustomDetrot
-      >>= overloadMaybeDefault binocularsConfigQCustomSurfaceOrientation
-      >>= overloadMaybeDefault binocularsConfigQCustomSubProjection
+  getConfig' mf (Args'QCustomProjection mr) = do
+    (ConfigContent cfg) <- liftIO $ readConfig mf
+    let econf = parseIniFile cfg configParser
+    case econf of
+      Left err   -> pure $ Left err
+      Right conf -> do
 
-    where
-      -- overload with command line
-      overload :: MonadLogger m
-               => Maybe ConfigRange -> Config 'QCustomProjection -> m (Config 'QCustomProjection)
-      overload mr' conf'
-        = case mr' of
-            Nothing  -> pure conf'
-            r -> do
-               $(logDebug) "overloading config range with the command line arguments:"
-               $(logDebugSH) r
-               pure conf' {_binocularsConfigQCustomInputRange = r}
+        -- inputRange
+        inputRange <- case mr of
+                       Nothing -> pure $ _binocularsConfigQCustomInputRange conf
+                       r       -> do
+                         logDebugN "overloading config range with the command line arguments:"
+                         logDebugN (pack . show $ r)
+                         pure r
 
-      -- sanitize due to the evolution of the projection implementation
-      sanitizeSubProjection :: MonadLogger m
-                            => Config 'QCustomProjection -> m (Config 'QCustomProjection)
-      sanitizeSubProjection conf'
-        = case _binocularsConfigQCustomProjectionType conf of
-            QxQyQzProjection   -> do
-              $(logDebug) "overwrite subprojection QCustomSubProjection'QxQyQz for the QxQyQzProjection input type"
-              pure conf'{_binocularsConfigQCustomSubProjection = Just QCustomSubProjection'QxQyQz}
-            _ -> pure conf'
+        -- detector
+        detector <- case _binocularsConfigQCustomDetector conf of
+                     Nothing -> do
+                       let d = _binocularsConfigQCustomDetector defaultConfig
+                       logDebugN "using default value:"
+                       logDebugN (pack . show $ d)
+                       pure d
+                     d -> pure d
 
-      -- set default values if relevant
-      overloadMaybeDefault :: (MonadLogger m, Show a)
-                           => Lens (Config 'QCustomProjection) (Config 'QCustomProjection) (Maybe a) (Maybe a)
-                           -> Config 'QCustomProjection -> m (Config 'QCustomProjection)
-      overloadMaybeDefault l conf'
-        = case conf' ^. l of
-            Nothing  -> do
-              let mv = defaultConfig ^. l
-              $(logDebug) "using default value:"
-              $(logDebugSH) (fromJust mv)
-              pure $ set' l mv conf'
-            (Just _) -> pure conf'
+        -- detrot
+        detrot <- case _binocularsConfigQCustomDetrot conf of
+                   Nothing -> do
+                     let v = _binocularsConfigQCustomDetrot defaultConfig
+                     logDebugN "using default value:"
+                     logDebugN (pack . show $ v)
+                     pure v
+                   v -> pure v
+
+        -- surface orientation
+        surfaceOrientation <- case _binocularsConfigQCustomSurfaceOrientation conf of
+                   Nothing -> do
+                     let v = _binocularsConfigQCustomSurfaceOrientation defaultConfig
+                     logDebugN "using default value:"
+                     logDebugN (pack . show $ v)
+                     pure v
+                   v -> pure v
+
+        -- subProjection
+        subProjection <- case _binocularsConfigQCustomProjectionType conf of
+                          QxQyQzProjection   -> do
+                            logDebugN "overwrite subprojection QCustomSubProjection'QxQyQz for the QxQyQzProjection input type"
+                            pure $ Just QCustomSubProjection'QxQyQz
+                          _ -> case _binocularsConfigQCustomSubProjection conf of
+                                Nothing -> pure $ _binocularsConfigQCustomSubProjection defaultConfig
+                                (Just j) -> pure $ Just j
+
+        pure $ Right conf { _binocularsConfigQCustomInputRange = inputRange
+                          , _binocularsConfigQCustomDetector = detector
+                          , _binocularsConfigQCustomDetrot = detrot
+                          , _binocularsConfigQCustomSurfaceOrientation = surfaceOrientation
+                          , _binocularsConfigQCustomSubProjection = subProjection
+                          }
+
+
+  overwriteWithCmd _mr _conf = undefined
 
   configParser = do
     (ncores, destination, overwrite) <-
@@ -827,20 +849,14 @@ process' = do
 
 processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processQCustom mf mr = do
-  econf <- getConfig' mf
+  econf :: Either String (Config 'QCustomProjection) <- getConfig' mf (Args'QCustomProjection mr)
   case econf of
     Right conf -> do
       $(logDebug) "config red from the config file"
       $(logDebugSH) conf
       $(logDebug) ""
 
-      conf' <- overwriteWithCmd mr conf
-
-      $(logDebug) "config once validated"
-      $(logDebugSH) conf'
-      $(logDebug) ""
-
-      runReaderT process' conf'
+      runReaderT process' conf
     Left e      -> $(logErrorSH) e
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
@@ -852,7 +868,7 @@ newQCustom cwd = do
 updateQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
               => Maybe FilePath -> m ()
 updateQCustom mf = do
-  (conf :: Either String (Config 'QCustomProjection)) <- getConfig' mf
+  (conf :: Either String (Config 'QCustomProjection)) <- getConfig' mf (Args'QCustomProjection Nothing)
   $(logDebug) "config red from the config file"
   $(logDebugSH) conf
   case conf of

@@ -25,6 +25,7 @@
 
 module Hkl.Binoculars.Config
     ( Angstrom(..)
+    , Args
     , Attenuation(..)
     , BinocularsPreConfig(..)
     , Config
@@ -64,7 +65,7 @@ import           Control.Lens                      (makeLenses)
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
-import           Control.Monad.IO.Class            (MonadIO, liftIO)
+import           Control.Monad.IO.Class            (MonadIO)
 import           Control.Monad.Logger              (MonadLogger)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa.Index             (DIM2, DIM3)
@@ -196,6 +197,7 @@ instance HasFieldValue (Int, Int) where
 
 data family Config (a :: ProjectionType)
 data family DataPath (a :: ProjectionType)
+data family Args (a :: ProjectionType)
 
 readConfig :: Maybe FilePath -> IO ConfigContent
 readConfig mf = do
@@ -239,10 +241,9 @@ class HasIniConfig (a :: ProjectionType) where
   serializeConfig = printIni . toIni
 
   getConfig' :: (MonadLogger m, MonadIO m)
-             => Maybe FilePath -> m (Either String (Config a))
-  getConfig' mf = do
-    (ConfigContent cfg) <- liftIO $ readConfig mf
-    pure $ parseIniFile cfg configParser
+             => Maybe FilePath
+             -> Args a
+             -> m (Either String (Config a))
 
 -- Angstrom
 
