@@ -354,7 +354,7 @@ instance HasIniConfig 'QCustomProjection where
       elemMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
       elemMb k mv = case mv of
                       (Just v) -> [(k, otua v)]
-                      Nothing  -> []
+                      Nothing  -> [("# " <> k, "")]
 
       ss = fromList [ ("dispatcher", elemMb  "ncores" (_binocularsConfigQCustomNcore c)
                                      <> elem "destination" (_binocularsConfigQCustomDestination c)
