@@ -198,9 +198,9 @@ newtype instance Args 'QCustomProjection = Args'QCustomProjection
     argsQCustomInputRange :: Maybe ConfigRange
   }
 
-instance HasIniConfig 'QCustomProjection where
-
-  defaultConfig = BinocularsConfigQCustom
+defaultConfig' :: Config 'QCustomProjection
+defaultConfig'
+  = BinocularsConfigQCustom
     { _binocularsConfigQCustomNcore = Nothing
     , _binocularsConfigQCustomDestination = DestinationTmpl "."
     , _binocularsConfigQCustomOverwrite = False
@@ -225,7 +225,7 @@ instance HasIniConfig 'QCustomProjection where
     , _binocularsConfigQCustomSubProjection = Just QCustomSubProjection'QxQyQz
     }
 
-  specConfig = undefined
+instance HasIniConfig' 'QCustomProjection where
 
   getConfig' mf (Args'QCustomProjection mr) = do
     (ConfigContent cfg) <- liftIO $ readConfig mf
@@ -245,7 +245,7 @@ instance HasIniConfig 'QCustomProjection where
         -- detector
         detector <- case _binocularsConfigQCustomDetector conf of
                      Nothing -> do
-                       let d = _binocularsConfigQCustomDetector defaultConfig
+                       let d = _binocularsConfigQCustomDetector defaultConfig'
                        logDebugN "using default value:"
                        logDebugN (pack . show $ d)
                        pure d
@@ -254,7 +254,7 @@ instance HasIniConfig 'QCustomProjection where
         -- detrot
         detrot <- case _binocularsConfigQCustomDetrot conf of
                    Nothing -> do
-                     let v = _binocularsConfigQCustomDetrot defaultConfig
+                     let v = _binocularsConfigQCustomDetrot defaultConfig'
                      logDebugN "using default value:"
                      logDebugN (pack . show $ v)
                      pure v
@@ -263,7 +263,7 @@ instance HasIniConfig 'QCustomProjection where
         -- surface orientation
         surfaceOrientation <- case _binocularsConfigQCustomSurfaceOrientation conf of
                    Nothing -> do
-                     let v = _binocularsConfigQCustomSurfaceOrientation defaultConfig
+                     let v = _binocularsConfigQCustomSurfaceOrientation defaultConfig'
                      logDebugN "using default value:"
                      logDebugN (pack . show $ v)
                      pure v
@@ -275,7 +275,7 @@ instance HasIniConfig 'QCustomProjection where
                             logDebugN "overwrite subprojection QCustomSubProjection'QxQyQz for the QxQyQzProjection input type"
                             pure $ Just QCustomSubProjection'QxQyQz
                           _ -> case _binocularsConfigQCustomSubProjection conf of
-                                Nothing -> pure $ _binocularsConfigQCustomSubProjection defaultConfig
+                                Nothing -> pure $ _binocularsConfigQCustomSubProjection defaultConfig'
                                 (Just j) -> pure $ Just j
         -- dataPath
         dataPath <- case _binocularsConfigQCustomDataPath conf of
@@ -302,44 +302,36 @@ instance HasIniConfig 'QCustomProjection where
                           }
 
 
-  overwriteWithCmd _mr _conf = undefined
-
   configParser = do
-    (ncores, destination, overwrite) <-
-      Data.Ini.Config.section "dispatcher" $ do
-      (,,)
-        <$> fieldMbOf "ncores" auto'
-        <*> fieldOf   "destination" auto'
-        <*> fieldOf   "overwrite" auto'
 
-    (inputtype, nexusdir, inputtmpl, inputrange, detector, centralpixel, sdd, detrot, attenuation_coefficient, attenuation_max, surface_orientation, maskmatrix, wavelength, datapath, image_sum_max) <-
-      Data.Ini.Config.section "input" $ do
-      (,,,,,,,,,,,,,,)
-        <$> fieldOf   "type" auto'
-        <*> fieldMbOf "nexusdir" auto'
-        <*> fieldMbOf "inputtmpl" auto'
-        <*> fieldMbOf "inputrange" auto'
-        <*> fieldMbOf "detector" auto'
-        <*> fieldOf   "centralpixel" auto'
-        <*> fieldOf   "sdd" auto'
-        <*> fieldMbOf "detrot" auto'
-        <*> fieldMbOf "attenuation_coefficient" auto'
-        <*> fieldMbOf "attenuation_max" auto'
-        <*> fieldMbOf "surface_orientation" auto'
-        <*> fieldMbOf "maskmatrix" auto'
-        <*> fieldMbOf "wavelength" auto'
-        <*> fieldMbOf "datapath" auto'
-        <*> fieldMbOf "image_sum_max" auto'
+    ncores <- section "dispatcher" (fieldMbOf "ncores" auto')
+    destination <- section "dispatcher" (fieldOf "destination" auto')
+    overwrite <- section "dispatcher" (fieldOf "overwrite" auto')
 
-    (projectiontype, resolution, limits, subprojection) <-
-      Data.Ini.Config.section "projection" $ do
-      (,,,)
-        <$> fieldOf   "type" auto'
-        <*> fieldOf   "resolution" auto'
-        <*> fieldMbOf "limits" auto'
-        <*> fieldMbOf "subprojection" auto'
+
+    inputtype <- section "input" (fieldOf   "type" auto')
+    nexusdir <- section "input" (fieldMbOf "nexusdir" auto')
+    inputtmpl <- section "input" (fieldMbOf "inputtmpl" auto')
+    inputrange <- section "input" (fieldMbOf "inputrange" auto')
+    detector <- section "input" (fieldMbOf "detector" auto')
+    centralpixel <- section "input" (fieldOf   "centralpixel" auto')
+    sdd <- section "input" (fieldOf   "sdd" auto')
+    detrot <- section "input" (fieldMbOf "detrot" auto')
+    attenuation_coefficient <- section "input" (fieldMbOf "attenuation_coefficient" auto')
+    attenuation_max <- section "input" (fieldMbOf "attenuation_max" auto')
+    surface_orientation <- section "input" (fieldMbOf "surface_orientation" auto')
+    maskmatrix <- section "input" (fieldMbOf "maskmatrix" auto')
+    wavelength <- section "input" (fieldMbOf "wavelength" auto')
+    datapath <- section "input" (fieldMbOf "datapath" auto')
+    image_sum_max <- section "input" (fieldMbOf "image_sum_max" auto')
+
+    projectiontype <- section "projection" (fieldOf   "type" auto')
+    resolution <- section "projection" (fieldOf   "resolution" auto')
+    limits <- section "projection" (fieldMbOf "limits" auto')
+    subprojection <- section "projection" (fieldMbOf "subprojection" auto')
 
     pure $ BinocularsConfigQCustom ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max surface_orientation maskmatrix wavelength projectiontype resolution limits datapath image_sum_max subprojection
+
 
   toIni c = Ini { iniSections = ss
                 , iniGlobals = []
@@ -887,7 +879,7 @@ processQCustom mf mr = do
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()
 newQCustom cwd = do
-  let conf = defaultConfig {_binocularsConfigQCustomNexusdir = Just cwd}
+  let conf = defaultConfig' {_binocularsConfigQCustomNexusdir = Just cwd}
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf
 
 updateQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)

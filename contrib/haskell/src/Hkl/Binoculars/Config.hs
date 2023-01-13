@@ -38,6 +38,7 @@ module Hkl.Binoculars.Config
     , FieldParsable(..)
     , HasFieldValue(..)
     , HasIniConfig(..)
+    , HasIniConfig'(..)
     , InputRange(..)
     , InputTmpl(..)
     , InputType(..)
@@ -229,6 +230,7 @@ class HasIniConfig (a :: ProjectionType) where
     (ConfigContent cfg) <- readConfig mf
     pure $ parseConfig cfg
 
+class HasIniConfig' (a :: ProjectionType) where
   -- non BIDIR API
   configParser :: IniParser (Config a)
 
