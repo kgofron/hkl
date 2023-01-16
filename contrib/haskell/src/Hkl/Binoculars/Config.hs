@@ -77,7 +77,6 @@ import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
 import           Data.Ini                          (Ini, printIni)
-import           Data.Ini.Config                   (IniParser, parseIniFile)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -139,7 +138,7 @@ auto :: HasFieldValue a => FieldValue a
 auto = fieldvalue
 
 auto' :: HasFieldValue a => Text -> Either String a
-auto' = fvParse $ fieldvalue
+auto' = fvParse fieldvalue
 
 instance HasFieldValue Bool where
   fieldvalue = bool
@@ -232,12 +231,7 @@ class HasIniConfig (a :: ProjectionType) where
 
 class HasIniConfig' (a :: ProjectionType) where
   -- non BIDIR API
-  configParser :: IniParser (Config a)
-
   toIni :: Config a -> Ini
-
-  parseConfig' ::  Text -> Either String (Config a)
-  parseConfig' cfg = parseIniFile cfg configParser
 
   serializeConfig :: Config a -> Text
   serializeConfig = printIni . toIni

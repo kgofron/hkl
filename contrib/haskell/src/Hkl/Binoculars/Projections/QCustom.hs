@@ -54,8 +54,8 @@ import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
-import           Data.Ini.Config                   (fieldMbOf, fieldOf,
-                                                    parseIniFile, section)
+import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
+                                                    section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.Maybe                        (fromJust, fromMaybe)
 import           Data.Text                         (Text, pack)
@@ -166,7 +166,7 @@ instance HasFieldValue (DataSourcePath DataFrameQCustom) where
 ------------
 
 data instance Config 'QCustomProjection = BinocularsConfigQCustom
-    { _binocularsConfigQCustomNcore                  :: Maybe Int
+    { _binocularsConfigQCustomNcore                  :: Int
     , _binocularsConfigQCustomDestination            :: DestinationTmpl
     , _binocularsConfigQCustomOverwrite              :: Bool
     , _binocularsConfigQCustomInputType              :: InputType
@@ -201,7 +201,7 @@ newtype instance Args 'QCustomProjection = Args'QCustomProjection
 defaultConfig' :: Config 'QCustomProjection
 defaultConfig'
   = BinocularsConfigQCustom
-    { _binocularsConfigQCustomNcore = Nothing
+    { _binocularsConfigQCustomNcore = 4
     , _binocularsConfigQCustomDestination = DestinationTmpl "."
     , _binocularsConfigQCustomOverwrite = False
     , _binocularsConfigQCustomInputType = SixsFlyScanUhv
@@ -225,112 +225,78 @@ defaultConfig'
     , _binocularsConfigQCustomSubProjection = Just QCustomSubProjection'QxQyQz
     }
 
+
+parseF :: (MonadLogger m, MonadIO m, HasFieldValue r)
+       => Text -> Text -> Text -> IO r -> m r
+parseF cfg sec fiel io = do
+  case parseIniFile cfg $ section sec (fieldMbOf fiel auto') of
+    Left err -> error err
+    Right mb -> case mb of
+                 Nothing -> liftIO io
+                 Just b  -> pure b
+
+parseMb ::  (MonadLogger m, MonadIO m, HasFieldValue r)
+        => Text -> Text -> Text -> m (Maybe r)
+parseMb cfg sec fiel = do
+  case parseIniFile cfg $ section sec (fieldMbOf fiel auto') of
+    Left err -> error err
+    Right mb -> pure mb
+
+parseMbDef :: (MonadLogger m, MonadIO m, HasFieldValue r)
+           => Text -> Text -> Text -> Maybe r -> m (Maybe r)
+parseMbDef cfg sec fiel def = do
+  case parseIniFile cfg $ section sec (fieldMbOf fiel auto') of
+    Left err -> error err
+    Right mb -> pure $ case mb of
+                        Nothing -> def
+                        Just r  -> Just r
+
 instance HasIniConfig' 'QCustomProjection where
 
   getConfig' mf (Args'QCustomProjection mr) = do
     (ConfigContent cfg) <- liftIO $ readConfig mf
-    let econf = parseIniFile cfg configParser
-    case econf of
-      Left err   -> pure $ Left err
-      Right conf -> do
 
-        -- inputRange
-        inputRange <- case mr of
-                       Nothing -> pure $ _binocularsConfigQCustomInputRange conf
-                       r       -> do
-                         logDebugN "overloading config range with the command line arguments:"
-                         logDebugN (pack . show $ r)
-                         pure r
+    -- section dispatcher
+    ncores <- parseF cfg "dispatcher" "ncores" $ do
+      n <- getNumCapabilities
+      pure $ if n >= 2 then n - 1 else n
+    destination <- parseF cfg "dispatcher" "destination" $ pure (DestinationTmpl ".")
+    overwrite <- parseF cfg "dispatcher" "overwrite" $ pure False
 
-        -- detector
-        detector <- case _binocularsConfigQCustomDetector conf of
-                     Nothing -> do
-                       let d = _binocularsConfigQCustomDetector defaultConfig'
-                       logDebugN "using default value:"
-                       logDebugN (pack . show $ d)
-                       pure d
-                     d -> pure d
+    -- section input
+    inputtype <- parseF cfg "input" "type" $ pure SixsFlyScanUhv
+    nexusdir <- parseMb cfg "input" "nexusdir"
+    inputtmpl <- parseMb cfg "input" "inputtmpl"
+    inputrange <- parseMbDef cfg "input" "inputrange" mr
+    detector <- parseMbDef cfg "input" "detector" (Just defaultDetector)
+    centralpixel <- parseF cfg "input" "centralpixel" $ pure (0, 0)
+    sdd <- parseF cfg "input" "sdd" $ pure (Meter (1 *~ meter))
+    detrot <- parseMbDef cfg "input" "detrot" (Just (Degree (0 *~ degree)))
+    attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
+    attenuation_max <- parseMb cfg "input" "attenuation_max"
+    surface_orientation <- parseMbDef cfg "input" "surface_orientation" (Just SurfaceOrientationVertical)
+    maskmatrix <-parseMb cfg "input" "maskmatrix"
+    wavelength <- parseMb cfg "input" "wavelength"
+    mdatapath <- parseMb cfg "input" "datapath"
+    image_sum_max <- parseMb cfg "input" "image_sum_max"
 
-        -- detrot
-        detrot <- case _binocularsConfigQCustomDetrot conf of
-                   Nothing -> do
-                     let v = _binocularsConfigQCustomDetrot defaultConfig'
-                     logDebugN "using default value:"
-                     logDebugN (pack . show $ v)
-                     pure v
-                   v -> pure v
+    -- section projection
+    projectiontype <- parseF cfg "projection" "type" $ pure QCustomProjection
+    resolution <- parseF cfg "projection" "resolution" $ pure (Resolutions3 0.01 0.01 0.01)
+    limits <- parseMb cfg "projection" "limits"
+    msubprojection <- parseMbDef cfg "projection" "subprojection" (Just QCustomSubProjection'QxQyQz)
+    let subprojection = case projectiontype of
+                          QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
+                          _                -> msubprojection
 
-        -- surface orientation
-        surfaceOrientation <- case _binocularsConfigQCustomSurfaceOrientation conf of
-                   Nothing -> do
-                     let v = _binocularsConfigQCustomSurfaceOrientation defaultConfig'
-                     logDebugN "using default value:"
-                     logDebugN (pack . show $ v)
-                     pure v
-                   v -> pure v
+    -- customize a bunch of parameters
+    datapath <- case mdatapath of
+                 Nothing -> do
+                   p <- h5dpathQCustom inputtype attenuation_coefficient attenuation_max detector wavelength subprojection
+                   pure (Just p)
+                 (Just d) -> pure $ Just d
 
-        -- subProjection
-        subProjection <- case _binocularsConfigQCustomProjectionType conf of
-                          QxQyQzProjection   -> do
-                            logDebugN "overwrite subprojection QCustomSubProjection'QxQyQz for the QxQyQzProjection input type"
-                            pure $ Just QCustomSubProjection'QxQyQz
-                          _ -> case _binocularsConfigQCustomSubProjection conf of
-                                Nothing -> pure $ _binocularsConfigQCustomSubProjection defaultConfig'
-                                (Just j) -> pure $ Just j
-        -- dataPath
-        dataPath <- case _binocularsConfigQCustomDataPath conf of
-                     Nothing -> do
-                       v <- h5dpathQCustom
-                           (_binocularsConfigQCustomInputType conf)
-                           (_binocularsConfigQCustomAttenuationCoefficient conf)
-                           (_binocularsConfigQCustomAttenuationMax conf)
-                           (_binocularsConfigQCustomDetector conf)
-                           (_binocularsConfigQCustomWavelength conf)
-                           (_binocularsConfigQCustomSubProjection conf)
-
-                       logDebugN "overwriting dataPath with default one"
-                       logDebugN (pack . show $ v)
-                       pure $ Just v
-                     v -> pure v
-
-        pure $ Right conf { _binocularsConfigQCustomInputRange = inputRange
-                          , _binocularsConfigQCustomDetector = detector
-                          , _binocularsConfigQCustomDetrot = detrot
-                          , _binocularsConfigQCustomDataPath = dataPath
-                          , _binocularsConfigQCustomSurfaceOrientation = surfaceOrientation
-                          , _binocularsConfigQCustomSubProjection = subProjection
-                          }
-
-
-  configParser = do
-
-    ncores <- section "dispatcher" (fieldMbOf "ncores" auto')
-    destination <- section "dispatcher" (fieldOf "destination" auto')
-    overwrite <- section "dispatcher" (fieldOf "overwrite" auto')
-
-
-    inputtype <- section "input" (fieldOf   "type" auto')
-    nexusdir <- section "input" (fieldMbOf "nexusdir" auto')
-    inputtmpl <- section "input" (fieldMbOf "inputtmpl" auto')
-    inputrange <- section "input" (fieldMbOf "inputrange" auto')
-    detector <- section "input" (fieldMbOf "detector" auto')
-    centralpixel <- section "input" (fieldOf   "centralpixel" auto')
-    sdd <- section "input" (fieldOf   "sdd" auto')
-    detrot <- section "input" (fieldMbOf "detrot" auto')
-    attenuation_coefficient <- section "input" (fieldMbOf "attenuation_coefficient" auto')
-    attenuation_max <- section "input" (fieldMbOf "attenuation_max" auto')
-    surface_orientation <- section "input" (fieldMbOf "surface_orientation" auto')
-    maskmatrix <- section "input" (fieldMbOf "maskmatrix" auto')
-    wavelength <- section "input" (fieldMbOf "wavelength" auto')
-    datapath <- section "input" (fieldMbOf "datapath" auto')
-    image_sum_max <- section "input" (fieldMbOf "image_sum_max" auto')
-
-    projectiontype <- section "projection" (fieldOf   "type" auto')
-    resolution <- section "projection" (fieldOf   "resolution" auto')
-    limits <- section "projection" (fieldMbOf "limits" auto')
-    subprojection <- section "projection" (fieldMbOf "subprojection" auto')
-
-    pure $ BinocularsConfigQCustom ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max surface_orientation maskmatrix wavelength projectiontype resolution limits datapath image_sum_max subprojection
+    pure $ Right $ BinocularsConfigQCustom ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max surface_orientation maskmatrix wavelength projectiontype resolution limits datapath image_sum_max subprojection
 
 
   toIni c = Ini { iniSections = ss
@@ -348,7 +314,7 @@ instance HasIniConfig' 'QCustomProjection where
                       (Just v) -> [(k, otua v)]
                       Nothing  -> [("# " <> k, "")]
 
-      ss = fromList [ ("dispatcher", elemMb  "ncores" (_binocularsConfigQCustomNcore c)
+      ss = fromList [ ("dispatcher",    elem  "ncores" (_binocularsConfigQCustomNcore c)
                                      <> elem "destination" (_binocularsConfigQCustomDestination c)
                                      <> elem "overwrite" (_binocularsConfigQCustomOverwrite c)
                       )
@@ -407,9 +373,9 @@ mkDetector'Sixs'Fly :: Detector Hkl DIM2 -> DataSourcePath Image
 mkDetector'Sixs'Fly det@(Detector2D n _ _)
   | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140 =
       DataSourcePath'Image
-      (hdf5p $ grouppat 0 $ (datasetp "scan_data/xpad_image"
-                             `H5Or`
-                             datasetp "scan_data/xpad_s140_image"))
+      (hdf5p $ grouppat 0 (datasetp "scan_data/xpad_image"
+                           `H5Or`
+                           datasetp "scan_data/xpad_s140_image"))
       det
   | n == c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED = undefined
   | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70 =
@@ -507,9 +473,9 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
        -- wavelength
        let dataSourcePath'WaveLength'Sixs ::  DataSourcePath WaveLength
            dataSourcePath'WaveLength'Sixs
-             = DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ (datasetp "SIXS/Monochromator/wavelength"
-                                                                `H5Or`
-                                                                datasetp "SIXS/i14-c-c02-op-mono/lambda"))
+             = DataSourcePath'WaveLength (hdf5p $ grouppat 0 (datasetp "SIXS/Monochromator/wavelength"
+                                                              `H5Or`
+                                                              datasetp "SIXS/i14-c-c02-op-mono/lambda"))
 
        -- geometry
        let dataSourcePaths'Sixs'Uhv'Axes :: [DataSourcePath Degree]
@@ -543,7 +509,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
            dataSourcePath'Geometry'Uhv'Sixs
              = DataSourcePath'Geometry'Uhv
                (mkWaveLength mw dataSourcePath'WaveLength'Sixs)
-               (dataSourcePaths'Sixs'Uhv'Axes)
+               dataSourcePaths'Sixs'Uhv'Axes
 
        let dataSourcePath'Geometry'MedH'Sixs ::  DataSourcePath Geometry
            dataSourcePath'Geometry'MedH'Sixs
@@ -601,9 +567,9 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                                   , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
                                   ])
                        <*> pure (DataSourcePath'Image
-                                  (hdf5p $ grouppat 0 $ (datasetp "scan_data/merlin_image"
-                                                         `H5Or`
-                                                         datasetp "scan_data/merlin_quad_image"))
+                                  (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
+                                                       `H5Or`
+                                                       datasetp "scan_data/merlin_quad_image"))
                                  det)
                        <*> pure (mkTimeStamp'Fly msub)
          MarsSbs -> DataSourcePath'DataFrameQCustom
@@ -684,7 +650,7 @@ h5dpathQCustom i ma mMaxAtt mdet mw msub =
                               <$> mkAttenuation ma dataSourcePath'Attenuation'Sixs
                               <*> pure (DataSourcePath'Geometry'UhvTest
                                         (mkWaveLength mw (DataSourcePath'WaveLength'Const (Angstrom (0.672494 *~ angstrom))))
-                                        (dataSourcePaths'Sixs'Uhv'Axes))
+                                        dataSourcePaths'Sixs'Uhv'Axes)
                               <*> pure (mkDetector'Sixs'Fly det)
                               <*> pure (mkTimeStamp'Fly msub)
          SixsFlyScanUhvUfxc -> DataSourcePath'DataFrameQCustom
