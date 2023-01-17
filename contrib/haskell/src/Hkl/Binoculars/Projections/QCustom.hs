@@ -35,6 +35,7 @@ module Hkl.Binoculars.Projections.QCustom
     , updateQCustom
     ) where
 
+import           Control.Applicative               ((<|>))
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
@@ -226,30 +227,30 @@ defaultConfig'
     }
 
 
+parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
+parse' c s f = parseIniFile c $ section s (fieldMbOf f auto')
+
+eitherF :: (t1 -> p) -> (t2 -> p) -> Either t1 t2 -> p
+eitherF fa _ (Left a)  = fa a
+eitherF _ fb (Right b) = fb b
+
 parseF :: (MonadLogger m, MonadIO m, HasFieldValue r)
        => Text -> Text -> Text -> IO r -> m r
-parseF cfg sec fiel io = do
-  case parseIniFile cfg $ section sec (fieldMbOf fiel auto') of
-    Left err -> error err
-    Right mb -> case mb of
-                 Nothing -> liftIO io
-                 Just b  -> pure b
+parseF c s f io = eitherF error fb (parse' c s f)
+  where
+    fb mb = case mb of
+              Nothing -> liftIO io
+              Just b  -> pure b
 
 parseMb ::  (MonadLogger m, MonadIO m, HasFieldValue r)
         => Text -> Text -> Text -> m (Maybe r)
-parseMb cfg sec fiel = do
-  case parseIniFile cfg $ section sec (fieldMbOf fiel auto') of
-    Left err -> error err
-    Right mb -> pure mb
+parseMb c s f = eitherF error pure (parse' c s f)
 
 parseMbDef :: (MonadLogger m, MonadIO m, HasFieldValue r)
            => Text -> Text -> Text -> Maybe r -> m (Maybe r)
-parseMbDef cfg sec fiel def = do
-  case parseIniFile cfg $ section sec (fieldMbOf fiel auto') of
-    Left err -> error err
-    Right mb -> pure $ case mb of
-                        Nothing -> def
-                        Just r  -> Just r
+parseMbDef c s f def = eitherF error fb (parse' c s f)
+  where
+    fb mb = pure $ mb <|> def
 
 instance HasIniConfig' 'QCustomProjection where
 
@@ -293,7 +294,7 @@ instance HasIniConfig' 'QCustomProjection where
     datapath <- case mdatapath of
                  Nothing -> do
                    p <- h5dpathQCustom inputtype attenuation_coefficient attenuation_max detector wavelength subprojection
-                   pure (Just p)
+                   pure $ Just p
                  (Just d) -> pure $ Just d
 
     pure $ Right $ BinocularsConfigQCustom ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max surface_orientation maskmatrix wavelength projectiontype resolution limits datapath image_sum_max subprojection
