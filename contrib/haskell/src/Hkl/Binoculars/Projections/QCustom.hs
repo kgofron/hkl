@@ -307,38 +307,36 @@ instance HasIniConfig' 'QCustomProjection where
       otua :: HasFieldValue a => a -> Text
       otua = fvEmit fieldvalue
 
-      elem :: HasFieldValue a => Text -> a -> [(Text, Text)]
-      elem k v = [(k, otua v)]
+      elemF :: HasFieldValue a => Text -> a -> [(Text, Text)]
+      elemF k v = [(k, otua v)]
 
-      elemMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
-      elemMb k mv = case mv of
-                      (Just v) -> [(k, otua v)]
-                      Nothing  -> [("# " <> k, "")]
+      elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
+      elemFMb k = maybe [("# " <> k, "")] (\v -> [(k, otua v)])
 
-      ss = fromList [ ("dispatcher",    elem  "ncores" (_binocularsConfigQCustomNcore c)
-                                     <> elem "destination" (_binocularsConfigQCustomDestination c)
-                                     <> elem "overwrite" (_binocularsConfigQCustomOverwrite c)
+      ss = fromList [ ("dispatcher",    elemF "ncores" (_binocularsConfigQCustomNcore c)
+                                     <> elemF "destination" (_binocularsConfigQCustomDestination c)
+                                     <> elemF "overwrite" (_binocularsConfigQCustomOverwrite c)
                       )
-                    ,  ("input", elem      "type" (_binocularsConfigQCustomInputType c)
-                                 <> elemMb "nexusdir" (_binocularsConfigQCustomNexusdir c)
-                                 <> elemMb "inputtmpl" (_binocularsConfigQCustomTmpl c)
-                                 <> elemMb "inputrange" (_binocularsConfigQCustomInputRange c)
-                                 <> elemMb "detector" (_binocularsConfigQCustomDetector c)
-                                 <> elem   "centralpixel" (_binocularsConfigQCustomCentralpixel c)
-                                 <> elem   "sdd" (_binocularsConfigQCustomSdd c)
-                                 <> elemMb "detrot" (_binocularsConfigQCustomDetrot c)
-                                 <> elemMb "attenuation_coefficient" (_binocularsConfigQCustomAttenuationCoefficient c)
-                                 <> elemMb "attenuation_max" (_binocularsConfigQCustomAttenuationMax c)
-                                 <> elemMb "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation c)
-                                 <> elemMb "maskmatrix" (_binocularsConfigQCustomMaskmatrix c)
-                                 <> elemMb "wavelength" (_binocularsConfigQCustomWavelength c)
-                                 <> elemMb "datapath" (_binocularsConfigQCustomDataPath c)
-                                 <> elemMb "image_sum_max" (_binocularsConfigQCustomImageSumMax c)
+                    ,  ("input",    elemF   "type" (_binocularsConfigQCustomInputType c)
+                                 <> elemFMb "nexusdir" (_binocularsConfigQCustomNexusdir c)
+                                 <> elemFMb "inputtmpl" (_binocularsConfigQCustomTmpl c)
+                                 <> elemFMb "inputrange" (_binocularsConfigQCustomInputRange c)
+                                 <> elemFMb "detector" (_binocularsConfigQCustomDetector c)
+                                 <> elemF   "centralpixel" (_binocularsConfigQCustomCentralpixel c)
+                                 <> elemF   "sdd" (_binocularsConfigQCustomSdd c)
+                                 <> elemFMb "detrot" (_binocularsConfigQCustomDetrot c)
+                                 <> elemFMb "attenuation_coefficient" (_binocularsConfigQCustomAttenuationCoefficient c)
+                                 <> elemFMb "attenuation_max" (_binocularsConfigQCustomAttenuationMax c)
+                                 <> elemFMb "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation c)
+                                 <> elemFMb "maskmatrix" (_binocularsConfigQCustomMaskmatrix c)
+                                 <> elemFMb "wavelength" (_binocularsConfigQCustomWavelength c)
+                                 <> elemFMb "datapath" (_binocularsConfigQCustomDataPath c)
+                                 <> elemFMb "image_sum_max" (_binocularsConfigQCustomImageSumMax c)
                        )
-                    , ("projection", elem      "type" (_binocularsConfigQCustomProjectionType c)
-                                     <> elem   "resolution" (_binocularsConfigQCustomProjectionResolution c)
-                                     <> elemMb "limits" (_binocularsConfigQCustomProjectionLimits c)
-                                     <> elemMb "subprojection" (_binocularsConfigQCustomSubProjection c)
+                    , ("projection",    elemF   "type" (_binocularsConfigQCustomProjectionType c)
+                                     <> elemF   "resolution" (_binocularsConfigQCustomProjectionResolution c)
+                                     <> elemFMb "limits" (_binocularsConfigQCustomProjectionLimits c)
+                                     <> elemFMb "subprojection" (_binocularsConfigQCustomSubProjection c)
                       )]
 
 ------------------
