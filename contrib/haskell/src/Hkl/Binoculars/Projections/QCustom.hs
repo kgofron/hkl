@@ -178,7 +178,7 @@ data instance Config 'QCustomProjection
     , _binocularsConfigQCustomDetector               :: Detector Hkl DIM2
     , _binocularsConfigQCustomCentralpixel           :: (Int, Int)
     , _binocularsConfigQCustomSdd                    :: Meter
-    , _binocularsConfigQCustomDetrot                 :: Maybe Degree
+    , _binocularsConfigQCustomDetrot                 :: Degree
     , _binocularsConfigQCustomAttenuationCoefficient :: Maybe Double
     , _binocularsConfigQCustomAttenuationMax         :: Maybe Float
     , _binocularsConfigQCustomSurfaceOrientation     :: Maybe SurfaceOrientation
@@ -213,7 +213,7 @@ defaultConfig'
     , _binocularsConfigQCustomDetector = defaultDetector
     , _binocularsConfigQCustomCentralpixel = (0, 0)
     , _binocularsConfigQCustomSdd = Meter (1 *~ meter)
-    , _binocularsConfigQCustomDetrot = Just (Degree (0 *~ degree))
+    , _binocularsConfigQCustomDetrot = Degree (0 *~ degree)
     , _binocularsConfigQCustomAttenuationCoefficient = Nothing
     , _binocularsConfigQCustomAttenuationMax = Nothing
     , _binocularsConfigQCustomSurfaceOrientation = Just SurfaceOrientationVertical
@@ -274,7 +274,7 @@ instance HasIniConfig' 'QCustomProjection where
     detector <- parseFDef cfg "input" "detector" (_binocularsConfigQCustomDetector defaultConfig')
     centralpixel <- parseFDef cfg "input" "centralpixel" (_binocularsConfigQCustomCentralpixel defaultConfig')
     sdd <- parseFDef cfg "input" "sdd" (_binocularsConfigQCustomSdd defaultConfig')
-    detrot <- parseMbDef cfg "input" "detrot" (_binocularsConfigQCustomDetrot defaultConfig')
+    detrot <- parseFDef cfg "input" "detrot" (_binocularsConfigQCustomDetrot defaultConfig')
     attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
     attenuation_max <- parseMb cfg "input" "attenuation_max"
     surface_orientation <- parseMbDef cfg "input" "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation defaultConfig')
@@ -331,7 +331,7 @@ instance HasIniConfig' 'QCustomProjection where
                                  <> elemF   "detector" (_binocularsConfigQCustomDetector c)
                                  <> elemF   "centralpixel" (_binocularsConfigQCustomCentralpixel c)
                                  <> elemF   "sdd" (_binocularsConfigQCustomSdd c)
-                                 <> elemFMb "detrot" (_binocularsConfigQCustomDetrot c)
+                                 <> elemF   "detrot" (_binocularsConfigQCustomDetrot c)
                                  <> elemFMb "attenuation_coefficient" (_binocularsConfigQCustomAttenuationCoefficient c)
                                  <> elemFMb "attenuation_max" (_binocularsConfigQCustomAttenuationMax c)
                                  <> elemFMb "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation c)
@@ -739,7 +739,6 @@ processQCustomP = do
   (conf :: Config 'QCustomProjection) <- ask
 
   -- should not be Maybe
-  let (Degree detrot) = fromJust ( _binocularsConfigQCustomDetrot conf)
   let surfaceOrientation = fromJust (_binocularsConfigQCustomSurfaceOrientation conf)
   let subprojection = fromJust (_binocularsConfigQCustomSubProjection conf)
   let h5d = fromJust (_binocularsConfigQCustomDataPath conf)
@@ -751,6 +750,7 @@ processQCustomP = do
   let destination = _binocularsConfigQCustomDestination conf
   let centralPixel' = _binocularsConfigQCustomCentralpixel conf
   let (Meter sampleDetectorDistance) = _binocularsConfigQCustomSdd conf
+  let (Degree detrot) = _binocularsConfigQCustomDetrot conf
   let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
   let res = _binocularsConfigQCustomProjectionResolution conf
 
