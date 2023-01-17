@@ -58,7 +58,7 @@ import           Data.Ini                          (Ini (..))
 import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
                                                     section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
-import           Data.Maybe                        (fromJust, fromMaybe)
+import           Data.Maybe                        (fromJust)
 import           Data.Text                         (Text, pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
@@ -175,7 +175,7 @@ data instance Config 'QCustomProjection
     , _binocularsConfigQCustomNexusdir               :: Maybe (Path Abs Dir)
     , _binocularsConfigQCustomTmpl                   :: Maybe InputTmpl
     , _binocularsConfigQCustomInputRange             :: Maybe ConfigRange
-    , _binocularsConfigQCustomDetector               :: Maybe (Detector Hkl DIM2)
+    , _binocularsConfigQCustomDetector               :: Detector Hkl DIM2
     , _binocularsConfigQCustomCentralpixel           :: (Int, Int)
     , _binocularsConfigQCustomSdd                    :: Meter
     , _binocularsConfigQCustomDetrot                 :: Maybe Degree
@@ -210,7 +210,7 @@ defaultConfig'
     , _binocularsConfigQCustomNexusdir = Nothing
     , _binocularsConfigQCustomTmpl = Nothing
     , _binocularsConfigQCustomInputRange  = Nothing
-    , _binocularsConfigQCustomDetector = Just defaultDetector
+    , _binocularsConfigQCustomDetector = defaultDetector
     , _binocularsConfigQCustomCentralpixel = (0, 0)
     , _binocularsConfigQCustomSdd = Meter (1 *~ meter)
     , _binocularsConfigQCustomDetrot = Just (Degree (0 *~ degree))
@@ -271,7 +271,7 @@ instance HasIniConfig' 'QCustomProjection where
     nexusdir <- parseMb cfg "input" "nexusdir"
     inputtmpl <- parseMb cfg "input" "inputtmpl"
     inputrange <- parseMbDef cfg "input" "inputrange" mr
-    detector <- parseMbDef cfg "input" "detector" (_binocularsConfigQCustomDetector defaultConfig')
+    detector <- parseFDef cfg "input" "detector" (_binocularsConfigQCustomDetector defaultConfig')
     centralpixel <- parseFDef cfg "input" "centralpixel" (_binocularsConfigQCustomCentralpixel defaultConfig')
     sdd <- parseFDef cfg "input" "sdd" (_binocularsConfigQCustomSdd defaultConfig')
     detrot <- parseMbDef cfg "input" "detrot" (_binocularsConfigQCustomDetrot defaultConfig')
@@ -328,7 +328,7 @@ instance HasIniConfig' 'QCustomProjection where
                                  <> elemFMb "nexusdir" (_binocularsConfigQCustomNexusdir c)
                                  <> elemFMb "inputtmpl" (_binocularsConfigQCustomTmpl c)
                                  <> elemFMb "inputrange" (_binocularsConfigQCustomInputRange c)
-                                 <> elemFMb "detector" (_binocularsConfigQCustomDetector c)
+                                 <> elemF   "detector" (_binocularsConfigQCustomDetector c)
                                  <> elemF   "centralpixel" (_binocularsConfigQCustomCentralpixel c)
                                  <> elemF   "sdd" (_binocularsConfigQCustomSdd c)
                                  <> elemFMb "detrot" (_binocularsConfigQCustomDetrot c)
@@ -446,13 +446,12 @@ h5dpathQCustom :: (MonadLogger m, MonadThrow m)
               => InputType
               -> Maybe Double
               -> Maybe Float
-              -> Maybe (Detector Hkl DIM2)
+              -> Detector Hkl DIM2
               -> Maybe Angstrom
               -> Maybe QCustomSubProjection
               -> m (DataSourcePath DataFrameQCustom)
-h5dpathQCustom i ma mMaxAtt mdet mw msub =
-    do let det = fromMaybe defaultDetector mdet
-
+h5dpathQCustom i ma mMaxAtt det mw msub =
+    do
        -- attenuation
        let dataSourcePath'Attenuation'Sixs :: DataSourcePath Attenuation
            dataSourcePath'Attenuation'Sixs =
@@ -740,13 +739,13 @@ processQCustomP = do
   (conf :: Config 'QCustomProjection) <- ask
 
   -- should not be Maybe
-  let det = fromJust (_binocularsConfigQCustomDetector conf)
   let (Degree detrot) = fromJust ( _binocularsConfigQCustomDetrot conf)
   let surfaceOrientation = fromJust (_binocularsConfigQCustomSurfaceOrientation conf)
   let subprojection = fromJust (_binocularsConfigQCustomSubProjection conf)
   let h5d = fromJust (_binocularsConfigQCustomDataPath conf)
 
   -- directly from the config
+  let det = _binocularsConfigQCustomDetector conf
   let (NCores cap) =  _binocularsConfigQCustomNCores conf
   let mlimits = _binocularsConfigQCustomProjectionLimits conf
   let destination = _binocularsConfigQCustomDestination conf

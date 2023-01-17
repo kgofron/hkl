@@ -269,9 +269,9 @@ process' = do
   let i = _binocularsConfigQparQperInputType c
   let mc = _binocularsConfigQparQperAttenuationCoefficient c
   let mm = _binocularsConfigQparQperAttenuationMax c
-  let mdet = _binocularsConfigQparQperDetector c
+  let det = fromMaybe defaultDetector (_binocularsConfigQparQperDetector c)
   let mw = _binocularsConfigQparQperWavelength c
-  processQparQperP (h5dpathQCustom i mc mm mdet mw Nothing)
+  processQparQperP (h5dpathQCustom i mc mm det mw Nothing)
 
 processQparQper :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processQparQper mf mr = do

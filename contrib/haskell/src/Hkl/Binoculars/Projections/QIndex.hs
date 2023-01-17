@@ -267,9 +267,9 @@ process' = do
   let i = _binocularsConfigQIndexInputType c
   let mc = _binocularsConfigQIndexAttenuationCoefficient c
   let mm = _binocularsConfigQIndexAttenuationMax c
-  let mdet = _binocularsConfigQIndexDetector c
+  let det = fromMaybe defaultDetector (_binocularsConfigQIndexDetector c)
   let mwavelength = _binocularsConfigQIndexWavelength c
-  processQIndexP (h5dpathQCustom i mc mm mdet mwavelength Nothing)
+  processQIndexP (h5dpathQCustom i mc mm det mwavelength Nothing)
 
 processQIndex :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processQIndex mf mr = do

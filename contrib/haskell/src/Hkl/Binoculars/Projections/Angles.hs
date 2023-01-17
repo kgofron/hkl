@@ -283,8 +283,8 @@ process' = do
   let i = _binocularsConfigAnglesInputType c
   let mc = _binocularsConfigAnglesAttenuationCoefficient c
   let mm = _binocularsConfigAnglesAttenuationMax c
-  let mdet = _binocularsConfigAnglesDetector c
-  processAnglesP (h5dpathQCustom i mc mm mdet Nothing Nothing)
+  let det = fromMaybe defaultDetector (_binocularsConfigAnglesDetector c)
+  processAnglesP (h5dpathQCustom i mc mm det Nothing Nothing)
 
 processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processAngles mf mr = do

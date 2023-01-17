@@ -484,7 +484,7 @@ h5dpathHkl :: (MonadLogger m, MonadThrow m)
 h5dpathHkl c =
   do let i = _binocularsConfigHklInputType c
      let ma = _binocularsConfigHklAttenuationCoefficient c
-     let mdet = _binocularsConfigHklDetector c
+     let det = fromMaybe defaultDetector (_binocularsConfigHklDetector c)
      let mm = _binocularsConfigHklAttenuationMax c
      let mw = _binocularsConfigHklWavelength c
      let samplePath beamline device =
@@ -515,7 +515,7 @@ h5dpathHkl c =
      let uhvSamplePath  = samplePath "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
      let uhvSamplePath2 = samplePath "SIXS" "i14-c-cx2-ex-diff-uhv"
      let uhvSamplePath3 = samplePath "SIXS" "i14-c-cx2-ex-cm-uhv"
-     qcustom <- h5dpathQCustom i ma mm mdet mw Nothing
+     qcustom <- h5dpathQCustom i ma mm det mw Nothing
      case i of
        CristalK6C -> do
          let ms = sampleConfig c
