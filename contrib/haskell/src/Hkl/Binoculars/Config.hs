@@ -45,6 +45,7 @@ module Hkl.Binoculars.Config
     , Limits(..)
     , MaskLocation(..)
     , Meter(..)
+    , NCores(..)
     , ProjectionType(..)
     , QCustomSubProjection(..)
     , Resolutions(..)
@@ -447,6 +448,20 @@ instance HasFieldValue Meter where
   fieldvalue = FieldValue
     { fvParse =  mapRight (Meter . (*~ meter)) . fvParse auto
     , fvEmit = \(Meter m) -> pack . show . (/~ meter) $ m
+    }
+
+-- NCores
+
+newtype NCores = NCores { unNCores :: Int }
+    deriving (Eq, Show)
+
+instance Arbitrary NCores where
+  arbitrary = NCores <$> arbitrary
+
+instance HasFieldValue NCores where
+  fieldvalue = FieldValue
+    { fvParse =  mapRight NCores . fvParse auto
+    , fvEmit = \(NCores m) -> pack . show $ m
     }
 
 -- ProjectionType

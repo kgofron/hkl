@@ -166,8 +166,9 @@ instance HasFieldValue (DataSourcePath DataFrameQCustom) where
 -- Config --
 ------------
 
-data instance Config 'QCustomProjection = BinocularsConfigQCustom
-    { _binocularsConfigQCustomNcore                  :: Int
+data instance Config 'QCustomProjection
+  = BinocularsConfigQCustom
+    { _binocularsConfigQCustomNCores                 :: NCores
     , _binocularsConfigQCustomDestination            :: DestinationTmpl
     , _binocularsConfigQCustomOverwrite              :: Bool
     , _binocularsConfigQCustomInputType              :: InputType
@@ -202,7 +203,7 @@ newtype instance Args 'QCustomProjection = Args'QCustomProjection
 defaultConfig' :: Config 'QCustomProjection
 defaultConfig'
   = BinocularsConfigQCustom
-    { _binocularsConfigQCustomNcore = 4
+    { _binocularsConfigQCustomNCores = NCores 4
     , _binocularsConfigQCustomDestination = DestinationTmpl "."
     , _binocularsConfigQCustomOverwrite = False
     , _binocularsConfigQCustomInputType = SixsFlyScanUhv
@@ -230,27 +231,23 @@ defaultConfig'
 parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
 parse' c s f = parseIniFile c $ section s (fieldMbOf f auto')
 
-eitherF :: (t1 -> p) -> (t2 -> p) -> Either t1 t2 -> p
-eitherF fa _ (Left a)  = fa a
-eitherF _ fb (Right b) = fb b
+eitherF :: (t1 -> p) -> Either t1 t2 -> (t2 -> p) -> p
+eitherF fa (Left a)  _ = fa a
+eitherF _ (Right b) fb = fb b
 
 parseF :: (MonadLogger m, MonadIO m, HasFieldValue r)
        => Text -> Text -> Text -> IO r -> m r
-parseF c s f io = eitherF error fb (parse' c s f)
-  where
-    fb mb = case mb of
-              Nothing -> liftIO io
-              Just b  -> pure b
+parseF c s f io = eitherF error (parse' c s f) (\mb -> case mb of
+                                                        Nothing -> liftIO io
+                                                        Just b  -> pure b)
 
 parseMb ::  (MonadLogger m, MonadIO m, HasFieldValue r)
         => Text -> Text -> Text -> m (Maybe r)
-parseMb c s f = eitherF error pure (parse' c s f)
+parseMb c s f = eitherF error (parse' c s f) pure
 
 parseMbDef :: (MonadLogger m, MonadIO m, HasFieldValue r)
            => Text -> Text -> Text -> Maybe r -> m (Maybe r)
-parseMbDef c s f def = eitherF error fb (parse' c s f)
-  where
-    fb mb = pure $ mb <|> def
+parseMbDef c s f def = eitherF error (parse' c s f) (\mb -> pure $ mb <|> def)
 
 instance HasIniConfig' 'QCustomProjection where
 
@@ -258,9 +255,12 @@ instance HasIniConfig' 'QCustomProjection where
     (ConfigContent cfg) <- liftIO $ readConfig mf
 
     -- section dispatcher
-    ncores <- parseF cfg "dispatcher" "ncores" $ do
-      n <- getNumCapabilities
-      pure $ if n >= 2 then n - 1 else n
+    ncores <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
+      nmax <- liftIO getNumCapabilities
+      let n = case mb of
+                Nothing -> nmax
+                Just b  -> max nmax b
+      pure $ NCores (if n >= 2 then n - 1 else n)
     destination <- parseF cfg "dispatcher" "destination" $ pure (DestinationTmpl ".")
     overwrite <- parseF cfg "dispatcher" "overwrite" $ pure False
 
@@ -313,7 +313,7 @@ instance HasIniConfig' 'QCustomProjection where
       elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
       elemFMb k = maybe [("# " <> k, "")] (\v -> [(k, otua v)])
 
-      ss = fromList [ ("dispatcher",    elemF "ncores" (_binocularsConfigQCustomNcore c)
+      ss = fromList [ ("dispatcher",    elemF "ncores" (_binocularsConfigQCustomNCores c)
                                      <> elemF "destination" (_binocularsConfigQCustomDestination c)
                                      <> elemF "overwrite" (_binocularsConfigQCustomOverwrite c)
                       )
@@ -740,6 +740,7 @@ processQCustomP = do
   let h5d = fromJust (_binocularsConfigQCustomDataPath conf)
 
   -- directly from the config
+  let (NCores cap) =  _binocularsConfigQCustomNCores conf
   let mlimits = _binocularsConfigQCustomProjectionLimits conf
   let destination = _binocularsConfigQCustomDestination conf
   let centralPixel' = _binocularsConfigQCustomCentralpixel conf
@@ -763,9 +764,7 @@ processQCustomP = do
 
   let fns = concatMap (replicate 1) (toList filenames)
   chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
-  cap' <-  liftIO getNumCapabilities
   let ntot = sum (Prelude.map clength chunks)
-  let cap = if cap' >= 2 then cap' - 1 else cap'
   let jobs = chunk (quot ntot cap) chunks
 
   -- log parameters
