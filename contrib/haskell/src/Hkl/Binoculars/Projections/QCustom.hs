@@ -235,11 +235,13 @@ eitherF :: (t1 -> p) -> Either t1 t2 -> (t2 -> p) -> p
 eitherF fa (Left a)  _ = fa a
 eitherF _ (Right b) fb = fb b
 
-parseF :: (MonadLogger m, MonadIO m, HasFieldValue r)
-       => Text -> Text -> Text -> IO r -> m r
-parseF c s f io = eitherF error (parse' c s f) (\mb -> case mb of
-                                                        Nothing -> liftIO io
-                                                        Just b  -> pure b)
+parseF :: (MonadLogger m, MonadIO m, HasFieldValue b)
+       => Text -> Text -> Text -> (Maybe b -> m r) -> m r
+parseF c s f io = eitherF error (parse' c s f) io
+
+parseFDef :: (MonadLogger m, MonadIO m, HasFieldValue p)
+          => Text -> Text -> Text -> p -> m p
+parseFDef c s f def = parseF c s f (\mb -> pure $ maybe def id mb)
 
 parseMb ::  (MonadLogger m, MonadIO m, HasFieldValue r)
         => Text -> Text -> Text -> m (Maybe r)
@@ -261,17 +263,17 @@ instance HasIniConfig' 'QCustomProjection where
                 Nothing -> nmax
                 Just b  -> max nmax b
       pure $ NCores (if n >= 2 then n - 1 else n)
-    destination <- parseF cfg "dispatcher" "destination" $ pure (DestinationTmpl ".")
-    overwrite <- parseF cfg "dispatcher" "overwrite" $ pure False
+    destination <- parseFDef cfg "dispatcher" "destination" (DestinationTmpl ".")
+    overwrite <- parseFDef cfg "dispatcher" "overwrite" False
 
     -- section input
-    inputtype <- parseF cfg "input" "type" $ pure SixsFlyScanUhv
+    inputtype <- parseFDef cfg "input" "type" SixsFlyScanUhv
     nexusdir <- parseMb cfg "input" "nexusdir"
     inputtmpl <- parseMb cfg "input" "inputtmpl"
     inputrange <- parseMbDef cfg "input" "inputrange" mr
     detector <- parseMbDef cfg "input" "detector" (Just defaultDetector)
-    centralpixel <- parseF cfg "input" "centralpixel" $ pure (0, 0)
-    sdd <- parseF cfg "input" "sdd" $ pure (Meter (1 *~ meter))
+    centralpixel <- parseFDef cfg "input" "centralpixel" (0, 0)
+    sdd <- parseFDef cfg "input" "sdd" (Meter (1 *~ meter))
     detrot <- parseMbDef cfg "input" "detrot" (Just (Degree (0 *~ degree)))
     attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
     attenuation_max <- parseMb cfg "input" "attenuation_max"
@@ -282,8 +284,8 @@ instance HasIniConfig' 'QCustomProjection where
     image_sum_max <- parseMb cfg "input" "image_sum_max"
 
     -- section projection
-    projectiontype <- parseF cfg "projection" "type" $ pure QCustomProjection
-    resolution <- parseF cfg "projection" "resolution" $ pure (Resolutions3 0.01 0.01 0.01)
+    projectiontype <- parseFDef cfg "projection" "type" QCustomProjection
+    resolution <- parseFDef cfg "projection" "resolution" (Resolutions3 0.01 0.01 0.01)
     limits <- parseMb cfg "projection" "limits"
     msubprojection <- parseMbDef cfg "projection" "subprojection" (Just QCustomSubProjection'QxQyQz)
     let subprojection = case projectiontype of
