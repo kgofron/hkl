@@ -263,36 +263,41 @@ instance HasIniConfig' 'QCustomProjection where
                 Nothing -> nmax
                 Just b  -> max nmax b
       pure $ NCores (if n >= 2 then n - 1 else n)
-    destination <- parseFDef cfg "dispatcher" "destination" (DestinationTmpl ".")
-    overwrite <- parseFDef cfg "dispatcher" "overwrite" False
+    destination <- parseFDef cfg "dispatcher" "destination" (_binocularsConfigQCustomDestination defaultConfig')
+    overwrite <- parseFDef cfg "dispatcher" "overwrite" (_binocularsConfigQCustomOverwrite defaultConfig')
 
     -- section input
-    inputtype <- parseFDef cfg "input" "type" SixsFlyScanUhv
+    inputtype <- parseFDef cfg "input" "type" (_binocularsConfigQCustomInputType defaultConfig')
     nexusdir <- parseMb cfg "input" "nexusdir"
     inputtmpl <- parseMb cfg "input" "inputtmpl"
     inputrange <- parseMbDef cfg "input" "inputrange" mr
-    detector <- parseMbDef cfg "input" "detector" (Just defaultDetector)
-    centralpixel <- parseFDef cfg "input" "centralpixel" (0, 0)
-    sdd <- parseFDef cfg "input" "sdd" (Meter (1 *~ meter))
-    detrot <- parseMbDef cfg "input" "detrot" (Just (Degree (0 *~ degree)))
+    detector <- parseMbDef cfg "input" "detector" (_binocularsConfigQCustomDetector defaultConfig')
+    centralpixel <- parseFDef cfg "input" "centralpixel" (_binocularsConfigQCustomCentralpixel defaultConfig')
+    sdd <- parseFDef cfg "input" "sdd" (_binocularsConfigQCustomSdd defaultConfig')
+    detrot <- parseMbDef cfg "input" "detrot" (_binocularsConfigQCustomDetrot defaultConfig')
     attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
     attenuation_max <- parseMb cfg "input" "attenuation_max"
-    surface_orientation <- parseMbDef cfg "input" "surface_orientation" (Just SurfaceOrientationVertical)
+    surface_orientation <- parseMbDef cfg "input" "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation defaultConfig')
     maskmatrix <-parseMb cfg "input" "maskmatrix"
     wavelength <- parseMb cfg "input" "wavelength"
     mdatapath <- parseMb cfg "input" "datapath"
     image_sum_max <- parseMb cfg "input" "image_sum_max"
 
     -- section projection
-    projectiontype <- parseFDef cfg "projection" "type" QCustomProjection
-    resolution <- parseFDef cfg "projection" "resolution" (Resolutions3 0.01 0.01 0.01)
+    projectiontype <- parseFDef cfg "projection" "type" (_binocularsConfigQCustomProjectionType defaultConfig')
+    resolution <- parseFDef cfg "projection" "resolution" (_binocularsConfigQCustomProjectionResolution defaultConfig')
     limits <- parseMb cfg "projection" "limits"
-    msubprojection <- parseMbDef cfg "projection" "subprojection" (Just QCustomSubProjection'QxQyQz)
+    msubprojection <- parseMbDef cfg "projection" "subprojection" (_binocularsConfigQCustomSubProjection defaultConfig')
+
+
+    -- customize a bunch of parameters
+
+    -- fix the subprojection depending on the projection type
     let subprojection = case projectiontype of
                           QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
                           _                -> msubprojection
 
-    -- customize a bunch of parameters
+    -- compute the datatype
     datapath <- case mdatapath of
                  Nothing -> do
                    p <- h5dpathQCustom inputtype attenuation_coefficient attenuation_max detector wavelength subprojection
