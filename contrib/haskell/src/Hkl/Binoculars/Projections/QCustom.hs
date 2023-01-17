@@ -181,7 +181,7 @@ data instance Config 'QCustomProjection
     , _binocularsConfigQCustomDetrot                 :: Degree
     , _binocularsConfigQCustomAttenuationCoefficient :: Maybe Double
     , _binocularsConfigQCustomAttenuationMax         :: Maybe Float
-    , _binocularsConfigQCustomSurfaceOrientation     :: Maybe SurfaceOrientation
+    , _binocularsConfigQCustomSurfaceOrientation     :: SurfaceOrientation
     , _binocularsConfigQCustomMaskmatrix             :: Maybe MaskLocation
     , _binocularsConfigQCustomWavelength             :: Maybe Angstrom
     , _binocularsConfigQCustomProjectionType         :: ProjectionType
@@ -216,7 +216,7 @@ defaultConfig'
     , _binocularsConfigQCustomDetrot = Degree (0 *~ degree)
     , _binocularsConfigQCustomAttenuationCoefficient = Nothing
     , _binocularsConfigQCustomAttenuationMax = Nothing
-    , _binocularsConfigQCustomSurfaceOrientation = Just SurfaceOrientationVertical
+    , _binocularsConfigQCustomSurfaceOrientation = SurfaceOrientationVertical
     , _binocularsConfigQCustomMaskmatrix = Nothing
     , _binocularsConfigQCustomWavelength = Nothing
     , _binocularsConfigQCustomProjectionType = QCustomProjection
@@ -277,7 +277,7 @@ instance HasIniConfig' 'QCustomProjection where
     detrot <- parseFDef cfg "input" "detrot" (_binocularsConfigQCustomDetrot defaultConfig')
     attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
     attenuation_max <- parseMb cfg "input" "attenuation_max"
-    surface_orientation <- parseMbDef cfg "input" "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation defaultConfig')
+    surface_orientation <- parseFDef cfg "input" "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation defaultConfig')
     maskmatrix <-parseMb cfg "input" "maskmatrix"
     wavelength <- parseMb cfg "input" "wavelength"
     mdatapath <- parseMb cfg "input" "datapath"
@@ -334,7 +334,7 @@ instance HasIniConfig' 'QCustomProjection where
                                  <> elemF   "detrot" (_binocularsConfigQCustomDetrot c)
                                  <> elemFMb "attenuation_coefficient" (_binocularsConfigQCustomAttenuationCoefficient c)
                                  <> elemFMb "attenuation_max" (_binocularsConfigQCustomAttenuationMax c)
-                                 <> elemFMb "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation c)
+                                 <> elemF   "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation c)
                                  <> elemFMb "maskmatrix" (_binocularsConfigQCustomMaskmatrix c)
                                  <> elemFMb "wavelength" (_binocularsConfigQCustomWavelength c)
                                  <> elemFMb "datapath" (_binocularsConfigQCustomDataPath c)
@@ -739,7 +739,6 @@ processQCustomP = do
   (conf :: Config 'QCustomProjection) <- ask
 
   -- should not be Maybe
-  let surfaceOrientation = fromJust (_binocularsConfigQCustomSurfaceOrientation conf)
   let subprojection = fromJust (_binocularsConfigQCustomSubProjection conf)
   let h5d = fromJust (_binocularsConfigQCustomDataPath conf)
 
@@ -753,6 +752,7 @@ processQCustomP = do
   let (Degree detrot) = _binocularsConfigQCustomDetrot conf
   let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
   let res = _binocularsConfigQCustomProjectionResolution conf
+  let surfaceOrientation = _binocularsConfigQCustomSurfaceOrientation conf
 
   -- built from the config
   let output' = case _binocularsConfigQCustomInputRange conf of
