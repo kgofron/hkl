@@ -187,7 +187,7 @@ data instance Config 'QCustomProjection
     , _binocularsConfigQCustomProjectionType         :: ProjectionType
     , _binocularsConfigQCustomProjectionResolution   :: Resolutions DIM3
     , _binocularsConfigQCustomProjectionLimits       :: Maybe (RLimits DIM3)
-    , _binocularsConfigQCustomDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
+    , _binocularsConfigQCustomDataPath               :: DataSourcePath DataFrameQCustom
     , _binocularsConfigQCustomImageSumMax            :: Maybe Double
     , _binocularsConfigQCustomSubProjection          :: Maybe QCustomSubProjection
     } deriving (Eq, Show, Generic)
@@ -222,7 +222,7 @@ defaultConfig'
     , _binocularsConfigQCustomProjectionType = QCustomProjection
     , _binocularsConfigQCustomProjectionResolution = Resolutions3 0.01 0.01 0.01
     , _binocularsConfigQCustomProjectionLimits  = Nothing
-    , _binocularsConfigQCustomDataPath = Just defaultDataSourcePath'DataFrameQCustom
+    , _binocularsConfigQCustomDataPath = defaultDataSourcePath'DataFrameQCustom
     , _binocularsConfigQCustomImageSumMax = Nothing
     , _binocularsConfigQCustomSubProjection = Just QCustomSubProjection'QxQyQz
     }
@@ -300,9 +300,8 @@ instance HasIniConfig' 'QCustomProjection where
     -- compute the datatype
     datapath <- case mdatapath of
                  Nothing -> do
-                   p <- h5dpathQCustom inputtype attenuation_coefficient attenuation_max detector wavelength subprojection
-                   pure $ Just p
-                 (Just d) -> pure $ Just d
+                   h5dpathQCustom inputtype attenuation_coefficient attenuation_max detector wavelength subprojection
+                 (Just d) -> pure d
 
     pure $ Right $ BinocularsConfigQCustom ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max surface_orientation maskmatrix wavelength projectiontype resolution limits datapath image_sum_max subprojection
 
@@ -337,7 +336,7 @@ instance HasIniConfig' 'QCustomProjection where
                                  <> elemF   "surface_orientation" (_binocularsConfigQCustomSurfaceOrientation c)
                                  <> elemFMb "maskmatrix" (_binocularsConfigQCustomMaskmatrix c)
                                  <> elemFMb "wavelength" (_binocularsConfigQCustomWavelength c)
-                                 <> elemFMb "datapath" (_binocularsConfigQCustomDataPath c)
+                                 <> elemF   "datapath" (_binocularsConfigQCustomDataPath c)
                                  <> elemFMb "image_sum_max" (_binocularsConfigQCustomImageSumMax c)
                        )
                     , ("projection",    elemF   "type" (_binocularsConfigQCustomProjectionType c)
@@ -740,7 +739,6 @@ processQCustomP = do
 
   -- should not be Maybe
   let subprojection = fromJust (_binocularsConfigQCustomSubProjection conf)
-  let h5d = fromJust (_binocularsConfigQCustomDataPath conf)
 
   -- directly from the config
   let det = _binocularsConfigQCustomDetector conf
@@ -753,6 +751,7 @@ processQCustomP = do
   let mImageSumMax = _binocularsConfigQCustomImageSumMax conf
   let res = _binocularsConfigQCustomProjectionResolution conf
   let surfaceOrientation = _binocularsConfigQCustomSurfaceOrientation conf
+  let datapaths = _binocularsConfigQCustomDataPath conf
 
   -- built from the config
   let output' = case _binocularsConfigQCustomInputRange conf of
@@ -769,14 +768,14 @@ processQCustomP = do
   -- compute the jobs
 
   let fns = concatMap (replicate 1) (toList filenames)
-  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
+  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP datapaths
   let ntot = sum (Prelude.map clength chunks)
   let jobs = chunk (quot ntot cap) chunks
 
   -- log parameters
 
   $(logDebugSH) filenames
-  $(logDebugSH) h5d
+  $(logDebugSH) datapaths
   $(logDebugSH) chunks
   $(logDebug) "start gessing final cube size"
 
@@ -786,7 +785,7 @@ processQCustomP = do
     runSafeT $ runEffect $
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
-    >-> framesQCustomP h5d
+    >-> framesQCustomP datapaths
     >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
     >-> accumulateP c
 
@@ -801,7 +800,7 @@ processQCustomP = do
                              runSafeT $ runEffect $
                              each job
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                             >-> framesQCustomP h5d
+                             >-> framesQCustomP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
                              >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
                              >-> tee (accumulateP c)
