@@ -37,8 +37,7 @@ module Hkl.Binoculars.Projections.QCustom
 
 import           Control.Applicative               ((<|>))
 import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Monad.Catch               (Exception, MonadThrow,
-                                                    throwM)
+import           Control.Monad.Catch               (Exception, MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Logger              (MonadLogger, logDebug,
                                                     logDebugN, logDebugSH,
@@ -58,6 +57,7 @@ import           Data.Ini                          (Ini (..))
 import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
                                                     section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
+import           Data.List.NonEmpty                (NonEmpty (..))
 import           Data.Maybe                        (fromJust)
 import           Data.Text                         (Text, pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
@@ -68,6 +68,7 @@ import           Foreign.ForeignPtr                (withForeignPtr)
 import           GHC.Conc                          (getNumCapabilities)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
+import           Numeric.Interval                  (empty)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
@@ -174,7 +175,7 @@ data instance Config 'QCustomProjection
     , _binocularsConfigQCustomInputType              :: InputType
     , _binocularsConfigQCustomNexusdir               :: Maybe (Path Abs Dir)
     , _binocularsConfigQCustomTmpl                   :: Maybe InputTmpl
-    , _binocularsConfigQCustomInputRange             :: Maybe ConfigRange
+    , _binocularsConfigQCustomInputRange             :: ConfigRange
     , _binocularsConfigQCustomDetector               :: Detector Hkl DIM2
     , _binocularsConfigQCustomCentralpixel           :: (Int, Int)
     , _binocularsConfigQCustomSdd                    :: Meter
@@ -209,7 +210,7 @@ defaultConfig'
     , _binocularsConfigQCustomInputType = SixsFlyScanUhv
     , _binocularsConfigQCustomNexusdir = Nothing
     , _binocularsConfigQCustomTmpl = Nothing
-    , _binocularsConfigQCustomInputRange  = Nothing
+    , _binocularsConfigQCustomInputRange  = ConfigRange (InputRange Numeric.Interval.empty :| [])
     , _binocularsConfigQCustomDetector = defaultDetector
     , _binocularsConfigQCustomCentralpixel = (0, 0)
     , _binocularsConfigQCustomSdd = Meter (1 *~ meter)
@@ -270,7 +271,11 @@ instance HasIniConfig' 'QCustomProjection where
     inputtype <- parseFDef cfg "input" "type" (_binocularsConfigQCustomInputType defaultConfig')
     nexusdir <- parseMb cfg "input" "nexusdir"
     inputtmpl <- parseMb cfg "input" "inputtmpl"
-    inputrange <- parseMbDef cfg "input" "inputrange" mr
+    inputrange <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
+      let mr' = mr <|> mb
+      case mr' of
+        Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
+        (Just r) -> pure r
     detector <- parseFDef cfg "input" "detector" (_binocularsConfigQCustomDetector defaultConfig')
     centralpixel <- parseFDef cfg "input" "centralpixel" (_binocularsConfigQCustomCentralpixel defaultConfig')
     sdd <- parseFDef cfg "input" "sdd" (_binocularsConfigQCustomSdd defaultConfig')
@@ -326,7 +331,7 @@ instance HasIniConfig' 'QCustomProjection where
                     ,  ("input",    elemF   "type" (_binocularsConfigQCustomInputType c)
                                  <> elemFMb "nexusdir" (_binocularsConfigQCustomNexusdir c)
                                  <> elemFMb "inputtmpl" (_binocularsConfigQCustomTmpl c)
-                                 <> elemFMb "inputrange" (_binocularsConfigQCustomInputRange c)
+                                 <> elemF   "inputrange" (_binocularsConfigQCustomInputRange c)
                                  <> elemF   "detector" (_binocularsConfigQCustomDetector c)
                                  <> elemF   "centralpixel" (_binocularsConfigQCustomCentralpixel c)
                                  <> elemF   "sdd" (_binocularsConfigQCustomSdd c)
@@ -754,13 +759,11 @@ processQCustomP = do
   let datapaths = _binocularsConfigQCustomDataPath conf
 
   -- built from the config
-  let output' = case _binocularsConfigQCustomInputRange conf of
-                 Just r  -> destination' r mlimits destination
-                 Nothing -> throwM MissingInputRange
+  let output' = destination' (_binocularsConfigQCustomInputRange conf) mlimits destination
 
   filenames <- InputFn'List
               <$> files (_binocularsConfigQCustomNexusdir conf)
-                        (_binocularsConfigQCustomInputRange conf)
+                        (Just (_binocularsConfigQCustomInputRange conf))
                         (_binocularsConfigQCustomTmpl conf)
   mask' <- getMask (_binocularsConfigQCustomMaskmatrix conf) det
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
