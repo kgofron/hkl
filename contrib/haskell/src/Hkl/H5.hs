@@ -25,6 +25,7 @@ module Hkl.H5
     , File
     , H5
     , H5Path
+    , HklH5Exception
     , checkNdims
     , closeDataset
     , closeFile

@@ -16,10 +16,16 @@ import           Bindings.HDF5.Group     (Group, closeGroup)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
 import           Foreign.ForeignPtr      (ForeignPtr, mallocForeignPtrBytes,
                                           touchForeignPtr)
-import           Pipes.Safe              (MonadSafe, bracket, catchAll)
+import           Pipes.Safe              (Exception, MonadSafe, bracket, catch,
+                                          throwM)
 
 import           Hkl.H5
 
+data HklPipesException
+  = CanNotOpenH5OrP HklH5Exception HklH5Exception
+  deriving (Show)
+
+instance Exception HklPipesException
 --  Deal with hdf5 object in a safe way
 
 bracket' :: MonadSafe m => (a -> IO ()) -> IO a -> (a -> m r) -> m r
@@ -51,4 +57,8 @@ withHdf5PathP loc (H5GroupPath n subpath) f = withGroupP (openGroup' loc n Nothi
 withHdf5PathP loc (H5GroupAtPath i subpath) f = withGroupAtP loc i $ \g -> withHdf5PathP g subpath f
 withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset' loc n Nothing) f
 withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = withDatasetP (openDatasetWithAttr loc a c) f
-withHdf5PathP loc (H5Or l r) f = withHdf5PathP loc l f `catchAll` const (withHdf5PathP loc r f)
+withHdf5PathP loc (H5Or l r) f = withHdf5PathP loc l f
+                                 `catch`
+                                 \exl -> withHdf5PathP loc r f
+                                        `catch`
+                                        \exr -> throwM $ CanNotOpenH5OrP exl exr
