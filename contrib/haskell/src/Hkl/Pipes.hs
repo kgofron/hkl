@@ -12,7 +12,7 @@ module Hkl.Pipes
 
 import           Bindings.HDF5.Core      (Location)
 import           Bindings.HDF5.Dataspace (Dataspace, closeDataspace)
-import           Bindings.HDF5.Group     (Group, closeGroup, openGroup)
+import           Bindings.HDF5.Group     (Group, closeGroup)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
 import           Foreign.ForeignPtr      (ForeignPtr, mallocForeignPtrBytes,
                                           touchForeignPtr)
@@ -37,7 +37,7 @@ withGroupP = bracket' closeGroup
 withGroupAtP :: (Location l, MonadSafe m) => l -> Int -> (Group -> m r) -> m r
 withGroupAtP l i f = do
   es <- liftIO $ nxEntries' l
-  withGroupP (openGroup l (es !! i) Nothing) f
+  withGroupP (openGroup' l (es !! i) Nothing) f
 
 withDatasetP :: MonadSafe m => IO Dataset -> (Dataset -> m r) -> m r
 withDatasetP = bracket' closeDataset
@@ -47,7 +47,7 @@ withDataspaceP = bracket' closeDataspace
 
 withHdf5PathP :: (MonadSafe m, Location l) => l -> Hdf5Path sh e -> (Dataset -> m r) -> m r
 withHdf5PathP loc (H5RootPath subpath) f = withHdf5PathP loc subpath f
-withHdf5PathP loc (H5GroupPath n subpath) f = withGroupP (openGroup loc n Nothing) $ \g -> withHdf5PathP g subpath f
+withHdf5PathP loc (H5GroupPath n subpath) f = withGroupP (openGroup' loc n Nothing) $ \g -> withHdf5PathP g subpath f
 withHdf5PathP loc (H5GroupAtPath i subpath) f = withGroupAtP loc i $ \g -> withHdf5PathP g subpath f
 withHdf5PathP loc (H5DatasetPath n) f = withDatasetP (openDataset' loc n Nothing) f
 withHdf5PathP loc (H5DatasetPathAttr (a, c)) f = withDatasetP (openDatasetWithAttr loc a c) f

@@ -6,7 +6,9 @@
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE UnicodeSyntax             #-}
+
 
 {-
     Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
@@ -36,6 +38,7 @@ module Hkl.H5
     , nxEntries'
     , openDataset'
     , openDatasetWithAttr
+    , openGroup'
     , openH5
     , setImage
     , withH5File
@@ -81,6 +84,7 @@ import           Bindings.HDF5.Dataspace         (Dataspace,
                                                   getSimpleDataspaceExtentNPoints,
                                                   selectHyperslab, selectNone)
 import           Bindings.HDF5.Datatype.Internal (NativeType, nativeTypeOf)
+import           Bindings.HDF5.Error             (HDF5Exception)
 import           Bindings.HDF5.File              (AccFlags (ReadOnly, Truncate),
                                                   File, closeFile, createFile,
                                                   openFile)
@@ -91,9 +95,11 @@ import           Bindings.HDF5.Object            (ObjectId, ObjectType (..),
                                                   closeObject, getObjectType,
                                                   openObject)
 import           Bindings.HDF5.PropertyList.DAPL (DAPL)
+import           Bindings.HDF5.PropertyList.GAPL (GAPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5l_iterate)
-import           Control.Exception               (Exception, bracket, throwIO)
+import           Control.Exception               (Exception, bracket, catch,
+                                                  throwIO)
 import           Control.Monad.Extra             (fromMaybeM)
 import           Data.Aeson                      (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa                 (Array, Shape, extent,
@@ -131,6 +137,8 @@ import           Prelude                         hiding (head)
 
 data HklH5Exception
   = CanNotFindDatasetWithAttributContent ByteString ByteString
+  | CanNotOpenDataset ByteString
+  | CanNotOpenGroup ByteString
   deriving (Show)
 
 instance Exception HklH5Exception
@@ -217,13 +225,18 @@ openH5 f = openFile (pack f) [ReadOnly] Nothing
 
 --  Group
 
+openGroup' :: Location l =>l  -> ByteString  -> Maybe GAPL -> IO Group
+openGroup' l n mgapl = openGroup l n mgapl
+                      `catch`
+                      (\(_e :: HDF5Exception) -> throwIO $ CanNotOpenGroup n)
+
 withGroup :: IO Group -> (Group -> IO r) -> IO r
 withGroup a = bracket a closeGroup
 
 withGroupAt :: Location l => l -> Int -> (Group -> IO r) -> IO r
 withGroupAt l i f = do
   es <- nxEntries' l
-  withGroup (openGroup l (es !! i) Nothing) f
+  withGroup (openGroup' l (es !! i) Nothing) f
 
 --  Dataspace
 
@@ -245,7 +258,9 @@ datasetShape d = withDataspace (getDatasetSpace d) getSimpleDataspaceExtent
 --  DataSet
 
 openDataset' :: Location l => l -> ByteString -> Maybe DAPL -> IO Dataset
-openDataset' = openDataset
+openDataset' l n mdapl = openDataset l n mdapl
+                         `catch`
+                         \(_e :: HDF5Exception) -> throwIO $ CanNotOpenDataset n
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
@@ -392,7 +407,7 @@ datasetpattr = H5DatasetPathAttr
 
 withHdf5Path' :: Location l => l -> Hdf5Path sh e -> (Dataset -> IO r) -> IO r
 withHdf5Path' loc (H5RootPath subpath) f = withHdf5Path' loc subpath f
-withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup loc n Nothing) $ \g -> withHdf5Path' g subpath f
+withHdf5Path' loc (H5GroupPath n subpath) f = withGroup (openGroup' loc n Nothing) $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5GroupAtPath i subpath) f = withGroupAt loc i $ \g -> withHdf5Path' g subpath f
 withHdf5Path' loc (H5DatasetPath n) f = withDataset (openDataset' loc n Nothing) f
 withHdf5Path' loc (H5DatasetPathAttr (a, c)) f = withDataset (openDatasetWithAttr loc a c) f

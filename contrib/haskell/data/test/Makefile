@@ -53,9 +53,10 @@ sixs:
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom_sbsuhv.ini
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Creutzburg_20220176/binoculars/config_hkl.cfg 218
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Creutzburg_20220176/binoculars/config_sbs.cfg 215
-	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Creutzburg_20220176/binoculars/config_sbs.cfg 12
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Creutzburg_20220176/binoculars/config_sbs.cfg 12
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run2/Hejral_20210611/binoculars/config_hkl_sbs.txt 50
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run3/felici_20211498/binoculars/config_hkl.txt 40-82
+	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run1/20211454_Bellec/binoculars/config_dpath.txt 488
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini
