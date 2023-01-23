@@ -816,7 +816,7 @@ instance ChunkP (DataSourcePath DataFrameQCustom) where
     chunkP (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _) =
       skipMalformed $ forever $ do
       fp <- await
-      withFileP (openH5 fp) $ \f ->
+      withFileP (openFile' fp) $ \f ->
         withHdf5PathP f i $ \i' -> do
         (_, ss) <- liftIO $ datasetShape i'
         case head ss of
@@ -830,7 +830,7 @@ instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
     framesQCustomP p =
         skipMalformed $ forever $ do
           (fn, js) <- await
-          withFileP (openH5 fn) $ \f ->
+          withFileP (openFile' fn) $ \f ->
             withDataSourceP f p $ \ g ->
             forM_ js (tryYield . extract1DStreamValue g)
 

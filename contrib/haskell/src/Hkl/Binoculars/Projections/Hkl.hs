@@ -466,7 +466,7 @@ instance ChunkP (DataSourcePath DataFrameHkl) where
 instance FramesHklP (DataSourcePath DataFrameHkl) where
   framesHklP (DataSourcePath'DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
-    withFileP (openH5 fp) $ \f ->
+    withFileP (openFile' fp) $ \f ->
       withDataSourceP f qcustom $ \qcustomAcq ->
       withDataSourceP f sample $ \sampleAcq ->
       forM_ js (\j -> tryYield ( DataFrameHkl

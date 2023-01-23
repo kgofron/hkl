@@ -38,8 +38,8 @@ module Hkl.H5
     , nxEntries'
     , openDataset'
     , openDatasetWithAttr
+    , openFile'
     , openGroup'
-    , openH5
     , setImage
     , withH5File
     -- new API
@@ -140,6 +140,7 @@ data HklH5Exception
   | CanNotOpenDataset ByteString
   | CanNotOpenGroup ByteString
   | CanNotOpenGroupAt ByteString Int
+  | CanNotOpenFile ByteString
   deriving (Show)
 
 instance Exception HklH5Exception
@@ -219,10 +220,14 @@ withH5File' :: IO File -> (File -> IO r) -> IO r
 withH5File' a = bracket a closeFile
 
 withH5File :: FilePath -> (File -> IO r) -> IO r
-withH5File fp = withH5File' (openFile (pack fp) [ReadOnly] Nothing)
+withH5File fp = withH5File' (openFile' fp)
 
-openH5 ∷ FilePath → IO File
-openH5 f = openFile (pack f) [ReadOnly] Nothing
+openFile' ∷ FilePath → IO File
+openFile' f = do
+  ef :: Either HDF5Exception File <- try $ openFile (pack f) [ReadOnly] Nothing
+  case ef of
+    Left _   -> throwIO $ CanNotOpenFile (pack f)
+    Right f' -> pure f'
 
 --  Group
 
