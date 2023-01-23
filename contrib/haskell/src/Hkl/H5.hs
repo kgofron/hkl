@@ -98,8 +98,8 @@ import           Bindings.HDF5.PropertyList.DAPL (DAPL)
 import           Bindings.HDF5.PropertyList.GAPL (GAPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5l_iterate)
-import           Control.Exception               (Exception, bracket, catch,
-                                                  throwIO)
+import           Control.Exception               (Exception, bracket, throwIO,
+                                                  try)
 import           Control.Monad.Extra             (fromMaybeM)
 import           Data.Aeson                      (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa                 (Array, Shape, extent,
@@ -139,6 +139,7 @@ data HklH5Exception
   = CanNotFindDatasetWithAttributContent ByteString ByteString
   | CanNotOpenDataset ByteString
   | CanNotOpenGroup ByteString
+  | CanNotOpenGroupAt ByteString Int
   deriving (Show)
 
 instance Exception HklH5Exception
@@ -226,9 +227,11 @@ openH5 f = openFile (pack f) [ReadOnly] Nothing
 --  Group
 
 openGroup' :: Location l =>l  -> ByteString  -> Maybe GAPL -> IO Group
-openGroup' l n mgapl = openGroup l n mgapl
-                      `catch`
-                      (\(_e :: HDF5Exception) -> throwIO $ CanNotOpenGroup n)
+openGroup' l n mgapl = do
+  eg :: Either HDF5Exception Group <- try $ openGroup l n mgapl
+  case eg of
+    Left _  -> throwIO $ CanNotOpenGroup n
+    Right g -> pure g
 
 withGroup :: IO Group -> (Group -> IO r) -> IO r
 withGroup a = bracket a closeGroup
@@ -236,7 +239,11 @@ withGroup a = bracket a closeGroup
 withGroupAt :: Location l => l -> Int -> (Group -> IO r) -> IO r
 withGroupAt l i f = do
   es <- nxEntries' l
-  withGroup (openGroup' l (es !! i) Nothing) f
+  let n = es !! i
+  eg :: Either HDF5Exception Group <- try $ openGroup l n Nothing
+  case eg of
+    Left _  -> throwIO $ CanNotOpenGroupAt n i
+    Right g -> withGroup (pure g) f
 
 --  Dataspace
 
@@ -258,9 +265,11 @@ datasetShape d = withDataspace (getDatasetSpace d) getSimpleDataspaceExtent
 --  DataSet
 
 openDataset' :: Location l => l -> ByteString -> Maybe DAPL -> IO Dataset
-openDataset' l n mdapl = openDataset l n mdapl
-                         `catch`
-                         \(_e :: HDF5Exception) -> throwIO $ CanNotOpenDataset n
+openDataset' l n mdapl = do
+  ed :: Either HDF5Exception Dataset <- try $ openDataset l n mdapl
+  case ed of
+    Left _  -> throwIO $ CanNotOpenDataset n
+    Right d -> pure d
 
 withDataset :: IO Dataset -> (Dataset -> IO r) -> IO r
 withDataset a = bracket a closeDataset
