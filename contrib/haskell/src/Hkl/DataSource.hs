@@ -254,10 +254,10 @@ data HklBinocularsException
 instance Exception HklBinocularsException
 
 data instance DataSourcePath Attenuation =
-  DataSourcePath'Attenuation { attenuationPath        :: DataSourcePath Float
-                             , attenuationOffset      :: Int
-                             , attenuationCoefficient :: Double
-                             , attenuationMax         :: Maybe Float
+  DataSourcePath'Attenuation { attenuationPath            :: DataSourcePath Float
+                             , attenuationPathOffset      :: Int
+                             , attenuationPathCoefficient :: Double
+                             , attenuationPathMax         :: Maybe Float
                              }
   | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourcePath Float }
   | DataSourcePath'NoAttenuation
@@ -271,12 +271,12 @@ instance Arbitrary (DataSourcePath Attenuation) where
     ]
 
 data instance DataSourceAcq Attenuation =
-  DataSourceAcq'Attenuation { attenuationPath        :: DataSourceAcq Float
-                            , attenuationOffset      :: Int
-                            , attenuationCoefficient :: Double
-                            , attenuationMax         :: Maybe Float
+  DataSourceAcq'Attenuation { attenuationAcqPath        :: DataSourceAcq Float
+                            , attenuationAcqOffset      :: Int
+                            , attenuationAcqCoefficient :: Double
+                            , attenuationAcqMax         :: Maybe Float
                             }
-  | DataSourceAcq'ApplyedAttenuationFactor { attenuationPath :: DataSourceAcq Float }
+  | DataSourceAcq'ApplyedAttenuationFactor { attenuationAcqPath :: DataSourceAcq Float }
   | DataSourceAcq'NoAttenuation
 
 instance DataSource Attenuation where
