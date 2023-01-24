@@ -65,7 +65,8 @@ import           Data.Text.IO                      (putStr)
 import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
-import           GHC.Conc                          (getNumCapabilities)
+import           GHC.Conc                          (getNumCapabilities,
+                                                    getNumProcessors)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Interval                  (empty)
@@ -259,11 +260,12 @@ instance HasIniConfig' 'QCustomProjection where
 
     -- section dispatcher
     ncores <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
-      nmax <- liftIO getNumCapabilities
-      let n = case mb of
-                Nothing -> nmax
-                Just b  -> max nmax b
-      pure $ NCores (if n >= 2 then n - 1 else n)
+      ncapmax <- liftIO getNumCapabilities
+      ncoresmax <- liftIO getNumProcessors
+      let ns = case mb of
+            Nothing -> [ncapmax, ncoresmax - 1]
+            Just b  -> [b, ncapmax, ncoresmax -1]
+      pure $ NCores (minimum ns)
     destination <- parseFDef cfg "dispatcher" "destination" (_binocularsConfigQCustomDestination defaultConfig')
     overwrite <- parseFDef cfg "dispatcher" "overwrite" (_binocularsConfigQCustomOverwrite defaultConfig')
 
