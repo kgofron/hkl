@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -187,16 +187,16 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 
 /* - delta_gamma_[omega|mu]_uhv for the uhv gemetry */
 
-/*   delta = arctan2(qy, qx) */
-/*   gamma = arcsin(qz / sqrt(qx**2 + qy**2)) */
+/*   delta = arctan2(qy_surf, qx_surf) */
+/*   gamma = arcsin(qz_surf / sqrt(qx_surf**2 + qy_surf**2)) */
 /*   omega or mu */
 
 /* subprojection of angles */
 
 /* - delta_gamma_[omega|mu|beta]_med */
 
-/*   delta = arcsin(z / sqrt(x**2 + y**2)) - beta */
-/*   gamma = arctan2(y, x) */
+/*   delta = arcsin(z_lab / sqrt(x_lab**2 + y_lab**2)) - beta */
+/*   gamma = arctan2(y_lab, x_lab) */
 /*   omega or mu or beta */
 
 /* angles */
