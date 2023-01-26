@@ -69,6 +69,7 @@ library
   exposed-modules: Hkl.Binoculars.Bidir
   exposed-modules: Hkl.Binoculars.Common
   exposed-modules: Hkl.Binoculars.Config
+  exposed-modules: Hkl.Binoculars.Config.Common
   exposed-modules: Hkl.Binoculars.Pipes
   exposed-modules: Hkl.Binoculars.Projections
   exposed-modules: Hkl.Binoculars.Projections.Angles

@@ -54,10 +54,7 @@ import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
-import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
-                                                    section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
-import           Data.List.NonEmpty                (NonEmpty (..))
 import           Data.Maybe                        (fromJust, fromMaybe)
 import           Data.Text                         (Text, pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
@@ -65,13 +62,10 @@ import           Data.Text.IO                      (putStr)
 import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
-import           GHC.Conc                          (getNumCapabilities,
-                                                    getNumProcessors)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
-import           Numeric.Interval                  (empty)
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
-import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
+import           Numeric.Units.Dimensional.Prelude (degree, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, await, each,
                                                     runEffect, yield, (>->))
@@ -82,6 +76,7 @@ import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
+import           Hkl.Binoculars.Config.Common
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
@@ -168,92 +163,6 @@ instance HasFieldValue (DataSourcePath DataFrameQCustom) where
 -- Config --
 ------------
 
--- Config Common
-
-data BinocularsConfig'Common
-  = BinocularsConfig'Common
-    { binocularsConfig'Common'NCores                 :: NCores
-    , binocularsConfig'Common'Destination            :: DestinationTmpl
-    , binocularsConfig'Common'Overwrite              :: Bool
-    , binocularsConfig'Common'InputType              :: InputType
-    , binocularsConfig'Common'Nexusdir               :: Maybe (Path Abs Dir)
-    , binocularsConfig'Common'Tmpl                   :: Maybe InputTmpl
-    , binocularsConfig'Common'InputRange             :: ConfigRange
-    , binocularsConfig'Common'Detector               :: Detector Hkl DIM2
-    , binocularsConfig'Common'Centralpixel           :: (Int, Int)
-    , binocularsConfig'Common'Sdd                    :: Meter
-    , binocularsConfig'Common'Detrot                 :: Degree
-    , binocularsConfig'Common'AttenuationCoefficient :: Maybe Double
-    , binocularsConfig'Common'AttenuationMax         :: Maybe Float
-    , binocularsConfig'Common'Maskmatrix             :: Maybe MaskLocation
-    , binocularsConfig'Common'Wavelength             :: Maybe Angstrom
-    , binocularsConfig'Common'ImageSumMax            :: Maybe Double
-    } deriving (Eq, Show, Generic)
-
-defaultBinocularsConfig'Common :: BinocularsConfig'Common
-defaultBinocularsConfig'Common
-  = BinocularsConfig'Common
-    { binocularsConfig'Common'NCores = NCores 4
-    , binocularsConfig'Common'Destination = DestinationTmpl "."
-    , binocularsConfig'Common'Overwrite = False
-    , binocularsConfig'Common'InputType = SixsFlyScanUhv
-    , binocularsConfig'Common'Nexusdir = Nothing
-    , binocularsConfig'Common'Tmpl = Nothing
-    , binocularsConfig'Common'InputRange  = ConfigRange (InputRange Numeric.Interval.empty :| [])
-    , binocularsConfig'Common'Detector = defaultDetector
-    , binocularsConfig'Common'Centralpixel = (0, 0)
-    , binocularsConfig'Common'Sdd = Meter (1 *~ meter)
-    , binocularsConfig'Common'Detrot = Degree (0 *~ degree)
-    , binocularsConfig'Common'AttenuationCoefficient = Nothing
-    , binocularsConfig'Common'AttenuationMax = Nothing
-    , binocularsConfig'Common'Maskmatrix = Nothing
-    , binocularsConfig'Common'Wavelength = Nothing
-    , binocularsConfig'Common'ImageSumMax = Nothing
-    }
-
-instance Arbitrary BinocularsConfig'Common where
-  arbitrary = genericArbitraryU
-
-parseBinocularsConfig'Common :: (MonadThrow m, MonadLogger m, MonadIO m)
-                             => Text -> Maybe ConfigRange -> m (Either String BinocularsConfig'Common)
-parseBinocularsConfig'Common cfg mr
-  = do
-    -- section dispatcher
-    ncores <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
-      ncapmax <- liftIO getNumCapabilities
-      ncoresmax <- liftIO getNumProcessors
-      let ns = case mb of
-            Nothing -> [ncapmax, ncoresmax - 1]
-            Just b  -> [b, ncapmax, ncoresmax -1]
-      pure $ NCores (minimum ns)
-    destination <- parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination defaultBinocularsConfig'Common)
-    overwrite <- parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite defaultBinocularsConfig'Common)
-
-    -- section input
-    inputtype <- parseFDef cfg "input" "type" (binocularsConfig'Common'InputType defaultBinocularsConfig'Common)
-    nexusdir <- parseMb cfg "input" "nexusdir"
-    inputtmpl <- parseMb cfg "input" "inputtmpl"
-    inputrange <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
-      let mr' = mr <|> mb
-      case mr' of
-        Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
-        (Just r) -> pure r
-    detector <- parseFDef cfg "input" "detector" (binocularsConfig'Common'Detector defaultBinocularsConfig'Common)
-    centralpixel <- parseFDef cfg "input" "centralpixel" (binocularsConfig'Common'Centralpixel defaultBinocularsConfig'Common)
-    sdd <- parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd defaultBinocularsConfig'Common)
-    detrot <- parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot defaultBinocularsConfig'Common)
-    attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
-    attenuation_max <- parseMb cfg "input" "attenuation_max"
-    maskmatrix <-parseMb cfg "input" "maskmatrix"
-    wavelength <- parseMb cfg "input" "wavelength"
-    image_sum_max <- parseMb cfg "input" "image_sum_max"
-
-    -- customize a bunch of parameters
-
-    pure $ Right $ BinocularsConfig'Common ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max maskmatrix wavelength image_sum_max
-
--- Config QCustom
-
 data instance Config 'QCustomProjection
   = BinocularsConfig'QCustom
     { binocularsConfig'QCustom'Common :: BinocularsConfig'Common
@@ -285,35 +194,6 @@ defaultBinocularsConfig'QCustom
     , binocularsConfig'QCustom'SubProjection = Just QCustomSubProjection'QxQyQz
     }
 
-
-parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
-parse' c s f = parseIniFile c $ section s (fieldMbOf f auto')
-
-eitherF :: (t1 -> p) -> Either t1 t2 -> (t2 -> p) -> p
-eitherF fa (Left a)  _ = fa a
-eitherF _ (Right b) fb = fb b
-
-parseF :: (MonadLogger m, MonadIO m, HasFieldValue b)
-       => Text -> Text -> Text -> (Maybe b -> m r) -> m r
-parseF c s f = eitherF error (parse' c s f)
-
-parseFDef :: (MonadLogger m, MonadIO m, HasFieldValue p)
-          => Text -> Text -> Text -> p -> m p
-parseFDef c s f def = parseF c s f (pure . fromMaybe def)
-
-parseMb ::  (MonadLogger m, MonadIO m, HasFieldValue r)
-        => Text -> Text -> Text -> m (Maybe r)
-parseMb c s f = eitherF error (parse' c s f) pure
-
-parseMbDef :: (MonadLogger m, MonadIO m, HasFieldValue r)
-           => Text -> Text -> Text -> Maybe r -> m (Maybe r)
-parseMbDef c s f def = eitherF error (parse' c s f) (\mb -> pure $ mb <|> def)
-
-elemF :: HasFieldValue a => Text -> a -> [(Text, Text)]
-elemF k v = [(k,  fvEmit fieldvalue v)]
-
-elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
-elemFMb k = maybe [("# " <> k, "")] (elemF k)
 
 instance HasIniConfig' 'QCustomProjection where
 
