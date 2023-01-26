@@ -7,7 +7,6 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -39,10 +38,8 @@ import           Control.Applicative               ((<|>))
 import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad.Catch               (Exception, MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Logger              (MonadLogger, logDebug,
-                                                    logDebugN, logDebugSH,
-                                                    logErrorSH, logInfo,
-                                                    logWarn, logWarnN)
+import           Control.Monad.Logger              (MonadLogger, logDebugN,
+                                                    logInfoN, logWarnN)
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
 import           Control.Monad.Trans.Reader        (runReaderT)
@@ -56,7 +53,7 @@ import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.Maybe                        (fromJust, fromMaybe)
-import           Data.Text                         (Text, pack)
+import           Data.Text                         (pack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Vector.Storable.Mutable      (unsafeWith)
@@ -88,6 +85,7 @@ import           Hkl.Image
 import           Hkl.Orphan                        ()
 import           Hkl.Pipes
 import           Hkl.Types
+import           Hkl.Utils
 
 -----------------------
 -- QCustom Projection --
@@ -283,10 +281,10 @@ mkAttenuation ma att =
       Nothing -> case att of
                   DataSourcePath'NoAttenuation     -> return DataSourcePath'NoAttenuation
                   DataSourcePath'Attenuation{} -> do
-                           $(logWarn) ("The current configuration extract the attenuation from the data files." :: Text)
+                           logWarnN "The current configuration extract the attenuation from the data files."
                            logWarnN "You forgot to provide the attenuation coefficient in the config file."
-                           logWarnN ("I continue without attenuation correction" :: Text)
-                           logWarnN ("Add attenuation_coefficient=<something> under the [input] section, to fix this" :: Text)
+                           logWarnN "I continue without attenuation correction"
+                           logWarnN "Add attenuation_coefficient=<something> under the [input] section, to fix this"
                            return DataSourcePath'NoAttenuation
                   applyed@DataSourcePath'ApplyedAttenuationFactor{} -> return applyed
       (Just coef) -> return $ case att of
@@ -729,10 +727,10 @@ processQCustomP = do
 
   -- log parameters
 
-  $(logDebugSH) filenames
-  $(logDebugSH) datapaths
-  $(logDebugSH) chunks
-  $(logDebug) "start gessing final cube size"
+  logDebugNSH filenames
+  logDebugNSH datapaths
+  logDebugNSH chunks
+  logDebugN "start gessing final cube size"
 
   -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
@@ -744,11 +742,11 @@ processQCustomP = do
     >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
     >-> accumulateP c
 
-  $(logDebug) "stop gessing final cube size"
+  logDebugN "stop gessing final cube size"
 
   -- do the final projection
 
-  $(logInfo) (pack $ printf "let's do a QCustom projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
+  logInfoN $ pack $ printf "let's do a QCustom projection of %d %s image(s) on %d core(s)" ntot (show det) cap
 
   liftIO $ withProgressBar ntot $ \pb -> do
     r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
@@ -798,7 +796,7 @@ processQCustom mf mr = do
       logDebugN "config red from the config file"
       logDebugN $ serializeConfig conf
       runReaderT processQCustomP conf
-    Left e      -> $(logErrorSH) e
+    Left e      -> logErrorNSH $ e
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()
@@ -813,8 +811,8 @@ updateQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
               => Maybe FilePath -> m ()
 updateQCustom mf = do
   (conf :: Either String (Config 'QCustomProjection)) <- getConfig' mf (Args'QCustomProjection Nothing)
-  $(logDebug) "config red from the config file"
-  $(logDebugSH) conf
+  logDebugN "config red from the config file"
+  logDebugN $ pack . show $ conf
   case conf of
-    Left e      -> $(logErrorSH) e
+    Left e      -> logErrorNSH e
     Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'
