@@ -398,15 +398,15 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let det = fromMaybe defaultDetector (_binocularsConfigHklDetector conf)
     let mlimits = _binocularsConfigHklProjectionLimits conf
     let destination = _binocularsConfigHklDestination conf
-    let output' = case _binocularsConfigHklInputRange conf of
-                   Just r  -> destination' r mlimits destination
-                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigHklCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigHklSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigHklDetrot conf)
     let mImageSumMax = _binocularsConfigHklImageSumMax conf
     let res = _binocularsConfigHklProjectionResolution conf
 
+    output' <- case _binocularsConfigHklInputRange conf of
+                Just r  -> liftIO $ destination' r mlimits destination (_binocularsConfigHklOverwrite conf)
+                Nothing -> throwM MissingInputRange
     filenames <- InputFn'List
                 <$> files (_binocularsConfigHklNexusdir conf)
                           (_binocularsConfigHklInputRange conf)

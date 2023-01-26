@@ -107,6 +107,8 @@ import           Path                              (Abs, Dir, File, Path, Rel,
                                                     fromAbsDir, parseAbsDir,
                                                     toFilePath)
 import           Path.IO                           (getCurrentDir, walkDirAccum)
+import           System.Directory                  (doesPathExist)
+import           System.FilePath                   (splitExtensions)
 import           Test.QuickCheck                   (Arbitrary (..), elements,
                                                     oneof)
 import           Text.Printf                       (printf)
@@ -387,11 +389,11 @@ instance Arbitrary InputType where
 instance HasFieldValue InputType where
   fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
     where
-      err t =  ("Unsupported "
-                 ++ show (typeRep (Proxy :: Proxy InputType))
-                 ++ " :" ++ unpack t
-                 ++ " Supported ones are: "
-                 ++ unpack (unwords $ Prelude.map emit [minBound..maxBound]))
+      err t =  "Unsupported "
+               ++ show (typeRep (Proxy :: Proxy InputType))
+               ++ " :" ++ unpack t
+               ++ " Supported ones are: "
+               ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
 
       parse :: Text -> Either String InputType
       parse t = parseEnum (err t) t
@@ -491,11 +493,11 @@ instance FieldEmitter ProjectionType where
 instance FieldParsable ProjectionType where
   fieldParser = go =<< takeText
     where
-      err t =  ("Unsupported "
-                 ++ show (typeRep (Proxy :: Proxy ProjectionType))
-                 ++ " :" ++ unpack t
-                 ++ " Supported ones are: "
-                 ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: ProjectionType]))
+      err t =  "Unsupported "
+               ++ show (typeRep (Proxy :: Proxy ProjectionType))
+               ++ " :" ++ unpack t
+               ++ " Supported ones are: "
+               ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: ProjectionType])
 
       go :: Text -> Parser ProjectionType
       go t
@@ -554,11 +556,11 @@ instance HasFieldValue QCustomSubProjection where
       parse :: Text -> Either String QCustomSubProjection
       parse t = parseEnum (err t) t
 
-      err t = ("Unsupported "
-               ++ show (typeRep (Proxy :: Proxy QCustomSubProjection))
-               ++ " :" ++ unpack t
-               ++ " Supported ones are: "
-               ++ unpack (unwords $ Prelude.map emit [minBound..maxBound]))
+      err t = "Unsupported "
+              ++ show (typeRep (Proxy :: Proxy QCustomSubProjection))
+              ++ " :" ++ unpack t
+              ++ " Supported ones are: "
+              ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
 
       emit :: QCustomSubProjection -> Text
       emit QCustomSubProjection'QxQyQz            = "qx_qy_qz"
@@ -704,11 +706,11 @@ instance Arbitrary SurfaceOrientation where
 instance HasFieldValue SurfaceOrientation where
   fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
     where
-      err t = ("Unsupported "
-               ++ show (typeRep (Proxy :: Proxy SurfaceOrientation))
-               ++ " :" ++ unpack t
-               ++ " Supported ones are: "
-               ++ unpack (unwords $ Prelude.map emit [minBound..maxBound]))
+      err t = "Unsupported "
+              ++ show (typeRep (Proxy :: Proxy SurfaceOrientation))
+              ++ " :" ++ unpack t
+              ++ " Supported ones are: "
+              ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
 
       parse :: Text -> Either String SurfaceOrientation
       parse t = parseEnum (err t) t
@@ -739,16 +741,29 @@ binocularsPreConfigSpec = do
 -- functions --
 ---------------
 
-destination' :: ConfigRange -> Maybe (RLimits a) -> DestinationTmpl -> FilePath
-destination' (ConfigRange rs) ml = replace' interval limits
-  where
-    interval = foldl' hull Numeric.Interval.empty intervals
+destination' :: ConfigRange -> Maybe (RLimits a) -> DestinationTmpl -> Bool -> IO FilePath
+destination' (ConfigRange rs) ml dtmpl overwrite =
+  if overwrite
+  then pure $ replace' interval limits dtmpl Nothing
+  else do
+    let guess = replace' interval limits dtmpl Nothing : Prelude.map (replace' interval limits dtmpl . Just) [2..]
+    findFirst guess
+      where
+        findFirst :: [FilePath] -> IO FilePath
+        findFirst [] = undefined -- can not append non empty list
+        findFirst (x : xs) = do
+          exists <- doesPathExist x
+          if exists
+            then findFirst xs
+            else return x
 
-    limits = case ml of
-               Nothing   -> "nolimits"
-               (Just ls) -> fieldEmitter ls
+        interval = foldl' hull Numeric.Interval.empty intervals
 
-    intervals = Data.List.NonEmpty.map unInputRange rs
+        limits = case ml of
+                   Nothing   -> "nolimits"
+                   (Just ls) -> fieldEmitter ls
+
+        intervals = Data.List.NonEmpty.map unInputRange rs
 
 isHdf5 :: Path Abs File -> Bool
 isHdf5 p = case (fileExtension p :: Maybe [Char]) of
@@ -806,9 +821,16 @@ getPreConfig' (ConfigContent cfg) = do
 getPreConfig :: Maybe FilePath -> IO (Either String BinocularsPreConfig)
 getPreConfig mf = getPreConfig' <$> readConfig mf
 
-replace' :: Interval Int -> Text -> DestinationTmpl -> FilePath
-replace' i l = unpack
-                 . replace "{last}" (pack . show . sup $ i)
-                 . replace "{first}" (pack . show . inf $ i)
-                 . replace "{limits}" l
-                 . unDestinationTmpl
+
+addOverwrite :: Maybe Int -> DestinationTmpl -> DestinationTmpl
+addOverwrite midx tmpl = case midx of
+  Nothing -> tmpl
+  Just idx -> let (f, ext) = splitExtensions . unpack . unDestinationTmpl $ tmpl
+             in DestinationTmpl (pack $ f <> printf "_%02d" idx <> ext)
+
+replace' :: Interval Int -> Text -> DestinationTmpl -> Maybe Int -> FilePath
+replace' i l dtmpl midx = unpack
+                          . replace "{last}" (pack . show . sup $ i)
+                          . replace "{first}" (pack . show . inf $ i)
+                          . replace "{limits}" l
+                          . unDestinationTmpl . addOverwrite midx $ dtmpl

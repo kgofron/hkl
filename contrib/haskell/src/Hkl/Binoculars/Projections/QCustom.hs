@@ -709,7 +709,7 @@ processQCustomP = do
   let datapaths = binocularsConfig'QCustom'DataPath conf
 
   -- built from the config
-  let output' = destination' (binocularsConfig'Common'InputRange . binocularsConfig'QCustom'Common $ conf) mlimits destination
+  output' <- liftIO $ destination' (binocularsConfig'Common'InputRange . binocularsConfig'QCustom'Common $ conf) mlimits destination (binocularsConfig'Common'Overwrite . binocularsConfig'QCustom'Common $ conf)
 
   filenames <- InputFn'List
               <$> files (binocularsConfig'Common'Nexusdir . binocularsConfig'QCustom'Common $ conf)

@@ -193,9 +193,6 @@ class (FramesQCustomP a, Show a) => ProcessQIndexP a where
     let det = fromMaybe defaultDetector (_binocularsConfigQIndexDetector conf)
     let mlimits = _binocularsConfigQIndexProjectionLimits conf
     let destination = _binocularsConfigQIndexDestination conf
-    let output' = case _binocularsConfigQIndexInputRange conf of
-                   Just r  -> destination' r mlimits destination
-                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigQIndexCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigQIndexSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQIndexDetrot conf)
@@ -203,6 +200,9 @@ class (FramesQCustomP a, Show a) => ProcessQIndexP a where
     let res = _binocularsConfigQIndexProjectionResolution conf
 
     h5d <- mkPaths
+    output' <- case _binocularsConfigQIndexInputRange conf of
+                Just r  -> liftIO $ destination' r mlimits destination (_binocularsConfigQIndexOverwrite conf)
+                Nothing -> throwM MissingInputRange
     filenames <- InputFn'List
                 <$> files (_binocularsConfigQIndexNexusdir conf)
                           (_binocularsConfigQIndexInputRange conf)

@@ -208,9 +208,6 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
     let det = fromMaybe defaultDetector (_binocularsConfigAnglesDetector conf)
     let mlimits = _binocularsConfigAnglesProjectionLimits conf
     let destination = _binocularsConfigAnglesDestination conf
-    let output' = case _binocularsConfigAnglesInputRange conf of
-                   Just r  -> destination' r mlimits destination
-                   Nothing -> throwM MissingInputRange
     let centralPixel' = _binocularsConfigAnglesCentralpixel conf
     let (Meter sampleDetectorDistance) = _binocularsConfigAnglesSdd conf
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigAnglesDetrot conf)
@@ -218,6 +215,9 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
     let mImageSumMax = _binocularsConfigAnglesImageSumMax conf
     let res = _binocularsConfigAnglesProjectionResolution conf
 
+    output' <- case _binocularsConfigAnglesInputRange conf of
+                Just r  -> liftIO $ destination' r mlimits destination (_binocularsConfigAnglesOverwrite conf)
+                Nothing -> throwM MissingInputRange
     h5d <- mkPaths
     filenames <- InputFn'List
                 <$> files (_binocularsConfigAnglesNexusdir conf)
