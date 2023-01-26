@@ -692,30 +692,32 @@ processQCustomP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QCustomProjec
 processQCustomP = do
   (conf :: Config 'QCustomProjection) <- ask
 
-  -- should not be Maybe
-  let subprojection = fromJust (binocularsConfig'QCustom'SubProjection conf)
+  -- directly from the common config
+  let common = binocularsConfig'QCustom'Common $ conf
+  let overwrite = binocularsConfig'Common'Overwrite common
+  let det = binocularsConfig'Common'Detector common
+  let (NCores cap) =  binocularsConfig'Common'NCores common
+  let destination = binocularsConfig'Common'Destination common
+  let centralPixel' = binocularsConfig'Common'Centralpixel common
+  let (Meter sampleDetectorDistance) = binocularsConfig'Common'Sdd common
+  let (Degree detrot) = binocularsConfig'Common'Detrot common
+  let mImageSumMax = binocularsConfig'Common'ImageSumMax common
+  let inputRange = binocularsConfig'Common'InputRange common
+  let nexusDir = binocularsConfig'Common'Nexusdir common
+  let tmpl = binocularsConfig'Common'Tmpl common
+  let maskMatrix = binocularsConfig'Common'Maskmatrix common
 
-  -- directly from the config
-  let det = binocularsConfig'Common'Detector . binocularsConfig'QCustom'Common $ conf
-  let (NCores cap) =  binocularsConfig'Common'NCores . binocularsConfig'QCustom'Common $ conf
+  -- directly from the specific config
   let mlimits = binocularsConfig'QCustom'ProjectionLimits conf
-  let destination = binocularsConfig'Common'Destination . binocularsConfig'QCustom'Common $ conf
-  let centralPixel' = binocularsConfig'Common'Centralpixel . binocularsConfig'QCustom'Common $ conf
-  let (Meter sampleDetectorDistance) = binocularsConfig'Common'Sdd . binocularsConfig'QCustom'Common $ conf
-  let (Degree detrot) = binocularsConfig'Common'Detrot . binocularsConfig'QCustom'Common $ conf
-  let mImageSumMax = binocularsConfig'Common'ImageSumMax . binocularsConfig'QCustom'Common $ conf
   let res = binocularsConfig'QCustom'ProjectionResolution conf
   let surfaceOrientation = binocularsConfig'QCustom'SurfaceOrientation conf
   let datapaths = binocularsConfig'QCustom'DataPath conf
+  let subprojection = fromJust (binocularsConfig'QCustom'SubProjection conf) -- should not be Maybe
 
   -- built from the config
-  output' <- liftIO $ destination' (binocularsConfig'Common'InputRange . binocularsConfig'QCustom'Common $ conf) mlimits destination (binocularsConfig'Common'Overwrite . binocularsConfig'QCustom'Common $ conf)
-
-  filenames <- InputFn'List
-              <$> files (binocularsConfig'Common'Nexusdir . binocularsConfig'QCustom'Common $ conf)
-                        (Just (binocularsConfig'Common'InputRange . binocularsConfig'QCustom'Common $ conf))
-                        (binocularsConfig'Common'Tmpl . binocularsConfig'QCustom'Common $ conf)
-  mask' <- getMask (binocularsConfig'Common'Maskmatrix . binocularsConfig'QCustom'Common $ conf) det
+  output' <- liftIO $ destination' inputRange mlimits destination overwrite
+  filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
+  mask' <- getMask maskMatrix det
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
 
   -- compute the jobs

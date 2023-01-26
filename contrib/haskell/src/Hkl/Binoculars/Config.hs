@@ -821,7 +821,6 @@ getPreConfig' (ConfigContent cfg) = do
 getPreConfig :: Maybe FilePath -> IO (Either String BinocularsPreConfig)
 getPreConfig mf = getPreConfig' <$> readConfig mf
 
-
 addOverwrite :: Maybe Int -> DestinationTmpl -> DestinationTmpl
 addOverwrite midx tmpl = case midx of
   Nothing -> tmpl
