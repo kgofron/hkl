@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -32,7 +32,8 @@ hid_t create_dataspace_from_axes(const darray_axis *axes)
 
         darray_init(dims);
         darray_foreach(axis, *axes){
-                darray_append(dims, axis_size(axis));
+                if(axis_size(axis) > 1)
+                   darray_append(dims, axis_size(axis));
         }
 
         return H5Screate_simple(darray_size(dims), &darray_item(dims, 0), NULL);
@@ -64,17 +65,19 @@ void hkl_binoculars_cube_save_hdf5(const char *fn,
                 hid_t dataset_id;
                 hsize_t dims[] = {6};
 
-                arr = hkl_binoculars_axis_array(axis);
-                dataspace_id = H5Screate_simple(ARRAY_SIZE(dims), dims, NULL);
-                dataset_id = H5Dcreate(groupe_axes_id, axis->name,
-                                       H5T_NATIVE_DOUBLE, dataspace_id,
-                                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-                status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE,
-                                  H5S_ALL, H5S_ALL,
-                                  H5P_DEFAULT, arr);
-                status = H5Dclose(dataset_id);
-                status = H5Sclose(dataspace_id);
-                free(arr);
+                if(axis_size(axis) > 1){
+                        arr = hkl_binoculars_axis_array(axis);
+                        dataspace_id = H5Screate_simple(ARRAY_SIZE(dims), dims, NULL);
+                        dataset_id = H5Dcreate(groupe_axes_id, axis->name,
+                                               H5T_NATIVE_DOUBLE, dataspace_id,
+                                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                        status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE,
+                                          H5S_ALL, H5S_ALL,
+                                          H5P_DEFAULT, arr);
+                        status = H5Dclose(dataset_id);
+                        status = H5Sclose(dataspace_id);
+                        free(arr);
+                }
         }
 
         status = H5Gclose(groupe_axes_id);
