@@ -545,6 +545,8 @@ data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QPhiQy
                           | QCustomSubProjection'QPhiQz
                           | QCustomSubProjection'QStereo
+                          | QCustomSubProjection'AnglesZaxisOmega
+                          | QCustomSubProjection'AnglesZaxisMu
   deriving (Enum, Bounded, Eq, Show)
 
 instance Arbitrary QCustomSubProjection where
@@ -570,6 +572,8 @@ instance HasFieldValue QCustomSubProjection where
       emit QCustomSubProjection'QPhiQy            = "q_phi_qy"
       emit QCustomSubProjection'QPhiQz            = "q_phi_qz"
       emit QCustomSubProjection'QStereo           = "q_stereo"
+      emit QCustomSubProjection'AnglesZaxisOmega  = "angles_zaxis_omega"
+      emit QCustomSubProjection'AnglesZaxisMu     = "angles_zaxis_mu"
 
 -- Resolutions
 

@@ -56,7 +56,7 @@ import           Test.QuickCheck                   (Arbitrary (..))
 
 import           Hkl.Binoculars.Config
 import           Hkl.Detector
-
+import           Hkl.Orphan                        ()
 
 data BinocularsConfig'Common
   = BinocularsConfig'Common

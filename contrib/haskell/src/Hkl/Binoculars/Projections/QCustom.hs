@@ -357,6 +357,8 @@ overloadIndexPath msub idx =
                    QCustomSubProjection'QPhiQy -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QPhiQz -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QStereo -> DataSourcePath'Index'NoIndex
+                   QCustomSubProjection'AnglesZaxisOmega -> DataSourcePath'Index'NoIndex
+                   QCustomSubProjection'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
 
 overloadWaveLength :: Maybe Angstrom -> DataSourcePath WaveLength -> DataSourcePath WaveLength
 overloadWaveLength ma wp = maybe wp DataSourcePath'WaveLength'Const ma

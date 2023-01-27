@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -369,6 +369,8 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
                 const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
                 const char *names_q_stereo[] = {"q", "xp", "yp"};       \
+                const char *names_angles_zaxis_omega[] = {"delta", "gamma", "omega"}; \
+                const char *names_angles_zaxis_mu[] = {"delta", "gamma", "mu"}; \
                                                                         \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
@@ -467,6 +469,20 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                         item.indexes_0[2] = rint(v.data[1] / ratio / resolutions[2]); \
                                         break;                          \
                                 }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(atan2(v.data[1], v.data[0]) / M_PI * 180 / resolutions[0]); \
+                                        item.indexes_0[1] = rint(atan2(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]), v.data[2]) / M_PI * 180 / resolutions[1]); \
+                                        item.indexes_0[2] = rint(hkl_vector_norm2(&v) / resolutions[2] / 10);          \
+                                        break;                          \
+                                }                                       \
+                                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU: \
+                                {                                       \
+                                        item.indexes_0[0] = rint(atan2(v.data[1], v.data[0]) / M_PI * 180 / resolutions[0]); \
+                                        item.indexes_0[1] = rint(atan2(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]), v.data[2]) / M_PI * 180 / resolutions[1]); \
+                                        item.indexes_0[2] = 0;          \
+                                        break;                          \
+                                }                                       \
                                 }                                       \
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -492,17 +508,17 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                         space_update_axes(space, names_qpar_qper_timestamp, n_pixels, resolutions); \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX: \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX:    \
                 {                                                       \
                         space_update_axes(space, names_q_phi_qx, n_pixels, resolutions); \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY: \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY:    \
                 {                                                       \
                         space_update_axes(space, names_q_phi_qy, n_pixels, resolutions); \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ: \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ:    \
                 {                                                       \
                         space_update_axes(space, names_q_phi_qz, n_pixels, resolutions); \
                         break;                                          \
@@ -512,8 +528,17 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                         space_update_axes(space, names_q_stereo, n_pixels, resolutions); \
                         break;                                          \
                 }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA: \
+                {                                                       \
+                        space_update_axes(space, names_angles_zaxis_omega, n_pixels, resolutions); \
+                        break;                                          \
                 }                                                       \
-                                                                        \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU: \
+                {                                                       \
+                        space_update_axes(space, names_angles_zaxis_mu, n_pixels, resolutions); \
+                        break;                                          \
+                }                                                       \
+                }                                                       \
                 hkl_detector_free(detector);                            \
                 hkl_sample_free(sample);                                \
         }

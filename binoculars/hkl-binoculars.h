@@ -92,7 +92,6 @@ typedef struct _HklBinocularsAxis HklBinocularsAxis;
 
 HKLAPI extern double *hkl_binoculars_axis_array(const HklBinocularsAxis *self);
 
-
 /*********/
 /* Space */
 /*********/
@@ -232,6 +231,8 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;
