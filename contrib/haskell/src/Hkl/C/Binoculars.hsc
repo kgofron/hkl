@@ -13,7 +13,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -34,11 +34,7 @@ import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, withForeignPt
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           System.IO.Unsafe      (unsafePerformIO)
 
--- import           Hkl.Binoculars.Config
--- import           Hkl.Detector
 import           Hkl.C.Hkl
--- import           Hkl.C.Sample
-import           Hkl.Orphan ()
 
 withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
 withForeignPtrs []       f = f []
@@ -116,8 +112,6 @@ instance Shape sh => Monoid (Cube sh) where
 #ccall hkl_binoculars_detector_2d_number_of_detectors, IO CInt
 #ccall hkl_binoculars_detector_2d_shape_get, <HklBinocularsDetectorEnum> -> Ptr CInt -> Ptr CInt -> IO ()
 #ccall hkl_binoculars_detector_2d_sixs_calibration, <HklBinocularsDetectorEnum> -> Ptr CDouble -> CInt -> CInt -> CInt -> CInt -> CDouble -> CDouble -> IO ()
-
-
 
 -----------
 -- Space --
