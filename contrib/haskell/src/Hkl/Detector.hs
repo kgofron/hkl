@@ -17,6 +17,7 @@ module Hkl.Detector
        , getDetectorMask
        , getDetectorDefaultMask
        , getPixelsCoordinates
+       , inDetector
        , newDetector
        , parseDetector2D
        , shape
@@ -31,7 +32,7 @@ import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..),
                                                     object, pairs, withObject,
                                                     (.:), (.=))
-import           Data.Array.Repa                   (Array, Shape)
+import           Data.Array.Repa                   (Array, Shape, inShape)
 import           Data.Array.Repa.Index             (DIM0, DIM2, DIM3, Z (..),
                                                     ix2, ix3, (:.) (..))
 import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr)
@@ -174,3 +175,6 @@ getDetectorMask (Detector2D n name sh)  mask = do
   let  err = MaskShapeNotcompatible (Data.Text.unwords [pack name, ": ", mask])
   liftIO $ withCString (unpack mask) $
          fromPtr sh err <=< c'hkl_binoculars_detector_2d_mask_load n
+
+inDetector :: (Int, Int) -> Detector Hkl DIM2 -> Bool
+inDetector (x, y) det = inShape (shape det) (ix2 y x)

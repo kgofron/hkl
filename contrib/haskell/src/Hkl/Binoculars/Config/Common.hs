@@ -127,7 +127,12 @@ parseBinocularsConfig'Common cfg mr
         Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
         (Just r) -> pure r
     detector <- parseFDef cfg "input" "detector" (binocularsConfig'Common'Detector defaultBinocularsConfig'Common)
-    centralpixel <- parseFDef cfg "input" "centralpixel" (binocularsConfig'Common'Centralpixel defaultBinocularsConfig'Common)
+    centralpixel <- eitherF error (parse' cfg "input" "centralpixel") $ \mc -> do
+      case mc of
+        Nothing -> pure (binocularsConfig'Common'Centralpixel defaultBinocularsConfig'Common)
+        Just c -> if c `inDetector` detector
+                 then pure c
+                 else error $ "The central pixel " <> show c <> " is not compatible with the detector"
     sdd <- parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd defaultBinocularsConfig'Common)
     detrot <- parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot defaultBinocularsConfig'Common)
     attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
