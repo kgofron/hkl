@@ -198,10 +198,11 @@ class (FramesQCustomP a, Show a) => ProcessQIndexP a where
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigQIndexDetrot conf)
     let mImageSumMax = _binocularsConfigQIndexImageSumMax conf
     let res = _binocularsConfigQIndexProjectionResolution conf
+    let projectionType = _binocularsConfigQIndexProjectionType conf
 
     h5d <- mkPaths
     output' <- case _binocularsConfigQIndexInputRange conf of
-                Just r  -> liftIO $ destination' r mlimits destination (_binocularsConfigQIndexOverwrite conf)
+                Just r  -> liftIO $ destination' projectionType r mlimits destination (_binocularsConfigQIndexOverwrite conf)
                 Nothing -> throwM MissingInputRange
     filenames <- InputFn'List
                 <$> files (_binocularsConfigQIndexNexusdir conf)

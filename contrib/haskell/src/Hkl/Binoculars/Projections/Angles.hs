@@ -214,9 +214,10 @@ class (FramesQCustomP a, Show a) => ProcessAnglesP a where
     let sAxis = getSampleAxis conf
     let mImageSumMax = _binocularsConfigAnglesImageSumMax conf
     let res = _binocularsConfigAnglesProjectionResolution conf
+    let projectionType = _binocularsConfigAnglesProjectionType conf
 
     output' <- case _binocularsConfigAnglesInputRange conf of
-                Just r  -> liftIO $ destination' r mlimits destination (_binocularsConfigAnglesOverwrite conf)
+                Just r  -> liftIO $ destination' projectionType r mlimits destination (_binocularsConfigAnglesOverwrite conf)
                 Nothing -> throwM MissingInputRange
     h5d <- mkPaths
     filenames <- InputFn'List

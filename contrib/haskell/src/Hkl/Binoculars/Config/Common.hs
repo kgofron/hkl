@@ -82,7 +82,7 @@ defaultBinocularsConfig'Common :: BinocularsConfig'Common
 defaultBinocularsConfig'Common
   = BinocularsConfig'Common
     { binocularsConfig'Common'NCores = NCores 4
-    , binocularsConfig'Common'Destination = DestinationTmpl "."
+    , binocularsConfig'Common'Destination = DestinationTmpl "{projection}_{first}-{last}_{limits}.h5"
     , binocularsConfig'Common'Overwrite = False
     , binocularsConfig'Common'InputType = SixsFlyScanUhv
     , binocularsConfig'Common'Nexusdir = Nothing

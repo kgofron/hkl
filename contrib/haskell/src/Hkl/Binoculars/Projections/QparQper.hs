@@ -200,10 +200,11 @@ class (FramesQCustomP a, Show a) => ProcessQparQperP a where
     let surfaceOrientation = fromMaybe SurfaceOrientationVertical (_binocularsConfigQparQperSurfaceOrientation conf)
     let mImageSumMax = _binocularsConfigQparQperImageSumMax conf
     let res = _binocularsConfigQparQperProjectionResolution conf
+    let projectionType = _binocularsConfigQparQperProjectionType conf
 
     h5d <- mkPaths
     output' <- case _binocularsConfigQparQperInputRange conf of
-                Just r  -> liftIO $ destination' r mlimits destination (_binocularsConfigQparQperOverwrite conf)
+                Just r  -> liftIO $ destination' projectionType r mlimits destination (_binocularsConfigQparQperOverwrite conf)
                 Nothing -> throwM MissingInputRange
     filenames <- InputFn'List
                 <$> files (_binocularsConfigQparQperNexusdir conf)

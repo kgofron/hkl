@@ -693,7 +693,7 @@ processQCustomP = do
   (conf :: Config 'QCustomProjection) <- ask
 
   -- directly from the common config
-  let common = binocularsConfig'QCustom'Common $ conf
+  let common = binocularsConfig'QCustom'Common conf
   let overwrite = binocularsConfig'Common'Overwrite common
   let det = binocularsConfig'Common'Detector common
   let (NCores cap) =  binocularsConfig'Common'NCores common
@@ -713,9 +713,10 @@ processQCustomP = do
   let surfaceOrientation = binocularsConfig'QCustom'SurfaceOrientation conf
   let datapaths = binocularsConfig'QCustom'DataPath conf
   let subprojection = fromJust (binocularsConfig'QCustom'SubProjection conf) -- should not be Maybe
+  let projectionType = binocularsConfig'QCustom'ProjectionType conf
 
   -- built from the config
-  output' <- liftIO $ destination' inputRange mlimits destination overwrite
+  output' <- liftIO $ destination' projectionType inputRange mlimits destination overwrite
   filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
   mask' <- getMask maskMatrix det
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
@@ -798,7 +799,7 @@ processQCustom mf mr = do
       logDebugN "config red from the config file"
       logDebugN $ serializeConfig conf
       runReaderT processQCustomP conf
-    Left e      -> logErrorNSH $ e
+    Left e      -> logErrorNSH e
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()

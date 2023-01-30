@@ -403,9 +403,10 @@ class (FramesHklP a, Show a) => ProcessHklP a where
     let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigHklDetrot conf)
     let mImageSumMax = _binocularsConfigHklImageSumMax conf
     let res = _binocularsConfigHklProjectionResolution conf
+    let projectionType = _binocularsConfigHklProjectionType conf
 
     output' <- case _binocularsConfigHklInputRange conf of
-                Just r  -> liftIO $ destination' r mlimits destination (_binocularsConfigHklOverwrite conf)
+                Just r  -> liftIO $ destination' projectionType r mlimits destination (_binocularsConfigHklOverwrite conf)
                 Nothing -> throwM MissingInputRange
     filenames <- InputFn'List
                 <$> files (_binocularsConfigHklNexusdir conf)
