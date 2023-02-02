@@ -226,6 +226,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
 {
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ = 0,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY,
@@ -260,27 +261,6 @@ HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint32_t);
 
-/* qindex */
-
-#define HKL_BINOCULARS_SPACE_QINDEX_DECL(image_t)			\
-        void hkl_binoculars_space_qindex_ ## image_t (HklBinocularsSpace *space, \
-                                                      const HklGeometry *geometry, \
-                                                      const image_t *image, \
-                                                      size_t n_pixels,  \
-                                                      double weight,    \
-                                                      const double *pixels_coordinates, \
-                                                      size_t pixels_coordinates_ndim, \
-                                                      const size_t *pixels_coordinates_dims, \
-                                                      const double *resolutions, \
-                                                      size_t n_resolutions, \
-                                                      const uint8_t *masked, \
-                                                      const HklBinocularsAxisLimits **limits, \
-                                                      size_t n_limits,  \
-                                                      double index)
-
-HKLAPI extern HKL_BINOCULARS_SPACE_QINDEX_DECL(int32_t);
-HKLAPI extern HKL_BINOCULARS_SPACE_QINDEX_DECL(uint16_t);
-HKLAPI extern HKL_BINOCULARS_SPACE_QINDEX_DECL(uint32_t);
 
 /* qparqper */
 

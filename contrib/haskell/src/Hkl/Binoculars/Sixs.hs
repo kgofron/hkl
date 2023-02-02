@@ -32,7 +32,6 @@ import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Angles
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
-import           Hkl.Binoculars.Projections.QIndex
 import           Hkl.Binoculars.Projections.QparQper
 
 process :: (MonadLogger m, MonadThrow m, MonadIO m)
@@ -48,7 +47,7 @@ process mf mr = do
                       Angles2Projection  -> processAngles mf mr
                       HklProjection      -> processHkl mf mr
                       QCustomProjection  -> processQCustom mf mr
-                      QIndexProjection   -> processQIndex mf mr
+                      QIndexProjection   -> processQCustom mf mr
                       QparQperProjection -> processQparQper mf mr
                       QxQyQzProjection   -> processQCustom mf mr
 
@@ -63,7 +62,7 @@ new p mf = do
     Angles2Projection  -> newAngles cwd
     HklProjection      -> newHkl cwd
     QCustomProjection  -> newQCustom cwd
-    QIndexProjection   -> newQIndex cwd
+    QIndexProjection   -> newQCustom cwd
     QparQperProjection -> newQparQper cwd
     QxQyQzProjection   -> newQCustom cwd
 
@@ -79,6 +78,6 @@ update f = do
                       Angles2Projection  -> updateAngles (Just f)
                       HklProjection      -> updateHkl (Just f)
                       QCustomProjection  -> updateQCustom (Just f)
-                      QIndexProjection   -> updateQIndex (Just f)
+                      QIndexProjection   -> updateQCustom (Just f)
                       QparQperProjection -> updateQparQper (Just f)
                       QxQyQzProjection   -> updateQCustom (Just f)

@@ -540,6 +540,7 @@ parseEnum err t = maybeToRight err (find match [minBound..maxBound])
 
 data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QTthTimestamp
+                          | QCustomSubProjection'QIndex
                           | QCustomSubProjection'QparQperTimestamp
                           | QCustomSubProjection'QPhiQx
                           | QCustomSubProjection'QPhiQy
@@ -567,6 +568,7 @@ instance HasFieldValue QCustomSubProjection where
       emit :: QCustomSubProjection -> Text
       emit QCustomSubProjection'QxQyQz            = "qx_qy_qz"
       emit QCustomSubProjection'QTthTimestamp     = "q_tth_timestamp"
+      emit QCustomSubProjection'QIndex            = "q_index"
       emit QCustomSubProjection'QparQperTimestamp = "qpar_qper_timestamp"
       emit QCustomSubProjection'QPhiQx            = "q_phi_qx"
       emit QCustomSubProjection'QPhiQy            = "q_phi_qy"

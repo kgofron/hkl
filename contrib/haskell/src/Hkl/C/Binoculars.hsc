@@ -179,32 +179,6 @@ foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_uint3
 c'hkl_binoculars_space_qcustom_uint32_t :: C'ProjectionTypeQCustom Word32
 
 
-type C'ProjectionTypeQIndex t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
- -> Ptr C'HklGeometry -- const HklGeometry *geometry
- -> Ptr t --  const uint16_t *image
- -> CSize -- size_t n_pixels
- -> CDouble -- double weight
- -> Ptr Double -- const double *pixels_coordinates
- -> CSize -- int32_t pixels_coordinates_ndim
- -> Ptr CSize --  const int32_t *pixels_coordinates_dims
- -> Ptr Double --  const double *resolutions
- -> CSize -- size_t n_resolutions
- -> Ptr CBool -- const uint8_t *mask
- -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
- -> CInt -- size_t n_limits
- -> CDouble -- double index
- -> IO ()
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qindex_int32_t" \
-c'hkl_binoculars_space_qindex_int32_t :: C'ProjectionTypeQIndex Int32
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qindex_uint16_t" \
-c'hkl_binoculars_space_qindex_uint16_t :: C'ProjectionTypeQIndex Word16
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qindex_uint32_t" \
-c'hkl_binoculars_space_qindex_uint32_t :: C'ProjectionTypeQIndex Word32
-
-
 type C'ProjectionTypeQ t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
  -> Ptr C'HklGeometry -- const HklGeometry *geometry
  -> Ptr t --  const uint16_t *image

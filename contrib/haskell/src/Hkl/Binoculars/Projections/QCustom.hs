@@ -218,6 +218,7 @@ instance HasIniConfig' 'QCustomProjection where
         -- fix the subprojection depending on the projection type
         let subprojection = case projectiontype of
                               QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
+                              QIndexProjection -> Just QCustomSubProjection'QIndex
                               _                -> msubprojection
 
         -- compute the datatype
@@ -352,6 +353,7 @@ overloadIndexPath msub idx =
     (Just sub) -> case sub of
                    QCustomSubProjection'QxQyQz -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QTthTimestamp -> idx
+                   QCustomSubProjection'QIndex -> idx
                    QCustomSubProjection'QparQperTimestamp -> idx
                    QCustomSubProjection'QPhiQx -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'QPhiQy -> DataSourcePath'Index'NoIndex
