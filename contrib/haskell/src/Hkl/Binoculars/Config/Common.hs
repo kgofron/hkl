@@ -25,10 +25,10 @@
 
 module Hkl.Binoculars.Config.Common
     ( BinocularsConfig'Common(..)
-    , defaultBinocularsConfig'Common
+    , default'BinocularsConfig'Common
     , elemF
     , elemFMb
-    , parseBinocularsConfig'Common
+    , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
     , parseMbDef
@@ -78,8 +78,8 @@ data BinocularsConfig'Common
     , binocularsConfig'Common'ImageSumMax            :: Maybe Double
     } deriving (Eq, Show, Generic)
 
-defaultBinocularsConfig'Common :: BinocularsConfig'Common
-defaultBinocularsConfig'Common
+default'BinocularsConfig'Common :: BinocularsConfig'Common
+default'BinocularsConfig'Common
   = BinocularsConfig'Common
     { binocularsConfig'Common'NCores = NCores 4
     , binocularsConfig'Common'Destination = DestinationTmpl "{projection}_{first}-{last}_{limits}.h5"
@@ -102,9 +102,9 @@ defaultBinocularsConfig'Common
 instance Arbitrary BinocularsConfig'Common where
   arbitrary = genericArbitraryU
 
-parseBinocularsConfig'Common :: (MonadThrow m, MonadLogger m, MonadIO m)
-                             => Text -> Maybe ConfigRange -> m (Either String BinocularsConfig'Common)
-parseBinocularsConfig'Common cfg mr
+parse'BinocularsConfig'Common :: (MonadThrow m, MonadLogger m, MonadIO m)
+                              => Text -> Maybe ConfigRange -> m (Either String BinocularsConfig'Common)
+parse'BinocularsConfig'Common cfg mr
   = do
     -- section dispatcher
     ncores <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
@@ -114,11 +114,11 @@ parseBinocularsConfig'Common cfg mr
             Nothing -> [ncapmax, ncoresmax - 1]
             Just b  -> [b, ncapmax, ncoresmax -1]
       pure $ NCores (minimum ns)
-    destination <- parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination defaultBinocularsConfig'Common)
-    overwrite <- parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite defaultBinocularsConfig'Common)
+    destination <- parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination default'BinocularsConfig'Common)
+    overwrite <- parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite default'BinocularsConfig'Common)
 
     -- section input
-    inputtype <- parseFDef cfg "input" "type" (binocularsConfig'Common'InputType defaultBinocularsConfig'Common)
+    inputtype <- parseFDef cfg "input" "type" (binocularsConfig'Common'InputType default'BinocularsConfig'Common)
     nexusdir <- parseMb cfg "input" "nexusdir"
     inputtmpl <- parseMb cfg "input" "inputtmpl"
     inputrange <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
@@ -126,15 +126,15 @@ parseBinocularsConfig'Common cfg mr
       case mr' of
         Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
         (Just r) -> pure r
-    detector <- parseFDef cfg "input" "detector" (binocularsConfig'Common'Detector defaultBinocularsConfig'Common)
+    detector <- parseFDef cfg "input" "detector" (binocularsConfig'Common'Detector default'BinocularsConfig'Common)
     centralpixel <- eitherF error (parse' cfg "input" "centralpixel") $ \mc -> do
       case mc of
-        Nothing -> pure (binocularsConfig'Common'Centralpixel defaultBinocularsConfig'Common)
+        Nothing -> pure (binocularsConfig'Common'Centralpixel default'BinocularsConfig'Common)
         Just c -> if c `inDetector` detector
                  then pure c
                  else error $ "The central pixel " <> show c <> " is not compatible with the detector"
-    sdd <- parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd defaultBinocularsConfig'Common)
-    detrot <- parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot defaultBinocularsConfig'Common)
+    sdd <- parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd default'BinocularsConfig'Common)
+    detrot <- parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot default'BinocularsConfig'Common)
     attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
     attenuation_max <- parseMb cfg "input" "attenuation_max"
     maskmatrix <-parseMb cfg "input" "maskmatrix"

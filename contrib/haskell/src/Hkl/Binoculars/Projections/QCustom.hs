@@ -26,10 +26,12 @@ module Hkl.Binoculars.Projections.QCustom
     ( Args(..)
     , Config(..)
     , DataFrameQCustom(..)
+    , DataSourcePath(..)
     , FramesQCustomP(..)
-    , defaultDataSourcePath'DataFrameQCustom
-    , h5dpathQCustom
+    , default'DataSourcePath'DataFrameQCustom
+    , guess'DataSourcePath'DataFrameQCustom
     , newQCustom
+    , overload'DataSourcePath'DataFrameQCustom
     , processQCustom
     , updateQCustom
     ) where
@@ -133,8 +135,8 @@ instance Is1DStreamable (DataSourceAcq DataFrameQCustom) DataFrameQCustom where
       <*> extract1DStreamValue idx i
 
 
-defaultDataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
-defaultDataSourcePath'DataFrameQCustom
+default'DataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
+default'DataSourcePath'DataFrameQCustom
   = DataSourcePath'DataFrameQCustom
     (DataSourcePath'Attenuation
       (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
@@ -175,20 +177,17 @@ data instance Config 'QCustomProjection
 instance Arbitrary (Config 'QCustomProjection) where
   arbitrary = genericArbitraryU
 
-newtype instance Args 'QCustomProjection = Args'QCustomProjection
-  {
-    argsQCustomInputRange :: Maybe ConfigRange
-  }
+newtype instance Args 'QCustomProjection = Args'QCustomProjection (Maybe ConfigRange)
 
-defaultBinocularsConfig'QCustom :: Config 'QCustomProjection
-defaultBinocularsConfig'QCustom
+default'BinocularsConfig'QCustom :: Config 'QCustomProjection
+default'BinocularsConfig'QCustom
   = BinocularsConfig'QCustom
-    { binocularsConfig'QCustom'Common = defaultBinocularsConfig'Common
+    { binocularsConfig'QCustom'Common = default'BinocularsConfig'Common
     , binocularsConfig'QCustom'SurfaceOrientation = SurfaceOrientationVertical
     , binocularsConfig'QCustom'ProjectionType = QCustomProjection
     , binocularsConfig'QCustom'ProjectionResolution = Resolutions3 0.01 0.01 0.01
     , binocularsConfig'QCustom'ProjectionLimits  = Nothing
-    , binocularsConfig'QCustom'DataPath = defaultDataSourcePath'DataFrameQCustom
+    , binocularsConfig'QCustom'DataPath = default'DataSourcePath'DataFrameQCustom
     , binocularsConfig'QCustom'SubProjection = Just QCustomSubProjection'QxQyQz
     }
 
@@ -198,20 +197,20 @@ instance HasIniConfig' 'QCustomProjection where
   getConfig' mf (Args'QCustomProjection mr) = do
     (ConfigContent cfg) <- liftIO $ readConfig mf
 
-    ecommon <- parseBinocularsConfig'Common cfg mr
+    ecommon <- parse'BinocularsConfig'Common cfg mr
     case ecommon of
       Left err -> error err
       Right common -> do
 
         -- section input
-        surface_orientation <- parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'SurfaceOrientation defaultBinocularsConfig'QCustom)
+        surface_orientation <- parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'SurfaceOrientation default'BinocularsConfig'QCustom)
         mdatapath <- parseMb cfg "input" "datapath"
 
         -- section projection
-        projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType defaultBinocularsConfig'QCustom)
-        resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution defaultBinocularsConfig'QCustom)
+        projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
+        resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
         limits <- parseMb cfg "projection" "limits"
-        msubprojection <- parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection defaultBinocularsConfig'QCustom)
+        msubprojection <- parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
 
         -- customize a bunch of parameters
 
@@ -224,14 +223,8 @@ instance HasIniConfig' 'QCustomProjection where
 
         -- compute the datatype
         datapath <- case mdatapath of
-                     Nothing -> do
-                       let inputtype = binocularsConfig'Common'InputType common
-                       let mAttenuationCoefficient = binocularsConfig'Common'AttenuationCoefficient common
-                       let detector =  binocularsConfig'Common'Detector common
-                       let mAttenuationMax = binocularsConfig'Common'AttenuationMax common
-                       let mWavelength = binocularsConfig'Common'Wavelength common
-                       h5dpathQCustom inputtype mAttenuationCoefficient mAttenuationMax detector mWavelength subprojection
-                     Just d  -> pure $ overloadDataPath common subprojection d
+                     Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection
+                     Just d  -> pure $ overload'DataSourcePath'DataFrameQCustom common subprojection d
 
         pure $ Right $ BinocularsConfig'QCustom common surface_orientation projectiontype resolution limits datapath subprojection
 
@@ -381,11 +374,11 @@ overloadGeometryPath mw (DataSourcePath'Geometry'UhvTest wp as) = DataSourcePath
 overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
 overloadImagePath det (DataSourcePath'Image p _) = DataSourcePath'Image p det
 
-overloadDataPath :: BinocularsConfig'Common
-                 -> Maybe QCustomSubProjection
-                 -> DataSourcePath DataFrameQCustom
-                 -> DataSourcePath DataFrameQCustom
-overloadDataPath common msub (DataSourcePath'DataFrameQCustom attenuationPath' geometryPath imagePath indexP)
+overload'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
+                                         -> Maybe QCustomSubProjection
+                                         -> DataSourcePath DataFrameQCustom
+                                         -> DataSourcePath DataFrameQCustom
+overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQCustom attenuationPath' geometryPath imagePath indexP)
   = let mAttCoef = binocularsConfig'Common'AttenuationCoefficient common
         mMaxAtt = binocularsConfig'Common'AttenuationMax common
         mWavelength = binocularsConfig'Common'Wavelength common
@@ -399,16 +392,18 @@ overloadDataPath common msub (DataSourcePath'DataFrameQCustom attenuationPath' g
       DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newIndexPath
 
 
-h5dpathQCustom :: (MonadLogger m, MonadThrow m)
-              => InputType
-              -> Maybe Double
-              -> Maybe Float
-              -> Detector Hkl DIM2
-              -> Maybe Angstrom
-              -> Maybe QCustomSubProjection
-              -> m (DataSourcePath DataFrameQCustom)
-h5dpathQCustom inputtype mAttenuationCoefficient mAttenuationMax detector mWavelength msub =
+guess'DataSourcePath'DataFrameQCustom :: (MonadLogger m, MonadThrow m)
+                                      => BinocularsConfig'Common
+                                      -> Maybe QCustomSubProjection
+                                      -> m (DataSourcePath DataFrameQCustom)
+guess'DataSourcePath'DataFrameQCustom common msub =
     do
+      let inputtype = binocularsConfig'Common'InputType common
+      let mAttenuationCoefficient = binocularsConfig'Common'AttenuationCoefficient common
+      let detector =  binocularsConfig'Common'Detector common
+      let mAttenuationMax = binocularsConfig'Common'AttenuationMax common
+      let mWavelength = binocularsConfig'Common'Wavelength common
+
       -- attenuation
       let dataSourcePath'Attenuation'Sixs :: DataSourcePath Attenuation
           dataSourcePath'Attenuation'Sixs =
@@ -808,8 +803,8 @@ processQCustom mf mr = do
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()
 newQCustom cwd = do
-  let conf = defaultBinocularsConfig'QCustom
-             { binocularsConfig'QCustom'Common = defaultBinocularsConfig'Common
+  let conf = default'BinocularsConfig'QCustom
+             { binocularsConfig'QCustom'Common = default'BinocularsConfig'Common
                                                  { binocularsConfig'Common'Nexusdir = Just cwd }
              }
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf

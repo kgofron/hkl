@@ -71,6 +71,18 @@ import           Hkl.Types
 class Is0DStreamable a e where
   extract0DStreamValue :: a -> IO e
 
+instance Is0DStreamable (DataSourceAcq Angstrom) Angstrom where
+  extract0DStreamValue (DataSourceAcq'Angstrom d) =
+    Angstrom <$> do
+      v <- extract0DStreamValue d
+      return $ v *~ angstrom
+  extract0DStreamValue (DataSourceAcq'Angstrom'Const a) = pure a
+
+instance Is0DStreamable (DataSourceAcq Angstrom) NanoMeter where
+  extract0DStreamValue (DataSourceAcq'Angstrom d) =
+    NanoMeter . unAngstrom . (Angstrom . (*~ angstrom)) <$> extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Angstrom'Const a) = pure $ NanoMeter . unAngstrom $ a
+
 instance Is0DStreamable Dataset CDouble where
   extract0DStreamValue d = getPosition d 0
 
@@ -97,12 +109,6 @@ instance Is0DStreamable (DataSourceAcq Degree) Double where
 instance Is0DStreamable (DataSourceAcq Degree) CDouble where
   extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
-
-instance Is0DStreamable (DataSourceAcq NanoMeter) NanoMeter where
-    extract0DStreamValue (DataSourceAcq'NanoMeter d) =
-        NanoMeter <$> do
-          v <- extract0DStreamValue d
-          return $ v *~ angstrom
 
 instance Is0DStreamable (DataSourceAcq WaveLength) WaveLength where
   extract0DStreamValue (DataSourceAcq'WaveLength d) = do
@@ -214,10 +220,11 @@ instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Word16 ds det buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Word32 ds det buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
 
-instance Is1DStreamable (DataSourceAcq NanoMeter) NanoMeter where
-  extract1DStreamValue (DataSourceAcq'NanoMeter d) i = NanoMeter <$> do
+instance Is1DStreamable (DataSourceAcq Angstrom) Angstrom where
+  extract1DStreamValue (DataSourceAcq'Angstrom d) i = Angstrom <$> do
     v <- extract1DStreamValue d i
     return $ v *~ angstrom
+  extract1DStreamValue (DataSourceAcq'Angstrom'Const d) _ = pure d
 
 instance Is1DStreamable (DataSourceAcq Index) Index where
   extract1DStreamValue (DataSourceAcq'Index ds) i = Index <$> extract1DStreamValue ds i
@@ -245,6 +252,25 @@ class DataSource a where
   withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
 -- DataSource (instances)
+
+-- Angstrom
+
+data instance DataSourcePath Angstrom = DataSourcePath'Angstrom (Hdf5Path Z Double)
+                                       | DataSourcePath'Angstrom'Const Angstrom
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+data instance DataSourceAcq Angstrom = DataSourceAcq'Angstrom Dataset
+                                      | DataSourceAcq'Angstrom'Const Angstrom
+
+instance DataSource Angstrom where
+  withDataSourceP f (DataSourcePath'Angstrom p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Angstrom ds)
+  withDataSourceP _ (DataSourcePath'Angstrom'Const a) g = g (DataSourceAcq'Angstrom'Const a)
+
+instance Arbitrary (DataSourcePath Angstrom) where
+  arbitrary =  oneof
+    [ DataSourcePath'Angstrom <$> arbitrary
+    , DataSourcePath'Angstrom'Const <$> arbitrary
+    ]
 
 -- Attenuation
 
@@ -489,19 +515,6 @@ newtype instance DataSourceAcq Int = DataSourceAcq'Int Int
 
 instance DataSource Int where
   withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)
-
--- NanoMeter
-
-newtype instance DataSourcePath NanoMeter = DataSourcePath'NanoMeter (Hdf5Path Z Double)
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-newtype instance DataSourceAcq NanoMeter = DataSourceAcq'NanoMeter Dataset
-
-instance DataSource NanoMeter where
-  withDataSourceP f (DataSourcePath'NanoMeter p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'NanoMeter ds)
-
-instance Arbitrary (DataSourcePath NanoMeter) where
-  arbitrary = DataSourcePath'NanoMeter <$> arbitrary
 
 -- WaveLength
 

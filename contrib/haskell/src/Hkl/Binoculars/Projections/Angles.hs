@@ -27,30 +27,23 @@ module Hkl.Binoculars.Projections.Angles
     , updateAngles
     ) where
 
-import           Control.Applicative                ((<|>))
 import           Control.Concurrent.Async           (mapConcurrently)
-import           Control.Lens                       (makeLenses, over)
-import           Control.Monad.Catch                (Exception, MonadThrow,
-                                                     throwM)
+import           Control.Monad.Catch                (Exception, MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
-import           Control.Monad.Logger               (MonadLogger, logDebug,
-                                                     logDebugSH, logErrorSH,
-                                                     logInfo)
+import           Control.Monad.Logger               (MonadLogger, logDebugN,
+                                                     logInfoN)
 import           Control.Monad.Reader               (MonadReader, ask)
 import           Control.Monad.Trans.Reader         (runReaderT)
 import           Data.Array.Repa                    (Array)
 import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
-import           Data.Ini.Config.Bidir              (field, ini, section,
-                                                     serializeIni, (.=), (.=?))
-import           Data.Maybe                         (fromMaybe)
+import           Data.HashMap.Lazy                  (fromList)
+import           Data.Ini                           (Ini (..))
 import           Data.Text                          (pack)
 import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
 import           Foreign.C.Types                    (CDouble (..))
 import           Foreign.ForeignPtr                 (withForeignPtr)
-import           GHC.Conc                           (getNumCapabilities)
-import           Numeric.Units.Dimensional.Prelude  (degree, meter, (*~))
 import           Path                               (Abs, Dir, Path)
 import           Pipes                              (each, runEffect, (>->))
 import           Pipes.Prelude                      (filter, map, tee, toListM)
@@ -59,13 +52,14 @@ import           Text.Printf                        (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
+import           Hkl.Binoculars.Config.Common
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
-import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Image
+import           Hkl.Utils
 
 
 
@@ -79,96 +73,91 @@ instance Exception HklBinocularsProjectionsAnglesException
 -- Config --
 ------------
 
-data instance Config 'AnglesProjection = BinocularsConfigAngles
-  { _binocularsConfigAnglesNcore                  :: Maybe Int
-  , _binocularsConfigAnglesDestination            :: DestinationTmpl
-  , _binocularsConfigAnglesOverwrite              :: Bool
-  , _binocularsConfigAnglesInputType              :: InputType
-  , _binocularsConfigAnglesNexusdir               :: Maybe (Path Abs Dir)
-  , _binocularsConfigAnglesTmpl                   :: Maybe InputTmpl
-  , _binocularsConfigAnglesInputRange             :: Maybe ConfigRange
-  , _binocularsConfigAnglesDetector               :: Maybe (Detector Hkl DIM2)
-  , _binocularsConfigAnglesCentralpixel           :: (Int, Int)
-  , _binocularsConfigAnglesSdd                    :: Meter
-  , _binocularsConfigAnglesDetrot                 :: Maybe Degree
-  , _binocularsConfigAnglesAttenuationCoefficient :: Maybe Double
-  , _binocularsConfigAnglesAttenuationMax         :: Maybe Float
-  , _binocularsConfigAnglesMaskmatrix             :: Maybe MaskLocation
-  , _binocularsConfigAnglesWavelength             :: Maybe Angstrom
-  , _binocularsConfigAnglesProjectionType         :: ProjectionType
-  , _binocularsConfigAnglesProjectionResolution   :: Resolutions DIM3
-  , _binocularsConfigAnglesProjectionLimits       :: Maybe (RLimits DIM3)
-  , _binocularsConfigAnglesDataPath               :: Maybe (DataSourcePath DataFrameQCustom)
-  , _binocularsConfigAnglesSampleAxis             :: Maybe SampleAxis
-  , _binocularsConfigAnglesImageSumMax            :: Maybe Double
+data instance Config 'AnglesProjection = BinocularsConfig'Angles
+  { binocularsConfig'Angles'Common                 :: BinocularsConfig'Common
+  , binocularsConfig'Angles'ProjectionType         :: ProjectionType
+  , binocularsConfig'Angles'ProjectionResolution   :: Resolutions DIM3
+  , binocularsConfig'Angles'ProjectionLimits       :: Maybe (RLimits DIM3)
+  , binocularsConfig'Angles'SampleAxis             :: SampleAxis
+  , binocularsConfig'Angles'DataPath               :: DataSourcePath DataFrameQCustom
  } deriving (Eq, Show)
 
-makeLenses 'BinocularsConfigAngles
 
-instance HasIniConfig 'AnglesProjection where
-  defaultConfig = BinocularsConfigAngles
-    { _binocularsConfigAnglesNcore = Nothing
-    , _binocularsConfigAnglesDestination = DestinationTmpl "."
-    , _binocularsConfigAnglesOverwrite = False
-    , _binocularsConfigAnglesInputType = SixsFlyScanUhv
-    , _binocularsConfigAnglesNexusdir = Nothing
-    , _binocularsConfigAnglesTmpl = Nothing
-    , _binocularsConfigAnglesInputRange  = Nothing
-    , _binocularsConfigAnglesDetector = Nothing
-    , _binocularsConfigAnglesCentralpixel = (0, 0)
-    , _binocularsConfigAnglesSdd = Meter (1 *~ meter)
-    , _binocularsConfigAnglesDetrot = Nothing
-    , _binocularsConfigAnglesAttenuationCoefficient = Nothing
-    , _binocularsConfigAnglesAttenuationMax = Nothing
-    , _binocularsConfigAnglesMaskmatrix = Nothing
-    , _binocularsConfigAnglesWavelength = Nothing
-    , _binocularsConfigAnglesProjectionType = AnglesProjection
-    , _binocularsConfigAnglesProjectionResolution = Resolutions3 1 1 1
-    , _binocularsConfigAnglesProjectionLimits  = Nothing
-    , _binocularsConfigAnglesDataPath = Just defaultDataSourcePath'DataFrameQCustom
-    , _binocularsConfigAnglesSampleAxis = Nothing
-    , _binocularsConfigAnglesImageSumMax = Nothing
+default'BinocularsConfig'Angles :: Config 'AnglesProjection
+default'BinocularsConfig'Angles
+  = BinocularsConfig'Angles
+    { binocularsConfig'Angles'Common = default'BinocularsConfig'Common
+    , binocularsConfig'Angles'ProjectionType = AnglesProjection
+    , binocularsConfig'Angles'ProjectionResolution = Resolutions3 1 1 1
+    , binocularsConfig'Angles'ProjectionLimits = Nothing
+    , binocularsConfig'Angles'DataPath = default'DataSourcePath'DataFrameQCustom
+    , binocularsConfig'Angles'SampleAxis = SampleAxis "omega"
     }
 
-  specConfig = do
-    section "dispatcher" $ do
-      binocularsConfigAnglesNcore .=? field "ncores" auto
-      binocularsConfigAnglesDestination .= field "destination" auto
-      binocularsConfigAnglesOverwrite .= field "overwrite" auto
-    section "input" $ do
-      binocularsConfigAnglesInputType .= field "type" auto
-      binocularsConfigAnglesNexusdir .=? field "nexusdir" auto
-      binocularsConfigAnglesTmpl .=? field "inputtmpl" auto
-      binocularsConfigAnglesInputRange .=? field "inputrange" auto
-      binocularsConfigAnglesDetector .=? field "detector" auto
-      binocularsConfigAnglesCentralpixel .= field "centralpixel" auto
-      binocularsConfigAnglesSdd .= field "sdd" auto
-      binocularsConfigAnglesDetrot .=? field "detrot" auto
-      binocularsConfigAnglesAttenuationCoefficient .=? field "attenuation_coefficient" auto
-      binocularsConfigAnglesAttenuationMax .=? field "attenuation_max" auto
-      binocularsConfigAnglesMaskmatrix .=? field "maskmatrix" auto
-      binocularsConfigAnglesWavelength .=? field "wavelength" auto
-      binocularsConfigAnglesDataPath .=? field "datapath" auto
-      binocularsConfigAnglesSampleAxis .=? field "sample_axis" auto
-      binocularsConfigAnglesImageSumMax .=? field "image_sum_max" auto
-    section "projection" $ do
-      binocularsConfigAnglesProjectionType .= field "type" auto
-      binocularsConfigAnglesProjectionResolution .= field "resolution" auto
-      binocularsConfigAnglesProjectionLimits .=? field "limits" auto
+newtype instance Args 'AnglesProjection = Args'AnglesProjection (Maybe ConfigRange)
 
-  overwriteWithCmd mr conf = return $ over binocularsConfigAnglesInputRange (mr <|>) conf
+instance HasIniConfig' 'AnglesProjection where
 
-getSampleAxis :: Config 'AnglesProjection -> SampleAxis
-getSampleAxis c = case _binocularsConfigAnglesSampleAxis c of
-                    (Just n) -> n
-                    Nothing -> case _binocularsConfigAnglesProjectionType c of
-                                AnglesProjection   -> SampleAxis "omega"
-                                Angles2Projection  -> SampleAxis "mu"
-                                HklProjection      -> undefined
-                                QCustomProjection  -> undefined
-                                QIndexProjection   -> undefined
-                                QparQperProjection -> undefined
-                                QxQyQzProjection   -> undefined
+  getConfig' mf (Args'AnglesProjection mr) = do
+    (ConfigContent cfg) <- liftIO $ readConfig mf
+
+    ecommon <- parse'BinocularsConfig'Common cfg mr
+    case ecommon of
+      Left err -> error err
+      Right common -> do
+
+        -- section input
+        mdatapath <- parseMb cfg "input" "datapath"
+
+        -- section projection
+        projectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Angles'ProjectionType default'BinocularsConfig'Angles)
+        resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Angles'ProjectionResolution default'BinocularsConfig'Angles)
+        limits <- parseMb cfg "projection" "limits"
+
+        sampleAxis <- parseFDef cfg "input" "sample_axis" $ case projectionType of
+                                                             AnglesProjection   -> SampleAxis "omega"
+                                                             Angles2Projection  -> SampleAxis "mu"
+                                                             HklProjection      -> undefined
+                                                             QCustomProjection  -> undefined
+                                                             QIndexProjection   -> undefined
+                                                             QparQperProjection -> undefined
+                                                             QxQyQzProjection   -> undefined
+
+        -- compute the datatype
+        datapath <- case mdatapath of
+                     Nothing -> guess'DataSourcePath'DataFrameQCustom common Nothing
+                     Just d  -> pure $ overload'DataSourcePath'DataFrameQCustom common Nothing d
+
+        pure $ Right $ BinocularsConfig'Angles common projectionType resolution limits sampleAxis datapath
+
+
+  toIni c = Ini { iniSections = fromList [ ("dispatcher",    elemF "ncores" (binocularsConfig'Common'NCores . binocularsConfig'Angles'Common $ c)
+                                                          <> elemF "destination" (binocularsConfig'Common'Destination . binocularsConfig'Angles'Common $ c)
+                                                          <> elemF "overwrite" (binocularsConfig'Common'Overwrite . binocularsConfig'Angles'Common $ c)
+                                           )
+                                         , ("input",    elemF   "type" (binocularsConfig'Common'InputType . binocularsConfig'Angles'Common $ c)
+                                                     <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir . binocularsConfig'Angles'Common $ c)
+                                                     <> elemFMb "inputtmpl" (binocularsConfig'Common'Tmpl . binocularsConfig'Angles'Common $ c)
+                                                     <> elemF   "inputrange" (binocularsConfig'Common'InputRange . binocularsConfig'Angles'Common $ c)
+                                                     <> elemF   "detector" (binocularsConfig'Common'Detector . binocularsConfig'Angles'Common $ c)
+                                                     <> elemF   "centralpixel" (binocularsConfig'Common'Centralpixel . binocularsConfig'Angles'Common $ c)
+                                                     <> elemF   "sdd" (binocularsConfig'Common'Sdd . binocularsConfig'Angles'Common $ c)
+                                                     <> elemF   "detrot" (binocularsConfig'Common'Detrot . binocularsConfig'Angles'Common $ c)
+                                                     <> elemFMb "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient . binocularsConfig'Angles'Common $ c)
+                                                     <> elemFMb "attenuation_max" (binocularsConfig'Common'AttenuationMax . binocularsConfig'Angles'Common $ c)
+                                                     <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix . binocularsConfig'Angles'Common $ c)
+                                                     <> elemFMb "wavelength" (binocularsConfig'Common'Wavelength . binocularsConfig'Angles'Common $ c)
+                                                     <> elemF   "datapath" (binocularsConfig'Angles'DataPath c)
+                                                     <> elemFMb "image_sum_max" (binocularsConfig'Common'ImageSumMax . binocularsConfig'Angles'Common $ c)
+                                                     <> elemF "sample_axis" (binocularsConfig'Angles'SampleAxis c)
+                                            )
+                                         , ("projection",    elemF   "type" (binocularsConfig'Angles'ProjectionType c)
+                                                          <> elemF   "resolution" (binocularsConfig'Angles'ProjectionResolution c)
+                                                          <> elemFMb "limits" (binocularsConfig'Angles'ProjectionLimits c)
+                                           )]
+
+                , iniGlobals = []
+                }
 
 -------------------------
 -- Angles Projection --
@@ -200,118 +189,109 @@ spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQC
 -- Pipe --
 ----------
 
-class (FramesQCustomP a, Show a) => ProcessAnglesP a where
-  processAnglesP :: (MonadIO m, MonadLogger m, MonadReader (Config 'AnglesProjection) m, MonadThrow m)
-                   => m a -> m ()
-  processAnglesP mkPaths = do
-    (conf :: (Config 'AnglesProjection)) <- ask
-    let det = fromMaybe defaultDetector (_binocularsConfigAnglesDetector conf)
-    let mlimits = _binocularsConfigAnglesProjectionLimits conf
-    let destination = _binocularsConfigAnglesDestination conf
-    let centralPixel' = _binocularsConfigAnglesCentralpixel conf
-    let (Meter sampleDetectorDistance) = _binocularsConfigAnglesSdd conf
-    let (Degree detrot) = fromMaybe (Degree (0 *~ degree)) ( _binocularsConfigAnglesDetrot conf)
-    let sAxis = getSampleAxis conf
-    let mImageSumMax = _binocularsConfigAnglesImageSumMax conf
-    let res = _binocularsConfigAnglesProjectionResolution conf
-    let projectionType = _binocularsConfigAnglesProjectionType conf
+processAnglesP :: (MonadIO m, MonadLogger m, MonadReader (Config 'AnglesProjection) m, MonadThrow m)
+               => m ()
+processAnglesP = do
+  conf :: Config 'AnglesProjection <- ask
 
-    output' <- case _binocularsConfigAnglesInputRange conf of
-                Just r  -> liftIO $ destination' projectionType r mlimits destination (_binocularsConfigAnglesOverwrite conf)
-                Nothing -> throwM MissingInputRange
-    h5d <- mkPaths
-    filenames <- InputFn'List
-                <$> files (_binocularsConfigAnglesNexusdir conf)
-                          (_binocularsConfigAnglesInputRange conf)
-                          (_binocularsConfigAnglesTmpl conf)
-    mask' <- getMask (_binocularsConfigAnglesMaskmatrix conf) det
-    pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+  -- directly from the common config
+  let common = binocularsConfig'Angles'Common conf
 
-    -- compute the jobs
+  let overwrite = binocularsConfig'Common'Overwrite common
+  let det = binocularsConfig'Common'Detector common
+  let (NCores cap) =  binocularsConfig'Common'NCores common
+  let destination = binocularsConfig'Common'Destination common
+  let centralPixel' = binocularsConfig'Common'Centralpixel common
+  let (Meter sampleDetectorDistance) = binocularsConfig'Common'Sdd common
+  let (Degree detrot) = binocularsConfig'Common'Detrot common
+  let mImageSumMax = binocularsConfig'Common'ImageSumMax common
+  let inputRange = binocularsConfig'Common'InputRange common
+  let nexusDir = binocularsConfig'Common'Nexusdir common
+  let tmpl = binocularsConfig'Common'Tmpl common
+  let maskMatrix = binocularsConfig'Common'Maskmatrix common
 
-    let fns = concatMap (replicate 1) (toList filenames)
-    chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP h5d
-    cap' <-  liftIO getNumCapabilities
-    let ntot = sum (Prelude.map clength chunks)
-    let cap = if cap' >= 2 then cap' - 1 else cap'
-    let jobs = chunk (quot ntot cap) chunks
+  -- directly from the specific config
+  let mlimits = binocularsConfig'Angles'ProjectionLimits conf
+  let res = binocularsConfig'Angles'ProjectionResolution conf
+  let datapaths = binocularsConfig'Angles'DataPath conf
+  let projectionType = binocularsConfig'Angles'ProjectionType conf
+  let sampleAxis = binocularsConfig'Angles'SampleAxis conf
 
-    -- log parameters
+  -- built from the config
+  output' <- liftIO $ destination' projectionType inputRange mlimits destination overwrite
+  filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
+  mask' <- getMask maskMatrix det
+  pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+  let fns = concatMap (replicate 1) (toList filenames)
+  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP datapaths
+  let ntot = sum (Prelude.map clength chunks)
+  let jobs = chunk (quot ntot cap) chunks
 
-    $(logDebugSH) filenames
-    $(logDebugSH) h5d
-    $(logDebug) "start gessing final cube size"
+  -- log parameters
 
-    -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
+  logDebugNSH filenames
+  logDebugNSH datapaths
+  logDebugNSH chunks
+  logDebugN "start gessing final cube size"
 
-    guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
-      runSafeT $ runEffect $
-      each chunks
-      >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
-      >-> framesQCustomP h5d
-      >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
-      >-> accumulateP c
+  -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)
 
-    $(logDebug) "stop gessing final cube size"
+  guessed <- liftIO $ withCubeAccumulator EmptyCube $ \c ->
+    runSafeT $ runEffect $
+    each chunks
+    >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
+    >-> framesQCustomP datapaths
+    >-> project det 3 (spaceAngles det pixels res mask' mlimits sampleAxis)
+    >-> accumulateP c
 
-    -- do the final projection
+  logDebugN "stop gessing final cube size"
 
-    $(logInfo) (pack $ printf "let's do a Angles projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
+  -- do the final projection
 
-    liftIO $ withProgressBar ntot $ \pb -> do
-      r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
-                               runSafeT $ runEffect $
-                               each job
-                               >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                               >-> framesQCustomP h5d
-                               >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
-                               >-> project det 3 (spaceAngles det pixels res mask' mlimits sAxis)
-                               >-> tee (accumulateP c)
-                               >-> progress pb
-                           ) jobs
-      saveCube output' r'
+  logInfoN (pack $ printf "let's do a Angles projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
-instance ProcessAnglesP (DataSourcePath DataFrameQCustom)
+  liftIO $ withProgressBar ntot $ \pb -> do
+    r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
+                             runSafeT $ runEffect $
+                             each job
+                             >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
+                             >-> framesQCustomP datapaths
+                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
+                             >-> project det 3 (spaceAngles det pixels res mask' mlimits sampleAxis)
+                             >-> tee (accumulateP c)
+                             >-> progress pb
+                         ) jobs
+    saveCube output' r'
 
 ---------
 -- Cmd --
 ---------
 
-process' :: (MonadLogger m, MonadThrow m, MonadIO m, MonadReader (Config 'AnglesProjection) m)
-         => m ()
-process' = do
-  c <- ask
-  let i = _binocularsConfigAnglesInputType c
-  let mc = _binocularsConfigAnglesAttenuationCoefficient c
-  let mm = _binocularsConfigAnglesAttenuationMax c
-  let det = fromMaybe defaultDetector (_binocularsConfigAnglesDetector c)
-  processAnglesP (h5dpathQCustom i mc mm det Nothing Nothing)
-
 processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processAngles mf mr = do
-  econf <- liftIO $ getConfig mf
+  econf :: Either String (Config 'AnglesProjection) <- getConfig' mf (Args'AnglesProjection mr)
   case econf of
     Right conf -> do
-      $(logDebug) "config red from the config file"
-      $(logDebugSH) conf
-      conf' <- overwriteWithCmd mr conf
-      $(logDebug) "config once overloaded with the command line arguments"
-      $(logDebugSH) conf'
-      runReaderT process' conf'
-    Left e      -> $(logErrorSH) e
+      logDebugN "config red from the config file"
+      logDebugN $ serializeConfig conf
+      runReaderT processAnglesP conf
+    Left e      -> logErrorNSH e
 
 newAngles :: (MonadIO m, MonadLogger m, MonadThrow m)
-            => Path Abs Dir -> m ()
+          => Path Abs Dir -> m ()
 newAngles cwd = do
-  let conf = defaultConfig {_binocularsConfigAnglesNexusdir = Just cwd}
-  liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf specConfig)
+  let conf = default'BinocularsConfig'Angles
+             { binocularsConfig'Angles'Common = default'BinocularsConfig'Common
+                                                { binocularsConfig'Common'Nexusdir = Just cwd }
+             }
+  liftIO $ Data.Text.IO.putStr $ serializeConfig conf
 
 updateAngles :: (MonadIO m, MonadLogger m, MonadThrow m)
-               => Maybe FilePath -> m ()
+             => Maybe FilePath -> m ()
 updateAngles mf = do
-  (conf  :: Either String (Config 'AnglesProjection))<- liftIO $ getConfig mf
-  $(logDebug) "config red from the config file"
-  $(logDebugSH) conf
+  (conf :: Either String (Config 'AnglesProjection)) <- getConfig' mf (Args'AnglesProjection Nothing)
+  logDebugN "config red from the config file"
+  logDebugN $ pack . show $ conf
   case conf of
-    Left e      -> $(logErrorSH) e
-    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeIni (ini conf' specConfig)
+    Left e      -> logErrorNSH e
+    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'

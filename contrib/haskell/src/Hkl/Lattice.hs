@@ -24,6 +24,9 @@ import           Hkl.C.Hkl
 newtype NanoMeter = NanoMeter { unNanoMeter :: Length Double }
     deriving (Eq, Show)
 
+instance Arbitrary NanoMeter where
+  arbitrary = NanoMeter . (*~ nano meter) <$> arbitrary
+
 instance FromJSON NanoMeter where
   parseJSON = fmap (NanoMeter . (*~ nano meter)) . parseJSON
 
