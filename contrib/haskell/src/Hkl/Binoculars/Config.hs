@@ -542,6 +542,7 @@ data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QTthTimestamp
                           | QCustomSubProjection'QIndex
                           | QCustomSubProjection'QparQperTimestamp
+                          | QCustomSubProjection'QparQper
                           | QCustomSubProjection'QPhiQx
                           | QCustomSubProjection'QPhiQy
                           | QCustomSubProjection'QPhiQz
@@ -570,6 +571,7 @@ instance HasFieldValue QCustomSubProjection where
       emit QCustomSubProjection'QTthTimestamp     = "q_tth_timestamp"
       emit QCustomSubProjection'QIndex            = "q_index"
       emit QCustomSubProjection'QparQperTimestamp = "qpar_qper_timestamp"
+      emit QCustomSubProjection'QparQper          = "qpar_qper"
       emit QCustomSubProjection'QPhiQx            = "q_phi_qx"
       emit QCustomSubProjection'QPhiQy            = "q_phi_qy"
       emit QCustomSubProjection'QPhiQz            = "q_phi_qz"

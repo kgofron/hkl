@@ -19,20 +19,19 @@ module Hkl.Binoculars.Sixs
   , update
   ) where
 
-import           Control.Monad.Catch                 (MonadThrow)
-import           Control.Monad.IO.Class              (MonadIO, liftIO)
-import           Control.Monad.Logger                (MonadLogger, logDebug,
-                                                      logDebugN, logDebugSH,
-                                                      logErrorSH)
-import           Data.Text                           (pack)
-import           Path.IO                             (getCurrentDir)
-import           Path.Posix                          (parseAbsDir)
+import           Control.Monad.Catch                (MonadThrow)
+import           Control.Monad.IO.Class             (MonadIO, liftIO)
+import           Control.Monad.Logger               (MonadLogger, logDebug,
+                                                     logDebugN, logDebugSH,
+                                                     logErrorSH)
+import           Data.Text                          (pack)
+import           Path.IO                            (getCurrentDir)
+import           Path.Posix                         (parseAbsDir)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Angles
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
-import           Hkl.Binoculars.Projections.QparQper
 
 process :: (MonadLogger m, MonadThrow m, MonadIO m)
         => Maybe FilePath -> Maybe ConfigRange -> m ()
@@ -48,7 +47,7 @@ process mf mr = do
                       HklProjection      -> processHkl mf mr
                       QCustomProjection  -> processQCustom mf mr
                       QIndexProjection   -> processQCustom mf mr
-                      QparQperProjection -> processQparQper mf mr
+                      QparQperProjection -> processQCustom mf mr
                       QxQyQzProjection   -> processQCustom mf mr
 
 new :: (MonadIO m, MonadLogger m, MonadThrow m)
@@ -63,7 +62,7 @@ new p mf = do
     HklProjection      -> newHkl cwd
     QCustomProjection  -> newQCustom cwd
     QIndexProjection   -> newQCustom cwd
-    QparQperProjection -> newQparQper cwd
+    QparQperProjection -> newQCustom cwd
     QxQyQzProjection   -> newQCustom cwd
 
 update :: (MonadIO m, MonadLogger m, MonadThrow m) => FilePath -> m ()
@@ -79,5 +78,5 @@ update f = do
                       HklProjection      -> updateHkl (Just f)
                       QCustomProjection  -> updateQCustom (Just f)
                       QIndexProjection   -> updateQCustom (Just f)
-                      QparQperProjection -> updateQparQper (Just f)
+                      QparQperProjection -> updateQCustom (Just f)
                       QxQyQzProjection   -> updateQCustom (Just f)
