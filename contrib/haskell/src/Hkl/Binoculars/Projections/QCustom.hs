@@ -229,6 +229,8 @@ instance HasIniConfig 'QCustomProjection where
         pure $ Right $ BinocularsConfig'QCustom common surface_orientation projectiontype resolution limits datapath subprojection
 
 
+instance ToIni (Config 'QCustomProjection) where
+
   toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF    "ncores" (binocularsConfig'Common'NCores . binocularsConfig'QCustom'Common $ c)
                                                           <> elemF "destination" (binocularsConfig'Common'Destination . binocularsConfig'QCustom'Common $ c)
                                                           <> elemF "overwrite" (binocularsConfig'Common'Overwrite . binocularsConfig'QCustom'Common $ c)

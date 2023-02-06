@@ -190,6 +190,8 @@ instance HasIniConfig 'HklProjection where
         pure $ Right $ BinocularsConfig'Hkl common sample projectiontype resolution limits datapath
 
 
+instance ToIni (Config 'HklProjection) where
+
   toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF    "ncores" (binocularsConfig'Common'NCores . binocularsConfig'Hkl'Common $ c)
                                                           <> elemF "destination" (binocularsConfig'Common'Destination . binocularsConfig'Hkl'Common $ c)
                                                           <> elemF "overwrite" (binocularsConfig'Common'Overwrite . binocularsConfig'Hkl'Common $ c)

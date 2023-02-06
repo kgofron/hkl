@@ -131,6 +131,8 @@ instance HasIniConfig 'AnglesProjection where
         pure $ Right $ BinocularsConfig'Angles common projectionType resolution limits sampleAxis datapath
 
 
+instance ToIni (Config 'AnglesProjection) where
+
   toIni c = Ini { iniSections = fromList [ ("dispatcher",    elemF "ncores" (binocularsConfig'Common'NCores . binocularsConfig'Angles'Common $ c)
                                                           <> elemF "destination" (binocularsConfig'Common'Destination . binocularsConfig'Angles'Common $ c)
                                                           <> elemF "overwrite" (binocularsConfig'Common'Overwrite . binocularsConfig'Angles'Common $ c)

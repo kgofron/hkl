@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 
 {-
     Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
@@ -21,10 +20,7 @@ module Hkl.Binoculars.Sixs
 
 import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO, liftIO)
-import           Control.Monad.Logger               (MonadLogger, logDebug,
-                                                     logDebugN, logDebugSH,
-                                                     logErrorSH)
-import           Data.Text                          (pack)
+import           Control.Monad.Logger               (MonadLogger, logDebugN)
 import           Path.IO                            (getCurrentDir)
 import           Path.Posix                         (parseAbsDir)
 
@@ -32,15 +28,16 @@ import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Angles
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
+import           Hkl.Utils
 
 process :: (MonadLogger m, MonadThrow m, MonadIO m)
         => Maybe FilePath -> Maybe ConfigRange -> m ()
 process mf mr = do
   epreconf <- liftIO $ getPreConfig mf
   logDebugN "pre-config red from the config file"
-  logDebugN (pack . show $ epreconf)
+  logDebugNSH epreconf
   case epreconf of
-    Left e        -> $(logErrorSH) e
+    Left e        -> logErrorNSH e
     Right preconf -> case _binocularsPreConfigProjectionType preconf of
                       AnglesProjection   -> processAngles mf mr
                       Angles2Projection  -> processAngles mf mr
@@ -68,10 +65,10 @@ new p mf = do
 update :: (MonadIO m, MonadLogger m, MonadThrow m) => FilePath -> m ()
 update f = do
   epreconf <- liftIO $ getPreConfig (Just f)
-  $(logDebug) "pre-config red from the config file"
-  $(logDebugSH) epreconf
+  logDebugN "pre-config red from the config file"
+  logDebugNSH epreconf
   case epreconf of
-    Left e        -> $(logErrorSH) e
+    Left e        -> logErrorNSH e
     Right preconf -> case _binocularsPreConfigProjectionType preconf of
                       AnglesProjection   -> updateAngles (Just f)
                       Angles2Projection  -> updateAngles (Just f)

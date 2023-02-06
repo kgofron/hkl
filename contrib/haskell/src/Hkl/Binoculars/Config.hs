@@ -51,6 +51,7 @@ module Hkl.Binoculars.Config
     , RLimits(..)
     , SampleAxis(..)
     , SurfaceOrientation(..)
+    , ToIni(..)
     , auto
     , auto'
     , destination'
@@ -58,6 +59,7 @@ module Hkl.Binoculars.Config
     , getMask
     , getPreConfig
     , readConfig
+    , serializeConfig
     ) where
 
 
@@ -214,12 +216,13 @@ readConfig mf = do
         Nothing  -> l
         (Just n) -> take n l
 
+class ToIni a where
+  toIni :: a -> Ini
+
+serializeConfig :: ToIni a => a -> Text
+serializeConfig = printIni . toIni
+
 class HasIniConfig (a :: ProjectionType) where
-
-  toIni :: Config a -> Ini
-
-  serializeConfig :: Config a -> Text
-  serializeConfig = printIni . toIni
 
   getConfig :: (MonadThrow m, MonadLogger m, MonadIO m)
             => Maybe FilePath
