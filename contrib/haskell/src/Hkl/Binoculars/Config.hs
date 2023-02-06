@@ -38,7 +38,6 @@ module Hkl.Binoculars.Config
     , FieldParsable(..)
     , HasFieldValue(..)
     , HasIniConfig(..)
-    , HasIniConfig'(..)
     , InputRange(..)
     , InputTmpl(..)
     , InputType(..)
@@ -215,34 +214,17 @@ readConfig mf = do
         Nothing  -> l
         (Just n) -> take n l
 
-
 class HasIniConfig (a :: ProjectionType) where
-  defaultConfig :: Config a
 
-  -- BIDIR API
-  specConfig :: IniSpec (Config a) ()
-
-  overwriteWithCmd ::MonadLogger m =>  Maybe ConfigRange -> Config a -> m (Config a)
-
-  parseConfig :: Text -> Either String (Config a)
-  parseConfig cfg = mapRight getIniValue (parseIni cfg (ini defaultConfig specConfig))
-
-  getConfig ::  Maybe FilePath -> IO (Either String (Config a))
-  getConfig mf = do
-    (ConfigContent cfg) <- readConfig mf
-    pure $ parseConfig cfg
-
-class HasIniConfig' (a :: ProjectionType) where
-  -- non BIDIR API
   toIni :: Config a -> Ini
 
   serializeConfig :: Config a -> Text
   serializeConfig = printIni . toIni
 
-  getConfig' :: (MonadThrow m, MonadLogger m, MonadIO m)
-             => Maybe FilePath
-             -> Args a
-             -> m (Either String (Config a))
+  getConfig :: (MonadThrow m, MonadLogger m, MonadIO m)
+            => Maybe FilePath
+            -> Args a
+            -> m (Either String (Config a))
 
 -- Angstrom
 

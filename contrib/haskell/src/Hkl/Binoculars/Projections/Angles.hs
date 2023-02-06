@@ -96,9 +96,9 @@ default'BinocularsConfig'Angles
 
 newtype instance Args 'AnglesProjection = Args'AnglesProjection (Maybe ConfigRange)
 
-instance HasIniConfig' 'AnglesProjection where
+instance HasIniConfig 'AnglesProjection where
 
-  getConfig' mf (Args'AnglesProjection mr) = do
+  getConfig mf (Args'AnglesProjection mr) = do
     (ConfigContent cfg) <- liftIO $ readConfig mf
 
     ecommon <- parse'BinocularsConfig'Common cfg mr
@@ -269,7 +269,7 @@ processAnglesP = do
 
 processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processAngles mf mr = do
-  econf :: Either String (Config 'AnglesProjection) <- getConfig' mf (Args'AnglesProjection mr)
+  econf :: Either String (Config 'AnglesProjection) <- getConfig mf (Args'AnglesProjection mr)
   case econf of
     Right conf -> do
       logDebugN "config red from the config file"
@@ -289,9 +289,9 @@ newAngles cwd = do
 updateAngles :: (MonadIO m, MonadLogger m, MonadThrow m)
              => Maybe FilePath -> m ()
 updateAngles mf = do
-  (conf :: Either String (Config 'AnglesProjection)) <- getConfig' mf (Args'AnglesProjection Nothing)
+  conf :: Either String (Config 'AnglesProjection) <- getConfig mf (Args'AnglesProjection Nothing)
   logDebugN "config red from the config file"
-  logDebugN $ pack . show $ conf
+  logDebugNSH conf
   case conf of
     Left e      -> logErrorNSH e
     Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'

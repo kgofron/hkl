@@ -161,9 +161,9 @@ overload'DataSourcePath'DataFrameHkl common sample (DataSourcePath'DataFrameHkl 
     newQCustomPath = overload'DataSourcePath'DataFrameQCustom common Nothing qCustomPath
     newSamplePath = overload'DataSourcePath'Sample sample samplePath
 
-instance HasIniConfig' 'HklProjection where
+instance HasIniConfig 'HklProjection where
 
-  getConfig' mf (Args'HklProjection mr) = do
+  getConfig mf (Args'HklProjection mr) = do
     (ConfigContent cfg) <- liftIO $ readConfig mf
 
     ecommon <- parse'BinocularsConfig'Common cfg mr
@@ -361,7 +361,7 @@ guess'DataSourcePath'DataFrameHkl common sample
 
 processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processHkl mf mr = do
-  econf :: Either String (Config 'HklProjection) <- getConfig' mf (Args'HklProjection mr)
+  econf :: Either String (Config 'HklProjection) <- getConfig mf (Args'HklProjection mr)
   case econf of
     Right conf -> do
       logDebugN "config red from the config file"
@@ -382,9 +382,9 @@ newHkl cwd = do
 updateHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
           => Maybe FilePath -> m ()
 updateHkl mf = do
-  (conf :: Either String (Config 'HklProjection)) <- getConfig' mf (Args'HklProjection Nothing)
+  (conf :: Either String (Config 'HklProjection)) <- getConfig mf (Args'HklProjection Nothing)
   logDebugN "config red from the config file"
-  logDebugN $ pack . show $ conf
+  logDebugNSH conf
   case conf of
     Left e      -> logErrorNSH e
     Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'

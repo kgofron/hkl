@@ -192,9 +192,9 @@ default'BinocularsConfig'QCustom
     }
 
 
-instance HasIniConfig' 'QCustomProjection where
+instance HasIniConfig 'QCustomProjection where
 
-  getConfig' mf (Args'QCustomProjection mr) = do
+  getConfig mf (Args'QCustomProjection mr) = do
     (ConfigContent cfg) <- liftIO $ readConfig mf
 
     ecommon <- parse'BinocularsConfig'Common cfg mr
@@ -792,7 +792,7 @@ instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
 
 processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
 processQCustom mf mr = do
-  econf :: Either String (Config 'QCustomProjection) <- getConfig' mf (Args'QCustomProjection mr)
+  econf :: Either String (Config 'QCustomProjection) <- getConfig mf (Args'QCustomProjection mr)
   case econf of
     Right conf -> do
       logDebugN "config red from the config file"
@@ -812,9 +812,9 @@ newQCustom cwd = do
 updateQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
               => Maybe FilePath -> m ()
 updateQCustom mf = do
-  (conf :: Either String (Config 'QCustomProjection)) <- getConfig' mf (Args'QCustomProjection Nothing)
+  (conf :: Either String (Config 'QCustomProjection)) <- getConfig mf (Args'QCustomProjection Nothing)
   logDebugN "config red from the config file"
-  logDebugN $ pack . show $ conf
+  logDebugNSH conf
   case conf of
     Left e      -> logErrorNSH e
     Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'
