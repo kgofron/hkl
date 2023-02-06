@@ -47,7 +47,7 @@ import           Data.Array.Repa                    (Array)
 import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
 import           Data.ByteString.Lazy               (fromStrict, toStrict)
-import           Data.HashMap.Lazy                  (fromList)
+import           Data.HashMap.Strict                (fromList)
 import           Data.Ini                           (Ini (..))
 import           Data.Ini.Config.Bidir              (FieldValue (..))
 import           Data.Text                          (pack)
@@ -192,9 +192,9 @@ instance HasIniConfig 'HklProjection where
 
 instance ToIni (Config 'HklProjection) where
   toIni c = toIni (binocularsConfig'Hkl'Common c)
-            <>
+            `mergeIni`
             toIni (binocularsConfig'Hkl'Sample c)
-            <>
+            `mergeIni`
             Ini { iniSections = fromList [ ("input", elemF   "datapath" (binocularsConfig'Hkl'DataPath c))
                                          , ("projection", elemF   "type" (binocularsConfig'Hkl'ProjectionType c)
                                                           <> elemF   "resolution" (binocularsConfig'Hkl'ProjectionResolution c)

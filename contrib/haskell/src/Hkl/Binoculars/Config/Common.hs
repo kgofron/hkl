@@ -51,7 +51,7 @@ import           GHC.Conc                          (getNumCapabilities,
                                                     getNumProcessors)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
-import           Numeric.Interval                  (empty)
+import           Numeric.Interval                  (empty, singleton)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Test.QuickCheck                   (Arbitrary (..))
@@ -89,7 +89,7 @@ default'BinocularsConfig'Common
     , binocularsConfig'Common'InputType = SixsFlyScanUhv
     , binocularsConfig'Common'Nexusdir = Nothing
     , binocularsConfig'Common'Tmpl = Nothing
-    , binocularsConfig'Common'InputRange  = ConfigRange (InputRange Numeric.Interval.empty :| [])
+    , binocularsConfig'Common'InputRange  = ConfigRange (InputRange (Numeric.Interval.singleton 1) :| [])
     , binocularsConfig'Common'Detector = defaultDetector
     , binocularsConfig'Common'Centralpixel = (0, 0)
     , binocularsConfig'Common'Sdd = Meter (1 *~ meter)

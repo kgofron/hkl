@@ -58,6 +58,7 @@ module Hkl.Binoculars.Config
     , files
     , getMask
     , getPreConfig
+    , mergeIni
     , readConfig
     , serializeConfig
     ) where
@@ -78,7 +79,9 @@ import           Data.Attoparsec.Text              (Parser, char, decimal,
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
-import           Data.Ini                          (Ini, printIni)
+import           Data.HashMap.Strict               (HashMap, unionWith)
+import           Data.Hashable                     (Hashable)
+import           Data.Ini                          (Ini (..), printIni)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -216,18 +219,29 @@ readConfig mf = do
         Nothing  -> l
         (Just n) -> take n l
 
-class ToIni a where
-  toIni :: a -> Ini
-
-serializeConfig :: ToIni a => a -> Text
-serializeConfig = printIni . toIni
-
 class HasIniConfig (a :: ProjectionType) where
 
   getConfig :: (MonadThrow m, MonadLogger m, MonadIO m)
             => Maybe FilePath
             -> Args a
             -> m (Either String (Config a))
+
+-- Class ToIni
+
+class ToIni a where
+  toIni :: a -> Ini
+
+serializeConfig :: ToIni a => a -> Text
+serializeConfig = printIni . toIni
+
+mergeHash :: (Eq k, Hashable k, Semigroup v) => HashMap k v -> HashMap k v -> HashMap k v
+mergeHash = unionWith f
+  where
+    f :: Semigroup v => v -> v -> v
+    f v1 v2 = v1 <> v2
+
+mergeIni :: Ini -> Ini -> Ini
+mergeIni x y = Ini {iniGlobals = mempty, iniSections = iniSections x `mergeHash` iniSections y}
 
 -- Angstrom
 
