@@ -35,6 +35,8 @@ import           Control.Monad.Catch          (MonadThrow)
 import           Control.Monad.IO.Class       (MonadIO)
 import           Control.Monad.Logger         (MonadLogger)
 import           Data.Aeson                   (FromJSON, ToJSON)
+import           Data.HashMap.Lazy            (fromList)
+import           Data.Ini                     (Ini (..))
 import           Data.Text                    (Text)
 import           GHC.Generics                 (Generic)
 import           Generic.Random               (genericArbitraryU)
@@ -229,6 +231,21 @@ default'BinocularsConfig'Sample
 instance Arbitrary BinocularsConfig'Sample where
   arbitrary = genericArbitraryU
 
+instance ToIni BinocularsConfig'Sample where
+  toIni c = Ini { iniSections = fromList [ ("input", elemFMb "a" (binocularsConfig'Sample'A c)
+                                                     <> elemFMb "b" (binocularsConfig'Sample'B c)
+                                                     <> elemFMb "c" (binocularsConfig'Sample'C c)
+                                                     <> elemFMb "alpha" (binocularsConfig'Sample'Alpha c)
+                                                     <> elemFMb "beta" (binocularsConfig'Sample'Beta c)
+                                                     <> elemFMb "gamma" (binocularsConfig'Sample'Gamma c)
+                                                     <> elemFMb "ux" (binocularsConfig'Sample'Ux c)
+                                                     <> elemFMb "uy" (binocularsConfig'Sample'Uy c)
+                                                     <> elemFMb "uz" (binocularsConfig'Sample'Uz c)
+                                           )
+                                         ]
+                , iniGlobals = []
+                }
+
 parse'BinocularsConfig'Sample :: (MonadThrow m, MonadLogger m, MonadIO m)
                              => Text -> m BinocularsConfig'Sample
 parse'BinocularsConfig'Sample cfg
@@ -242,41 +259,3 @@ parse'BinocularsConfig'Sample cfg
     <*> parseMb cfg "input" "ux"
     <*> parseMb cfg "input" "uy"
     <*> parseMb cfg "input" "uz"
-
-
--- overloadSampleWithConfig :: BinocularsConfig'Sample -> Sample -> Sample
--- overloadSampleWithConfig (BinocularsConfig'Sample ma mb mc malpha mbeta mgamma mux muy muz)
---   (Sample name (Triclinic a b c alpha beta gamma) ux uy uz)
---   = Sample name nlat nux nuy nuz
---   where
---     nlat = Triclinic
---            (maybe a (Angstrom . unAngstrom) ma)
---            (maybe b (Angstrom . unAngstrom) mb)
---            (maybe c (Angstrom . unAngstrom) mc)
---            (fromMaybe alpha malpha)
---            (fromMaybe beta mbeta)
---            (fromMaybe gamma mgamma)
-
---     go :: Parameter -> Maybe Double -> Parameter
---     go p@(Parameter _ v _) nv = p{parameterValue=fromMaybe v nv}
-
---     nux = go ux ((/~ degree) . unDegree <$> mux)
---     nuy = go uy ((/~ degree) . unDegree <$> muy)
---     nuz = go uz ((/~ degree) . unDegree <$> muz)
-
--- sampleConfig :: BinocularsConfig'Sample -> Maybe Sample
--- sampleConfig cf = do
---   (Angstrom a) <- binocularsConfig'Hkl'A cf
---   (Angstrom b) <- binocularsConfig'Hkl'B cf
---   (Angstrom c) <- binocularsConfig'Hkl'C cf
---   alpha <- binocularsConfig'Hkl'Alpha cf
---   beta <- binocularsConfig'Hkl'Beta cf
---   gamma <- binocularsConfig'Hkl'Gamma cf
---   (Degree ux) <- binocularsConfig'Hkl'Ux cf
---   (Degree uy) <- binocularsConfig'Hkl'Uy cf
---   (Degree uz) <- binocularsConfig'Hkl'Uz cf
---   let pux = Parameter "ux" (ux /~ degree) (Range 0  360)
---   let puy = Parameter "uy" (uy /~ degree) (Range 0  360)
---   let puz = Parameter "uz" (uz /~ degree) (Range 0  360)
---   return $ Sample "triclinic" (Triclinic (Angstrom a) (Angstrom b) (Angstrom c)
---                                 alpha beta gamma) pux puy puz

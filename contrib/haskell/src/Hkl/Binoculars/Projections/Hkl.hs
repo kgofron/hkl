@@ -191,31 +191,16 @@ instance HasIniConfig 'HklProjection where
 
 
 instance ToIni (Config 'HklProjection) where
-
-  toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF    "ncores" (binocularsConfig'Common'NCores . binocularsConfig'Hkl'Common $ c)
-                                                          <> elemF "destination" (binocularsConfig'Common'Destination . binocularsConfig'Hkl'Common $ c)
-                                                          <> elemF "overwrite" (binocularsConfig'Common'Overwrite . binocularsConfig'Hkl'Common $ c)
-                                           )
-                                         ,  ("input", elemF      "type" (binocularsConfig'Common'InputType . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemFMb "inputtmpl" (binocularsConfig'Common'Tmpl . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemF   "inputrange" (binocularsConfig'Common'InputRange . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemF   "detector" (binocularsConfig'Common'Detector . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemF   "centralpixel" (binocularsConfig'Common'Centralpixel . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemF   "sdd" (binocularsConfig'Common'Sdd . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemF   "detrot" (binocularsConfig'Common'Detrot . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemFMb "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemFMb "attenuation_max" (binocularsConfig'Common'AttenuationMax . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemFMb "wavelength" (binocularsConfig'Common'Wavelength . binocularsConfig'Hkl'Common $ c)
-                                                      <> elemF   "datapath" (binocularsConfig'Hkl'DataPath c)
-                                                      <> elemFMb "image_sum_max" (binocularsConfig'Common'ImageSumMax . binocularsConfig'Hkl'Common $ c)
-                                            )
-                                         , ("projection", elemF      "type" (binocularsConfig'Hkl'ProjectionType c)
+  toIni c = toIni (binocularsConfig'Hkl'Common c)
+            <>
+            toIni (binocularsConfig'Hkl'Sample c)
+            <>
+            Ini { iniSections = fromList [ ("input", elemF   "datapath" (binocularsConfig'Hkl'DataPath c))
+                                         , ("projection", elemF   "type" (binocularsConfig'Hkl'ProjectionType c)
                                                           <> elemF   "resolution" (binocularsConfig'Hkl'ProjectionResolution c)
                                                           <> elemFMb "limits" (binocularsConfig'Hkl'ProjectionLimits c)
-                                           )]
-
+                                           )
+                                         ]
                 , iniGlobals = []
                 }
 

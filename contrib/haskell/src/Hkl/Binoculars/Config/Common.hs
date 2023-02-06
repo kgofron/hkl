@@ -39,6 +39,8 @@ import           Control.Monad.Catch               (Exception, MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Logger              (MonadLogger)
 import           Data.Array.Repa.Index             (DIM2)
+import           Data.HashMap.Lazy                 (fromList)
+import           Data.Ini                          (Ini (..))
 import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
                                                     section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
@@ -101,6 +103,30 @@ default'BinocularsConfig'Common
 
 instance Arbitrary BinocularsConfig'Common where
   arbitrary = genericArbitraryU
+
+instance ToIni  BinocularsConfig'Common where
+  toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF    "ncores" (binocularsConfig'Common'NCores c)
+                                                          <> elemF "destination" (binocularsConfig'Common'Destination c)
+                                                          <> elemF "overwrite" (binocularsConfig'Common'Overwrite c)
+                                           )
+                                         ,  ("input", elemF      "type" (binocularsConfig'Common'InputType c)
+                                                      <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir c)
+                                                      <> elemFMb "inputtmpl" (binocularsConfig'Common'Tmpl c)
+                                                      <> elemF   "inputrange" (binocularsConfig'Common'InputRange c)
+                                                      <> elemF   "detector" (binocularsConfig'Common'Detector c)
+                                                      <> elemF   "centralpixel" (binocularsConfig'Common'Centralpixel c)
+                                                      <> elemF   "sdd" (binocularsConfig'Common'Sdd c)
+                                                      <> elemF   "detrot" (binocularsConfig'Common'Detrot c)
+                                                      <> elemFMb "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient c)
+                                                      <> elemFMb "attenuation_max" (binocularsConfig'Common'AttenuationMax c)
+                                                      <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
+                                                      <> elemFMb "wavelength" (binocularsConfig'Common'Wavelength c)
+                                                      <> elemFMb "image_sum_max" (binocularsConfig'Common'ImageSumMax c)
+                                            )
+                                         ]
+
+                , iniGlobals = []
+                }
 
 parse'BinocularsConfig'Common :: (MonadThrow m, MonadLogger m, MonadIO m)
                               => Text -> Maybe ConfigRange -> m (Either String BinocularsConfig'Common)
