@@ -26,7 +26,6 @@ module Hkl.Binoculars.Config.Common
     , default'BinocularsConfig'Common
     , elemF
     , elemFMb
-    , getCapabilities
     , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
@@ -35,7 +34,6 @@ module Hkl.Binoculars.Config.Common
 
 import           Control.Applicative               ((<|>))
 import           Control.Monad.Catch               (Exception)
-import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
@@ -43,10 +41,7 @@ import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
                                                     section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.List.NonEmpty                (NonEmpty (..))
-import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text)
-import           GHC.Conc                          (getNumCapabilities,
-                                                    getNumProcessors)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Interval                  (singleton)
@@ -126,13 +121,8 @@ instance ToIni  BinocularsConfig'Common where
                 , iniGlobals = []
                 }
 
-getCapabilities :: IO (Int, Int)
-getCapabilities = (,)
-                  <$> getNumCapabilities
-                  <*> getNumProcessors
-
-parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> (Int, Int) -> Either String BinocularsConfig'Common
-parse'BinocularsConfig'Common cfg mr (ncapmax, ncoresmax)
+parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> Capabilities -> Either String BinocularsConfig'Common
+parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
   = do
     -- section dispatcher
     ncores <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do

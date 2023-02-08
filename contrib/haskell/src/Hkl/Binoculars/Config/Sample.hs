@@ -31,9 +31,6 @@ module Hkl.Binoculars.Config.Sample
     , parse'BinocularsConfig'Sample
     ) where
 
-import           Control.Monad.Catch          (MonadThrow)
-import           Control.Monad.IO.Class       (MonadIO)
-import           Control.Monad.Logger         (MonadLogger)
 import           Data.Aeson                   (FromJSON, ToJSON)
 import           Data.HashMap.Lazy            (fromList)
 import           Data.Ini                     (Ini (..))

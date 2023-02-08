@@ -41,7 +41,7 @@ import           Control.Concurrent.Async          (mapConcurrently)
 import           Control.Monad.Catch               (Exception, MonadThrow)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Logger              (MonadLogger, logDebugN,
-                                                    logInfoN, logWarnN)
+                                                    logInfoN)
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
 import           Control.Monad.Trans.Reader        (ReaderT, runReaderT)

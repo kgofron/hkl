@@ -28,6 +28,7 @@ module Hkl.Binoculars.Config
     , Args
     , Attenuation(..)
     , BinocularsPreConfig(..)
+    , Capabilities(..)
     , Config
     , ConfigContent(..)
     , ConfigRange(..)
@@ -56,6 +57,7 @@ module Hkl.Binoculars.Config
     , auto'
     , destination'
     , files
+    , getCapabilities
     , getMask
     , getPreConfig
     , mergeIni
@@ -70,7 +72,6 @@ import           Control.Monad.Catch               (Exception, MonadThrow,
                                                     throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
-import           Control.Monad.Logger              (MonadLogger)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
@@ -99,6 +100,8 @@ import           Data.Text                         (Text, breakOn, drop, empty,
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
+import           GHC.Conc                          (getNumCapabilities,
+                                                    getNumProcessors)
 import           GHC.Exts                          (IsList (..))
 import           Numeric.Interval                  (Interval, empty, hull, inf,
                                                     singleton, singular, sup,
@@ -223,7 +226,7 @@ class HasIniConfig (a :: ProjectionType) where
 
   getConfig :: ConfigContent
             -> Args a
-            -> (Int, Int) -- capabilities
+            -> Capabilities
             -> Either String (Config a)
 
 -- Class ToIni
@@ -267,6 +270,16 @@ instance HasFieldValue Angstrom where
 
 newtype Attenuation = Attenuation { unAttenuation :: Double }
   deriving (Eq, Show)
+
+-- Capabilities
+
+data Capabilities = Capabilities Int Int
+  deriving (Eq, Show)
+
+getCapabilities :: IO Capabilities
+getCapabilities = Capabilities
+                  <$> getNumCapabilities
+                  <*> getNumProcessors
 
 -- ConfigContent
 
