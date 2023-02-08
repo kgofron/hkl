@@ -26,6 +26,7 @@ module Hkl.Binoculars.Config.Common
     , default'BinocularsConfig'Common
     , elemF
     , elemFMb
+    , getCapabilities
     , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
@@ -33,9 +34,8 @@ module Hkl.Binoculars.Config.Common
     ) where
 
 import           Control.Applicative               ((<|>))
-import           Control.Monad.Catch               (Exception, MonadThrow)
+import           Control.Monad.Catch               (Exception)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Logger              (MonadLogger)
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
@@ -49,7 +49,7 @@ import           GHC.Conc                          (getNumCapabilities,
                                                     getNumProcessors)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
-import           Numeric.Interval                  (empty, singleton)
+import           Numeric.Interval                  (singleton)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Test.QuickCheck                   (Arbitrary (..))
@@ -126,14 +126,16 @@ instance ToIni  BinocularsConfig'Common where
                 , iniGlobals = []
                 }
 
-parse'BinocularsConfig'Common :: (MonadThrow m, MonadLogger m, MonadIO m)
-                              => Text -> Maybe ConfigRange -> m (Either String BinocularsConfig'Common)
-parse'BinocularsConfig'Common cfg mr
+getCapabilities :: IO (Int, Int)
+getCapabilities = (,)
+                  <$> getNumCapabilities
+                  <*> getNumProcessors
+
+parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> (Int, Int) -> Either String BinocularsConfig'Common
+parse'BinocularsConfig'Common cfg mr (ncapmax, ncoresmax)
   = do
     -- section dispatcher
     ncores <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
-      ncapmax <- liftIO getNumCapabilities
-      ncoresmax <- liftIO getNumProcessors
       let ns = case mb of
             Nothing -> [ncapmax, ncoresmax - 1]
             Just b  -> [b, ncapmax, ncoresmax -1]
@@ -167,7 +169,7 @@ parse'BinocularsConfig'Common cfg mr
 
     -- customize a bunch of parameters
 
-    pure $ Right $ BinocularsConfig'Common ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max maskmatrix wavelength image_sum_max
+    pure $ BinocularsConfig'Common ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max maskmatrix wavelength image_sum_max
 
 parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
 parse' c s f = parseIniFile c $ section s (fieldMbOf f auto')
@@ -176,21 +178,23 @@ eitherF :: (t1 -> p) -> Either t1 t2 -> (t2 -> p) -> p
 eitherF fa (Left a)  _ = fa a
 eitherF _ (Right b) fb = fb b
 
-parseF :: (MonadLogger m, MonadIO m, HasFieldValue b)
-       => Text -> Text -> Text -> (Maybe b -> m r) -> m r
+parseF :: HasFieldValue b
+       => Text -> Text -> Text -> (Maybe b -> Either String r) -> Either String r
 parseF c s f = eitherF error (parse' c s f)
 
-parseFDef :: (MonadLogger m, MonadIO m, HasFieldValue p)
-          => Text -> Text -> Text -> p -> m p
-parseFDef c s f def = parseF c s f (pure . fromMaybe def)
+parseFDef :: HasFieldValue p
+          => Text -> Text -> Text -> p -> Either String p
+parseFDef c s f def = parseF c s f $ \mb -> case mb of
+                                             Nothing -> Right def
+                                             Just b  -> Right b
 
-parseMb ::  (MonadLogger m, MonadIO m, HasFieldValue r)
-        => Text -> Text -> Text -> m (Maybe r)
+parseMb ::  HasFieldValue r
+        => Text -> Text -> Text -> Either String (Maybe r)
 parseMb c s f = eitherF error (parse' c s f) pure
 
-parseMbDef :: (MonadLogger m, MonadIO m, HasFieldValue r)
-           => Text -> Text -> Text -> Maybe r -> m (Maybe r)
-parseMbDef c s f def = eitherF error (parse' c s f) (\mb -> pure $ mb <|> def)
+parseMbDef :: HasFieldValue r
+           => Text -> Text -> Text -> Maybe r -> Maybe r
+parseMbDef c s f def = eitherF error (parse' c s f) (\mb -> mb <|> def)
 
 elemF :: HasFieldValue a => Text -> a -> [(Text, Text)]
 elemF k v = [(k,  fvEmit fieldvalue v)]

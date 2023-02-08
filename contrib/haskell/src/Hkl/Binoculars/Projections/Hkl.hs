@@ -39,7 +39,7 @@ import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
 import           Control.Monad.Reader               (MonadReader, ask, forM_,
                                                      forever)
-import           Control.Monad.Trans.Reader         (runReaderT)
+import           Control.Monad.Trans.Reader         (ReaderT, runReaderT)
 import           Data.Aeson                         (FromJSON, ToJSON,
                                                      eitherDecode', encode)
 import           Data.Array.Repa                    (Array)
@@ -162,10 +162,10 @@ overload'DataSourcePath'DataFrameHkl common sample (DataSourcePath'DataFrameHkl 
 
 instance HasIniConfig 'HklProjection where
 
-  getConfig mf (Args'HklProjection mr) = do
-    (ConfigContent cfg) <- liftIO $ readConfig mf
+  getConfig (ConfigContent cfg) (Args'HklProjection mr) capabilities = do
+    -- (ConfigContent cfg) <- liftIO $ readConfig mf
 
-    ecommon <- parse'BinocularsConfig'Common cfg mr
+    let ecommon = parse'BinocularsConfig'Common cfg mr capabilities
     case ecommon of
       Left err -> error err
       Right common -> do
@@ -182,11 +182,11 @@ instance HasIniConfig 'HklProjection where
         -- customize a bunch of parameters
 
         -- compute the datatype
-        datapath <- case mdatapath of
+        let datapath = case mdatapath of
                      Nothing -> guess'DataSourcePath'DataFrameHkl common sample
-                     Just d  -> pure $ overload'DataSourcePath'DataFrameHkl common sample d
+                     Just d  -> overload'DataSourcePath'DataFrameHkl common sample d
 
-        pure $ Right $ BinocularsConfig'Hkl common sample projectiontype resolution limits datapath
+        pure $ BinocularsConfig'Hkl common sample projectiontype resolution limits datapath
 
 
 instance ToIni (Config 'HklProjection) where
@@ -332,28 +332,34 @@ instance FramesHklP (DataSourcePath DataFrameHkl) where
 -- Inputs --
 ------------
 
-guess'DataSourcePath'DataFrameHkl :: (MonadLogger m, MonadThrow m)
-                                  => BinocularsConfig'Common
+guess'DataSourcePath'DataFrameHkl :: BinocularsConfig'Common
                                   -> BinocularsConfig'Sample
-                                  -> m (DataSourcePath DataFrameHkl)
+                                  -> DataSourcePath DataFrameHkl
 guess'DataSourcePath'DataFrameHkl common sample
   = DataSourcePath'DataFrameHkl
-    <$> guess'DataSourcePath'DataFrameQCustom common Nothing
-    <*> guess'DataSourcePath'Sample common sample
+    (guess'DataSourcePath'DataFrameQCustom common Nothing)
+    (guess'DataSourcePath'Sample common sample)
 
 ---------
 -- Cmd --
 ---------
 
-processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
-processHkl mf mr = do
-  econf :: Either String (Config 'HklProjection) <- getConfig mf (Args'HklProjection mr)
+cmdHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => ReaderT (Config 'HklProjection) m () -> Maybe FilePath -> Maybe ConfigRange -> m ()
+cmdHkl action mf mr
+  = do
+  content <- liftIO $ readConfig mf
+  capabilities <- liftIO getCapabilities
+  let econf = getConfig content (Args'HklProjection mr) capabilities
   case econf of
     Right conf -> do
       logDebugN "config red from the config file"
       logDebugN $ serializeConfig conf
-      runReaderT processHklP conf
+      runReaderT action conf
     Left e      -> logErrorNSH e
+
+
+processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
+processHkl = cmdHkl processHklP
 
 newHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
        => Path Abs Dir -> m ()
@@ -366,11 +372,5 @@ newHkl cwd = do
 
 
 updateHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
-          => Maybe FilePath -> m ()
-updateHkl mf = do
-  (conf :: Either String (Config 'HklProjection)) <- getConfig mf (Args'HklProjection Nothing)
-  logDebugN "config red from the config file"
-  logDebugNSH conf
-  case conf of
-    Left e      -> logErrorNSH e
-    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'
+          => Maybe FilePath -> Maybe ConfigRange -> m ()
+updateHkl = cmdHkl (pure ())

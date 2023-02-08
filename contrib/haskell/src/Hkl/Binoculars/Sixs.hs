@@ -62,18 +62,18 @@ new p mf = do
     QparQperProjection -> newQCustom cwd
     QxQyQzProjection   -> newQCustom cwd
 
-update :: (MonadIO m, MonadLogger m, MonadThrow m) => FilePath -> m ()
-update f = do
+update :: (MonadIO m, MonadLogger m, MonadThrow m) => FilePath -> Maybe ConfigRange -> m ()
+update f mr = do
   epreconf <- liftIO $ getPreConfig (Just f)
   logDebugN "pre-config red from the config file"
   logDebugNSH epreconf
   case epreconf of
     Left e        -> logErrorNSH e
     Right preconf -> case _binocularsPreConfigProjectionType preconf of
-                      AnglesProjection   -> updateAngles (Just f)
-                      Angles2Projection  -> updateAngles (Just f)
-                      HklProjection      -> updateHkl (Just f)
-                      QCustomProjection  -> updateQCustom (Just f)
-                      QIndexProjection   -> updateQCustom (Just f)
-                      QparQperProjection -> updateQCustom (Just f)
-                      QxQyQzProjection   -> updateQCustom (Just f)
+                      AnglesProjection   -> updateAngles (Just f) mr
+                      Angles2Projection  -> updateAngles (Just f) mr
+                      HklProjection      -> updateHkl (Just f) mr
+                      QCustomProjection  -> updateQCustom (Just f) mr
+                      QIndexProjection   -> updateQCustom (Just f) mr
+                      QparQperProjection -> updateQCustom (Just f) mr
+                      QxQyQzProjection   -> updateQCustom (Just f) mr

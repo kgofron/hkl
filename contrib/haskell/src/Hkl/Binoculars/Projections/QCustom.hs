@@ -44,7 +44,7 @@ import           Control.Monad.Logger              (MonadLogger, logDebugN,
                                                     logInfoN, logWarnN)
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
-import           Control.Monad.Trans.Reader        (runReaderT)
+import           Control.Monad.Trans.Reader        (ReaderT, runReaderT)
 import           Data.Aeson                        (FromJSON, ToJSON,
                                                     eitherDecode', encode)
 import           Data.Array.Repa                   (Array)
@@ -194,39 +194,33 @@ default'BinocularsConfig'QCustom
 
 instance HasIniConfig 'QCustomProjection where
 
-  getConfig mf (Args'QCustomProjection mr) = do
-    (ConfigContent cfg) <- liftIO $ readConfig mf
+  getConfig (ConfigContent cfg) (Args'QCustomProjection mr) capabilities = do
+    common <- parse'BinocularsConfig'Common cfg mr capabilities
+    surface_orientation <- parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'SurfaceOrientation default'BinocularsConfig'QCustom)
+    let edatapath = parseMb cfg "input" "datapath"
 
-    ecommon <- parse'BinocularsConfig'Common cfg mr
-    case ecommon of
-      Left err -> error err
-      Right common -> do
+    -- section projection
+    projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
+    resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
+    limits <- parseMb cfg "projection" "limits"
+    let msubprojection = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
 
-        -- section input
-        surface_orientation <- parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'SurfaceOrientation default'BinocularsConfig'QCustom)
-        mdatapath <- parseMb cfg "input" "datapath"
+    -- customize a bunch of parameters
 
-        -- section projection
-        projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
-        resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
-        limits <- parseMb cfg "projection" "limits"
-        msubprojection <- parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
-
-        -- customize a bunch of parameters
-
-        -- fix the subprojection depending on the projection type
-        let subprojection = case projectiontype of
-                              QIndexProjection -> Just QCustomSubProjection'QIndex
-                              QparQperProjection -> Just QCustomSubProjection'QparQper
-                              QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
-                              _                -> msubprojection
+    -- fix the subprojection depending on the projection type
+    let subprojection = case projectiontype of
+                          QIndexProjection -> Just QCustomSubProjection'QIndex
+                          QparQperProjection -> Just QCustomSubProjection'QparQper
+                          QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
+                          _                -> msubprojection
 
         -- compute the datatype
-        datapath <- case mdatapath of
-                     Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection
-                     Just d  -> pure $ overload'DataSourcePath'DataFrameQCustom common subprojection d
+    let datapath = case edatapath of
+                 Left _ -> guess'DataSourcePath'DataFrameQCustom common subprojection
+                 Right Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection
+                 Right (Just d)  -> overload'DataSourcePath'DataFrameQCustom common subprojection d
 
-        pure $ Right $ BinocularsConfig'QCustom common surface_orientation projectiontype resolution limits datapath subprojection
+    pure $ BinocularsConfig'QCustom common surface_orientation projectiontype resolution limits datapath subprojection
 
 
 instance ToIni (Config 'QCustomProjection) where
@@ -257,22 +251,22 @@ data HklBinocularsProjectionsQCustomException
 instance Exception HklBinocularsProjectionsQCustomException
 
 
-mkAttenuation :: (MonadLogger m, MonadThrow m) => Maybe Double -> DataSourcePath Attenuation -> m (DataSourcePath Attenuation)
+mkAttenuation :: Maybe Double -> DataSourcePath Attenuation -> DataSourcePath Attenuation
 mkAttenuation ma att =
     case ma of
       Nothing -> case att of
-                  DataSourcePath'NoAttenuation     -> return DataSourcePath'NoAttenuation
-                  DataSourcePath'Attenuation{} -> do
-                           logWarnN "The current configuration extract the attenuation from the data files."
-                           logWarnN "You forgot to provide the attenuation coefficient in the config file."
-                           logWarnN "I continue without attenuation correction"
-                           logWarnN "Add attenuation_coefficient=<something> under the [input] section, to fix this"
-                           return DataSourcePath'NoAttenuation
-                  applyed@DataSourcePath'ApplyedAttenuationFactor{} -> return applyed
-      (Just coef) -> return $ case att of
-                               DataSourcePath'NoAttenuation           -> DataSourcePath'NoAttenuation
-                               (DataSourcePath'Attenuation p o _ m) -> DataSourcePath'Attenuation p o coef m
-                               (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
+                  DataSourcePath'NoAttenuation     -> DataSourcePath'NoAttenuation
+                  DataSourcePath'Attenuation{} ->  DataSourcePath'NoAttenuation
+                           -- logWarnN "The current configuration extract the attenuation from the data files."
+                           -- logWarnN "You forgot to provide the attenuation coefficient in the config file."
+                           -- logWarnN "I continue without attenuation correction"
+                           -- logWarnN "Add attenuation_coefficient=<something> under the [input] section, to fix this"
+                           -- return DataSourcePath'NoAttenuation
+                  applyed@DataSourcePath'ApplyedAttenuationFactor{} -> applyed
+      (Just coef) -> case att of
+                      DataSourcePath'NoAttenuation           -> DataSourcePath'NoAttenuation
+                      (DataSourcePath'Attenuation p o _ m) -> DataSourcePath'Attenuation p o coef m
+                      (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
 
 mkDetector'Sixs'Fly :: Detector Hkl DIM2 -> DataSourcePath Image
 mkDetector'Sixs'Fly det@(Detector2D n _ _)
@@ -379,10 +373,9 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
       DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newIndexPath
 
 
-guess'DataSourcePath'DataFrameQCustom :: (MonadLogger m, MonadThrow m)
-                                      => BinocularsConfig'Common
+guess'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
                                       -> Maybe QCustomSubProjection
-                                      -> m (DataSourcePath DataFrameQCustom)
+                                      -> DataSourcePath DataFrameQCustom
 guess'DataSourcePath'DataFrameQCustom common msub =
     do
       let inputtype = binocularsConfig'Common'InputType common
@@ -487,161 +480,161 @@ guess'DataSourcePath'DataFrameQCustom common msub =
 
       case inputtype of
          CristalK6C -> DataSourcePath'DataFrameQCustom
-                      <$> mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation
-                      <*> pure (DataSourcePath'Geometry'CristalK6C
-                                 (overloadWaveLength mWavelength (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
-                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position"))
-                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position"))
-                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position"))
-                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1"))
-                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position"))
-                                 (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position")))
-                      <*> pure (DataSourcePath'Image
-                                (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05")
-                                detector) -- medipix
-                      <*> pure (mkTimeStamp'Sbs msub)
+                      (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
+                      (DataSourcePath'Geometry'CristalK6C
+                        (overloadWaveLength mWavelength (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
+                        (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position"))
+                        (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position"))
+                        (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position"))
+                        (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1"))
+                        (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position"))
+                        (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position")))
+                      (DataSourcePath'Image
+                        (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05")
+                        detector) -- medipix
+                      (mkTimeStamp'Sbs msub)
          MarsFlyscan -> DataSourcePath'DataFrameQCustom
-                       <$> mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
-                                             (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att")))
-                       <*> pure (DataSourcePath'Geometry'Mars
-                                  (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom))))
-                                  [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
-                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
-                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
-                                  ])
-                       <*> pure (DataSourcePath'Image
-                                  (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
-                                                       `H5Or`
-                                                       datasetp "scan_data/merlin_quad_image"))
-                                 detector)
-                       <*> pure (mkTimeStamp'Fly msub)
+                       (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
+                                                               (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
+                       (DataSourcePath'Geometry'Mars
+                         (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom))))
+                         [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
+                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
+                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
+                         ])
+                       (DataSourcePath'Image
+                         (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
+                                              `H5Or`
+                                              datasetp "scan_data/merlin_quad_image"))
+                         detector)
+                       (mkTimeStamp'Fly msub)
          MarsSbs -> DataSourcePath'DataFrameQCustom
-                   <$> mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation
-                   <*> pure (DataSourcePath'Geometry'Mars
-                              (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom))))
-                              [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
-                              ])
-                   <*> pure (DataSourcePath'Image
-                             (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
-                             detector)
-                   <*> pure (mkTimeStamp'Sbs msub)
+                   (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
+                   (DataSourcePath'Geometry'Mars
+                     (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom))))
+                     [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
+                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
+                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
+                     ])
+                   (DataSourcePath'Image
+                    (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
+                    detector)
+                   (mkTimeStamp'Sbs msub)
          SixsFlyMedH -> DataSourcePath'DataFrameQCustom
-                       <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                       <*> pure dataSourcePath'Geometry'MedH'Sixs
-                       <*> pure (mkDetector'Sixs'Fly detector)
-                       <*> pure (mkTimeStamp'Fly msub)
+                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                       dataSourcePath'Geometry'MedH'Sixs
+                       (mkDetector'Sixs'Fly detector)
+                       (mkTimeStamp'Fly msub)
          SixsFlyMedV -> DataSourcePath'DataFrameQCustom
-                       <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                       <*> pure (DataSourcePath'Geometry'MedV
-                                  (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                  (DataSourcePath'Degree'Const (Degree (0 *~ degree)))
-                                -- (DataSourcePath'Degree(H5Or
-                                --                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta")
-                                --                         (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")))
-                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu"))
-                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega"))
-                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma"))
-                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta"))
-                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")))
-                       <*> pure (mkDetector'Sixs'Fly detector)
-                       <*> pure (mkTimeStamp'Fly msub)
+                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                       (DataSourcePath'Geometry'MedV
+                             (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                             (DataSourcePath'Degree'Const (Degree (0 *~ degree)))
+                           -- (DataSourcePath'Degree(H5Or
+                           --                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta")
+                           --                         (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")))
+                             (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu"))
+                             (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega"))
+                             (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma"))
+                             (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta"))
+                             (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")))
+                       (mkDetector'Sixs'Fly detector)
+                       (mkTimeStamp'Fly msub)
          SixsFlyMedVEiger -> DataSourcePath'DataFrameQCustom
-                            <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                            <*> pure (DataSourcePath'Geometry'MedVEiger
-                                       (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                       [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/beta") -- maybe nothing
-                                       , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu")
-                                       , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                                       , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma")
-                                       , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta")
-                                       , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")
-                                       ]
-                                       (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
-                                                              `H5Or`
-                                                              hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre")))
-                                       (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
-                                                              `H5Or`
-                                                              hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))))
-                            <*> pure (mkDetector'Sixs'Fly detector)
-                            <*> pure (mkTimeStamp'Fly msub)
+                            (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                            (DataSourcePath'Geometry'MedVEiger
+                              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                              [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/beta") -- maybe nothing
+                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu")
+                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma")
+                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta")
+                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")
+                              ]
+                              (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                                     `H5Or`
+                                                     hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre")))
+                              (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                                                     `H5Or`
+                                                     hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))))
+                            (mkDetector'Sixs'Fly detector)
+                            (mkTimeStamp'Fly msub)
          SixsFlyMedVS70 -> DataSourcePath'DataFrameQCustom
-                          <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                          <*> pure (DataSourcePath'Geometry'MedV
-                                     (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/beta"))
-                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu"))
-                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega"))
-                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma"))
-                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta"))
-                                     (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")))
-                          <*> pure (mkDetector'Sixs'Fly detector)
-                          <*> pure (mkTimeStamp'Fly msub)
+                          (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                          (DataSourcePath'Geometry'MedV
+                            (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/beta"))
+                            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu"))
+                            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega"))
+                            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma"))
+                            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta"))
+                            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")))
+                          (mkDetector'Sixs'Fly detector)
+                          (mkTimeStamp'Fly msub)
          SixsFlyScanUhv -> DataSourcePath'DataFrameQCustom
-                          <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                          <*> pure dataSourcePath'Geometry'Uhv'Sixs
-                          <*> pure (mkDetector'Sixs'Fly detector)
-                          <*> pure (mkTimeStamp'Fly msub)
+                          (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                          dataSourcePath'Geometry'Uhv'Sixs
+                          (mkDetector'Sixs'Fly detector)
+                          (mkTimeStamp'Fly msub)
          SixsFlyScanUhv2 -> DataSourcePath'DataFrameQCustom
-                           <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                           <*> pure dataSourcePath'Geometry'Uhv'Sixs
-                           <*> pure (mkDetector'Sixs'Fly detector)
-                           <*> pure (mkTimeStamp'Fly msub)
+                           (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                           dataSourcePath'Geometry'Uhv'Sixs
+                           (mkDetector'Sixs'Fly detector)
+                           (mkTimeStamp'Fly msub)
          SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
-                              <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                              <*> pure (DataSourcePath'Geometry'UhvTest
-                                        (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (0.672494 *~ angstrom))))
-                                        dataSourcePaths'Sixs'Uhv'Axes)
-                              <*> pure (mkDetector'Sixs'Fly detector)
-                              <*> pure (mkTimeStamp'Fly msub)
+                              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                              (DataSourcePath'Geometry'UhvTest
+                               (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (0.672494 *~ angstrom))))
+                               dataSourcePaths'Sixs'Uhv'Axes)
+                              (mkDetector'Sixs'Fly detector)
+                              (mkTimeStamp'Fly msub)
          SixsFlyScanUhvUfxc -> DataSourcePath'DataFrameQCustom
-                              <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-                              <*> pure dataSourcePath'Geometry'Uhv'Sixs
-                              <*> pure (mkDetector'Sixs'Fly detector)
-                              <*> pure (mkTimeStamp'Fly msub)
+                              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                              dataSourcePath'Geometry'Uhv'Sixs
+                              (mkDetector'Sixs'Fly detector)
+                              (mkTimeStamp'Fly msub)
          SixsSbsFixedDetector -> DataSourcePath'DataFrameQCustom
-                                <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
-                                <*> pure (DataSourcePath'Geometry'Fix
-                                          (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs))
-                                <*> pure (mkDetector'Sixs'Sbs detector)
-                                <*> pure (mkTimeStamp'Sbs msub)
+                                (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
+                                (DataSourcePath'Geometry'Fix
+                                 (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs))
+                                (mkDetector'Sixs'Sbs detector)
+                                (mkTimeStamp'Sbs msub)
          SixsSbsMedH -> DataSourcePath'DataFrameQCustom
-                       <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
-                       <*> pure dataSourcePath'Geometry'MedH'Sixs
-                       <*> pure (mkDetector'Sixs'Sbs detector)
-                       <*> pure (mkTimeStamp'Sbs msub)
+                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
+                       dataSourcePath'Geometry'MedH'Sixs
+                       (mkDetector'Sixs'Sbs detector)
+                       (mkTimeStamp'Sbs msub)
          SixsSbsMedV -> DataSourcePath'DataFrameQCustom
-                       <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
-                       <*> pure (DataSourcePath'Geometry'MedV
-                                  (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                  (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"))
-                                  (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")))
-                                  (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")))
-                                  (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")))
-                                  (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
-                                  (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))))
-                       <*> pure (mkDetector'Sixs'Sbs detector)
-                       <*> pure (mkTimeStamp'Sbs msub)
+                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
+                       (DataSourcePath'Geometry'MedV
+                         (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                         (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"))
+                         (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")))
+                         (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")))
+                         (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")))
+                         (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
+                         (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))))
+                       (mkDetector'Sixs'Sbs detector)
+                       (mkTimeStamp'Sbs msub)
          SixsSbsMedVFixDetector -> DataSourcePath'DataFrameQCustom
-                                  <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
-                                  <*> pure (DataSourcePath'Geometry'MedV
-                                             (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                             (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"))
-                                             (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")))
-                                             (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")))
-                                             (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")))
-                                             (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
-                                             (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))))
-                                  <*> pure (mkDetector'Sixs'Sbs detector)
-                                  <*> pure (mkTimeStamp'Sbs msub)
+                                  (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
+                                  (DataSourcePath'Geometry'MedV
+                                    (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                                    (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch"))
+                                    (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")))
+                                    (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")))
+                                    (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")))
+                                    (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
+                                    (DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))))
+                                  (mkDetector'Sixs'Sbs detector)
+                                  (mkTimeStamp'Sbs msub)
          SixsSbsUhv -> DataSourcePath'DataFrameQCustom
-                      <$> mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
-                      <*> pure dataSourcePath'Geometry'Uhv'Sixs
-                      <*> pure (mkDetector'Sixs'Sbs detector)
-                      <*> pure (mkTimeStamp'Sbs msub)
+                      (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
+                      dataSourcePath'Geometry'Uhv'Sixs
+                      (mkDetector'Sixs'Sbs detector)
+                      (mkTimeStamp'Sbs msub)
 
 
 {-# INLINE spaceQCustom #-}
@@ -777,15 +770,21 @@ instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
 -- Cmd --
 ---------
 
-processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
-processQCustom mf mr = do
-  econf :: Either String (Config 'QCustomProjection) <- getConfig mf (Args'QCustomProjection mr)
+cmdQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => ReaderT (Config 'QCustomProjection) m () -> Maybe FilePath -> Maybe ConfigRange -> m ()
+cmdQCustom action mf mr
+  = do
+  content <- liftIO $ readConfig mf
+  capabilities <- liftIO getCapabilities
+  let econf = getConfig content (Args'QCustomProjection mr) capabilities
   case econf of
     Right conf -> do
       logDebugN "config red from the config file"
       logDebugN $ serializeConfig conf
-      runReaderT processQCustomP conf
+      runReaderT action conf
     Left e      -> logErrorNSH e
+
+processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
+processQCustom = cmdQCustom processQCustomP
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()
@@ -797,11 +796,5 @@ newQCustom cwd = do
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf
 
 updateQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
-              => Maybe FilePath -> m ()
-updateQCustom mf = do
-  (conf :: Either String (Config 'QCustomProjection)) <- getConfig mf (Args'QCustomProjection Nothing)
-  logDebugN "config red from the config file"
-  logDebugNSH conf
-  case conf of
-    Left e      -> logErrorNSH e
-    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'
+              => Maybe FilePath -> Maybe ConfigRange -> m ()
+updateQCustom = cmdQCustom (pure ())

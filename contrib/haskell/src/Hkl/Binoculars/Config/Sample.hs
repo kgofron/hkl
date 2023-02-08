@@ -142,10 +142,9 @@ overload'DataSourcePath'Sample (BinocularsConfig'Sample ma mb mc malpha mbeta mg
     (maybe puy DataSourcePath'Degree'Const muy)
     (maybe puz DataSourcePath'Degree'Const muz)
 
-guess'DataSourcePath'Sample :: (MonadLogger m, MonadThrow m)
-                           => BinocularsConfig'Common
+guess'DataSourcePath'Sample :: BinocularsConfig'Common
                            -> BinocularsConfig'Sample
-                           -> m (DataSourcePath Sample)
+                           -> DataSourcePath Sample
 guess'DataSourcePath'Sample common sample =
   do let inputType = binocularsConfig'Common'InputType common
      let samplePath' beamline device =
@@ -196,7 +195,7 @@ guess'DataSourcePath'Sample common sample =
                         SixsSbsMedVFixDetector -> medVSamplePath
                         SixsSbsUhv             -> uhvSamplePath3
 
-     return $ overload'DataSourcePath'Sample sample samplePath
+     overload'DataSourcePath'Sample sample samplePath
 ------------
 -- Config --
 ------------
@@ -246,8 +245,7 @@ instance ToIni BinocularsConfig'Sample where
                 , iniGlobals = []
                 }
 
-parse'BinocularsConfig'Sample :: (MonadThrow m, MonadLogger m, MonadIO m)
-                             => Text -> m BinocularsConfig'Sample
+parse'BinocularsConfig'Sample :: Text -> Either String BinocularsConfig'Sample
 parse'BinocularsConfig'Sample cfg
   = BinocularsConfig'Sample
     <$> parseMb cfg "input" "a"

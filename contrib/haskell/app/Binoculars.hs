@@ -35,7 +35,7 @@ data FullOptions = FullOptions Bool Options
 
 data Options = Process (Maybe FilePath) (Maybe ConfigRange)
              | CfgNew ProjectionType (Maybe FilePath)
-             | CfgUpdate FilePath
+             | CfgUpdate FilePath (Maybe ConfigRange)
   deriving Show
 
 debug :: Parser Bool
@@ -61,7 +61,9 @@ cfgNewCommand :: Mod CommandFields Options
 cfgNewCommand = command "cfg-new" (info cfgNewOption (progDesc "new config files"))
 
 cfgUpdateOption :: Parser Options
-cfgUpdateOption = CfgUpdate <$> config
+cfgUpdateOption = CfgUpdate
+                  <$> config
+                  <*> optional (argument (eitherReader (parseOnly fieldParser. pack)) (metavar "RANGE"))
 
 cfgUpdateCommand :: Mod CommandFields Options
 cfgUpdateCommand = command "cfg-update" (info cfgUpdateOption (progDesc "update config files"))
@@ -72,9 +74,9 @@ options = FullOptions
           <*> hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand)
 
 run :: (MonadIO m, MonadLogger m, MonadThrow m) => Options -> m ()
-run (Process mf mr) = process mf mr
-run (CfgNew p mf)   = new p mf
-run (CfgUpdate f)   = update f
+run (Process mf mr)  = process mf mr
+run (CfgNew p mf)    = new p mf
+run (CfgUpdate f mr) = update f mr
 
 
 main :: IO ()

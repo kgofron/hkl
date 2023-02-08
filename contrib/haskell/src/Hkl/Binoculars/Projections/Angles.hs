@@ -30,7 +30,7 @@ import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
 import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
 import           Control.Monad.Reader               (MonadReader, ask)
-import           Control.Monad.Trans.Reader         (runReaderT)
+import           Control.Monad.Trans.Reader         (ReaderT, runReaderT)
 import           Data.Array.Repa                    (Array)
 import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
@@ -95,10 +95,10 @@ newtype instance Args 'AnglesProjection = Args'AnglesProjection (Maybe ConfigRan
 
 instance HasIniConfig 'AnglesProjection where
 
-  getConfig mf (Args'AnglesProjection mr) = do
-    (ConfigContent cfg) <- liftIO $ readConfig mf
+  getConfig (ConfigContent cfg) (Args'AnglesProjection mr) capabilities = do
+    -- (ConfigContent cfg) <- liftIO $ readConfig mf
 
-    ecommon <- parse'BinocularsConfig'Common cfg mr
+    let ecommon = parse'BinocularsConfig'Common cfg mr capabilities
     case ecommon of
       Left err -> error err
       Right common -> do
@@ -121,11 +121,11 @@ instance HasIniConfig 'AnglesProjection where
                                                              QxQyQzProjection   -> undefined
 
         -- compute the datatype
-        datapath <- case mdatapath of
-                     Nothing -> guess'DataSourcePath'DataFrameQCustom common Nothing
-                     Just d  -> pure $ overload'DataSourcePath'DataFrameQCustom common Nothing d
+        let datapath = case mdatapath of
+                         Nothing -> guess'DataSourcePath'DataFrameQCustom common Nothing
+                         Just d  -> overload'DataSourcePath'DataFrameQCustom common Nothing d
 
-        pure $ Right $ BinocularsConfig'Angles common projectionType resolution limits sampleAxis datapath
+        pure $ BinocularsConfig'Angles common projectionType resolution limits sampleAxis datapath
 
 
 instance ToIni (Config 'AnglesProjection) where
@@ -249,15 +249,21 @@ processAnglesP = do
 -- Cmd --
 ---------
 
-processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
-processAngles mf mr = do
-  econf :: Either String (Config 'AnglesProjection) <- getConfig mf (Args'AnglesProjection mr)
+cmdAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => ReaderT (Config 'AnglesProjection) m () -> Maybe FilePath -> Maybe ConfigRange -> m ()
+cmdAngles action mf mr
+  = do
+  content <- liftIO $ readConfig mf
+  capabilities <- liftIO getCapabilities
+  let econf = getConfig content (Args'AnglesProjection mr) capabilities
   case econf of
     Right conf -> do
       logDebugN "config red from the config file"
       logDebugN $ serializeConfig conf
-      runReaderT processAnglesP conf
+      runReaderT action conf
     Left e      -> logErrorNSH e
+
+processAngles :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
+processAngles = cmdAngles processAnglesP
 
 newAngles :: (MonadIO m, MonadLogger m, MonadThrow m)
           => Path Abs Dir -> m ()
@@ -269,11 +275,5 @@ newAngles cwd = do
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf
 
 updateAngles :: (MonadIO m, MonadLogger m, MonadThrow m)
-             => Maybe FilePath -> m ()
-updateAngles mf = do
-  conf :: Either String (Config 'AnglesProjection) <- getConfig mf (Args'AnglesProjection Nothing)
-  logDebugN "config red from the config file"
-  logDebugNSH conf
-  case conf of
-    Left e      -> logErrorNSH e
-    Right conf' -> liftIO $ Data.Text.IO.putStr $ serializeConfig conf'
+             => Maybe FilePath -> Maybe ConfigRange -> m ()
+updateAngles = cmdAngles (pure ())

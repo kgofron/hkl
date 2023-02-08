@@ -221,10 +221,10 @@ readConfig mf = do
 
 class HasIniConfig (a :: ProjectionType) where
 
-  getConfig :: (MonadThrow m, MonadLogger m, MonadIO m)
-            => Maybe FilePath
+  getConfig :: ConfigContent
             -> Args a
-            -> m (Either String (Config a))
+            -> (Int, Int) -- capabilities
+            -> Either String (Config a)
 
 -- Class ToIni
 
