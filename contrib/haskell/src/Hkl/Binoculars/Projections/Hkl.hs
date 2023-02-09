@@ -33,7 +33,7 @@ module Hkl.Binoculars.Projections.Hkl
 
 
 import           Control.Concurrent.Async           (mapConcurrently)
-import           Control.Monad.Catch                (Exception, MonadThrow)
+import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO (liftIO))
 import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
@@ -80,17 +80,6 @@ import           Hkl.Orphan                         ()
 import           Hkl.Pipes
 import           Hkl.Sample
 import           Hkl.Utils
-
-----------------
--- Exceptions -
-----------------
-
-data HklBinocularsProjectionsHklException
-    = MissingSampleParameters (Config 'HklProjection)
-    | MissingInputRange
-    deriving (Show)
-
-instance Exception HklBinocularsProjectionsHklException
 
 ----------------
 -- DataPath's --
@@ -162,7 +151,6 @@ overload'DataSourcePath'DataFrameHkl common sample (DataSourcePath'DataFrameHkl 
 instance HasIniConfig 'HklProjection where
 
   getConfig (ConfigContent cfg) (Args'HklProjection mr) capabilities = do
-    -- (ConfigContent cfg) <- liftIO $ readConfig mf
 
     let ecommon = parse'BinocularsConfig'Common cfg mr capabilities
     case ecommon of
