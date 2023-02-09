@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -23,7 +24,7 @@
 
 module Hkl.Binoculars.Projections.Hkl
     ( Config(..)
-    , DataFrameHkl(..)
+    , DataFrameHkl
     , defaultDataSourcePath'DataFrameHkl
     , newHkl
     , processHkl
@@ -45,6 +46,7 @@ import           Data.Array.Repa                    (Array)
 import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
 import           Data.ByteString.Lazy               (fromStrict, toStrict)
+import           Data.Functor.Identity              (Identity)
 import           Data.HashMap.Strict                (fromList)
 import           Data.Ini                           (Ini (..))
 import           Data.Ini.Config.Bidir              (FieldValue (..))
@@ -85,27 +87,34 @@ import           Hkl.Utils
 -- DataPath's --
 ----------------
 
-data DataFrameHkl
-  = DataFrameHkl DataFrameQCustom Sample
-  deriving Show
+-- "Higher-Kinded Data"
+type family HKD f a where
+  HKD Identity a = a
+  HKD f        a = f a
 
+data DataFrameHkl' f
+  = DataFrameHkl
+    { dataFrameHkl'DataFrameQCustom :: HKD f DataFrameQCustom
+    , dataFrameHkl'Sample           :: HKD f Sample
+    }
+  deriving (Generic)
 
-data instance DataSourcePath DataFrameHkl = DataSourcePath'DataFrameHkl
-  { dataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
-  , dataSourcePath'Sample :: DataSourcePath Sample
-  }
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+type DataFrameHkl = DataFrameHkl' Identity
 
-instance Arbitrary (DataSourcePath DataFrameHkl) where
-  arbitrary = DataSourcePath'DataFrameHkl <$> arbitrary  <*> arbitrary
+type DataFrameHkl'Path = DataFrameHkl' DataSourcePath
+deriving instance Show DataFrameHkl'Path
+instance FromJSON DataFrameHkl'Path
+instance ToJSON DataFrameHkl'Path
 
-defaultDataSourcePath'DataFrameHkl :: DataSourcePath DataFrameHkl
-defaultDataSourcePath'DataFrameHkl = DataSourcePath'DataFrameHkl
-  { dataSourcePath'DataFrameQCustom = default'DataSourcePath'DataFrameQCustom
-  , dataSourcePath'Sample = default'DataSourcePath'Sample
-  }
+instance Arbitrary DataFrameHkl'Path where
+  arbitrary = DataFrameHkl <$> arbitrary  <*> arbitrary
 
-instance HasFieldValue (DataSourcePath DataFrameHkl) where
+defaultDataSourcePath'DataFrameHkl :: DataFrameHkl'Path
+defaultDataSourcePath'DataFrameHkl = DataFrameHkl
+                                     default'DataSourcePath'DataFrameQCustom
+                                     default'DataSourcePath'Sample
+
+instance HasFieldValue DataFrameHkl'Path where
   fieldvalue = FieldValue
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
@@ -122,8 +131,8 @@ data instance Config 'HklProjection
     , binocularsConfig'Hkl'ProjectionType         :: ProjectionType
     , binocularsConfig'Hkl'ProjectionResolution   :: Resolutions DIM3
     , binocularsConfig'Hkl'ProjectionLimits       :: Maybe (RLimits DIM3)
-    , binocularsConfig'Hkl'DataPath               :: DataSourcePath DataFrameHkl
-    } deriving (Eq, Show, Generic)
+    , binocularsConfig'Hkl'DataPath               :: DataFrameHkl'Path
+    } deriving (Generic)
 
 newtype instance Args 'HklProjection = Args'HklProjection (Maybe ConfigRange)
 
@@ -140,10 +149,10 @@ default'BinocularsConfig'Hkl
 
 overload'DataSourcePath'DataFrameHkl :: BinocularsConfig'Common
                                      -> BinocularsConfig'Sample
-                                     -> DataSourcePath DataFrameHkl
-                                     -> DataSourcePath DataFrameHkl
-overload'DataSourcePath'DataFrameHkl common sample (DataSourcePath'DataFrameHkl qCustomPath samplePath)
-  = DataSourcePath'DataFrameHkl newQCustomPath newSamplePath
+                                     -> DataFrameHkl'Path
+                                     -> DataFrameHkl'Path
+overload'DataSourcePath'DataFrameHkl common sample (DataFrameHkl qCustomPath samplePath)
+  = DataFrameHkl newQCustomPath newSamplePath
   where
     newQCustomPath = overload'DataSourcePath'DataFrameQCustom common Nothing qCustomPath
     newSamplePath = overload'DataSourcePath'Sample sample samplePath
@@ -301,11 +310,11 @@ processHklP = do
 
 -- FramesHklP
 
-instance ChunkP (DataSourcePath DataFrameHkl) where
-  chunkP (DataSourcePath'DataFrameHkl p _) = chunkP p
+instance ChunkP DataFrameHkl'Path where
+  chunkP (DataFrameHkl p _) = chunkP p
 
-instance FramesHklP (DataSourcePath DataFrameHkl) where
-  framesHklP (DataSourcePath'DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
+instance FramesHklP DataFrameHkl'Path where
+  framesHklP (DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
     withFileP (openFile' fp) $ \f ->
       withDataSourceP f qcustom $ \qcustomAcq ->
@@ -321,9 +330,9 @@ instance FramesHklP (DataSourcePath DataFrameHkl) where
 
 guess'DataSourcePath'DataFrameHkl :: BinocularsConfig'Common
                                   -> BinocularsConfig'Sample
-                                  -> DataSourcePath DataFrameHkl
+                                  -> DataFrameHkl'Path
 guess'DataSourcePath'DataFrameHkl common sample
-  = DataSourcePath'DataFrameHkl
+  = DataFrameHkl
     (guess'DataSourcePath'DataFrameQCustom common Nothing)
     (guess'DataSourcePath'Sample common sample)
 
