@@ -1,8 +1,9 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
-
+{-# LANGUAGE OverloadedStrings     #-}
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -13,6 +14,7 @@
 -}
 module Hkl.Binoculars.Projections
   ( Space(..)
+  , cmd
   , newSpace
   , saveCube
   , withGeometry
@@ -25,6 +27,10 @@ module Hkl.Binoculars.Projections
   ) where
 
 import           Control.Monad                   (zipWithM)
+import           Control.Monad.Catch             (MonadThrow)
+import           Control.Monad.IO.Class          (MonadIO (liftIO))
+import           Control.Monad.Logger            (MonadLogger, logDebugN)
+import           Control.Monad.Trans.Reader      (ReaderT, runReaderT)
 import           Data.Array.Repa                 (Array, Shape, extent,
                                                   listOfShape, size)
 import           Data.Array.Repa.Index           (DIM2, DIM3)
@@ -48,6 +54,23 @@ import           Hkl.C
 import           Hkl.Detector
 import           Hkl.Geometry
 import           Hkl.Orphan                      ()
+import           Hkl.Utils
+
+
+cmd :: (HasIniConfig a, ToIni (Config a), MonadLogger m, MonadThrow m, MonadIO m)
+    => ReaderT (Config a) m () -> Maybe FilePath -> Args a -> m ()
+cmd action mf args
+  = do
+  content <- liftIO $ readConfig mf
+  capabilities <- liftIO getCapabilities
+  let econf = getConfig content args capabilities
+  case econf of
+    Right conf -> do
+      logDebugN "config red from the config file"
+      logDebugN $ serializeConfig conf
+      runReaderT action conf
+    Left e      -> logErrorNSH e
+
 
 --  Common
 

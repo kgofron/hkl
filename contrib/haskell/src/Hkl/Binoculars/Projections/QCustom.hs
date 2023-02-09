@@ -44,7 +44,6 @@ import           Control.Monad.Logger              (MonadLogger, logDebugN,
                                                     logInfoN)
 import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
-import           Control.Monad.Trans.Reader        (ReaderT, runReaderT)
 import           Data.Aeson                        (FromJSON, ToJSON,
                                                     eitherDecode', encode)
 import           Data.Array.Repa                   (Array)
@@ -770,21 +769,8 @@ instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
 -- Cmd --
 ---------
 
-cmdQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => ReaderT (Config 'QCustomProjection) m () -> Maybe FilePath -> Maybe ConfigRange -> m ()
-cmdQCustom action mf mr
-  = do
-  content <- liftIO $ readConfig mf
-  capabilities <- liftIO getCapabilities
-  let econf = getConfig content (Args'QCustomProjection mr) capabilities
-  case econf of
-    Right conf -> do
-      logDebugN "config red from the config file"
-      logDebugN $ serializeConfig conf
-      runReaderT action conf
-    Left e      -> logErrorNSH e
-
 processQCustom :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
-processQCustom = cmdQCustom processQCustomP
+processQCustom mf mr = cmd processQCustomP mf (Args'QCustomProjection mr)
 
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()
@@ -797,4 +783,4 @@ newQCustom cwd = do
 
 updateQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
               => Maybe FilePath -> Maybe ConfigRange -> m ()
-updateQCustom = cmdQCustom (pure ())
+updateQCustom mf mr = cmd (pure ()) mf (Args'QCustomProjection mr)

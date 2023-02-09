@@ -39,7 +39,6 @@ import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
 import           Control.Monad.Reader               (MonadReader, ask, forM_,
                                                      forever)
-import           Control.Monad.Trans.Reader         (ReaderT, runReaderT)
 import           Data.Aeson                         (FromJSON, ToJSON,
                                                      eitherDecode', encode)
 import           Data.Array.Repa                    (Array)
@@ -344,22 +343,8 @@ guess'DataSourcePath'DataFrameHkl common sample
 -- Cmd --
 ---------
 
-cmdHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => ReaderT (Config 'HklProjection) m () -> Maybe FilePath -> Maybe ConfigRange -> m ()
-cmdHkl action mf mr
-  = do
-  content <- liftIO $ readConfig mf
-  capabilities <- liftIO getCapabilities
-  let econf = getConfig content (Args'HklProjection mr) capabilities
-  case econf of
-    Right conf -> do
-      logDebugN "config red from the config file"
-      logDebugN $ serializeConfig conf
-      runReaderT action conf
-    Left e      -> logErrorNSH e
-
-
 processHkl :: (MonadLogger m, MonadThrow m, MonadIO m) => Maybe FilePath -> Maybe ConfigRange -> m ()
-processHkl = cmdHkl processHklP
+processHkl mf mr = cmd processHklP mf (Args'HklProjection mr)
 
 newHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
        => Path Abs Dir -> m ()
@@ -373,4 +358,4 @@ newHkl cwd = do
 
 updateHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
           => Maybe FilePath -> Maybe ConfigRange -> m ()
-updateHkl = cmdHkl (pure ())
+updateHkl mf mr = cmd (pure ()) mf (Args'HklProjection mr)
