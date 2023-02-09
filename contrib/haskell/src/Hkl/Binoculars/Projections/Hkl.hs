@@ -23,12 +23,8 @@
 -}
 
 module Hkl.Binoculars.Projections.Hkl
-    ( Config(..)
-    , DataFrameHkl
-    , defaultDataSourcePath'DataFrameHkl
-    , newHkl
+    ( newHkl
     , processHkl
-    , spaceHkl
     , updateHkl
     ) where
 
