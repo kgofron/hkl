@@ -73,6 +73,7 @@ import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.H5
+import           Hkl.HKD
 import           Hkl.Image
 import           Hkl.Orphan                         ()
 import           Hkl.Pipes
@@ -82,11 +83,6 @@ import           Hkl.Utils
 ----------------
 -- DataPath's --
 ----------------
-
--- "Higher-Kinded Data"
-type family HKD f a where
-  HKD Identity a = a
-  HKD f        a = f a
 
 data DataFrameHkl' f
   = DataFrameHkl

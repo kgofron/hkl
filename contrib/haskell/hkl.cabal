@@ -87,6 +87,7 @@ library
   exposed-modules: Hkl.Engine
   exposed-modules: Hkl.Geometry
   exposed-modules: Hkl.H5
+  exposed-modules: Hkl.HKD
   exposed-modules: Hkl.Image
   exposed-modules: Hkl.Lattice
   exposed-modules: Hkl.MyMatrix
