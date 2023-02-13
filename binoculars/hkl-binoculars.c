@@ -439,7 +439,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX: \
                                 {                                       \
                                         item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
-                                        item.indexes_0[1] = rint(timestamp / resolutions[2]); \
+                                        item.indexes_0[1] = rint(timestamp / resolutions[1]); \
                                         item.indexes_0[2] = REMOVED; \
                                         break;                          \
                                 }                                       \
@@ -497,7 +497,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                 {                                       \
                                         item.indexes_0[0] = rint(atan2(v.data[1], v.data[0]) / M_PI * 180 / resolutions[0]); \
                                         item.indexes_0[1] = rint(atan2(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]), v.data[2]) / M_PI * 180 / resolutions[1]); \
-                                        item.indexes_0[2] = 0;          \
+                                        item.indexes_0[2] = REMOVED;    \
                                         break;                          \
                                 }                                       \
                                 }                                       \
