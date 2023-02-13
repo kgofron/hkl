@@ -4,8 +4,6 @@
 module Hkl.Geometry
        ( Factory(..)
        , Geometry(..)
-       , Source(..)
-       , WaveLength
        , factoryFromString
        , newFactory
        , newGeometry
@@ -63,13 +61,9 @@ newFactory f = withCString (show f) $ \cname -> c'hkl_factory_get_by_name cname 
 
 --  Source
 
-type WaveLength = Length Double
-
-newtype Source = Source WaveLength deriving (Show)
-
 data Geometry = Geometry
                 Factory --  the type of diffractometer
-                Source --  source
+                Double --  source
                 (Vector CDouble) --  axes position
                 (Maybe [Parameter]) --  axes configuration
               deriving (Show)
@@ -113,9 +107,9 @@ data Geometry = Geometry
 --       c_hkl_geometry_axis_values_set ptr values n unit nullPtr
 
 pokeGeometry :: Ptr C'HklGeometry -> Geometry -> IO ()
-pokeGeometry ptr (Geometry _ (Source lw) vs _) = do
+pokeGeometry ptr (Geometry _ lw vs _) = do
   -- set the source
-  let wavelength = CDouble (lw /~ nano meter)
+  let wavelength = CDouble lw
   c'hkl_geometry_wavelength_set ptr wavelength unit nullPtr
 
   -- set the axes

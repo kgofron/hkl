@@ -69,9 +69,9 @@ data Lattice = Cubic -- a = b = c, alpha = beta = gamma = 90
                NanoMeter -- c
                Degree -- beta
              | Triclinic -- a != b != c, alpha != beta != gamma != 90
-               NanoMeter -- a
-               NanoMeter -- b
-               NanoMeter -- c
+               Double -- a
+               Double -- b
+               Double -- c
                Degree -- alpha
                Degree -- beta
                Degree -- gamma
@@ -126,10 +126,10 @@ newLattice (Monoclinic (NanoMeter la) (NanoMeter lb) (NanoMeter lc) (Degree abet
   let alpha = CDouble ((90 *~ degree) /~ radian)
   let beta = CDouble (abeta /~ radian)
   newLattice' a b c alpha beta alpha
-newLattice (Triclinic (NanoMeter la) (NanoMeter lb) (NanoMeter lc) (Degree aalpha) (Degree abeta) (Degree agamma)) = do
-  let a = CDouble (la /~ nano meter)
-  let b = CDouble (lb /~ nano meter)
-  let c = CDouble (lc /~ nano meter)
+newLattice (Triclinic la lb lc (Degree aalpha) (Degree abeta) (Degree agamma)) = do
+  let a = CDouble la
+  let b = CDouble lb
+  let c = CDouble lc
   let alpha = CDouble (aalpha /~ radian)
   let beta = CDouble (abeta /~ radian)
   let gamma = CDouble (agamma /~ radian)

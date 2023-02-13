@@ -76,7 +76,7 @@ data instance Config 'AnglesProjection = BinocularsConfig'Angles
   , binocularsConfig'Angles'ProjectionLimits       :: Maybe (RLimits DIM3)
   , binocularsConfig'Angles'SampleAxis             :: SampleAxis
   , binocularsConfig'Angles'DataPath               :: DataSourcePath DataFrameQCustom
- } deriving (Eq, Show)
+ } deriving (Show)
 
 
 default'BinocularsConfig'Angles :: Config 'AnglesProjection

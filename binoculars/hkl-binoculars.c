@@ -424,63 +424,63 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                 case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS: \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ: \
                                 {                                       \
-                                        item.indexes_0[0] = rint(v.data[0] / resolutions[0] / 10); \
-                                        item.indexes_0[1] = rint(v.data[1] / resolutions[1] / 10); \
-                                        item.indexes_0[2] = rint(v.data[2] / resolutions[2] / 10); \
+                                        item.indexes_0[0] = rint(v.data[0] / resolutions[0]); \
+                                        item.indexes_0[1] = rint(v.data[1] / resolutions[1]); \
+                                        item.indexes_0[2] = rint(v.data[2] / resolutions[2]); \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP: \
                                 {                                       \
-                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
                                         item.indexes_0[1] = rint(asin(hkl_vector_norm2(&v) / 2 / k) * 2 / M_PI * 180 / resolutions[1]); \
                                         item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX: \
                                 {                                       \
-                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
                                         item.indexes_0[1] = rint(timestamp / resolutions[1]); \
                                         item.indexes_0[2] = REMOVED; \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP: \
                                 {                                       \
-                                        item.indexes_0[0] = sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0] / 10; \
-                                        item.indexes_0[1] = v.data[2] / resolutions[1] / 10; \
+                                        item.indexes_0[0] = sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0]; \
+                                        item.indexes_0[1] = v.data[2] / resolutions[1]; \
                                         item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER: \
                                 {                                       \
-                                        item.indexes_0[0] = sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0] / 10; \
-                                        item.indexes_0[1] = v.data[2] / resolutions[1] / 10; \
+                                        item.indexes_0[0] = sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0]; \
+                                        item.indexes_0[1] = v.data[2] / resolutions[1]; \
                                         item.indexes_0[2] = REMOVED; \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX: \
                                 {                                       \
-                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
                                         item.indexes_0[1] = rint((atan2(v.data[2], -v.data[1])) / M_PI * 180 / resolutions[1]); \
-                                        item.indexes_0[2] = rint(v.data[0] / resolutions[2] / 10); \
+                                        item.indexes_0[2] = rint(v.data[0] / resolutions[2]); \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY: \
                                 {                                       \
-                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
                                         item.indexes_0[1] = rint((atan2(v.data[2], v.data[0])) / M_PI * 180 / resolutions[1]); \
-                                        item.indexes_0[2] = rint(v.data[1] / resolutions[2] / 10); \
+                                        item.indexes_0[2] = rint(v.data[1] / resolutions[2]); \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ: \
                                 {                                       \
-                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
                                         item.indexes_0[1] = rint((atan2(v.data[0], v.data[1])) / M_PI * 180 / resolutions[1]); \
-                                        item.indexes_0[2] = rint(v.data[2] / resolutions[2] / 10); \
+                                        item.indexes_0[2] = rint(v.data[2] / resolutions[2]); \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO: \
                                 {                                       \
-                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0] / 10); \
+                                        item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
                                         double ratio = v.data[2] + item.indexes_0[0]; \
                                         item.indexes_0[1] = rint(v.data[0] / ratio / resolutions[1]); \
                                         item.indexes_0[2] = rint(v.data[1] / ratio / resolutions[2]); \
@@ -490,7 +490,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                                 {                                       \
                                         item.indexes_0[0] = rint(atan2(v.data[1], v.data[0]) / M_PI * 180 / resolutions[0]); \
                                         item.indexes_0[1] = rint(atan2(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]), v.data[2]) / M_PI * 180 / resolutions[1]); \
-                                        item.indexes_0[2] = rint(hkl_vector_norm2(&v) / resolutions[2] / 10);          \
+                                        item.indexes_0[2] = rint(hkl_vector_norm2(&v) / resolutions[2]);          \
                                         break;                          \
                                 }                                       \
                                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU: \

@@ -69,7 +69,7 @@ data BinocularsConfig'Common
     , binocularsConfig'Common'AttenuationCoefficient :: Maybe Double
     , binocularsConfig'Common'AttenuationMax         :: Maybe Float
     , binocularsConfig'Common'Maskmatrix             :: Maybe MaskLocation
-    , binocularsConfig'Common'Wavelength             :: Maybe Angstrom
+    , binocularsConfig'Common'Wavelength             :: Maybe Double
     , binocularsConfig'Common'ImageSumMax            :: Maybe Double
     } deriving (Eq, Show, Generic)
 

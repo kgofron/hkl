@@ -53,22 +53,22 @@ import           Hkl.Sample
 
 data instance DataSourcePath Sample
     = DataSourcePath'Sample
-      (DataSourcePath Angstrom) -- a
-      (DataSourcePath Angstrom) -- b
-      (DataSourcePath Angstrom) -- c
+      (DataSourcePath Double) -- a
+      (DataSourcePath Double) -- b
+      (DataSourcePath Double) -- c
       (DataSourcePath Degree) -- alpha
       (DataSourcePath Degree) -- beta
       (DataSourcePath Degree) -- gamma
       (DataSourcePath Degree) -- ux
       (DataSourcePath Degree) -- uy
       (DataSourcePath Degree) -- uz
-    deriving (Eq, FromJSON, Generic, Show, ToJSON)
+    deriving (FromJSON, Generic, Show, ToJSON)
 
 data instance DataSourceAcq Sample
   = DataSourceAcq'Sample
-    (DataSourceAcq Angstrom)
-    (DataSourceAcq Angstrom)
-    (DataSourceAcq Angstrom)
+    (DataSourceAcq Double)
+    (DataSourceAcq Double)
+    (DataSourceAcq Double)
     (DataSourceAcq Degree)
     (DataSourceAcq Degree)
     (DataSourceAcq Degree)
@@ -113,9 +113,9 @@ instance Arbitrary (DataSourcePath Sample) where
 
 default'DataSourcePath'Sample :: DataSourcePath Sample
 default'DataSourcePath'Sample = DataSourcePath'Sample
-  (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A"))
-  (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B"))
-  (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C"))
+  (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A"))
+  (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B"))
+  (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C"))
   (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Alpha"))
   (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Beta"))
   (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Gamma"))
@@ -129,9 +129,9 @@ overload'DataSourcePath'Sample :: BinocularsConfig'Sample
                                -> DataSourcePath Sample
 overload'DataSourcePath'Sample (BinocularsConfig'Sample ma mb mc malpha mbeta mgamma mux muy muz) (DataSourcePath'Sample pa pb pc palpha pbeta pgamma pux puy puz)
   = DataSourcePath'Sample
-    (maybe pa DataSourcePath'Angstrom'Const ma)
-    (maybe pb DataSourcePath'Angstrom'Const mb)
-    (maybe pc DataSourcePath'Angstrom'Const mc)
+    (maybe pa DataSourcePath'Double'Const ma)
+    (maybe pb DataSourcePath'Double'Const mb)
+    (maybe pc DataSourcePath'Double'Const mc)
     (maybe palpha DataSourcePath'Degree'Const malpha)
     (maybe pbeta DataSourcePath'Degree'Const mbeta)
     (maybe pgamma DataSourcePath'Degree'Const mgamma)
@@ -146,9 +146,9 @@ guess'DataSourcePath'Sample common sample =
   do let inputType = binocularsConfig'Common'InputType common
      let samplePath' beamline device =
            DataSourcePath'Sample
-           (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A"))
-           (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B"))
-           (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C"))
+           (DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A"))
+           (DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B"))
+           (DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma"))
@@ -157,9 +157,9 @@ guess'DataSourcePath'Sample common sample =
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "Uz"))
      let sampleMarsPath beamline device =
            DataSourcePath'Sample
-           (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a"))
-           (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b"))
-           (DataSourcePath'Angstrom(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c"))
+           (DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a"))
+           (DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b"))
+           (DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma"))
@@ -199,9 +199,9 @@ guess'DataSourcePath'Sample common sample =
 
 data BinocularsConfig'Sample
   = BinocularsConfig'Sample
-    { binocularsConfig'Sample'A     :: Maybe Angstrom
-    , binocularsConfig'Sample'B     :: Maybe Angstrom
-    , binocularsConfig'Sample'C     :: Maybe Angstrom
+    { binocularsConfig'Sample'A     :: Maybe Double
+    , binocularsConfig'Sample'B     :: Maybe Double
+    , binocularsConfig'Sample'C     :: Maybe Double
     , binocularsConfig'Sample'Alpha :: Maybe Degree
     , binocularsConfig'Sample'Beta  :: Maybe Degree
     , binocularsConfig'Sample'Gamma :: Maybe Degree

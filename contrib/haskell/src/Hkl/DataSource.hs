@@ -110,14 +110,9 @@ instance Is0DStreamable (DataSourceAcq Degree) CDouble where
   extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
-instance Is0DStreamable (DataSourceAcq WaveLength) WaveLength where
-  extract0DStreamValue (DataSourceAcq'WaveLength d) = do
-    v <- extract0DStreamValue d
-    return $ v *~ angstrom
-  extract0DStreamValue (DataSourceAcq'WaveLength'Const a) = return $ unAngstrom a
-
-instance Is0DStreamable (DataSourceAcq WaveLength) Source where
-  extract0DStreamValue d = Source <$> extract0DStreamValue d
+instance Is0DStreamable (DataSourceAcq Double) Double where
+  extract0DStreamValue (DataSourceAcq'Double d)       = extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Double'Const a) = pure a
 
 --------------------
 -- Is1DStreamable --
@@ -178,7 +173,7 @@ instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
            kphi <- extract1DStreamValue kphi' i
            return (Geometry
                    K6c
-                   (Source wavelength)
+                   wavelength
                    (fromList [mu, komega, kappa, kphi, gamma, delta])
                    Nothing)
 
@@ -229,14 +224,6 @@ instance Is1DStreamable (DataSourceAcq Angstrom) Angstrom where
 instance Is1DStreamable (DataSourceAcq Index) Index where
   extract1DStreamValue (DataSourceAcq'Index ds) i = Index <$> extract1DStreamValue ds i
   extract1DStreamValue DataSourceAcq'Index'NoIndex _ = returnIO $ Index 0
-
-instance Is1DStreamable Dataset WaveLength where
-  extract1DStreamValue d i = do
-    v <- extract1DStreamValue d i
-    return $ v *~ angstrom
-
-instance Is1DStreamable Dataset Source where
-  extract1DStreamValue d i = Source <$> extract1DStreamValue d i
 
 instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector CDouble) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
@@ -329,6 +316,25 @@ instance DataSource Degree where
   withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
   withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
 
+-- Double
+
+data instance DataSourcePath Double = DataSourcePath'Double (Hdf5Path Z Double)
+                                    | DataSourcePath'Double'Const Double
+  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+instance Arbitrary (DataSourcePath Double) where
+  arbitrary = oneof
+    [ DataSourcePath'Double <$> arbitrary
+    , DataSourcePath'Double'Const <$> arbitrary
+    ]
+
+data instance DataSourceAcq Double = DataSourceAcq'Double Dataset
+                                       | DataSourceAcq'Double'Const Double
+
+instance DataSource Double where
+    withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Double ds)
+    withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
+
 -- Float
 
 newtype instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)
@@ -345,7 +351,7 @@ instance DataSource Float where
 -- Geometry
 
 data instance DataSourcePath Geometry =
-  DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath WaveLength
+  DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath Double
                                      , geometryPathMu         :: DataSourcePath Degree
                                      , geometryPathKomega     :: DataSourcePath Degree
                                      , geometryPathKappa      :: DataSourcePath Degree
@@ -353,13 +359,13 @@ data instance DataSourcePath Geometry =
                                      , geometryPathGamma      :: DataSourcePath Degree
                                      , geometryPathDelta      :: DataSourcePath Degree
                                      }
-  | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath WaveLength }
-  | DataSourcePath'Geometry'Mars { geometryPathWavelength :: DataSourcePath WaveLength
+  | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
+  | DataSourcePath'Geometry'Mars { geometryPathWavelength :: DataSourcePath Double
                                  , geometryPathAxes       :: [DataSourcePath Degree] }
-  | DataSourcePath'Geometry'MedH { geometryPathWavelength :: DataSourcePath WaveLength
+  | DataSourcePath'Geometry'MedH { geometryPathWavelength :: DataSourcePath Double
                                  , geometryPathAxes       :: [DataSourcePath Degree]
                                  }
-  | DataSourcePath'Geometry'MedV { geometryPathWavelength :: DataSourcePath WaveLength
+  | DataSourcePath'Geometry'MedV { geometryPathWavelength :: DataSourcePath Double
                                  , geometryPathBeta       :: DataSourcePath Degree
                                  , geometryPathMu         :: DataSourcePath Degree
                                  , geometryPathOmega      :: DataSourcePath Degree
@@ -367,18 +373,18 @@ data instance DataSourcePath Geometry =
                                  , geometryPathDelta      :: DataSourcePath Degree
                                  , geometryPathEtaa       :: DataSourcePath Degree
                                  }
-  | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath WaveLength
+  | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath Double
                                       , geometryPathAxes       :: [DataSourcePath Degree]
                                       , geometryPathEix        :: DataSourcePath Degree
                                       , geometryPathEiz        :: DataSourcePath Degree
                                       }
-  | DataSourcePath'Geometry'Uhv { geometryPathWavelength :: DataSourcePath WaveLength
+  | DataSourcePath'Geometry'Uhv { geometryPathWavelength :: DataSourcePath Double
                                 , geometryPathAxes       :: [DataSourcePath Degree]
                                 }
-  | DataSourcePath'Geometry'UhvTest { geometryPathWavelengthTest :: DataSourcePath WaveLength
+  | DataSourcePath'Geometry'UhvTest { geometryPathWavelengthTest :: DataSourcePath Double
                                     , geometryPathAxes           :: [DataSourcePath Degree]
                                     }
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+  deriving (Generic, Show, FromJSON, ToJSON)
 
 instance Arbitrary (DataSourcePath Geometry) where
   arbitrary = oneof
@@ -393,7 +399,7 @@ instance Arbitrary (DataSourcePath Geometry) where
     ]
 
 data instance DataSourceAcq Geometry = DataSourceAcq'Geometry'CristalK6C
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                        (DataSourceAcq Degree)
                                        (DataSourceAcq Degree)
                                        (DataSourceAcq Degree)
@@ -401,26 +407,26 @@ data instance DataSourceAcq Geometry = DataSourceAcq'Geometry'CristalK6C
                                        (DataSourceAcq Degree)
                                        (DataSourceAcq Degree)
                                      | DataSourceAcq'Geometry'Fix
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                      | DataSourceAcq'Geometry'Mars
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                        [DataSourceAcq Degree]
                                      | DataSourceAcq'Geometry'MedH
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                        [DataSourceAcq Degree]
                                      | DataSourceAcq'Geometry'MedV
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                        [DataSourceAcq Degree]
                                      | DataSourceAcq'Geometry'MedVEiger
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                        [DataSourceAcq Degree]
                                        (DataSourceAcq Degree)
                                        (DataSourceAcq Degree)
                                      | DataSourceAcq'Geometry'Uhv
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                        [DataSourceAcq Degree]
                                      | DataSourceAcq'Geometry'UhvTest
-                                       (DataSourceAcq WaveLength)
+                                       (DataSourceAcq Double)
                                        [DataSourceAcq Degree]
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
@@ -515,22 +521,3 @@ newtype instance DataSourceAcq Int = DataSourceAcq'Int Int
 
 instance DataSource Int where
   withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)
-
--- WaveLength
-
-data instance DataSourcePath WaveLength = DataSourcePath'WaveLength (Hdf5Path Z Double)
-                                        | DataSourcePath'WaveLength'Const Angstrom
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-instance Arbitrary (DataSourcePath WaveLength) where
-  arbitrary = oneof
-    [ DataSourcePath'WaveLength <$> arbitrary
-    , DataSourcePath'WaveLength'Const <$> arbitrary
-    ]
-
-data instance DataSourceAcq WaveLength = DataSourceAcq'WaveLength Dataset
-                                       | DataSourceAcq'WaveLength'Const Angstrom
-
-instance DataSource WaveLength where
-    withDataSourceP f (DataSourcePath'WaveLength p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'WaveLength ds)
-    withDataSourceP _ (DataSourcePath'WaveLength'Const a) g = g (DataSourceAcq'WaveLength'Const a)

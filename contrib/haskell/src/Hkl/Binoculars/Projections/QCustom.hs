@@ -106,7 +106,7 @@ data instance DataSourcePath DataFrameQCustom
     (DataSourcePath Geometry)
     (DataSourcePath Image)
     (DataSourcePath Index)
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+  deriving (Generic, Show, FromJSON, ToJSON)
 
 data instance DataSourceAcq DataFrameQCustom
   = DataSourceAcq'DataFrameQCustom
@@ -141,7 +141,7 @@ default'DataSourcePath'DataFrameQCustom
       (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
       2 0 Nothing)
     (DataSourcePath'Geometry'Uhv
-      (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
+      (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
       [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
       , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
       , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
@@ -171,7 +171,7 @@ data instance Config 'QCustomProjection
     , binocularsConfig'QCustom'ProjectionLimits       :: Maybe (RLimits DIM3)
     , binocularsConfig'QCustom'DataPath               :: DataSourcePath DataFrameQCustom
     , binocularsConfig'QCustom'SubProjection          :: Maybe QCustomSubProjection
-    } deriving (Eq, Show, Generic)
+    } deriving (Show, Generic)
 
 instance Arbitrary (Config 'QCustomProjection) where
   arbitrary = genericArbitraryU
@@ -337,10 +337,10 @@ overloadIndexPath msub idx =
                    QCustomSubProjection'AnglesZaxisOmega -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
 
-overloadWaveLength :: Maybe Angstrom -> DataSourcePath WaveLength -> DataSourcePath WaveLength
-overloadWaveLength ma wp = maybe wp DataSourcePath'WaveLength'Const ma
+overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
+overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
 
-overloadGeometryPath ::  Maybe Angstrom -> DataSourcePath Geometry -> DataSourcePath Geometry
+overloadGeometryPath ::  Maybe Double -> DataSourcePath Geometry -> DataSourcePath Geometry
 overloadGeometryPath mw (DataSourcePath'Geometry'CristalK6C wp m k kap kphi g d) = DataSourcePath'Geometry'CristalK6C (overloadWaveLength mw wp) m k kap kphi g d
 overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overloadWaveLength mw wp)
 overloadGeometryPath mw (DataSourcePath'Geometry'Mars wp as) = DataSourcePath'Geometry'Mars (overloadWaveLength mw wp) as
@@ -407,9 +407,9 @@ guess'DataSourcePath'DataFrameQCustom common msub =
             0 0 mAttenuationMax
 
       -- wavelength
-      let dataSourcePath'WaveLength'Sixs ::  DataSourcePath WaveLength
+      let dataSourcePath'WaveLength'Sixs ::  DataSourcePath Double
           dataSourcePath'WaveLength'Sixs
-            = DataSourcePath'WaveLength (hdf5p $ grouppat 0 (datasetp "SIXS/Monochromator/wavelength"
+            = DataSourcePath'Double (hdf5p $ grouppat 0 (datasetp "SIXS/Monochromator/wavelength"
                                                              `H5Or`
                                                              datasetp "SIXS/i14-c-c02-op-mono/lambda"))
 
@@ -481,7 +481,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
          CristalK6C -> DataSourcePath'DataFrameQCustom
                       (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
                       (DataSourcePath'Geometry'CristalK6C
-                        (overloadWaveLength mWavelength (DataSourcePath'WaveLength (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
+                        (overloadWaveLength mWavelength (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
                         (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position"))
                         (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position"))
                         (DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position"))
@@ -496,7 +496,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
                                                                (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
                        (DataSourcePath'Geometry'Mars
-                         (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom))))
+                         (overloadWaveLength mWavelength (DataSourcePath'Double'Const 1.537591))
                          [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
                          , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
                          , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
@@ -511,7 +511,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
          MarsSbs -> DataSourcePath'DataFrameQCustom
                    (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
                    (DataSourcePath'Geometry'Mars
-                     (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (1.537591 *~ angstrom))))
+                     (overloadWaveLength mWavelength (DataSourcePath'Double'Const 1.537591))
                      [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
@@ -585,7 +585,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
          SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
                               (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                               (DataSourcePath'Geometry'UhvTest
-                               (overloadWaveLength mWavelength (DataSourcePath'WaveLength'Const (Angstrom (0.672494 *~ angstrom))))
+                               (overloadWaveLength mWavelength (DataSourcePath'Double'Const 0.672494))
                                dataSourcePaths'Sixs'Uhv'Axes)
                               (mkDetector'Sixs'Fly detector)
                               (mkTimeStamp'Fly msub)
