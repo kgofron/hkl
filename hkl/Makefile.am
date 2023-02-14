@@ -38,6 +38,7 @@ hkl_c_sources = \
 	hkl-engine-e4c.c \
 	hkl-engine-k4c.c \
 	hkl-engine-e6c.c \
+	hkl-engine-esrf-id01-psic.c \
 	hkl-engine-k6c.c \
 	hkl-engine-petra3-p08-lisa.c \
 	hkl-engine-petra3-p09-eh2.c \
