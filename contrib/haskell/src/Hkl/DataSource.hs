@@ -7,7 +7,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
+
 {-
     Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -21,8 +23,8 @@
 
 module Hkl.DataSource
   ( DataSource(..)
-  , DataSourceAcq(..)
   , DataSourcePath(..)
+  , DataSourceAcq(..)
   , HklBinocularsException(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
@@ -109,6 +111,11 @@ class Is1DStreamable a e where
   extract1DStreamValue :: a -> Int -> IO e
 
 -- Is1DStreamable (instances)
+
+data HklBinocularsException
+    = WrongAttenuation Text Int Double
+    deriving (Show)
+instance Exception HklBinocularsException
 
 badAttenuation :: Float
 badAttenuation = -100
@@ -213,30 +220,39 @@ instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector CDo
 -- DataSource --
 ----------------
 
-data family DataSourcePath a :: Type
-data family DataSourceAcq a :: Type
-
 class DataSource a where
+  data DataSourcePath a :: Type
+  data DataSourceAcq a :: Type
+
   withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
 -- DataSource (instances)
 
 -- Attenuation
 
-data HklBinocularsException
-    = WrongAttenuation Text Int Double
-    deriving (Show)
-instance Exception HklBinocularsException
+instance DataSource Attenuation where
+  data DataSourcePath Attenuation =
+    DataSourcePath'Attenuation { attenuationPath            :: DataSourcePath Float
+                               , attenuationPathOffset      :: Int
+                               , attenuationPathCoefficient :: Double
+                               , attenuationPathMax         :: Maybe Float
+                               }
+    | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourcePath Float }
+    | DataSourcePath'NoAttenuation
+    deriving (Generic, Show, FromJSON, ToJSON)
 
-data instance DataSourcePath Attenuation =
-  DataSourcePath'Attenuation { attenuationPath            :: DataSourcePath Float
-                             , attenuationPathOffset      :: Int
-                             , attenuationPathCoefficient :: Double
-                             , attenuationPathMax         :: Maybe Float
-                             }
-  | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourcePath Float }
-  | DataSourcePath'NoAttenuation
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+  data DataSourceAcq Attenuation =
+    DataSourceAcq'Attenuation { attenuationAcqPath        :: DataSourceAcq Float
+                              , attenuationAcqOffset      :: Int
+                              , attenuationAcqCoefficient :: Double
+                              , attenuationAcqMax         :: Maybe Float
+                              }
+    | DataSourceAcq'ApplyedAttenuationFactor { attenuationAcqPath :: DataSourceAcq Float }
+    | DataSourceAcq'NoAttenuation
+
+  withDataSourceP f (DataSourcePath'Attenuation p o c m) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'Attenuation ds o c m)
+  withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
+  withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
 
 instance Arbitrary (DataSourcePath Attenuation) where
   arbitrary = oneof
@@ -245,25 +261,21 @@ instance Arbitrary (DataSourcePath Attenuation) where
     , pure DataSourcePath'NoAttenuation
     ]
 
-data instance DataSourceAcq Attenuation =
-  DataSourceAcq'Attenuation { attenuationAcqPath        :: DataSourceAcq Float
-                            , attenuationAcqOffset      :: Int
-                            , attenuationAcqCoefficient :: Double
-                            , attenuationAcqMax         :: Maybe Float
-                            }
-  | DataSourceAcq'ApplyedAttenuationFactor { attenuationAcqPath :: DataSourceAcq Float }
-  | DataSourceAcq'NoAttenuation
-
-instance DataSource Attenuation where
-  withDataSourceP f (DataSourcePath'Attenuation p o c m) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'Attenuation ds o c m)
-  withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
-  withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
 
 -- Degree
 
-data instance DataSourcePath Degree = DataSourcePath'Degree (Hdf5Path DIM1 Double)
-                                    | DataSourcePath'Degree'Const Degree
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+instance DataSource Degree where
+  data DataSourcePath Degree
+    = DataSourcePath'Degree (Hdf5Path DIM1 Double)
+    | DataSourcePath'Degree'Const Degree
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq Degree
+    = DataSourceAcq'Degree Dataset
+    | DataSourceAcq'Degree'Const Degree
+
+  withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
+  withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
 
 instance Arbitrary (DataSourcePath Degree) where
   arbitrary = oneof
@@ -271,18 +283,20 @@ instance Arbitrary (DataSourcePath Degree) where
     , DataSourcePath'Degree'Const <$> arbitrary
     ]
 
-data instance DataSourceAcq Degree = DataSourceAcq'Degree Dataset
-                                   | DataSourceAcq'Degree'Const Degree
-
-instance DataSource Degree where
-  withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
-  withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
-
 -- Double
 
-data instance DataSourcePath Double = DataSourcePath'Double (Hdf5Path Z Double)
-                                    | DataSourcePath'Double'Const Double
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+instance DataSource Double where
+  data DataSourcePath Double
+    = DataSourcePath'Double (Hdf5Path Z Double)
+    | DataSourcePath'Double'Const Double
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq Double
+    = DataSourceAcq'Double Dataset
+    | DataSourceAcq'Double'Const Double
+
+  withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Double ds)
+  withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
 
 instance Arbitrary (DataSourcePath Double) where
   arbitrary = oneof
@@ -290,106 +304,24 @@ instance Arbitrary (DataSourcePath Double) where
     , DataSourcePath'Double'Const <$> arbitrary
     ]
 
-data instance DataSourceAcq Double = DataSourceAcq'Double Dataset
-                                       | DataSourceAcq'Double'Const Double
-
-instance DataSource Double where
-    withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Double ds)
-    withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
 
 -- Float
 
-newtype instance DataSourcePath Float = DataSourcePath'Float (Hdf5Path DIM1 Float)
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
+instance DataSource Float where
+  newtype DataSourcePath Float
+    = DataSourcePath'Float (Hdf5Path DIM1 Float)
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+  newtype DataSourceAcq Float
+    = DataSourceAcq'Float Dataset
+
+  withDataSourceP f (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
 
 instance Arbitrary (DataSourcePath Float) where
   arbitrary = DataSourcePath'Float <$> arbitrary
 
-newtype instance DataSourceAcq Float = DataSourceAcq'Float Dataset
-
-instance DataSource Float where
-  withDataSourceP f (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
 
 -- Geometry
-
-data instance DataSourcePath Geometry =
-  DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath Double
-                                     , geometryPathMu         :: DataSourcePath Degree
-                                     , geometryPathKomega     :: DataSourcePath Degree
-                                     , geometryPathKappa      :: DataSourcePath Degree
-                                     , geometryPathKphi       :: DataSourcePath Degree
-                                     , geometryPathGamma      :: DataSourcePath Degree
-                                     , geometryPathDelta      :: DataSourcePath Degree
-                                     }
-  | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
-  | DataSourcePath'Geometry'Mars { geometryPathWavelength :: DataSourcePath Double
-                                 , geometryPathAxes       :: [DataSourcePath Degree] }
-  | DataSourcePath'Geometry'MedH { geometryPathWavelength :: DataSourcePath Double
-                                 , geometryPathAxes       :: [DataSourcePath Degree]
-                                 }
-  | DataSourcePath'Geometry'MedV { geometryPathWavelength :: DataSourcePath Double
-                                 , geometryPathBeta       :: DataSourcePath Degree
-                                 , geometryPathMu         :: DataSourcePath Degree
-                                 , geometryPathOmega      :: DataSourcePath Degree
-                                 , geometryPathGamma      :: DataSourcePath Degree
-                                 , geometryPathDelta      :: DataSourcePath Degree
-                                 , geometryPathEtaa       :: DataSourcePath Degree
-                                 }
-  | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath Double
-                                      , geometryPathAxes       :: [DataSourcePath Degree]
-                                      , geometryPathEix        :: DataSourcePath Degree
-                                      , geometryPathEiz        :: DataSourcePath Degree
-                                      }
-  | DataSourcePath'Geometry'Uhv { geometryPathWavelength :: DataSourcePath Double
-                                , geometryPathAxes       :: [DataSourcePath Degree]
-                                }
-  | DataSourcePath'Geometry'UhvTest { geometryPathWavelengthTest :: DataSourcePath Double
-                                    , geometryPathAxes           :: [DataSourcePath Degree]
-                                    }
-  deriving (Generic, Show, FromJSON, ToJSON)
-
-instance Arbitrary (DataSourcePath Geometry) where
-  arbitrary = oneof
-    [ DataSourcePath'Geometry'CristalK6C <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'Fix <$> arbitrary
-    , DataSourcePath'Geometry'Mars <$> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'MedH <$> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'MedV <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'MedVEiger <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'Uhv <$> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'UhvTest <$> arbitrary <*> arbitrary
-    ]
-
-data instance DataSourceAcq Geometry = DataSourceAcq'Geometry'CristalK6C
-                                       (DataSourceAcq Double)
-                                       (DataSourceAcq Degree)
-                                       (DataSourceAcq Degree)
-                                       (DataSourceAcq Degree)
-                                       (DataSourceAcq Degree)
-                                       (DataSourceAcq Degree)
-                                       (DataSourceAcq Degree)
-                                     | DataSourceAcq'Geometry'Fix
-                                       (DataSourceAcq Double)
-                                     | DataSourceAcq'Geometry'Mars
-                                       (DataSourceAcq Double)
-                                       [DataSourceAcq Degree]
-                                     | DataSourceAcq'Geometry'MedH
-                                       (DataSourceAcq Double)
-                                       [DataSourceAcq Degree]
-                                     | DataSourceAcq'Geometry'MedV
-                                       (DataSourceAcq Double)
-                                       [DataSourceAcq Degree]
-                                     | DataSourceAcq'Geometry'MedVEiger
-                                       (DataSourceAcq Double)
-                                       [DataSourceAcq Degree]
-                                       (DataSourceAcq Degree)
-                                       (DataSourceAcq Degree)
-                                     | DataSourceAcq'Geometry'Uhv
-                                       (DataSourceAcq Double)
-                                       [DataSourceAcq Degree]
-                                     | DataSourceAcq'Geometry'UhvTest
-                                       (DataSourceAcq Double)
-                                       [DataSourceAcq Degree]
 
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
@@ -398,6 +330,74 @@ withAxesPathP :: (MonadSafe m, Location l) => l -> [DataSourcePath Degree] -> ([
 withAxesPathP f dpaths = nest (Prelude.map (withDataSourceP f) dpaths)
 
 instance DataSource Geometry where
+  data DataSourcePath Geometry =
+    DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath Double
+                                       , geometryPathMu         :: DataSourcePath Degree
+                                       , geometryPathKomega     :: DataSourcePath Degree
+                                       , geometryPathKappa      :: DataSourcePath Degree
+                                       , geometryPathKphi       :: DataSourcePath Degree
+                                       , geometryPathGamma      :: DataSourcePath Degree
+                                       , geometryPathDelta      :: DataSourcePath Degree
+                                       }
+    | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
+    | DataSourcePath'Geometry'Mars { geometryPathWavelength :: DataSourcePath Double
+                                   , geometryPathAxes       :: [DataSourcePath Degree] }
+    | DataSourcePath'Geometry'MedH { geometryPathWavelength :: DataSourcePath Double
+                                   , geometryPathAxes       :: [DataSourcePath Degree]
+                                   }
+    | DataSourcePath'Geometry'MedV { geometryPathWavelength :: DataSourcePath Double
+                                   , geometryPathBeta       :: DataSourcePath Degree
+                                   , geometryPathMu         :: DataSourcePath Degree
+                                   , geometryPathOmega      :: DataSourcePath Degree
+                                   , geometryPathGamma      :: DataSourcePath Degree
+                                   , geometryPathDelta      :: DataSourcePath Degree
+                                   , geometryPathEtaa       :: DataSourcePath Degree
+                                   }
+    | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath Double
+                                        , geometryPathAxes       :: [DataSourcePath Degree]
+                                        , geometryPathEix        :: DataSourcePath Degree
+                                        , geometryPathEiz        :: DataSourcePath Degree
+                                        }
+    | DataSourcePath'Geometry'Uhv { geometryPathWavelength :: DataSourcePath Double
+                                  , geometryPathAxes       :: [DataSourcePath Degree]
+                                  }
+    | DataSourcePath'Geometry'UhvTest { geometryPathWavelengthTest :: DataSourcePath Double
+                                      , geometryPathAxes           :: [DataSourcePath Degree]
+                                      }
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq Geometry
+    = DataSourceAcq'Geometry'CristalK6C
+      (DataSourceAcq Double)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+    | DataSourceAcq'Geometry'Fix
+      (DataSourceAcq Double)
+    | DataSourceAcq'Geometry'Mars
+      (DataSourceAcq Double)
+      [DataSourceAcq Degree]
+    | DataSourceAcq'Geometry'MedH
+      (DataSourceAcq Double)
+      [DataSourceAcq Degree]
+    | DataSourceAcq'Geometry'MedV
+      (DataSourceAcq Double)
+      [DataSourceAcq Degree]
+    | DataSourceAcq'Geometry'MedVEiger
+      (DataSourceAcq Double)
+      [DataSourceAcq Degree]
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+    | DataSourceAcq'Geometry'Uhv
+      (DataSourceAcq Double)
+      [DataSourceAcq Degree]
+    | DataSourceAcq'Geometry'UhvTest
+      (DataSourceAcq Double)
+      [DataSourceAcq Degree]
+
   withDataSourceP f (DataSourcePath'Geometry'CristalK6C w m ko ka kp g d) gg =
     withDataSourceP f w $ \w' ->
     withDataSourceP f m $ \mu' ->
@@ -425,24 +425,33 @@ instance DataSource Geometry where
     withDataSourceP f w $ \w' ->
     withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'UhvTest w' as')
 
+instance Arbitrary (DataSourcePath Geometry) where
+  arbitrary = oneof
+    [ DataSourcePath'Geometry'CristalK6C <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'Fix <$> arbitrary
+    , DataSourcePath'Geometry'Mars <$> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'MedH <$> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'MedV <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'MedVEiger <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'Uhv <$> arbitrary <*> arbitrary
+    , DataSourcePath'Geometry'UhvTest <$> arbitrary <*> arbitrary
+    ]
+
 -- Image
-
-data instance DataSourcePath Image = DataSourcePath'Image (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-instance Arbitrary (DataSourcePath Image) where
-  arbitrary = DataSourcePath'Image <$> arbitrary <*> arbitrary
-
-
-data instance DataSourceAcq Image = DataSourceAcq'Image'Int32 Dataset (Detector Hkl DIM2) (IOVector Int32)
-                                  | DataSourceAcq'Image'Word16 Dataset (Detector Hkl DIM2) (IOVector Word16)
-                                  | DataSourceAcq'Image'Word32 Dataset (Detector Hkl DIM2) (IOVector Word32)
 
 condM :: (Monad m) => [(m Bool, m a)] -> m a
 condM []          = undefined
 condM ((p, v):ls) = ifM p v (condM ls)
 
 instance DataSource Image where
+  data DataSourcePath Image
+    = DataSourcePath'Image (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+  data instance DataSourceAcq Image = DataSourceAcq'Image'Int32 Dataset (Detector Hkl DIM2) (IOVector Int32)
+                                    | DataSourceAcq'Image'Word16 Dataset (Detector Hkl DIM2) (IOVector Word16)
+                                    | DataSourceAcq'Image'Word32 Dataset (Detector Hkl DIM2) (IOVector Word32)
+
   withDataSourceP f (DataSourcePath'Image p det) g = withHdf5PathP f p $ \ds -> do
     t <- liftIO $ getDatasetType ds
     s <- liftIO $ getTypeSize t
@@ -458,16 +467,20 @@ instance DataSource Image where
                 g (DataSourceAcq'Image'Word32 ds det arr))
           ]
 
+instance Arbitrary (DataSourcePath Image) where
+  arbitrary = DataSourcePath'Image <$> arbitrary <*> arbitrary
+
 -- Index
 
-data instance DataSourcePath Index = DataSourcePath'Index (Hdf5Path DIM1 Double)
-                                   | DataSourcePath'Index'NoIndex
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-data instance DataSourceAcq Index = DataSourceAcq'Index Dataset
-                                  | DataSourceAcq'Index'NoIndex
-
 instance DataSource Index where
+  data DataSourcePath Index
+    = DataSourcePath'Index (Hdf5Path DIM1 Double)
+    | DataSourcePath'Index'NoIndex
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq Index = DataSourceAcq'Index Dataset
+                           | DataSourceAcq'Index'NoIndex
+
   withDataSourceP f (DataSourcePath'Index p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Index ds)
   withDataSourceP _ DataSourcePath'Index'NoIndex g = g DataSourceAcq'Index'NoIndex
 
@@ -476,10 +489,12 @@ instance Arbitrary (DataSourcePath Index) where
 
 -- Int
 
-newtype instance DataSourcePath Int = DataSourcePath'Int Int
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-newtype instance DataSourceAcq Int = DataSourceAcq'Int Int
-
 instance DataSource Int where
+  newtype DataSourcePath Int
+    = DataSourcePath'Int Int
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+  newtype DataSourceAcq Int
+    = DataSourceAcq'Int Int
+
   withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)

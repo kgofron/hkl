@@ -99,25 +99,22 @@ data DataFrameQCustom
       Index -- timestamp in double
     deriving Show
 
-data instance DataSourcePath DataFrameQCustom
-  = DataSourcePath'DataFrameQCustom
-    (DataSourcePath Attenuation)
-    (DataSourcePath Geometry)
-    (DataSourcePath Image)
-    (DataSourcePath Index)
-  deriving (Generic, Show, FromJSON, ToJSON)
-
-data instance DataSourceAcq DataFrameQCustom
-  = DataSourceAcq'DataFrameQCustom
-    (DataSourceAcq Attenuation)
-    (DataSourceAcq Geometry)
-    (DataSourceAcq Image)
-    (DataSourceAcq Index)
-
-instance Arbitrary (DataSourcePath DataFrameQCustom) where
-  arbitrary = DataSourcePath'DataFrameQCustom <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-
 instance DataSource DataFrameQCustom where
+  data DataSourcePath DataFrameQCustom
+    = DataSourcePath'DataFrameQCustom
+      (DataSourcePath Attenuation)
+      (DataSourcePath Geometry)
+      (DataSourcePath Image)
+      (DataSourcePath Index)
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq DataFrameQCustom
+    = DataSourceAcq'DataFrameQCustom
+      (DataSourceAcq Attenuation)
+      (DataSourceAcq Geometry)
+      (DataSourceAcq Image)
+      (DataSourceAcq Index)
+
   withDataSourceP f (DataSourcePath'DataFrameQCustom a g i idx) gg =
     withDataSourceP f a $ \a' ->
     withDataSourceP f g $ \g' ->
@@ -132,6 +129,8 @@ instance Is1DStreamable (DataSourceAcq DataFrameQCustom) DataFrameQCustom where
       <*> extract1DStreamValue img i
       <*> extract1DStreamValue idx i
 
+instance Arbitrary (DataSourcePath DataFrameQCustom) where
+  arbitrary = DataSourcePath'DataFrameQCustom <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 default'DataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
 default'DataSourcePath'DataFrameQCustom

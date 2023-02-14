@@ -51,7 +51,8 @@ import           Hkl.Sample
 -- DataSource --
 ----------------
 
-data instance DataSourcePath Sample
+instance DataSource Sample where
+  data DataSourcePath Sample
     = DataSourcePath'Sample
       (DataSourcePath Double) -- a
       (DataSourcePath Double) -- b
@@ -64,19 +65,18 @@ data instance DataSourcePath Sample
       (DataSourcePath Degree) -- uz
     deriving (FromJSON, Generic, Show, ToJSON)
 
-data instance DataSourceAcq Sample
-  = DataSourceAcq'Sample
-    (DataSourceAcq Double)
-    (DataSourceAcq Double)
-    (DataSourceAcq Double)
-    (DataSourceAcq Degree)
-    (DataSourceAcq Degree)
-    (DataSourceAcq Degree)
-    (DataSourceAcq Degree)
-    (DataSourceAcq Degree)
-    (DataSourceAcq Degree)
+  data DataSourceAcq Sample
+    = DataSourceAcq'Sample
+      (DataSourceAcq Double)
+      (DataSourceAcq Double)
+      (DataSourceAcq Double)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
+      (DataSourceAcq Degree)
 
-instance DataSource Sample where
   withDataSourceP f (DataSourcePath'Sample a b c alpha beta gamma ux uy uz) g =
     withDataSourceP f a $ \a' ->
     withDataSourceP f b $ \b' ->
