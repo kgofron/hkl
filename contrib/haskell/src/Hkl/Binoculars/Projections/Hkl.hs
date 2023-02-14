@@ -95,22 +95,19 @@ data DataFrameHkl' f
     }
   deriving (Generic)
 
-type DataFrameHkl = DataFrameHkl' Identity
+deriving instance Show (DataFrameHkl' DataSourcePath)
+instance FromJSON (DataFrameHkl' DataSourcePath)
+instance ToJSON (DataFrameHkl' DataSourcePath)
 
-type DataFrameHkl'Path = DataFrameHkl' DataSourcePath
-deriving instance Show DataFrameHkl'Path
-instance FromJSON DataFrameHkl'Path
-instance ToJSON DataFrameHkl'Path
-
-instance Arbitrary DataFrameHkl'Path where
+instance Arbitrary (DataFrameHkl' DataSourcePath) where
   arbitrary = DataFrameHkl <$> arbitrary  <*> arbitrary
 
-defaultDataSourcePath'DataFrameHkl :: DataFrameHkl'Path
+defaultDataSourcePath'DataFrameHkl :: DataFrameHkl' DataSourcePath
 defaultDataSourcePath'DataFrameHkl = DataFrameHkl
                                      default'DataSourcePath'DataFrameQCustom
                                      default'DataSourcePath'Sample
 
-instance HasFieldValue DataFrameHkl'Path where
+instance HasFieldValue (DataFrameHkl' DataSourcePath) where
   fieldvalue = FieldValue
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
                , fvEmit = decodeUtf8 . toStrict . encode
@@ -127,7 +124,7 @@ data instance Config 'HklProjection
     , binocularsConfig'Hkl'ProjectionType         :: ProjectionType
     , binocularsConfig'Hkl'ProjectionResolution   :: Resolutions DIM3
     , binocularsConfig'Hkl'ProjectionLimits       :: Maybe (RLimits DIM3)
-    , binocularsConfig'Hkl'DataPath               :: DataFrameHkl'Path
+    , binocularsConfig'Hkl'DataPath               :: DataFrameHkl' DataSourcePath
     } deriving (Generic)
 
 newtype instance Args 'HklProjection = Args'HklProjection (Maybe ConfigRange)
@@ -145,8 +142,8 @@ default'BinocularsConfig'Hkl
 
 overload'DataSourcePath'DataFrameHkl :: BinocularsConfig'Common
                                      -> BinocularsConfig'Sample
-                                     -> DataFrameHkl'Path
-                                     -> DataFrameHkl'Path
+                                     -> DataFrameHkl' DataSourcePath
+                                     -> DataFrameHkl' DataSourcePath
 overload'DataSourcePath'DataFrameHkl common sample (DataFrameHkl qCustomPath samplePath)
   = DataFrameHkl newQCustomPath newSamplePath
   where
@@ -201,7 +198,7 @@ instance ToIni (Config 'HklProjection) where
 ----------------
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameHkl -> IO (DataFrameSpace DIM3)
+spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameHkl' Identity -> IO (DataFrameSpace DIM3)
 spaceHkl det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img _) samplePath) = do
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
@@ -227,7 +224,7 @@ spaceHkl det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFr
 
 class ChunkP a => FramesHklP a where
   framesHklP :: MonadSafe m
-             => a -> Pipe (FilePath, [Int]) DataFrameHkl m ()
+             => a -> Pipe (FilePath, [Int]) (DataFrameHkl' Identity) m ()
 
 
 processHklP :: (MonadIO m, MonadLogger m, MonadReader (Config 'HklProjection) m, MonadThrow m)
@@ -306,10 +303,10 @@ processHklP = do
 
 -- FramesHklP
 
-instance ChunkP DataFrameHkl'Path where
+instance ChunkP (DataFrameHkl' DataSourcePath) where
   chunkP (DataFrameHkl p _) = chunkP p
 
-instance FramesHklP DataFrameHkl'Path where
+instance FramesHklP (DataFrameHkl' DataSourcePath) where
   framesHklP (DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
     withFileP (openFile' fp) $ \f ->
@@ -326,7 +323,7 @@ instance FramesHklP DataFrameHkl'Path where
 
 guess'DataSourcePath'DataFrameHkl :: BinocularsConfig'Common
                                   -> BinocularsConfig'Sample
-                                  -> DataFrameHkl'Path
+                                  -> DataFrameHkl' DataSourcePath
 guess'DataSourcePath'DataFrameHkl common sample
   = DataFrameHkl
     (guess'DataSourcePath'DataFrameQCustom common Nothing)
