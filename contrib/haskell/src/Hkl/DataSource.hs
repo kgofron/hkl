@@ -49,7 +49,6 @@ import           Foreign.C.Types                   (CDouble (..))
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
-import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe)
 import           Test.QuickCheck                   (Arbitrary (..), oneof)
@@ -70,18 +69,6 @@ import           Hkl.Types
 
 class Is0DStreamable a e where
   extract0DStreamValue :: a -> IO e
-
-instance Is0DStreamable (DataSourceAcq Angstrom) Angstrom where
-  extract0DStreamValue (DataSourceAcq'Angstrom d) =
-    Angstrom <$> do
-      v <- extract0DStreamValue d
-      return $ v *~ angstrom
-  extract0DStreamValue (DataSourceAcq'Angstrom'Const a) = pure a
-
-instance Is0DStreamable (DataSourceAcq Angstrom) NanoMeter where
-  extract0DStreamValue (DataSourceAcq'Angstrom d) =
-    NanoMeter . unAngstrom . (Angstrom . (*~ angstrom)) <$> extract0DStreamValue d
-  extract0DStreamValue (DataSourceAcq'Angstrom'Const a) = pure $ NanoMeter . unAngstrom $ a
 
 instance Is0DStreamable Dataset CDouble where
   extract0DStreamValue d = getPosition d 0
@@ -215,12 +202,6 @@ instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Word16 ds det buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Word32 ds det buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
 
-instance Is1DStreamable (DataSourceAcq Angstrom) Angstrom where
-  extract1DStreamValue (DataSourceAcq'Angstrom d) i = Angstrom <$> do
-    v <- extract1DStreamValue d i
-    return $ v *~ angstrom
-  extract1DStreamValue (DataSourceAcq'Angstrom'Const d) _ = pure d
-
 instance Is1DStreamable (DataSourceAcq Index) Index where
   extract1DStreamValue (DataSourceAcq'Index ds) i = Index <$> extract1DStreamValue ds i
   extract1DStreamValue DataSourceAcq'Index'NoIndex _ = returnIO $ Index 0
@@ -239,25 +220,6 @@ class DataSource a where
   withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
 -- DataSource (instances)
-
--- Angstrom
-
-data instance DataSourcePath Angstrom = DataSourcePath'Angstrom (Hdf5Path Z Double)
-                                       | DataSourcePath'Angstrom'Const Angstrom
-  deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-data instance DataSourceAcq Angstrom = DataSourceAcq'Angstrom Dataset
-                                      | DataSourceAcq'Angstrom'Const Angstrom
-
-instance DataSource Angstrom where
-  withDataSourceP f (DataSourcePath'Angstrom p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Angstrom ds)
-  withDataSourceP _ (DataSourcePath'Angstrom'Const a) g = g (DataSourceAcq'Angstrom'Const a)
-
-instance Arbitrary (DataSourcePath Angstrom) where
-  arbitrary =  oneof
-    [ DataSourcePath'Angstrom <$> arbitrary
-    , DataSourcePath'Angstrom'Const <$> arbitrary
-    ]
 
 -- Attenuation
 

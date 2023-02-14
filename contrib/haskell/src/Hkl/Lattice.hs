@@ -4,7 +4,6 @@
 module Hkl.Lattice
   ( Degree(..)
   , Lattice(..)
-  , NanoMeter(..)
   , withLattice
   ) where
 
@@ -14,24 +13,11 @@ import           Foreign                           (ForeignPtr, Ptr,
                                                     withForeignPtr)
 import           Foreign.C.Types                   (CDouble (..))
 import           GHC.Generics                      (Generic)
-import           Numeric.Units.Dimensional.Prelude (Angle, Length, degree,
-                                                    meter, nano, radian, (*~),
+import           Numeric.Units.Dimensional.Prelude (Angle, degree, radian, (*~),
                                                     (/~))
 import           Test.QuickCheck                   (Arbitrary (..))
 
 import           Hkl.C.Hkl
-
-newtype NanoMeter = NanoMeter { unNanoMeter :: Length Double }
-    deriving (Eq, Show)
-
-instance Arbitrary NanoMeter where
-  arbitrary = NanoMeter . (*~ nano meter) <$> arbitrary
-
-instance FromJSON NanoMeter where
-  parseJSON = fmap (NanoMeter . (*~ nano meter)) . parseJSON
-
-instance ToJSON NanoMeter where
-  toJSON = toJSON . (/~ nano meter) . unNanoMeter
 
 newtype Degree = Degree { unDegree :: Angle Double }
     deriving (Eq, Show)
@@ -49,24 +35,24 @@ instance ToJSON Degree where
 --  Lattice
 
 data Lattice = Cubic -- a = b = c, alpha = beta = gamma = 90
-               NanoMeter
+               Double
              | Tetragonal -- a = b != c,  alpha = beta = gamma = 90
-               NanoMeter -- a, b
-               NanoMeter -- c
+               Double -- a, b
+               Double -- c
              | Orthorhombic -- a != b != c,  alpha = beta = gamma = 90
-               NanoMeter -- a
-               NanoMeter -- b
-               NanoMeter -- c
+               Double -- a
+               Double -- b
+               Double -- c
              | Rhombohedral -- a = b = c, alpha = beta = gamma != 90
-               NanoMeter -- a, b, c
+               Double -- a, b, c
                Degree -- alpha, beta, gamma
              | Hexagonal -- a = b != c, alpha = beta = 90, gamma = 120
-               NanoMeter -- a, b
-               NanoMeter -- c
+               Double -- a, b
+               Double -- c
              | Monoclinic -- a != b != c, alpha = gamma = 90, beta != 90
-               NanoMeter -- a
-               NanoMeter -- b
-               NanoMeter -- c
+               Double -- a
+               Double -- b
+               Double -- c
                Degree -- beta
              | Triclinic -- a != b != c, alpha != beta != gamma != 90
                Double -- a
@@ -94,35 +80,35 @@ newLattice' a b c alpha beta gamma = do
   newForeignPtr p'hkl_lattice_free lattice
 
 newLattice :: Lattice -> IO (ForeignPtr C'HklLattice)
-newLattice  (Cubic (NanoMeter la)) = do
-  let a = CDouble (la /~ nano meter)
+newLattice  (Cubic la) = do
+  let a = CDouble la
   let alpha = CDouble ((90 *~ degree) /~ radian)
   newLattice' a a a alpha alpha alpha
-newLattice (Tetragonal (NanoMeter la) (NanoMeter lc)) = do
-  let a = CDouble (la /~ nano meter)
-  let c = CDouble (lc /~ nano meter)
+newLattice (Tetragonal la lc) = do
+  let a = CDouble la
+  let c = CDouble lc
   let alpha = CDouble ((90 *~ degree) /~ radian)
   newLattice' a a c alpha alpha alpha
-newLattice  (Orthorhombic (NanoMeter la) (NanoMeter lb) (NanoMeter lc)) = do
-  let a = CDouble (la /~ nano meter)
-  let b = CDouble (lb /~ nano meter)
-  let c = CDouble (lc /~ nano meter)
+newLattice  (Orthorhombic la lb lc) = do
+  let a = CDouble la
+  let b = CDouble lb
+  let c = CDouble lc
   let alpha = CDouble ((90 *~ degree) /~ radian)
   newLattice' a b c alpha alpha alpha
-newLattice (Rhombohedral (NanoMeter la) (Degree aalpha)) = do
-  let a = CDouble (la /~ nano meter)
+newLattice (Rhombohedral la (Degree aalpha)) = do
+  let a = CDouble la
   let alpha = CDouble (aalpha /~ radian)
   newLattice' a a a alpha alpha alpha
-newLattice (Hexagonal (NanoMeter la) (NanoMeter lc)) = do
-  let a = CDouble (la /~ nano meter)
-  let c = CDouble (lc /~ nano meter)
+newLattice (Hexagonal la lc) = do
+  let a = CDouble la
+  let c = CDouble lc
   let alpha = CDouble ((90 *~ degree) /~ radian)
   let gamma = CDouble ((120 *~ degree) /~ radian)
   newLattice' a a c alpha alpha gamma
-newLattice (Monoclinic (NanoMeter la) (NanoMeter lb) (NanoMeter lc) (Degree abeta)) = do
-  let a = CDouble (la /~ nano meter)
-  let b = CDouble (lb /~ nano meter)
-  let c = CDouble (lc /~ nano meter)
+newLattice (Monoclinic la lb lc (Degree abeta)) = do
+  let a = CDouble la
+  let b = CDouble lb
+  let c = CDouble lc
   let alpha = CDouble ((90 *~ degree) /~ radian)
   let beta = CDouble (abeta /~ radian)
   newLattice' a b c alpha beta alpha

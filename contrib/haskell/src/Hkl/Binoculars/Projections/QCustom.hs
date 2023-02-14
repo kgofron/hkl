@@ -62,7 +62,6 @@ import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (withForeignPtr)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
-import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~))
 import           Path                              (Abs, Dir, Path)
 import           Pipes                             (Pipe, await, each,
