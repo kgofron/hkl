@@ -1,1 +1,1 @@
-cabal configure --extra-lib-dirs=`readlink -f ../../hkl/.libs/` --extra-lib-dirs=`readlink -f ../../binoculars/` --extra-include-dirs=`readlink -f ../../` --extra-include-dirs=`readlink -f ../../binoculars`
+cabal configure --extra-lib-dirs=`readlink -f ../../hkl/.libs/` --extra-lib-dirs=`readlink -f ../../binoculars/` --extra-include-dirs=`readlink -f ../../` --extra-include-dirs=`readlink -f ../../binoculars` -fuseHklDev

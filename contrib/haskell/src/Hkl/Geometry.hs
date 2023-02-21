@@ -1,30 +1,36 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.Geometry
        ( Factory(..)
        , Geometry(..)
+       , Geometry'(..)
        , factoryFromString
        , newFactory
        , newGeometry
+       , newGeometry'
        , peekHklGeometryList
+       , testGeometry
        , withGeometry
+       , zaxis
        ) where
 
-import           Prelude                           hiding (max, min)
+import           Data.Text             (Text)
+import           Data.Tree             (Tree (..), foldTree)
+import           Foreign               (ForeignPtr, Ptr, newForeignPtr, nullPtr,
+                                        withForeignPtr)
+import           Foreign.C             (CDouble (..), withCString)
+import           Numeric.LinearAlgebra (Vector)
 
-import           Foreign                           (ForeignPtr, Ptr,
-                                                    newForeignPtr, nullPtr,
-                                                    withForeignPtr)
-import           Foreign.C                         (CDouble (..), withCString)
-import           Numeric.LinearAlgebra
+import           Control.Monad.Loops   (unfoldrM)
+import qualified Data.Vector.Storable  as V
 
-import           Control.Monad.Loops               (unfoldrM)
-import qualified Data.Vector.Storable              as V
-import           Numeric.Units.Dimensional.Prelude (Length, meter, nano, (/~))
+import           Prelude               hiding (max, min)
 
 import           Hkl.C.Hkl
 import           Hkl.Parameter
+import           Hkl.Utils
 
 -------------
 -- Factory --
@@ -53,7 +59,7 @@ factoryFromString s
   | otherwise   = error $ "unknown diffractometer type:" ++ s
 
 newFactory :: Factory -> IO (Ptr C'HklFactory)
-newFactory f = withCString (show f) $ \cname -> c'hkl_factory_get_by_name cname nullPtr
+newFactory f = Foreign.C.withCString (show f) $ \cname -> c'hkl_factory_get_by_name cname nullPtr
 
 --------------
 -- Geometry --
@@ -68,6 +74,80 @@ data Geometry = Geometry
                 (Maybe [Parameter]) --  axes configuration
               deriving (Show)
 
+
+data Transformation
+  = NoTransformation
+  | Rotation Double Double Double
+  | Translation Double Double Double
+  deriving (Show)
+
+data Axis
+  = Axis Text Transformation
+  deriving (Show)
+
+newtype Geometry'
+  = Geometry'
+    (Tree Axis)
+    deriving (Show)
+
+zaxis :: Tree Axis
+zaxis =  Node
+         (Axis "mu" (Rotation 0 0 1))
+         [ Node
+           (Axis "omega" (Rotation 0 (-1) 0))
+           []
+         , Node
+           (Axis "delta" (Rotation 0 (-1) 0))
+           [ Node
+             (Axis "gamma" (Rotation 0 0 1))
+             []
+           ]
+         ]
+
+testGeometry :: [[Axis]]
+testGeometry = foldTree go zaxis
+  where
+    go :: Axis -> [[[Axis]]] -> [[Axis]]
+    go x xsss = if null xsss then [[x]] else concatMap (map (x:)) xsss
+
+newGeometry' :: Geometry' -> IO (ForeignPtr C'HklGeometry)
+newGeometry' (Geometry' g)
+  = do
+  let factoryPtr = nullPtr
+  gPtr <- c'hkl_geometry_new factoryPtr p'hkl_geometry_operations_defaults
+  mapM_ (addHolder gPtr) (axes g)
+  newForeignPtr p'hkl_geometry_free gPtr
+    where
+      addHolder :: Ptr C'HklGeometry -> [Axis] -> IO ()
+      addHolder gPtr axs = do
+        hPtr <- c'hkl_geometry_add_holder gPtr
+        mapM_ (addAxis hPtr) axs
+
+      addAxis :: Ptr C'HklHolder -> Axis -> IO ()
+      addAxis h (Axis n t) = Hkl.Utils.withCString n $ \c'n -> case t of
+        NoTransformation -> return ()
+        Rotation x y z -> c'hkl_holder_add_rotation h c'n (CDouble x) (CDouble y) (CDouble z) p'hkl_unit_angle_deg
+        Translation x y z -> c'hkl_holder_add_translation h c'n (CDouble x) (CDouble y) (CDouble z) p'hkl_unit_length_nm
+
+      axes :: Tree Axis -> [[Axis]]
+      axes g' = foldTree (\x xsss -> if null xsss then [[x]] else concatMap (map (x:)) xsss) g'
+
+-- static HklGeometry *hkl_geometry_new_zaxis(const HklFactory *factory)
+-- {
+-- 	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
+-- 	HklHolder *h;
+
+-- 	h = hkl_geometry_add_holder(self);
+-- 	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+-- 	hkl_holder_add_rotation(h, OMEGA, 0, -1, 0, &hkl_unit_angle_deg);
+
+-- 	h = hkl_geometry_add_holder(self);
+-- 	hkl_holder_add_rotation(h, MU, 0, 0, 1, &hkl_unit_angle_deg);
+-- 	hkl_holder_add_rotation(h, DELTA, 0, -1, 0, &hkl_unit_angle_deg);
+-- 	hkl_holder_add_rotation(h, GAMMA, 0, 0, 1, &hkl_unit_angle_deg);
+
+-- 	return self;
+-- }
 
 -- peekAxis :: Ptr C'HklGeometry -> CString -> IO (Ptr C'HklParameter)
 -- peekAxis ptr s = c'hkl_geometry_axis_get ptr s nullPtr

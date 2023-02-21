@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -25,39 +25,6 @@
 #include "hkl.h"                        // for G_BEGIN_DECLS, etc
 
 G_BEGIN_DECLS
-
-typedef struct _HklUnitDimension HklUnitDimension;
-
-struct _HklUnitDimension
-{
-	int l; /* Length */
-	int m; /* Mass */
-	int t; /* Time */
-	int i; /* Electric current */
-	int th; /* Thermodynamic temperature */
-	int n; /* Amount of substance */
-	int j; /* Luminous intensity */
-};
-
-#define HklDPlaneAngle {0, 0, 0, 0, 0, 0, 0}
-#define HklDLength {1, 0, 0, 0, 0, 0, 0}
-
-typedef struct _HklUnit HklUnit;
-
-struct _HklUnit
-{
-	HklUnitDimension dimension;
-	double factor;
-	char const *name;
-	char const *repr;
-};
-
-static HklUnit const hkl_unit_angle_deg = {HklDPlaneAngle, M_PI/180., "Degree", "°"};
-static HklUnit const hkl_unit_angle_rad = {HklDPlaneAngle, 1., "Radian", "rad"};
-static HklUnit const hkl_unit_length_nm = {HklDLength, 1e-9, "Nano Meter", "nm"};
-static HklUnit const hkl_unit_angle_mrad = {HklDPlaneAngle, 1e-3, "Milli Radian", "mrad"};
-static HklUnit const hkl_unit_length_mm = {HklDLength, 1e-3, "Milli Meter", "mm"};
-static HklUnit const hkl_unit_length_meter = {HklDLength, 1., "Meter", "m"};
 
 extern HklUnit *hkl_unit_dup(const HklUnit *self);
 extern void hkl_unit_free(HklUnit *self);

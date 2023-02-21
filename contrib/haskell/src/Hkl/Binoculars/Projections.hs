@@ -54,7 +54,7 @@ import           Hkl.C
 import           Hkl.Detector
 import           Hkl.Geometry
 import           Hkl.Orphan                      ()
-import           Hkl.Utils
+import           Hkl.Utils                       hiding (withCString)
 
 
 cmd :: (HasIniConfig a, ToIni (Config a), MonadLogger m, MonadThrow m, MonadIO m)

@@ -78,6 +78,9 @@ import Foreign.C (CInt(..), CUInt(..), CDouble(..), CSize(..), CString)
 
 #opaque_t HklGeometry
 
+#globalvar hkl_geometry_operations_defaults, Ptr ()
+
+#ccall hkl_geometry_add_holder, Ptr <HklGeometry> -> IO (Ptr <HklHolder>)
 #ccall hkl_geometry_axis_values_get, Ptr <HklGeometry> -> Ptr CDouble -> CSize -> CInt -> IO ()
 #ccall hkl_geometry_axis_values_set, Ptr <HklGeometry> -> Ptr CDouble -> CSize -> CInt -> Ptr () -> IO ()
 #ccall hkl_geometry_axis_names_get, Ptr <HklGeometry> -> IO (Ptr <darray_string>)
@@ -85,6 +88,7 @@ import Foreign.C (CInt(..), CUInt(..), CDouble(..), CSize(..), CString)
 #ccall hkl_geometry_detector_rotation_get_binding, Ptr <HklGeometry> -> Ptr <HklDetector> -> IO (Ptr <HklQuaternion>)
 #ccall hkl_geometry_free, Ptr <HklGeometry> -> IO ()
 #ccall hkl_geometry_name_get, Ptr <HklGeometry> -> IO CString
+#ccall hkl_geometry_new, Ptr <HklFactory> -> Ptr (Ptr ()) -> IO (Ptr <HklGeometry>)
 #ccall hkl_geometry_wavelength_get, Ptr <HklGeometry> -> CInt -> IO CDouble
 #ccall hkl_geometry_wavelength_set, Ptr <HklGeometry> -> CDouble -> CInt -> Ptr () -> IO ()
 
@@ -98,6 +102,11 @@ import Foreign.C (CInt(..), CUInt(..), CDouble(..), CSize(..), CString)
 #ccall hkl_geometry_list_item_geometry_get, Ptr <HklGeometryListItem> -> IO (Ptr <HklGeometry>)
 #ccall hkl_geometry_list_items_next_get, Ptr <HklGeometryList> -> Ptr <HklGeometryListItem> -> IO (Ptr <HklGeometryListItem>)
 
+-- HklHolder
+
+#opaque_t HklHolder
+#ccall hkl_holder_add_rotation, Ptr <HklHolder> -> CString -> CDouble -> CDouble -> CDouble -> Ptr <HklUnit> -> IO ()
+#ccall hkl_holder_add_translation, Ptr <HklHolder> -> CString -> CDouble -> CDouble -> CDouble -> Ptr <HklUnit> -> IO ()
 -- HklLattice
 
 #opaque_t HklLattice
@@ -145,3 +154,14 @@ import Foreign.C (CInt(..), CUInt(..), CDouble(..), CSize(..), CString)
 #ccall hkl_sample_ux_set, Ptr <HklSample> -> Ptr <HklParameter> -> Ptr () -> IO CInt
 #ccall hkl_sample_uy_set, Ptr <HklSample> -> Ptr <HklParameter> -> Ptr () -> IO CInt
 #ccall hkl_sample_uz_set, Ptr <HklSample> -> Ptr <HklParameter> -> Ptr () -> IO CInt
+
+-- HklUnit
+
+#opaque_t HklUnit
+
+#globalvar hkl_unit_angle_deg, <HklUnit>
+#globalvar hkl_unit_angle_rad, <HklUnit>
+#globalvar hkl_unit_length_nm, <HklUnit>
+#globalvar hkl_unit_angle_mrad, <HklUnit>
+#globalvar hkl_unit_length_mm, <HklUnit>
+#globalvar hkl_unit_length_meter, <HklUnit>

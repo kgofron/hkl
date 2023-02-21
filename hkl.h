@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -151,11 +151,44 @@ HKLAPI void hkl_matrix_times_matrix(HklMatrix *self, const HklMatrix *m) HKL_ARG
 /* Unit */
 /********/
 
+typedef struct _HklUnitDimension HklUnitDimension;
+
+struct _HklUnitDimension
+{
+	int l; /* Length */
+	int m; /* Mass */
+	int t; /* Time */
+	int i; /* Electric current */
+	int th; /* Thermodynamic temperature */
+	int n; /* Amount of substance */
+	int j; /* Luminous intensity */
+};
+
+#define HklDPlaneAngle {0, 0, 0, 0, 0, 0, 0}
+#define HklDLength {1, 0, 0, 0, 0, 0, 0}
+
 typedef enum _HklUnitEnum
 {
 	HKL_UNIT_DEFAULT,
 	HKL_UNIT_USER
 } HklUnitEnum;
+
+typedef struct _HklUnit HklUnit;
+
+struct _HklUnit
+{
+	HklUnitDimension dimension;
+	double factor;
+	char const *name;
+	char const *repr;
+};
+
+extern const HklUnit hkl_unit_angle_deg;
+extern const HklUnit hkl_unit_angle_rad;
+extern const HklUnit hkl_unit_length_nm;
+extern const HklUnit hkl_unit_angle_mrad;
+extern const HklUnit hkl_unit_length_mm;
+extern const HklUnit hkl_unit_length_meter;
 
 /*************/
 /* Parameter */
