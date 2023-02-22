@@ -17,7 +17,6 @@ module Hkl.Binoculars.Projections
   , cmd
   , newSpace
   , saveCube
-  , withGeometry
   , withMaybeLimits
   , withMaybeMask
   , withNPixels
@@ -52,7 +51,6 @@ import           Prelude                         hiding (drop)
 import           Hkl.Binoculars.Config
 import           Hkl.C
 import           Hkl.Detector
-import           Hkl.Geometry
 import           Hkl.Orphan                      ()
 import           Hkl.Utils                       hiding (withCString)
 

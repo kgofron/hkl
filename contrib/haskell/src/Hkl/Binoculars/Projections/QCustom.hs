@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-
+{-# OPTIONS_GHC -ddump-simpl -ddump-to-file -ddump-splices #-}
 {-
     Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -59,7 +59,7 @@ import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (withForeignPtr)
+import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~))
@@ -77,6 +77,7 @@ import           Hkl.Binoculars.Config.Common
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
+import           Hkl.C.Hkl
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
@@ -94,7 +95,7 @@ import           Hkl.Utils
 data DataFrameQCustom
     = DataFrameQCustom
       Attenuation -- attenuation
-      Geometry -- geometry
+      (ForeignPtr C'HklGeometry) -- geometry
       Image -- image
       Index -- timestamp in double
     deriving Show
@@ -346,7 +347,6 @@ overloadGeometryPath mw (DataSourcePath'Geometry'MedH wp as) = DataSourcePath'Ge
 overloadGeometryPath mw (DataSourcePath'Geometry'MedV wp b m o g d e) = DataSourcePath'Geometry'MedV (overloadWaveLength mw wp) b m o g d e
 overloadGeometryPath mw (DataSourcePath'Geometry'MedVEiger wp as x z) = DataSourcePath'Geometry'MedVEiger (overloadWaveLength mw wp) as x z
 overloadGeometryPath mw (DataSourcePath'Geometry'Uhv wp as) = DataSourcePath'Geometry'Uhv (overloadWaveLength mw wp) as
-overloadGeometryPath mw (DataSourcePath'Geometry'UhvTest wp as) = DataSourcePath'Geometry'UhvTest (overloadWaveLength mw wp) as
 
 
 overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
@@ -582,7 +582,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                            (mkTimeStamp'Fly msub)
          SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
                               (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                              (DataSourcePath'Geometry'UhvTest
+                              (DataSourcePath'Geometry'Uhv
                                (overloadWaveLength mWavelength (DataSourcePath'Double'Const 0.672494))
                                dataSourcePaths'Sixs'Uhv'Axes)
                               (mkDetector'Sixs'Fly detector)
@@ -638,7 +638,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
 spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> SurfaceOrientation -> Maybe (RLimits DIM3) -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
-  withGeometry g $ \geometry ->
+  withForeignPtr g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
   withResolutions rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
@@ -667,8 +667,6 @@ processQCustomP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QCustomProjec
                 => m ()
 processQCustomP = do
   (conf :: Config 'QCustomProjection) <- ask
-
-  gPtr <- liftIO $ newGeometry' zaxis
 
   -- directly from the common config
   let common = binocularsConfig'QCustom'Common conf

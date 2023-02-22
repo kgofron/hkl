@@ -197,7 +197,7 @@ instance ToIni (Config 'HklProjection) where
 spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameHkl' Identity -> IO (DataFrameSpace DIM3)
 spaceHkl det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img _) samplePath) = do
   withNPixels det $ \nPixels ->
-    withGeometry g $ \geometry ->
+    withForeignPtr g $ \geometry ->
     withSample samplePath $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withResolutions rs $ \nr r ->

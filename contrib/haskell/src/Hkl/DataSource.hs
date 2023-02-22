@@ -48,6 +48,7 @@ import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, unsafeNew)
 import           Data.Word                         (Word16, Word32)
 import           Foreign.C.Types                   (CDouble (..))
+import           Foreign.ForeignPtr                (ForeignPtr)
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
@@ -58,6 +59,7 @@ import           Test.QuickCheck                   (Arbitrary (..), oneof)
 import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Config
+import           Hkl.C.Hkl
 import           Hkl.Detector
 import           Hkl.Geometry
 import           Hkl.H5
@@ -156,53 +158,13 @@ instance Is1DStreamable (DataSourceAcq Float) Float where
 instance Is1DStreamable (DataSourceAcq Float) Attenuation where
   extract1DStreamValue (DataSourceAcq'Float ds) i = Attenuation <$> extract1DStreamValue ds i
 
-instance Is1DStreamable (DataSourceAcq Geometry) Geometry where
-    extract1DStreamValue (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta') i =
-        do wavelength <- extract0DStreamValue w'
-           mu <- extract0DStreamValue mu'
-           komega <- extract0DStreamValue komega'
-           kappa <- extract0DStreamValue kappa'
-           gamma <- extract0DStreamValue gamma'
-           delta <- extract0DStreamValue delta'
-           kphi <- extract1DStreamValue kphi' i
-           return (Geometry
-                   K6c
-                   wavelength
-                   (fromList [mu, komega, kappa, kphi, gamma, delta])
-                   Nothing)
-
-    extract1DStreamValue (DataSourceAcq'Geometry'Fix w') _i =
-        Geometry Fixe <$> extract0DStreamValue w'
-                      <*> pure (fromList [])
-                      <*> pure Nothing
-
-
-    extract1DStreamValue (DataSourceAcq'Geometry'Mars w' as') i =
-        Geometry Mars <$> extract0DStreamValue w'
-                      <*> extract1DStreamValue as' i
-                      <*> pure Nothing
-
-    extract1DStreamValue (DataSourceAcq'Geometry'MedH w' as') i =
-        Geometry MedH <$> extract0DStreamValue w'
-                      <*> extract1DStreamValue as' i
-                      <*> pure Nothing
-
-    extract1DStreamValue (DataSourceAcq'Geometry'MedV w' as') i =
-        Geometry MedV <$> extract0DStreamValue w'
-                      <*> extract1DStreamValue as' i
-                      <*> pure Nothing
-
+instance Is1DStreamable (DataSourceAcq Geometry) (ForeignPtr C'HklGeometry) where
     extract1DStreamValue (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') _i = undefined
-
-    extract1DStreamValue (DataSourceAcq'Geometry'Uhv w' as') i =
-        Geometry Uhv <$> extract0DStreamValue w'
-                     <*> extract1DStreamValue as' i
-                     <*> pure Nothing
-
-    extract1DStreamValue (DataSourceAcq'Geometry'UhvTest w' as') i =
-        Geometry Uhv <$> extract0DStreamValue w' -- (Source (unAngstrom w))
-                     <*> extract1DStreamValue as' i
-                     <*> pure Nothing
+    extract1DStreamValue (DataSourceAcq'Geometry fptr w' as') i = do
+      w <- extract0DStreamValue w'
+      as <- extract1DStreamValue as' i
+      pokeGeometry fptr w as
+      return fptr
 
 instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Int32 ds det buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
@@ -361,69 +323,50 @@ instance DataSource Geometry where
     | DataSourcePath'Geometry'Uhv { geometryPathWavelength :: DataSourcePath Double
                                   , geometryPathAxes       :: [DataSourcePath Degree]
                                   }
-    | DataSourcePath'Geometry'UhvTest { geometryPathWavelengthTest :: DataSourcePath Double
-                                      , geometryPathAxes           :: [DataSourcePath Degree]
-                                      }
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Geometry
-    = DataSourceAcq'Geometry'CristalK6C
-      (DataSourceAcq Double)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-    | DataSourceAcq'Geometry'Fix
-      (DataSourceAcq Double)
-    | DataSourceAcq'Geometry'Mars
-      (DataSourceAcq Double)
-      [DataSourceAcq Degree]
-    | DataSourceAcq'Geometry'MedH
-      (DataSourceAcq Double)
-      [DataSourceAcq Degree]
-    | DataSourceAcq'Geometry'MedV
-      (DataSourceAcq Double)
-      [DataSourceAcq Degree]
-    | DataSourceAcq'Geometry'MedVEiger
+    = DataSourceAcq'Geometry'MedVEiger
       (DataSourceAcq Double)
       [DataSourceAcq Degree]
       (DataSourceAcq Degree)
       (DataSourceAcq Degree)
-    | DataSourceAcq'Geometry'Uhv
-      (DataSourceAcq Double)
-      [DataSourceAcq Degree]
-    | DataSourceAcq'Geometry'UhvTest
+    | DataSourceAcq'Geometry
+      (ForeignPtr C'HklGeometry)
       (DataSourceAcq Double)
       [DataSourceAcq Degree]
 
+
   withDataSourceP f (DataSourcePath'Geometry'CristalK6C w m ko ka kp g d) gg =
     withDataSourceP f w $ \w' ->
-    withDataSourceP f m $ \mu' ->
-    withDataSourceP f ko $ \komega' ->
-    withDataSourceP f ka $ \kappa' ->
-    withDataSourceP f kp $ \kphi' ->
-    withDataSourceP f g $ \gamma' ->
-    withDataSourceP f d $ \delta' -> gg (DataSourceAcq'Geometry'CristalK6C w' mu' komega' kappa' kphi' gamma' delta')
+    withAxesPathP f [m, ko, ka, kp, g, d] $ \as' -> do
+    fptr <- liftIO $ newGeometry (Geometry'Factory K6c)
+    gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP f (DataSourcePath'Geometry'Fix w) gg =
-    withDataSourceP f w $ \w' -> gg (DataSourceAcq'Geometry'Fix w')
+    withDataSourceP f w $ \w' -> do
+    fptr <- liftIO $ newGeometry fixed
+    gg (DataSourceAcq'Geometry fptr w' [])
   withDataSourceP f (DataSourcePath'Geometry'Mars w as) gg =
     withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'Mars w' as')
+    withAxesPathP f as $ \as' -> do
+    fptr <- liftIO $ newGeometry (Geometry'Factory Mars)
+    gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP f (DataSourcePath'Geometry'MedH w as) gg =
     withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'MedH w' as')
+    withAxesPathP f as $ \as' -> do
+    fptr <- liftIO $ newGeometry (Geometry'Factory MedH)
+    gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP f (DataSourcePath'Geometry'MedV w b m o g d e) gg =
     withDataSourceP f w $ \w' ->
-    withAxesPathP f [b, m, o, g, d, e] $ \as' -> gg (DataSourceAcq'Geometry'MedV w' as')
+    withAxesPathP f [b, m, o, g, d, e] $ \as' -> do
+    fptr <- liftIO $ newGeometry (Geometry'Factory MedV)
+    gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP _f (DataSourcePath'Geometry'MedVEiger _w _as _eix _eiz) _gg = undefined
   withDataSourceP f (DataSourcePath'Geometry'Uhv w as) gg =
     withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'Uhv w' as')
-  withDataSourceP f (DataSourcePath'Geometry'UhvTest w as) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> gg (DataSourceAcq'Geometry'UhvTest w' as')
+    withAxesPathP f as $ \as' -> do
+    fptr <- liftIO $ newGeometry (Geometry'Factory Uhv)
+    gg (DataSourceAcq'Geometry fptr w' as')
 
 instance Arbitrary (DataSourcePath Geometry) where
   arbitrary = oneof
@@ -434,7 +377,6 @@ instance Arbitrary (DataSourcePath Geometry) where
     , DataSourcePath'Geometry'MedV <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
     , DataSourcePath'Geometry'MedVEiger <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
     , DataSourcePath'Geometry'Uhv <$> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'UhvTest <$> arbitrary <*> arbitrary
     ]
 
 -- Image
