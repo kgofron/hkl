@@ -83,4 +83,5 @@ ssd:
 #binoculars process config_m1018_32h_Qxyz.txt 105-106 129 131
 #binoculars process configV2_m1018_32h_Qxyz_Vhkl.txt 45-48 62-63 67-68
 #binoculars process config_m1018_32h_HKL.txt 33-36
-.PHONI: mars ord05133 ssd sixs
+
+.PHONY: mars ord05133 sixs ssd
