@@ -11,7 +11,6 @@ module Hkl.Geometry
        , newGeometry
        , newGeometry'
        , peekHklGeometryList
-       , testGeometry
        , withGeometry
        , zaxis
        ) where
@@ -90,25 +89,21 @@ newtype Geometry'
     (Tree Axis)
     deriving (Show)
 
-zaxis :: Tree Axis
-zaxis =  Node
-         (Axis "mu" (Rotation 0 0 1))
+zaxis :: Geometry'
+zaxis
+  =  Geometry'
+     ( Node
+       (Axis "mu" (Rotation 0 0 1))
+       [ Node
+         (Axis "omega" (Rotation 0 (-1) 0))
+         []
+       , Node
+         (Axis "delta" (Rotation 0 (-1) 0))
          [ Node
-           (Axis "omega" (Rotation 0 (-1) 0))
+           (Axis "gamma" (Rotation 0 0 1))
            []
-         , Node
-           (Axis "delta" (Rotation 0 (-1) 0))
-           [ Node
-             (Axis "gamma" (Rotation 0 0 1))
-             []
-           ]
          ]
-
-testGeometry :: [[Axis]]
-testGeometry = foldTree go zaxis
-  where
-    go :: Axis -> [[[Axis]]] -> [[Axis]]
-    go x xsss = if null xsss then [[x]] else concatMap (map (x:)) xsss
+       ])
 
 newGeometry' :: Geometry' -> IO (ForeignPtr C'HklGeometry)
 newGeometry' (Geometry' g)
