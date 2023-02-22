@@ -24,6 +24,9 @@ Flag useHklDev
   Default: True
 
 library
+  profiling-detail: toplevel-functions
+  optimization: True
+
   build-depends: aeson
   build-depends: async
   build-depends: attoparsec
@@ -98,8 +101,6 @@ library
   exposed-modules: Hkl.Types
   exposed-modules: Hkl.Utils
 
-  extra-libraries: hkl-binoculars
-
   ghc-options: -g
   ghc-options: -Wall
   ghc-options: -Wincomplete-uni-patterns
@@ -111,11 +112,12 @@ library
 
   if flag(useHklDev)
     extra-libraries: hkl
+    extra-libraries: hkl-binoculars
 
     pkgconfig-depends: glib-2.0
   else
     pkgconfig-depends: hkl
-
+    extra-libraries: hkl-binoculars
 
 executable binoculars-ng
   build-depends: base >= 4.6
@@ -140,6 +142,15 @@ executable binoculars-ng
   ghc-options: -threaded
   ghc-options: "-with-rtsopts=-N4"
   ghc-options: -Wall
+
+  if flag(useHklDev)
+    extra-libraries: hkl
+    extra-libraries: hkl-binoculars
+
+    pkgconfig-depends: glib-2.0
+  else
+    pkgconfig-depends: hkl
+    extra-libraries: hkl-binoculars
 
   main-is: app/Binoculars.hs
 
