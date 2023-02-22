@@ -668,7 +668,7 @@ processQCustomP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QCustomProjec
 processQCustomP = do
   (conf :: Config 'QCustomProjection) <- ask
 
-  gPtr <- newGeometry' zaxis
+  gPtr <- liftIO $ newGeometry' zaxis
 
   -- directly from the common config
   let common = binocularsConfig'QCustom'Common conf
