@@ -20,7 +20,8 @@ module Hkl.Binoculars.Sixs
 
 import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO, liftIO)
-import           Control.Monad.Logger               (MonadLogger, logDebugN)
+import           Control.Monad.Logger               (LoggingT, MonadLogger,
+                                                     logDebugN)
 import           Path.IO                            (getCurrentDir)
 import           Path.Posix                         (parseAbsDir)
 
@@ -30,6 +31,7 @@ import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.Utils
 
+{-# SPECIALIZE process :: Maybe FilePath -> Maybe ConfigRange ->LoggingT IO () #-}
 process :: (MonadLogger m, MonadThrow m, MonadIO m)
         => Maybe FilePath -> Maybe ConfigRange -> m ()
 process mf mr = do

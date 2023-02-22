@@ -8,7 +8,8 @@ module Hkl.Utils
     , withCString
     ) where
 
-import           Control.Monad.Logger  (MonadLogger, logDebugN, logErrorN)
+import           Control.Monad.Logger  (LoggingT, MonadLogger, logDebugN,
+                                        logErrorN)
 import           Data.Text             (Text, length, pack)
 import           Data.Text.Foreign     (unsafeCopyToPtr)
 import           Data.Text.IO          (writeFile)
@@ -26,9 +27,11 @@ hasContent f c = do
     Data.Text.IO.writeFile f c
     print $ "--> created : " ++ f
 
+{-# SPECIALIZE logDebugNSH :: Text -> LoggingT IO () #-}
 logDebugNSH :: (Show a, MonadLogger m) => a -> m ()
 logDebugNSH = logDebugN . pack . show
 
+{-# SPECIALIZE logErrorNSH :: Text -> LoggingT IO () #-}
 logErrorNSH :: (Show a, MonadLogger m) => a -> m ()
 logErrorNSH = logErrorN . pack . show
 
