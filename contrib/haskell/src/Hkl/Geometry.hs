@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -13,12 +15,14 @@ module Hkl.Geometry
        , zaxis
        ) where
 
+import           Data.Aeson            (FromJSON (..), ToJSON (..))
 import           Data.Text             (Text)
 import           Data.Tree             (Tree (..), foldTree)
 import qualified Data.Vector.Storable  as V
 import           Foreign               (ForeignPtr, Ptr, newForeignPtr, nullPtr,
                                         withForeignPtr)
 import           Foreign.C             (CDouble (..), withCString)
+import           GHC.Generics          (Generic)
 import           Numeric.LinearAlgebra (Vector)
 
 import           Prelude               hiding (max, min)
@@ -32,6 +36,7 @@ import           Hkl.Utils
 -------------
 
 data Factory = K6c | Fixe | Uhv | Mars | MedH | MedV | SoleilSiriusKappa
+  deriving (Generic, FromJSON, ToJSON)
 
 instance Show Factory where
   show K6c               = "K6C"
@@ -64,16 +69,16 @@ data Transformation
   = NoTransformation
   | Rotation Double Double Double
   | Translation Double Double Double
-  deriving (Show)
+  deriving (Generic, FromJSON, Show, ToJSON)
 
 data Axis
   = Axis Text Transformation
-  deriving (Show)
+  deriving (Generic, FromJSON, Show, ToJSON)
 
 data Geometry
   = Geometry'Custom (Tree Axis)
   | Geometry'Factory Factory
-    deriving (Show)
+    deriving (Generic, FromJSON, Show, ToJSON)
 
 fixed :: Geometry
 fixed

@@ -293,14 +293,18 @@ withAxesPathP f dpaths = nest (Prelude.map (withDataSourceP f) dpaths)
 
 instance DataSource Geometry where
   data DataSourcePath Geometry =
-    DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath Double
-                                       , geometryPathMu         :: DataSourcePath Degree
-                                       , geometryPathKomega     :: DataSourcePath Degree
-                                       , geometryPathKappa      :: DataSourcePath Degree
-                                       , geometryPathKphi       :: DataSourcePath Degree
-                                       , geometryPathGamma      :: DataSourcePath Degree
-                                       , geometryPathDelta      :: DataSourcePath Degree
-                                       }
+    DataSourcePath'Geometry { geometryGeometry       :: Geometry
+                            , geometryPathWavelength :: DataSourcePath Double
+                            , geometryPathAxes       :: [DataSourcePath Degree]
+                            }
+    | DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath Double
+                                         , geometryPathMu         :: DataSourcePath Degree
+                                         , geometryPathKomega     :: DataSourcePath Degree
+                                         , geometryPathKappa      :: DataSourcePath Degree
+                                         , geometryPathKphi       :: DataSourcePath Degree
+                                         , geometryPathGamma      :: DataSourcePath Degree
+                                         , geometryPathDelta      :: DataSourcePath Degree
+                                         }
     | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
     | DataSourcePath'Geometry'Mars { geometryPathWavelength :: DataSourcePath Double
                                    , geometryPathAxes       :: [DataSourcePath Degree] }
@@ -337,6 +341,11 @@ instance DataSource Geometry where
       [DataSourceAcq Degree]
 
 
+  withDataSourceP f (DataSourcePath'Geometry g w as) gg =
+    withDataSourceP f w $ \w' ->
+    withAxesPathP f as $ \as' -> do
+    fptr <- liftIO $ newGeometry g
+    gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP f (DataSourcePath'Geometry'CristalK6C w m ko ka kp g d) gg =
     withDataSourceP f w $ \w' ->
     withAxesPathP f [m, ko, ka, kp, g, d] $ \as' -> do

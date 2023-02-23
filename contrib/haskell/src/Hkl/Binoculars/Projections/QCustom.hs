@@ -340,6 +340,7 @@ overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Do
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
 
 overloadGeometryPath ::  Maybe Double -> DataSourcePath Geometry -> DataSourcePath Geometry
+overloadGeometryPath mw (DataSourcePath'Geometry g wp as) = DataSourcePath'Geometry g (overloadWaveLength mw wp) as
 overloadGeometryPath mw (DataSourcePath'Geometry'CristalK6C wp m k kap kphi g d) = DataSourcePath'Geometry'CristalK6C (overloadWaveLength mw wp) m k kap kphi g d
 overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overloadWaveLength mw wp)
 overloadGeometryPath mw (DataSourcePath'Geometry'Mars wp as) = DataSourcePath'Geometry'Mars (overloadWaveLength mw wp) as
