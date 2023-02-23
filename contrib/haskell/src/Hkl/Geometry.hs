@@ -83,29 +83,16 @@ data Geometry
 fixed :: Geometry
 fixed
   = Geometry'Custom
-    ( Node
-      (Axis "mu" (Rotation 0 0 1))
-      [ Node
-        (Axis "omega" (Rotation 0 (-1) 0))
-        []
-      ]
-    )
+    (Node (Axis "mu" (Rotation 0 0 1)) [ Node (Axis "omega" (Rotation 0 (-1) 0)) [] ])
 
 zaxis :: Geometry
 zaxis
   = Geometry'Custom
-    ( Node
-      (Axis "mu" (Rotation 0 0 1))
-      [ Node
-        (Axis "omega" (Rotation 0 (-1) 0))
-        []
-      , Node
-        (Axis "delta" (Rotation 0 (-1) 0))
-        [ Node
-          (Axis "gamma" (Rotation 0 0 1))
-          []
-        ]
-      ])
+    ( Node (Axis "mu" (Rotation 0 0 1))
+      [ Node (Axis "omega" (Rotation 0 (-1) 0)) []
+      , Node (Axis "delta" (Rotation 0 (-1) 0)) [ Node (Axis "gamma" (Rotation 0 0 1)) [] ]
+      ]
+    )
 
 newGeometry :: Geometry -> IO (ForeignPtr C'HklGeometry)
 newGeometry (Geometry'Custom g)
