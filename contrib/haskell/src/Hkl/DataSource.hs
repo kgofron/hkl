@@ -297,36 +297,12 @@ instance DataSource Geometry where
                             , geometryPathWavelength :: DataSourcePath Double
                             , geometryPathAxes       :: [DataSourcePath Degree]
                             }
-    | DataSourcePath'Geometry'CristalK6C { geometryPathWavelength :: DataSourcePath Double
-                                         , geometryPathMu         :: DataSourcePath Degree
-                                         , geometryPathKomega     :: DataSourcePath Degree
-                                         , geometryPathKappa      :: DataSourcePath Degree
-                                         , geometryPathKphi       :: DataSourcePath Degree
-                                         , geometryPathGamma      :: DataSourcePath Degree
-                                         , geometryPathDelta      :: DataSourcePath Degree
-                                         }
     | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
-    | DataSourcePath'Geometry'Mars { geometryPathWavelength :: DataSourcePath Double
-                                   , geometryPathAxes       :: [DataSourcePath Degree] }
-    | DataSourcePath'Geometry'MedH { geometryPathWavelength :: DataSourcePath Double
-                                   , geometryPathAxes       :: [DataSourcePath Degree]
-                                   }
-    | DataSourcePath'Geometry'MedV { geometryPathWavelength :: DataSourcePath Double
-                                   , geometryPathBeta       :: DataSourcePath Degree
-                                   , geometryPathMu         :: DataSourcePath Degree
-                                   , geometryPathOmega      :: DataSourcePath Degree
-                                   , geometryPathGamma      :: DataSourcePath Degree
-                                   , geometryPathDelta      :: DataSourcePath Degree
-                                   , geometryPathEtaa       :: DataSourcePath Degree
-                                   }
     | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath Double
                                         , geometryPathAxes       :: [DataSourcePath Degree]
                                         , geometryPathEix        :: DataSourcePath Degree
                                         , geometryPathEiz        :: DataSourcePath Degree
                                         }
-    | DataSourcePath'Geometry'Uhv { geometryPathWavelength :: DataSourcePath Double
-                                  , geometryPathAxes       :: [DataSourcePath Degree]
-                                  }
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Geometry
@@ -346,46 +322,17 @@ instance DataSource Geometry where
     withAxesPathP f as $ \as' -> do
     fptr <- liftIO $ newGeometry g
     gg (DataSourceAcq'Geometry fptr w' as')
-  withDataSourceP f (DataSourcePath'Geometry'CristalK6C w m ko ka kp g d) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f [m, ko, ka, kp, g, d] $ \as' -> do
-    fptr <- liftIO $ newGeometry (Geometry'Factory K6c)
-    gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP f (DataSourcePath'Geometry'Fix w) gg =
     withDataSourceP f w $ \w' -> do
     fptr <- liftIO $ newGeometry fixed
     gg (DataSourceAcq'Geometry fptr w' [])
-  withDataSourceP f (DataSourcePath'Geometry'Mars w as) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> do
-    fptr <- liftIO $ newGeometry (Geometry'Factory Mars)
-    gg (DataSourceAcq'Geometry fptr w' as')
-  withDataSourceP f (DataSourcePath'Geometry'MedH w as) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> do
-    fptr <- liftIO $ newGeometry (Geometry'Factory MedH)
-    gg (DataSourceAcq'Geometry fptr w' as')
-  withDataSourceP f (DataSourcePath'Geometry'MedV w b m o g d e) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f [b, m, o, g, d, e] $ \as' -> do
-    fptr <- liftIO $ newGeometry (Geometry'Factory MedV)
-    gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP _f (DataSourcePath'Geometry'MedVEiger _w _as _eix _eiz) _gg = undefined
-  withDataSourceP f (DataSourcePath'Geometry'Uhv w as) gg =
-    withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> do
-    fptr <- liftIO $ newGeometry (Geometry'Factory Uhv)
-    gg (DataSourceAcq'Geometry fptr w' as')
 
 instance Arbitrary (DataSourcePath Geometry) where
   arbitrary = oneof
-    [ DataSourcePath'Geometry'CristalK6C <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'Fix <$> arbitrary
-    , DataSourcePath'Geometry'Mars <$> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'MedH <$> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'MedV <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    -- TODO add the Geometry constructor
+    [ DataSourcePath'Geometry'Fix <$> arbitrary
     , DataSourcePath'Geometry'MedVEiger <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-    , DataSourcePath'Geometry'Uhv <$> arbitrary <*> arbitrary
     ]
 
 -- Image
