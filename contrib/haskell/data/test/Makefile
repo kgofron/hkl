@@ -1,4 +1,4 @@
-RTS = +RTS -N4 -p -RTS
+RTS = +RTS -N4 -RTS
 RUN = cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- $(RTS)
 PROCESS = $(RUN) --debug process
 PROCESS_DBG = cd ../..; ./bootstrap gdb --args dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process
