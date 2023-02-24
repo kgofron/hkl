@@ -18,17 +18,18 @@ module Hkl.Binoculars.Sixs
   , update
   ) where
 
-import           Control.Monad.Catch                (MonadThrow)
-import           Control.Monad.IO.Class             (MonadIO, liftIO)
-import           Control.Monad.Logger               (LoggingT, MonadLogger,
-                                                     logDebugN)
-import           Path.IO                            (getCurrentDir)
-import           Path.Posix                         (parseAbsDir)
+import           Control.Monad.Catch                 (MonadThrow)
+import           Control.Monad.IO.Class              (MonadIO, liftIO)
+import           Control.Monad.Logger                (LoggingT, MonadLogger,
+                                                      logDebugN)
+import           Path.IO                             (getCurrentDir)
+import           Path.Posix                          (parseAbsDir)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Angles
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
+import           Hkl.Binoculars.Projections.QCustom2
 import           Hkl.Utils
 
 {-# SPECIALIZE process :: Maybe FilePath -> Maybe ConfigRange ->LoggingT IO () #-}
@@ -45,6 +46,7 @@ process mf mr = do
                       Angles2Projection  -> processAngles mf mr
                       HklProjection      -> processHkl mf mr
                       QCustomProjection  -> processQCustom mf mr
+                      QCustom2Projection -> processQCustom2 mf mr
                       QIndexProjection   -> processQCustom mf mr
                       QparQperProjection -> processQCustom mf mr
                       QxQyQzProjection   -> processQCustom mf mr
@@ -60,6 +62,7 @@ new p mf = do
     Angles2Projection  -> newAngles cwd
     HklProjection      -> newHkl cwd
     QCustomProjection  -> newQCustom cwd
+    QCustom2Projection -> newQCustom2 cwd
     QIndexProjection   -> newQCustom cwd
     QparQperProjection -> newQCustom cwd
     QxQyQzProjection   -> newQCustom cwd
@@ -76,6 +79,7 @@ update f mr = do
                       Angles2Projection  -> updateAngles (Just f) mr
                       HklProjection      -> updateHkl (Just f) mr
                       QCustomProjection  -> updateQCustom (Just f) mr
+                      QCustom2Projection -> updateQCustom2 (Just f) mr
                       QIndexProjection   -> updateQCustom (Just f) mr
                       QparQperProjection -> updateQCustom (Just f) mr
                       QxQyQzProjection   -> updateQCustom (Just f) mr

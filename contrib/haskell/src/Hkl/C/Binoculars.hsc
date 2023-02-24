@@ -178,6 +178,15 @@ c'hkl_binoculars_space_qcustom_uint16_t :: C'ProjectionTypeQCustom Word16
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_uint32_t" \
 c'hkl_binoculars_space_qcustom_uint32_t :: C'ProjectionTypeQCustom Word32
 
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom2_int32_t" \
+c'hkl_binoculars_space_qcustom2_int32_t :: C'ProjectionTypeQCustom Int32
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom2_uint16_t" \
+c'hkl_binoculars_space_qcustom2_uint16_t :: C'ProjectionTypeQCustom Word16
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom2_uint32_t" \
+c'hkl_binoculars_space_qcustom2_uint32_t :: C'ProjectionTypeQCustom Word32
+
 
 type C'ProjectionTypeHkl t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
   -> Ptr C'HklGeometry -- const HklGeometry *geometry

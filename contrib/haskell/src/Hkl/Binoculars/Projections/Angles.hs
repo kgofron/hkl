@@ -115,6 +115,7 @@ instance HasIniConfig 'AnglesProjection where
                                                              Angles2Projection  -> SampleAxis "mu"
                                                              HklProjection      -> undefined
                                                              QCustomProjection  -> undefined
+                                                             QCustom2Projection  -> undefined
                                                              QIndexProjection   -> undefined
                                                              QparQperProjection -> undefined
                                                              QxQyQzProjection   -> undefined

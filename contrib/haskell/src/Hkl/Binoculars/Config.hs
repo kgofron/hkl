@@ -484,6 +484,7 @@ data ProjectionType = AnglesProjection
                     | Angles2Projection
                     | HklProjection
                     | QCustomProjection
+                    | QCustom2Projection
                     | QIndexProjection
                     | QparQperProjection
                     | QxQyQzProjection
@@ -498,6 +499,7 @@ instance FieldEmitter ProjectionType where
   fieldEmitter Angles2Projection  = "angles2"
   fieldEmitter HklProjection      = "hkl"
   fieldEmitter QCustomProjection  = "qcustom"
+  fieldEmitter QCustom2Projection = "qcustom2"
   fieldEmitter QIndexProjection   = "qindex"
   fieldEmitter QparQperProjection = "qparqper"
   fieldEmitter QxQyQzProjection   = "qxqyqz"

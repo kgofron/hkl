@@ -262,6 +262,30 @@ HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint32_t);
 
+/* qcustom for generic geometries */
+
+#define HKL_BINOCULARS_SPACE_QCUSTOM2_DECL(image_t)			\
+        void hkl_binoculars_space_qcustom2_ ## image_t (HklBinocularsSpace *space, \
+                                                        const HklGeometry *geometry, \
+                                                        const image_t *image, \
+                                                        size_t n_pixels, \
+                                                        double weight,  \
+                                                        const double *pixels_coordinates, \
+                                                        size_t pixels_coordinates_ndim, \
+                                                        const size_t *pixels_coordinates_dims, \
+                                                        const double *resolutions, \
+                                                        size_t n_resolutions, \
+                                                        const uint8_t *masked, \
+                                                        HklBinocularsSurfaceOrientationEnum surf, \
+                                                        const HklBinocularsAxisLimits **limits, \
+                                                        size_t n_limits, \
+                                                        double timestamp, \
+                                                        const HklBinocularsQCustomSubProjectionEnum subprojection)
+
+
+HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM2_DECL(int32_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM2_DECL(uint16_t);
+HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM2_DECL(uint32_t);
 
 /* hkl */
 

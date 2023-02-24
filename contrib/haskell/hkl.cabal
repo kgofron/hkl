@@ -24,9 +24,6 @@ Flag useHklDev
   Default: True
 
 library
-  profiling-detail: toplevel-functions
-  optimization: True
-
   build-depends: aeson
   build-depends: async
   build-depends: attoparsec
@@ -80,6 +77,7 @@ library
   exposed-modules: Hkl.Binoculars.Projections.Angles
   exposed-modules: Hkl.Binoculars.Projections.Hkl
   exposed-modules: Hkl.Binoculars.Projections.QCustom
+  exposed-modules: Hkl.Binoculars.Projections.QCustom2
   exposed-modules: Hkl.Binoculars.Sixs
   exposed-modules: Hkl.C
   exposed-modules: Hkl.C.Binoculars
