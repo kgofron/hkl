@@ -111,7 +111,7 @@ instance Shape sh => Monoid (Cube sh) where
 #ccall hkl_binoculars_detector_2d_name_get, <HklBinocularsDetectorEnum> -> IO CString
 #ccall hkl_binoculars_detector_2d_number_of_detectors, IO CInt
 #ccall hkl_binoculars_detector_2d_shape_get, <HklBinocularsDetectorEnum> -> Ptr CInt -> Ptr CInt -> IO ()
-#ccall hkl_binoculars_detector_2d_sixs_calibration, <HklBinocularsDetectorEnum> -> Ptr CDouble -> CInt -> CInt -> CInt -> CInt -> CDouble -> CDouble -> IO ()
+#ccall hkl_binoculars_detector_2d_sixs_calibration, <HklBinocularsDetectorEnum> -> Ptr CDouble -> CInt -> CInt -> CInt -> CInt -> CDouble -> CDouble -> CInt -> IO ()
 
 -----------
 -- Space --

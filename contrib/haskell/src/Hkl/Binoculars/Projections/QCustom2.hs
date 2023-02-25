@@ -212,7 +212,7 @@ processQCustom2P = do
   output' <- liftIO $ destination' projectionType inputRange mlimits destination overwrite
   filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
   mask' <- getMask maskMatrix det
-  pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot
+  pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot NoNormalisation
 
   -- compute the jobs
 

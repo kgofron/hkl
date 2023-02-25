@@ -10,6 +10,7 @@ module Hkl.Detector
        ( Detector(..)
        , Hkl
        , Mask
+       , Normalisation(..)
        , PyFAI
        , SomeDetector(..)
        , ZeroD
@@ -150,11 +151,14 @@ shape (Detector2D _ _ s) = s
 
 --  Xpad Family
 
-getPixelsCoordinates :: Detector Hkl DIM2 -> (Int, Int) -> Length Double -> Angle Double -> IO (Array F DIM3 Double)
-getPixelsCoordinates (Detector2D n _ sh) (ix0, iy0) sdd detrot = do
+data Normalisation = NoNormalisation | Normalisation
+  deriving (Enum)
+
+getPixelsCoordinates :: Detector Hkl DIM2 -> (Int, Int) -> Length Double -> Angle Double -> Normalisation -> IO (Array F DIM3 Double)
+getPixelsCoordinates (Detector2D n _ sh) (ix0, iy0) sdd detrot norm = do
   parr <- c'hkl_binoculars_detector_2d_coordinates_get n
   let Z :. height :. width = sh
-  c'hkl_binoculars_detector_2d_sixs_calibration n parr (toEnum width) (toEnum height) (toEnum ix0) (toEnum iy0) (CDouble (sdd /~ meter)) (CDouble (detrot /~ radian))
+  c'hkl_binoculars_detector_2d_sixs_calibration n parr (toEnum width) (toEnum height) (toEnum ix0) (toEnum iy0) (CDouble (sdd /~ meter)) (CDouble (detrot /~ radian)) (toEnum . fromEnum $ norm)
   arr <- newForeignPtr finalizerFree parr
   return $ fromForeignPtr (ix3 3 height width) (castForeignPtr arr)
 

@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -399,7 +399,7 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
                                                  double *arr,
                                                  int width, int height,
                                                  int ix0, int iy0, double sdd,
-                                                 double detrot)
+                                                 double detrot, int normalize_flag)
 {
         struct shape_t shape = SHAPE(width, height);
         double *y = y_coordinates(arr, shape);
@@ -411,7 +411,8 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
 
         translate_coordinates(arr, shape, dx, dy, dz);
         rotate_coordinates(arr, shape, detrot, 1, 0, 0);
-        normalize_coordinates(arr, shape);
+        if(normalize_flag)
+                normalize_coordinates(arr, shape);
 }
 
 /*****************************/

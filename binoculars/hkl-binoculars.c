@@ -36,6 +36,7 @@
 /* mark the masked pixels with this value */
 #define MASKED PTRDIFF_MAX
 #define REMOVED 0
+#define REMOVED_WHEN_SAVED "__removed_when_saved__"
 
 /* Math */
 
@@ -365,9 +366,9 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 size_t i;                                               \
                 const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
                 const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
-                const char *names_q_index[] = {"q", "index", "__removed_when_saved__"}; \
+                const char *names_q_index[] = {"q", "index", REMOVED_WHEN_SAVED}; \
                 const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
-                const char *names_qpar_qper[] = {"qpar", "qper", "__removed_when_saved__"}; \
+                const char *names_qpar_qper[] = {"qpar", "qper", REMOVED_WHEN_SAVED}; \
                 const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
                 const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
                 const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
@@ -582,9 +583,9 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                 size_t i;                                               \
                 const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
                 const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
-                const char *names_q_index[] = {"q", "index", "__removed_when_saved__"}; \
+                const char *names_q_index[] = {"q", "index", REMOVED_WHEN_SAVED}; \
                 const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
-                const char *names_qpar_qper[] = {"qpar", "qper", "__removed_when_saved__"}; \
+                const char *names_qpar_qper[] = {"qpar", "qper", REMOVED_WHEN_SAVED}; \
                 const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
                 const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
                 const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
@@ -606,7 +607,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                                                         \
                 HklSample *sample = hkl_sample_new("test");             \
                 HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
-                const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector); \
+                HklHolder *holder = hkl_geometry_detector_holder_get(geometry, detector); \
                 const HklVector ki = hkl_geometry_ki_get(geometry);     \
                 double k = hkl_vector_norm2(&ki);                       \
                 HklQuaternion qs_1 = hkl_geometry_sample_rotation_get(geometry, sample); \
@@ -632,7 +633,8 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 HklBinocularsSpaceItem item;            \
                                 HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                hkl_vector_rotated_quaternion(&v, &q);  \
+                                v = hkl_holder_transformation_apply(holder, &v); \
+                                hkl_vector_normalize(&v);               \
                                 hkl_vector_times_double(&v, k);         \
                                 hkl_vector_minus_vector(&v, &ki);       \
                                 hkl_vector_rotated_quaternion(&v, &qs_1); \
