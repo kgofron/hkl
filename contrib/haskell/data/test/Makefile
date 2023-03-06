@@ -1,4 +1,4 @@
-RTS = +RTS -N4 -RTS
+RTS = +RTS -N8 -RTS
 RUN = cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- $(RTS)
 PROCESS = $(RUN) --debug process
 PROCESS_DBG = cd ../..; ./bootstrap gdb --args dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng process
@@ -45,10 +45,11 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run5/20200672_Guinebretiere/binoculars/config_6D5b_Qxyz.txt 412-417
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run4/cervasio_20220528/binoculars/config_hkl_s70.cfg 170-178
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Lundgren_20220155/binoculars21/config_hkl.cfg 570-599
-	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Lundgren_20220155/binoculars21/config_hkl_3.cfg 570-599
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Lundgren_20220155/binoculars21/config_hkl_3.cfg 570-599
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/20220739_kutyla/binoculars/config_angles.cfg-ng 26-41
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/20220739_kutyla/binoculars/config_q-index.cfg 210-286
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom.ini
+	$(PROCESS) data/test/config_sixs_ruche_qcustom2.ini
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom_datapath.ini
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom_sbsuhv.ini
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Creutzburg_20220176/binoculars/config_hkl.cfg 218

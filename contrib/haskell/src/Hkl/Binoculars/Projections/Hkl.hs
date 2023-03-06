@@ -23,7 +23,9 @@
 -}
 
 module Hkl.Binoculars.Projections.Hkl
-    ( newHkl
+    ( Config(..)
+    , DataFrameHkl'(..)
+    , newHkl
     , processHkl
     , updateHkl
     ) where
