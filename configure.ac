@@ -62,7 +62,6 @@ AX_CXXFLAGS_WARN_ALL
 # Checks for libraries.
 AX_PATH_GSL
 AM_PATH_GLIB_2_0
-PKG_CHECK_MODULES([HDF5], [hdf5-serial >= 1.8.13])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -166,6 +165,18 @@ AC_SUBST(MATHJAX_PATH)
 
 dnl *** gtk-doc ***
 GTK_DOC_CHECK([1.9],[--flavour no-tmpl])
+
+dnl **********************************************
+dnl *** add an option for the binoculars build ***
+dnl **********************************************
+
+OPTION_DEFAULT_ON([binoculars], [do not compile the binoculars API])
+
+AM_CONDITIONAL([BINOCULARS], [test x$enable_binoculars = xyes])
+AM_COND_IF([BINOCULARS],
+           [PKG_CHECK_MODULES([HDF5], [hdf5-serial >= 1.8.13])
+            PKG_CHECK_MODULES([CGLM], [cglm >= 0.7])
+])
 
 dnl *******************************
 dnl *** add an option for hkl3d ***

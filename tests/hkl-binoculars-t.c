@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -199,20 +199,22 @@ static void qparqper_projection(void)
 
                         hkl_geometry_randomize(geometry);
 
-                        hkl_binoculars_space_qparqper_uint32_t (space,
-                                                                geometry,
-                                                                img,
-                                                                arr_size,
-                                                                1.0,
-                                                                pixels_coordinates,
-                                                                ARRAY_SIZE(pixels_coordinates_dims),
-                                                                pixels_coordinates_dims,
-                                                                resolutions,
-                                                                ARRAY_SIZE(resolutions),
-                                                                mask,
-                                                                HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
-                                                                limits,
-                                                                ARRAY_SIZE(limits));
+                        hkl_binoculars_space_qcustom_uint32_t (space,
+                                                               geometry,
+                                                               img,
+                                                               arr_size,
+                                                               1.0,
+                                                               pixels_coordinates,
+                                                               ARRAY_SIZE(pixels_coordinates_dims),
+                                                               pixels_coordinates_dims,
+                                                               resolutions,
+                                                               ARRAY_SIZE(resolutions),
+                                                               mask,
+                                                               HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
+                                                               limits,
+                                                               ARRAY_SIZE(limits),
+                                                               0.0,
+                                                               HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
@@ -274,20 +276,22 @@ static void qxqyqz_projection(void)
 
                         hkl_geometry_randomize(geometry);
 
-                        hkl_binoculars_space_qxqyqz_uint32_t (space,
-                                                              geometry,
-                                                              img,
-                                                              arr_size,
-                                                              1.0,
-                                                              pixels_coordinates,
-                                                              ARRAY_SIZE(pixels_coordinates_dims),
-                                                              pixels_coordinates_dims,
-                                                              resolutions,
-                                                              ARRAY_SIZE(resolutions),
-                                                              mask,
-                                                              HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
-                                                              limits,
-                                                              ARRAY_SIZE(limits));
+                        hkl_binoculars_space_qcustom_uint32_t (space,
+                                                               geometry,
+                                                               img,
+                                                               arr_size,
+                                                               1.0,
+                                                               pixels_coordinates,
+                                                               ARRAY_SIZE(pixels_coordinates_dims),
+                                                               pixels_coordinates_dims,
+                                                               resolutions,
+                                                               ARRAY_SIZE(resolutions),
+                                                               mask,
+                                                               HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
+                                                               limits,
+                                                               ARRAY_SIZE(limits),
+                                                               0.0,
+                                                               HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ);
 
                         hkl_binoculars_cube_add_space(cube, space);
 

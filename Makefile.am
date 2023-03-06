@@ -1,9 +1,12 @@
 ## Process this file with automake to produce Makefile.in
 
 ACLOCAL_AMFLAGS = -I m4
-AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection --enable-hkl3d
+AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection --enable-hkl3d --enable-binoculars
 
-SUBDIRS = hkl binoculars third-party
+SUBDIRS = hkl third-party
+if BINOCULARS
+SUBDIRS += binoculars
+endif
 if HKL3D
 SUBDIRS += hkl3d data
 endif
