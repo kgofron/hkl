@@ -137,11 +137,11 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
     inputtype <- parseFDef cfg "input" "type" (binocularsConfig'Common'InputType default'BinocularsConfig'Common)
     nexusdir <- parseMb cfg "input" "nexusdir"
     inputtmpl <- parseMb cfg "input" "inputtmpl"
-    inputrange <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
+    inputrange <- eitherF error (parse' cfg "input" "inputrange") $ \mb -> do
       let mr' = mr <|> mb
       case mr' of
         Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
-        (Just r) -> pure r
+        Just r -> pure r
     detector <- parseFDef cfg "input" "detector" (binocularsConfig'Common'Detector default'BinocularsConfig'Common)
     centralpixel <- eitherF error (parse' cfg "input" "centralpixel") $ \mc -> do
       case mc of
