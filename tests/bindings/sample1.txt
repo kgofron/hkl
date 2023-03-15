@@ -1,0 +1,29 @@
+Created at 2022-10-07 11:51
+
+DiffractometerType E6C
+
+Crystal    sample1
+
+Wavelength 1.7770422817830014
+
+A 5.0 B 5.0 C 5.0
+Alpha 90.0 Beta 90.0 Gamma 90.0
+
+R0 0 0.0 1.0 0.0 0 1 0.0 10.23607 90.0 0.0 0.0 20.47213
+R1 1 1.0 0.0 0.0 0 1 0.0 100.23607 90.0 0.0 0.0 20.47213
+
+Engine hkl
+
+Mode constant_phi_vertical
+
+PsiRef not available in current engine mode
+
+AutoEnergyUpdate 0
+
+U00 1.257 U01 0.000 U02 -0.000 
+U10 -0.000 U11 1.257 U12 -0.000 
+U20 -0.000 U21 0.000 U22 1.257 
+
+Ux 1.0124021018228465e-14 Uy -8.834875001314751e-22 Uz -4.999999996768621e-06
+
+SaveDirectory /home/p09user/crystals

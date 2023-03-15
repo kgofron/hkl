@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+from typing import NamedTuple
 
 import os
 import math
 import unittest
 
-from collections import namedtuple
 from gi.repository import GLib
 import gi
 gi.require_version("Hkl", "5.0")
@@ -16,18 +16,56 @@ from numpy.linalg import inv, norm
 # Types #
 #########
 
-Detector = namedtuple('Detector', ['type'])
-Diffractometer = namedtuple('Diffractometer', ['dtype', 'sample',
-                                               'detector', 'source', 'engine'])
-Engine = namedtuple('Engine', ['name', 'mode'])
-Lattice = namedtuple('Lattice', ['a', 'b', 'c', 'alpha', 'beta', 'gamma'])
-Reflection = namedtuple('Reflection', ['hkl', 'values'])
-Sample = namedtuple('Sample', ['lattice', 'or0', 'or1', 'ux', 'uy', 'uz'])
-Source = namedtuple('Source', ['wavelength', 'energy'])
+class Lattice(NamedTuple):
+    a: float
+    b: float
+    c: float
+    alpha: float
+    beta: float
+    gamma: float
 
-HklDiffractometer = namedtuple('HklDiffractometer', ['sample', 'detector',
-                                                     'geometry', 'engines'])
 
+class Reflection(NamedTuple):
+    hkl : [float]
+    values : [float]
+
+
+class Sample(NamedTuple):
+    lattice: Lattice
+    or0: Reflection
+    or1: Reflection
+    ux: float
+    uy: float
+    uz: float
+
+
+class Detector(NamedTuple):
+    type: str
+
+
+class Source(NamedTuple):
+    wavelength: float
+    energy: float
+
+
+class Engine(NamedTuple):
+    name: str
+    mode: str
+
+
+class Diffractometer(NamedTuple):
+    dtype: str
+    sample: Sample
+    detector: Detector
+    source: Source
+    engine: Engine
+
+
+class HklDiffractometer(NamedTuple):
+    sample: Hkl.Sample
+    detector: Hkl.Detector
+    geometry: Hkl.Geometry
+    engines: Hkl.EngineList
 
 ##################
 # Helper methods #
@@ -128,7 +166,7 @@ def new_hkl_diffractometer(config):
     engine = engines.engine_get_by_name(config.engine.name)
     engine.current_mode_set(config.engine.mode)
 
-    return HklDiffractometer(sample, geometry, detector, engines)
+    return HklDiffractometer(sample, detector, geometry, engines)
 
 #################
 # Config parser #
@@ -199,7 +237,7 @@ def parse(filename, dtype):
 ######################
 
 def ca(config, hkl, engine_name='hkl'):
-    sample, geometry, detector, engines = new_hkl_diffractometer(config)
+    sample, detector, geometry, engines = new_hkl_diffractometer(config)
     engines.init(geometry, detector, sample)
     engine = engines.engine_get_by_name(engine_name)
     solutions = engine.pseudo_axis_values_set(hkl,
@@ -210,12 +248,12 @@ def ca(config, hkl, engine_name='hkl'):
 
 
 def get_UB(config):
-    sample, geometry, detector, engines = new_hkl_diffractometer(config)
+    sample, detector, geometry, engines = new_hkl_diffractometer(config)
     return hkl_matrix_to_numpy(sample.UB_get())
 
 
 def get_R_and_P(config, values):
-    sample, geometry, detector, engines = new_hkl_diffractometer(config)
+    sample, detector, geometry, engines = new_hkl_diffractometer(config)
     geometry.axis_values_set(values, Hkl.UnitEnum.USER)
     R = hkl_matrix_to_numpy(geometry.sample_rotation_get(sample).to_matrix())
     P = hkl_matrix_to_numpy(geometry.detector_rotation_get(detector).to_matrix())
