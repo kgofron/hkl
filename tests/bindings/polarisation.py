@@ -368,7 +368,65 @@ class Polarisation(unittest.TestCase):
         # keep in order to pass the test
         self.assertTrue(True)
 
+    def test_petraIII_v2(self):
+        dtype = "E6C"
+        # RUBh = kf - ki = (P ki - ki) = (P - I) ki
 
+        config = parse(find('sample1.txt'), dtype)
+        print(config)
+
+        ## Test:
+
+        # The values obtained with the executable have been tested
+        # using the crystal lattice and orientation given in file sample1.txt
+        # for the following reflections [^1]:
+
+        # Reflection: ( 0.0,  2.0,  0.0)
+        # angles: 0.00000    20.81848     90.00000     0.00000    0.00000     41.63696
+        # kinc = ( 2.6300, -1.0000,  0.0000)
+        # kscat = ( 2.6300,  1.0000,  0.0000)
+        gaga = ca(config, [0.0, 2.0, 0.0])
+        print(gaga)
+
+        # Reflection: ( 0.0,  3.0,  0.0)
+        # angles: 0.00000    32.21601     90.00000     0.00000    0.00000     64.43202
+        # kinc = ( 2.3805, -1.5000,  0.0000)
+        # kscat = ( 2.3805,  1.5000,  0.0000)
+        gaga = ca(config, [0.0, 3.0, 0.0])
+        print(gaga)
+
+        # Reflection: ( 0.0,  4.0,  0.0)
+        # angles: 0.00000    45.30143     90.00000     0.00000    0.00000     90.60284
+        # kinc = ( 1.9791, -2.0000,  0.0000)
+        # kscat = ( 1.9791,  2.0000,  0.0000)
+        gaga = ca(config, [0.0, 4.0, 0.0])
+        print(gaga)
+
+        # Reflection: ( 1.0,  3.0,  0.0)
+        # angles: 0.00000    52.62572     90.00000     0.00000    0.00000     68.38154
+        # kinc = ( 1.7079, -2.2360,  0.0000)
+        # kscat = ( 2.7079,  0.7640,  0.0000)
+        gaga = ca(config, [1.0, 3.0, 0.0])
+        print(gaga)
+
+        # Reflection: ( 1.0,  4.0,  0.0)
+        # angles: 0.00000    61.14891     90.00000     0.00000    0.00000     94.22532
+        # kinc = ( 1.3577, -2.4644,  0.0000)
+        # kscat = ( 2.3577,  1.5356,  0.0000)
+        gaga = ca(config, [1.0, 4.0, 0.0])
+        print(gaga)
+
+        # Reflection: ( 2.0,  3.0,  0.0)
+        # angles: 0.00000    49.97822     90.00000     0.00000    0.00000     46.82633
+        # kinc = ( 0.7974, -2.6983,  0.0000)
+        # kscat = ( 2.7974,  0.3017,  0.0000)
+        gaga = ca(config, [2.0, 3.0, 0.0])
+        print(gaga)
+
+        # [^1]: The order of angles is given as in hkl library: mu, omega, chi, phi, gamma, delta)
+
+        # keep in order to fail the test until it is implemented
+        self.assertTrue(False)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
