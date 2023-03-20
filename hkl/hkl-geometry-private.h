@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -207,11 +207,6 @@ extern int hkl_geometry_is_valid_range(const HklGeometry *self);
 extern HklHolder *hkl_geometry_sample_holder_get(const HklGeometry *self, const HklSample *sample);
 
 extern HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self, const HklDetector *detector);
-
-extern HklVector hkl_geometry_ki_get(const HklGeometry *self);
-
-extern HklVector hkl_geometry_kf_get(const HklGeometry *self,
-				     const HklDetector *detector);
 
 /*******************/
 /* HklGeometryList */

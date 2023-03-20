@@ -309,6 +309,11 @@ HKLAPI HklQuaternion hkl_geometry_sample_rotation_get(const HklGeometry *self,
 HKLAPI HklQuaternion hkl_geometry_detector_rotation_get(const HklGeometry *self,
 							const HklDetector *detector) HKL_ARG_NONNULL(1, 2);
 
+HKLAPI HklVector hkl_geometry_ki_get(const HklGeometry *self) HKL_ARG_NONNULL(1);
+
+HKLAPI HklVector hkl_geometry_kf_get(const HklGeometry *self,
+				     const HklDetector *detector) HKL_ARG_NONNULL(1, 2);
+
 HKLAPI void hkl_geometry_fprintf(FILE *file, const HklGeometry *self) HKL_ARG_NONNULL(1, 2);
 
 /* HklGeometryList */

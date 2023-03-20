@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2012-2019 Synchrotron SOLEIL
+ * Copyright (C) 2012-2019, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -56,6 +56,11 @@ HKLAPI HklQuaternion *hkl_geometry_sample_rotation_get_binding(const HklGeometry
 
 HKLAPI HklQuaternion *hkl_geometry_detector_rotation_get_binding(const HklGeometry *self,
 								 const HklDetector *detector) HKL_ARG_NONNULL(1, 2);
+
+HKLAPI HklVector *hkl_geometry_ki_get_binding(const HklGeometry *self);
+
+HKLAPI HklVector *hkl_geometry_kf_get_binding(const HklGeometry *self,
+                                              const HklDetector *detector);
 
 /*******************/
 /* HklGeometryList */

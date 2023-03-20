@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -924,11 +924,30 @@ HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self,
 	return self->ops->detector_holder_get(self, detector);
 }
 
+/**
+ * hkl_geometry_ki_get:
+ * @self: the self @HklGeometry@
+ *
+ * return the ki vector in the laboratory
+ * basis.
+ *
+ * Returns: the ki vector.
+ **/
 HklVector hkl_geometry_ki_get(const HklGeometry *self)
 {
 	return self->ops->ki_get(self);
 }
 
+/**
+ * hkl_geometry_kf_get:
+ * @self: the self @HklGeometry@
+ * @detector: the @HklDetector@
+ *
+ * return the kf vector in the laboratory
+ * basis.
+ *
+ * Returns: the kf vector.
+ **/
 HklVector hkl_geometry_kf_get(const HklGeometry *self,
 			      const HklDetector *detector)
 {

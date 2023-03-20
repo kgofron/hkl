@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2012-2019, 2022 Synchrotron SOLEIL
+ * Copyright (C) 2012-2019, 2022, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -166,6 +166,40 @@ HklQuaternion *hkl_geometry_detector_rotation_get_binding(const HklGeometry *sel
 	HklQuaternion q = hkl_geometry_detector_rotation_get(self, detector);
 
 	return hkl_quaternion_dup(&q);
+}
+
+/**
+ * hkl_geometry_ki_get_binding: (rename-to hkl_geometry_ki_get)
+ * @self: the self @HklGeometry@
+ *
+ * return the ki vector in the laboratory
+ * basis.
+ *
+ * Returns: (transfer full): the ki vector.
+ **/
+HklVector *hkl_geometry_ki_get_binding(const HklGeometry *self)
+{
+	HklVector v = hkl_geometry_ki_get(self);
+
+	return hkl_vector_dup(&v);
+}
+
+/**
+ * hkl_geometry_kf_get_binding: (rename-to hkl_geometry_kf_get)
+ * @self: the self @HklGeometry@
+ * @detector: the self @HklDetector@
+ *
+ * return the kf vector in the laboratory
+ * basis.
+ *
+ * Returns: (transfer full): the kf vector.
+ **/
+HklVector *hkl_geometry_kf_get_binding(const HklGeometry *self,
+                                       const HklDetector *detector)
+{
+	HklVector v = hkl_geometry_kf_get(self, detector);
+
+	return hkl_vector_dup(&v);
 }
 
 /*******************/

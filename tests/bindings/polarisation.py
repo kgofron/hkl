@@ -259,6 +259,14 @@ def get_R_and_P(config, values):
     P = hkl_matrix_to_numpy(geometry.detector_rotation_get(detector).to_matrix())
     return R, P
 
+def get_kinc_kscat(config, values):
+    sample, detector, geometry, engines = new_hkl_diffractometer(config)
+    geometry.axis_values_set(values, Hkl.UnitEnum.USER)
+    R = hkl_matrix_to_numpy(geometry.sample_rotation_get(sample).to_matrix())
+    UB = hkl_matrix_to_numpy(sample.UB_get())
+    RUB = dot(R, UB)
+    RUB_1 = inv(RUB)
+
 ##############
 # Unit tests #
 ##############
