@@ -879,13 +879,13 @@ HklQuaternion hkl_geometry_sample_rotation_get(const HklGeometry *self,
 
 /**
  * hkl_geometry_detector_rotation_get:
- * @self: the self @HklGeometry@
- * @detector: the @HklDetector@
+ * @self: the self #HklGeometry
+ * @detector: the #HklDetector
  *
  * return the rotation part of the given detector in the laboratory
  * basis.
  *
- * Returns: the rotation express as a quaternion.
+ * Returns: the rotation express as a #HklQuaternion.
  **/
 HklQuaternion hkl_geometry_detector_rotation_get(const HklGeometry *self,
 						 const HklDetector *detector)
@@ -926,12 +926,12 @@ HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self,
 
 /**
  * hkl_geometry_ki_get:
- * @self: the self @HklGeometry@
+ * @self: the self #HklGeometry
  *
  * return the ki vector in the laboratory
  * basis.
  *
- * Returns: the ki vector.
+ * Returns: the ki vector as #HklVector.
  **/
 HklVector hkl_geometry_ki_get(const HklGeometry *self)
 {

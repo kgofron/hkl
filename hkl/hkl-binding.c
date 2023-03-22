@@ -153,7 +153,7 @@ HklQuaternion *hkl_geometry_sample_rotation_get_binding(const HklGeometry *self,
 
 /**
  * hkl_geometry_detector_rotation_get_binding: (rename-to hkl_geometry_detector_rotation_get)
- * @self: the self @HklGeometry@
+ * @self: the self #HklGeometry
  *
  * return the rotation part of the given detector in the laboratory
  * basis.
@@ -170,7 +170,7 @@ HklQuaternion *hkl_geometry_detector_rotation_get_binding(const HklGeometry *sel
 
 /**
  * hkl_geometry_ki_get_binding: (rename-to hkl_geometry_ki_get)
- * @self: the self @HklGeometry@
+ * @self: the self #HklGeometry
  *
  * return the ki vector in the laboratory
  * basis.
@@ -186,8 +186,8 @@ HklVector *hkl_geometry_ki_get_binding(const HklGeometry *self)
 
 /**
  * hkl_geometry_kf_get_binding: (rename-to hkl_geometry_kf_get)
- * @self: the self @HklGeometry@
- * @detector: the self @HklDetector@
+ * @self: the self #HklGeometry
+ * @detector: the self #HklDetector
  *
  * return the kf vector in the laboratory
  * basis.

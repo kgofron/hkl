@@ -100,7 +100,7 @@ static inline HklVector hkl_geometry_ki_get_real(const HklGeometry *self)
 }
 
 static inline HklVector hkl_geometry_kf_get_real(const HklGeometry *self,
-						 UNUSED const HklDetector *detector)
+                                                 UNUSED const HklDetector *detector)
 {
 	HklVector kf = {{HKL_TAU / self->source.wave_length, 0, 0}};
 	HklHolder *detector_holder = darray_item(self->holders, HKL_HOLDER_DETECTOR_IDX);
