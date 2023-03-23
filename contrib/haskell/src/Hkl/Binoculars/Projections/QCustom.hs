@@ -405,8 +405,8 @@ guess'DataSourcePath'DataFrameQCustom common msub =
       let dataSourcePath'WaveLength'Sixs ::  DataSourcePath Double
           dataSourcePath'WaveLength'Sixs
             = DataSourcePath'Double (hdf5p $ grouppat 0 (datasetp "SIXS/Monochromator/wavelength"
-                                                             `H5Or`
-                                                             datasetp "SIXS/i14-c-c02-op-mono/lambda"))
+                                                         `H5Or`
+                                                         datasetp "SIXS/i14-c-c02-op-mono/lambda"))
 
       -- geometry
       let dataSourcePaths'Sixs'Uhv'Axes :: [DataSourcePath Degree]
@@ -452,15 +452,15 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "scan_data/mu"
+              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/mu")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "scan_data/gamma"
+              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/gamma")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "scan_data/delta"
+              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/delta")))
               ]
