@@ -368,7 +368,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ:            \
         case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS:                 \
         {                                                               \
-                const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
+                static const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
                 names = names_qx_qy_qz;                                 \
@@ -376,7 +376,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP:     \
         {                                                               \
-                const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
+                static const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
                 assert(ARRAY_SIZE(names_q_tth_timestamp) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_tth_timestamp) == n_resolutions); \
                 names = names_q_tth_timestamp;                          \
@@ -384,7 +384,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX:             \
         {                                                               \
-                const char *names_q_index[] = {"q", "index"};           \
+                static const char *names_q_index[] = {"q", "index"};           \
                 assert(ARRAY_SIZE(names_q_index) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_index) == n_resolutions);     \
                 names = names_q_index;                                  \
@@ -392,7 +392,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP: \
         {                                                               \
-                const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
+                static const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
                 assert(ARRAY_SIZE(names_qpar_qper_timestamp) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qpar_qper_timestamp) == n_resolutions); \
                 names = names_qpar_qper_timestamp;                      \
@@ -400,7 +400,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER:           \
         {                                                               \
-                const char *names_qpar_qper[] = {"qpar", "qper"};       \
+                static const char *names_qpar_qper[] = {"qpar", "qper"};       \
                 assert(ARRAY_SIZE(names_qpar_qper) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qpar_qper) == n_resolutions); \
                 names = names_qpar_qper;                                \
@@ -408,7 +408,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX:            \
         {                                                               \
-                const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
+                static const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
                 assert(ARRAY_SIZE(names_q_phi_qx) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_phi_qx) == n_resolutions);    \
                 names = names_q_phi_qx;                                 \
@@ -416,7 +416,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY:            \
         {                                                               \
-                const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
+                static const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
                 assert(ARRAY_SIZE(names_q_phi_qy) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_phi_qy) == n_resolutions);    \
                 names = names_q_phi_qy;                                 \
@@ -424,7 +424,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ:            \
         {                                                               \
-                const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
+                static const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
                 assert(ARRAY_SIZE(names_q_phi_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_phi_qz) == n_resolutions);    \
                 names = names_q_phi_qz;                                 \
@@ -432,7 +432,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO:            \
         {                                                               \
-                const char *names_q_stereo[] = {"q", "xp", "yp"};       \
+                static const char *names_q_stereo[] = {"q", "xp", "yp"};       \
                 assert(ARRAY_SIZE(names_q_stereo) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_stereo) == n_resolutions);    \
                 names = names_q_stereo;                                 \
@@ -440,7 +440,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA:  \
         {                                                               \
-                const char *names_angles_zaxis_omega[] = {"delta", "gamma", "omega"}; \
+                static const char *names_angles_zaxis_omega[] = {"delta", "gamma", "omega"}; \
                 assert(ARRAY_SIZE(names_angles_zaxis_omega) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_angles_zaxis_omega) == n_resolutions); \
                 names = names_angles_zaxis_omega;                       \
@@ -448,7 +448,7 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU:     \
         {                                                               \
-                const char *names_angles_zaxis_mu[] = {"delta", "gamma", "mu"}; \
+                static const char *names_angles_zaxis_mu[] = {"delta", "gamma", "mu"}; \
                 assert(ARRAY_SIZE(names_angles_zaxis_mu) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_angles_zaxis_mu) == n_resolutions); \
                 names = names_angles_zaxis_mu;                          \
@@ -601,7 +601,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ:            \
         case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS:                 \
         {                                                               \
-                const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
+                static const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};      \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
                 names = names_qx_qy_qz;                                 \
@@ -609,7 +609,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP:     \
         {                                                               \
-                const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
+                static const char *names_q_tth_timestamp[] = {"q", "tth", "timestamp"}; \
                 assert(ARRAY_SIZE(names_q_tth_timestamp) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_tth_timestamp) == n_resolutions); \
                 names = names_q_tth_timestamp;                          \
@@ -617,7 +617,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX:             \
         {                                                               \
-                const char *names_q_index[] = {"q", "index"};           \
+                static const char *names_q_index[] = {"q", "index"};           \
                 assert(ARRAY_SIZE(names_q_index) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_index) == n_resolutions);     \
                 names = names_q_index;                                  \
@@ -625,7 +625,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP: \
         {                                                               \
-                const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
+                static const char *names_qpar_qper_timestamp[] = {"qpar", "qper", "timestamp"}; \
                 assert(ARRAY_SIZE(names_qpar_qper_timestamp) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qpar_qper_timestamp) == n_resolutions); \
                 names = names_qpar_qper_timestamp;                      \
@@ -633,7 +633,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER:           \
         {                                                               \
-                const char *names_qpar_qper[] = {"qpar", "qper"};       \
+                static const char *names_qpar_qper[] = {"qpar", "qper"};       \
                 assert(ARRAY_SIZE(names_qpar_qper) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_qpar_qper) == n_resolutions);   \
                 names = names_qpar_qper;                                \
@@ -641,7 +641,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX:            \
         {                                                               \
-                const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
+                static const char *names_q_phi_qx[] = {"q", "phi", "qx"};      \
                 assert(ARRAY_SIZE(names_q_phi_qx) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_phi_qx) == n_resolutions);    \
                 names = names_q_phi_qx;                                 \
@@ -649,7 +649,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY:            \
         {                                                               \
-                const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
+                static const char *names_q_phi_qy[] = {"q", "phi", "qy"};      \
                 assert(ARRAY_SIZE(names_q_phi_qy) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_phi_qy) == n_resolutions);    \
                 names = names_q_phi_qy;                                 \
@@ -657,7 +657,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ:            \
         {                                                               \
-                const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
+                static const char *names_q_phi_qz[] = {"q", "phi", "qz"};      \
                 assert(ARRAY_SIZE(names_q_phi_qz) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_phi_qz) == n_resolutions);    \
                 names = names_q_phi_qz;                                 \
@@ -665,7 +665,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO:            \
         {                                                               \
-                const char *names_q_stereo[] = {"q", "xp", "yp"};       \
+                static const char *names_q_stereo[] = {"q", "xp", "yp"};       \
                 assert(ARRAY_SIZE(names_q_stereo) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_q_stereo) == n_resolutions);    \
                 names = names_q_stereo;                                 \
@@ -673,7 +673,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA:  \
         {                                                               \
-                const char *names_angles_zaxis_omega[] = {"delta", "gamma", "omega"}; \
+                static const char *names_angles_zaxis_omega[] = {"delta", "gamma", "omega"}; \
                 assert(ARRAY_SIZE(names_angles_zaxis_omega) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_angles_zaxis_omega) == n_resolutions); \
                 names = names_angles_zaxis_omega;                       \
@@ -681,7 +681,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
         }                                                               \
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU:     \
         {                                                               \
-                const char *names_angles_zaxis_mu[] = {"delta", "gamma", "mu"}; \
+                static const char *names_angles_zaxis_mu[] = {"delta", "gamma", "mu"}; \
                 assert(ARRAY_SIZE(names_angles_zaxis_mu) == darray_size(space->axes)); \
                 assert(ARRAY_SIZE(names_angles_zaxis_mu) == n_resolutions); \
                 names = names_angles_zaxis_mu;                          \
