@@ -42,6 +42,7 @@ hid_t create_dataspace_from_axes(const darray_axis *axes)
 void hkl_binoculars_cube_save_hdf5(const char *fn,
                                    const HklBinocularsCube *self)
 {
+        double axis_idx = 0;
         hid_t file_id;
         hid_t groupe_id;
         hid_t groupe_axes_id;
@@ -67,6 +68,13 @@ void hkl_binoculars_cube_save_hdf5(const char *fn,
 
                 if(axis_size(axis) > 1){
                         arr = hkl_binoculars_axis_array(axis);
+                        /* the arr[0] contains the axis index expected
+                           by the binoculars gui. This value must
+                           start from zero, so compute this index
+                           using an external counter instead of using
+                           the original index stored in the axis
+                           array. */
+                        arr[0] = axis_idx++;
                         dataspace_id = H5Screate_simple(ARRAY_SIZE(dims), dims, NULL);
                         dataset_id = H5Dcreate(groupe_axes_id, axis->name,
                                                H5T_NATIVE_DOUBLE, dataspace_id,

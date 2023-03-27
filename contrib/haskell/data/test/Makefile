@@ -60,6 +60,7 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run1/20211454_Bellec/binoculars/config_dpath.txt 488
 #	$(PROCESS_DBG) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run1/20211454_Bellec/binoculars/config_angles.txt 488
 	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_xpad.txt 356
+# TODO	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_xpad.txt 537
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini
