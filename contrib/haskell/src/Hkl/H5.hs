@@ -142,6 +142,7 @@ data HklH5Exception
   | CanNotOpenGroup ByteString
   | CanNotOpenGroupAt ByteString Int
   | CanNotOpenFile ByteString
+  | ContainNanValue
   deriving (Show)
 
 instance Exception HklH5Exception
@@ -205,10 +206,13 @@ getPosition' dataset' h =
 getPositionNew :: Shape sh => Dataset -> sh -> IO (Vector Double)
 getPositionNew dataset' s = getPosition' dataset' (shapeAsCoordinateToHyperslab s)
 
-getPosition :: NativeType t => Dataset -> Int -> IO t
+getPosition :: (NativeType t, RealFloat t) => Dataset -> Int -> IO t
 getPosition dataset' n = do
   v <- getPosition' dataset' [(HSize (fromIntegral n), Nothing,  HSize 1, Nothing)]
-  return $ head v
+  let v' = head v
+  if isNaN v'
+    then throwIO $ ContainNanValue
+    else return v'
 
 getUB :: Dataset -> IO (Matrix Double)
 getUB dataset' = do
