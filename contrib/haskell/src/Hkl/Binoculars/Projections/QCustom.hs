@@ -722,6 +722,8 @@ processQCustomP = do
   logDebugNSH filenames
   logDebugNSH datapaths
   logDebugNSH chunks
+  logDebugNSH ntot
+  logDebugNSH jobs
   logDebugN "start gessing final cube size"
 
   -- guess the final cube dimensions (To optimize, do not create the cube, just extract the shape)

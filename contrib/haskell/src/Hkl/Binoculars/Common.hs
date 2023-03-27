@@ -3,7 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -66,7 +66,8 @@ chunk target = go target target
     cons1 x cs = (x : Prelude.head cs) : tail cs
 
     golast tgt gap x =
-      if | cweight x <= gap         -> [[x]]
+      if | 0 == gap                 -> [[x]]
+         | cweight x <= gap         -> [[x]]
          | (x1, x2) <- csplit x gap -> [x1] : golast tgt tgt x2
 
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
