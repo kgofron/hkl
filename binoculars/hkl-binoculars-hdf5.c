@@ -56,6 +56,54 @@ void hkl_binoculars_cube_save_hdf5(const char *fn,
         groupe_id = H5Gcreate(file_id, "binoculars",
                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
+        // config
+
+        /* #define FILE            "h5ex_t_string.h5" */
+        /* #define DATASET         "DS1" */
+        /* #define DIM0            4 */
+        /* #define SDIM            8 */
+
+
+        /* hid_t       file, filetype, memtype, space, dset; */
+        /*                                     /\* Handles *\/ */
+        /* herr_t      status; */
+        /* hsize_t     dims[1] = {DIM0}; */
+        /* size_t      sdim; */
+        /* char        wdata[DIM0][SDIM] = {"Parting", "is such", "sweet", "sorrow."}, */
+        /*                                     /\* Write buffer *\/ */
+        /*         **rdata;                    /\* Read buffer *\/ */
+        /* int         ndims, */
+        /*         i; */
+
+        /* /\* */
+        /*  * Create a new file using the default properties. */
+        /*  *\/ */
+        /* file = H5Fcreate (FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT); */
+
+        /* /\* */
+        /*  * Create file and memory datatypes.  For this example we will save */
+        /*  * the strings as FORTRAN strings, therefore they do not need space */
+        /*  * for the null terminator in the file. */
+        /*  *\/ */
+        /* filetype = H5Tcopy (H5T_FORTRAN_S1); */
+        /* status = H5Tset_size (filetype, SDIM - 1); */
+        /* memtype = H5Tcopy (H5T_C_S1); */
+        /* status = H5Tset_size (memtype, SDIM); */
+
+        /* /\* */
+        /*  * Create dataspace.  Setting maximum size to NULL sets the maximum */
+        /*  * size to be the current size. */
+        /*  *\/ */
+        /* space = H5Screate_simple (1, dims, NULL); */
+
+        /* /\* */
+        /*  * Create the dataset and write the string data to it. */
+        /*  *\/ */
+        /* dset = H5Dcreate (file, DATASET, filetype, space, H5P_DEFAULT, H5P_DEFAULT, */
+        /*                   H5P_DEFAULT); */
+        /* status = H5Dwrite (dset, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, wdata[0]); */
+
+
         // axes
         groupe_axes_id = H5Gcreate(groupe_id, "axes",
                                    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
