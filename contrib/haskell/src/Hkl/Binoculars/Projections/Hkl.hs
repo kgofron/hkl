@@ -48,7 +48,7 @@ import           Data.Functor.Identity              (Identity)
 import           Data.HashMap.Strict                (fromList)
 import           Data.Ini                           (Ini (..))
 import           Data.Ini.Config.Bidir              (FieldValue (..))
-import           Data.Text                          (pack)
+import           Data.Text                          (pack, unpack)
 import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
@@ -297,7 +297,7 @@ processHklP = do
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs
-    saveCube output' r'
+    saveCube output' (unpack . serializeConfig $ conf) r'
 
 -- FramesHklP
 

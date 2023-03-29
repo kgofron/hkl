@@ -139,6 +139,7 @@ HKLAPI extern void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
                                                  const HklBinocularsSpace *space);
 
 HKLAPI extern void hkl_binoculars_cube_save_hdf5(const char *fn,
+                                                 const char *config,
                                                  const HklBinocularsCube *self);
 
 HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube *self);

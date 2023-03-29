@@ -54,7 +54,7 @@ import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.Maybe                        (fromJust, fromMaybe)
-import           Data.Text                         (pack)
+import           Data.Text                         (pack, unpack)
 import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Vector.Storable.Mutable      (unsafeWith)
@@ -753,7 +753,7 @@ processQCustomP = do
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs
-    saveCube output' r'
+    saveCube output' (unpack . serializeConfig $ conf) r'
 
 
 instance ChunkP (DataSourcePath DataFrameQCustom) where

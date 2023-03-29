@@ -35,7 +35,7 @@ import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
 import           Data.HashMap.Lazy                  (fromList)
 import           Data.Ini                           (Ini (..))
-import           Data.Text                          (pack)
+import           Data.Text                          (pack, unpack)
 import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
 import           Foreign.C.Types                    (CDouble (..))
@@ -243,7 +243,7 @@ processAnglesP = do
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs
-    saveCube output' r'
+    saveCube output' (unpack . serializeConfig $ conf) r'
 
 ---------
 -- Cmd --

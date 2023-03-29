@@ -89,7 +89,7 @@ instance Shape sh => Monoid (Cube sh) where
 #ccall hkl_binoculars_cube_new, CSize -> Ptr (Ptr <HklBinocularsSpace>) -> IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_empty, IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_empty_from_cube, Ptr <HklBinocularsCube> -> IO (Ptr <HklBinocularsCube>)
-#ccall hkl_binoculars_cube_save_hdf5, CString -> Ptr <HklBinocularsCube> -> IO ()
+#ccall hkl_binoculars_cube_save_hdf5, CString -> CString -> Ptr <HklBinocularsCube> -> IO ()
 
 --------------
 -- Detector --

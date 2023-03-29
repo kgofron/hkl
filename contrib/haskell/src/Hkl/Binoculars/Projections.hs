@@ -78,14 +78,15 @@ withNPixels d f = f (toEnum . size . shape $ d)
 withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CSize -> IO r) -> IO r
 withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
-saveCube :: Shape sh => FilePath -> [Cube sh] -> IO ()
-saveCube o rs = do
+saveCube :: Shape sh => FilePath -> String -> [Cube sh] -> IO ()
+saveCube o conf rs = do
   let c = mconcat rs
   case c of
     (Cube fp) ->
-        withCString o $ \fn ->
-        withForeignPtr fp $ \p ->
-            c'hkl_binoculars_cube_save_hdf5 fn p
+      withCString o $ \fn ->
+      withCString conf $ \config ->
+      withForeignPtr fp $ \p ->
+            c'hkl_binoculars_cube_save_hdf5 fn config p
     EmptyCube -> return ()
 
 newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
