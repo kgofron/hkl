@@ -454,6 +454,14 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
                 names = names_angles_zaxis_mu;                          \
                 break;                                                  \
         }                                                               \
+        default:                                                        \
+        {                                                               \
+                static const char *names_qx_qy_qz[] = {"qx", "qy", "qz"}; \
+                assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
+                assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
+                names = names_qx_qy_qz;                                 \
+                break;                                                  \
+        }                                                               \
         }                                                               \
         assert(n_pixels == space->max_items);                          \
                                                                        \
@@ -687,6 +695,14 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                 names = names_angles_zaxis_mu;                          \
                 break;                                                  \
         }                                                               \
+        default:                                                        \
+        {                                                               \
+                static const char *names_qx_qy_qz[] = {"qx", "qy", "qz"}; \
+                assert(ARRAY_SIZE(names_qx_qy_qz) == darray_size(space->axes)); \
+                assert(ARRAY_SIZE(names_qx_qy_qz) == n_resolutions);    \
+                names = names_qx_qy_qz;                                 \
+                break;                                                  \
+        }                                                               \
         }                                                               \
         assert(n_pixels == space->max_items);                           \
                                                                         \
@@ -907,8 +923,7 @@ static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes)
         if (0 != darray_size(*axes)){
                 HklBinocularsAxis *axis;
 
-                self = g_new(HklBinocularsCube, 1);
-                darray_init(self->axes);
+                self = g_new0(HklBinocularsCube, 1);
                 darray_foreach(axis, *axes){
                         darray_append(self->axes, *axis);
                 }

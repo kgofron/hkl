@@ -343,6 +343,8 @@ static inline char *create_npy_header(HklBinocularsNpyDataType type,
         /* first compute the dict and its size */
 
         stream = open_memstream(&dict, &dict_size);
+        if (NULL == stream) goto fail;
+
         fprintf(stream,"{");
         fprintf(stream, "'descr': '%c%c%d'",
                 bigendian(), map_type(type), map_size(type));
@@ -373,6 +375,8 @@ static inline char *create_npy_header(HklBinocularsNpyDataType type,
         /* create the full header */
 
         stream = open_memstream(&header, header_size);
+        if (NULL == stream) goto fail;
+
         fwrite(&magic[0], sizeof(char), ARRAY_SIZE(magic), stream);
         fprintf(stream, "%c%c", VERSION_1, 0x0);
         uint16_t len = (uint16_t)dict_size;
@@ -385,6 +389,8 @@ static inline char *create_npy_header(HklBinocularsNpyDataType type,
         free(dict);
 
         return header;
+fail:
+        return NULL;
 }
 
 void npy_save(const char *fname,
@@ -397,7 +403,11 @@ void npy_save(const char *fname,
         size_t header_size;
 
         header = create_npy_header(type, shape, &header_size);
+        if (NULL == header) return;
+
         f = fopen(fname, "wb");
+        if (NULL == f) return;
+
         fseek(f,0,SEEK_SET);
         fwrite(&header[0], 1, header_size, f);
         fprintf(stdout, "%s\n", header);
