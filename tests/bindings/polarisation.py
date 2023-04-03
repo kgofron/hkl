@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import NamedTuple
+from typing import List, NamedTuple
 
 import os
 import math
@@ -27,8 +27,8 @@ class Lattice(NamedTuple):
 
 
 class Reflection(NamedTuple):
-    hkl : [float]
-    values : [float]
+    hkl : List[float]
+    values : List[float]
 
 
 class Sample(NamedTuple):
