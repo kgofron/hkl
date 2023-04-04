@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -54,6 +54,7 @@ static int hkl_parameter_init(HklParameter *self, const char *name,
 		self->fit = fit;
 		self->changed = changed;
 		self->ops = &hkl_parameter_operations_defaults;
+                self->type = Parameter();
 	} else
 		return FALSE;
 
@@ -87,11 +88,14 @@ HklParameter *hkl_parameter_new(const char *name, const char *description,
 				min, value, max,
 				fit, changed,
 				unit, punit)) {
-		free(self);
-		self = NULL;
+                goto fail;
 	}
 
 	return self;
+
+fail:
+        free(self);
+        return NULL;
 }
 
 /**
@@ -495,4 +499,15 @@ double hkl_parameter_orthodromic_distance_get(const HklParameter *self,
                                               double value)
 {
 	return self->ops->orthodromic_distance_get(self, value);
+}
+
+/**
+ * hkl_parameter_type_get: (skip)
+ * @self: the this ptr
+ *
+ * Returns: the #HklParameterType of the parameter.
+ **/
+HklParameterType hkl_parameter_type_get(const HklParameter *self)
+{
+        return self->ops->type_get(self);
 }

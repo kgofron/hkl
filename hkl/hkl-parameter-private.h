@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -38,7 +38,10 @@ G_BEGIN_DECLS
 
 datatype(
         HklParameterType,
-        (Parameter)
+        (Parameter),
+        (Rotation, HklVector),
+        (RotationWithOrigin, HklVector, HklVector),
+        (Translation, HklVector)
         );
 
 typedef struct _HklParameterOperations HklParameterOperations;
@@ -53,6 +56,7 @@ struct _HklParameter {
 	int fit;
 	int changed;
 	const HklParameterOperations *ops;
+        HklParameterType type;
 };
 
 #define HKL_PARAMETER_DEFAULTS .name="dummy", .description="no description", .range={.min=-DBL_MAX, .max=DBL_MAX}, ._value=0, .unit=NULL, .punit=NULL, .fit=TRUE, .changed=TRUE, .ops = &hkl_parameter_operations_defaults
@@ -97,6 +101,7 @@ struct _HklParameterOperations {
 	int                   (*transformation_cmp)(const HklParameter *self, const HklParameter *p2);
 	HklVector             (*transformation_apply)(const HklParameter *self, const HklVector *v);
         double                (*orthodromic_distance_get)(const HklParameter *self, double v);
+        HklParameterType      (*type_get) (const HklParameter *self);
 };
 
 #define HKL_PARAMETER_OPERATIONS_DEFAULTS				\
@@ -115,7 +120,8 @@ struct _HklParameterOperations {
 		.quaternion_get = hkl_parameter_quaternion_get_real,	\
 		.transformation_cmp = hkl_parameter_transformation_cmp_real, \
                 .transformation_apply = hkl_parameter_transformation_apply_real, \
-                .orthodromic_distance_get = hkl_parameter_orthodromic_distance_get_real
+                .orthodromic_distance_get = hkl_parameter_orthodromic_distance_get_real, \
+                .type_get = hkl_parameter_type_get_real
 
 static inline HklParameter *hkl_parameter_copy_real(const HklParameter *self)
 {
@@ -252,6 +258,11 @@ static inline double hkl_parameter_orthodromic_distance_get_real(const HklParame
         return self->_value;
 }
 
+static inline HklParameterType hkl_parameter_type_get_real(const HklParameter *self)
+{
+        return self->type;
+}
+
 static NEEDED HklParameterOperations hkl_parameter_operations_defaults = {
 	HKL_PARAMETER_OPERATIONS_DEFAULTS,
 };
@@ -287,6 +298,8 @@ extern HklVector hkl_parameter_transformation_apply(const HklParameter *self,
 
 extern double hkl_parameter_orthodromic_distance_get(const HklParameter *self,
                                                      double value);
+
+extern HklParameterType hkl_parameter_type_get(const HklParameter *self);
 
 /********************/
 /* HklParameterList */

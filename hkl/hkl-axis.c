@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2020, 2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2020, 2022, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -288,6 +288,7 @@ HklParameter *hkl_parameter_new_rotation(const char *name, HklVector const *axis
 			.name = name,
 			.punit = punit,
 			.ops = &hkl_parameter_operations_axis,
+                        .type = Rotation(*axis_v),
 		},
 		.axis_v = *axis_v,
 		.q = {{1., 0., 0., 0.}},
@@ -389,6 +390,7 @@ HklParameter *hkl_parameter_new_rotation_with_origin(const char *name,
 				.name = name,
 				.punit = punit,
 				.ops = &hkl_parameter_operations_rotation_with_origin,
+                                .type = RotationWithOrigin(*axis_v, *origin),
 			},
 			.axis_v = *axis_v,
 			.q = {{1., 0., 0., 0.}},
@@ -497,6 +499,7 @@ HklParameter *hkl_parameter_new_translation(const char *name, HklVector const *a
 			.name = name,
 			.punit = punit,
 			.ops = &hkl_parameter_operations_translation,
+                        .type = Translation(*axis_v),
 		},
 		.axis_v = *axis_v,
 	};
