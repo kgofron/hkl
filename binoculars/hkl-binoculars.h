@@ -199,6 +199,12 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*   gamma = arctan2(y_lab, x_lab) */
 /*   omega or mu or beta */
 
+/* q_qpar_qper */
+
+/* q_index / tth_index  ( index = numero du scan) */
+
+/* q_timescan / tth_timescan   (timescan = temps moyen du timestamp du scan (constant pour 1 scan)) */
+
 /* angles */
 
 #define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)			\
