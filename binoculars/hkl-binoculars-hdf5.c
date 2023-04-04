@@ -33,7 +33,7 @@ static hid_t create_dataspace_from_axes(const darray_axis *axes)
         darray_init(dims);
         darray_foreach(axis, *axes){
                 if(axis_size(axis) > 1)
-                   darray_append(dims, axis_size(axis));
+			darray_append(dims, axis_size(axis));
         }
 
         return H5Screate_simple(darray_size(dims), &darray_item(dims, 0), NULL);
