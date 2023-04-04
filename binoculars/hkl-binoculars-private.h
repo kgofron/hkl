@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -22,9 +22,12 @@
 #ifndef __HKL_BINOCULARS_PRIVATE_H__
 #define __HKL_BINOCULARS_PRIVATE_H__
 
+#include <cglm/struct.h>
+
 #include "datatype99.h"
 
 #include "hkl-binoculars.h"
+#include "hkl-geometry-private.h"
 
 /********/
 /* Axis */
@@ -80,5 +83,14 @@ static inline size_t axis_size(const HklBinocularsAxis *self)
 {
 	return self->imax - self->imin + 1;
 }
+
+/************/
+/* Geometry */
+/************/
+
+extern mat4s hkl_binoculars_parameter_transformation_get(const HklParameter *self);
+
+extern mat4s hkl_binoculars_holder_transformation_get(const HklHolder *self);
+
 
 #endif

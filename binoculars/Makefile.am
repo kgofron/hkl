@@ -22,6 +22,7 @@ libhkl_binoculars_a_SOURCES = \
 	hkl-binoculars-cnpy.c \
 	hkl-binoculars-cnpy-private.h \
 	hkl-binoculars-detectors-2d.c \
+	hkl-binoculars-geometry.c \
 	hkl-binoculars-hdf5.c \
 	hkl-binoculars-private.h \
 	$(top_builddir)/hkl/hkl-axis.c \
