@@ -9,6 +9,7 @@ module Hkl.Geometry
        , Geometry(..)
        , factoryFromString
        , fixed
+       , medVTranslation
        , newFactory
        , newGeometry
        , pokeGeometry
@@ -84,6 +85,21 @@ fixed :: Geometry
 fixed
   = Geometry'Custom
     (Node (Axis "mu" (Rotation 0 0 1)) [ Node (Axis "omega" (Rotation 0 (-1) 0)) [] ])
+
+medVTranslation :: Geometry
+medVTranslation
+  = Geometry'Custom
+    ( Node (Axis "" NoTransformation)
+      [ Node (Axis "beta" (Rotation 0 (-1) 0)) [Node (Axis "mu" (Rotation 0  0 1)) [Node (Axis "omega" (Rotation 0 (-1) 0)) [] ] ]
+      , Node (Axis "eix" (Translation 0 0 (-1))) [Node (Axis "eiz" (Translation 0 1 0)) [] ]
+      ]
+    )
+
+        -- # TODO translate the detector, must be done after the detrot.
+        -- if eix != 0.0:
+        --     pixels[2] += -eix * 1e-3
+        -- if eiz != 0.0:
+        --     pixels[1] += eiz * 1e-3
 
 zaxis :: Geometry
 zaxis
