@@ -772,6 +772,44 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                         }                                               \
                         break;                                          \
                 }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP: \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        hkl_vector_rotated_quaternion(&v, &q); \
+                                                                        \
+					item.indexes_0[0] = rint(v.data[1] / resolutions[0]); \
+					item.indexes_0[1] = rint(v.data[2] / resolutions[1]); \
+					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
+                                        item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z:         \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        hkl_vector_rotated_quaternion(&v, &q); \
+                                                                        \
+					item.indexes_0[0] = rint(v.data[1] / resolutions[0]); \
+					item.indexes_0[1] = rint(v.data[2] / resolutions[1]); \
+					item.indexes_0[2] = REMOVED;    \
+                                        item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
                 }                                                       \
 		space_update_axes(space, names, n_pixels, resolutions);	\
 		hkl_detector_free(detector);				\
