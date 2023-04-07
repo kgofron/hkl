@@ -211,7 +211,13 @@ instance HasIniConfig 'QCustomProjection where
                           QIndexProjection -> Just QCustomSubProjection'QIndex
                           QparQperProjection -> Just QCustomSubProjection'QparQper
                           QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
-                          _                -> msubprojection
+                          AnglesProjection -> msubprojection
+                          Angles2Projection -> msubprojection
+                          HklProjection -> msubprojection
+                          QCustomProjection -> msubprojection
+                          QCustom2Projection -> msubprojection
+                          RealSpaceProjection -> Just QCustomSubProjection'YZTimestamp
+                          PixelsProjection -> Just QCustomSubProjection'YZ
 
         -- compute the datatype
     let datapath = case edatapath of
@@ -336,6 +342,8 @@ overloadIndexPath msub idx =
                    QCustomSubProjection'QStereo -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'AnglesZaxisOmega -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
+                   QCustomSubProjection'YZTimestamp -> idx
+                   QCustomSubProjection'YZ -> DataSourcePath'Index'NoIndex
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma

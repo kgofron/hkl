@@ -488,6 +488,8 @@ data ProjectionType = AnglesProjection
                     | QIndexProjection
                     | QparQperProjection
                     | QxQyQzProjection
+                    | RealSpaceProjection
+                    | PixelsProjection
 
   deriving (Eq, Show, Enum, Bounded)
 
@@ -495,14 +497,16 @@ instance Arbitrary ProjectionType where
   arbitrary = elements ([minBound .. maxBound] :: [ProjectionType])
 
 instance FieldEmitter ProjectionType where
-  fieldEmitter AnglesProjection   = "angles"
-  fieldEmitter Angles2Projection  = "angles2"
-  fieldEmitter HklProjection      = "hkl"
-  fieldEmitter QCustomProjection  = "qcustom"
-  fieldEmitter QCustom2Projection = "qcustom2"
-  fieldEmitter QIndexProjection   = "qindex"
-  fieldEmitter QparQperProjection = "qparqper"
-  fieldEmitter QxQyQzProjection   = "qxqyqz"
+  fieldEmitter AnglesProjection    = "angles"
+  fieldEmitter Angles2Projection   = "angles2"
+  fieldEmitter HklProjection       = "hkl"
+  fieldEmitter QCustomProjection   = "qcustom"
+  fieldEmitter QCustom2Projection  = "qcustom2"
+  fieldEmitter QIndexProjection    = "qindex"
+  fieldEmitter QparQperProjection  = "qparqper"
+  fieldEmitter QxQyQzProjection    = "qxqyqz"
+  fieldEmitter RealSpaceProjection = "realspace"
+  fieldEmitter PixelsProjection    = "pixels"
 
 instance FieldParsable ProjectionType where
   fieldParser = go =<< takeText
@@ -521,6 +525,8 @@ instance FieldParsable ProjectionType where
         | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
         | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
         | toLower t == "sixs:hklprojection" = pure HklProjection
+        | toLower t == "sixs:realspace" = pure RealSpaceProjection
+        | toLower t == "sixs:pixels" = pure PixelsProjection
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'
@@ -563,6 +569,8 @@ data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QStereo
                           | QCustomSubProjection'AnglesZaxisOmega
                           | QCustomSubProjection'AnglesZaxisMu
+                          | QCustomSubProjection'YZTimestamp
+                          | QCustomSubProjection'YZ
   deriving (Enum, Bounded, Eq, Show)
 
 instance Arbitrary QCustomSubProjection where
@@ -592,6 +600,8 @@ instance HasFieldValue QCustomSubProjection where
       emit QCustomSubProjection'QStereo           = "q_stereo"
       emit QCustomSubProjection'AnglesZaxisOmega  = "angles_zaxis_omega"
       emit QCustomSubProjection'AnglesZaxisMu     = "angles_zaxis_mu"
+      emit QCustomSubProjection'YZTimestamp       = "y_z_timestamp"
+      emit QCustomSubProjection'YZ                = "y_z"
 
 -- Resolutions
 

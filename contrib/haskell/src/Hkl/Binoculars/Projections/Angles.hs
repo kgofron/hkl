@@ -119,6 +119,8 @@ instance HasIniConfig 'AnglesProjection where
                                                              QIndexProjection   -> undefined
                                                              QparQperProjection -> undefined
                                                              QxQyQzProjection   -> undefined
+                                                             RealSpaceProjection -> undefined
+                                                             PixelsProjection -> undefined
 
         -- compute the datatype
         let datapath = case mdatapath of
