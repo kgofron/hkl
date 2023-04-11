@@ -91,12 +91,13 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
 import           Data.List                         (find, isInfixOf, length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
 import           Data.String                       (IsString)
-import           Data.Text                         (Text, breakOn, drop, empty,
-                                                    findIndex, intercalate,
-                                                    length, lines, pack,
-                                                    replace, singleton, strip,
-                                                    take, takeWhile, toLower,
-                                                    unlines, unpack, unwords)
+import           Data.Text                         (Text, breakOn, cons, drop,
+                                                    empty, findIndex,
+                                                    intercalate, length, lines,
+                                                    pack, replace, singleton,
+                                                    strip, take, takeWhile,
+                                                    toLower, unlines, unpack,
+                                                    unwords)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
@@ -161,7 +162,13 @@ instance HasFieldValue Degree where
 
 number' :: (Show a, Read a, Num a, Typeable a) => FieldValue a
 number' = Data.Ini.Config.Bidir.number
-  { fvParse = fvParse Data.Ini.Config.Bidir.number . uncomment}
+  { fvParse = \t -> case fvParse Data.Ini.Config.Bidir.number . uncomment $ t of
+                     Left _ -> fvParse Data.Ini.Config.Bidir.number . uncomment $ nt
+                       where
+                         nt :: Text
+                         nt = cons '0' t
+                     Right v -> Right v
+  }
 
 instance HasFieldValue Double where
   fieldvalue = number'
@@ -386,7 +393,7 @@ data InputType = CristalK6C
                | SixsFlyMedVS70
                | SixsFlyScanUhv
                | SixsFlyScanUhv2
-               | SixsFlyScanUhvGisaxs
+               | SixsFlyScanUhvGisaxsEiger
                | SixsFlyScanUhvTest
                | SixsFlyScanUhvUfxc
                | SixsSbsFixedDetector
@@ -412,23 +419,23 @@ instance HasFieldValue InputType where
       parse t = parseEnum (err t) t
 
       emit :: InputType -> Text
-      emit CristalK6C             = "cristal:k6c"
-      emit MarsFlyscan            = "mars:flyscan"
-      emit MarsSbs                = "mars:sbs"
-      emit SixsFlyMedH            = "sixs:flymedh"
-      emit SixsFlyMedV            = "sixs:flymedv"
-      emit SixsFlyMedVEiger       = "sixs:flymedveiger"
-      emit SixsFlyMedVS70         = "sixs:flymedvs70"
-      emit SixsFlyScanUhv         = "sixs:flyscanuhv"
-      emit SixsFlyScanUhv2        = "sixs:flyscanuhv2"
-      emit SixsFlyScanUhvGisaxs   = "sixs:gisaxuhveiger"
-      emit SixsFlyScanUhvTest     = "sixs:flyscanuhvtest"
-      emit SixsFlyScanUhvUfxc     = "sixs:flyscanuhvufxc"
-      emit SixsSbsFixedDetector   = "sixs:sbsfixeddetector"
-      emit SixsSbsMedH            = "sixs:sbsmedh"
-      emit SixsSbsMedV            = "sixs:sbsmedv"
-      emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
-      emit SixsSbsUhv             = "sixs:sbsuhv"
+      emit CristalK6C                = "cristal:k6c"
+      emit MarsFlyscan               = "mars:flyscan"
+      emit MarsSbs                   = "mars:sbs"
+      emit SixsFlyMedH               = "sixs:flymedh"
+      emit SixsFlyMedV               = "sixs:flymedv"
+      emit SixsFlyMedVEiger          = "sixs:flymedveiger"
+      emit SixsFlyMedVS70            = "sixs:flymedvs70"
+      emit SixsFlyScanUhv            = "sixs:flyscanuhv"
+      emit SixsFlyScanUhv2           = "sixs:flyscanuhv2"
+      emit SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger"
+      emit SixsFlyScanUhvTest        = "sixs:flyscanuhvtest"
+      emit SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
+      emit SixsSbsFixedDetector      = "sixs:sbsfixeddetector"
+      emit SixsSbsMedH               = "sixs:sbsmedh"
+      emit SixsSbsMedV               = "sixs:sbsmedv"
+      emit SixsSbsMedVFixDetector    = "sixs:sbsmedvfixdetector"
+      emit SixsSbsUhv                = "sixs:sbsuhv"
 -- Limits
 
 data Limits = Limits (Maybe Double) (Maybe Double)
@@ -570,8 +577,8 @@ data QCustomSubProjection = QCustomSubProjection'QxQyQz
                           | QCustomSubProjection'QStereo
                           | QCustomSubProjection'AnglesZaxisOmega
                           | QCustomSubProjection'AnglesZaxisMu
+                          | QCustomSubProjection'XYZ
                           | QCustomSubProjection'YZTimestamp
-                          | QCustomSubProjection'YZ
   deriving (Enum, Bounded, Eq, Show)
 
 instance Arbitrary QCustomSubProjection where
@@ -601,8 +608,8 @@ instance HasFieldValue QCustomSubProjection where
       emit QCustomSubProjection'QStereo           = "q_stereo"
       emit QCustomSubProjection'AnglesZaxisOmega  = "angles_zaxis_omega"
       emit QCustomSubProjection'AnglesZaxisMu     = "angles_zaxis_mu"
+      emit QCustomSubProjection'XYZ               = "x_y_z"
       emit QCustomSubProjection'YZTimestamp       = "y_z_timestamp"
-      emit QCustomSubProjection'YZ                = "y_z"
 
 -- Resolutions
 

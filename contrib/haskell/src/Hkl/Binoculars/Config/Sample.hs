@@ -175,23 +175,23 @@ guess'DataSourcePath'Sample common sample =
      let uhvSamplePath3 = samplePath' "SIXS" "i14-c-cx2-ex-cm-uhv"
 
      let samplePath = case inputType of
-                        CristalK6C             -> cristalSamplePath
-                        MarsFlyscan            -> marsSamplePath
-                        MarsSbs                -> marsSamplePath
-                        SixsFlyMedH            -> medHSamplePath
-                        SixsFlyMedV            -> medVSamplePath
-                        SixsFlyMedVEiger       -> medVSamplePath
-                        SixsFlyMedVS70         -> medVSamplePath
-                        SixsFlyScanUhv         -> uhvSamplePath
-                        SixsFlyScanUhvGisaxs   -> uhvSamplePath3
-                        SixsFlyScanUhv2        -> uhvSamplePath3
-                        SixsFlyScanUhvTest     -> uhvSamplePath3
-                        SixsFlyScanUhvUfxc     -> uhvSamplePath
-                        SixsSbsFixedDetector   -> undefined -- TODO this must not be possible.
-                        SixsSbsMedH            -> medHSamplePath
-                        SixsSbsMedV            -> medVSamplePath
-                        SixsSbsMedVFixDetector -> medVSamplePath
-                        SixsSbsUhv             -> uhvSamplePath3
+                        CristalK6C                -> cristalSamplePath
+                        MarsFlyscan               -> marsSamplePath
+                        MarsSbs                   -> marsSamplePath
+                        SixsFlyMedH               -> medHSamplePath
+                        SixsFlyMedV               -> medVSamplePath
+                        SixsFlyMedVEiger          -> medVSamplePath
+                        SixsFlyMedVS70            -> medVSamplePath
+                        SixsFlyScanUhv            -> uhvSamplePath
+                        SixsFlyScanUhvGisaxsEiger -> uhvSamplePath3
+                        SixsFlyScanUhv2           -> uhvSamplePath3
+                        SixsFlyScanUhvTest        -> uhvSamplePath3
+                        SixsFlyScanUhvUfxc        -> uhvSamplePath
+                        SixsSbsFixedDetector      -> undefined -- TODO this must not be possible.
+                        SixsSbsMedH               -> medHSamplePath
+                        SixsSbsMedV               -> medVSamplePath
+                        SixsSbsMedVFixDetector    -> medVSamplePath
+                        SixsSbsUhv                -> uhvSamplePath3
 
      overload'DataSourcePath'Sample sample samplePath
 ------------

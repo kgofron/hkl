@@ -129,8 +129,8 @@ instance HasIniConfig 'QCustom2Projection where
                           HklProjection -> msubprojection
                           QCustomProjection -> msubprojection
                           QCustom2Projection -> msubprojection
-                          RealSpaceProjection -> Just QCustomSubProjection'YZTimestamp
-                          PixelsProjection -> Just QCustomSubProjection'YZ
+                          RealSpaceProjection -> Just QCustomSubProjection'XYZ
+                          PixelsProjection -> Just QCustomSubProjection'YZTimestamp
 
         -- compute the datatype
     let datapath = case edatapath of

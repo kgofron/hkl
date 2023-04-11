@@ -50,6 +50,7 @@ import           Path                              (Abs, Dir, Path)
 import           Test.QuickCheck                   (Arbitrary (..))
 
 import           Hkl.Binoculars.Config
+import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Orphan                        ()
 
@@ -142,7 +143,24 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
       case mr' of
         Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
         Just r -> pure r
-    detector <- parseFDef cfg "input" "detector" (binocularsConfig'Common'Detector default'BinocularsConfig'Common)
+    detector <- parseFDef cfg "input" "detector" (case inputtype of
+                                                   CristalK6C -> mkDetector c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED
+                                                   MarsFlyscan -> mkDetector c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
+                                                   MarsSbs -> mkDetector c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
+                                                   SixsFlyMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsFlyMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsFlyMedVEiger -> mkDetector c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M
+                                                   SixsFlyMedVS70 -> mkDetector c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70
+                                                   SixsFlyScanUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsFlyScanUhv2 -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsFlyScanUhvGisaxsEiger -> mkDetector c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M
+                                                   SixsFlyScanUhvTest -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsFlyScanUhvUfxc -> mkDetector c'HKL_BINOCULARS_DETECTOR_UFXC
+                                                   SixsSbsFixedDetector -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsSbsMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsSbsMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsSbsMedVFixDetector -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsSbsUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common)
     centralpixel <- eitherF error (parse' cfg "input" "centralpixel") $ \mc -> do
       case mc of
         Nothing -> pure (binocularsConfig'Common'Centralpixel default'BinocularsConfig'Common)
@@ -153,7 +171,7 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
     detrot <- parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot default'BinocularsConfig'Common)
     attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
     attenuation_max <- parseMb cfg "input" "attenuation_max"
-    maskmatrix <-parseMb cfg "input" "maskmatrix"
+    maskmatrix <- parseMb cfg "input" "maskmatrix"
     wavelength <- parseMb cfg "input" "wavelength"
     image_sum_max <- parseMb cfg "input" "image_sum_max"
 

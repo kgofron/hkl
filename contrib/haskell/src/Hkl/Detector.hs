@@ -19,6 +19,7 @@ module Hkl.Detector
        , getDetectorDefaultMask
        , getPixelsCoordinates
        , inDetector
+       , mkDetector
        , newDetector
        , parseDetector2D
        , shape
@@ -107,25 +108,27 @@ newDetector :: Detector a sh -> IO (ForeignPtr C'HklDetector)
 newDetector ZeroD = c'hkl_detector_factory_new 0 >>= newForeignPtr p'hkl_detector_free
 newDetector _ = error "Can not use 2D detector with the hkl library"
 
+{-# NOINLINE mkDetector #-}
+mkDetector :: C'HklBinocularsDetectorEnum -> Detector Hkl DIM2
+mkDetector n
+  = unsafePerformIO $ Detector2D n
+    <$> (peekCString =<< c'hkl_binoculars_detector_2d_name_get n)
+    <*> alloca (\width ->
+                   alloca $ \height -> do
+                   c'hkl_binoculars_detector_2d_shape_get n width height
+                   w <- peek width
+                   h <- peek height
+                   return $ ix2 (fromEnum h) (fromEnum w))
+
 {-# NOINLINE detectors #-}
 detectors :: [Detector Hkl DIM2]
 detectors = unsafePerformIO $ do
   nd <- c'hkl_binoculars_detector_2d_number_of_detectors
-  mapM mkDetector [0..toEnum . fromEnum $ nd - 1]
-       where
-         mkDetector :: C'HklBinocularsDetectorEnum -> IO (Detector Hkl DIM2)
-         mkDetector n = Detector2D n
-                        <$> (peekCString =<< c'hkl_binoculars_detector_2d_name_get n)
-                        <*> alloca (\width ->
-                                 alloca $ \height -> do
-                                   c'hkl_binoculars_detector_2d_shape_get n width height
-                                   w <- peek width
-                                   h <- peek height
-                                   return $ ix2 (fromEnum h) (fromEnum w))
+  return $ map mkDetector [0..toEnum . fromEnum $ nd - 1]
 
 -- TODO s140 should be the default
 defaultDetector :: Detector Hkl DIM2
-defaultDetector = head detectors
+defaultDetector = mkDetector c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140
 
 parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
 parseDetector2D t = case find (\(Detector2D _ n _) -> n == unpack t) detectors of

@@ -459,20 +459,20 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 names = names_angles_zaxis_mu;
                 break;
         }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:
+        {
+                static const char *names_x_y_z[] = {"x", "y", "z"};
+                assert(ARRAY_SIZE(names_x_y_z) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_x_y_z) == n_resolutions);
+                names = names_x_y_z;
+                break;
+        }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP:
         {
                 static const char *names_y_z_timestamp[] = {"y", "z", "timestamp"};
                 assert(ARRAY_SIZE(names_y_z_timestamp) == darray_size(space->axes));
                 assert(ARRAY_SIZE(names_y_z_timestamp) == n_resolutions);
                 names = names_y_z_timestamp;
-                break;
-        }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z:
-        {
-                static const char *names_y_z[] = {"y", "z"};
-                assert(ARRAY_SIZE(names_y_z) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_y_z) == n_resolutions);
-                names = names_y_z;
                 break;
         }
         default:
@@ -772,6 +772,25 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                         }                                               \
                         break;                                          \
                 }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:         \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        hkl_vector_rotated_quaternion(&v, &q); \
+                                                                        \
+					item.indexes_0[0] = rint(v.data[0] / resolutions[0]); \
+					item.indexes_0[1] = rint(v.data[1] / resolutions[1]); \
+					item.indexes_0[2] = rint(v.data[2] / resolutions[2]);    \
+                                        item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP: \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
@@ -783,25 +802,6 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
 					item.indexes_0[0] = rint(v.data[1] / resolutions[0]); \
 					item.indexes_0[1] = rint(v.data[2] / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z:         \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                                                        \
-					item.indexes_0[0] = rint(v.data[1] / resolutions[0]); \
-					item.indexes_0[1] = rint(v.data[2] / resolutions[1]); \
-					item.indexes_0[2] = REMOVED;    \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -1106,6 +1106,25 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                         }                                               \
                         break;                                          \
                 }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:         \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                                                        \
+					item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
+					item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
+					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
+                                        item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP: \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
@@ -1117,25 +1136,6 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
 					item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z:         \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
-					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
-					item.indexes_0[2] = REMOVED;    \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \

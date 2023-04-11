@@ -108,7 +108,7 @@ sixsUhvGisax
   = Geometry'Custom
     ( Node (Axis "" NoTransformation)
       [ Node (Axis "mu" (Rotation 0 0 1)) [ Node (Axis "omega" (Rotation 0 (-1) 0)) [] ]
-      , Node (Axis "eiz" (Translation 0 0.001 0)) []
+      , Node (Axis "eiz" (Translation 0 (-0.001) 0)) []
       ]
     )
 

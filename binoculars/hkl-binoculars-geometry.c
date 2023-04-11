@@ -43,6 +43,8 @@ mat4s hkl_binoculars_parameter_transformation_get(const HklParameter *self)
                 }
                 of(Translation, v_v) {
                         CGLM_ALIGN_MAT vec3s v = {{v_v->data[0], v_v->data[1], v_v->data[2]}};
+                        v = glms_vec3_scale(v, self->_value);
+
                         r = glms_translate_make(v);
                 }
         }

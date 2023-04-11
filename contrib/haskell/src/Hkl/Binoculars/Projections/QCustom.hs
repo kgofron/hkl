@@ -216,8 +216,8 @@ instance HasIniConfig 'QCustomProjection where
                           HklProjection -> msubprojection
                           QCustomProjection -> msubprojection
                           QCustom2Projection -> msubprojection
-                          RealSpaceProjection -> Just QCustomSubProjection'YZTimestamp
-                          PixelsProjection -> Just QCustomSubProjection'YZ
+                          RealSpaceProjection -> Just QCustomSubProjection'XYZ
+                          PixelsProjection -> Just QCustomSubProjection'YZTimestamp
 
         -- compute the datatype
     let datapath = case edatapath of
@@ -342,8 +342,8 @@ overloadIndexPath msub idx =
                    QCustomSubProjection'QStereo -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'AnglesZaxisOmega -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
+                   QCustomSubProjection'XYZ -> DataSourcePath'Index'NoIndex
                    QCustomSubProjection'YZTimestamp -> idx
-                   QCustomSubProjection'YZ -> DataSourcePath'Index'NoIndex
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
@@ -498,7 +498,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                       )
                       (DataSourcePath'Image
                         (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05")
-                        detector) -- medipix
+                        detector)
                       (mkTimeStamp'Sbs msub)
          MarsFlyscan -> DataSourcePath'DataFrameQCustom
                        (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
@@ -596,22 +596,22 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                            dataSourcePath'Geometry'Uhv'Sixs
                            (mkDetector'Sixs'Fly detector)
                            (mkTimeStamp'Fly msub)
-         SixsFlyScanUhvGisaxs -> DataSourcePath'DataFrameQCustom
-                                (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                                (DataSourcePath'Geometry
-                                 sixsUhvGisax
-                                 (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                  [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
-                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
-                                  --, DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
-                                  --                        `H5Or`
-                                  --                        hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
-                                  , DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
-                                                          `H5Or`
-                                                          hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
-                                  ])
-                                (mkDetector'Sixs'Fly detector)
-                                (mkTimeStamp'Fly msub)
+         SixsFlyScanUhvGisaxsEiger -> DataSourcePath'DataFrameQCustom
+                                     (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                                     (DataSourcePath'Geometry
+                                      sixsUhvGisax
+                                      (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                                      [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
+                                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
+                                      --, DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                      --                        `H5Or`
+                                      --                        hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
+                                      , DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                                                              `H5Or`
+                                                              hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
+                                      ])
+                                     (mkDetector'Sixs'Fly detector)
+                                     (mkTimeStamp'Fly msub)
          SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
                               (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                               (DataSourcePath'Geometry
