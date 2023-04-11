@@ -183,6 +183,7 @@ guess'DataSourcePath'Sample common sample =
                         SixsFlyMedVEiger       -> medVSamplePath
                         SixsFlyMedVS70         -> medVSamplePath
                         SixsFlyScanUhv         -> uhvSamplePath
+                        SixsFlyScanUhvGisaxs   -> uhvSamplePath3
                         SixsFlyScanUhv2        -> uhvSamplePath3
                         SixsFlyScanUhvTest     -> uhvSamplePath3
                         SixsFlyScanUhvUfxc     -> uhvSamplePath

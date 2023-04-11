@@ -386,6 +386,7 @@ data InputType = CristalK6C
                | SixsFlyMedVS70
                | SixsFlyScanUhv
                | SixsFlyScanUhv2
+               | SixsFlyScanUhvGisaxs
                | SixsFlyScanUhvTest
                | SixsFlyScanUhvUfxc
                | SixsSbsFixedDetector
@@ -420,6 +421,7 @@ instance HasFieldValue InputType where
       emit SixsFlyMedVS70         = "sixs:flymedvs70"
       emit SixsFlyScanUhv         = "sixs:flyscanuhv"
       emit SixsFlyScanUhv2        = "sixs:flyscanuhv2"
+      emit SixsFlyScanUhvGisaxs   = "sixs:gisaxuhveiger"
       emit SixsFlyScanUhvTest     = "sixs:flyscanuhvtest"
       emit SixsFlyScanUhvUfxc     = "sixs:flyscanuhvufxc"
       emit SixsSbsFixedDetector   = "sixs:sbsfixeddetector"
@@ -427,7 +429,6 @@ instance HasFieldValue InputType where
       emit SixsSbsMedV            = "sixs:sbsmedv"
       emit SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
       emit SixsSbsUhv             = "sixs:sbsuhv"
-
 -- Limits
 
 data Limits = Limits (Maybe Double) (Maybe Double)

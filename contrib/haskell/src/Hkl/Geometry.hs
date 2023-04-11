@@ -9,10 +9,11 @@ module Hkl.Geometry
        , Geometry(..)
        , factoryFromString
        , fixed
-       , medVTranslation
        , newFactory
        , newGeometry
        , pokeGeometry
+       , sixsMedVGisax
+       , sixsUhvGisax
        , zaxis
        ) where
 
@@ -86,8 +87,8 @@ fixed
   = Geometry'Custom
     (Node (Axis "mu" (Rotation 0 0 1)) [ Node (Axis "omega" (Rotation 0 (-1) 0)) [] ])
 
-medVTranslation :: Geometry
-medVTranslation
+sixsMedVGisax :: Geometry
+sixsMedVGisax
   = Geometry'Custom
     ( Node (Axis "" NoTransformation)
       [ Node (Axis "beta" (Rotation 0 (-1) 0)) [Node (Axis "mu" (Rotation 0  0 1)) [Node (Axis "omega" (Rotation 0 (-1) 0)) [] ] ]
@@ -95,11 +96,21 @@ medVTranslation
       ]
     )
 
-        -- # TODO translate the detector, must be done after the detrot.
+  -- # TODO translate the detector, must be done after the detrot.
         -- if eix != 0.0:
         --     pixels[2] += -eix * 1e-3
         -- if eiz != 0.0:
         --     pixels[1] += eiz * 1e-3
+
+
+sixsUhvGisax :: Geometry
+sixsUhvGisax
+  = Geometry'Custom
+    ( Node (Axis "" NoTransformation)
+      [ Node (Axis "mu" (Rotation 0 0 1)) [ Node (Axis "omega" (Rotation 0 (-1) 0)) [] ]
+      , Node (Axis "eiz" (Translation 0 0.001 0)) []
+      ]
+    )
 
 zaxis :: Geometry
 zaxis

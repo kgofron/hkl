@@ -596,6 +596,22 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                            dataSourcePath'Geometry'Uhv'Sixs
                            (mkDetector'Sixs'Fly detector)
                            (mkTimeStamp'Fly msub)
+         SixsFlyScanUhvGisaxs -> DataSourcePath'DataFrameQCustom
+                                (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                                (DataSourcePath'Geometry
+                                 sixsUhvGisax
+                                 (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                                  [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
+                                  , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
+                                  --, DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                  --                        `H5Or`
+                                  --                        hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
+                                  , DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                                                          `H5Or`
+                                                          hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
+                                  ])
+                                (mkDetector'Sixs'Fly detector)
+                                (mkTimeStamp'Fly msub)
          SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
                               (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                               (DataSourcePath'Geometry
