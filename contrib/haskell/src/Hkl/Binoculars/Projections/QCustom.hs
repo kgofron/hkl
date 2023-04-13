@@ -36,40 +36,39 @@ module Hkl.Binoculars.Projections.QCustom
     , updateQCustom
     ) where
 
-import           Control.Applicative               ((<|>))
-import           Control.Concurrent.Async          (mapConcurrently)
-import           Control.Monad.Catch               (Exception, MonadThrow)
-import           Control.Monad.IO.Class            (MonadIO (liftIO))
-import           Control.Monad.Logger              (MonadLogger, logDebugN,
-                                                    logInfoN)
-import           Control.Monad.Reader              (MonadReader, ask, forM_,
-                                                    forever)
-import           Data.Aeson                        (FromJSON, ToJSON,
-                                                    eitherDecode', encode)
-import           Data.Array.Repa                   (Array)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
-import           Data.ByteString.Lazy              (fromStrict, toStrict)
-import           Data.HashMap.Lazy                 (fromList)
-import           Data.Ini                          (Ini (..))
-import           Data.Ini.Config.Bidir             (FieldValue (..))
-import           Data.Maybe                        (fromJust, fromMaybe)
-import           Data.Text                         (pack, unpack)
-import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
-import           Data.Text.IO                      (putStr)
-import           Data.Vector.Storable.Mutable      (unsafeWith)
-import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
-import           GHC.Generics                      (Generic)
-import           Generic.Random                    (genericArbitraryU)
-import           Numeric.Units.Dimensional.Prelude (degree, (*~))
-import           Path                              (Abs, Dir, Path)
-import           Pipes                             (Pipe, await, each,
-                                                    runEffect, yield, (>->))
-import           Pipes.Prelude                     (filter, map, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, runSafeT)
-import           Test.QuickCheck                   (Arbitrary (..))
-import           Text.Printf                       (printf)
+import           Control.Applicative             ((<|>))
+import           Control.Concurrent.Async        (mapConcurrently)
+import           Control.Monad.Catch             (Exception, MonadThrow)
+import           Control.Monad.IO.Class          (MonadIO (liftIO))
+import           Control.Monad.Logger            (MonadLogger, logDebugN,
+                                                  logInfoN)
+import           Control.Monad.Reader            (MonadReader, ask, forM_,
+                                                  forever)
+import           Data.Aeson                      (FromJSON, ToJSON,
+                                                  eitherDecode', encode)
+import           Data.Array.Repa                 (Array)
+import           Data.Array.Repa.Index           (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
+import           Data.ByteString.Lazy            (fromStrict, toStrict)
+import           Data.HashMap.Lazy               (fromList)
+import           Data.Ini                        (Ini (..))
+import           Data.Ini.Config.Bidir           (FieldValue (..))
+import           Data.Maybe                      (fromJust, fromMaybe)
+import           Data.Text                       (pack, unpack)
+import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
+import           Data.Text.IO                    (putStr)
+import           Data.Vector.Storable.Mutable    (unsafeWith)
+import           Foreign.C.Types                 (CDouble (..))
+import           Foreign.ForeignPtr              (ForeignPtr, withForeignPtr)
+import           GHC.Generics                    (Generic)
+import           Generic.Random                  (genericArbitraryU)
+import           Path                            (Abs, Dir, Path)
+import           Pipes                           (Pipe, await, each, runEffect,
+                                                  yield, (>->))
+import           Pipes.Prelude                   (filter, map, tee, toListM)
+import           Pipes.Safe                      (MonadSafe, runSafeT)
+import           Test.QuickCheck                 (Arbitrary (..))
+import           Text.Printf                     (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -83,7 +82,7 @@ import           Hkl.Detector
 import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.Image
-import           Hkl.Orphan                        ()
+import           Hkl.Orphan                      ()
 import           Hkl.Pipes
 import           Hkl.Types
 import           Hkl.Utils
@@ -142,10 +141,10 @@ default'DataSourcePath'DataFrameQCustom
     (DataSourcePath'Geometry
       (Geometry'Factory Uhv)
       (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
-      [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
-      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
-      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
-      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
+      [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
+      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
+      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
+      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
       ])
     (DataSourcePath'Image
       (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
@@ -417,27 +416,27 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                                          datasetp "SIXS/i14-c-c02-op-mono/lambda"))
 
       -- geometry
-      let dataSourcePaths'Sixs'Uhv'Axes :: [DataSourcePath Degree]
+      let dataSourcePaths'Sixs'Uhv'Axes :: [DataSourcePath Double]
           dataSourcePaths'Sixs'Uhv'Axes
-            = [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
+            = [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")
                                                                                `H5Or`
                                                                                datasetp "UHV_MU"))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
                                                                                `H5Or`
                                                                                datasetp "UHV_OMEGA"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
                                                                                `H5Or`
                                                                                datasetp "UHV_DELTA"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
                                                                                `H5Or`
                                                                                datasetp "UHV_GAMMA"
                                                                                `H5Or`
@@ -456,19 +455,19 @@ guess'DataSourcePath'DataFrameQCustom common msub =
             = DataSourcePath'Geometry
               (Geometry'Factory MedH)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "beta"
+              [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "beta"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/mu")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/gamma")))
 
-              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/delta")))
               ]
@@ -488,12 +487,12 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                       (DataSourcePath'Geometry
                         (Geometry'Factory K6c)
                         (overloadWaveLength mWavelength (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
-                        [ DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position")
-                        , DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position")
-                        , DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position")
-                        , DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1")
-                        , DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position")
-                        , DataSourcePath'Degree (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position")
+                        [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position")
+                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position")
+                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position")
+                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1")
+                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position")
+                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position")
                         ]
                       )
                       (DataSourcePath'Image
@@ -506,10 +505,10 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        (DataSourcePath'Geometry
                          (Geometry'Factory Mars)
                          (overloadWaveLength mWavelength (DataSourcePath'Double'Const 1.537591))
-                         [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
+                         [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
                          ])
                        (DataSourcePath'Image
                          (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
@@ -522,10 +521,10 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                    (DataSourcePath'Geometry
                      (Geometry'Factory Mars)
                      (overloadWaveLength mWavelength (DataSourcePath'Double'Const 1.537591))
-                     [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
-                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
-                     , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
+                     [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
+                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
+                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
                      ])
                    (DataSourcePath'Image
                     (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
@@ -541,15 +540,15 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        (DataSourcePath'Geometry
                          (Geometry'Factory MedV)
                          (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                         [ DataSourcePath'Degree'Const (Degree (0 *~ degree))
-                           -- (DataSourcePath'Degree(H5Or
+                         [ DataSourcePath'Double'Const 0
+                           -- (DataSourcePath'Double(H5Or
                            --                         (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetp "beta")
                            --                         (hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")))
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu")
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma")
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta")
-                         , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/mu")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/delta")
+                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")
                          ])
                        (mkDetector'Sixs'Fly detector)
                        (mkTimeStamp'Fly msub)
@@ -557,17 +556,17 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                             (DataSourcePath'Geometry'MedVEiger
                               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                              [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/beta") -- maybe nothing
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu")
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma")
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta")
-                              , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")
+                              [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/beta") -- maybe nothing
+                              , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/mu")
+                              , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                              , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma")
+                              , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/delta")
+                              , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa")
                               ]
-                              (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                              (DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
                                                      `H5Or`
                                                      hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre")))
-                              (DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                              (DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
                                                      `H5Or`
                                                      hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))))
                             (mkDetector'Sixs'Fly detector)
@@ -577,12 +576,12 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                           (DataSourcePath'Geometry
                             (Geometry'Factory MedV)
                             (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                            [ (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/beta"))
-                            , (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu"))
-                            , (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega"))
-                            , (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma"))
-                            , (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/delta"))
-                            , (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa"))
+                            [ (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/beta"))
+                            , (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/mu"))
+                            , (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega"))
+                            , (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/gamma"))
+                            , (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/delta"))
+                            , (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/etaa"))
                             ])
                           (mkDetector'Sixs'Fly detector)
                           (mkTimeStamp'Fly msub)
@@ -601,12 +600,12 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                      (DataSourcePath'Geometry
                                       sixsUhvGisax
                                       (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                      [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
-                                      , DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
-                                      --, DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                      [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
+                                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
+                                      --, DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
                                       --                        `H5Or`
                                       --                        hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
-                                      , DataSourcePath'Degree(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                                      , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
                                                               `H5Or`
                                                               hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
                                       ])
@@ -641,12 +640,12 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        (DataSourcePath'Geometry
                          (Geometry'Factory MedV)
                          (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                         [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch")
-                         , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu"))
-                         , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega"))
-                         , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma"))
-                         , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta"))
-                         , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))
+                         [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch")
+                         , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu"))
+                         , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega"))
+                         , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma"))
+                         , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta"))
+                         , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))
                          ])
                        (mkDetector'Sixs'Sbs detector)
                        (mkTimeStamp'Sbs msub)
@@ -655,12 +654,12 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                   (DataSourcePath'Geometry
                                     (Geometry'Factory MedV)
                                     (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                    [ DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")
-                                    , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu"))
-                                    , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega"))
-                                    , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma"))
-                                    , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta"))
-                                    , DataSourcePath'Degree(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))
+                                    [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")
+                                    , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu"))
+                                    , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega"))
+                                    , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma"))
+                                    , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta"))
+                                    , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa"))
                                     ])
                                   (mkDetector'Sixs'Sbs detector)
                                   (mkTimeStamp'Sbs msub)

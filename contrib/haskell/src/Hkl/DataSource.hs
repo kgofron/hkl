@@ -86,6 +86,9 @@ instance Is0DStreamable Degree Double where
 instance Is0DStreamable Degree CDouble where
   extract0DStreamValue (Degree d) = pure $ CDouble (d /~ degree)
 
+instance Is0DStreamable Double CDouble where
+  extract0DStreamValue d = pure $ CDouble d
+
 instance Is0DStreamable (DataSourceAcq Degree) Degree where
     extract0DStreamValue (DataSourceAcq'Degree d) =
         Degree <$> do
@@ -139,9 +142,9 @@ instance Is1DStreamable (DataSourceAcq Attenuation) Attenuation where
     extract1DStreamValue DataSourceAcq'NoAttenuation _ = returnIO $ Attenuation 1
 
 
-instance Is1DStreamable (DataSourceAcq Degree) CDouble where
-  extract1DStreamValue (DataSourceAcq'Degree d)       = extract1DStreamValue d
-  extract1DStreamValue (DataSourceAcq'Degree'Const d) = const $ extract0DStreamValue d
+instance Is1DStreamable (DataSourceAcq Double) CDouble where
+  extract1DStreamValue (DataSourceAcq'Double d)       = extract1DStreamValue d
+  extract1DStreamValue (DataSourceAcq'Double'Const d) = const $ extract0DStreamValue d
 
 instance Is1DStreamable Dataset CDouble where
   extract1DStreamValue = getPosition
@@ -175,7 +178,7 @@ instance Is1DStreamable (DataSourceAcq Index) Index where
   extract1DStreamValue (DataSourceAcq'Index ds) i = Index <$> extract1DStreamValue ds i
   extract1DStreamValue DataSourceAcq'Index'NoIndex _ = returnIO $ Index 0
 
-instance Is1DStreamable  [DataSourceAcq Degree] (Data.Vector.Storable.Vector CDouble) where
+instance Is1DStreamable  [DataSourceAcq Double] (Data.Vector.Storable.Vector CDouble) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 ----------------
@@ -288,33 +291,33 @@ instance Arbitrary (DataSourcePath Float) where
 nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
 
-withAxesPathP :: (MonadSafe m, Location l) => l -> [DataSourcePath Degree] -> ([DataSourceAcq Degree] -> m a) -> m a
+withAxesPathP :: (MonadSafe m, Location l) => l -> [DataSourcePath Double] -> ([DataSourceAcq Double] -> m a) -> m a
 withAxesPathP f dpaths = nest (Prelude.map (withDataSourceP f) dpaths)
 
 instance DataSource Geometry where
   data DataSourcePath Geometry =
     DataSourcePath'Geometry { geometryGeometry       :: Geometry
                             , geometryPathWavelength :: DataSourcePath Double
-                            , geometryPathAxes       :: [DataSourcePath Degree]
+                            , geometryPathAxes       :: [DataSourcePath Double]
                             }
     | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
     | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath Double
-                                        , geometryPathAxes       :: [DataSourcePath Degree]
-                                        , geometryPathEix        :: DataSourcePath Degree
-                                        , geometryPathEiz        :: DataSourcePath Degree
+                                        , geometryPathAxes       :: [DataSourcePath Double]
+                                        , geometryPathEix        :: DataSourcePath Double
+                                        , geometryPathEiz        :: DataSourcePath Double
                                         }
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Geometry
     = DataSourceAcq'Geometry'MedVEiger
       (DataSourceAcq Double)
-      [DataSourceAcq Degree]
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
+      [DataSourceAcq Double]
+      (DataSourceAcq Double)
+      (DataSourceAcq Double)
     | DataSourceAcq'Geometry
       (ForeignPtr C'HklGeometry)
       (DataSourceAcq Double)
-      [DataSourceAcq Degree]
+      [DataSourceAcq Double]
 
 
   withDataSourceP f (DataSourcePath'Geometry g w as) gg =
