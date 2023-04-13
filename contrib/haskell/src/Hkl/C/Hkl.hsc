@@ -165,3 +165,10 @@ import Foreign.C (CInt(..), CUInt(..), CDouble(..), CSize(..), CString)
 #globalvar hkl_unit_angle_mrad, <HklUnit>
 #globalvar hkl_unit_length_mm, <HklUnit>
 #globalvar hkl_unit_length_meter, <HklUnit>
+
+-- HklUnitEnum
+
+#integral_t HklUnitEnum
+
+#num HKL_UNIT_DEFAULT
+#num HKL_UNIT_USER

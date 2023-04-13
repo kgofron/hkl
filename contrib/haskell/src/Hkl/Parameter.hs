@@ -19,22 +19,18 @@ module Hkl.Parameter
        , copyParameter
        , peekParameter
        , pokeParameter
-       , unit
        ) where
 
 import           Control.Monad         (void)
 import           Data.Aeson            (FromJSON (..), ToJSON (..))
 import           Foreign               (ForeignPtr, Ptr, newForeignPtr, nullPtr)
-import           Foreign.C             (CDouble (CDouble), CInt)
+import           Foreign.C             (CDouble (CDouble))
 import           Foreign.C.String      (peekCString)
 import           Foreign.Marshal.Alloc (alloca)
 import           Foreign.Storable      (peek)
 import           GHC.Generics          (Generic)
 
 import           Hkl.C.Hkl
-
-unit :: CInt
-unit = 1
 
 --  Range
 
@@ -75,16 +71,16 @@ peekParameter ptr =
   alloca $ \pmax -> do
   cname <- c'hkl_parameter_name_get ptr
   name <- peekCString cname
-  value <- c'hkl_parameter_value_get ptr unit
-  c'hkl_parameter_min_max_get ptr pmin pmax unit
+  value <- c'hkl_parameter_value_get ptr c'HKL_UNIT_USER
+  c'hkl_parameter_min_max_get ptr pmin pmax c'HKL_UNIT_USER
   (CDouble min_) <- peek pmin
   (CDouble max_) <- peek pmax
   return (Parameter name value (Range min_ max_))
 
 pokeParameter :: Ptr C'HklParameter -> Parameter -> IO ()
 pokeParameter ptr (Parameter _name value (Range min_ max_)) = do
-  void $ c'hkl_parameter_value_set ptr (CDouble value) unit nullPtr
-  void $ c'hkl_parameter_min_max_set ptr (CDouble min_) (CDouble max_) unit nullPtr
+  void $ c'hkl_parameter_value_set ptr (CDouble value) c'HKL_UNIT_USER nullPtr
+  void $ c'hkl_parameter_min_max_set ptr (CDouble min_) (CDouble max_) c'HKL_UNIT_USER nullPtr
 
 copyParameter :: Ptr C'HklParameter -> IO (ForeignPtr C'HklParameter)
 copyParameter p = newForeignPtr p'hkl_parameter_free =<< c'hkl_parameter_new_copy p

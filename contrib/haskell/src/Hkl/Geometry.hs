@@ -30,7 +30,6 @@ import           Numeric.LinearAlgebra (Vector)
 import           Prelude               hiding (max, min)
 
 import           Hkl.C.Hkl
-import           Hkl.Parameter
 import           Hkl.Utils
 
 -------------
@@ -149,9 +148,9 @@ pokeGeometry fptr lw vs =
   withForeignPtr fptr $ \ptr -> do
   -- set the source
   let wavelength = CDouble lw
-  c'hkl_geometry_wavelength_set ptr wavelength unit nullPtr
+  c'hkl_geometry_wavelength_set ptr wavelength c'HKL_UNIT_USER nullPtr
 
   -- set the axes
   let n = toEnum . V.length $ vs
   V.unsafeWith vs $ \values ->
-    c'hkl_geometry_axis_values_set ptr values n unit nullPtr
+    c'hkl_geometry_axis_values_set ptr values n c'HKL_UNIT_USER nullPtr
