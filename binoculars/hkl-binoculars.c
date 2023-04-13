@@ -861,6 +861,9 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                                                         \
 		darray_size(space->items) = 0;				\
                                                                         \
+                glms_mat4_print(m_holder_s, stdout);                    \
+                glms_mat4_print(m_holder_d, stdout);                    \
+                                                                        \
                 switch(subprojection){                                  \
                 case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS:         \
                 case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ:    \
@@ -1106,13 +1109,16 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:         \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:       \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        glms_vec3_print(v, stdout);     \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        glms_mat4_print(m_holder_d, stdout); \
+                                        glms_vec3_print(v, stdout);     \
                                                                         \
 					item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
@@ -1131,7 +1137,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                                                         \
 					item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \

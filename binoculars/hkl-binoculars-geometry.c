@@ -19,6 +19,9 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+
+/* #define DEBUG */
+
 #include "hkl-binoculars-private.h"
 
 mat4s hkl_binoculars_parameter_transformation_get(const HklParameter *self)
@@ -32,7 +35,7 @@ mat4s hkl_binoculars_parameter_transformation_get(const HklParameter *self)
                         CGLM_ALIGN_MAT vec3s axis = {{axis_v->data[0], axis_v->data[1], axis_v->data[2]}};
 
                         r = glms_rotate_make(self->_value, axis);
-                }
+                };
                 of(RotationWithOrigin, axis_v, pivot_v) {
                         CGLM_ALIGN_MAT mat4s m = glms_mat4_identity();
                         CGLM_ALIGN_MAT vec3s pivot = {{pivot_v->data[0], pivot_v->data[1], pivot_v->data[2]}};
@@ -40,13 +43,18 @@ mat4s hkl_binoculars_parameter_transformation_get(const HklParameter *self)
                         CGLM_ALIGN_MAT vec3s axis = {{axis_v->data[0], axis_v->data[1], axis_v->data[2]}};
 
                         r = glms_rotate_atm(m, pivot, angle, axis);
-                }
+                };
                 of(Translation, v_v) {
                         CGLM_ALIGN_MAT vec3s v = {{v_v->data[0], v_v->data[1], v_v->data[2]}};
                         v = glms_vec3_scale(v, self->_value);
 
+#ifdef DEBUG
+                        glms_vec3_print(v, stdout);
+                        hkl_vector_fprintf(stdout, v_v);
+                        fprintf(stdout, "\nvalue: %g", self->_value);
+#endif
                         r = glms_translate_make(v);
-                }
+                };
         }
 
         return r;
