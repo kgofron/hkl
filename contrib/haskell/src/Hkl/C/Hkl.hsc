@@ -6,13 +6,8 @@
 
 module Hkl.C.Hkl where
 
-import Foreign ( FunPtr
-               , Ptr
-               , Storable(..)
-               , plusPtr
-               , )
-
-import Foreign.C (CInt(..), CUInt(..), CDouble(..), CSize(..), CString)
+import           Foreign               (FunPtr, Ptr, Storable(..), plusPtr)
+import           Foreign.C             (CInt(..), CUInt(..), CDouble(..), CSize(..), CString)
 
 
 -- darray_engine

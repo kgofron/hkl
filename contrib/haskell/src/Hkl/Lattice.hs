@@ -4,6 +4,8 @@
 module Hkl.Lattice
   ( Degree(..)
   , Lattice(..)
+  , Unit(..)
+  , unitToHklUnit
   , withLattice
   ) where
 
@@ -120,3 +122,16 @@ newLattice (Triclinic la lb lc (Degree aalpha) (Degree abeta) (Degree agamma)) =
   let beta = CDouble (abeta /~ radian)
   let gamma = CDouble (agamma /~ radian)
   newLattice' a b c alpha beta gamma
+
+
+-- Unit
+
+data Unit = Unit'NoUnit
+          | Unit'Angle'Degree
+          | Unit'Length'MilliMeter
+  deriving (Generic, FromJSON, Show, ToJSON)
+
+unitToHklUnit :: Unit -> Ptr C'HklUnit
+unitToHklUnit Unit'NoUnit            = p'hkl_unit_angle_rad
+unitToHklUnit Unit'Angle'Degree      = p'hkl_unit_angle_deg
+unitToHklUnit Unit'Length'MilliMeter = p'hkl_unit_length_mm

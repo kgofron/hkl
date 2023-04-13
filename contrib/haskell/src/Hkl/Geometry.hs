@@ -30,6 +30,8 @@ import           Numeric.LinearAlgebra (Vector)
 import           Prelude               hiding (max, min)
 
 import           Hkl.C.Hkl
+import           Hkl.Lattice
+import           Hkl.Orphan            ()
 import           Hkl.Utils
 
 -------------
@@ -73,7 +75,7 @@ data Transformation
   deriving (Generic, FromJSON, Show, ToJSON)
 
 data Axis
-  = Axis Text Transformation
+  = Axis Text Transformation Unit
   deriving (Generic, FromJSON, Show, ToJSON)
 
 data Geometry
@@ -84,14 +86,14 @@ data Geometry
 fixed :: Geometry
 fixed
   = Geometry'Custom
-    (Node (Axis "mu" (Rotation 0 0 1)) [ Node (Axis "omega" (Rotation 0 (-1) 0)) [] ])
+    (Node (Axis "mu" (Rotation 0 0 1) Unit'Angle'Degree) [ Node (Axis "omega" (Rotation 0 (-1) 0) Unit'Angle'Degree) [] ])
 
 sixsMedVGisax :: Geometry
 sixsMedVGisax
   = Geometry'Custom
-    ( Node (Axis "" NoTransformation)
-      [ Node (Axis "beta" (Rotation 0 (-1) 0)) [Node (Axis "mu" (Rotation 0  0 1)) [Node (Axis "omega" (Rotation 0 (-1) 0)) [] ] ]
-      , Node (Axis "eix" (Translation 0 0 (-1))) [Node (Axis "eiz" (Translation 0 1 0)) [] ]
+    ( Node (Axis "" NoTransformation Unit'NoUnit)
+      [ Node (Axis "beta" (Rotation 0 (-1) 0) Unit'Angle'Degree) [Node (Axis "mu" (Rotation 0  0 1) Unit'Angle'Degree) [Node (Axis "omega" (Rotation 0 (-1) 0) Unit'Angle'Degree) [] ] ]
+      , Node (Axis "eix" (Translation 0 0 (-1)) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 1 0) Unit'Length'MilliMeter) [] ]
       ]
     )
 
@@ -105,18 +107,18 @@ sixsMedVGisax
 sixsUhvGisax :: Geometry
 sixsUhvGisax
   = Geometry'Custom
-    ( Node (Axis "" NoTransformation)
-      [ Node (Axis "mu" (Rotation 0 0 1)) [ Node (Axis "omega" (Rotation 0 (-1) 0)) [] ]
-      , Node (Axis "eiz" (Translation 0 (-0.001) 0)) []
+    ( Node (Axis "" NoTransformation Unit'NoUnit)
+      [ Node (Axis "mu" (Rotation 0 0 1) Unit'Angle'Degree) [ Node (Axis "omega" (Rotation 0 (-1) 0) Unit'Angle'Degree) [] ]
+      , Node (Axis "eiz" (Translation 0 (-0.001) 0) Unit'Length'MilliMeter) []
       ]
     )
 
 zaxis :: Geometry
 zaxis
   = Geometry'Custom
-    ( Node (Axis "mu" (Rotation 0 0 1))
-      [ Node (Axis "omega" (Rotation 0 (-1) 0)) []
-      , Node (Axis "delta" (Rotation 0 (-1) 0)) [ Node (Axis "gamma" (Rotation 0 0 1)) [] ]
+    ( Node (Axis "mu" (Rotation 0 0 1) Unit'Angle'Degree)
+      [ Node (Axis "omega" (Rotation 0 (-1) 0) Unit'Angle'Degree) []
+      , Node (Axis "delta" (Rotation 0 (-1) 0) Unit'Angle'Degree) [ Node (Axis "gamma" (Rotation 0 0 1) Unit'Angle'Degree) [] ]
       ]
     )
 
@@ -134,10 +136,10 @@ newGeometry (Geometry'Custom g)
         mapM_ (addAxis hPtr) axs
 
       addAxis :: Ptr C'HklHolder -> Axis -> IO ()
-      addAxis h (Axis n t) = Hkl.Utils.withCString n $ \c'n -> case t of
+      addAxis h (Axis n t u) = Hkl.Utils.withCString n $ \c'n -> case t of
         NoTransformation -> return ()
-        Rotation x y z -> c'hkl_holder_add_rotation h c'n (CDouble x) (CDouble y) (CDouble z) p'hkl_unit_angle_deg
-        Translation x y z -> c'hkl_holder_add_translation h c'n (CDouble x) (CDouble y) (CDouble z) p'hkl_unit_length_nm
+        Rotation x y z -> c'hkl_holder_add_rotation h c'n (CDouble x) (CDouble y) (CDouble z) (unitToHklUnit u)
+        Translation x y z -> c'hkl_holder_add_translation h c'n (CDouble x) (CDouble y) (CDouble z) (unitToHklUnit u)
 
       axes :: Tree Axis -> [[Axis]]
       axes g' = foldTree (\x xsss -> if null xsss then [[x]] else concatMap (map (x:)) xsss) g'
