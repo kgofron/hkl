@@ -12,7 +12,7 @@
     Stability  : Experimental
     Portability: GHC only (not tested)
 -}
-module Hkl.Binoculars.Sixs
+module Hkl.Binoculars.Command
   ( new
   , process
   , update
