@@ -644,16 +644,16 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                   (DataSourcePath'Geometry
                                    sixsMedHGisaxs
                                    (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                                    [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")
+                                    [ DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch"))
                                     , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/mu"))
-                                    , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                    , DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eix")
                                                             `H5Or`
-                                                            hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
+                                                            hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tx.1/position_pre"))
                                       `DataSourcePath'Double'Or`
                                       DataSourcePath'Double'Const 0
-                                    , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                                    , DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eiz")
                                                             `H5Or`
-                                                            hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
+                                                            hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tz.1/position_pre"))
                                       `DataSourcePath'Double'Or`
                                       DataSourcePath'Double'Const 0
                                     ])
