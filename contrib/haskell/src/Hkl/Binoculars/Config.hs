@@ -398,6 +398,7 @@ data InputType = CristalK6C
                | SixsFlyScanUhvUfxc
                | SixsSbsFixedDetector
                | SixsSbsMedH
+               | SixsSbsMedHFixDetector
                | SixsSbsMedV
                | SixsSbsMedVFixDetector
                | SixsSbsUhv
@@ -433,6 +434,7 @@ instance HasFieldValue InputType where
       emit SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
       emit SixsSbsFixedDetector      = "sixs:sbsfixeddetector"
       emit SixsSbsMedH               = "sixs:sbsmedh"
+      emit SixsSbsMedHFixDetector    = "sixs:sbsmedhfixdetector"
       emit SixsSbsMedV               = "sixs:sbsmedv"
       emit SixsSbsMedVFixDetector    = "sixs:sbsmedvfixdetector"
       emit SixsSbsUhv                = "sixs:sbsuhv"

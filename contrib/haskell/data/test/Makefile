@@ -41,7 +41,7 @@ sixs:
 #	$(PROCESS) data/test/config_sixs_ruche_limits.txt 338
 #	$(PROCESS) data/test/config_sixs_ruche_flyscanuhvtest.txt 550
 #	$(PROCESS) data/test/config_sixs_ruche_angles.ini 274-279
-	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_Andreazza/binoculars/config3_ech1.txt 77-78
+# TODO	$(PROCESS_DBG) /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_Andreazza/binoculars/config3_ech1.txt 77-78
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run5/20200672_Guinebretiere/binoculars/config_6D5b_Qxyz.txt 412-417
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run4/cervasio_20220528/binoculars/config_hkl_s70.cfg 170-178
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Lundgren_20220155/binoculars21/config_hkl.cfg 570-599
@@ -49,7 +49,7 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/20220739_kutyla/binoculars/config_angles.cfg-ng 26-41
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/20220739_kutyla/binoculars/config_q-index.cfg 210-286
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom.ini
-# TODO	$(PROCESS) data/test/config_sixs_ruche_qcustom2.ini
+# 	$(PROCESS) data/test/config_sixs_ruche_qcustom2.ini
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom_datapath.ini
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom_sbsuhv.ini
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run5/Creutzburg_20220176/binoculars/config_hkl.cfg 218
@@ -61,6 +61,7 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2022/Run1/20211454_Bellec/binoculars/config_angles.txt 488
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_xpad.txt 356
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_xpad.txt 537
+	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_eiger.txt 306
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini

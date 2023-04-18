@@ -598,7 +598,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
          SixsFlyScanUhvGisaxsEiger -> DataSourcePath'DataFrameQCustom
                                      (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                                      (DataSourcePath'Geometry
-                                      sixsUhvGisax
+                                      sixsUhvGisaxs
                                       (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
                                       [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
                                       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
@@ -639,6 +639,26 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        dataSourcePath'Geometry'MedH'Sixs
                        (mkDetector'Sixs'Sbs detector)
                        (mkTimeStamp'Sbs msub)
+         SixsSbsMedHFixDetector -> DataSourcePath'DataFrameQCustom
+                                  (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                                  (DataSourcePath'Geometry
+                                   sixsMedHGisaxs
+                                   (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                                    [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-ex-diff-med-tpp" $ groupp "TPP" $ groupp "Orientation" $ datasetp "pitch")
+                                    , DataSourcePath'Double(hdf5p $ datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/mu"))
+                                    , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                                            `H5Or`
+                                                            hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
+                                      `DataSourcePath'Double'Or`
+                                      DataSourcePath'Double'Const 0
+                                    , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
+                                                            `H5Or`
+                                                            hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
+                                      `DataSourcePath'Double'Or`
+                                      DataSourcePath'Double'Const 0
+                                    ])
+                                  (mkDetector'Sixs'Sbs detector)
+                                  (mkTimeStamp'Sbs msub)
          SixsSbsMedV -> DataSourcePath'DataFrameQCustom
                        (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
                        (DataSourcePath'Geometry
