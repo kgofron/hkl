@@ -19,12 +19,11 @@ module Hkl.Geometry
        ) where
 
 import           Data.Aeson            (FromJSON (..), ToJSON (..))
-import           Data.Text             (Text)
 import           Data.Tree             (Tree (..), foldTree)
 import qualified Data.Vector.Storable  as V
 import           Foreign               (ForeignPtr, Ptr, newForeignPtr, nullPtr,
                                         withForeignPtr)
-import           Foreign.C             (CDouble (..), withCString)
+import           Foreign.C             (CDouble (..), newCString, withCString)
 import           GHC.Generics          (Generic)
 import           Numeric.LinearAlgebra (Vector)
 
@@ -33,7 +32,6 @@ import           Prelude               hiding (max, min)
 import           Hkl.C.Hkl
 import           Hkl.Lattice
 import           Hkl.Orphan            ()
-import           Hkl.Utils
 
 -------------
 -- Factory --
@@ -76,7 +74,7 @@ data Transformation
   deriving (Generic, FromJSON, Show, ToJSON)
 
 data Axis
-  = Axis Text Transformation Unit
+  = Axis String Transformation Unit
   deriving (Generic, FromJSON, Show, ToJSON)
 
 data Geometry
@@ -147,10 +145,14 @@ newGeometry (Geometry'Custom g)
         mapM_ (addAxis hPtr) axs
 
       addAxis :: Ptr C'HklHolder -> Axis -> IO ()
-      addAxis h (Axis n t u) = Hkl.Utils.withCString n $ \c'n -> case t of
+      addAxis h (Axis n t u) = case t of
         NoTransformation -> return ()
-        Rotation x y z -> c'hkl_holder_add_rotation h c'n (CDouble x) (CDouble y) (CDouble z) (unitToHklUnit u)
-        Translation x y z -> c'hkl_holder_add_translation h c'n (CDouble x) (CDouble y) (CDouble z) (unitToHklUnit u)
+        Rotation x y z -> do
+          c'n <- newCString n
+          c'hkl_holder_add_rotation h c'n (CDouble x) (CDouble y) (CDouble z) (unitToHklUnit u)
+        Translation x y z -> do
+          c'n <- newCString n
+          c'hkl_holder_add_translation h c'n (CDouble x) (CDouble y) (CDouble z) (unitToHklUnit u)
 
       axes :: Tree Axis -> [[Axis]]
       axes g' = foldTree (\x xsss -> if null xsss then [[x]] else concatMap (map (x:)) xsss) g'
