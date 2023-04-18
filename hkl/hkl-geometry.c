@@ -289,8 +289,18 @@ HklGeometry *hkl_geometry_new(const HklFactory *factory,
 {
 	HklGeometry *g = g_new(HklGeometry, 1);
 
-	g->ops = ops;
-	g->factory = factory;
+        if(NULL == factory){
+                static const HklFactory readonly = {
+                        .name = "readonly",
+                        .description = "Readonly geometry which can be customise by the user",
+                };
+                g->factory = &readonly;
+                g->ops = &hkl_geometry_operations_defaults;
+        } else {
+                g->factory = factory;
+                g->ops = ops;
+        }
+
 	hkl_source_init(&g->source, 1.54, 1, 0, 0);
 	darray_init(g->axes);
 	darray_init(g->holders);

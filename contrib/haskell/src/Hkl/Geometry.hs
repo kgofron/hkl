@@ -137,8 +137,7 @@ zaxis
 newGeometry :: Geometry -> IO (ForeignPtr C'HklGeometry)
 newGeometry (Geometry'Custom g)
   = do
-  let factoryPtr = nullPtr
-  gPtr <- c'hkl_geometry_new factoryPtr p'hkl_geometry_operations_defaults
+  gPtr <- c'hkl_geometry_new nullPtr nullPtr
   mapM_ (addHolder gPtr) (axes g)
   newForeignPtr p'hkl_geometry_free gPtr
     where
