@@ -602,12 +602,16 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                       (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
                                       [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
                                       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
-                                      --, DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
-                                      --                        `H5Or`
-                                      --                        hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
+                                      , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
+                                                              `H5Or`
+                                                              hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
+                                        `DataSourcePath'Double'Or`
+                                        DataSourcePath'Double'Const 0
                                       , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
                                                               `H5Or`
                                                               hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
+                                        `DataSourcePath'Double'Or`
+                                        DataSourcePath'Double'Const 0
                                       ])
                                      (mkDetector'Sixs'Fly detector)
                                      (mkTimeStamp'Fly msub)

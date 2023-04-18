@@ -34,7 +34,8 @@ import           Bindings.HDF5.Core                (Location)
 import           Bindings.HDF5.Dataset             (getDatasetType)
 import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
                                                     typeIDsEqual)
-import           Control.Exception                 (Exception, throwIO)
+import           Control.Exception                 (Exception, SomeException,
+                                                    throwIO)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
@@ -53,7 +54,7 @@ import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
-import           Pipes.Safe                        (MonadSafe)
+import           Pipes.Safe                        (MonadSafe, catchAll, throwM)
 import           Test.QuickCheck                   (Arbitrary (..), oneof)
 
 import           Prelude                           hiding (filter)
@@ -185,6 +186,12 @@ instance Is1DStreamable  [DataSourceAcq Double] (Data.Vector.Storable.Vector CDo
 -- DataSource --
 ----------------
 
+data HklDataSourceException
+  = CanNotOpenDataSource'Double'Or SomeException SomeException
+  deriving (Show)
+
+instance Exception HklDataSourceException
+
 class DataSource a where
   data DataSourcePath a :: Type
   data DataSourceAcq a :: Type
@@ -254,6 +261,7 @@ instance DataSource Double where
   data DataSourcePath Double
     = DataSourcePath'Double (Hdf5Path Z Double)
     | DataSourcePath'Double'Const Double
+    | DataSourcePath'Double'Or (DataSourcePath Double) (DataSourcePath Double)
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Double
@@ -262,6 +270,11 @@ instance DataSource Double where
 
   withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Double ds)
   withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
+  withDataSourceP f (DataSourcePath'Double'Or l r) g = withDataSourceP f l g
+                                                       `catchAll`
+                                                       \exl -> withDataSourceP f r g
+                                                              `catchAll`
+                                                              \exr -> throwM $ CanNotOpenDataSource'Double'Or exl exr
 
 instance Arbitrary (DataSourcePath Double) where
   arbitrary = oneof
