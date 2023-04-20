@@ -18,12 +18,6 @@ data HklDetectorException = MaskShapeNotcompatible Text
     deriving (Show)
 instance Exception HklDetectorException
 
-data HklPipesException
-  = CanNotOpenH5OrP HklH5Exception HklH5Exception
-  deriving (Show)
-
-instance Exception HklPipesException
-
 data HklBinocularsException
     = WrongAttenuation Text Int Double
     deriving (Show)
@@ -49,6 +43,7 @@ data HklH5Exception
   | CanNotOpenGroup ByteString
   | CanNotOpenGroupAt ByteString Int
   | CanNotOpenFile ByteString
+  | CanNotOpenH5Or HklH5Exception HklH5Exception
   | ContainNanValue
   deriving (Show)
 

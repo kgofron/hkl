@@ -56,4 +56,4 @@ withHdf5PathP loc (H5Or l r) f = withHdf5PathP loc l f
                                  `catch`
                                  \exl -> withHdf5PathP loc r f
                                         `catch`
-                                        \exr -> throwM $ CanNotOpenH5OrP exl exr
+                                        \exr -> throwM $ CanNotOpenH5Or exl exr
