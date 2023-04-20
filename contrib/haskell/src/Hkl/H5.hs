@@ -99,8 +99,7 @@ import           Bindings.HDF5.PropertyList.DAPL (DAPL)
 import           Bindings.HDF5.PropertyList.GAPL (GAPL)
 import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
                                                   HId_t (HId_t), h5l_iterate)
-import           Control.Exception               (Exception, bracket, throwIO,
-                                                  try)
+import           Control.Exception               (bracket, throwIO, try)
 import           Control.Monad.Extra             (fromMaybeM)
 import           Data.Aeson                      (FromJSON (..), ToJSON (..))
 import           Data.Array.Repa                 (Array, Shape, extent,
@@ -130,22 +129,12 @@ import           Numeric.LinearAlgebra           (Matrix, reshape)
 import           Test.QuickCheck                 (Arbitrary (..), oneof)
 
 import           Hkl.Detector
+import           Hkl.Exception
 import           Hkl.Orphan                      ()
 
 import           Prelude                         hiding (head)
 
 -- {-# ANN module "HLint: ignore Use camelCase" #-}
-
-data HklH5Exception
-  = CanNotFindDatasetWithAttributContent ByteString ByteString
-  | CanNotOpenDataset ByteString
-  | CanNotOpenGroup ByteString
-  | CanNotOpenGroupAt ByteString Int
-  | CanNotOpenFile ByteString
-  | ContainNanValue
-  deriving (Show)
-
-instance Exception HklH5Exception
 
 data H5
 

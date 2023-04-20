@@ -33,7 +33,6 @@ module Hkl.Binoculars.Config.Common
     ) where
 
 import           Control.Applicative               ((<|>))
-import           Control.Monad.Catch               (Exception)
 import           Data.Array.Repa.Index             (DIM2)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
@@ -210,15 +209,3 @@ elemF k v = [(k,  fvEmit fieldvalue v)]
 
 elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
 elemFMb k = maybe [("# " <> k, "")] (elemF k)
-
-
-------------------
--- Input Path's --
-------------------
-
-data HklBinocularsProjectionsQCustomException
-    = MissingAttenuationCoefficient
-    | MissingInputRange
-    deriving (Show)
-
-instance Exception HklBinocularsProjectionsQCustomException

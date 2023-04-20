@@ -38,7 +38,7 @@ module Hkl.Binoculars.Projections.QCustom
 
 import           Control.Applicative             ((<|>))
 import           Control.Concurrent.Async        (mapConcurrently)
-import           Control.Monad.Catch             (Exception, MonadThrow)
+import           Control.Monad.Catch             (MonadThrow)
 import           Control.Monad.IO.Class          (MonadIO (liftIO))
 import           Control.Monad.Logger            (MonadLogger, logDebugN,
                                                   logInfoN)
@@ -246,14 +246,6 @@ instance ToIni (Config 'QCustomProjection) where
 ------------------
 -- Input Path's --
 ------------------
-
-data HklBinocularsProjectionsQCustomException
-    = MissingAttenuationCoefficient
-    | MissingInputRange
-    deriving (Show)
-
-instance Exception HklBinocularsProjectionsQCustomException
-
 
 mkAttenuation :: Maybe Double -> DataSourcePath Attenuation -> DataSourcePath Attenuation
 mkAttenuation ma att =

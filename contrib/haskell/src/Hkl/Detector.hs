@@ -28,8 +28,7 @@ module Hkl.Detector
 
 
 import           Control.Monad                     ((<=<))
-import           Control.Monad.Catch               (Exception, MonadThrow,
-                                                    throwM)
+import           Control.Monad.Catch               (MonadThrow, throwM)
 import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..),
                                                     object, pairs, withObject,
@@ -56,11 +55,7 @@ import           Test.QuickCheck                   (Arbitrary (..), elements)
 
 import           Hkl.C.Binoculars
 import           Hkl.C.Hkl
-
-data HklDetectorException = MaskShapeNotcompatible Text
-                          | NoDefaultMask
-    deriving (Show)
-instance Exception HklDetectorException
+import           Hkl.Exception
 
 data PyFAI deriving (Eq, Show)
 data Hkl deriving (Eq, Show)

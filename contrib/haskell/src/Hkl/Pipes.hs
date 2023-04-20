@@ -16,16 +16,11 @@ import           Bindings.HDF5.Group     (Group, closeGroup)
 import           Control.Monad.IO.Class  (MonadIO (liftIO))
 import           Foreign.ForeignPtr      (ForeignPtr, mallocForeignPtrBytes,
                                           touchForeignPtr)
-import           Pipes.Safe              (Exception, MonadSafe, bracket, catch,
-                                          throwM)
+import           Pipes.Safe              (MonadSafe, bracket, catch, throwM)
 
+import           Hkl.Exception
 import           Hkl.H5
 
-data HklPipesException
-  = CanNotOpenH5OrP HklH5Exception HklH5Exception
-  deriving (Show)
-
-instance Exception HklPipesException
 --  Deal with hdf5 object in a safe way
 
 bracket' :: MonadSafe m => (a -> IO ()) -> IO a -> (a -> m r) -> m r

@@ -25,7 +25,7 @@ module Hkl.Binoculars.Projections.Angles
     ) where
 
 import           Control.Concurrent.Async           (mapConcurrently)
-import           Control.Monad.Catch                (Exception, MonadThrow)
+import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO (liftIO), liftIO)
 import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
@@ -56,14 +56,6 @@ import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Image
 import           Hkl.Utils
-
-
-
-data HklBinocularsProjectionsAnglesException
-    = MissingInputRange
-    deriving (Show)
-
-instance Exception HklBinocularsProjectionsAnglesException
 
 ------------
 -- Config --

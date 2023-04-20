@@ -68,8 +68,7 @@ module Hkl.Binoculars.Config
 
 import           Control.Applicative               (many, (<|>))
 import           Control.Lens                      (makeLenses)
-import           Control.Monad.Catch               (Exception, MonadThrow,
-                                                    throwM)
+import           Control.Monad.Catch               (MonadThrow, throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
@@ -126,9 +125,9 @@ import           Prelude                           hiding (drop, length, lines,
                                                     takeWhile, unlines, unwords)
 
 import           Hkl.Detector
+import           Hkl.Exception
 import           Hkl.Lattice
 import           Paths_hkl
-
 
 -- Class FieldEmitter
 
@@ -328,14 +327,6 @@ instance HasFieldValue DestinationTmpl where
     { fvParse = Right . DestinationTmpl . uncomment
     , fvEmit = \(DestinationTmpl t) -> t
     }
-
--- HklBinocularsConfigException
-
-data HklBinocularsConfigException = NoDataFilesUnderTheGivenDirectory (Path Abs Dir)
-                                  | ResolutionNotCompatibleWithProjectionNbOfCoordinates [Double] Int
-    deriving (Show)
-
-instance Exception HklBinocularsConfigException
 
 -- InputRange
 

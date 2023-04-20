@@ -44,7 +44,6 @@ import           Data.Array.Repa                   (size)
 import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Int                          (Int32)
 import           Data.Kind                         (Type)
-import           Data.Text                         (Text)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, unsafeNew)
 import           Data.Word                         (Word16, Word32)
@@ -62,6 +61,7 @@ import           Prelude                           hiding (filter)
 import           Hkl.Binoculars.Config
 import           Hkl.C.Hkl
 import           Hkl.Detector
+import           Hkl.Exception
 import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.Image
@@ -117,11 +117,6 @@ class Is1DStreamable a e where
   extract1DStreamValue :: a -> Int -> IO e
 
 -- Is1DStreamable (instances)
-
-data HklBinocularsException
-    = WrongAttenuation Text Int Double
-    deriving (Show)
-instance Exception HklBinocularsException
 
 badAttenuation :: Float
 badAttenuation = -100

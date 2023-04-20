@@ -86,6 +86,7 @@ library
   exposed-modules: Hkl.DataSource
   exposed-modules: Hkl.Detector
   exposed-modules: Hkl.Engine
+  exposed-modules: Hkl.Exception
   exposed-modules: Hkl.Geometry
   exposed-modules: Hkl.H5
   exposed-modules: Hkl.HKD
