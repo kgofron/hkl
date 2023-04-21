@@ -8,7 +8,7 @@
 
 module Hkl.Exception where
 
-import           Control.Monad.Catch   (Exception)
+import           Control.Exception     (Exception, SomeException)
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Text             (Text)
 import           Path                  (Abs, Dir, Path)
@@ -48,3 +48,9 @@ data HklH5Exception
   deriving (Show)
 
 instance Exception HklH5Exception
+
+data HklDataSourceException
+  = CanNotOpenDataSource'Double'Or SomeException SomeException
+  deriving (Show)
+
+instance Exception HklDataSourceException

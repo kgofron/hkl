@@ -34,8 +34,7 @@ import           Bindings.HDF5.Core                (Location)
 import           Bindings.HDF5.Dataset             (getDatasetType)
 import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
                                                     typeIDsEqual)
-import           Control.Exception                 (Exception, SomeException,
-                                                    throwIO)
+import           Control.Exception                 (throwIO)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
@@ -180,12 +179,6 @@ instance Is1DStreamable  [DataSourceAcq Double] (Data.Vector.Storable.Vector CDo
 ----------------
 -- DataSource --
 ----------------
-
-data HklDataSourceException
-  = CanNotOpenDataSource'Double'Or SomeException SomeException
-  deriving (Show)
-
-instance Exception HklDataSourceException
 
 class DataSource a where
   data DataSourcePath a :: Type
