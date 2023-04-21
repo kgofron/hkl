@@ -52,7 +52,7 @@ import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
-import           Pipes.Safe                        (MonadSafe, catchAll, throwM)
+import           Pipes.Safe                        (MonadSafe, catch, throwM)
 import           Test.QuickCheck                   (Arbitrary (..), oneof)
 
 import           Prelude                           hiding (filter)
@@ -259,9 +259,9 @@ instance DataSource Double where
   withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Double ds)
   withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
   withDataSourceP f (DataSourcePath'Double'Or l r) g = withDataSourceP f l g
-                                                       `catchAll`
+                                                       `catch`
                                                        \exl -> withDataSourceP f r g
-                                                              `catchAll`
+                                                              `catch`
                                                               \exr -> throwM $ CanNotOpenDataSource'Double'Or exl exr
 
 instance Arbitrary (DataSourcePath Double) where
