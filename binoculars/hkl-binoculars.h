@@ -148,41 +148,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /* Projections */
 /***************/
 
-/* class RealSpace(backend.ProjectionBase): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         pixels = pdataframe.pixels */
-/*         P = pdataframe.P */
-/*         timestamp = pdataframe.timestamp */
-
-/*         if P is not None: */
-/*             pixels_ = numpy.tensordot(P, pixels, axes=1) */
-/*         else: */
-/*             pixels_ = pixels */
-/*         x = pixels_[1] */
-/*         y = pixels_[2] */
-/*         if timestamp is not None: */
-/*             z = numpy.ones_like(x) * timestamp */
-/*         else: */
-/*             z = pixels_[0] */
-
-/*         return (x, y, z) */
-
-/*     def get_axis_labels(self): */
-/*         return ("x", "y", "z") */
-
-
-/* class Pixels(backend.ProjectionBase): */
-/*     def project(self, index: int, pdataframe: PDataFrame) -> Tuple[ndarray]: */
-/*         pixels = pdataframe.pixels */
-
-/*         return numpy.meshgrid( */
-/*             numpy.arange(pixels[0].shape[1]), numpy.arange(pixels[0].shape[0]) */
-/*         ) */
-
-/*     def get_axis_labels(self) -> Tuple[str]: */
-/*         return "x", "y" */
-
-
 /* subprojection for QCustom */
 
 /* - delta_gamma_[omega|mu]_uhv for the uhv gemetry */
