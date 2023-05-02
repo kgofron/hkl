@@ -149,26 +149,26 @@ struct _HklGeometryListItem
 
 extern HklParameter *hkl_holder_add_parameter(HklHolder *self,
                                               char const *name,
-                                              const HklUnit *punit);
+                                              const HklUnit *punit) HKL_ARG_NONNULL(1, 2, 3);
 
 extern HklParameter *hkl_holder_add_rotation(HklHolder *self,
 					     char const *name,
 					     double x, double y, double z,
-					     const HklUnit *punit);
+					     const HklUnit *punit) HKL_ARG_NONNULL(1, 2, 6);
 
 extern HklParameter *hkl_holder_add_rotation_with_origin(HklHolder *self,
 							 const char *name,
 							 double x, double y, double z,
 							 double ox, double oy, double oz,
-							 const HklUnit *punit);
+							 const HklUnit *punit) HKL_ARG_NONNULL(1, 2, 9);
 
 extern HklParameter *hkl_holder_add_translation(HklHolder *self,
 						char const *name,
 						double x, double y, double z,
-						const HklUnit *punit);
+						const HklUnit *punit) HKL_ARG_NONNULL(1, 2, 6);
 
 extern HklVector hkl_holder_transformation_apply(const HklHolder *self,
-						 const HklVector *v);
+						 const HklVector *v) HKL_ARG_NONNULL(1, 2);
 
 /***************/
 /* HklGeometry */
@@ -178,35 +178,35 @@ extern HklGeometry *hkl_geometry_new(const HklFactory *factory,
 				     const HklGeometryOperations *ops);
 
 extern int hkl_geometry_init_geometry(HklGeometry *self,
-				      const HklGeometry *src);
+				      const HklGeometry *src) HKL_ARG_NONNULL(1, 2);
 
-extern HklHolder *hkl_geometry_add_holder(HklGeometry *self);
+extern HklHolder *hkl_geometry_add_holder(HklGeometry *self) HKL_ARG_NONNULL(1);
 
-extern void hkl_geometry_update(HklGeometry *self);
+extern void hkl_geometry_update(HklGeometry *self) HKL_ARG_NONNULL(1);
 
 extern int hkl_geometry_get_axis_idx_by_name(const HklGeometry *self,
-					     const char *name);
+					     const char *name) HKL_ARG_NONNULL(1, 2);
 
 /* internally require do not use the hkl_geometry_axis_get */
 extern HklParameter *hkl_geometry_get_axis_by_name(HklGeometry *self,
-						   const char *name);
+						   const char *name) HKL_ARG_NONNULL(1, 2);
 
 extern double hkl_geometry_distance(const HklGeometry *self,
-				    const HklGeometry *ref);
+				    const HklGeometry *ref) HKL_ARG_NONNULL(1, 2);
 
 extern double hkl_geometry_distance_orthodromic(const HklGeometry *self,
-						const HklGeometry *ref);
+						const HklGeometry *ref) HKL_ARG_NONNULL(1, 2);
 
 extern int hkl_geometry_closest_from_geometry_with_range(HklGeometry *self,
-							 const HklGeometry *ref);
+							 const HklGeometry *ref) HKL_ARG_NONNULL(1, 2);
 
-extern int hkl_geometry_is_valid(const HklGeometry *self);
+extern int hkl_geometry_is_valid(const HklGeometry *self) HKL_ARG_NONNULL(1);
 
-extern int hkl_geometry_is_valid_range(const HklGeometry *self);
+extern int hkl_geometry_is_valid_range(const HklGeometry *self) HKL_ARG_NONNULL(1);
 
-extern HklHolder *hkl_geometry_sample_holder_get(const HklGeometry *self, const HklSample *sample);
+extern HklHolder *hkl_geometry_sample_holder_get(const HklGeometry *self, const HklSample *sample) HKL_ARG_NONNULL(1, 2);
 
-extern HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self, const HklDetector *detector);
+extern HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self, const HklDetector *detector) HKL_ARG_NONNULL(1, 2);
 
 /*******************/
 /* HklGeometryList */
@@ -214,31 +214,31 @@ extern HklHolder *hkl_geometry_detector_holder_get(const HklGeometry *self, cons
 
 extern HklGeometryList *hkl_geometry_list_new(void);
 
-extern HklGeometryList *hkl_geometry_list_new_copy(const HklGeometryList *self);
+extern HklGeometryList *hkl_geometry_list_new_copy(const HklGeometryList *self) HKL_ARG_NONNULL(1);
 
-extern void hkl_geometry_list_add(HklGeometryList *self, const HklGeometry *geometry);
+extern void hkl_geometry_list_add(HklGeometryList *self, const HklGeometry *geometry) HKL_ARG_NONNULL(1, 2);
 
-extern void hkl_geometry_list_reset(HklGeometryList *self);
+extern void hkl_geometry_list_reset(HklGeometryList *self) HKL_ARG_NONNULL(1);
 
-extern void hkl_geometry_list_sort(HklGeometryList *self, HklGeometry *ref);
+extern void hkl_geometry_list_sort(HklGeometryList *self, HklGeometry *ref) HKL_ARG_NONNULL(1, 2);
 
-extern void hkl_geometry_list_fprintf(FILE *f, const HklGeometryList *self);
+extern void hkl_geometry_list_fprintf(FILE *f, const HklGeometryList *self) HKL_ARG_NONNULL(1, 2);
 
-extern void hkl_geometry_list_multiply(HklGeometryList *self);
+extern void hkl_geometry_list_multiply(HklGeometryList *self) HKL_ARG_NONNULL(1);
 
-extern void hkl_geometry_list_multiply_from_range(HklGeometryList *self);
+extern void hkl_geometry_list_multiply_from_range(HklGeometryList *self) HKL_ARG_NONNULL(1);
 
-extern void hkl_geometry_list_remove_invalid(HklGeometryList *self);
+extern void hkl_geometry_list_remove_invalid(HklGeometryList *self) HKL_ARG_NONNULL(1);
 
 /***********************/
 /* HklGeometryListItem */
 /***********************/
 
-extern HklGeometryListItem *hkl_geometry_list_item_new(const HklGeometry *geometry);
+extern HklGeometryListItem *hkl_geometry_list_item_new(const HklGeometry *geometry) HKL_ARG_NONNULL(1);
 
-extern HklGeometryListItem *hkl_geometry_list_item_new_copy(const HklGeometryListItem *self);
+extern HklGeometryListItem *hkl_geometry_list_item_new_copy(const HklGeometryListItem *self) HKL_ARG_NONNULL(1);
 
-extern void hkl_geometry_list_item_free(HklGeometryListItem *self);
+extern void hkl_geometry_list_item_free(HklGeometryListItem *self) HKL_ARG_NONNULL(1);
 
 G_END_DECLS
 

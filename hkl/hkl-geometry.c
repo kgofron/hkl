@@ -597,9 +597,6 @@ int hkl_geometry_get_axis_idx_by_name(const HklGeometry *self, const char *name)
 	uint i = 0;
 	HklParameter **axis;
 
-	if (!self || !name)
-		return -1;
-
 	darray_foreach(axis, self->axes){
 		if (!strcmp((*axis)->name, name))
 			return i;
@@ -758,9 +755,6 @@ double hkl_geometry_distance(const HklGeometry *self,
 	double value1, value2;
 	double distance = 0.;
 
-	if (!self || !ref)
-		return 0.;
-
 	for(i=0; i<darray_size(self->axes); ++i){
 		value1 = darray_item(self->axes, i)->_value;
 		value2 = darray_item(ref->axes, i)->_value;
@@ -782,9 +776,6 @@ double hkl_geometry_distance_orthodromic(const HklGeometry *self,
 {
 	size_t i;
 	double distance = 0.;
-
-	if (!self || !ref)
-		return 0.;
 
 	for(i=0; i<darray_size(self->axes); ++i){
                 distance += hkl_parameter_orthodromic_distance_get(
@@ -999,9 +990,6 @@ HklGeometryList *hkl_geometry_list_new_copy(const HklGeometryList *self)
 	HklGeometryList *dup;
 	HklGeometryListItem *item;
 
-	if (!self)
-		return NULL;
-
 	dup = g_new(HklGeometryList, 1);
 
 	list_head_init(&dup->items);
@@ -1175,9 +1163,6 @@ void hkl_geometry_list_fprintf(FILE *f, const HklGeometryList *self)
 	uint i = 0;
 	double value;
 
-	if(!self)
-		return;
-
 	fprintf(f, "multiply method: %p \n", self->multiply);
 	if(self->n_items){
 		HklGeometryListItem *item;
@@ -1222,7 +1207,7 @@ void hkl_geometry_list_multiply(HklGeometryList *self)
 	uint len = self->n_items;
 	HklGeometryListItem *item;
 
-	if(!self || !self->multiply)
+	if(!self->multiply)
 		return;
 
 	/*
@@ -1281,9 +1266,6 @@ void hkl_geometry_list_multiply_from_range(HklGeometryList *self)
 	uint i;
 	uint len = self->n_items;
 	const HklGeometryListItem *item;
-
-	if(!self)
-		return;
 
 	/*
 	 * warning this method change the self->len so we need to save it
@@ -1354,12 +1336,7 @@ void hkl_geometry_list_remove_invalid(HklGeometryList *self)
  **/
 HklGeometryListItem *hkl_geometry_list_item_new(const HklGeometry *geometry)
 {
-	HklGeometryListItem *self;
-
-	if(!geometry)
-		return NULL;
-
-	self = g_new(HklGeometryListItem, 1);
+	HklGeometryListItem *self = g_new(HklGeometryListItem, 1);
 
 	self->geometry = hkl_geometry_new_copy(geometry);
 
@@ -1376,12 +1353,7 @@ HklGeometryListItem *hkl_geometry_list_item_new(const HklGeometry *geometry)
  **/
 HklGeometryListItem *hkl_geometry_list_item_new_copy(const HklGeometryListItem *self)
 {
-	HklGeometryListItem *dup;
-
-	if(!self)
-		return NULL;
-
-	dup = g_new(HklGeometryListItem, 1);
+	HklGeometryListItem *dup = g_new(HklGeometryListItem, 1);
 
 	dup->geometry = hkl_geometry_new_copy(self->geometry);
 
@@ -1396,9 +1368,6 @@ HklGeometryListItem *hkl_geometry_list_item_new_copy(const HklGeometryListItem *
  **/
 void hkl_geometry_list_item_free(HklGeometryListItem *self)
 {
-	if(!self)
-		return;
-
 	hkl_geometry_free(self->geometry);
 	free(self);
 }
