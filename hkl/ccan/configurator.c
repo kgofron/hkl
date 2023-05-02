@@ -197,7 +197,7 @@ static const struct test base_tests[] = {
 	  "return __builtin_clzll(1) == (sizeof(long long)*8 - 1) ? 0 : 1;" },
 	{ "HAVE_BUILTIN_CTZ", "__builtin_ctz support",
 	  "INSIDE_MAIN", NULL, NULL,
-	  "return __builtin_ctz(1 << (sizeof(int)*8 - 1)) == (sizeof(int)*8 - 1) ? 0 : 1;" },
+	  "return __builtin_ctz(1U << (sizeof(int)*8 - 1)) == (sizeof(int)*8 - 1) ? 0 : 1;" },
 	{ "HAVE_BUILTIN_CTZL", "__builtin_ctzl support",
 	  "INSIDE_MAIN", NULL, NULL,
 	  "return __builtin_ctzl(1UL << (sizeof(long)*8 - 1)) == (sizeof(long)*8 - 1) ? 0 : 1;" },
@@ -797,12 +797,12 @@ static bool run_test(const char *cmd, const char *wrapper, struct test *test)
 		/* We run INSIDE_MAIN tests for sanity checking. */
 		if (strstr(test->style, "EXECUTE")
 		    || strstr(test->style, "INSIDE_MAIN")) {
-			char *cmd = malloc(strlen(wrapper) + strlen(" ." DIR_SEP OUTPUT_FILE) + 1);
+			char *runcmd = malloc(strlen(wrapper) + strlen(" ." DIR_SEP OUTPUT_FILE) + 1);
 
-			strcpy(cmd, wrapper);
-			strcat(cmd, " ." DIR_SEP OUTPUT_FILE);
-			output = run(cmd, &status);
-			free(cmd);
+			strcpy(runcmd, wrapper);
+			strcat(runcmd, " ." DIR_SEP OUTPUT_FILE);
+			output = run(runcmd, &status);
+			free(runcmd);
 			if (!strstr(test->style, "EXECUTE") && status != 0)
 				c12r_errx(EXIT_BAD_TEST,
 					  "Test for %s failed with %i:\n%s",
