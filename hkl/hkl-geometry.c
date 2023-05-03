@@ -1221,7 +1221,7 @@ void hkl_geometry_list_multiply(HklGeometryList *self)
 }
 
 static void perm_r(HklGeometryList *self, const HklGeometry *ref,
-		   const HklGeometry *geometry, const int perm[],
+		   const HklGeometry *geometry,
 		   const unsigned int axis_idx)
 {
 	if (axis_idx == darray_size(geometry->axes)){
@@ -1231,8 +1231,9 @@ static void perm_r(HklGeometryList *self, const HklGeometry *ref,
 			self->n_items++;
 		}
 	}else{
-		if(perm[axis_idx]){
-			HklParameter *axis = darray_item(geometry->axes, axis_idx);
+                HklParameter *axis = darray_item(geometry->axes, axis_idx);
+
+		if(hkl_parameter_is_permutable(axis)){
 			const double max = axis->range.max;;
 			const double value0 = axis->_value;
 			double value;
@@ -1240,7 +1241,7 @@ static void perm_r(HklGeometryList *self, const HklGeometry *ref,
 			value = value0;
 			do{
 				/* fprintf(stdout, "\n%d %s, %f", axis_idx, hkl_axis_get_name(axis), value * HKL_RADTODEG); */
-				perm_r(self, ref, geometry, perm, axis_idx + 1);
+				perm_r(self, ref, geometry, axis_idx + 1);
 				value +=  2*M_PI;
 				if(value <= (max + HKL_EPSILON)){
 					/* optimisation here: */
@@ -1257,49 +1258,38 @@ static void perm_r(HklGeometryList *self, const HklGeometry *ref,
 			/* restore the initial value */
 			axis->_value = value0;
 		} else
-			perm_r(self, ref, geometry, perm, axis_idx + 1);
+			perm_r(self, ref, geometry, axis_idx + 1);
 	}
 }
 
 void hkl_geometry_list_multiply_from_range(HklGeometryList *self)
 {
-	uint i;
-	uint len = self->n_items;
-	const HklGeometryListItem *item;
-
+        size_t i;
+        size_t len;
+        const HklGeometryListItem *item;
 	/*
 	 * warning this method change the self->len so we need to save it
 	 * before using the recursive perm_r calls
 	 */
+        len =  self->n_items;
 
 	for(i=0, item=list_top(&self->items, HklGeometryListItem, list);
-	    i<len;
+	    i<len && NULL != item;
 	    ++i, item=list_next(&self->items, item, list)){
-		HklGeometry *geometry;
-		HklParameter **axis;
-		int *perm;
-		size_t j = 0;
-
-                if(!item)
-                        return;
-
-		geometry = hkl_geometry_new_copy(item->geometry);
-		perm = alloca(darray_size(geometry->axes) * sizeof(*perm));
+                HklParameter **axis;
+		HklGeometry *geometry = hkl_geometry_new_copy(item->geometry);
 
 		/* find axes to permute and the first solution of thoses axes */
-		darray_foreach(axis, geometry->axes){
-			perm[j] = hkl_parameter_is_permutable(*axis);
-			/* fprintf(stdout, "%d %d\n", j, perm[j]); */
-			if (perm[j])
+                darray_foreach(axis, geometry->axes){
+			if (hkl_parameter_is_permutable(*axis))
 				hkl_parameter_value_set_smallest_in_range(*axis);
-			++j;
 		}
 		/*
 		 * fprintf(stdout, "FIRST SOLUTION\n");
 		 * hkl_geometry_fprintf(stdout, geometry);
 		 */
 
-		perm_r(self, item->geometry, geometry, perm, 0);
+		perm_r(self, item->geometry, geometry, 0);
 		hkl_geometry_free(geometry);
 	}
 }
