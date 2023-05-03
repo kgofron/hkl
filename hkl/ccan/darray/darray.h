@@ -280,6 +280,9 @@ typedef darray(unsigned long)  darray_ulong;
 
 #define darray_realloc(arr, newAlloc) do { \
 		(arr).item = realloc((arr).item, ((arr).alloc = (newAlloc)) * sizeof(*(arr).item)); \
+                if (NULL == (arr).item && 0 != (newAlloc) ) {                 \
+                        abort();                                        \
+                }                                                       \
 	} while(0)
 #define darray_growalloc(arr, need) do { \
 		size_t need_ = (need); \
