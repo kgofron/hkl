@@ -278,10 +278,13 @@ typedef darray(unsigned long)  darray_ulong;
 		} \
 	} while(0)
 
-#define darray_realloc(arr, newAlloc) do { \
-		(arr).item = realloc((arr).item, ((arr).alloc = (newAlloc)) * sizeof(*(arr).item)); \
-                if (NULL == (arr).item && 0 != (newAlloc) ) {                 \
+#define darray_realloc(arr, newAlloc) do {                              \
+                void *tmp = realloc((arr).item, (newAlloc) * sizeof(*(arr).item)); \
+                if (NULL == tmp && 0 != (newAlloc) ) {                  \
                         abort();                                        \
+                }else{                                                  \
+                        (arr).item = tmp;                               \
+                        (arr).alloc = (newAlloc);                       \
                 }                                                       \
 	} while(0)
 #define darray_growalloc(arr, need) do { \
