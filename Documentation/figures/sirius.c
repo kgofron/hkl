@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2021, 2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021, 2022, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -41,11 +41,13 @@ static void GeometryList_save_as_dat(const char *filename,  const struct Traject
 	const struct Engine *econfig;
 	generator_t(struct Engine) gen = trajectory_gen(trajectory);
 	FILE *f = fopen(filename, "w+");
+        if (NULL == f)
+                goto error;
 
 	/* print the header */
 	econfig = generator_next(gen);
         if (NULL == econfig)
-                goto error;
+                goto error_fclose;
 
 	fprintf(f, "#");
 	Engine_header(f, *econfig);
@@ -67,9 +69,9 @@ static void GeometryList_save_as_dat(const char *filename,  const struct Traject
 		hkl_geometry_save_as_dat(f, item->geometry);
 	}
 
-error:
+error_fclose:
 	fclose(f);
-
+error:
 	generator_free(gen);
 }
 
@@ -126,6 +128,11 @@ static void xy_save_as_dat(XY *xy, const char *filename)
 {
 	uint i;
 	FILE *f = fopen(filename, "w+");
+        if (NULL == f){
+                fprintf(stderr, "Cannot open the %s file.", filename);
+                return;
+        }
+
 	fprintf(f, "# x y");
 	for(i=0; i<darray_size(xy->x); ++i)
 		fprintf(f, "\n%d %f",
