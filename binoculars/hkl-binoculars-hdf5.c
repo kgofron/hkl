@@ -28,6 +28,7 @@
 static hid_t create_dataspace_from_axes(const darray_axis *axes)
 {
         HklBinocularsAxis *axis;
+        hid_t hid;
         darray(hsize_t) dims;
 
         darray_init(dims);
@@ -36,7 +37,10 @@ static hid_t create_dataspace_from_axes(const darray_axis *axes)
 			darray_append(dims, axis_size(axis));
         }
 
-        return H5Screate_simple(darray_size(dims), &darray_item(dims, 0), NULL);
+        hid = H5Screate_simple(darray_size(dims), &darray_item(dims, 0), NULL);
+        darray_free(dims);
+
+        return hid;
 }
 
 static herr_t save_string(hid_t group_id, const char *name, const char* config)
