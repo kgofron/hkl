@@ -73,9 +73,12 @@ check_PROGRAMS = runtests $(all_tests)
 check-local: $(check_PROGRAMS)
 	./runtests -v -s $(abs_top_srcdir) $(all_tests)
 
+valgrind:
+	G_DEBUG=gc-friendly G_SLICE=always-malloc valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes .libs/hkl-bench-t
+
 # Support for GNU Flymake, in Emacs.
 check-syntax: AM_CFLAGS += -fsyntax-only -pipe
 check-syntax:
 	test -z "$(CHK_SOURCES)" || $(COMPILE) $(CHK_SOURCES)
 
-.PHONY: check-syntax
+.PHONY: check-syntax valgrind
