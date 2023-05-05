@@ -96,7 +96,7 @@ data DataFrameQCustom
       Attenuation -- attenuation
       (ForeignPtr C'HklGeometry) -- geometry
       Image -- image
-      Index -- timestamp in double
+      Timestamp -- timestamp in double
     deriving Show
 
 instance DataSource DataFrameQCustom where
@@ -105,7 +105,7 @@ instance DataSource DataFrameQCustom where
       (DataSourcePath Attenuation)
       (DataSourcePath Geometry)
       (DataSourcePath Image)
-      (DataSourcePath Index)
+      (DataSourcePath Timestamp)
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq DataFrameQCustom
@@ -113,7 +113,7 @@ instance DataSource DataFrameQCustom where
       (DataSourceAcq Attenuation)
       (DataSourceAcq Geometry)
       (DataSourceAcq Image)
-      (DataSourceAcq Index)
+      (DataSourceAcq Timestamp)
 
   withDataSourceP f (DataSourcePath'DataFrameQCustom a g i idx) gg =
     withDataSourceP f a $ \a' ->
@@ -149,7 +149,7 @@ default'DataSourcePath'DataFrameQCustom
     (DataSourcePath'Image
       (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
       defaultDetector)
-    (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+    (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
 instance HasFieldValue (DataSourcePath DataFrameQCustom) where
   fieldvalue = FieldValue
@@ -207,7 +207,7 @@ instance HasIniConfig 'QCustomProjection where
 
     -- fix the subprojection depending on the projection type
     let subprojection = case projectiontype of
-                          QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QIndex
+                          QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QTimestamp
                           QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
                           QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
                           AnglesProjection -> msubprojection
@@ -317,25 +317,25 @@ overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)
 overloadAttenuationPath _ _ ap@DataSourcePath'ApplyedAttenuationFactor{} = ap
 overloadAttenuationPath _ _ ap@DataSourcePath'NoAttenuation = ap
 
-overloadIndexPath :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Index -> DataSourcePath Index
-overloadIndexPath msub idx =
+overloadTimestampPath :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp -> DataSourcePath Timestamp
+overloadTimestampPath msub idx =
   case msub of
-    Nothing -> DataSourcePath'Index'NoIndex
+    Nothing -> DataSourcePath'Timestamp'NoTimestamp
     (Just sub) -> case sub of
-                   HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QIndex -> idx
+                   HklBinocularsQCustomSubProjectionEnum'QTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Index'NoIndex
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Index'NoIndex
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Index'NoIndex
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Index'NoIndex
-                   HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Index'NoIndex
-                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisOmega -> DataSourcePath'Index'NoIndex
-                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
-                   HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisOmega -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timestamp'NoTimestamp
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
@@ -362,9 +362,9 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
         newAttenuationPath = overloadAttenuationPath mAttCoef mMaxAtt attenuationPath'
         newGeometryPath = overloadGeometryPath mWavelength geometryPath
         newImagePath = overloadImagePath detector imagePath
-        newIndexPath = overloadIndexPath msub indexP
+        newTimestampPath = overloadTimestampPath msub indexP
     in
-      DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newIndexPath
+      DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newTimestampPath
 
 
 guess'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
@@ -466,13 +466,13 @@ guess'DataSourcePath'DataFrameQCustom common msub =
               ]
 
        -- timestamp
-      let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Index
+      let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
           mkTimeStamp'Sbs msub'
-            = overloadIndexPath msub' (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
+            = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
 
-      let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Index
+      let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
           mkTimeStamp'Fly msub'
-            = overloadIndexPath msub' (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+            = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
       case inputtype of
          CristalK6C -> DataSourcePath'DataFrameQCustom
@@ -700,11 +700,11 @@ spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unIndex $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
     (ImageWord16 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unIndex $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
     (ImageWord32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unIndex $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
 
   return (DataFrameSpace img space att)
 

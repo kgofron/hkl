@@ -170,7 +170,7 @@ instance Enum HklBinocularsSurfaceOrientationEnum where
 
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP
-#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX
@@ -186,7 +186,7 @@ instance Enum HklBinocularsSurfaceOrientationEnum where
 data HklBinocularsQCustomSubProjectionEnum
   = HklBinocularsQCustomSubProjectionEnum'QxQyQz
   | HklBinocularsQCustomSubProjectionEnum'QTthTimestamp
-  | HklBinocularsQCustomSubProjectionEnum'QIndex
+  | HklBinocularsQCustomSubProjectionEnum'QTimestamp
   | HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp
   | HklBinocularsQCustomSubProjectionEnum'QparQper
   | HklBinocularsQCustomSubProjectionEnum'QPhiQx
@@ -204,7 +204,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
   toEnum n
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ = HklBinocularsQCustomSubProjectionEnum'QxQyQz
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QTthTimestamp
-    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX = HklBinocularsQCustomSubProjectionEnum'QIndex
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QTimestamp
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER = HklBinocularsQCustomSubProjectionEnum'QparQper
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX = HklBinocularsQCustomSubProjectionEnum'QPhiQx
@@ -220,7 +220,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
 
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQyQz = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ
   fromEnum HklBinocularsQCustomSubProjectionEnum'QTthTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP
-  fromEnum HklBinocularsQCustomSubProjectionEnum'QIndex = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX
+  fromEnum HklBinocularsQCustomSubProjectionEnum'QTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP
   fromEnum HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP
   fromEnum HklBinocularsQCustomSubProjectionEnum'QparQper = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER
   fromEnum HklBinocularsQCustomSubProjectionEnum'QPhiQx = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX

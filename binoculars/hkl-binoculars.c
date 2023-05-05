@@ -387,12 +387,12 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 names = names_q_tth_timestamp;
                 break;
         }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP:
         {
-                static const char *names_q_index[] = {"q", "index"};
-                assert(ARRAY_SIZE(names_q_index) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_q_index) == n_resolutions);
-                names = names_q_index;
+                static const char *names_q_timestamp[] = {"q", "timestamp"};
+                assert(ARRAY_SIZE(names_q_timestamp) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_q_timestamp) == n_resolutions);
+                names = names_q_timestamp;
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP:
@@ -581,7 +581,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX:     \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP: \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
@@ -940,7 +940,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_INDEX:     \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP: \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \

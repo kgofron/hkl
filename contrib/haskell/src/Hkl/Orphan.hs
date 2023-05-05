@@ -83,7 +83,7 @@ instance HasFieldValue HklBinocularsQCustomSubProjectionEnum where
       emit :: HklBinocularsQCustomSubProjectionEnum -> Text
       emit HklBinocularsQCustomSubProjectionEnum'QxQyQz            = "qx_qy_qz"
       emit HklBinocularsQCustomSubProjectionEnum'QTthTimestamp     = "q_tth_timestamp"
-      emit HklBinocularsQCustomSubProjectionEnum'QIndex            = "q_index"
+      emit HklBinocularsQCustomSubProjectionEnum'QTimestamp        = "q_timestamp"
       emit HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp = "qpar_qper_timestamp"
       emit HklBinocularsQCustomSubProjectionEnum'QparQper          = "qpar_qper"
       emit HklBinocularsQCustomSubProjectionEnum'QPhiQx            = "q_phi_qx"

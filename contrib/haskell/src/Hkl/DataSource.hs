@@ -169,9 +169,9 @@ instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Word16 ds det buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Word32 ds det buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
 
-instance Is1DStreamable (DataSourceAcq Index) Index where
-  extract1DStreamValue (DataSourceAcq'Index ds) i = Index <$> extract1DStreamValue ds i
-  extract1DStreamValue DataSourceAcq'Index'NoIndex _ = returnIO $ Index 0
+instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
+  extract1DStreamValue (DataSourceAcq'Timestamp ds) i = Timestamp <$> extract1DStreamValue ds i
+  extract1DStreamValue DataSourceAcq'Timestamp'NoTimestamp _ = returnIO $ Timestamp 0
 
 instance Is1DStreamable  [DataSourceAcq Double] (Data.Vector.Storable.Vector CDouble) where
   extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
@@ -372,23 +372,6 @@ instance DataSource Image where
 instance Arbitrary (DataSourcePath Image) where
   arbitrary = DataSourcePath'Image <$> arbitrary <*> arbitrary
 
--- Index
-
-instance DataSource Index where
-  data DataSourcePath Index
-    = DataSourcePath'Index (Hdf5Path DIM1 Double)
-    | DataSourcePath'Index'NoIndex
-    deriving (Eq, Generic, Show, FromJSON, ToJSON)
-
-  data DataSourceAcq Index = DataSourceAcq'Index Dataset
-                           | DataSourceAcq'Index'NoIndex
-
-  withDataSourceP f (DataSourcePath'Index p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Index ds)
-  withDataSourceP _ DataSourcePath'Index'NoIndex g = g DataSourceAcq'Index'NoIndex
-
-instance Arbitrary (DataSourcePath Index) where
-  arbitrary = DataSourcePath'Index <$> arbitrary
-
 -- Int
 
 instance DataSource Int where
@@ -400,3 +383,20 @@ instance DataSource Int where
     = DataSourceAcq'Int Int
 
   withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)
+
+-- Timestamp
+
+instance DataSource Timestamp where
+  data DataSourcePath Timestamp
+    = DataSourcePath'Timestamp (Hdf5Path DIM1 Double)
+    | DataSourcePath'Timestamp'NoTimestamp
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq Timestamp = DataSourceAcq'Timestamp Dataset
+                               | DataSourceAcq'Timestamp'NoTimestamp
+
+  withDataSourceP f (DataSourcePath'Timestamp p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timestamp ds)
+  withDataSourceP _ DataSourcePath'Timestamp'NoTimestamp g = g DataSourceAcq'Timestamp'NoTimestamp
+
+instance Arbitrary (DataSourcePath Timestamp) where
+  arbitrary = DataSourcePath'Timestamp <$> arbitrary

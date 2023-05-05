@@ -121,7 +121,7 @@ instance HasIniConfig 'QCustom2Projection where
 
     -- fix the subprojection depending on the projection type
     let subprojection = case projectiontype of
-                          QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QIndex
+                          QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QTimestamp
                           QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
                           QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
                           AnglesProjection -> msubprojection
@@ -174,11 +174,11 @@ spaceQCustom2 det pixels rs mmask' surf mlimits subprojection space@(Space fSpac
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom2_int32_t" #-} c'hkl_binoculars_space_qcustom2_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unIndex $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom2_int32_t" #-} c'hkl_binoculars_space_qcustom2_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
     (ImageWord16 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom2_uint16_t" #-} c'hkl_binoculars_space_qcustom2_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unIndex $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom2_uint16_t" #-} c'hkl_binoculars_space_qcustom2_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
     (ImageWord32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom2_uint32_t" #-} c'hkl_binoculars_space_qcustom2_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unIndex $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom2_uint32_t" #-} c'hkl_binoculars_space_qcustom2_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
 
   return (DataFrameSpace img space att)
 

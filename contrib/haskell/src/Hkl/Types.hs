@@ -5,8 +5,8 @@
 module Hkl.Types ( AbsDirPath
                  , Beamline(..)
                  , beamlineUpper
-                 , Index(..)
                  , SampleName
+                 , Timestamp(..)
                  , Trajectory
                    -- hdf5
                  , H5Path
@@ -36,7 +36,7 @@ beamlineUpper b = [toUpper x | x ← show b]
 
 -- Index
 
-newtype Index = Index { unIndex :: Double }
+newtype Timestamp = Timestamp { unTimestamp :: Double }
   deriving Show
 
 --  Trajectory
