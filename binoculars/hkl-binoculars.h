@@ -164,8 +164,6 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /*   gamma = arctan2(y_lab, x_lab) */
 /*   omega or mu or beta */
 
-/* q_qpar_qper */
-
 /* q_index / tth_index  ( index = numero du scan) */
 
 /* q_timescan / tth_timescan   (timescan = temps moyen du timestamp du scan (constant pour 1 scan)) */
@@ -209,6 +207,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;

@@ -181,6 +181,7 @@ instance Enum HklBinocularsSurfaceOrientationEnum where
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER
 
 data HklBinocularsQCustomSubProjectionEnum
   = HklBinocularsQCustomSubProjectionEnum'QxQyQz
@@ -196,6 +197,7 @@ data HklBinocularsQCustomSubProjectionEnum
   | HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu
   | HklBinocularsQCustomSubProjectionEnum'XYZ
   | HklBinocularsQCustomSubProjectionEnum'YZTimestamp
+  | HklBinocularsQCustomSubProjectionEnum'QQparQper
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsQCustomSubProjectionEnum where
@@ -213,6 +215,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU = HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z = HklBinocularsQCustomSubProjectionEnum'XYZ
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'YZTimestamp
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER = HklBinocularsQCustomSubProjectionEnum'QQparQper
     | otherwise = error "Non supported HklBinocularsQCustomSubProjectionEnum value"
 
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQyQz = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ
@@ -228,6 +231,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
   fromEnum HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU
   fromEnum HklBinocularsQCustomSubProjectionEnum'XYZ = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z
   fromEnum HklBinocularsQCustomSubProjectionEnum'YZTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP
+  fromEnum HklBinocularsQCustomSubProjectionEnum'QQparQper = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER
 
 
 #opaque_t HklBinocularsSpace

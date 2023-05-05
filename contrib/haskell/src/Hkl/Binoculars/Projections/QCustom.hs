@@ -335,6 +335,7 @@ overloadIndexPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
                    HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Index'NoIndex
                    HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> idx
+                   HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Index'NoIndex
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma

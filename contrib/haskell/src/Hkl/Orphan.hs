@@ -94,3 +94,4 @@ instance HasFieldValue HklBinocularsQCustomSubProjectionEnum where
       emit HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu     = "angles_zaxis_mu"
       emit HklBinocularsQCustomSubProjectionEnum'XYZ               = "x_y_z"
       emit HklBinocularsQCustomSubProjectionEnum'YZTimestamp       = "y_z_timestamp"
+      emit HklBinocularsQCustomSubProjectionEnum'QQparQper         = "q_qpar_qper"
