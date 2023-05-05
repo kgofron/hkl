@@ -22,8 +22,22 @@ import           Prelude                         hiding (unwords)
 
 import           Hkl.C.Binoculars
 
-instance (Shape sh, Storable e) => Show (Array F sh e) where
-    show = showShape . extent
+---------------
+-- Arbitrary --
+---------------
+
+instance Arbitrary (Path Abs Dir) where
+  arbitrary = pure $(mkAbsDir "/toto")
+
+instance Arbitrary HklBinocularsSurfaceOrientationEnum where
+  arbitrary = elements ([minBound .. maxBound] :: [HklBinocularsSurfaceOrientationEnum])
+
+instance Arbitrary HklBinocularsQCustomSubProjectionEnum where
+  arbitrary = elements ([minBound .. maxBound] :: [HklBinocularsQCustomSubProjectionEnum])
+
+-----------------
+-- From/ToJSON --
+-----------------
 
 instance ToJSON ByteString where
     toJSON = String . decodeUtf8
@@ -34,17 +48,9 @@ instance FromJSON ByteString where
     parseJSON _          = GHC.Base.empty
     {-# INLINE parseJSON #-}
 
-instance Arbitrary (Path Abs Dir) where
-  arbitrary = pure $(mkAbsDir "/toto")
+----------
+-- Show --
+----------
 
-
--- HklBinocularsSurfaceOrientationEnum
-
-instance Arbitrary HklBinocularsSurfaceOrientationEnum where
-  arbitrary = elements ([minBound .. maxBound] :: [HklBinocularsSurfaceOrientationEnum])
-
-
--- HklBinocularsQCustomSubProjectionEnum
-
-instance Arbitrary HklBinocularsQCustomSubProjectionEnum where
-  arbitrary = elements ([minBound .. maxBound] :: [HklBinocularsQCustomSubProjectionEnum])
+instance (Shape sh, Storable e) => Show (Array F sh e) where
+    show = showShape . extent
