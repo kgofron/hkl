@@ -169,7 +169,7 @@ data instance Config 'QCustomProjection
     , binocularsConfig'QCustom'ProjectionResolution   :: Resolutions DIM3
     , binocularsConfig'QCustom'ProjectionLimits       :: Maybe (RLimits DIM3)
     , binocularsConfig'QCustom'DataPath               :: DataSourcePath DataFrameQCustom
-    , binocularsConfig'QCustom'SubProjection          :: Maybe QCustomSubProjection
+    , binocularsConfig'QCustom'SubProjection          :: Maybe HklBinocularsQCustomSubProjectionEnum
     } deriving (Show, Generic)
 
 instance Arbitrary (Config 'QCustomProjection) where
@@ -186,7 +186,7 @@ default'BinocularsConfig'QCustom
     , binocularsConfig'QCustom'ProjectionResolution = Resolutions3 0.01 0.01 0.01
     , binocularsConfig'QCustom'ProjectionLimits  = Nothing
     , binocularsConfig'QCustom'DataPath = default'DataSourcePath'DataFrameQCustom
-    , binocularsConfig'QCustom'SubProjection = Just QCustomSubProjection'QxQyQz
+    , binocularsConfig'QCustom'SubProjection = Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
     }
 
 
@@ -207,16 +207,16 @@ instance HasIniConfig 'QCustomProjection where
 
     -- fix the subprojection depending on the projection type
     let subprojection = case projectiontype of
-                          QIndexProjection -> Just QCustomSubProjection'QIndex
-                          QparQperProjection -> Just QCustomSubProjection'QparQper
-                          QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
+                          QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QIndex
+                          QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
+                          QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
                           AnglesProjection -> msubprojection
                           Angles2Projection -> msubprojection
                           HklProjection -> msubprojection
                           QCustomProjection -> msubprojection
                           QCustom2Projection -> msubprojection
-                          RealSpaceProjection -> Just QCustomSubProjection'XYZ
-                          PixelsProjection -> Just QCustomSubProjection'YZTimestamp
+                          RealSpaceProjection -> Just HklBinocularsQCustomSubProjectionEnum'XYZ
+                          PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
 
         -- compute the datatype
     let datapath = case edatapath of
@@ -317,24 +317,24 @@ overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)
 overloadAttenuationPath _ _ ap@DataSourcePath'ApplyedAttenuationFactor{} = ap
 overloadAttenuationPath _ _ ap@DataSourcePath'NoAttenuation = ap
 
-overloadIndexPath :: Maybe QCustomSubProjection -> DataSourcePath Index -> DataSourcePath Index
+overloadIndexPath :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Index -> DataSourcePath Index
 overloadIndexPath msub idx =
   case msub of
     Nothing -> DataSourcePath'Index'NoIndex
     (Just sub) -> case sub of
-                   QCustomSubProjection'QxQyQz -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'QTthTimestamp -> idx
-                   QCustomSubProjection'QIndex -> idx
-                   QCustomSubProjection'QparQperTimestamp -> idx
-                   QCustomSubProjection'QparQper -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'QPhiQx -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'QPhiQy -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'QPhiQz -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'QStereo -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'AnglesZaxisOmega -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'XYZ -> DataSourcePath'Index'NoIndex
-                   QCustomSubProjection'YZTimestamp -> idx
+                   HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> idx
+                   HklBinocularsQCustomSubProjectionEnum'QIndex -> idx
+                   HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> idx
+                   HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisOmega -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Index'NoIndex
+                   HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> idx
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
@@ -349,7 +349,7 @@ overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath
 overloadImagePath det (DataSourcePath'Image p _) = DataSourcePath'Image p det
 
 overload'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
-                                         -> Maybe QCustomSubProjection
+                                         -> Maybe HklBinocularsQCustomSubProjectionEnum
                                          -> DataSourcePath DataFrameQCustom
                                          -> DataSourcePath DataFrameQCustom
 overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQCustom attenuationPath' geometryPath imagePath indexP)
@@ -367,7 +367,7 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
 
 
 guess'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
-                                      -> Maybe QCustomSubProjection
+                                      -> Maybe HklBinocularsQCustomSubProjectionEnum
                                       -> DataSourcePath DataFrameQCustom
 guess'DataSourcePath'DataFrameQCustom common msub =
     do
@@ -465,11 +465,11 @@ guess'DataSourcePath'DataFrameQCustom common msub =
               ]
 
        -- timestamp
-      let mkTimeStamp'Sbs :: Maybe QCustomSubProjection -> DataSourcePath Index
+      let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Index
           mkTimeStamp'Sbs msub'
             = overloadIndexPath msub' (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
 
-      let mkTimeStamp'Fly :: Maybe QCustomSubProjection -> DataSourcePath Index
+      let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Index
           mkTimeStamp'Fly msub'
             = overloadIndexPath msub' (DataSourcePath'Index(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
@@ -687,7 +687,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
 
 
 {-# INLINE spaceQCustom #-}
-spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> HklBinocularsSurfaceOrientationEnum -> Maybe (RLimits DIM3) -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
+spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> HklBinocularsSurfaceOrientationEnum -> Maybe (RLimits DIM3) -> HklBinocularsQCustomSubProjectionEnum -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withForeignPtr g $ \geometry ->

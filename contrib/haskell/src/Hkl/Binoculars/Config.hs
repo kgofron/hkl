@@ -47,7 +47,6 @@ module Hkl.Binoculars.Config
     , Meter(..)
     , NCores(..)
     , ProjectionType(..)
-    , QCustomSubProjection(..)
     , Resolutions(..)
     , RLimits(..)
     , SampleAxis(..)
@@ -557,53 +556,6 @@ parseEnum err t = maybeToRight err (find match [minBound..maxBound])
   where
     match :: HasFieldValue a => a -> Bool
     match i = toLower t == fvEmit fieldvalue i
-
--- QCustomSubProjection
-
-data QCustomSubProjection = QCustomSubProjection'QxQyQz
-                          | QCustomSubProjection'QTthTimestamp
-                          | QCustomSubProjection'QIndex
-                          | QCustomSubProjection'QparQperTimestamp
-                          | QCustomSubProjection'QparQper
-                          | QCustomSubProjection'QPhiQx
-                          | QCustomSubProjection'QPhiQy
-                          | QCustomSubProjection'QPhiQz
-                          | QCustomSubProjection'QStereo
-                          | QCustomSubProjection'AnglesZaxisOmega
-                          | QCustomSubProjection'AnglesZaxisMu
-                          | QCustomSubProjection'XYZ
-                          | QCustomSubProjection'YZTimestamp
-  deriving (Enum, Bounded, Eq, Show)
-
-instance Arbitrary QCustomSubProjection where
-  arbitrary = elements ([minBound .. maxBound] :: [QCustomSubProjection])
-
-instance HasFieldValue QCustomSubProjection where
-  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
-    where
-      parse :: Text -> Either String QCustomSubProjection
-      parse t = parseEnum (err t) t
-
-      err t = "Unsupported "
-              ++ show (typeRep (Proxy :: Proxy QCustomSubProjection))
-              ++ " :" ++ unpack t
-              ++ " Supported ones are: "
-              ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
-
-      emit :: QCustomSubProjection -> Text
-      emit QCustomSubProjection'QxQyQz            = "qx_qy_qz"
-      emit QCustomSubProjection'QTthTimestamp     = "q_tth_timestamp"
-      emit QCustomSubProjection'QIndex            = "q_index"
-      emit QCustomSubProjection'QparQperTimestamp = "qpar_qper_timestamp"
-      emit QCustomSubProjection'QparQper          = "qpar_qper"
-      emit QCustomSubProjection'QPhiQx            = "q_phi_qx"
-      emit QCustomSubProjection'QPhiQy            = "q_phi_qy"
-      emit QCustomSubProjection'QPhiQz            = "q_phi_qz"
-      emit QCustomSubProjection'QStereo           = "q_stereo"
-      emit QCustomSubProjection'AnglesZaxisOmega  = "angles_zaxis_omega"
-      emit QCustomSubProjection'AnglesZaxisMu     = "angles_zaxis_mu"
-      emit QCustomSubProjection'XYZ               = "x_y_z"
-      emit QCustomSubProjection'YZTimestamp       = "y_z_timestamp"
 
 -- Resolutions
 

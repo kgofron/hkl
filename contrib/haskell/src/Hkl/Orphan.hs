@@ -62,3 +62,35 @@ instance HasFieldValue HklBinocularsSurfaceOrientationEnum where
       emit :: HklBinocularsSurfaceOrientationEnum -> Text
       emit HklBinocularsSurfaceOrientationEnum'Vertical   = "vertical"
       emit HklBinocularsSurfaceOrientationEnum'Horizontal = "horizontal"
+
+-- HklBinocularsQCustomSubProjectionEnum
+
+instance Arbitrary HklBinocularsQCustomSubProjectionEnum where
+  arbitrary = elements ([minBound .. maxBound] :: [HklBinocularsQCustomSubProjectionEnum])
+
+instance HasFieldValue HklBinocularsQCustomSubProjectionEnum where
+  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
+    where
+      parse :: Text -> Either String HklBinocularsQCustomSubProjectionEnum
+      parse t = parseEnum (err t) t
+
+      err t = "Unsupported "
+              ++ show (typeRep (Proxy :: Proxy HklBinocularsQCustomSubProjectionEnum))
+              ++ " :" ++ unpack t
+              ++ " Supported ones are: "
+              ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
+
+      emit :: HklBinocularsQCustomSubProjectionEnum -> Text
+      emit HklBinocularsQCustomSubProjectionEnum'QxQyQz            = "qx_qy_qz"
+      emit HklBinocularsQCustomSubProjectionEnum'QTthTimestamp     = "q_tth_timestamp"
+      emit HklBinocularsQCustomSubProjectionEnum'QIndex            = "q_index"
+      emit HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp = "qpar_qper_timestamp"
+      emit HklBinocularsQCustomSubProjectionEnum'QparQper          = "qpar_qper"
+      emit HklBinocularsQCustomSubProjectionEnum'QPhiQx            = "q_phi_qx"
+      emit HklBinocularsQCustomSubProjectionEnum'QPhiQy            = "q_phi_qy"
+      emit HklBinocularsQCustomSubProjectionEnum'QPhiQz            = "q_phi_qz"
+      emit HklBinocularsQCustomSubProjectionEnum'QStereo           = "q_stereo"
+      emit HklBinocularsQCustomSubProjectionEnum'AnglesZaxisOmega  = "angles_zaxis_omega"
+      emit HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu     = "angles_zaxis_mu"
+      emit HklBinocularsQCustomSubProjectionEnum'XYZ               = "x_y_z"
+      emit HklBinocularsQCustomSubProjectionEnum'YZTimestamp       = "y_z_timestamp"

@@ -83,7 +83,7 @@ data instance Config 'QCustom2Projection
     , binocularsConfig'QCustom2'ProjectionResolution   :: Resolutions DIM3
     , binocularsConfig'QCustom2'ProjectionLimits       :: Maybe (RLimits DIM3)
     , binocularsConfig'QCustom2'DataPath               :: DataSourcePath DataFrameQCustom
-    , binocularsConfig'QCustom2'SubProjection          :: Maybe QCustomSubProjection
+    , binocularsConfig'QCustom2'SubProjection          :: Maybe HklBinocularsQCustomSubProjectionEnum
     } deriving (Show, Generic)
 
 instance Arbitrary (Config 'QCustom2Projection) where
@@ -100,7 +100,7 @@ default'BinocularsConfig'QCustom2
     , binocularsConfig'QCustom2'ProjectionResolution = Resolutions3 0.01 0.01 0.01
     , binocularsConfig'QCustom2'ProjectionLimits  = Nothing
     , binocularsConfig'QCustom2'DataPath = default'DataSourcePath'DataFrameQCustom
-    , binocularsConfig'QCustom2'SubProjection = Just QCustomSubProjection'QxQyQz
+    , binocularsConfig'QCustom2'SubProjection = Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
     }
 
 
@@ -121,16 +121,16 @@ instance HasIniConfig 'QCustom2Projection where
 
     -- fix the subprojection depending on the projection type
     let subprojection = case projectiontype of
-                          QIndexProjection -> Just QCustomSubProjection'QIndex
-                          QparQperProjection -> Just QCustomSubProjection'QparQper
-                          QxQyQzProjection -> Just QCustomSubProjection'QxQyQz
+                          QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QIndex
+                          QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
+                          QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
                           AnglesProjection -> msubprojection
                           Angles2Projection -> msubprojection
                           HklProjection -> msubprojection
                           QCustomProjection -> msubprojection
                           QCustom2Projection -> msubprojection
-                          RealSpaceProjection -> Just QCustomSubProjection'XYZ
-                          PixelsProjection -> Just QCustomSubProjection'YZTimestamp
+                          RealSpaceProjection -> Just HklBinocularsQCustomSubProjectionEnum'XYZ
+                          PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
 
         -- compute the datatype
     let datapath = case edatapath of
@@ -162,7 +162,7 @@ instance ToIni (Config 'QCustom2Projection) where
 ------------------
 
 {-# INLINE spaceQCustom2 #-}
-spaceQCustom2 :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> HklBinocularsSurfaceOrientationEnum -> Maybe (RLimits DIM3) -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
+spaceQCustom2 :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> HklBinocularsSurfaceOrientationEnum -> Maybe (RLimits DIM3) -> HklBinocularsQCustomSubProjectionEnum -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQCustom2 det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withForeignPtr g $ \geometry ->
