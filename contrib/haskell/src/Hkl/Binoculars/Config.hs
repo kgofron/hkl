@@ -59,10 +59,8 @@ module Hkl.Binoculars.Config
     , getMask
     , getPreConfig
     , mergeIni
-    , parseEnum
     , readConfig
     , serializeConfig
-    , uncomment
     ) where
 
 
@@ -124,6 +122,7 @@ import           Prelude                           hiding (drop, length, lines,
                                                     putStr, readFile, take,
                                                     takeWhile, unlines, unwords)
 
+import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Exception
 import           Hkl.Lattice
@@ -327,6 +326,54 @@ instance HasFieldValue DestinationTmpl where
     { fvParse = Right . DestinationTmpl . uncomment
     , fvEmit = \(DestinationTmpl t) -> t
     }
+
+-- HklBinocularsQCustomSubProjectionEnum
+
+instance HasFieldValue HklBinocularsQCustomSubProjectionEnum where
+  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
+    where
+      parse :: Text -> Either String HklBinocularsQCustomSubProjectionEnum
+      parse t = parseEnum (err t) t
+
+      err t = "Unsupported "
+              ++ show (typeRep (Proxy :: Proxy HklBinocularsQCustomSubProjectionEnum))
+              ++ " :" ++ unpack t
+              ++ " Supported ones are: "
+              ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
+
+      emit :: HklBinocularsQCustomSubProjectionEnum -> Text
+      emit HklBinocularsQCustomSubProjectionEnum'QxQyQz            = "qx_qy_qz"
+      emit HklBinocularsQCustomSubProjectionEnum'QTthTimestamp     = "q_tth_timestamp"
+      emit HklBinocularsQCustomSubProjectionEnum'QTimestamp        = "q_timestamp"
+      emit HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp = "qpar_qper_timestamp"
+      emit HklBinocularsQCustomSubProjectionEnum'QparQper          = "qpar_qper"
+      emit HklBinocularsQCustomSubProjectionEnum'QPhiQx            = "q_phi_qx"
+      emit HklBinocularsQCustomSubProjectionEnum'QPhiQy            = "q_phi_qy"
+      emit HklBinocularsQCustomSubProjectionEnum'QPhiQz            = "q_phi_qz"
+      emit HklBinocularsQCustomSubProjectionEnum'QStereo           = "q_stereo"
+      emit HklBinocularsQCustomSubProjectionEnum'AnglesZaxisOmega  = "angles_zaxis_omega"
+      emit HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu     = "angles_zaxis_mu"
+      emit HklBinocularsQCustomSubProjectionEnum'XYZ               = "x_y_z"
+      emit HklBinocularsQCustomSubProjectionEnum'YZTimestamp       = "y_z_timestamp"
+      emit HklBinocularsQCustomSubProjectionEnum'QQparQper         = "q_qpar_qper"
+
+-- HklBinocularsSurfaceOrientationEnum
+
+instance HasFieldValue HklBinocularsSurfaceOrientationEnum where
+  fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
+    where
+      err t = "Unsupported "
+              ++ show (typeRep (Proxy :: Proxy HklBinocularsSurfaceOrientationEnum))
+              ++ " :" ++ unpack t
+              ++ " Supported ones are: "
+              ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
+
+      parse :: Text -> Either String HklBinocularsSurfaceOrientationEnum
+      parse t = parseEnum (err t) t
+
+      emit :: HklBinocularsSurfaceOrientationEnum -> Text
+      emit HklBinocularsSurfaceOrientationEnum'Vertical   = "vertical"
+      emit HklBinocularsSurfaceOrientationEnum'Horizontal = "horizontal"
 
 -- InputRange
 
