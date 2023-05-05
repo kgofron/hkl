@@ -78,7 +78,7 @@ import           Hkl.Utils
 data instance Config 'QCustom2Projection
   = BinocularsConfig'QCustom2
     { binocularsConfig'QCustom2'Common :: BinocularsConfig'Common
-    , binocularsConfig'QCustom2'SurfaceOrientation     :: SurfaceOrientation
+    , binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum     :: HklBinocularsSurfaceOrientationEnum
     , binocularsConfig'QCustom2'ProjectionType         :: ProjectionType
     , binocularsConfig'QCustom2'ProjectionResolution   :: Resolutions DIM3
     , binocularsConfig'QCustom2'ProjectionLimits       :: Maybe (RLimits DIM3)
@@ -95,7 +95,7 @@ default'BinocularsConfig'QCustom2 :: Config 'QCustom2Projection
 default'BinocularsConfig'QCustom2
   = BinocularsConfig'QCustom2
     { binocularsConfig'QCustom2'Common = default'BinocularsConfig'Common
-    , binocularsConfig'QCustom2'SurfaceOrientation = SurfaceOrientationVertical
+    , binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum = HklBinocularsSurfaceOrientationEnum'Vertical
     , binocularsConfig'QCustom2'ProjectionType = QCustomProjection
     , binocularsConfig'QCustom2'ProjectionResolution = Resolutions3 0.01 0.01 0.01
     , binocularsConfig'QCustom2'ProjectionLimits  = Nothing
@@ -108,7 +108,7 @@ instance HasIniConfig 'QCustom2Projection where
 
   getConfig (ConfigContent cfg) (Args'QCustom2Projection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities
-    surface_orientation <- parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom2'SurfaceOrientation default'BinocularsConfig'QCustom2)
+    surface_orientation <- parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom2)
     let edatapath = parseMb cfg "input" "datapath"
 
     -- section projection
@@ -145,7 +145,7 @@ instance ToIni (Config 'QCustom2Projection) where
 
   toIni c = toIni (binocularsConfig'QCustom2'Common c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input",    elemF   "surface_orientation" (binocularsConfig'QCustom2'SurfaceOrientation c)
+            Ini { iniSections = fromList [ ("input",    elemF   "surface_orientation" (binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum c)
                                                      <> elemF   "datapath" (binocularsConfig'QCustom2'DataPath c)
                                            )
                                          , ("projection",    elemF   "type" (binocularsConfig'QCustom2'ProjectionType c)
@@ -162,7 +162,7 @@ instance ToIni (Config 'QCustom2Projection) where
 ------------------
 
 {-# INLINE spaceQCustom2 #-}
-spaceQCustom2 :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> SurfaceOrientation -> Maybe (RLimits DIM3) -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
+spaceQCustom2 :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> HklBinocularsSurfaceOrientationEnum -> Maybe (RLimits DIM3) -> QCustomSubProjection -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
 spaceQCustom2 det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withForeignPtr g $ \geometry ->
@@ -209,7 +209,7 @@ processQCustom2P = do
   -- directly from the specific config
   let mlimits = binocularsConfig'QCustom'ProjectionLimits conf
   let res = binocularsConfig'QCustom'ProjectionResolution conf
-  let surfaceOrientation = binocularsConfig'QCustom'SurfaceOrientation conf
+  let surfaceOrientation = binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum conf
   let datapaths = binocularsConfig'QCustom'DataPath conf
   let subprojection = fromJust (binocularsConfig'QCustom'SubProjection conf) -- should not be Maybe
   let projectionType = binocularsConfig'QCustom'ProjectionType conf

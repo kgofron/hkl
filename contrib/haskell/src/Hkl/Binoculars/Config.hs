@@ -51,7 +51,6 @@ module Hkl.Binoculars.Config
     , Resolutions(..)
     , RLimits(..)
     , SampleAxis(..)
-    , SurfaceOrientation(..)
     , ToIni(..)
     , auto
     , auto'
@@ -61,8 +60,10 @@ module Hkl.Binoculars.Config
     , getMask
     , getPreConfig
     , mergeIni
+    , parseEnum
     , readConfig
     , serializeConfig
+    , uncomment
     ) where
 
 
@@ -726,31 +727,6 @@ instance HasFieldValue SampleAxis where
   fieldvalue = FieldValue { fvParse = Right . SampleAxis . uncomment
                           , fvEmit = \(SampleAxis t) -> t
                           }
-
--- SurfaceOrientation
-
-data SurfaceOrientation = SurfaceOrientationVertical
-                        | SurfaceOrientationHorizontal
-  deriving (Eq, Show, Enum, Bounded)
-
-instance Arbitrary SurfaceOrientation where
-  arbitrary = elements ([minBound .. maxBound] :: [SurfaceOrientation])
-
-instance HasFieldValue SurfaceOrientation where
-  fieldvalue = FieldValue { fvParse = parse . strip . uncomment, fvEmit = emit }
-    where
-      err t = "Unsupported "
-              ++ show (typeRep (Proxy :: Proxy SurfaceOrientation))
-              ++ " :" ++ unpack t
-              ++ " Supported ones are: "
-              ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
-
-      parse :: Text -> Either String SurfaceOrientation
-      parse t = parseEnum (err t) t
-
-      emit :: SurfaceOrientation -> Text
-      emit SurfaceOrientationVertical   = "vertical"
-      emit SurfaceOrientationHorizontal = "horizontal"
 
 -- BinocularsPreConfig
 

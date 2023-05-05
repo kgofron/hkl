@@ -146,6 +146,26 @@ instance Enum HklBinocularsDetectorEnum where
 -- Space --
 -----------
 
+#integral_t HklBinocularsSurfaceOrientationEnum
+
+#num HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL
+#num HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL
+
+data HklBinocularsSurfaceOrientationEnum
+  = HklBinocularsSurfaceOrientationEnum'Vertical
+  | HklBinocularsSurfaceOrientationEnum'Horizontal
+  deriving (Bounded, Eq, Show)
+
+
+instance Enum HklBinocularsSurfaceOrientationEnum where
+  toEnum n
+    | n == c'HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL = HklBinocularsSurfaceOrientationEnum'Vertical
+    | n == c'HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL = HklBinocularsSurfaceOrientationEnum'Horizontal
+    | otherwise = error "Non supported HklBinocularsSurfaceOrientationEnum value"
+
+  fromEnum HklBinocularsSurfaceOrientationEnum'Vertical = c'HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL
+  fromEnum HklBinocularsSurfaceOrientationEnum'Horizontal = c'HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL
+
 #opaque_t HklBinocularsSpace
 
 #ccall hkl_binoculars_space_new, \
@@ -191,7 +211,7 @@ type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace 
  -> Ptr Double --  const double *resolutions
  -> CSize -- size_t n_resolutions
  -> Ptr CBool -- const uint8_t *mask
- -> CInt -- surface orientation
+ -> C'HklBinocularsSurfaceOrientationEnum -- surface orientation
  -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
  -> CInt -- size_t n_limits
  -> CDouble -- double index
