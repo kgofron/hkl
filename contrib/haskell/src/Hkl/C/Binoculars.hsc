@@ -113,6 +113,7 @@ data HklBinocularsDetectorEnum
   | HklBinocularsDetectorEnum'Ufxc
   | HklBinocularsDetectorEnum'Merlin
   | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+  deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsDetectorEnum where
   toEnum n

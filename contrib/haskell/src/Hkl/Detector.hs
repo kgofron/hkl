@@ -66,7 +66,7 @@ data Detector a sh where
   Xpad32 :: Detector PyFAI DIM2
   XpadFlatCorrected :: Detector PyFAI DIM2
   ZeroD :: Detector ZeroD DIM0
-  Detector2D :: C'HklBinocularsDetectorEnum -> String -> DIM2 -> Detector Hkl DIM2
+  Detector2D :: HklBinocularsDetectorEnum -> String -> DIM2 -> Detector Hkl DIM2
 
 deriving instance Show (Detector a sh)
 deriving instance Eq (Detector a sh)
@@ -104,26 +104,26 @@ newDetector ZeroD = c'hkl_detector_factory_new 0 >>= newForeignPtr p'hkl_detecto
 newDetector _ = error "Can not use 2D detector with the hkl library"
 
 {-# NOINLINE mkDetector #-}
-mkDetector :: C'HklBinocularsDetectorEnum -> Detector Hkl DIM2
-mkDetector n
-  = unsafePerformIO $ Detector2D n
-    <$> (peekCString =<< c'hkl_binoculars_detector_2d_name_get n)
-    <*> alloca (\width ->
-                   alloca $ \height -> do
-                   c'hkl_binoculars_detector_2d_shape_get n width height
-                   w <- peek width
-                   h <- peek height
-                   return $ ix2 (fromEnum h) (fromEnum w))
+mkDetector :: HklBinocularsDetectorEnum -> Detector Hkl DIM2
+mkDetector d
+  = let n = toEnum . fromEnum $ d
+    in
+      unsafePerformIO $ Detector2D d
+      <$> (peekCString =<< c'hkl_binoculars_detector_2d_name_get n)
+      <*> alloca (\width ->
+                    alloca $ \height -> do
+                     c'hkl_binoculars_detector_2d_shape_get n width height
+                     w <- peek width
+                     h <- peek height
+                     return $ ix2 (fromEnum h) (fromEnum w))
 
 {-# NOINLINE detectors #-}
 detectors :: [Detector Hkl DIM2]
-detectors = unsafePerformIO $ do
-  nd <- c'hkl_binoculars_detector_2d_number_of_detectors
-  return $ map mkDetector [0..toEnum . fromEnum $ nd - 1]
+detectors = unsafePerformIO $ return $ map mkDetector [minBound..maxBound]
 
 -- TODO s140 should be the default
 defaultDetector :: Detector Hkl DIM2
-defaultDetector = mkDetector c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140
+defaultDetector = mkDetector HklBinocularsDetectorEnum'ImxpadS140
 
 parseDetector2D :: Text -> Either String (Detector Hkl DIM2)
 parseDetector2D t = case find (\(Detector2D _ n _) -> n == unpack t) detectors of
@@ -153,7 +153,8 @@ data Normalisation = NoNormalisation | Normalisation
   deriving (Enum)
 
 getPixelsCoordinates :: Detector Hkl DIM2 -> (Int, Int) -> Length Double -> Angle Double -> Normalisation -> IO (Array F DIM3 Double)
-getPixelsCoordinates (Detector2D n _ sh) (ix0, iy0) sdd detrot norm = do
+getPixelsCoordinates (Detector2D d _ sh) (ix0, iy0) sdd detrot norm = do
+  let n = toEnum . fromEnum $ d
   parr <- c'hkl_binoculars_detector_2d_coordinates_get n
   let Z :. height :. width = sh
   c'hkl_binoculars_detector_2d_sixs_calibration n parr (toEnum width) (toEnum height) (toEnum ix0) (toEnum iy0) (CDouble (sdd /~ meter)) (CDouble (detrot /~ radian)) (toEnum . fromEnum $ norm)
@@ -169,12 +170,14 @@ fromPtr sh err ptr =
       return $ fromForeignPtr sh (castForeignPtr arr)
 
 getDetectorDefaultMask :: (MonadThrow m, MonadIO m) => Detector Hkl DIM2 -> m Mask
-getDetectorDefaultMask (Detector2D n _ sh) =
-    fromPtr sh NoDefaultMask =<< liftIO (c'hkl_binoculars_detector_2d_mask_get n)
+getDetectorDefaultMask (Detector2D d _ sh) = do
+  let n = toEnum . fromEnum $ d
+  fromPtr sh NoDefaultMask =<< liftIO (c'hkl_binoculars_detector_2d_mask_get n)
 
 getDetectorMask :: (MonadThrow m, MonadIO m) => Detector Hkl DIM2 -> Text -> m Mask
-getDetectorMask (Detector2D n name sh)  mask = do
+getDetectorMask (Detector2D d name sh)  mask = do
   let  err = MaskShapeNotcompatible (Data.Text.unwords [pack name, ": ", mask])
+  let n = toEnum . fromEnum $ d
   liftIO $ withCString (unpack mask) $
          fromPtr sh err <=< c'hkl_binoculars_detector_2d_mask_load n
 

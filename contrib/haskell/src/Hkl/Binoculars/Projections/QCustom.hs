@@ -265,51 +265,51 @@ mkAttenuation ma att =
                       (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
 
 mkDetector'Sixs'Fly :: Detector Hkl DIM2 -> DataSourcePath Image
-mkDetector'Sixs'Fly det@(Detector2D n _ _)
-  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140 =
-      DataSourcePath'Image
-      (hdf5p $ grouppat 0 (datasetp "scan_data/xpad_image"
-                           `H5Or`
-                           datasetp "scan_data/xpad_s140_image"))
-      det
-  | n == c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED = undefined
-  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70 =
-      DataSourcePath'Image
-      (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_s70_image")
-      det
-  | n == c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M =
-      DataSourcePath'Image
-      (hdf5p $ grouppat 0 $ datasetp "scan_data/eiger_image")
-      det
-  | n == c'HKL_BINOCULARS_DETECTOR_UFXC =
-      DataSourcePath'Image
-      (hdf5p $ grouppat 0 $ datasetp "scan_data/ufxc_sixs_image")
-      det
-  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = undefined
-  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = undefined
-  | otherwise = undefined
+mkDetector'Sixs'Fly det@(Detector2D d _ _)
+  = case d of
+      HklBinocularsDetectorEnum'ImxpadS140 ->
+        DataSourcePath'Image
+        (hdf5p $ grouppat 0 (datasetp "scan_data/xpad_image"
+                              `H5Or`
+                              datasetp "scan_data/xpad_s140_image"))
+        det
+      HklBinocularsDetectorEnum'XpadFlatCorrected -> undefined
+      HklBinocularsDetectorEnum'ImxpadS70 ->
+        DataSourcePath'Image
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_s70_image")
+        det
+      HklBinocularsDetectorEnum'DectrisEiger1M ->
+        DataSourcePath'Image
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/eiger_image")
+        det
+      HklBinocularsDetectorEnum'Ufxc ->
+        DataSourcePath'Image
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/ufxc_sixs_image")
+        det
+      HklBinocularsDetectorEnum'Merlin -> undefined
+      HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
 
 mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourcePath Image
-mkDetector'Sixs'Sbs det@(Detector2D n _ _)
-  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140 =
-      DataSourcePath'Image
-      (hdf5p (datasetpattr ("long_name", "i14-c-c00/dt/xpad.s140/image")
-              `H5Or`
-              datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")))
-      det
-  | n == c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED = undefined
-  | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70 =
-      DataSourcePath'Image
-      (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s70/image"))
-      det
-  | n == c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M =
-      DataSourcePath'Image
-      (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
-      det
-  | n == c'HKL_BINOCULARS_DETECTOR_UFXC = undefined
-  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = undefined
-  | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = undefined
-  | otherwise = undefined
+mkDetector'Sixs'Sbs det@(Detector2D d _ _)
+  = case d of
+      HklBinocularsDetectorEnum'ImxpadS140 ->
+        DataSourcePath'Image
+        (hdf5p (datasetpattr ("long_name", "i14-c-c00/dt/xpad.s140/image")
+                `H5Or`
+                datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")))
+        det
+      HklBinocularsDetectorEnum'XpadFlatCorrected -> undefined
+      HklBinocularsDetectorEnum'ImxpadS70 ->
+        DataSourcePath'Image
+        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s70/image"))
+        det
+      HklBinocularsDetectorEnum'DectrisEiger1M ->
+        DataSourcePath'Image
+        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
+        det
+      HklBinocularsDetectorEnum'Ufxc -> undefined
+      HklBinocularsDetectorEnum'Merlin -> undefined
+      HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
 
 overloadAttenuationPath :: Maybe Double -> Maybe Float -> DataSourcePath Attenuation -> DataSourcePath Attenuation
 overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)

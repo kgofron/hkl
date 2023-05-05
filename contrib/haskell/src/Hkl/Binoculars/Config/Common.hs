@@ -143,18 +143,18 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
         Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
         Just r -> pure r
     detector <- parseFDef cfg "input" "detector" (case inputtype of
-                                                   CristalK6C -> mkDetector c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED
-                                                   MarsFlyscan -> mkDetector c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
-                                                   MarsSbs -> mkDetector c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
+                                                   CristalK6C -> mkDetector HklBinocularsDetectorEnum'XpadFlatCorrected
+                                                   MarsFlyscan -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+                                                   MarsSbs -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
                                                    SixsFlyMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsFlyMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                   SixsFlyMedVEiger -> mkDetector c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M
-                                                   SixsFlyMedVS70 -> mkDetector c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70
+                                                   SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
+                                                   SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70
                                                    SixsFlyScanUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsFlyScanUhv2 -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                   SixsFlyScanUhvGisaxsEiger -> mkDetector c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M
+                                                   SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
                                                    SixsFlyScanUhvTest -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                   SixsFlyScanUhvUfxc -> mkDetector c'HKL_BINOCULARS_DETECTOR_UFXC
+                                                   SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
                                                    SixsSbsFixedDetector -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsSbsMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsSbsMedHFixDetector -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
