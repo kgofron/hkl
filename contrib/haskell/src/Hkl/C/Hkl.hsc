@@ -48,7 +48,7 @@ import           Foreign.C             (CInt(..), CUInt(..), CDouble(..), CSize(
 #ccall hkl_engine_parameters_names_get, Ptr <HklEngine> -> IO (Ptr <darray_string>)
 #ccall hkl_engine_pseudo_axis_get, Ptr <HklEngine> -> CString -> Ptr () -> IO (Ptr <HklParameter>)
 #ccall hkl_engine_pseudo_axis_names_get, Ptr <HklEngine> -> IO (Ptr <darray_string>)
-#ccall hkl_engine_pseudo_axis_values_set, Ptr <HklEngine> -> Ptr CDouble -> CSize -> CInt -> Ptr ()-> IO (Ptr <HklGeometryList>)
+#ccall hkl_engine_pseudo_axis_values_set, Ptr <HklEngine> -> Ptr CDouble -> CSize -> <HklUnitEnum> -> Ptr ()-> IO (Ptr <HklGeometryList>)
 
 
 -- HklEngineList
@@ -76,16 +76,16 @@ import           Foreign.C             (CInt(..), CUInt(..), CDouble(..), CSize(
 #globalvar hkl_geometry_operations_defaults, Ptr ()
 
 #ccall hkl_geometry_add_holder, Ptr <HklGeometry> -> IO (Ptr <HklHolder>)
-#ccall hkl_geometry_axis_values_get, Ptr <HklGeometry> -> Ptr CDouble -> CSize -> CInt -> IO ()
-#ccall hkl_geometry_axis_values_set, Ptr <HklGeometry> -> Ptr CDouble -> CSize -> CInt -> Ptr () -> IO ()
+#ccall hkl_geometry_axis_values_get, Ptr <HklGeometry> -> Ptr CDouble -> CSize -> <HklUnitEnum> -> IO ()
+#ccall hkl_geometry_axis_values_set, Ptr <HklGeometry> -> Ptr CDouble -> CSize -> <HklUnitEnum> -> Ptr () -> IO ()
 #ccall hkl_geometry_axis_names_get, Ptr <HklGeometry> -> IO (Ptr <darray_string>)
 #ccall hkl_geometry_axis_get, Ptr <HklGeometry> -> CString -> Ptr () -> IO (Ptr <HklParameter>)
 #ccall hkl_geometry_detector_rotation_get_binding, Ptr <HklGeometry> -> Ptr <HklDetector> -> IO (Ptr <HklQuaternion>)
 #ccall hkl_geometry_free, Ptr <HklGeometry> -> IO ()
 #ccall hkl_geometry_name_get, Ptr <HklGeometry> -> IO CString
 #ccall hkl_geometry_new, Ptr <HklFactory> -> Ptr (Ptr ()) -> IO (Ptr <HklGeometry>)
-#ccall hkl_geometry_wavelength_get, Ptr <HklGeometry> -> CInt -> IO CDouble
-#ccall hkl_geometry_wavelength_set, Ptr <HklGeometry> -> CDouble -> CInt -> Ptr () -> IO ()
+#ccall hkl_geometry_wavelength_get, Ptr <HklGeometry> -> <HklUnitEnum> -> IO CDouble
+#ccall hkl_geometry_wavelength_set, Ptr <HklGeometry> -> CDouble -> <HklUnitEnum> -> Ptr () -> IO ()
 
 -- HklGeometryList
 
@@ -100,6 +100,7 @@ import           Foreign.C             (CInt(..), CUInt(..), CDouble(..), CSize(
 -- HklHolder
 
 #opaque_t HklHolder
+
 #ccall hkl_holder_add_rotation, Ptr <HklHolder> -> CString -> CDouble -> CDouble -> CDouble -> Ptr <HklUnit> -> IO ()
 #ccall hkl_holder_add_translation, Ptr <HklHolder> -> CString -> CDouble -> CDouble -> CDouble -> Ptr <HklUnit> -> IO ()
 -- HklLattice
@@ -167,3 +168,16 @@ import           Foreign.C             (CInt(..), CUInt(..), CDouble(..), CSize(
 
 #num HKL_UNIT_DEFAULT
 #num HKL_UNIT_USER
+
+data HklUnitEnum
+  = HklUnitEnum'Defaut
+  | HklUnitEnum'User
+
+instance Enum HklUnitEnum where
+  toEnum n
+    | n == c'HKL_UNIT_DEFAULT = HklUnitEnum'Defaut
+    | n == c'HKL_UNIT_USER = HklUnitEnum'User
+    | otherwise = error "Non supported Unit type"
+
+  fromEnum HklUnitEnum'Defaut = c'HKL_UNIT_DEFAULT
+  fromEnum HklUnitEnum'User = c'HKL_UNIT_USER
