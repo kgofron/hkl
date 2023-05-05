@@ -105,6 +105,34 @@ instance Shape sh => Monoid (Cube sh) where
 #num HKL_BINOCULARS_DETECTOR_MERLIN
 #num HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
 
+data HklBinocularsDetectorEnum
+  = HklBinocularsDetectorEnum'ImxpadS140
+  | HklBinocularsDetectorEnum'XpadFlatCorrected
+  | HklBinocularsDetectorEnum'ImxpadS70
+  | HklBinocularsDetectorEnum'DectrisEiger1M
+  | HklBinocularsDetectorEnum'Ufxc
+  | HklBinocularsDetectorEnum'Merlin
+  | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+
+instance Enum HklBinocularsDetectorEnum where
+  toEnum n
+    | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140 = HklBinocularsDetectorEnum'ImxpadS140
+    | n == c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED = HklBinocularsDetectorEnum'XpadFlatCorrected
+    | n == c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70 = HklBinocularsDetectorEnum'ImxpadS70
+    | n == c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M = HklBinocularsDetectorEnum'DectrisEiger1M
+    | n == c'HKL_BINOCULARS_DETECTOR_UFXC = HklBinocularsDetectorEnum'Ufxc
+    | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = HklBinocularsDetectorEnum'Merlin
+    | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+    | otherwise = error "Non supported Detector type"
+
+  fromEnum HklBinocularsDetectorEnum'ImxpadS140 = c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140
+  fromEnum HklBinocularsDetectorEnum'XpadFlatCorrected = c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED
+  fromEnum HklBinocularsDetectorEnum'ImxpadS70 = c'HKL_BINOCULARS_DETECTOR_IMXPAD_S70
+  fromEnum HklBinocularsDetectorEnum'DectrisEiger1M = c'HKL_BINOCULARS_DETECTOR_DECTRIS_EIGER1M
+  fromEnum HklBinocularsDetectorEnum'Ufxc =  c'HKL_BINOCULARS_DETECTOR_UFXC
+  fromEnum HklBinocularsDetectorEnum'Merlin =  c'HKL_BINOCULARS_DETECTOR_MERLIN
+  fromEnum HklBinocularsDetectorEnum'MerlinMedipix3rxQuad = c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
+
 #ccall hkl_binoculars_detector_2d_coordinates_get, <HklBinocularsDetectorEnum> -> IO (Ptr CDouble)
 #ccall hkl_binoculars_detector_2d_mask_get, <HklBinocularsDetectorEnum> -> IO (Ptr CBool)
 #ccall hkl_binoculars_detector_2d_mask_load, <HklBinocularsDetectorEnum> -> CString -> IO (Ptr CBool)
