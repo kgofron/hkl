@@ -254,7 +254,7 @@ type C'ProjectionTypeAngles t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *
  -> CSize -- size_t n_resolutions
  -> Ptr CBool -- const uint8_t *mask
  -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
- -> CInt -- size_t n_limits
+ -> CSize -- size_t n_limits
  -> CString -- const char *sample_axis
  -> IO ()
 
@@ -281,7 +281,7 @@ type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace 
  -> Ptr CBool -- const uint8_t *mask
  -> C'HklBinocularsSurfaceOrientationEnum -- surface orientation
  -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
- -> CInt -- size_t n_limits
+ -> CSize -- size_t n_limits
  -> CDouble -- double index
  -> C'HklBinocularsQCustomSubProjectionEnum -- int subprojection
  -> IO ()
@@ -318,7 +318,7 @@ type C'ProjectionTypeHkl t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *sel
   -> CSize -- size_t n_resolutions
   -> Ptr CBool -- const uint8_t *mask
   -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
-  -> CInt -- size_t n_limits
+  -> CSize -- size_t n_limits
   -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_int32_t" \
