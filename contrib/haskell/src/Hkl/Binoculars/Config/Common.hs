@@ -98,9 +98,33 @@ instance Arbitrary BinocularsConfig'Common where
   arbitrary = genericArbitraryU
 
 instance ToIni  BinocularsConfig'Common where
-  toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF    "ncores" (binocularsConfig'Common'NCores c)
-                                                          <> elemF "destination" (binocularsConfig'Common'Destination c)
-                                                          <> elemF "overwrite" (binocularsConfig'Common'Overwrite c)
+  toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF' "ncores" (binocularsConfig'Common'NCores c)
+                                                          [ "the number of cores use for computation."
+                                                          , "the effective number of core used depends on the real number of core available on your computer."
+                                                          , "at maximum this value could be one less that the pysical number of core."
+                                                          , ""
+                                                          , "default value: <physical number of core>"
+                                                          ]
+                                                          <> elemF' "destination" (binocularsConfig'Common'Destination c)
+                                                          [ "the template used to produce the destination file"
+                                                          , "it can contain these parameters"
+                                                          , "  - {first}      - replaced by the first scan numer of the serie"
+                                                          , "  - {last}       - replaced by the last scan numer of the serie"
+                                                          , "  - {limits}     - replaced by the limits of the final cube or nolimits"
+                                                          , "  - {projection} - the projection name"
+                                                          , ""
+                                                          , "default value: {projection}_{first}-{last}_{limits}.h5"
+                                                          , ""
+                                                          ]
+                                                          <> elemF' "overwrite" (binocularsConfig'Common'Overwrite c)
+                                                          [ " - true: the output file name is always the same, so it is overwriten when"
+                                                          , "recomputed with the same parameter."
+                                                          , " - false: the output is modifier and `_<number>` is added to the filename in order"
+                                                          , " to avoid overwriting them."
+                                                          , ""
+                                                          , "default value: false"
+                                                          , ""
+                                                          ]
                                            )
                                          ,  ("input", elemF      "type" (binocularsConfig'Common'InputType c)
                                                       <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir c)
@@ -209,3 +233,11 @@ elemF k v = [(k,  fvEmit fieldvalue v)]
 
 elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
 elemFMb k = maybe [("# " <> k, "")] (elemF k)
+
+elemF' ::  HasFieldValue a => Text -> a -> [Text] -> [(Text, Text)]
+elemF' k v cs = [ ("#", "")
+                , ("#", k <> ":")
+                , ("#", "")
+                ]
+                <> [("#", c) | c <- cs]
+                <> [(k,  fvEmit fieldvalue v)]
