@@ -23,6 +23,8 @@
 
 #include "datatype99.h"
 
+#include "ccan/array_size/array_size.h"
+
 #include "hkl-binoculars.h"
 #include "hkl-binoculars-cnpy-private.h"
 #include "hkl-quaternion-private.h"
@@ -147,6 +149,10 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                 DETECTOR(MerlinMedipix3RXQuad,
                          SHAPE(515, 515), TILING(256, 256, 3, 3, 55e-6)),
         };
+
+        if (n > ARRAY_SIZE(detectors))
+                n = 0; /* use the first detector as default */
+
         return detectors[n];
 }
 
@@ -501,7 +507,7 @@ void hkl_binoculars_detector_2d_coordinates_save(HklBinocularsDetectorEnum n,
 uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
 {
         const struct detector_t detector = get_detector(n);
-        uint8_t *arr = NULL;
+        uint8_t *arr;
 
         match(detector.type){
                 of(ImXpadS70, imxpad){
@@ -528,6 +534,9 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(MerlinMedipix3RXQuad, tiling){
                         arr = mask_get_tiling(&detector.shape,
                                               tiling);
+                }
+                otherwise {
+                        arr = no_mask(&detector.shape);
                 }
         }
 
