@@ -154,7 +154,15 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <the current directory>"
                                                       ]
-                                                      <> elemFMb "inputtmpl" (binocularsConfig'Common'Tmpl c)
+                                                      <> elemFMb' "inputtmpl" (binocularsConfig'Common'Tmpl c)
+                                                      [ "data files are matched with this template in order to decide if it must be used for computation."
+                                                      , ""
+                                                      , "the template is pre-processed with the printf logic and an integer value comming from the the `inputrange`"
+                                                      , "for example with the default value `%05d` and this `inputrange=1-10`, all files which contains"
+                                                      , "00001, 00002, ... 00010 are used during the computation."
+                                                      , ""
+                                                      , "default value: `%05d`"
+                                                      ]
                                                       <> elemF   "inputrange" (binocularsConfig'Common'InputRange c)
                                                       <> elemF   "detector" (binocularsConfig'Common'Detector c)
                                                       <> elemF   "centralpixel" (binocularsConfig'Common'Centralpixel c)
@@ -260,15 +268,20 @@ elemF k v = [(k,  fvEmit fieldvalue v)]
 elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
 elemFMb k = maybe [("# " <> k, "")] (elemF k)
 
-elemDoc :: Text -> [Text] -> [(Text, Text)]
-elemDoc k cs = [ ("#", "")
-               , ("#", k <> ":")
-               , ("#", "")
-               ]
-               <> [("#", c) | c <- cs <> [""]]
+elemDoc :: Text -> [Text] -> Bool -> [(Text, Text)]
+elemDoc k cs o = [ ("#", "")
+                 , ("#", k <> case o of
+                                False -> ":"
+                                True  -> ": (optional)")
+                 , ("#", "")
+                 ]
+                 <> [("#", c) | c <- cs <> [""]]
+
+elemF'' ::  HasFieldValue a => Text -> a -> [Text] -> Bool -> [(Text, Text)]
+elemF'' k v cs o = elemDoc k cs o <> [(k,  fvEmit fieldvalue v)]
 
 elemF' ::  HasFieldValue a => Text -> a -> [Text] -> [(Text, Text)]
-elemF' k v cs = elemDoc k cs <> [(k,  fvEmit fieldvalue v)]
+elemF' k v cs = elemF'' k v cs False
 
 elemFMb' :: HasFieldValue a => Text -> Maybe a -> [Text] -> [(Text, Text)]
-elemFMb' k m cs = maybe (elemDoc k cs <> [("# " <> k, "")]) (\a -> elemF' k a cs) m
+elemFMb' k m cs = maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF'' k a cs True) m
