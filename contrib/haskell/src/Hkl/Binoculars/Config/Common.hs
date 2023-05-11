@@ -126,7 +126,29 @@ instance ToIni  BinocularsConfig'Common where
                                                           , ""
                                                           ]
                                            )
-                                         ,  ("input", elemF      "type" (binocularsConfig'Common'InputType c)
+                                         ,  ("input", elemF'     "type" (binocularsConfig'Common'InputType c)
+                                                      ([ "Define the experimental setup and the type of scan used to acquire the data"
+                                                       , ""
+                                                       , "This parameter defines how to find the datas in the hdf5 file."
+                                                       , ""
+                                                       , "the list of the available values are:"
+                                                       , ""
+                                                       ]
+                                                       <> [" - " <> fvEmit fieldvalue v | v <- [minBound..maxBound :: InputType]]
+                                                       <> [ ""
+                                                          , "default value: sixs:flyscanuhv"
+                                                          , ""
+                                                          , "`sbs` means step by step scan."
+                                                          , ""
+                                                          , "`fly` or `flyscan` means flyscan."
+                                                          , ""
+                                                          , "`medh` or `medv` or `uhv` refers to the diffractometer."
+                                                          , ""
+                                                          , "Some configurations specify the detector like eiger/s70..."
+                                                          , "look at the `detector` parameter if you need to select another one."
+                                                          , ""
+                                                          ]
+                                                      )
                                                       <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir c)
                                                       <> elemFMb "inputtmpl" (binocularsConfig'Common'Tmpl c)
                                                       <> elemF   "inputrange" (binocularsConfig'Common'InputRange c)
