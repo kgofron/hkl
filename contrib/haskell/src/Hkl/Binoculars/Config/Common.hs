@@ -190,7 +190,15 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "default value: `ImXpadS140`"
                                                           ]
                                                       )
-                                                      <> elemF   "centralpixel" (binocularsConfig'Common'Centralpixel c)
+                                                      <> elemF' "centralpixel" (binocularsConfig'Common'Centralpixel c)
+                                                      [ "x,y coordinates in pixels of the direct beam on the detector."
+                                                      , ""
+                                                      , "with `sdd` and `detrot` this parameter allow to set the"
+                                                      , "detector position on the detector's arm when all motors"
+                                                      , "are set equal to `0`."
+                                                      , ""
+                                                      , "default value: `0,0`"
+                                                      ]
                                                       <> elemF   "sdd" (binocularsConfig'Common'Sdd c)
                                                       <> elemF   "detrot" (binocularsConfig'Common'Detrot c)
                                                       <> elemFMb "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient c)
