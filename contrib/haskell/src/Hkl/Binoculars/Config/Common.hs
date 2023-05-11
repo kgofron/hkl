@@ -199,8 +199,24 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `0,0`"
                                                       ]
-                                                      <> elemF   "sdd" (binocularsConfig'Common'Sdd c)
-                                                      <> elemF   "detrot" (binocularsConfig'Common'Detrot c)
+                                                      <> elemF' "sdd" (binocularsConfig'Common'Sdd c)
+                                                      [ "sample-detector-distance expressed in meter."
+                                                      , ""
+                                                      , "with `centralpixel` and `detrot` this parameter allow to set the"
+                                                      , "detector position on the detector's arm when all motors"
+                                                      , "are set equal to `0`."
+                                                      , ""
+                                                      , "default value: `1.0`"
+                                                      ]
+                                                      <> elemF' "detrot" (binocularsConfig'Common'Detrot c)
+                                                      [ "rotation of the detector along the x axis expressed in Degrees."
+                                                      , ""
+                                                      , "with `centralpixel` and `sdd` this parameter allow to set the"
+                                                      , "detector position on the detector's arm when all motors"
+                                                      , "are set equal to `0`."
+                                                      , ""
+                                                      , "default value: `0.0`"
+                                                      ]
                                                       <> elemFMb "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient c)
                                                       <> elemFMb "attenuation_max" (binocularsConfig'Common'AttenuationMax c)
                                                       <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
