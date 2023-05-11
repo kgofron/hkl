@@ -217,7 +217,30 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `0.0`"
                                                       ]
-                                                      <> elemFMb "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient c)
+                                                      <> elemFMb' "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient c)
+                                                      ["the attenuation coefficient used to correct the detector's data."
+                                                      , ""
+                                                      , " `<not set>` - no correction is applyed"
+                                                      , " `value`     - a correction is applyed"
+                                                      , ""
+                                                      , "The `value` depends on the energy of the experiment."
+                                                      , ""
+                                                      , "On Sixs there is two different kind of attenuation system."
+                                                      , " `new attenuation` - based on piezo actuators (fast)"
+                                                      , " `old attenuation` - based on pneumatic` actuators (slower)"
+                                                      , ""
+                                                      , "both system save the same kind of data's in the data files."
+                                                      , "An attenuation value `v` at each step of the scan which allows"
+                                                      , "to compute the image correction with this formula:"
+                                                      , ""
+                                                      , "  `attenuation_coef ** v`"
+                                                      , ""
+                                                      , "The only difference is a shift of the index for the the new attenuation."
+                                                      , "The applyed correction for the n-th point is computed with the `value`"
+                                                      , "at n + 2"
+                                                      , ""
+                                                      , "default value: <not set>"
+                                                      ]
                                                       <> elemFMb "attenuation_max" (binocularsConfig'Common'AttenuationMax c)
                                                       <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
                                                       <> elemFMb "wavelength" (binocularsConfig'Common'Wavelength c)
