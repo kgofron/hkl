@@ -103,31 +103,29 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "the effective number of core used depends on the real number of core available on your computer."
                                                           , "at maximum this value could be one less that the pysical number of core."
                                                           , ""
-                                                          , "default value: <physical number of core>"
+                                                          , "default value: `<physical number of core>`"
                                                           ]
                                                           <> elemF' "destination" (binocularsConfig'Common'Destination c)
                                                           [ "the template used to produce the destination file"
                                                           , "it can contain these parameters"
-                                                          , "  - {first}      - replaced by the first scan numer of the serie"
-                                                          , "  - {last}       - replaced by the last scan numer of the serie"
-                                                          , "  - {limits}     - replaced by the limits of the final cube or nolimits"
-                                                          , "  - {projection} - the projection name"
+                                                          , "  `{first}`      - replaced by the first scan numer of the serie"
+                                                          , "  `{last}`       - replaced by the last scan numer of the serie"
+                                                          , "  `{limits}`     - replaced by the limits of the final cube or nolimits"
+                                                          , "  `{projection}` - the projection name"
                                                           , ""
-                                                          , "default value: {projection}_{first}-{last}_{limits}.h5"
+                                                          , "default value: `{projection}_{first}-{last}_{limits}.h5`"
                                                           ]
                                                           <> elemF' "overwrite" (binocularsConfig'Common'Overwrite c)
-                                                          [ " - true: the output file name is always the same, so it is overwriten when"
+                                                          [ " `true` - the output file name is always the same, so it is overwriten when"
                                                           , "recomputed with the same parameter."
-                                                          , " - false: the output is modifier and `_<number>` is added to the filename in order"
+                                                          , " `false` - the output is modifier and `_<number>` is added to the filename in order"
                                                           , " to avoid overwriting them."
                                                           , ""
-                                                          , "default value: false"
+                                                          , "default value: `false`"
                                                           ]
                                            )
-                                         ,  ("input", elemF'     "type" (binocularsConfig'Common'InputType c)
+                                         ,  ("input", elemF' "type" (binocularsConfig'Common'InputType c)
                                                       ([ "Define the experimental setup and the type of scan used to acquire the data"
-                                                       , ""
-                                                       , "This parameter defines how to find the datas in the hdf5 file."
                                                        , ""
                                                        , "the list of the available values are:"
                                                        , ""
@@ -143,7 +141,9 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "Some configurations specify the detector like eiger/s70..."
                                                           , "look at the `detector` parameter if you need to select another one."
                                                           , ""
-                                                          , "default value: sixs:flyscanuhv"
+                                                          , "This parameter defines how to find the datas in the hdf5 file."
+                                                          , ""
+                                                          , "default value: `sixs:flyscanuhv`"
                                                           ]
                                                       )
                                                       <> elemFMb' "nexusdir" (binocularsConfig'Common'Nexusdir c)
@@ -158,12 +158,22 @@ instance ToIni  BinocularsConfig'Common where
                                                       [ "data files are matched with this template in order to decide if it must be used for computation."
                                                       , ""
                                                       , "the template is pre-processed with the printf logic and an integer value comming from the the `inputrange`"
-                                                      , "for example with the default value `%05d` and this `inputrange=1-10`, all files which contains"
+                                                      , "for example with the default value `%05d` and this `inputrange=1-10`, all supported files which contains"
                                                       , "00001, 00002, ... 00010 are used during the computation."
                                                       , ""
                                                       , "default value: `%05d`"
                                                       ]
-                                                      <> elemF   "inputrange" (binocularsConfig'Common'InputRange c)
+                                                      <> elemF' "inputrange" (binocularsConfig'Common'InputRange c)
+                                                      [ "Indexes of the scans you want to process"
+                                                      , ""
+                                                      , "There is two ways to enter these values."
+                                                      , "  `n`         - a single scan with index n"
+                                                      , "  `n-m`       - a range of scans from n to m (included)"
+                                                      , ""
+                                                      , "  `n-m,p,...` - combination of scans indexes separated by a coma (no space allowed)."
+                                                      , ""
+                                                      , "default value: `1`"
+                                                      ]
                                                       <> elemF   "detector" (binocularsConfig'Common'Detector c)
                                                       <> elemF   "centralpixel" (binocularsConfig'Common'Centralpixel c)
                                                       <> elemF   "sdd" (binocularsConfig'Common'Sdd c)
@@ -275,7 +285,11 @@ elemDoc k cs o = [ ("#", "")
                                 True  -> ": (optional)")
                  , ("#", "")
                  ]
-                 <> [("#", c) | c <- cs <> [""]]
+                 <> [("#", c) | c <- cs <> case o of
+                                            False -> [""]
+                                            True -> [ ""
+                                                   , "uncomment and edit the next line if you want to modify the value"
+                                                   ]]
 
 elemF'' ::  HasFieldValue a => Text -> a -> [Text] -> Bool -> [(Text, Text)]
 elemF'' k v cs o = elemDoc k cs o <> [(k,  fvEmit fieldvalue v)]
