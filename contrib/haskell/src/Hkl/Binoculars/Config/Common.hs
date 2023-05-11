@@ -241,7 +241,19 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <not set>"
                                                       ]
-                                                      <> elemFMb "attenuation_max" (binocularsConfig'Common'AttenuationMax c)
+                                                      <> elemFMb' "attenuation_max" (binocularsConfig'Common'AttenuationMax c)
+                                                      [ "maximum attenuation allow for the attenuation correction."
+                                                      , ""
+                                                      , " `<not set>` - always apply the attenuation correction."
+                                                      , " `max`       - apply the attenuation if `v` is lower or equal to `max`"
+                                                      , ""
+                                                      , "`v` is the value stored by the attenuation system in the data file."
+                                                      , ""
+                                                      , "This parameter has an effect only if the `attenuation_coefficient`"
+                                                      , "was previously set."
+                                                      , ""
+                                                      , "default value: <not set>"
+                                                      ]
                                                       <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
                                                       <> elemFMb "wavelength" (binocularsConfig'Common'Wavelength c)
                                                       <> elemFMb "image_sum_max" (binocularsConfig'Common'ImageSumMax c)
