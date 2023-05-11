@@ -254,9 +254,36 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <not set>"
                                                       ]
-                                                      <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
-                                                      <> elemFMb "wavelength" (binocularsConfig'Common'Wavelength c)
-                                                      <> elemFMb "image_sum_max" (binocularsConfig'Common'ImageSumMax c)
+                                                      <> elemFMb' "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
+                                                      [ "name of the file which contain the detector mask or `default`"
+                                                      , ""
+                                                      , "The supported type of file is for now only .npy"
+                                                      , ""
+                                                      , "the `default` value can be set in order to use the default"
+                                                      , "mask of the detector. Some of them have by default some area"
+                                                      , "which required to be masked (pixels with non standard surface, "
+                                                      , "area with holes)."
+                                                      , ""
+                                                      , "Most of the time a mask file was generated during ther experiment."
+                                                      , ""
+                                                      , "default value: <not set>"
+                                                      ]
+                                                      <> elemFMb' "wavelength" (binocularsConfig'Common'Wavelength c)
+                                                      [ "overwrite the wavelength from the data file with the one provided."
+                                                      , ""
+                                                      , " `<not set>`  - use the data file wavelength"
+                                                      , " `wavelength` - overwrite the data file value with this one."
+                                                      , ""
+                                                      , "default value: <not set>"
+                                                      ]
+                                                      <> elemFMb' "image_sum_max" (binocularsConfig'Common'ImageSumMax c)
+                                                      [ "maximum intensity value allow for the sum of all pixels in an image in order to process it."
+                                                      , ""
+                                                      , " `<not set>` - process all images."
+                                                      , " `max`       - process images only if the sum of all the pixels is lower than `max`"
+                                                      , ""
+                                                      , "default value: <not set>"
+                                                      ]
                                             )
                                          ]
 
