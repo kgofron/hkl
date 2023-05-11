@@ -15,6 +15,7 @@ module Hkl.Detector
        , SomeDetector(..)
        , ZeroD
        , defaultDetector
+       , detectors
        , getDetectorMask
        , getDetectorDefaultMask
        , getPixelsCoordinates

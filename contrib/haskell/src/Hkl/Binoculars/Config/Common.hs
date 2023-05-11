@@ -40,7 +40,7 @@ import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
                                                     section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.List.NonEmpty                (NonEmpty (..))
-import           Data.Text                         (Text)
+import           Data.Text                         (Text, pack)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Interval                  (singleton)
@@ -166,7 +166,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       <> elemF' "inputrange" (binocularsConfig'Common'InputRange c)
                                                       [ "Indexes of the scans you want to process"
                                                       , ""
-                                                      , "There is two ways to enter these values."
+                                                      , "There are two ways to enter these values."
                                                       , "  `n`         - a single scan with index n"
                                                       , "  `n-m`       - a range of scans from n to m (included)"
                                                       , ""
@@ -174,7 +174,22 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `1`"
                                                       ]
-                                                      <> elemF   "detector" (binocularsConfig'Common'Detector c)
+                                                      <> elemF' "detector" (binocularsConfig'Common'Detector c)
+                                                      ([ "The detector name"
+                                                       , ""
+                                                       , "In order to process the data, we need the 3D position of each pixel"
+                                                       , "in the laboratory basis. Since every detector has it's own geometry,"
+                                                       , "it is necessary to provide this information unambiguously."
+                                                       , ""
+                                                       , "Some data files contain more than one detectors, so this parameter allows"
+                                                       , "to select the right one."
+                                                       , ""
+                                                       , "the list of known detectors is:"]
+                                                       <> [" - " <> pack n | (Detector2D _ n _) <- detectors]
+                                                       <> [ ""
+                                                          , "default value: `ImXpadS140`"
+                                                          ]
+                                                      )
                                                       <> elemF   "centralpixel" (binocularsConfig'Common'Centralpixel c)
                                                       <> elemF   "sdd" (binocularsConfig'Common'Sdd c)
                                                       <> elemF   "detrot" (binocularsConfig'Common'Detrot c)
