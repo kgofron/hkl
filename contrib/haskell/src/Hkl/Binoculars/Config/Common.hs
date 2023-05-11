@@ -114,7 +114,6 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "  - {projection} - the projection name"
                                                           , ""
                                                           , "default value: {projection}_{first}-{last}_{limits}.h5"
-                                                          , ""
                                                           ]
                                                           <> elemF' "overwrite" (binocularsConfig'Common'Overwrite c)
                                                           [ " - true: the output file name is always the same, so it is overwriten when"
@@ -123,7 +122,6 @@ instance ToIni  BinocularsConfig'Common where
                                                           , " to avoid overwriting them."
                                                           , ""
                                                           , "default value: false"
-                                                          , ""
                                                           ]
                                            )
                                          ,  ("input", elemF'     "type" (binocularsConfig'Common'InputType c)
@@ -136,8 +134,6 @@ instance ToIni  BinocularsConfig'Common where
                                                        ]
                                                        <> [" - " <> fvEmit fieldvalue v | v <- [minBound..maxBound :: InputType]]
                                                        <> [ ""
-                                                          , "default value: sixs:flyscanuhv"
-                                                          , ""
                                                           , "`sbs` means step by step scan."
                                                           , ""
                                                           , "`fly` or `flyscan` means flyscan."
@@ -147,9 +143,17 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "Some configurations specify the detector like eiger/s70..."
                                                           , "look at the `detector` parameter if you need to select another one."
                                                           , ""
+                                                          , "default value: sixs:flyscanuhv"
                                                           ]
                                                       )
-                                                      <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir c)
+                                                      <> elemFMb' "nexusdir" (binocularsConfig'Common'Nexusdir c)
+                                                      [ "Directory path where binoculars-ng looks for the data."
+                                                      , ""
+                                                      , "All sub directories are explored."
+                                                      , "It can be relative to the current directory or absolute"
+                                                      , ""
+                                                      , "default value: <the current directory>"
+                                                      ]
                                                       <> elemFMb "inputtmpl" (binocularsConfig'Common'Tmpl c)
                                                       <> elemF   "inputrange" (binocularsConfig'Common'InputRange c)
                                                       <> elemF   "detector" (binocularsConfig'Common'Detector c)
@@ -256,10 +260,15 @@ elemF k v = [(k,  fvEmit fieldvalue v)]
 elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
 elemFMb k = maybe [("# " <> k, "")] (elemF k)
 
+elemDoc :: Text -> [Text] -> [(Text, Text)]
+elemDoc k cs = [ ("#", "")
+               , ("#", k <> ":")
+               , ("#", "")
+               ]
+               <> [("#", c) | c <- cs <> [""]]
+
 elemF' ::  HasFieldValue a => Text -> a -> [Text] -> [(Text, Text)]
-elemF' k v cs = [ ("#", "")
-                , ("#", k <> ":")
-                , ("#", "")
-                ]
-                <> [("#", c) | c <- cs]
-                <> [(k,  fvEmit fieldvalue v)]
+elemF' k v cs = elemDoc k cs <> [(k,  fvEmit fieldvalue v)]
+
+elemFMb' :: HasFieldValue a => Text -> Maybe a -> [Text] -> [(Text, Text)]
+elemFMb' k m cs = maybe (elemDoc k cs <> [("# " <> k, "")]) (\a -> elemF' k a cs) m
