@@ -230,15 +230,120 @@ instance Arbitrary BinocularsConfig'Sample where
   arbitrary = genericArbitraryU
 
 instance ToIni BinocularsConfig'Sample where
-  toIni c = Ini { iniSections = fromList [ ("input", elemFMb "a" (binocularsConfig'Sample'A c)
-                                                     <> elemFMb "b" (binocularsConfig'Sample'B c)
-                                                     <> elemFMb "c" (binocularsConfig'Sample'C c)
-                                                     <> elemFMb "alpha" (binocularsConfig'Sample'Alpha c)
-                                                     <> elemFMb "beta" (binocularsConfig'Sample'Beta c)
-                                                     <> elemFMb "gamma" (binocularsConfig'Sample'Gamma c)
-                                                     <> elemFMb "ux" (binocularsConfig'Sample'Ux c)
-                                                     <> elemFMb "uy" (binocularsConfig'Sample'Uy c)
-                                                     <> elemFMb "uz" (binocularsConfig'Sample'Uz c)
+  toIni c = Ini { iniSections = fromList [ ("input", elemFMb' "a" (binocularsConfig'Sample'A c)
+                                                     [ "`a` parameter of the sample lattice (same unit than the wavelength)."
+                                                     , ""
+                                                     , "This parameter with the 5 others, `b`, `c`, `alpha`, `beta` and `gamma`"
+                                                     , "can be set in order to overwrite the values from the data file."
+                                                     , ""
+                                                     , " `<not set>` - read `a` from the data file."
+                                                     , " `a`         - override `a` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "b" (binocularsConfig'Sample'B c)
+                                                     [ "`b` parameter of the sample lattice (same unit than the wavelength)."
+                                                     , ""
+                                                     , "This parameter with the 5 others, `a`, `c`, `alpha`, `beta` and `gamma`"
+                                                     , "can be set in order to overwrite the values from the data file."
+                                                     , ""
+                                                     , " `<not set>` - read `b` from the data file."
+                                                     , " `b`         - override `b` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "c" (binocularsConfig'Sample'C c)
+                                                     [ "`c` parameter of the sample lattice (same unit than the wavelength)."
+                                                     , ""
+                                                     , "This parameter with the 5 others, `a`, `b`, `alpha`, `beta` and `gamma`"
+                                                     , "can be set in order to overwrite the values from the data file."
+                                                     , ""
+                                                     , " `<not set>` - read `c` from the data file."
+                                                     , " `c`         - override `c` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "alpha" (binocularsConfig'Sample'Alpha c)
+                                                     [ "`alpha` parameter of the sample lattice (Degree)."
+                                                     , ""
+                                                     , "This parameter with the 5 others, `a`, `b`, `c`, `beta` and `gamma`"
+                                                     , "can be set in order to overwrite the values from the data file."
+                                                     , ""
+                                                     , " `<not set>` - read `alpha` from the data file."
+                                                     , " `alpha`     - override `alpha` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "beta" (binocularsConfig'Sample'Beta c)
+                                                     [ "`beta` parameter of the sample lattice (Degree)."
+                                                     , ""
+                                                     , "This parameter with the 5 others, `a`, `b`, `c`, `alpha`, and `gamma`"
+                                                     , "can be set in order to overwrite the values from the data file."
+                                                     , ""
+                                                     , " `<not set>` - read `beta` from the data file."
+                                                     , " `beta`      - override `beta` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "gamma" (binocularsConfig'Sample'Gamma c)
+                                                     [ "`gamma` parameter of the sample lattice (Degree)."
+                                                     , ""
+                                                     , "This parameter with the 5 others, `a`, `b`, `c`, `alpha` and `beta`"
+                                                     , "can be set in order to overwrite the values from the data file."
+                                                     , ""
+                                                     , " `<not set>` - read `gamma` from the data file."
+                                                     , " `gamma`     - override `gamma` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "ux" (binocularsConfig'Sample'Ux c)
+                                                     [ "`ux` rotation of the sample around the x axis"
+                                                     , ""
+                                                     , "`ux`, `uy`, `uz` are the eulerian angles, which define"
+                                                     , "the orientation of the sample lattice, relatively to"
+                                                     , "the sample holder."
+                                                     , ""
+                                                     , "the rotation is computed like this:"
+                                                     , ""
+                                                     , "Ux * Uy * Uz"
+                                                     , ""
+                                                     , " `<not set>` - read `ux` from the data file."
+                                                     , " `ux`        - override `ux` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "uy" (binocularsConfig'Sample'Uy c)
+                                                     [ "`uy` rotation of the sample around the y axis"
+                                                     , ""
+                                                     , "`ux`, `uy`, `uz` are the eulerian angles, which define"
+                                                     , "the orientation of the sample lattice, relatively to"
+                                                     , "the sample holder."
+                                                     , ""
+                                                     , "the rotation is computed like this:"
+                                                     , ""
+                                                     , "Ux * Uy * Uz"
+                                                     , ""
+                                                     , " `<not set>` - read `uy` from the data file."
+                                                     , " `uy`        - override `uy` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
+                                                     <> elemFMb' "uz" (binocularsConfig'Sample'Uz c)
+                                                     [ "`uz` rotation of the sample around the z axis"
+                                                     , ""
+                                                     , "`ux`, `uy`, `uz` are the eulerian angles, which define"
+                                                     , "the orientation of the sample lattice, relatively to"
+                                                     , "the sample holder."
+                                                     , ""
+                                                     , "the rotation is computed like this:"
+                                                     , ""
+                                                     , "Ux * Uy * Uz"
+                                                     , ""
+                                                     , " `<not set>` - read `uz` from the data file."
+                                                     , " `uz`        - override `uz` with this value."
+                                                     , ""
+                                                     , "default value: <not set>"
+                                                     ]
                                            )
                                          ]
                 , iniGlobals = []

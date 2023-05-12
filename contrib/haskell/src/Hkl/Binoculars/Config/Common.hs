@@ -25,7 +25,9 @@ module Hkl.Binoculars.Config.Common
     ( BinocularsConfig'Common(..)
     , default'BinocularsConfig'Common
     , elemF
+    , elemF' -- Rename into elemF
     , elemFMb
+    , elemFMb' -- Rename intoo elemFMb
     , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
