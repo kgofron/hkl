@@ -242,6 +242,15 @@ static inline double *coordinates_rectangle(const struct shape_t *shape,
 
 }
 
+static inline void flip_z(const struct shape_t *shape, double *arr)
+{
+        int i;
+        double *z = z_coordinates(arr, *shape);
+
+        for(i=0; i<shape_size(*shape); ++i)
+                z[i] *= -1;
+}
+
 static inline double *coordinates_get_square(const struct shape_t *shape,
                                              const struct square_t *square)
 {
@@ -467,6 +476,7 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                 of(Eiger1M, tiling){
                         arr = coordinates_get_square(&detector.shape,
                                                      &tiling->square);
+                        flip_z(&detector.shape, arr);
                 }
                 of(Ufxc, square){
                         arr = coordinates_get_square(&detector.shape,
