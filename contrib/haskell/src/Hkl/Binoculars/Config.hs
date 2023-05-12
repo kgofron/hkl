@@ -53,6 +53,7 @@ module Hkl.Binoculars.Config
     , ToIni(..)
     , auto
     , auto'
+    , dataPathComment
     , destination'
     , files
     , getCapabilities
@@ -226,6 +227,14 @@ readConfig mf = do
       fixHeader l = case findIndex (== '#' ) l of
         Nothing  -> l
         (Just n) -> take n l
+
+dataPathComment :: [Text]
+dataPathComment = [ "`datapath` internal value used to find the data in the data file."
+                  , ""
+                  , "This value is for expert only."
+                  , ""
+                  , "default value: <not set>"
+                  ]
 
 class HasIniConfig (a :: ProjectionType) where
 
@@ -433,21 +442,21 @@ instance HasFieldValue InputTmpl where
 data InputType = CristalK6C
                | MarsFlyscan
                | MarsSbs
-               | SixsFlyMedH
-               | SixsFlyMedV
-               | SixsFlyMedVEiger
-               | SixsFlyMedVS70
-               | SixsFlyScanUhv
-               | SixsFlyScanUhv2
-               | SixsFlyScanUhvGisaxsEiger
-               | SixsFlyScanUhvTest
-               | SixsFlyScanUhvUfxc
-               | SixsSbsFixedDetector
-               | SixsSbsMedH
-               | SixsSbsMedHFixDetector
-               | SixsSbsMedV
-               | SixsSbsMedVFixDetector
-               | SixsSbsUhv
+               | SixsFlyMedH  -- ok
+               | SixsFlyMedV  -- ok
+               | SixsFlyMedVEiger  -- old
+               | SixsFlyMedVS70 -- old
+               | SixsFlyScanUhv --supress
+               | SixsFlyScanUhv2  -- rename sixs:flyuhv
+               | SixsFlyScanUhvGisaxsEiger  -- sixs:uhvgisaxs
+               | SixsFlyScanUhvTest  --supress
+               | SixsFlyScanUhvUfxc  --old
+               | SixsSbsFixedDetector  -- supress
+               | SixsSbsMedH  -- ok
+               | SixsSbsMedHFixDetector  -- rename sixs:medhgisaxs
+               | SixsSbsMedV  -- ok
+               | SixsSbsMedVFixDetector -- split sixs:medvgisaxs
+               | SixsSbsUhv -- ok
   deriving (Eq, Show, Enum, Bounded)
 
 instance Arbitrary InputType where
