@@ -902,7 +902,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -924,7 +924,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -946,7 +946,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -968,7 +968,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -990,7 +990,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -1012,7 +1012,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -1034,7 +1034,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -1056,7 +1056,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -1078,7 +1078,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -1101,7 +1101,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -1123,7 +1123,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
@@ -1186,7 +1186,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                 if(not_masked(masked, i)){              \
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 0); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \

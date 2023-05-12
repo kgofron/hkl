@@ -68,6 +68,8 @@ sixs:
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_1.ini 913
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_1.ini 912-913
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_2.ini 912-913
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run1/20201403_Bellec/binoculars/config1q.txt 50-55
+	$(PROCESS) data/test/config_sixs_ruche_qcustom2_3.ini 50-55
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini
