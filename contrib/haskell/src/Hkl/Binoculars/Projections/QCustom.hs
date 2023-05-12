@@ -231,8 +231,8 @@ instance ToIni (Config 'QCustomProjection) where
 
   toIni c = toIni (binocularsConfig'QCustom'Common c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input",    elemF   "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum c)
-                                                     <> elemF   "datapath" (binocularsConfig'QCustom'DataPath c)
+            Ini { iniSections = fromList [ ("input",    elemF "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum c)
+                                                     <> elemF' "datapath" (binocularsConfig'QCustom'DataPath c) dataPathComment
                                            )
                                          , ("projection",    elemF   "type" (binocularsConfig'QCustom'ProjectionType c)
                                                           <> elemF   "resolution" (binocularsConfig'QCustom'ProjectionResolution c)
@@ -415,7 +415,9 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                                                                `H5Or`
                                                                                datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")
                                                                                `H5Or`
-                                                                               datasetp "UHV_MU"))
+                                                                               datasetp "UHV_MU"
+                                                                               `H5Or`
+                                                                               datasetp "mu_xps"))
 
               , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
                                                                                `H5Or`

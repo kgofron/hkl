@@ -71,6 +71,10 @@ import           Hkl.Utils
 -- QCustom2 Projection --
 -------------------------
 
+-- TODO
+-- detecter automatiquement si le scan est SBS ou flyscan.
+-- parametre type pour la geometry. (uhv, medh, medv, uhvfix etc...)
+
 ------------
 -- Config --
 ------------
@@ -146,7 +150,7 @@ instance ToIni (Config 'QCustom2Projection) where
   toIni c = toIni (binocularsConfig'QCustom2'Common c)
             `mergeIni`
             Ini { iniSections = fromList [ ("input",    elemF   "surface_orientation" (binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum c)
-                                                     <> elemF   "datapath" (binocularsConfig'QCustom2'DataPath c)
+                                                     <> elemF'  "datapath" (binocularsConfig'QCustom2'DataPath c) dataPathComment
                                            )
                                          , ("projection",    elemF   "type" (binocularsConfig'QCustom2'ProjectionType c)
                                                           <> elemF   "resolution" (binocularsConfig'QCustom2'ProjectionResolution c)
