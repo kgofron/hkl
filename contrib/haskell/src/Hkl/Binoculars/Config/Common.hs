@@ -25,9 +25,7 @@ module Hkl.Binoculars.Config.Common
     ( BinocularsConfig'Common(..)
     , default'BinocularsConfig'Common
     , elemF
-    , elemF' -- Rename into elemF
     , elemFMb
-    , elemFMb' -- Rename intoo elemFMb
     , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
@@ -100,14 +98,14 @@ instance Arbitrary BinocularsConfig'Common where
   arbitrary = genericArbitraryU
 
 instance ToIni  BinocularsConfig'Common where
-  toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF' "ncores" (binocularsConfig'Common'NCores c)
+  toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF "ncores" (binocularsConfig'Common'NCores c)
                                                           [ "the number of cores use for computation."
                                                           , "the effective number of core used depends on the real number of core available on your computer."
                                                           , "at maximum this value could be one less that the pysical number of core."
                                                           , ""
                                                           , "default value: `<physical number of core>`"
                                                           ]
-                                                          <> elemF' "destination" (binocularsConfig'Common'Destination c)
+                                                          <> elemF "destination" (binocularsConfig'Common'Destination c)
                                                           [ "the template used to produce the destination file"
                                                           , "it can contain these parameters"
                                                           , "  `{first}`      - replaced by the first scan numer of the serie"
@@ -117,7 +115,7 @@ instance ToIni  BinocularsConfig'Common where
                                                           , ""
                                                           , "default value: `{projection}_{first}-{last}_{limits}.h5`"
                                                           ]
-                                                          <> elemF' "overwrite" (binocularsConfig'Common'Overwrite c)
+                                                          <> elemF "overwrite" (binocularsConfig'Common'Overwrite c)
                                                           [ " `true` - the output file name is always the same, so it is overwriten when"
                                                           , "recomputed with the same parameter."
                                                           , " `false` - the output is modifier and `_<number>` is added to the filename in order"
@@ -126,7 +124,7 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "default value: `false`"
                                                           ]
                                            )
-                                         ,  ("input", elemF' "type" (binocularsConfig'Common'InputType c)
+                                         ,  ("input", elemF "type" (binocularsConfig'Common'InputType c)
                                                       ([ "Define the experimental setup and the type of scan used to acquire the data"
                                                        , ""
                                                        , "the list of the available values are:"
@@ -148,7 +146,7 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "default value: `sixs:flyscanuhv`"
                                                           ]
                                                       )
-                                                      <> elemFMb' "nexusdir" (binocularsConfig'Common'Nexusdir c)
+                                                      <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir c)
                                                       [ "Directory path where binoculars-ng looks for the data."
                                                       , ""
                                                       , "All sub directories are explored."
@@ -156,7 +154,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <the current directory>"
                                                       ]
-                                                      <> elemFMb' "inputtmpl" (binocularsConfig'Common'Tmpl c)
+                                                      <> elemFMb "inputtmpl" (binocularsConfig'Common'Tmpl c)
                                                       [ "data files are matched with this template in order to decide if it must be used for computation."
                                                       , ""
                                                       , "the template is pre-processed with the printf logic and an integer value comming from the the `inputrange`"
@@ -165,7 +163,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `%05d`"
                                                       ]
-                                                      <> elemF' "inputrange" (binocularsConfig'Common'InputRange c)
+                                                      <> elemF "inputrange" (binocularsConfig'Common'InputRange c)
                                                       [ "Indexes of the scans you want to process"
                                                       , ""
                                                       , "There are two ways to enter these values."
@@ -176,7 +174,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `1`"
                                                       ]
-                                                      <> elemF' "detector" (binocularsConfig'Common'Detector c)
+                                                      <> elemF "detector" (binocularsConfig'Common'Detector c)
                                                       ([ "The detector name"
                                                        , ""
                                                        , "In order to process the data, we need the 3D position of each pixel"
@@ -192,7 +190,7 @@ instance ToIni  BinocularsConfig'Common where
                                                           , "default value: `ImXpadS140`"
                                                           ]
                                                       )
-                                                      <> elemF' "centralpixel" (binocularsConfig'Common'Centralpixel c)
+                                                      <> elemF "centralpixel" (binocularsConfig'Common'Centralpixel c)
                                                       [ "x,y coordinates in pixels of the direct beam on the detector."
                                                       , ""
                                                       , "with `sdd` and `detrot` this parameter allow to set the"
@@ -201,7 +199,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `0,0`"
                                                       ]
-                                                      <> elemF' "sdd" (binocularsConfig'Common'Sdd c)
+                                                      <> elemF "sdd" (binocularsConfig'Common'Sdd c)
                                                       [ "sample-detector-distance expressed in meter."
                                                       , ""
                                                       , "with `centralpixel` and `detrot` this parameter allow to set the"
@@ -210,7 +208,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `1.0`"
                                                       ]
-                                                      <> elemF' "detrot" (binocularsConfig'Common'Detrot c)
+                                                      <> elemF "detrot" (binocularsConfig'Common'Detrot c)
                                                       [ "rotation of the detector along the x axis expressed in Degrees."
                                                       , ""
                                                       , "with `centralpixel` and `sdd` this parameter allow to set the"
@@ -219,7 +217,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: `0.0`"
                                                       ]
-                                                      <> elemFMb' "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient c)
+                                                      <> elemFMb "attenuation_coefficient" (binocularsConfig'Common'AttenuationCoefficient c)
                                                       ["the attenuation coefficient used to correct the detector's data."
                                                       , ""
                                                       , " `<not set>` - no correction is applyed"
@@ -243,7 +241,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <not set>"
                                                       ]
-                                                      <> elemFMb' "attenuation_max" (binocularsConfig'Common'AttenuationMax c)
+                                                      <> elemFMb "attenuation_max" (binocularsConfig'Common'AttenuationMax c)
                                                       [ "maximum attenuation allow for the attenuation correction."
                                                       , ""
                                                       , " `<not set>` - always apply the attenuation correction."
@@ -256,7 +254,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <not set>"
                                                       ]
-                                                      <> elemFMb' "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
+                                                      <> elemFMb "maskmatrix" (binocularsConfig'Common'Maskmatrix c)
                                                       [ "name of the file which contain the detector mask or `default`"
                                                       , ""
                                                       , "The supported type of file is for now only .npy"
@@ -270,7 +268,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <not set>"
                                                       ]
-                                                      <> elemFMb' "wavelength" (binocularsConfig'Common'Wavelength c)
+                                                      <> elemFMb "wavelength" (binocularsConfig'Common'Wavelength c)
                                                       [ "overwrite the wavelength from the data file with the one provided."
                                                       , ""
                                                       , " `<not set>`  - use the data file wavelength"
@@ -278,7 +276,7 @@ instance ToIni  BinocularsConfig'Common where
                                                       , ""
                                                       , "default value: <not set>"
                                                       ]
-                                                      <> elemFMb' "image_sum_max" (binocularsConfig'Common'ImageSumMax c)
+                                                      <> elemFMb "image_sum_max" (binocularsConfig'Common'ImageSumMax c)
                                                       [ "maximum intensity value allow for the sum of all pixels in an image in order to process it."
                                                       , ""
                                                       , " `<not set>` - process all images."
@@ -375,12 +373,6 @@ parseMbDef :: HasFieldValue r
            => Text -> Text -> Text -> Maybe r -> Maybe r
 parseMbDef c s f def = eitherF error (parse' c s f) (\mb -> mb <|> def)
 
-elemF :: HasFieldValue a => Text -> a -> [(Text, Text)]
-elemF k v = [(k,  fvEmit fieldvalue v)]
-
-elemFMb :: HasFieldValue a => Text -> Maybe a -> [(Text, Text)]
-elemFMb k = maybe [("# " <> k, "")] (elemF k)
-
 elemDoc :: Text -> [Text] -> Bool -> [(Text, Text)]
 elemDoc k cs o = [ ("#", "")
                  , ("#", k <> case o of
@@ -394,11 +386,11 @@ elemDoc k cs o = [ ("#", "")
                                                    , "uncomment and edit the next line if you want to modify the value"
                                                    ]]
 
-elemF'' ::  HasFieldValue a => Text -> a -> [Text] -> Bool -> [(Text, Text)]
-elemF'' k v cs o = elemDoc k cs o <> [(k,  fvEmit fieldvalue v)]
+elemF' ::  HasFieldValue a => Text -> a -> [Text] -> Bool -> [(Text, Text)]
+elemF' k v cs o = elemDoc k cs o <> [(k,  fvEmit fieldvalue v)]
 
-elemF' ::  HasFieldValue a => Text -> a -> [Text] -> [(Text, Text)]
-elemF' k v cs = elemF'' k v cs False
+elemF ::  HasFieldValue a => Text -> a -> [Text] -> [(Text, Text)]
+elemF k v cs = elemF' k v cs False
 
-elemFMb' :: HasFieldValue a => Text -> Maybe a -> [Text] -> [(Text, Text)]
-elemFMb' k m cs = maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF'' k a cs True) m
+elemFMb :: HasFieldValue a => Text -> Maybe a -> [Text] -> [(Text, Text)]
+elemFMb k m cs = maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF' k a cs True) m

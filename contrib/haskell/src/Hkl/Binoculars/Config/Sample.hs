@@ -230,7 +230,7 @@ instance Arbitrary BinocularsConfig'Sample where
   arbitrary = genericArbitraryU
 
 instance ToIni BinocularsConfig'Sample where
-  toIni c = Ini { iniSections = fromList [ ("input", elemFMb' "a" (binocularsConfig'Sample'A c)
+  toIni c = Ini { iniSections = fromList [ ("input", elemFMb "a" (binocularsConfig'Sample'A c)
                                                      [ "`a` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `b`, `c`, `alpha`, `beta` and `gamma`"
@@ -241,7 +241,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "b" (binocularsConfig'Sample'B c)
+                                                     <> elemFMb "b" (binocularsConfig'Sample'B c)
                                                      [ "`b` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `c`, `alpha`, `beta` and `gamma`"
@@ -252,7 +252,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "c" (binocularsConfig'Sample'C c)
+                                                     <> elemFMb "c" (binocularsConfig'Sample'C c)
                                                      [ "`c` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `alpha`, `beta` and `gamma`"
@@ -263,7 +263,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "alpha" (binocularsConfig'Sample'Alpha c)
+                                                     <> elemFMb "alpha" (binocularsConfig'Sample'Alpha c)
                                                      [ "`alpha` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `beta` and `gamma`"
@@ -274,7 +274,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "beta" (binocularsConfig'Sample'Beta c)
+                                                     <> elemFMb "beta" (binocularsConfig'Sample'Beta c)
                                                      [ "`beta` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `alpha`, and `gamma`"
@@ -285,7 +285,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "gamma" (binocularsConfig'Sample'Gamma c)
+                                                     <> elemFMb "gamma" (binocularsConfig'Sample'Gamma c)
                                                      [ "`gamma` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `alpha` and `beta`"
@@ -296,7 +296,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "ux" (binocularsConfig'Sample'Ux c)
+                                                     <> elemFMb "ux" (binocularsConfig'Sample'Ux c)
                                                      [ "`ux` rotation of the sample around the x axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
@@ -312,7 +312,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "uy" (binocularsConfig'Sample'Uy c)
+                                                     <> elemFMb "uy" (binocularsConfig'Sample'Uy c)
                                                      [ "`uy` rotation of the sample around the y axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
@@ -328,7 +328,7 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb' "uz" (binocularsConfig'Sample'Uz c)
+                                                     <> elemFMb "uz" (binocularsConfig'Sample'Uz c)
                                                      [ "`uz` rotation of the sample around the z axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
