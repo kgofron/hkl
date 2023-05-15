@@ -371,6 +371,17 @@ instance HasFieldValue HklBinocularsQCustomSubProjectionEnum where
   fieldvalue = parsable
 
 
+instance HasFieldComment HklBinocularsQCustomSubProjectionEnum where
+  fieldComment _ = [ "The sub-projection that can be computed with binoculars-ng"
+                   , ""
+                   , "the list of the available sub-projections are:"
+                   , ""
+                   ]
+                   <> [" - " <> fvEmit fieldvalue v | v <- [minBound..maxBound :: HklBinocularsQCustomSubProjectionEnum]]
+                   <> [ ""
+                      , "default value: `qx_qy_qz`"
+                      ]
+
 -- HklBinocularsSurfaceOrientationEnum
 
 instance HasFieldValue HklBinocularsSurfaceOrientationEnum where
