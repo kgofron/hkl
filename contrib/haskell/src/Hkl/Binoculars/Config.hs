@@ -389,6 +389,20 @@ instance HasFieldValue HklBinocularsSurfaceOrientationEnum where
       emit HklBinocularsSurfaceOrientationEnum'Vertical   = "vertical"
       emit HklBinocularsSurfaceOrientationEnum'Horizontal = "horizontal"
 
+instance HasFieldComment HklBinocularsSurfaceOrientationEnum where
+  fieldComment _ = [ "The orientation of the surface."
+                   , ""
+                   , "the list of the available orientation are:"
+                   , ""
+                   ]
+                   <> [" - " <> fvEmit fieldvalue v | v <- [minBound..maxBound :: HklBinocularsSurfaceOrientationEnum]]
+                   <> [ ""
+                      , "this orientation if for all the Geometry axes set to zero and correspond to"
+                      , "the orientation of a vector collinear to the surface."
+                      , ""
+                      , "default value: `vertical`"
+                      ]
+
 -- InputRange
 
 newtype InputRange = InputRange {unInputRange :: Interval Int }
