@@ -682,6 +682,18 @@ instance HasFieldValue (Resolutions DIM2) where
       emit :: Resolutions DIM2 -> Text
       emit (Resolutions2 r1 r2) = intercalate "," (Prelude.map (pack . show) [r1, r2])
 
+instance HasFieldComment (Resolutions DIM2) where
+  fieldComment _ = [ "The resolution of the bins expected for the projection's axes"
+                   , ""
+                   , "The expected value are:"
+                   , "  - one double - same resolution for all axes."
+                   , "  - one double per axis - each axis has it's own resolution."
+                   , ""
+                   , "the latter form use a comma to separate the values and no space is allowed."
+                   , ""
+                   , "default value: <depends of the projection type>"
+                   ]
+
 instance HasFieldValue (Resolutions DIM3) where
   fieldvalue = FieldValue { fvParse = parse, fvEmit = emit }
     where
@@ -695,6 +707,18 @@ instance HasFieldValue (Resolutions DIM3) where
 
       emit :: Resolutions DIM3 -> Text
       emit (Resolutions3 r1 r2 r3) = intercalate "," (Prelude.map (pack . show) [r1, r2, r3])
+
+instance HasFieldComment (Resolutions DIM3) where
+  fieldComment _ = [ "The resolution of the bins expected for the projection's axes"
+                   , ""
+                   , "The expected value are:"
+                   , "  - one double - same resolution for all axes."
+                   , "  - one double per axis - each axis has it's own resolution."
+                   , ""
+                   , "the latter form use a comma to separate the values and no space is allowed."
+                   , ""
+                   , "default value: <depends of the projection type>"
+                   ]
 
 -- RLimits
 
@@ -747,8 +771,48 @@ instance (FieldParsable (RLimits DIM3)) where
 instance HasFieldValue (RLimits DIM2) where
   fieldvalue = parsable
 
+instance HasFieldComment (RLimits DIM2) where
+  fieldComment _ = [ "The limits of the bins expected for the projection's axes"
+                   , ""
+                   , "Sometime it is interesting to focus on a specific region of a map."
+                   , "this allows to increase the resolution and keep a memory footprint acceptable."
+                   , ""
+                   , "The expected value is a list of <limits>. One per axis."
+                   , ""
+                   , "  `[<limits>,<limits>]`"
+                   , ""
+                   , "<limits> has this form `<double or nothing>:<double or nothing>`"
+                   , "nothing means realy nothing and in this case their is no limits."
+                   , ""
+                   , "example:"
+                   , "  - [:1,2:3]"
+                   , "  - [:,2:3]"
+                   , ""
+                   , "default value: <not set>"
+                   ]
+
 instance HasFieldValue (RLimits DIM3) where
   fieldvalue = parsable
+
+instance HasFieldComment (RLimits DIM3) where
+  fieldComment _ = [ "The limits of the bins expected for the projection's axes"
+                   , ""
+                   , "Sometime it is interesting to focus on a specific region of a map."
+                   , "this allows to increase the resolution and keep a memory footprint acceptable."
+                   , ""
+                   , "The expected value is a list of <limits>. One per axis."
+                   , ""
+                   , "  `[<limits>,<limits>,<limits>]`"
+                   , ""
+                   , "<limits> has this form `<double or nothing>:<double or nothing>`."
+                   , "nothing means realy nothing and in this case their is no limits."
+                   , ""
+                   , "example:"
+                   , "  - [:1,2:3,4:5]"
+                   , "  - [:,2:3,4:]"
+                   , ""
+                   , "default value: <not set>"
+                   ]
 
 instance IsList (RLimits sh) where
   type Item (RLimits sh) = Limits

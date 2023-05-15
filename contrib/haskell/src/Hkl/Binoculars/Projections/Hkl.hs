@@ -191,8 +191,8 @@ instance ToIni (Config 'HklProjection) where
             `mergeIni`
             Ini { iniSections = fromList [ ("input", elemF' "datapath" (binocularsConfig'Hkl'DataPath c) (fieldComment (binocularsConfig'Hkl'DataPath c)))
                                          , ("projection", elemF' "type" (binocularsConfig'Hkl'ProjectionType c) (fieldComment (binocularsConfig'Hkl'ProjectionType c))
-                                                          <> elemF   "resolution" (binocularsConfig'Hkl'ProjectionResolution c)
-                                                          <> elemFMb "limits" (binocularsConfig'Hkl'ProjectionLimits c)
+                                                          <> elemF' "resolution" (binocularsConfig'Hkl'ProjectionResolution c) (fieldComment (binocularsConfig'Hkl'ProjectionResolution c))
+                                                          <> elemFMb' "limits" (binocularsConfig'Hkl'ProjectionLimits c) (maybe [""] fieldComment (binocularsConfig'Hkl'ProjectionLimits c))
                                            )
                                          ]
                 , iniGlobals = []

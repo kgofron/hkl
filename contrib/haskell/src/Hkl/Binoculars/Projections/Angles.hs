@@ -129,8 +129,8 @@ instance ToIni (Config 'AnglesProjection) where
                                                      <> elemF "sample_axis" (binocularsConfig'Angles'SampleAxis c)
                                             )
                                          , ("projection", elemF' "type" (binocularsConfig'Angles'ProjectionType c) (fieldComment (binocularsConfig'Angles'ProjectionType c))
-                                                          <> elemF   "resolution" (binocularsConfig'Angles'ProjectionResolution c)
-                                                          <> elemFMb "limits" (binocularsConfig'Angles'ProjectionLimits c)
+                                                          <> elemF' "resolution" (binocularsConfig'Angles'ProjectionResolution c) (fieldComment (binocularsConfig'Angles'ProjectionResolution c))
+                                                          <> elemFMb' "limits" (binocularsConfig'Angles'ProjectionLimits c) (maybe [""] fieldComment (binocularsConfig'Angles'ProjectionLimits c))
                                            )]
                 , iniGlobals = []
                 }
