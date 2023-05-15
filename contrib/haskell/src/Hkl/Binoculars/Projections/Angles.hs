@@ -128,7 +128,7 @@ instance ToIni (Config 'AnglesProjection) where
             Ini { iniSections = fromList [ ("input", elemF' "datapath" (binocularsConfig'Angles'DataPath c) (fieldComment (binocularsConfig'Angles'DataPath c))
                                                      <> elemF "sample_axis" (binocularsConfig'Angles'SampleAxis c)
                                             )
-                                         , ("projection", elemF      "type" (binocularsConfig'Angles'ProjectionType c)
+                                         , ("projection", elemF' "type" (binocularsConfig'Angles'ProjectionType c) (fieldComment (binocularsConfig'Angles'ProjectionType c))
                                                           <> elemF   "resolution" (binocularsConfig'Angles'ProjectionResolution c)
                                                           <> elemFMb "limits" (binocularsConfig'Angles'ProjectionLimits c)
                                            )]

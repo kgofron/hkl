@@ -242,7 +242,7 @@ instance ToIni (Config 'QCustomProjection) where
             Ini { iniSections = fromList [ ("input",    elemF "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum c)
                                                      <> elemF' "datapath" (binocularsConfig'QCustom'DataPath c) (fieldComment (binocularsConfig'QCustom'DataPath c))
                                            )
-                                         , ("projection",    elemF   "type" (binocularsConfig'QCustom'ProjectionType c)
+                                         , ("projection",    elemF' "type" (binocularsConfig'QCustom'ProjectionType c) (fieldComment (binocularsConfig'QCustom'ProjectionType c))
                                                           <> elemF   "resolution" (binocularsConfig'QCustom'ProjectionResolution c)
                                                           <> elemFMb "limits" (binocularsConfig'QCustom'ProjectionLimits c)
                                                           <> elemFMb "subprojection" (binocularsConfig'QCustom'SubProjection c)

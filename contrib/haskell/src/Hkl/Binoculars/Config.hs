@@ -596,6 +596,19 @@ instance FieldParsable ProjectionType where
 instance HasFieldValue ProjectionType where
   fieldvalue = parsable
 
+instance HasFieldComment ProjectionType where
+  fieldComment _ = [ "The type of projection that can be computed with binoculars-ng"
+                   , ""
+                   , "the list of the available projections are:"
+                   , ""
+                   ]
+                   <> [" - " <> fvEmit fieldvalue v | v <- [minBound..maxBound :: ProjectionType]]
+                   <> [ ""
+                      , "Some projections can be customize using the `subprojection` parameter."
+                      , ""
+                      , "default value: `qxqyqz`"
+                      ]
+
 ms :: String
 ms = "#;"
 
