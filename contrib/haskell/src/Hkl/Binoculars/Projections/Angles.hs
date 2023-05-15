@@ -126,7 +126,7 @@ instance ToIni (Config 'AnglesProjection) where
   toIni c = toIni (binocularsConfig'Angles'Common c)
             `mergeIni`
             Ini { iniSections = fromList [ ("input", elemF' "datapath" (binocularsConfig'Angles'DataPath c) (fieldComment (binocularsConfig'Angles'DataPath c))
-                                                     <> elemF "sample_axis" (binocularsConfig'Angles'SampleAxis c)
+                                                     <> elemF' "sample_axis" (binocularsConfig'Angles'SampleAxis c) [""]
                                             )
                                          , ("projection", elemF' "type" (binocularsConfig'Angles'ProjectionType c) (fieldComment (binocularsConfig'Angles'ProjectionType c))
                                                           <> elemF' "resolution" (binocularsConfig'Angles'ProjectionResolution c) (fieldComment (binocularsConfig'Angles'ProjectionResolution c))
