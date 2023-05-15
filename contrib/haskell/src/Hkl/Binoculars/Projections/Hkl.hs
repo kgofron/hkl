@@ -105,6 +105,14 @@ defaultDataSourcePath'DataFrameHkl = DataFrameHkl
                                      default'DataSourcePath'DataFrameQCustom
                                      default'DataSourcePath'Sample
 
+instance HasFieldComment (DataFrameHkl' DataSourcePath) where
+  fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
+                   , ""
+                   , "This value is for expert only."
+                   , ""
+                   , "default value: <not set>"
+                   ]
+
 instance HasFieldValue (DataFrameHkl' DataSourcePath) where
   fieldvalue = FieldValue
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
@@ -181,7 +189,7 @@ instance ToIni (Config 'HklProjection) where
             `mergeIni`
             toIni (binocularsConfig'Hkl'Sample c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input", elemF' "datapath" (binocularsConfig'Hkl'DataPath c) dataPathComment)
+            Ini { iniSections = fromList [ ("input", elemF' "datapath" (binocularsConfig'Hkl'DataPath c) (fieldComment (binocularsConfig'Hkl'DataPath c)))
                                          , ("projection", elemF   "type" (binocularsConfig'Hkl'ProjectionType c)
                                                           <> elemF   "resolution" (binocularsConfig'Hkl'ProjectionResolution c)
                                                           <> elemFMb "limits" (binocularsConfig'Hkl'ProjectionLimits c)

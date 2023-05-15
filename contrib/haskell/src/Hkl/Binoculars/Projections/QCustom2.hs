@@ -150,7 +150,7 @@ instance ToIni (Config 'QCustom2Projection) where
   toIni c = toIni (binocularsConfig'QCustom2'Common c)
             `mergeIni`
             Ini { iniSections = fromList [ ("input",    elemF   "surface_orientation" (binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum c)
-                                                     <> elemF'  "datapath" (binocularsConfig'QCustom2'DataPath c) dataPathComment
+                                                     <> elemF'  "datapath" (binocularsConfig'QCustom2'DataPath c) (fieldComment (binocularsConfig'QCustom2'DataPath c))
                                            )
                                          , ("projection",    elemF   "type" (binocularsConfig'QCustom2'ProjectionType c)
                                                           <> elemF   "resolution" (binocularsConfig'QCustom2'ProjectionResolution c)

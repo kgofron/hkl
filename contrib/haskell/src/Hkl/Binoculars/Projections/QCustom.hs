@@ -151,6 +151,14 @@ default'DataSourcePath'DataFrameQCustom
       defaultDetector)
     (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
+instance HasFieldComment (DataSourcePath DataFrameQCustom) where
+  fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
+                   , ""
+                   , "This value is for expert only."
+                   , ""
+                   , "default value: <not set>"
+                   ]
+
 instance HasFieldValue (DataSourcePath DataFrameQCustom) where
   fieldvalue = FieldValue
                { fvParse = eitherDecode' . fromStrict . encodeUtf8
@@ -232,7 +240,7 @@ instance ToIni (Config 'QCustomProjection) where
   toIni c = toIni (binocularsConfig'QCustom'Common c)
             `mergeIni`
             Ini { iniSections = fromList [ ("input",    elemF "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum c)
-                                                     <> elemF' "datapath" (binocularsConfig'QCustom'DataPath c) dataPathComment
+                                                     <> elemF' "datapath" (binocularsConfig'QCustom'DataPath c) (fieldComment (binocularsConfig'QCustom'DataPath c))
                                            )
                                          , ("projection",    elemF   "type" (binocularsConfig'QCustom'ProjectionType c)
                                                           <> elemF   "resolution" (binocularsConfig'QCustom'ProjectionResolution c)

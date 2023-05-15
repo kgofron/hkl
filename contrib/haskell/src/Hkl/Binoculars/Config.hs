@@ -37,6 +37,7 @@ module Hkl.Binoculars.Config
     , DestinationTmpl(..)
     , FieldEmitter(..)
     , FieldParsable(..)
+    , HasFieldComment(..)
     , HasFieldValue(..)
     , HasIniConfig(..)
     , InputRange(..)
@@ -53,7 +54,6 @@ module Hkl.Binoculars.Config
     , ToIni(..)
     , auto
     , auto'
-    , dataPathComment
     , destination'
     , files
     , getCapabilities
@@ -138,6 +138,11 @@ class FieldEmitter a where
 
 class FieldEmitter a => FieldParsable a where
   fieldParser :: Parser a
+
+-- class HasFieldComment
+
+class HasFieldValue a => HasFieldComment a where
+  fieldComment :: a -> [Text]
 
 -- Class HasFieldValue
 
@@ -227,14 +232,6 @@ readConfig mf = do
       fixHeader l = case findIndex (== '#' ) l of
         Nothing  -> l
         (Just n) -> take n l
-
-dataPathComment :: [Text]
-dataPathComment = [ "`datapath` internal value used to find the data in the data file."
-                  , ""
-                  , "This value is for expert only."
-                  , ""
-                  , "default value: <not set>"
-                  ]
 
 class HasIniConfig (a :: ProjectionType) where
 
