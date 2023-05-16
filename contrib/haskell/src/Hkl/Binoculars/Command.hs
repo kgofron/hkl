@@ -50,8 +50,8 @@ process mf mr = do
                       QIndexProjection    -> processQCustom mf mr
                       QparQperProjection  -> processQCustom mf mr
                       QxQyQzProjection    -> processQCustom mf mr
-                      RealSpaceProjection -> processQCustom2 mf mr
-                      PixelsProjection    -> processQCustom2 mf mr
+                      RealSpaceProjection -> processQCustom mf mr
+                      PixelsProjection    -> processQCustom mf mr
 
 new :: (MonadIO m, MonadLogger m, MonadThrow m)
     => ProjectionType -> Maybe FilePath -> m ()
@@ -68,8 +68,8 @@ new p mf = do
     QIndexProjection    -> newQCustom cwd
     QparQperProjection  -> newQCustom cwd
     QxQyQzProjection    -> newQCustom cwd
-    RealSpaceProjection -> newQCustom2 cwd
-    PixelsProjection    -> newQCustom2 cwd
+    RealSpaceProjection -> newQCustom cwd
+    PixelsProjection    -> newQCustom cwd
 
 update :: (MonadIO m, MonadLogger m, MonadThrow m) => FilePath -> Maybe ConfigRange -> m ()
 update f mr = do
@@ -87,5 +87,5 @@ update f mr = do
                       QIndexProjection    -> updateQCustom (Just f) mr
                       QparQperProjection  -> updateQCustom (Just f) mr
                       QxQyQzProjection    -> updateQCustom (Just f) mr
-                      RealSpaceProjection -> updateQCustom2 (Just f) mr
-                      PixelsProjection    -> updateQCustom2 (Just f) mr
+                      RealSpaceProjection -> updateQCustom (Just f) mr
+                      PixelsProjection    -> updateQCustom (Just f) mr
