@@ -506,34 +506,41 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
 		size_t i;						\
                 HklBinocularsSpaceItem item;                            \
 		const char **names = axis_name_from_subprojection(subprojection, space, n_resolutions); \
-                assert(n_pixels == space->max_items);                   \
-									\
+		assert(n_pixels == space->max_items);			\
+                                                                        \
 		const double *q_x = &pixels_coordinates[0 * n_pixels];	\
 		const double *q_y = &pixels_coordinates[1 * n_pixels];	\
 		const double *q_z = &pixels_coordinates[2 * n_pixels];	\
                                                                         \
 		HklSample *sample = hkl_sample_new("test");		\
 		HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
-		const HklQuaternion q = hkl_geometry_detector_rotation_get(geometry, detector); \
-		const HklVector ki = hkl_geometry_ki_get(geometry);	\
-		double k = hkl_vector_norm2(&ki);			\
-		HklQuaternion qs_1 = hkl_geometry_sample_rotation_get(geometry, sample); \
+		HklHolder *holder_d = hkl_geometry_detector_holder_get(geometry, detector); \
+                CGLM_ALIGN_MAT mat4s m_holder_d = hkl_binoculars_holder_transformation_get(holder_d); \
+		const HklVector ki_v = hkl_geometry_ki_get(geometry);	\
+                CGLM_ALIGN_MAT vec3s ki = {{ki_v.data[0], ki_v.data[1], ki_v.data[2]}}; \
+	        float k = glms_vec3_norm(ki);                           \
+		HklHolder *holder_s = hkl_geometry_sample_holder_get(geometry,sample); \
+                CGLM_ALIGN_MAT mat4s m_holder_s = hkl_binoculars_holder_transformation_get(holder_s); \
+                                                                        \
 		switch(surf){						\
 		case HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL:	\
 		{							\
-			HklQuaternion q_ub;				\
-			HklVector v_s = {{1, 0, 0}};			\
-			hkl_quaternion_init_from_angle_and_axe(&q_ub, -M_PI_2, &v_s); \
-			hkl_quaternion_times_quaternion(&qs_1, &q_ub);	\
+                        CGLM_ALIGN_MAT vec3s axis = GLMS_XUP;           \
+			CGLM_ALIGN_MAT mat4s m_q_ub = glms_rotate_make(-M_PI_2, axis); \
+                                                                        \
+                        m_holder_s = glms_mat4_mul(m_holder_s, m_q_ub); \
 			break;						\
 		}							\
 		case HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL:	\
 		case HKL_BINOCULARS_SURFACE_ORIENTATION_NUM_ORIENTATION: \
 			break;						\
 		}							\
-		hkl_quaternion_conjugate(&qs_1);			\
+		m_holder_s = glms_mat4_inv(m_holder_s);                 \
                                                                         \
 		darray_size(space->items) = 0;				\
+                                                                        \
+                glms_mat4_print(m_holder_s, stdout);                    \
+                glms_mat4_print(m_holder_d, stdout);                    \
                                                                         \
                 switch(subprojection){                                  \
                 case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS:         \
@@ -541,16 +548,16 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v, ki);       \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(v.data[0] / resolutions[0]); \
-					item.indexes_0[1] = rint(v.data[1] / resolutions[1]); \
-					item.indexes_0[2] = rint(v.data[2] / resolutions[2]); \
+                                        item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
+                                        item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
+                                        item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -563,15 +570,15 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
-					item.indexes_0[1] = rint(asin(hkl_vector_norm2(&v) / 2 / k) * 2 / M_PI * 180 / resolutions[1]); \
+					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+					item.indexes_0[1] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -585,14 +592,14 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
+					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
 					item.indexes_0[1] = rint(timestamp / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
                                         item.intensity = rint((double)image[i] * weight); \
@@ -607,15 +614,15 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0]); \
-					item.indexes_0[1] = rint(v.data[2] / resolutions[1]); \
+					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
+                                        item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -629,15 +636,15 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[0]); \
-                                        item.indexes_0[1] = rint(v.data[2] / resolutions[1]); \
+					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
+					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -651,16 +658,16 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
-					item.indexes_0[1] = rint((atan2(v.data[2], -v.data[1])) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(v.data[0] / resolutions[2]); \
+					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+					item.indexes_0[1] = rint((atan2(v.raw[2], -v.raw[1])) / M_PI * 180 / resolutions[1]); \
+					item.indexes_0[2] = rint(v.raw[0] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -673,16 +680,16 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
-					item.indexes_0[1] = rint((atan2(v.data[2], v.data[0])) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(v.data[1] / resolutions[2]); \
+					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+					item.indexes_0[1] = rint((atan2(v.raw[2], v.raw[0])) / M_PI * 180 / resolutions[1]); \
+					item.indexes_0[2] = rint(v.raw[1] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -695,16 +702,16 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
-					item.indexes_0[1] = rint((atan2(v.data[0], v.data[1])) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(v.data[2] / resolutions[2]); \
+					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+					item.indexes_0[1] = rint((atan2(v.raw[0], v.raw[1])) / M_PI * 180 / resolutions[1]); \
+					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -717,17 +724,17 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
-					double ratio = v.data[2] + item.indexes_0[0]; \
-					item.indexes_0[1] = rint(v.data[0] / ratio / resolutions[1]); \
-					item.indexes_0[2] = rint(v.data[1] / ratio / resolutions[2]); \
+					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+					double ratio = v.raw[2] + item.indexes_0[0]; \
+					item.indexes_0[1] = rint(v.raw[0] / ratio / resolutions[1]); \
+					item.indexes_0[2] = rint(v.raw[1] / ratio / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -740,16 +747,16 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(atan2(v.data[1], v.data[0]) / M_PI * 180 / resolutions[0]); \
-					item.indexes_0[1] = rint(atan2(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]), v.data[2]) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(hkl_vector_norm2(&v) / resolutions[2]); \
+					item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
+					item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
+					item.indexes_0[2] = rint(glms_vec3_norm(v) / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -762,35 +769,38 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(atan2(v.data[1], v.data[0]) / M_PI * 180 / resolutions[0]); \
-					item.indexes_0[1] = rint(atan2(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]), v.data[2]) / M_PI * 180 / resolutions[1]); \
+					item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
+					item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
-                                        }                               \
+                                }                                       \
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:         \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:       \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
+                                        glms_vec3_print(v, stdout);     \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        glms_mat4_print(m_holder_d, stdout); \
+                                        glms_vec3_print(v, stdout);     \
                                                                         \
-					item.indexes_0[0] = rint(v.data[0] / resolutions[0]); \
-					item.indexes_0[1] = rint(v.data[1] / resolutions[1]); \
-					item.indexes_0[2] = rint(v.data[2] / resolutions[2]);    \
+					item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
+					item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
+					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -803,12 +813,12 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                                                         \
-					item.indexes_0[0] = rint(v.data[1] / resolutions[0]); \
-					item.indexes_0[1] = rint(v.data[2] / resolutions[1]); \
+					item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
+					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
@@ -822,16 +832,16 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
-                                        HklVector v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-                                        hkl_vector_rotated_quaternion(&v, &q); \
-                                        hkl_vector_times_double(&v, k); \
-                                        hkl_vector_minus_vector(&v, &ki); \
-                                        hkl_vector_rotated_quaternion(&v, &qs_1); \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(hkl_vector_norm2(&v) / resolutions[0]); \
-					item.indexes_0[1] = rint(sqrt(v.data[0] * v.data[0] + v.data[1] * v.data[1]) / resolutions[1]); \
-                                        item.indexes_0[2] = rint(v.data[2] / resolutions[2]); \
+					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+					item.indexes_0[1] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[1]); \
+					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -840,11 +850,11 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                }                                                       \
+		}							\
 		space_update_axes(space, names, n_pixels, resolutions);	\
 		hkl_detector_free(detector);				\
 		hkl_sample_free(sample);				\
-                }
+        }
 
 HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint16_t);
