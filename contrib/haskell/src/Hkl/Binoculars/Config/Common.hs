@@ -406,5 +406,8 @@ elemF' k v = let cs :: [Text]
 elemFMb' :: HasFieldComment a => Text -> Maybe a -> [(Text, Text)]
 elemFMb' k m = let cs :: [Text]
                    cs = fieldComment (fromMaybe undefined m)
+
+                   content :: [(Text, Text)]
+                   content = maybe [("# " <> k, "")] (\v -> [(k, fvEmit fieldvalue v)]) m
                in
-                 maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF'' k a cs True) m
+                 elemDoc k cs True <> content
