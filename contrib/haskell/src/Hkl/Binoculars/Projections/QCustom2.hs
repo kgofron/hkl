@@ -149,13 +149,13 @@ instance ToIni (Config 'QCustom2Projection) where
 
   toIni c = toIni (binocularsConfig'QCustom2'Common c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input",    elemF' "surface_orientation" (binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum c)
-                                                     <> elemF'  "datapath" (binocularsConfig'QCustom2'DataPath c)
+            Ini { iniSections = fromList [ ("input",    elemFDef' "surface_orientation" binocularsConfig'QCustom2'HklBinocularsSurfaceOrientationEnum c default'BinocularsConfig'QCustom2
+                                                     <> elemFDef'  "datapath" binocularsConfig'QCustom2'DataPath c default'BinocularsConfig'QCustom2
                                            )
-                                         , ("projection",    elemF' "type" (binocularsConfig'QCustom2'ProjectionType c)
-                                                          <> elemF' "resolution" (binocularsConfig'QCustom2'ProjectionResolution c)
-                                                          <> elemFMb' "limits" (binocularsConfig'QCustom2'ProjectionLimits c)
-                                                          <> elemFMb' "subprojection" (binocularsConfig'QCustom2'SubProjection c)
+                                         , ("projection",    elemFDef' "type" binocularsConfig'QCustom2'ProjectionType c default'BinocularsConfig'QCustom2
+                                                          <> elemFDef' "resolution" binocularsConfig'QCustom2'ProjectionResolution c default'BinocularsConfig'QCustom2
+                                                          <> elemFMbDef' "limits" binocularsConfig'QCustom2'ProjectionLimits c default'BinocularsConfig'QCustom2
+                                                          <> elemFMbDef' "subprojection" binocularsConfig'QCustom2'SubProjection c default'BinocularsConfig'QCustom2
                                            )]
 
                 , iniGlobals = []

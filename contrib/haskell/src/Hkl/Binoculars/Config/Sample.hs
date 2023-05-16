@@ -230,7 +230,7 @@ instance Arbitrary BinocularsConfig'Sample where
   arbitrary = genericArbitraryU
 
 instance ToIni BinocularsConfig'Sample where
-  toIni c = Ini { iniSections = fromList [ ("input", elemFMb "a" (binocularsConfig'Sample'A c)
+  toIni c = Ini { iniSections = fromList [ ("input", elemFMbDef "a" binocularsConfig'Sample'A c default'BinocularsConfig'Sample
                                                      [ "`a` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `b`, `c`, `alpha`, `beta` and `gamma`"
@@ -238,10 +238,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `a` from the data file."
                                                      , " `a`         - override `a` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "b" (binocularsConfig'Sample'B c)
+                                                     <> elemFMbDef "b" binocularsConfig'Sample'B c default'BinocularsConfig'Sample
                                                      [ "`b` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `c`, `alpha`, `beta` and `gamma`"
@@ -249,10 +247,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `b` from the data file."
                                                      , " `b`         - override `b` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "c" (binocularsConfig'Sample'C c)
+                                                     <> elemFMbDef "c" binocularsConfig'Sample'C c default'BinocularsConfig'Sample
                                                      [ "`c` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `alpha`, `beta` and `gamma`"
@@ -260,10 +256,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `c` from the data file."
                                                      , " `c`         - override `c` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "alpha" (binocularsConfig'Sample'Alpha c)
+                                                     <> elemFMbDef "alpha" binocularsConfig'Sample'Alpha c default'BinocularsConfig'Sample
                                                      [ "`alpha` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `beta` and `gamma`"
@@ -271,10 +265,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `alpha` from the data file."
                                                      , " `alpha`     - override `alpha` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "beta" (binocularsConfig'Sample'Beta c)
+                                                     <> elemFMbDef "beta" binocularsConfig'Sample'Beta c default'BinocularsConfig'Sample
                                                      [ "`beta` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `alpha`, and `gamma`"
@@ -282,10 +274,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `beta` from the data file."
                                                      , " `beta`      - override `beta` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "gamma" (binocularsConfig'Sample'Gamma c)
+                                                     <> elemFMbDef "gamma" binocularsConfig'Sample'Gamma c default'BinocularsConfig'Sample
                                                      [ "`gamma` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `alpha` and `beta`"
@@ -293,10 +283,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `gamma` from the data file."
                                                      , " `gamma`     - override `gamma` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "ux" (binocularsConfig'Sample'Ux c)
+                                                     <> elemFMbDef "ux" binocularsConfig'Sample'Ux c default'BinocularsConfig'Sample
                                                      [ "`ux` rotation of the sample around the x axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
@@ -309,10 +297,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `ux` from the data file."
                                                      , " `ux`        - override `ux` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "uy" (binocularsConfig'Sample'Uy c)
+                                                     <> elemFMbDef "uy" binocularsConfig'Sample'Uy c default'BinocularsConfig'Sample
                                                      [ "`uy` rotation of the sample around the y axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
@@ -325,10 +311,8 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `uy` from the data file."
                                                      , " `uy`        - override `uy` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
-                                                     <> elemFMb "uz" (binocularsConfig'Sample'Uz c)
+                                                     <> elemFMbDef "uz" binocularsConfig'Sample'Uz c default'BinocularsConfig'Sample
                                                      [ "`uz` rotation of the sample around the z axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
@@ -341,8 +325,6 @@ instance ToIni BinocularsConfig'Sample where
                                                      , ""
                                                      , " `<not set>` - read `uz` from the data file."
                                                      , " `uz`        - override `uz` with this value."
-                                                     , ""
-                                                     , "default value: <not set>"
                                                      ]
                                            )
                                          ]

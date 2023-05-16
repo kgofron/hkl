@@ -125,16 +125,16 @@ instance HasIniConfig 'AnglesProjection where
 instance ToIni (Config 'AnglesProjection) where
   toIni c = toIni (binocularsConfig'Angles'Common c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input", elemF' "datapath" (binocularsConfig'Angles'DataPath c)
-                                                     <> elemF "sample_axis" (binocularsConfig'Angles'SampleAxis c)
+            Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Angles'DataPath c default'BinocularsConfig'Angles
+                                                     <> elemFDef "sample_axis" binocularsConfig'Angles'SampleAxis c default'BinocularsConfig'Angles
                                                      [ "the name of the sample axis"
                                                      , ""
                                                      , "default value: `omega`"
                                                      ]
                                             )
-                                         , ("projection", elemF' "type" (binocularsConfig'Angles'ProjectionType c)
-                                                          <> elemF' "resolution" (binocularsConfig'Angles'ProjectionResolution c)
-                                                          <> elemFMb' "limits" (binocularsConfig'Angles'ProjectionLimits c)
+                                         , ("projection", elemFDef' "type" binocularsConfig'Angles'ProjectionType c default'BinocularsConfig'Angles
+                                                          <> elemFDef' "resolution" binocularsConfig'Angles'ProjectionResolution c default'BinocularsConfig'Angles
+                                                          <> elemFMbDef' "limits" binocularsConfig'Angles'ProjectionLimits c default'BinocularsConfig'Angles
                                            )]
                 , iniGlobals = []
                 }
