@@ -110,7 +110,13 @@ instance ToIni  BinocularsConfig'Common where
                                                           ]
                                                           <> elemF "destination" (binocularsConfig'Common'Destination c)
                                                           [ "the template used to produce the destination file"
-                                                          , "it can contain these parameters"
+                                                          , ""
+                                                          , "You can write what you want in the field but it need to end with .h5"
+                                                          , "The generated file is an hdf5 file. You can add in the text some specific"
+                                                          , "string which will be replace with values extracted from the configuration"
+                                                          , "when saving the file."
+                                                          , ""
+                                                          , "These parameters are:"
                                                           , "  `{first}`      - replaced by the first scan numer of the serie"
                                                           , "  `{last}`       - replaced by the last scan numer of the serie"
                                                           , "  `{limits}`     - replaced by the limits of the final cube or nolimits"
