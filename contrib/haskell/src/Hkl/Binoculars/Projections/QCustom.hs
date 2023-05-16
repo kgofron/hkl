@@ -755,7 +755,7 @@ processQCustomP = do
   let projectionType = binocularsConfig'QCustom'ProjectionType conf
 
   -- built from the config
-  output' <- liftIO $ destination' projectionType inputRange mlimits destination overwrite
+  output' <- liftIO $ destination' projectionType (Just subprojection) inputRange mlimits destination overwrite
   filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
   mask' <- getMask maskMatrix det
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot Normalisation

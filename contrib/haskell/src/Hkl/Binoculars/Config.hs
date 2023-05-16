@@ -865,12 +865,12 @@ binocularsPreConfigSpec = do
 -- functions --
 ---------------
 
-destination' :: ProjectionType -> ConfigRange -> Maybe (RLimits a) -> DestinationTmpl -> Bool -> IO FilePath
-destination' proj (ConfigRange rs) ml dtmpl overwrite =
+destination' :: ProjectionType -> Maybe HklBinocularsQCustomSubProjectionEnum -> ConfigRange -> Maybe (RLimits a) -> DestinationTmpl -> Bool -> IO FilePath
+destination' proj msub (ConfigRange rs) ml dtmpl overwrite =
   if overwrite
-  then pure $ replace' proj interval limits dtmpl Nothing
+  then pure $ replace' proj msub interval limits dtmpl Nothing
   else do
-    let guess = replace' proj interval limits dtmpl Nothing : Prelude.map (replace' proj interval limits dtmpl . Just) [2..]
+    let guess = replace' proj msub interval limits dtmpl Nothing : Prelude.map (replace' proj msub interval limits dtmpl . Just) [2..]
     findFirst guess
       where
         findFirst :: [FilePath] -> IO FilePath
@@ -951,10 +951,12 @@ addOverwrite midx tmpl = case midx of
   Just idx -> let (f, ext) = splitExtensions . unpack . unDestinationTmpl $ tmpl
              in DestinationTmpl (pack $ f <> printf "_%02d" idx <> ext)
 
-replace' :: ProjectionType -> Interval Int -> Text -> DestinationTmpl -> Maybe Int -> FilePath
-replace' proj i l dtmpl midx = unpack
+replace' :: ProjectionType -> Maybe HklBinocularsQCustomSubProjectionEnum -> Interval Int -> Text -> DestinationTmpl -> Maybe Int -> FilePath
+replace' proj msub i l dtmpl midx = unpack
                           . replace "{last}" (pack . show . sup $ i)
                           . replace "{first}" (pack . show . inf $ i)
                           . replace "{limits}" l
-                          . replace "{projection}" (fieldEmitter proj)
+                          . replace "{projection}" (case msub of
+                                                      (Just sub) -> fieldEmitter sub
+                                                      Nothing -> fieldEmitter proj)
                           . unDestinationTmpl . addOverwrite midx $ dtmpl
