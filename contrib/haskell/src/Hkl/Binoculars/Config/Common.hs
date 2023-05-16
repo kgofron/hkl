@@ -26,6 +26,7 @@ module Hkl.Binoculars.Config.Common
     , default'BinocularsConfig'Common
     , elemF
     , elemFMb
+    , elemFMb'
     , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
@@ -40,6 +41,7 @@ import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
                                                     section)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.List.NonEmpty                (NonEmpty (..))
+import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, pack)
 import           GHC.Generics                      (Generic)
 import           Generic.Random                    (genericArbitraryU)
@@ -394,3 +396,9 @@ elemF k v cs = elemF' k v cs False
 
 elemFMb :: HasFieldValue a => Text -> Maybe a -> [Text] -> [(Text, Text)]
 elemFMb k m cs = maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF' k a cs True) m
+
+elemFMb' :: HasFieldComment a => Text -> Maybe a -> [(Text, Text)]
+elemFMb' k m = let cs :: [Text]
+                   cs = fieldComment (fromMaybe undefined m)
+               in
+                 maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF' k a cs True) m

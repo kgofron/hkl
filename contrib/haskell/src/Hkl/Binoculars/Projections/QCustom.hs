@@ -244,8 +244,8 @@ instance ToIni (Config 'QCustomProjection) where
                                            )
                                          , ("projection",    elemF "type" (binocularsConfig'QCustom'ProjectionType c) (fieldComment (binocularsConfig'QCustom'ProjectionType c))
                                                           <> elemF "resolution" (binocularsConfig'QCustom'ProjectionResolution c) (fieldComment (binocularsConfig'QCustom'ProjectionResolution c))
-                                                          <> elemFMb "limits" (binocularsConfig'QCustom'ProjectionLimits c) (maybe [""] fieldComment (binocularsConfig'QCustom'ProjectionLimits c))
-                                                          <> elemFMb "subprojection" (binocularsConfig'QCustom'SubProjection c) (maybe [""] fieldComment (binocularsConfig'QCustom'SubProjection c))
+                                                          <> elemFMb' "limits" (binocularsConfig'QCustom'ProjectionLimits c)
+                                                          <> elemFMb' "subprojection" (binocularsConfig'QCustom'SubProjection c)
                                            )]
 
                 , iniGlobals = []
