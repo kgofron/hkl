@@ -378,9 +378,6 @@ instance HasFieldComment HklBinocularsQCustomSubProjectionEnum where
                    , ""
                    ]
                    <> [" - " <> fvEmit fieldvalue v | v <- [minBound..maxBound :: HklBinocularsQCustomSubProjectionEnum]]
-                   <> [ ""
-                      , "default value: `qx_qy_qz`"
-                      ]
 
 -- HklBinocularsSurfaceOrientationEnum
 
@@ -410,8 +407,6 @@ instance HasFieldComment HklBinocularsSurfaceOrientationEnum where
                    <> [ ""
                       , "this orientation if for all the Geometry axes set to zero and correspond to"
                       , "the orientation of a vector collinear to the surface."
-                      , ""
-                      , "default value: `vertical`"
                       ]
 
 -- InputRange
@@ -630,8 +625,6 @@ instance HasFieldComment ProjectionType where
                    <> [" - " <> fvEmit fieldvalue v | v <- [minBound..maxBound :: ProjectionType]]
                    <> [ ""
                       , "Some projections can be customize using the `subprojection` parameter."
-                      , ""
-                      , "default value: `qxqyqz`"
                       ]
 
 ms :: String
@@ -701,8 +694,6 @@ instance HasFieldComment (Resolutions DIM2) where
                    , "  - one double per axis - each axis has it's own resolution."
                    , ""
                    , "the latter form use a comma to separate the values and no space is allowed."
-                   , ""
-                   , "default value: <depends of the projection type>"
                    ]
 
 instance HasFieldValue (Resolutions DIM3) where
@@ -727,8 +718,6 @@ instance HasFieldComment (Resolutions DIM3) where
                    , "  - one double per axis - each axis has it's own resolution."
                    , ""
                    , "the latter form use a comma to separate the values and no space is allowed."
-                   , ""
-                   , "default value: <depends of the projection type>"
                    ]
 
 -- RLimits
@@ -798,8 +787,6 @@ instance HasFieldComment (RLimits DIM2) where
                    , "example:"
                    , "  - [:1,2:3]"
                    , "  - [:,2:3]"
-                   , ""
-                   , "default value: <not set>"
                    ]
 
 instance HasFieldValue (RLimits DIM3) where
@@ -821,8 +808,6 @@ instance HasFieldComment (RLimits DIM3) where
                    , "example:"
                    , "  - [:1,2:3,4:5]"
                    , "  - [:,2:3,4:]"
-                   , ""
-                   , "default value: <not set>"
                    ]
 
 instance IsList (RLimits sh) where
