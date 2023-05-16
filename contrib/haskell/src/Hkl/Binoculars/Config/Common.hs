@@ -25,6 +25,7 @@ module Hkl.Binoculars.Config.Common
     ( BinocularsConfig'Common(..)
     , default'BinocularsConfig'Common
     , elemF
+    , elemF'
     , elemFMb
     , elemFMb'
     , parse'BinocularsConfig'Common
@@ -388,17 +389,22 @@ elemDoc k cs o = [ ("#", "")
                                                    , "uncomment and edit the next line if you want to modify the value"
                                                    ]]
 
-elemF' ::  HasFieldValue a => Text -> a -> [Text] -> Bool -> [(Text, Text)]
-elemF' k v cs o = elemDoc k cs o <> [(k,  fvEmit fieldvalue v)]
+elemF'' ::  HasFieldValue a => Text -> a -> [Text] -> Bool -> [(Text, Text)]
+elemF'' k v cs o = elemDoc k cs o <> [(k,  fvEmit fieldvalue v)]
 
 elemF ::  HasFieldValue a => Text -> a -> [Text] -> [(Text, Text)]
-elemF k v cs = elemF' k v cs False
+elemF k v cs = elemF'' k v cs False
 
 elemFMb :: HasFieldValue a => Text -> Maybe a -> [Text] -> [(Text, Text)]
-elemFMb k m cs = maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF' k a cs True) m
+elemFMb k m cs = maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF'' k a cs True) m
+
+elemF' :: HasFieldComment a => Text -> a -> [(Text, Text)]
+elemF' k v = let cs :: [Text]
+                 cs = fieldComment v
+             in elemF'' k v cs False
 
 elemFMb' :: HasFieldComment a => Text -> Maybe a -> [(Text, Text)]
 elemFMb' k m = let cs :: [Text]
                    cs = fieldComment (fromMaybe undefined m)
                in
-                 maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF' k a cs True) m
+                 maybe (elemDoc k cs True <> [("# " <> k, "")]) (\a -> elemF'' k a cs True) m
