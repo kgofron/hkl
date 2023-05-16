@@ -107,12 +107,12 @@ instance HasIniConfig 'AnglesProjection where
                                                              Angles2Projection  -> SampleAxis "mu"
                                                              HklProjection      -> undefined
                                                              QCustomProjection  -> undefined
-                                                             QCustom2Projection  -> undefined
                                                              QIndexProjection   -> undefined
                                                              QparQperProjection -> undefined
                                                              QxQyQzProjection   -> undefined
                                                              RealSpaceProjection -> undefined
                                                              PixelsProjection -> undefined
+                                                             TestProjection  -> undefined
 
         -- compute the datatype
         let datapath = case mdatapath of

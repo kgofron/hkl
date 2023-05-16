@@ -238,123 +238,6 @@ static void qcustom_projection(void)
         ok(res == TRUE, __func__);
 }
 
-static void qcustom2_projection(void)
-{
-        size_t n;
-        int res = TRUE;
-        HklFactory *factory = hkl_factory_get_by_name("ZAXIS", NULL);
-        HklGeometry *geometry = hkl_factory_create_new_geometry(factory);
-
-        /* for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){ */
-        for(n=0; n<1; ++n){
-                size_t i;
-                int height;
-                int width;
-                HklBinocularsCube *cube, *cube2;
-                HklBinocularsSpace *space;
-                double *pixels_coordinates;
-                double *pixels_coordinates_2;
-                uint8_t *mask;
-                ptrdiff_t min, max;
-                HklBinocularsAxisLimits *qx_lims, *qy_lims, *qz_lims;
-
-                fprintf(stderr, "\nprojection \"%s\" detector : \"%s\"", __func__, hkl_binoculars_detector_2d_name_get(n));
-
-                min = -0.45 / 0.05, max = 0.45 / 0.05;
-                /* qx_lims = hkl_binoculars_axis_limits_new(&min, &max); */
-                qx_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
-                min = -0.45 / 0.05, max = 0.45 / 0.05;
-                /* qy_lims = hkl_binoculars_axis_limits_new(&min, &max); */
-                qy_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
-                min = -0.45 / 0.05, max = 0.45 / 0.05;
-                /* qz_lims = hkl_binoculars_axis_limits_new(&min, &max); */
-                qz_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
-
-                const HklBinocularsAxisLimits *limits[] = {qx_lims, qy_lims, qz_lims};
-
-                hkl_binoculars_detector_2d_shape_get(n, &width, &height);
-                space = hkl_binoculars_space_new(width * height, 3);
-                cube = hkl_binoculars_cube_new_empty();
-                cube2 = hkl_binoculars_cube_new_empty();
-                pixels_coordinates = hkl_binoculars_detector_2d_coordinates_get(n);
-                hkl_binoculars_detector_2d_sixs_calibration(n, pixels_coordinates, width, height,
-                                                            100, 100, 1,
-                                                            0, 1);
-
-                pixels_coordinates_2 = hkl_binoculars_detector_2d_coordinates_get(n);
-                hkl_binoculars_detector_2d_sixs_calibration(n, pixels_coordinates_2, width, height,
-                                                            100, 100, 1,
-                                                            0, 0);
-
-                mask = hkl_binoculars_detector_2d_mask_get(n);
-
-                for(i=0; i<1; ++i){
-                        size_t arr_size;
-                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
-                        size_t pixels_coordinates_dims[] = {3, height, width};
-                        double resolutions[] = {0.05, 0.05, 0.05};
-
-                        hkl_geometry_randomize(geometry);
-
-                        hkl_binoculars_space_qcustom_uint32_t (space,
-                                                               geometry,
-                                                               img,
-                                                               arr_size,
-                                                               1.0,
-                                                               pixels_coordinates,
-                                                               ARRAY_SIZE(pixels_coordinates_dims),
-                                                               pixels_coordinates_dims,
-                                                               resolutions,
-                                                               ARRAY_SIZE(resolutions),
-                                                               mask,
-                                                               HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
-                                                               limits,
-                                                               ARRAY_SIZE(limits),
-                                                               0.0,
-                                                               HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ);
-                        hkl_binoculars_cube_add_space(cube, space);
-
-
-                        hkl_binoculars_space_qcustom2_uint32_t (space,
-                                                                geometry,
-                                                                img,
-                                                                arr_size,
-                                                                1.0,
-                                                                pixels_coordinates_2,
-                                                                ARRAY_SIZE(pixels_coordinates_dims),
-                                                                pixels_coordinates_dims,
-                                                                resolutions,
-                                                                ARRAY_SIZE(resolutions),
-                                                                mask,
-                                                                HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
-                                                                limits,
-                                                                ARRAY_SIZE(limits),
-                                                                0.0,
-                                                                HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ);
-                        hkl_binoculars_cube_add_space(cube2, space);
-
-                        free(img);
-                }
-
-                free(mask);
-                free(pixels_coordinates_2);
-                free(pixels_coordinates);
-                fprintf(stderr, "\n");
-                hkl_binoculars_cube_fprintf(stderr, cube2);
-                hkl_binoculars_cube_free(cube2);
-                fprintf(stderr, "\n");
-                hkl_binoculars_cube_fprintf(stderr, cube);
-                hkl_binoculars_cube_free(cube);
-                hkl_binoculars_space_free(space);
-                hkl_binoculars_axis_limits_free(qz_lims);
-                hkl_binoculars_axis_limits_free(qy_lims);
-                hkl_binoculars_axis_limits_free(qx_lims);
-        }
-
-	hkl_geometry_free(geometry);
-
-        ok(res == TRUE, __func__);
-}
 
 static void qparqper_projection(void)
 {
@@ -590,7 +473,7 @@ static void hkl_projection(void)
 
 int main(void)
 {
-	plan(10);
+	plan(9);
 
 	coordinates_get();
         coordinates_save();
@@ -598,7 +481,6 @@ int main(void)
         mask_save();
         angles_projection();
         qcustom_projection();
-        qcustom2_projection();
         qparqper_projection();
         qxqyqz_projection();
         hkl_projection();

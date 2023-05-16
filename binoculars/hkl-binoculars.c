@@ -860,368 +860,6 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
 
-/* qcustom2 */
-
-#define HKL_BINOCULARS_SPACE_QCUSTOM2_IMPL(image_t)			\
-        HKL_BINOCULARS_SPACE_QCUSTOM2_DECL(image_t)			\
-        {                                                               \
-		size_t i;						\
-                HklBinocularsSpaceItem item;                            \
-		const char **names = axis_name_from_subprojection(subprojection, space, n_resolutions); \
-		assert(n_pixels == space->max_items);			\
-                                                                        \
-		const double *q_x = &pixels_coordinates[0 * n_pixels];	\
-		const double *q_y = &pixels_coordinates[1 * n_pixels];	\
-		const double *q_z = &pixels_coordinates[2 * n_pixels];	\
-                                                                        \
-		HklSample *sample = hkl_sample_new("test");		\
-		HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
-		HklHolder *holder_d = hkl_geometry_detector_holder_get(geometry, detector); \
-                CGLM_ALIGN_MAT mat4s m_holder_d = hkl_binoculars_holder_transformation_get(holder_d); \
-		const HklVector ki_v = hkl_geometry_ki_get(geometry);	\
-                CGLM_ALIGN_MAT vec3s ki = {{ki_v.data[0], ki_v.data[1], ki_v.data[2]}}; \
-	        float k = glms_vec3_norm(ki);                           \
-		HklHolder *holder_s = hkl_geometry_sample_holder_get(geometry,sample); \
-                CGLM_ALIGN_MAT mat4s m_holder_s = hkl_binoculars_holder_transformation_get(holder_s); \
-                                                                        \
-		switch(surf){						\
-		case HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL:	\
-		{							\
-                        CGLM_ALIGN_MAT vec3s axis = GLMS_XUP;           \
-			CGLM_ALIGN_MAT mat4s m_q_ub = glms_rotate_make(-M_PI_2, axis); \
-                                                                        \
-                        m_holder_s = glms_mat4_mul(m_holder_s, m_q_ub); \
-			break;						\
-		}							\
-		case HKL_BINOCULARS_SURFACE_ORIENTATION_HORIZONTAL:	\
-		case HKL_BINOCULARS_SURFACE_ORIENTATION_NUM_ORIENTATION: \
-			break;						\
-		}							\
-		m_holder_s = glms_mat4_inv(m_holder_s);                 \
-                                                                        \
-		darray_size(space->items) = 0;				\
-                                                                        \
-                glms_mat4_print(m_holder_s, stdout);                    \
-                glms_mat4_print(m_holder_d, stdout);                    \
-                                                                        \
-                switch(subprojection){                                  \
-                case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS:         \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ:    \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v, ki);       \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-                                        item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
-                                        item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
-                                        item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP: \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP: \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint(timestamp / resolutions[1]); \
-					item.indexes_0[2] = REMOVED;	\
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP: \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
-                                        item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
-					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER:   \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
-					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
-					item.indexes_0[2] = REMOVED;	\
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX:    \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint((atan2(v.raw[2], -v.raw[1])) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(v.raw[0] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY:    \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint((atan2(v.raw[2], v.raw[0])) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(v.raw[1] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ:    \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint((atan2(v.raw[0], v.raw[1])) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO:    \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					double ratio = v.raw[2] + item.indexes_0[0]; \
-					item.indexes_0[1] = rint(v.raw[0] / ratio / resolutions[1]); \
-					item.indexes_0[2] = rint(v.raw[1] / ratio / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA: \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
-					item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(glms_vec3_norm(v) / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU: \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
-					item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = REMOVED;	\
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:       \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        glms_vec3_print(v, stdout);     \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        glms_mat4_print(m_holder_d, stdout); \
-                                        glms_vec3_print(v, stdout);     \
-                                                                        \
-					item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
-					item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
-					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP: \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                                                        \
-					item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
-					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
-					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER:   \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
-                                                                        \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[1]); \
-					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-		}							\
-		space_update_axes(space, names, n_pixels, resolutions);	\
-		hkl_detector_free(detector);				\
-		hkl_sample_free(sample);				\
-        }
-
-HKL_BINOCULARS_SPACE_QCUSTOM2_IMPL(int32_t);
-HKL_BINOCULARS_SPACE_QCUSTOM2_IMPL(uint16_t);
-HKL_BINOCULARS_SPACE_QCUSTOM2_IMPL(uint32_t);
-
 /* hkl */
 
 #define HKL_BINOCULARS_SPACE_HKL_IMPL(image_t)                          \
@@ -1278,6 +916,64 @@ HKL_BINOCULARS_SPACE_QCUSTOM2_IMPL(uint32_t);
 HKL_BINOCULARS_SPACE_HKL_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_HKL_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
+
+/* test */
+
+#define HKL_BINOCULARS_SPACE_TEST_IMPL(image_t)                         \
+        HKL_BINOCULARS_SPACE_TEST_DECL(image_t)                          \
+        {                                                               \
+                size_t i, j;                                            \
+                const char * names[] = {"H", "K", "L"};                 \
+                                                                        \
+                assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
+                assert(ARRAY_SIZE(names) == n_resolutions);             \
+                assert(n_pixels == space->max_items);                   \
+                                                                        \
+                const double *h = &pixels_coordinates[0 * n_pixels];    \
+                const double *k = &pixels_coordinates[1 * n_pixels];    \
+                const double *l = &pixels_coordinates[2 * n_pixels];    \
+                                                                        \
+                HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
+                const HklQuaternion q_d = hkl_geometry_detector_rotation_get(geometry, detector); \
+                HklQuaternion qs = hkl_geometry_sample_rotation_get(geometry, sample); \
+                const HklVector ki = hkl_geometry_ki_get(geometry);     \
+                double K = hkl_vector_norm2(&ki);                       \
+                HklMatrix RUB;                                          \
+                HklMatrix RUB_1;                                        \
+                hkl_quaternion_to_matrix(&qs, &RUB);                    \
+                hkl_matrix_times_matrix(&RUB, hkl_sample_UB_get(sample)); \
+                hkl_matrix_inv(&RUB, &RUB_1);                           \
+                                                                        \
+                darray_size(space->items) = 0;                          \
+                for(i=0;i<n_pixels;++i){                                \
+                        if(NULL == masked || 0 == masked[i]){           \
+                                HklBinocularsSpaceItem item;            \
+                                HklVector v = {{h[i], k[i], l[i]}};     \
+                                                                        \
+                                hkl_vector_rotated_quaternion(&v, &q_d); \
+                                hkl_vector_times_double(&v, K);         \
+                                hkl_vector_minus_vector(&v, &ki);       \
+                                hkl_matrix_times_vector(&RUB_1, &v);    \
+                                                                        \
+                                for(j=0; j<ARRAY_SIZE(names); ++j){     \
+                                        item.indexes_0[j] = rint(v.data[j] / resolutions[j]); \
+                                }                                       \
+                                item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                        darray_append(space->items, item); \
+                        }                                               \
+                }                                                       \
+                                                                        \
+                space_update_axes(space, names, n_pixels, resolutions); \
+                                                                        \
+                hkl_detector_free(detector);                            \
+        }
+
+HKL_BINOCULARS_SPACE_TEST_IMPL(int32_t);
+HKL_BINOCULARS_SPACE_TEST_IMPL(uint16_t);
+HKL_BINOCULARS_SPACE_TEST_IMPL(uint32_t);
+
 
 /* Cube */
 

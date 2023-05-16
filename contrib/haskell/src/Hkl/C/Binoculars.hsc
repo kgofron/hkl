@@ -295,16 +295,6 @@ c'hkl_binoculars_space_qcustom_uint16_t :: C'ProjectionTypeQCustom Word16
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_uint32_t" \
 c'hkl_binoculars_space_qcustom_uint32_t :: C'ProjectionTypeQCustom Word32
 
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom2_int32_t" \
-c'hkl_binoculars_space_qcustom2_int32_t :: C'ProjectionTypeQCustom Int32
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom2_uint16_t" \
-c'hkl_binoculars_space_qcustom2_uint16_t :: C'ProjectionTypeQCustom Word16
-
-foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom2_uint32_t" \
-c'hkl_binoculars_space_qcustom2_uint32_t :: C'ProjectionTypeQCustom Word32
-
-
 type C'ProjectionTypeHkl t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *self
   -> Ptr C'HklGeometry -- const HklGeometry *geometry
   -> Ptr C'HklSample -- const HklSample *sample
@@ -330,3 +320,14 @@ c'hkl_binoculars_space_hkl_uint16_t :: C'ProjectionTypeHkl Word16
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_uint32_t" \
 c'hkl_binoculars_space_hkl_uint32_t :: C'ProjectionTypeHkl Word32
+
+
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_test_int32_t" \
+c'hkl_binoculars_space_test_int32_t :: C'ProjectionTypeHkl Int32
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_test_uint16_t" \
+c'hkl_binoculars_space_test_uint16_t :: C'ProjectionTypeHkl Word16
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_test_uint32_t" \
+c'hkl_binoculars_space_test_uint32_t :: C'ProjectionTypeHkl Word32

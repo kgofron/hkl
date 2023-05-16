@@ -566,12 +566,12 @@ data ProjectionType = AnglesProjection
                     | Angles2Projection
                     | HklProjection
                     | QCustomProjection
-                    | QCustom2Projection
                     | QIndexProjection
                     | QparQperProjection
                     | QxQyQzProjection
                     | RealSpaceProjection
                     | PixelsProjection
+                    | TestProjection
 
   deriving (Eq, Show, Enum, Bounded)
 
@@ -583,12 +583,12 @@ instance FieldEmitter ProjectionType where
   fieldEmitter Angles2Projection   = "angles2"
   fieldEmitter HklProjection       = "hkl"
   fieldEmitter QCustomProjection   = "qcustom"
-  fieldEmitter QCustom2Projection  = "qcustom2"
   fieldEmitter QIndexProjection    = "qindex"
   fieldEmitter QparQperProjection  = "qparqper"
   fieldEmitter QxQyQzProjection    = "qxqyqz"
   fieldEmitter RealSpaceProjection = "realspace"
   fieldEmitter PixelsProjection    = "pixels"
+  fieldEmitter TestProjection      = "test"
 
 instance FieldParsable ProjectionType where
   fieldParser = go =<< takeText
@@ -609,6 +609,7 @@ instance FieldParsable ProjectionType where
         | toLower t == "sixs:hklprojection" = pure HklProjection
         | toLower t == "sixs:realspace" = pure RealSpaceProjection
         | toLower t == "sixs:pixels" = pure PixelsProjection
+        | toLower t == "qcustom2" = pure QCustomProjection
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'
