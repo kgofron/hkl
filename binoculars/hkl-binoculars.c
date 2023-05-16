@@ -904,7 +904,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_vec3_sub(v, ki);       \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
                                         item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
