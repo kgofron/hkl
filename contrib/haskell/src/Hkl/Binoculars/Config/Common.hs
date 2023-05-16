@@ -82,7 +82,7 @@ default'BinocularsConfig'Common
     { binocularsConfig'Common'NCores = NCores 4
     , binocularsConfig'Common'Destination = DestinationTmpl "{projection}_{first}-{last}_{limits}.h5"
     , binocularsConfig'Common'Overwrite = False
-    , binocularsConfig'Common'InputType = SixsFlyScanUhv
+    , binocularsConfig'Common'InputType = SixsFlyScanUhv2
     , binocularsConfig'Common'Nexusdir = Nothing
     , binocularsConfig'Common'Tmpl = Nothing
     , binocularsConfig'Common'InputRange  = ConfigRange (InputRange (Numeric.Interval.singleton 1) :| [])
@@ -100,6 +100,7 @@ default'BinocularsConfig'Common
 instance Arbitrary BinocularsConfig'Common where
   arbitrary = genericArbitraryU
 
+-- TODO prendre les valeurs par default definie precedemment.
 instance ToIni  BinocularsConfig'Common where
   toIni c = Ini { iniSections = fromList [ ("dispatcher", elemF "ncores" (binocularsConfig'Common'NCores c)
                                                           [ "the number of cores use for computation."
@@ -152,7 +153,7 @@ instance ToIni  BinocularsConfig'Common where
                                                           , ""
                                                           , "This parameter defines how to find the datas in the hdf5 file."
                                                           , ""
-                                                          , "default value: `sixs:flyscanuhv`"
+                                                          , "default value: `sixs:flyscanuhv2`"
                                                           ]
                                                       )
                                                       <> elemFMb "nexusdir" (binocularsConfig'Common'Nexusdir c)
