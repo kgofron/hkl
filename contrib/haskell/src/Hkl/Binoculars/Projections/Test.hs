@@ -262,7 +262,7 @@ processTestP = do
   output' <- liftIO $ destination' projectionType Nothing inputRange mlimits destination overwrite
   filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
   mask' <- getMask maskMatrix det
-  pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot Normalisation
+  pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot NoNormalisation
 
   let fns = concatMap (replicate 1) (toList filenames)
   chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP datapaths

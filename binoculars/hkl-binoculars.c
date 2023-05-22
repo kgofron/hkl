@@ -920,10 +920,11 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
 /* test */
 
 #define HKL_BINOCULARS_SPACE_TEST_IMPL(image_t)                         \
-        HKL_BINOCULARS_SPACE_TEST_DECL(image_t)                          \
+        HKL_BINOCULARS_SPACE_TEST_DECL(image_t)                         \
         {                                                               \
-                size_t i, j;                                            \
+                size_t i;                                            \
                 const char * names[] = {"H", "K", "L"};                 \
+                HklBinocularsSpaceItem item;                            \
                                                                         \
                 assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
                 assert(ARRAY_SIZE(names) == n_resolutions);             \
@@ -933,31 +934,49 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
                 const double *k = &pixels_coordinates[1 * n_pixels];    \
                 const double *l = &pixels_coordinates[2 * n_pixels];    \
                                                                         \
-                HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
-                const HklQuaternion q_d = hkl_geometry_detector_rotation_get(geometry, detector); \
-                HklQuaternion qs = hkl_geometry_sample_rotation_get(geometry, sample); \
-                const HklVector ki = hkl_geometry_ki_get(geometry);     \
-                double K = hkl_vector_norm2(&ki);                       \
-                HklMatrix RUB;                                          \
-                HklMatrix RUB_1;                                        \
-                hkl_quaternion_to_matrix(&qs, &RUB);                    \
-                hkl_matrix_times_matrix(&RUB, hkl_sample_UB_get(sample)); \
-                hkl_matrix_inv(&RUB, &RUB_1);                           \
+		HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
+		HklHolder *holder_d = hkl_geometry_detector_holder_get(geometry, detector); \
+                CGLM_ALIGN_MAT mat4s m_holder_d = hkl_binoculars_holder_transformation_get(holder_d); \
+		const HklVector ki_v = hkl_geometry_ki_get(geometry);	\
+                CGLM_ALIGN_MAT vec3s ki = {{ki_v.data[0], ki_v.data[1], ki_v.data[2]}}; \
+	        float K = glms_vec3_norm(ki);                           \
+		HklHolder *holder_s = hkl_geometry_sample_holder_get(geometry,sample); \
+                CGLM_ALIGN_MAT mat4s m_holder_s = hkl_binoculars_holder_transformation_get(holder_s); \
                                                                         \
-                darray_size(space->items) = 0;                          \
+                const HklMatrix *UB = hkl_sample_UB_get(sample);        \
+                CGLM_ALIGN_MAT mat4s ub = {GLM_MAT4_ZERO_INIT};         \
+                ub.raw[0][0] = UB->data[0][0];                          \
+                ub.raw[0][1] = UB->data[0][1];                          \
+                ub.raw[0][2] = UB->data[0][2];                          \
+                                                                        \
+                ub.raw[1][0] = UB->data[1][0];                          \
+                ub.raw[1][1] = UB->data[1][1];                          \
+                ub.raw[1][2] = UB->data[1][2];                          \
+                                                                        \
+                ub.raw[2][0] = UB->data[2][0];                          \
+                ub.raw[2][1] = UB->data[2][1];                          \
+                ub.raw[2][2] = UB->data[2][2];                          \
+                                                                        \
+                m_holder_s = glms_mat4_mul(m_holder_s, ub);             \
+		m_holder_s = glms_mat4_inv(m_holder_s);                 \
+                                                                        \
+		darray_size(space->items) = 0;				\
+                                                                        \
+                glms_mat4_print(m_holder_s, stdout);                    \
+                glms_mat4_print(m_holder_d, stdout);                    \
+                                                                        \
                 for(i=0;i<n_pixels;++i){                                \
-                        if(NULL == masked || 0 == masked[i]){           \
-                                HklBinocularsSpaceItem item;            \
-                                HklVector v = {{h[i], k[i], l[i]}};     \
+                        if(not_masked(masked, i)){                      \
+                                CGLM_ALIGN_MAT vec3s v = {{h[i], k[i], l[i]}}; \
                                                                         \
-                                hkl_vector_rotated_quaternion(&v, &q_d); \
-                                hkl_vector_times_double(&v, K);         \
-                                hkl_vector_minus_vector(&v, &ki);       \
-                                hkl_matrix_times_vector(&RUB_1, &v);    \
+                                v = glms_mat4_mulv3(m_holder_d, v, 1);  \
+                                v = glms_vec3_scale_as(v, K);           \
+                                v = glms_vec3_sub(v, ki);               \
+                                v = glms_mat4_mulv3(m_holder_s, v, 0);  \
                                                                         \
-                                for(j=0; j<ARRAY_SIZE(names); ++j){     \
-                                        item.indexes_0[j] = rint(v.data[j] / resolutions[j]); \
-                                }                                       \
+                                item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
+                                item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
+                                item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
