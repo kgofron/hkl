@@ -118,6 +118,20 @@ static inline void hkl_binoculars_axis_init(HklBinocularsAxis *self,
 	self->imax = imax;
 }
 
+static inline int hkl_binoculars_axis_cmp(const HklBinocularsAxis *self,
+                                          const HklBinocularsAxis *other)
+{
+        int res = 0;
+
+        res |= strcmp(self->name, other->name);
+        res |= self->index != other->index;
+        res |= self->resolution != other->resolution;
+        res |= self->imin != other->imin;
+        res |= self->imax != other->imax;
+
+        return res;
+}
+
 double *hkl_binoculars_axis_array(const HklBinocularsAxis *self)
 {
 	double *arr = g_new0(double, 6);
@@ -147,9 +161,10 @@ static inline void hkl_binoculars_axis_merge(HklBinocularsAxis *self, const HklB
 
 void hkl_binoculars_axis_fprintf(FILE *f, const HklBinocularsAxis *self)
 {
-	fprintf(f, "%s : %ld min: %f max: %f res: %f size: %ld",
+	fprintf(f, "%s : %ld min: %f(%ld) max: %f(%ld) res: %f size: %ld",
 		self->name, self->index,
-		axis_min(self), axis_max(self),
+		axis_min(self), self->imin,
+                axis_max(self), self->imax,
 		self->resolution, axis_size(self));
 }
 
@@ -934,33 +949,26 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
                 const double *k = &pixels_coordinates[1 * n_pixels];    \
                 const double *l = &pixels_coordinates[2 * n_pixels];    \
                                                                         \
-		HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
-		HklHolder *holder_d = hkl_geometry_detector_holder_get(geometry, detector); \
+                HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
+                HklHolder *holder_d = hkl_geometry_detector_holder_get(geometry, detector); \
                 CGLM_ALIGN_MAT mat4s m_holder_d = hkl_binoculars_holder_transformation_get(holder_d); \
-		const HklVector ki_v = hkl_geometry_ki_get(geometry);	\
+                const HklVector ki_v = hkl_geometry_ki_get(geometry);        \
                 CGLM_ALIGN_MAT vec3s ki = {{ki_v.data[0], ki_v.data[1], ki_v.data[2]}}; \
-	        float K = glms_vec3_norm(ki);                           \
-		HklHolder *holder_s = hkl_geometry_sample_holder_get(geometry,sample); \
+                float K = glms_vec3_norm(ki);                           \
+                HklHolder *holder_s = hkl_geometry_sample_holder_get(geometry,sample); \
                 CGLM_ALIGN_MAT mat4s m_holder_s = hkl_binoculars_holder_transformation_get(holder_s); \
                                                                         \
                 const HklMatrix *UB = hkl_sample_UB_get(sample);        \
-                CGLM_ALIGN_MAT mat4s ub = {GLM_MAT4_ZERO_INIT};         \
-                ub.raw[0][0] = UB->data[0][0];                          \
-                ub.raw[0][1] = UB->data[0][1];                          \
-                ub.raw[0][2] = UB->data[0][2];                          \
-                                                                        \
-                ub.raw[1][0] = UB->data[1][0];                          \
-                ub.raw[1][1] = UB->data[1][1];                          \
-                ub.raw[1][2] = UB->data[1][2];                          \
-                                                                        \
-                ub.raw[2][0] = UB->data[2][0];                          \
-                ub.raw[2][1] = UB->data[2][1];                          \
-                ub.raw[2][2] = UB->data[2][2];                          \
-                                                                        \
+                CGLM_ALIGN_MAT mat4s ub = {{{UB->data[0][0], UB->data[0][1], UB->data[0][2], 0}, \
+                                            {UB->data[1][0], UB->data[1][1], UB->data[1][2], 0}, \
+                                            {UB->data[2][0], UB->data[2][1], UB->data[2][2], 0}, \
+                                            {0, 0, 0, 1}}};             \
+                glms_mat4_print(ub, stdout);                            \
                 m_holder_s = glms_mat4_mul(m_holder_s, ub);             \
-		m_holder_s = glms_mat4_inv(m_holder_s);                 \
+                glms_mat4_print(m_holder_s, stdout);                    \
+                m_holder_s = glms_mat4_inv(m_holder_s);                 \
                                                                         \
-		darray_size(space->items) = 0;				\
+                darray_size(space->items) = 0;                          \
                                                                         \
                 glms_mat4_print(m_holder_s, stdout);                    \
                 glms_mat4_print(m_holder_d, stdout);                    \
@@ -1120,6 +1128,26 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
         free(self->photons);
         darray_free(self->axes);
         free(self);
+}
+
+int hkl_binoculars_cube_cmp(const HklBinocularsCube *self, const HklBinocularsCube *other)
+{
+        int i;
+        int res = 0;
+
+        res |= darray_size(self->axes) != darray_size(other->axes);
+        res |= self->offset0 != other->offset0;
+        for(i=0; i<darray_size(self->axes); ++i){
+                res |= hkl_binoculars_axis_cmp(&darray_item(self->axes, i),
+                                               &darray_item(other->axes, i));
+        }
+
+        if(res){
+                hkl_binoculars_cube_fprintf(stdout, self);
+                hkl_binoculars_cube_fprintf(stdout, other);
+        }
+
+        return res;
 }
 
 void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube *self)
