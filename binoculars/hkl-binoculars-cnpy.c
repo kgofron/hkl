@@ -382,7 +382,7 @@ static inline char *create_npy_header(HklBinocularsNpyDataType type,
         uint16_t len = (uint16_t)dict_size;
         fwrite(&len, 1, sizeof(len), stream);
         fwrite(dict, 1, dict_size, stream);
-        fprintf(stdout, "%s", dict);
+        /* fprintf(stdout, "%s", dict); */
         fflush(stream);
         fclose(stream);
 
@@ -410,7 +410,7 @@ void npy_save(const char *fname,
 
         fseek(f,0,SEEK_SET);
         fwrite(&header[0], 1, header_size, f);
-        fprintf(stdout, "%s\n", header);
+        /* fprintf(stdout, "%s\n", header); */
         fseek(f,0,SEEK_END);
         fwrite(arr, map_size(type), shape_size(shape), f);
         fclose(f);

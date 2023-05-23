@@ -26,6 +26,7 @@
 
 #include <hkl-geometry-private.h>
 #include <hkl-axis-private.h>
+#include <hkl-binoculars-private.h>
 
 static void coordinates_get(void)
 {
@@ -147,7 +148,6 @@ static void angles_projection(void)
 
                 free(mask);
                 free(pixels_coordinates);
-                hkl_binoculars_cube_fprintf(stderr, cube);
                 hkl_binoculars_cube_free(cube);
                 hkl_binoculars_space_free(space);
                 hkl_binoculars_axis_limits_free(omega_lims);
@@ -225,7 +225,6 @@ static void qcustom_projection(void)
 
                 free(mask);
                 free(pixels_coordinates);
-                hkl_binoculars_cube_fprintf(stderr, cube);
                 hkl_binoculars_cube_free(cube);
                 hkl_binoculars_space_free(space);
                 hkl_binoculars_axis_limits_free(qz_lims);
@@ -302,7 +301,6 @@ static void qparqper_projection(void)
 
                 free(mask);
                 free(pixels_coordinates);
-                hkl_binoculars_cube_fprintf(stderr, cube);
                 hkl_binoculars_cube_free(cube);
                 hkl_binoculars_space_free(space);
                 hkl_binoculars_axis_limits_free(qper_lims);
@@ -379,7 +377,6 @@ static void qxqyqz_projection(void)
 
                 free(mask);
                 free(pixels_coordinates);
-                hkl_binoculars_cube_fprintf(stderr, cube);
                 hkl_binoculars_cube_free(cube);
                 hkl_binoculars_space_free(space);
                 hkl_binoculars_axis_limits_free(qz_lims);
@@ -457,7 +454,6 @@ static void hkl_projection(void)
 
                 free(mask);
                 free(pixels_coordinates);
-                hkl_binoculars_cube_fprintf(stderr, cube);
                 hkl_binoculars_cube_free(cube);
                 hkl_binoculars_space_free(space);
                 hkl_binoculars_axis_limits_free(l_lims);
@@ -479,8 +475,28 @@ static void test_projection(void)
         HklGeometry *geometry = hkl_factory_create_new_geometry(factory);
         HklSample *sample = hkl_sample_new("hkl projection");
 
-        /* for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){ */
-        for(n=0; n<1; ++n){
+        /* the geometry positions */
+        static double axes[3][4] = {{0, 0, 0, 0},
+                                    {10, 10, 10, 10},
+                                    {30, 30, 30, 30}};
+
+        /* the expected result for the three axes of the 1st detector */
+        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{0, -1, 0},
+                                                                           {0, -1, 0},
+                                                                           {0, -1, 0},
+                                                                           {0, -1, -1},
+                                                                           {0, 0, 0},
+                                                                           {0, 0, 0},
+                                                                           {0, 0, 0}};
+        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{3, 20, 9},
+                                                                           {3, 20, 11},
+                                                                           {3, 20, 9},
+                                                                           {3, 20, 9},
+                                                                           {2, 20, 9},
+                                                                           {2, 20, 9},
+                                                                           {3, 20, 9}};
+
+        for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
                 int height;
                 int width;
@@ -489,19 +505,10 @@ static void test_projection(void)
                 double *pixels_coordinates;
                 double *pixels_coordinates_2;
                 uint8_t *mask;
-                ptrdiff_t min, max;
                 HklBinocularsAxisLimits *h_lims, *k_lims, *l_lims;
 
-                fprintf(stderr, "\nprojection \"%s\" detector : \"%s\"", __func__, hkl_binoculars_detector_2d_name_get(n));
-
-                min = -0.45 / 0.05, max = 0.45 / 0.05;
-                /* qx_lims = hkl_binoculars_axis_limits_new(&min, &max); */
                 h_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
-                min = -0.45 / 0.05, max = 0.45 / 0.05;
-                /* qy_lims = hkl_binoculars_axis_limits_new(&min, &max); */
                 k_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
-                min = -0.45 / 0.05, max = 0.45 / 0.05;
-                /* qz_lims = hkl_binoculars_axis_limits_new(&min, &max); */
                 l_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
 
                 const HklBinocularsAxisLimits *limits[] = {h_lims, k_lims, l_lims};
@@ -522,13 +529,13 @@ static void test_projection(void)
 
                 mask = hkl_binoculars_detector_2d_mask_get(n);
 
-                for(i=0; i<1; ++i){
+                for(i=0; i<3; ++i){
                         size_t arr_size;
                         uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
                         size_t pixels_coordinates_dims[] = {3, height, width};
                         double resolutions[] = {0.05, 0.05, 0.05};
 
-                        hkl_geometry_randomize(geometry);
+                        hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL);
 
                         hkl_binoculars_space_hkl_uint32_t (space,
                                                            geometry,
@@ -566,14 +573,16 @@ static void test_projection(void)
                 }
 
                 res &= DIAG(!hkl_binoculars_cube_cmp(cube, cube2));
+                for(i=0; i<ARRAY_SIZE(imax[n]); ++i){
+                        res &= imin[n][i] == darray_item(cube->axes, i).imin;
+                        res &= imax[n][i] == darray_item(cube->axes, i).imax;
+                        res &= imin[n][i] == darray_item(cube2->axes, i).imin;
+                        res &= imax[n][i] == darray_item(cube2->axes, i).imax;
+                }
 
                 free(mask);
                 free(pixels_coordinates_2);
                 free(pixels_coordinates);
-                /* fprintf(stderr, "\n"); */
-                /* hkl_binoculars_cube_fprintf(stderr, cube); */
-                /* fprintf(stderr, "\n"); */
-                /* hkl_binoculars_cube_fprintf(stderr, cube2); */
                 hkl_binoculars_cube_free(cube2);
                 hkl_binoculars_cube_free(cube);
                 hkl_binoculars_space_free(space);
@@ -592,7 +601,6 @@ int main(void)
 {
 	plan(10);
 
-        test_projection(); /* temporary to test new hkl */
 	coordinates_get();
         coordinates_save();
 	mask_get();
@@ -602,6 +610,7 @@ int main(void)
         qparqper_projection();
         qxqyqz_projection();
         hkl_projection();
+        test_projection();
 
 	return 0;
 }

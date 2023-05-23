@@ -1130,10 +1130,10 @@ void hkl_binoculars_cube_free(HklBinocularsCube *self)
         free(self);
 }
 
-int hkl_binoculars_cube_cmp(const HklBinocularsCube *self, const HklBinocularsCube *other)
+unsigned int hkl_binoculars_cube_cmp(const HklBinocularsCube *self, const HklBinocularsCube *other)
 {
         int i;
-        int res = 0;
+        unsigned int res = 0;
 
         res |= darray_size(self->axes) != darray_size(other->axes);
         res |= self->offset0 != other->offset0;
@@ -1141,6 +1141,16 @@ int hkl_binoculars_cube_cmp(const HklBinocularsCube *self, const HklBinocularsCu
                 res |= hkl_binoculars_axis_cmp(&darray_item(self->axes, i),
                                                &darray_item(other->axes, i));
         }
+
+        /* for(i=0; i<cube_size(self); ++i){ */
+        /*         res |= self->photons[i] != other->photons[i]; */
+        /*         res |= self->contributions[i] != other->contributions[i]; */
+        /*         if(res){ */
+        /*                 fprintf(stdout, "\nphotons: %d %u %u ", i, self->photons[i], other->photons[i]); */
+        /*                 fprintf(stdout, "\ncontributions: %d %u %u", i, self->contributions[i], other->contributions[i]); */
+        /*                 break; */
+        /*         } */
+        /* } */
 
         if(res){
                 hkl_binoculars_cube_fprintf(stdout, self);
