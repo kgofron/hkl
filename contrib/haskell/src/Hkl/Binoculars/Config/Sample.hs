@@ -196,7 +196,6 @@ guess'DataSourcePath'Sample common sample =
                         SixsFlyMedVS70            -> medVSamplePath
                         SixsFlyUhv                -> uhvSamplePath3 `DataSourcePath'Sample'Or` uhvSamplePath
                         SixsFlyScanUhvGisaxsEiger -> uhvSamplePath3
-                        SixsFlyScanUhvTest        -> uhvSamplePath3
                         SixsFlyScanUhvUfxc        -> uhvSamplePath
                         SixsSbsFixedDetector      -> undefined -- TODO this must not be possible.
                         SixsSbsMedH               -> medHSamplePath

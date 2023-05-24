@@ -476,7 +476,6 @@ data InputType = CristalK6C
                | SixsFlyMedVS70 -- old
                | SixsFlyUhv -- ok
                | SixsFlyScanUhvGisaxsEiger  -- sixs:uhvgisaxs
-               | SixsFlyScanUhvTest  --supress
                | SixsFlyScanUhvUfxc  --old
                | SixsSbsFixedDetector  -- supress
                | SixsSbsMedH  -- ok
@@ -499,7 +498,6 @@ instance FieldEmitter InputType where
   fieldEmitter SixsFlyMedVS70            = "sixs:flymedvs70"
   fieldEmitter SixsFlyUhv                = "sixs:flyuhv"
   fieldEmitter SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger"
-  fieldEmitter SixsFlyScanUhvTest        = "sixs:flyscanuhvtest"
   fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
   fieldEmitter SixsSbsFixedDetector      = "sixs:sbsfixeddetector"
   fieldEmitter SixsSbsMedH               = "sixs:sbsmedh"
@@ -521,6 +519,7 @@ instance FieldParsable InputType where
       go t
         | toLower t == "sixs:flyscanuhv" = pure SixsFlyUhv
         | toLower t == "sixs:flyscanuhv2" = pure SixsFlyUhv
+        | toLower t == "sixs:flyscanuhvtest" = pure SixsFlyUhv
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'

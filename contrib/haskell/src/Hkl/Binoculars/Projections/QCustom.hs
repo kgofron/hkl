@@ -613,14 +613,6 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                       ])
                                      (mkDetector'Sixs'Fly detector)
                                      (mkTimeStamp'Fly msub)
-         SixsFlyScanUhvTest -> DataSourcePath'DataFrameQCustom
-                              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                              (DataSourcePath'Geometry
-                               (Geometry'Factory Uhv)
-                               (overloadWaveLength mWavelength (DataSourcePath'Double'Const 0.672494))
-                               dataSourcePaths'Sixs'Uhv'Axes)
-                              (mkDetector'Sixs'Fly detector)
-                              (mkTimeStamp'Fly msub)
          SixsFlyScanUhvUfxc -> DataSourcePath'DataFrameQCustom
                               (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                               dataSourcePath'Geometry'Uhv'Sixs
