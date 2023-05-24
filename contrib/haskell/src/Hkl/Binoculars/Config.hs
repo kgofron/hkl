@@ -477,7 +477,6 @@ data InputType = CristalK6C
                | SixsFlyUhv -- ok
                | SixsFlyScanUhvGisaxsEiger  -- sixs:uhvgisaxs
                | SixsFlyScanUhvUfxc  --old
-               | SixsSbsFixedDetector  -- supress
                | SixsSbsMedH  -- ok
                | SixsSbsMedHFixDetector  -- rename sixs:medhgisaxs
                | SixsSbsMedV  -- ok
@@ -499,7 +498,6 @@ instance FieldEmitter InputType where
   fieldEmitter SixsFlyUhv                = "sixs:flyuhv"
   fieldEmitter SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger"
   fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
-  fieldEmitter SixsSbsFixedDetector      = "sixs:sbsfixeddetector"
   fieldEmitter SixsSbsMedH               = "sixs:sbsmedh"
   fieldEmitter SixsSbsMedHFixDetector    = "sixs:sbsmedhfixdetector"
   fieldEmitter SixsSbsMedV               = "sixs:sbsmedv"

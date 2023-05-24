@@ -299,7 +299,6 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
                                                    SixsFlyUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
                                                    SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
-                                                   SixsSbsFixedDetector -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsSbsMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsSbsMedHFixDetector -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsSbsMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
