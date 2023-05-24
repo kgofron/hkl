@@ -588,16 +588,11 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                             ])
                           (mkDetector'Sixs'Fly detector)
                           (mkTimeStamp'Fly msub)
-         SixsFlyScanUhv -> DataSourcePath'DataFrameQCustom
+         SixsFlyUhv -> DataSourcePath'DataFrameQCustom
                           (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                           dataSourcePath'Geometry'Uhv'Sixs
                           (mkDetector'Sixs'Fly detector)
                           (mkTimeStamp'Fly msub)
-         SixsFlyScanUhv2 -> DataSourcePath'DataFrameQCustom
-                           (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                           dataSourcePath'Geometry'Uhv'Sixs
-                           (mkDetector'Sixs'Fly detector)
-                           (mkTimeStamp'Fly msub)
          SixsFlyScanUhvGisaxsEiger -> DataSourcePath'DataFrameQCustom
                                      (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                                      (DataSourcePath'Geometry

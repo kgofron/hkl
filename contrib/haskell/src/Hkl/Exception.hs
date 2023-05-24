@@ -41,6 +41,7 @@ instance Exception HklBinocularsConfigException
 
 data HklDataSourceException
   = CanNotOpenDataSource'Double'Or HklDataSourceException HklDataSourceException
+  | CanNotOpenDataSource'Sample'Or HklDataSourceException HklDataSourceException
   | HklDataSourceException'HklH5Exception HklH5Exception
   deriving (Show, Typeable)
 

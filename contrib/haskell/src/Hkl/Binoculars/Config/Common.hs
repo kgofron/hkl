@@ -82,7 +82,7 @@ default'BinocularsConfig'Common
     { binocularsConfig'Common'NCores = NCores 4
     , binocularsConfig'Common'Destination = DestinationTmpl "{projection}_{first}-{last}_{limits}.h5"
     , binocularsConfig'Common'Overwrite = False
-    , binocularsConfig'Common'InputType = SixsFlyScanUhv2
+    , binocularsConfig'Common'InputType = SixsFlyUhv
     , binocularsConfig'Common'Nexusdir = Nothing
     , binocularsConfig'Common'Tmpl = Nothing
     , binocularsConfig'Common'InputRange  = ConfigRange (InputRange (Numeric.Interval.singleton 1) :| [])
@@ -296,8 +296,7 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
                                                    SixsFlyMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
                                                    SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70
-                                                   SixsFlyScanUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                   SixsFlyScanUhv2 -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                   SixsFlyUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
                                                    SixsFlyScanUhvTest -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                    SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc

@@ -474,8 +474,7 @@ data InputType = CristalK6C
                | SixsFlyMedV  -- ok
                | SixsFlyMedVEiger  -- old
                | SixsFlyMedVS70 -- old
-               | SixsFlyScanUhv --supress
-               | SixsFlyScanUhv2  -- rename sixs:flyuhv
+               | SixsFlyUhv -- ok
                | SixsFlyScanUhvGisaxsEiger  -- sixs:uhvgisaxs
                | SixsFlyScanUhvTest  --supress
                | SixsFlyScanUhvUfxc  --old
@@ -490,37 +489,45 @@ data InputType = CristalK6C
 instance Arbitrary InputType where
   arbitrary = elements ([minBound .. maxBound] :: [InputType])
 
-instance HasFieldValue InputType where
-  fieldvalue = FieldValue { fvParse = parse . strip. uncomment, fvEmit = emit }
+instance FieldEmitter InputType where
+  fieldEmitter CristalK6C                = "cristal:k6c"
+  fieldEmitter MarsFlyscan               = "mars:flyscan"
+  fieldEmitter MarsSbs                   = "mars:sbs"
+  fieldEmitter SixsFlyMedH               = "sixs:flymedh"
+  fieldEmitter SixsFlyMedV               = "sixs:flymedv"
+  fieldEmitter SixsFlyMedVEiger          = "sixs:flymedveiger"
+  fieldEmitter SixsFlyMedVS70            = "sixs:flymedvs70"
+  fieldEmitter SixsFlyUhv                = "sixs:flyuhv"
+  fieldEmitter SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger"
+  fieldEmitter SixsFlyScanUhvTest        = "sixs:flyscanuhvtest"
+  fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
+  fieldEmitter SixsSbsFixedDetector      = "sixs:sbsfixeddetector"
+  fieldEmitter SixsSbsMedH               = "sixs:sbsmedh"
+  fieldEmitter SixsSbsMedHFixDetector    = "sixs:sbsmedhfixdetector"
+  fieldEmitter SixsSbsMedV               = "sixs:sbsmedv"
+  fieldEmitter SixsSbsMedVFixDetector    = "sixs:sbsmedvfixdetector"
+  fieldEmitter SixsSbsUhv                = "sixs:sbsuhv"
+
+instance FieldParsable InputType where
+  fieldParser = go =<< takeText
     where
       err t =  "Unsupported "
                ++ show (typeRep (Proxy :: Proxy InputType))
                ++ " :" ++ unpack t
                ++ " Supported ones are: "
-               ++ unpack (unwords $ Prelude.map emit [minBound..maxBound])
+               ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: InputType])
 
-      parse :: Text -> Either String InputType
-      parse t = parseEnum (err t) t
+      go :: Text -> Parser InputType
+      go t
+        | toLower t == "sixs:flyscanuhv" = pure SixsFlyUhv
+        | toLower t == "sixs:flyscanuhv2" = pure SixsFlyUhv
+      go t = case parseEnum (err t) t of
+        Right p   -> pure p
+        Left err' -> fail err'
 
-      emit :: InputType -> Text
-      emit CristalK6C                = "cristal:k6c"
-      emit MarsFlyscan               = "mars:flyscan"
-      emit MarsSbs                   = "mars:sbs"
-      emit SixsFlyMedH               = "sixs:flymedh"
-      emit SixsFlyMedV               = "sixs:flymedv"
-      emit SixsFlyMedVEiger          = "sixs:flymedveiger"
-      emit SixsFlyMedVS70            = "sixs:flymedvs70"
-      emit SixsFlyScanUhv            = "sixs:flyscanuhv"
-      emit SixsFlyScanUhv2           = "sixs:flyscanuhv2"
-      emit SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger"
-      emit SixsFlyScanUhvTest        = "sixs:flyscanuhvtest"
-      emit SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
-      emit SixsSbsFixedDetector      = "sixs:sbsfixeddetector"
-      emit SixsSbsMedH               = "sixs:sbsmedh"
-      emit SixsSbsMedHFixDetector    = "sixs:sbsmedhfixdetector"
-      emit SixsSbsMedV               = "sixs:sbsmedv"
-      emit SixsSbsMedVFixDetector    = "sixs:sbsmedvfixdetector"
-      emit SixsSbsUhv                = "sixs:sbsuhv"
+instance HasFieldValue InputType where
+  fieldvalue = parsable
+
 -- Limits
 
 data Limits = Limits (Maybe Double) (Maybe Double)

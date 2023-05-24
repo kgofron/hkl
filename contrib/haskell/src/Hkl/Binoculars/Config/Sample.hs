@@ -37,11 +37,13 @@ import           Data.Ini                     (Ini (..))
 import           Data.Text                    (Text)
 import           GHC.Generics                 (Generic)
 import           Generic.Random               (genericArbitraryU)
+import           Pipes.Safe                   (catch, throwM)
 import           Test.QuickCheck              (Arbitrary (..))
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Config.Common
 import           Hkl.DataSource
+import           Hkl.Exception
 import           Hkl.H5
 import           Hkl.Lattice
 import           Hkl.Parameter
@@ -63,6 +65,7 @@ instance DataSource Sample where
       (DataSourcePath Degree) -- ux
       (DataSourcePath Degree) -- uy
       (DataSourcePath Degree) -- uz
+    | DataSourcePath'Sample'Or (DataSourcePath Sample) (DataSourcePath Sample)
     deriving (FromJSON, Generic, Show, ToJSON)
 
   data DataSourceAcq Sample
@@ -87,6 +90,11 @@ instance DataSource Sample where
     withDataSourceP f ux $ \ux' ->
     withDataSourceP f uy $ \uy' ->
     withDataSourceP f uz $ \uz' -> g (DataSourceAcq'Sample a' b' c' alpha' beta' gamma' ux' uy' uz')
+  withDataSourceP f (DataSourcePath'Sample'Or l r) g = withDataSourceP f l g
+                                                       `catch`
+                                                       \exl -> withDataSourceP f r g
+                                                              `catch`
+                                                              \exr -> throwM $ CanNotOpenDataSource'Sample'Or exl exr
 
 instance Is0DStreamable (DataSourceAcq Sample) Sample where
   extract0DStreamValue (DataSourceAcq'Sample a b c alpha beta gamma ux uy uz) =
@@ -138,6 +146,10 @@ overload'DataSourcePath'Sample (BinocularsConfig'Sample ma mb mc malpha mbeta mg
     (maybe pux DataSourcePath'Degree'Const mux)
     (maybe puy DataSourcePath'Degree'Const muy)
     (maybe puz DataSourcePath'Degree'Const muz)
+overload'DataSourcePath'Sample c (DataSourcePath'Sample'Or l r)
+  = DataSourcePath'Sample'Or
+    (overload'DataSourcePath'Sample c l)
+    (overload'DataSourcePath'Sample c r)
 
 guess'DataSourcePath'Sample :: BinocularsConfig'Common
                            -> BinocularsConfig'Sample
@@ -182,9 +194,8 @@ guess'DataSourcePath'Sample common sample =
                         SixsFlyMedV               -> medVSamplePath
                         SixsFlyMedVEiger          -> medVSamplePath
                         SixsFlyMedVS70            -> medVSamplePath
-                        SixsFlyScanUhv            -> uhvSamplePath
+                        SixsFlyUhv                -> uhvSamplePath3 `DataSourcePath'Sample'Or` uhvSamplePath
                         SixsFlyScanUhvGisaxsEiger -> uhvSamplePath3
-                        SixsFlyScanUhv2           -> uhvSamplePath3
                         SixsFlyScanUhvTest        -> uhvSamplePath3
                         SixsFlyScanUhvUfxc        -> uhvSamplePath
                         SixsSbsFixedDetector      -> undefined -- TODO this must not be possible.
@@ -195,6 +206,7 @@ guess'DataSourcePath'Sample common sample =
                         SixsSbsUhv                -> uhvSamplePath3
 
      overload'DataSourcePath'Sample sample samplePath
+
 ------------
 -- Config --
 ------------
