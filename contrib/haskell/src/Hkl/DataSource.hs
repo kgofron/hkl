@@ -302,11 +302,6 @@ instance DataSource Geometry where
                             , geometryPathAxes       :: [DataSourcePath Double]
                             }
     | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
-    | DataSourcePath'Geometry'MedVEiger { geometryPathWavelength :: DataSourcePath Double
-                                        , geometryPathAxes       :: [DataSourcePath Double]
-                                        , geometryPathEix        :: DataSourcePath Double
-                                        , geometryPathEiz        :: DataSourcePath Double
-                                        }
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Geometry
@@ -330,14 +325,11 @@ instance DataSource Geometry where
     withDataSourceP f w $ \w' -> do
     fptr <- liftIO $ newGeometry fixed
     gg (DataSourceAcq'Geometry fptr w' [])
-  withDataSourceP _f (DataSourcePath'Geometry'MedVEiger _w _as _eix _eiz) _gg = undefined
 
 instance Arbitrary (DataSourcePath Geometry) where
   arbitrary = oneof
     -- TODO add the Geometry constructor
-    [ DataSourcePath'Geometry'Fix <$> arbitrary
-    , DataSourcePath'Geometry'MedVEiger <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-    ]
+    [ DataSourcePath'Geometry'Fix <$> arbitrary]
 
 -- Image
 

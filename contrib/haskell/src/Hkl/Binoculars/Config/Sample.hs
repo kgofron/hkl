@@ -183,25 +183,22 @@ guess'DataSourcePath'Sample common sample =
      let medHSamplePath = samplePath' "SIXS" "i14-c-cx1-ex-cm-med.h"
      let medVSamplePath = samplePath' "SIXS" "i14-c-cx1-ex-cm-med.v"
      let uhvSamplePath  = samplePath' "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
-     -- let uhvSamplePath2 = samplePath' "SIXS" "i14-c-cx2-ex-diff-uhv"
-     let uhvSamplePath3 = samplePath' "SIXS" "i14-c-cx2-ex-cm-uhv"
+                          `DataSourcePath'Sample'Or`
+                          samplePath' "SIXS" "i14-c-cx2-ex-cm-uhv"
 
      let samplePath = case inputType of
-                        CristalK6C                -> cristalSamplePath
-                        MarsFlyscan               -> marsSamplePath
-                        MarsSbs                   -> marsSamplePath
-                        SixsFlyMedH               -> medHSamplePath
-                        SixsFlyMedV               -> medVSamplePath
-                        SixsFlyMedVEiger          -> medVSamplePath
-                        SixsFlyMedVS70            -> medVSamplePath
-                        SixsFlyUhv                -> uhvSamplePath3 `DataSourcePath'Sample'Or` uhvSamplePath
-                        SixsFlyScanUhvGisaxsEiger -> uhvSamplePath3
-                        SixsFlyScanUhvUfxc        -> uhvSamplePath
-                        SixsSbsMedH               -> medHSamplePath
-                        SixsSbsMedHFixDetector    -> medHSamplePath
-                        SixsSbsMedV               -> medVSamplePath
-                        SixsSbsMedVFixDetector    -> medVSamplePath
-                        SixsSbsUhv                -> uhvSamplePath3
+                        CristalK6C             -> cristalSamplePath
+                        MarsFlyscan            -> marsSamplePath
+                        MarsSbs                -> marsSamplePath
+                        SixsFlyMedH            -> medHSamplePath
+                        SixsFlyMedV            -> medVSamplePath
+                        SixsFlyUhv             -> uhvSamplePath
+                        SixsFlyUhvGisaxs       -> uhvSamplePath
+                        SixsSbsMedH            -> medHSamplePath
+                        SixsSbsMedHFixDetector -> medHSamplePath
+                        SixsSbsMedV            -> medVSamplePath
+                        SixsSbsMedVFixDetector -> medVSamplePath
+                        SixsSbsUhv             -> uhvSamplePath
 
      overload'DataSourcePath'Sample sample samplePath
 

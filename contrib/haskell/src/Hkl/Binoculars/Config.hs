@@ -43,6 +43,7 @@ module Hkl.Binoculars.Config
     , InputRange(..)
     , InputTmpl(..)
     , InputType(..)
+    , InputTypeDeprecated(..)
     , Limits(..)
     , MaskLocation(..)
     , Meter(..)
@@ -467,16 +468,43 @@ instance HasFieldValue InputTmpl where
 
 -- InputType
 
+data InputTypeDeprecated
+  = SixsFlyMedVEiger
+  | SixsFlyMedVS70
+  | SixsFlyScanUhvGisaxsEiger
+  | SixsFlyScanUhvUfxc
+  deriving (Eq, Show, Enum, Bounded)
+
+instance FieldEmitter InputTypeDeprecated where
+  fieldEmitter SixsFlyMedVEiger          = "sixs:flymedveiger"
+  fieldEmitter SixsFlyMedVS70            = "sixs:flymedvs70"
+  fieldEmitter SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger"
+  fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
+
+instance FieldParsable InputTypeDeprecated where
+  fieldParser = go =<< takeText
+    where
+      err t =  "Unsupported "
+               ++ show (typeRep (Proxy :: Proxy InputTypeDeprecated))
+               ++ " :" ++ unpack t
+               ++ " Supported ones are: "
+               ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: InputTypeDeprecated])
+
+      go :: Text -> Parser InputTypeDeprecated
+      go t = case parseEnum (err t) t of
+        Right p   -> pure p
+        Left err' -> fail err'
+
+instance HasFieldValue InputTypeDeprecated where
+  fieldvalue = parsable
+
 data InputType = CristalK6C
                | MarsFlyscan
                | MarsSbs
                | SixsFlyMedH  -- ok
                | SixsFlyMedV  -- ok
-               | SixsFlyMedVEiger  -- old
-               | SixsFlyMedVS70 -- old
                | SixsFlyUhv -- ok
-               | SixsFlyScanUhvGisaxsEiger  -- sixs:uhvgisaxs
-               | SixsFlyScanUhvUfxc  --old
+               | SixsFlyUhvGisaxs
                | SixsSbsMedH  -- ok
                | SixsSbsMedHFixDetector  -- rename sixs:medhgisaxs
                | SixsSbsMedV  -- ok
@@ -488,21 +516,18 @@ instance Arbitrary InputType where
   arbitrary = elements ([minBound .. maxBound] :: [InputType])
 
 instance FieldEmitter InputType where
-  fieldEmitter CristalK6C                = "cristal:k6c"
-  fieldEmitter MarsFlyscan               = "mars:flyscan"
-  fieldEmitter MarsSbs                   = "mars:sbs"
-  fieldEmitter SixsFlyMedH               = "sixs:flymedh"
-  fieldEmitter SixsFlyMedV               = "sixs:flymedv"
-  fieldEmitter SixsFlyMedVEiger          = "sixs:flymedveiger"
-  fieldEmitter SixsFlyMedVS70            = "sixs:flymedvs70"
-  fieldEmitter SixsFlyUhv                = "sixs:flyuhv"
-  fieldEmitter SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger"
-  fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
-  fieldEmitter SixsSbsMedH               = "sixs:sbsmedh"
-  fieldEmitter SixsSbsMedHFixDetector    = "sixs:sbsmedhfixdetector"
-  fieldEmitter SixsSbsMedV               = "sixs:sbsmedv"
-  fieldEmitter SixsSbsMedVFixDetector    = "sixs:sbsmedvfixdetector"
-  fieldEmitter SixsSbsUhv                = "sixs:sbsuhv"
+  fieldEmitter CristalK6C             = "cristal:k6c"
+  fieldEmitter MarsFlyscan            = "mars:flyscan"
+  fieldEmitter MarsSbs                = "mars:sbs"
+  fieldEmitter SixsFlyMedH            = "sixs:flymedh"
+  fieldEmitter SixsFlyMedV            = "sixs:flymedv"
+  fieldEmitter SixsFlyUhv             = "sixs:flyuhv"
+  fieldEmitter SixsFlyUhvGisaxs       = "sixs:flyuhvgisaxs"
+  fieldEmitter SixsSbsMedH            = "sixs:sbsmedh"
+  fieldEmitter SixsSbsMedHFixDetector = "sixs:sbsmedhfixdetector"
+  fieldEmitter SixsSbsMedV            = "sixs:sbsmedv"
+  fieldEmitter SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
+  fieldEmitter SixsSbsUhv             = "sixs:sbsuhv"
 
 instance FieldParsable InputType where
   fieldParser = go =<< takeText
