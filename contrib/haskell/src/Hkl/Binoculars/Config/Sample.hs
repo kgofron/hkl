@@ -187,18 +187,18 @@ guess'DataSourcePath'Sample common sample =
                           samplePath' "SIXS" "i14-c-cx2-ex-cm-uhv"
 
      let samplePath = case inputType of
-                        CristalK6C             -> cristalSamplePath
-                        MarsFlyscan            -> marsSamplePath
-                        MarsSbs                -> marsSamplePath
-                        SixsFlyMedH            -> medHSamplePath
-                        SixsFlyMedV            -> medVSamplePath
-                        SixsFlyUhv             -> uhvSamplePath
-                        SixsFlyUhvGisaxs       -> uhvSamplePath
-                        SixsSbsMedH            -> medHSamplePath
-                        SixsSbsMedHFixDetector -> medHSamplePath
-                        SixsSbsMedV            -> medVSamplePath
-                        SixsSbsMedVFixDetector -> medVSamplePath
-                        SixsSbsUhv             -> uhvSamplePath
+                        CristalK6C        -> cristalSamplePath
+                        MarsFlyscan       -> marsSamplePath
+                        MarsSbs           -> marsSamplePath
+                        SixsFlyMedH       -> medHSamplePath
+                        SixsFlyMedV       -> medVSamplePath
+                        SixsFlyUhv        -> uhvSamplePath
+                        SixsFlyUhvGisaxs  -> uhvSamplePath
+                        SixsSbsMedH       -> medHSamplePath
+                        SixsSbsMedHGisaxs -> medHSamplePath
+                        SixsSbsMedV       -> medVSamplePath
+                        SixsSbsMedVGisaxs -> medVSamplePath
+                        SixsSbsUhv        -> uhvSamplePath
 
      overload'DataSourcePath'Sample sample samplePath
 

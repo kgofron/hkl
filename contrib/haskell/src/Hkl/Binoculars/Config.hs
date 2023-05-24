@@ -501,33 +501,33 @@ instance HasFieldValue InputTypeDeprecated where
 data InputType = CristalK6C
                | MarsFlyscan
                | MarsSbs
-               | SixsFlyMedH  -- ok
-               | SixsFlyMedV  -- ok
-               | SixsFlyUhv -- ok
+               | SixsFlyMedH
+               | SixsFlyMedV
+               | SixsFlyUhv
                | SixsFlyUhvGisaxs
-               | SixsSbsMedH  -- ok
-               | SixsSbsMedHFixDetector  -- rename sixs:medhgisaxs
-               | SixsSbsMedV  -- ok
-               | SixsSbsMedVFixDetector -- split sixs:medvgisaxs
-               | SixsSbsUhv -- ok
+               | SixsSbsMedH
+               | SixsSbsMedHGisaxs  -- rename sixs:medhgisaxs
+               | SixsSbsMedV
+               | SixsSbsMedVGisaxs -- split sixs:medvgisaxs
+               | SixsSbsUhv
   deriving (Eq, Show, Enum, Bounded)
 
 instance Arbitrary InputType where
   arbitrary = elements ([minBound .. maxBound] :: [InputType])
 
 instance FieldEmitter InputType where
-  fieldEmitter CristalK6C             = "cristal:k6c"
-  fieldEmitter MarsFlyscan            = "mars:flyscan"
-  fieldEmitter MarsSbs                = "mars:sbs"
-  fieldEmitter SixsFlyMedH            = "sixs:flymedh"
-  fieldEmitter SixsFlyMedV            = "sixs:flymedv"
-  fieldEmitter SixsFlyUhv             = "sixs:flyuhv"
-  fieldEmitter SixsFlyUhvGisaxs       = "sixs:flyuhvgisaxs"
-  fieldEmitter SixsSbsMedH            = "sixs:sbsmedh"
-  fieldEmitter SixsSbsMedHFixDetector = "sixs:sbsmedhfixdetector"
-  fieldEmitter SixsSbsMedV            = "sixs:sbsmedv"
-  fieldEmitter SixsSbsMedVFixDetector = "sixs:sbsmedvfixdetector"
-  fieldEmitter SixsSbsUhv             = "sixs:sbsuhv"
+  fieldEmitter CristalK6C        = "cristal:k6c"
+  fieldEmitter MarsFlyscan       = "mars:flyscan"
+  fieldEmitter MarsSbs           = "mars:sbs"
+  fieldEmitter SixsFlyMedH       = "sixs:flymedh"
+  fieldEmitter SixsFlyMedV       = "sixs:flymedv"
+  fieldEmitter SixsFlyUhv        = "sixs:flyuhv"
+  fieldEmitter SixsFlyUhvGisaxs  = "sixs:flyuhvgisaxs"
+  fieldEmitter SixsSbsMedH       = "sixs:sbsmedh"
+  fieldEmitter SixsSbsMedHGisaxs = "sixs:sbsmedhgisaxs"
+  fieldEmitter SixsSbsMedV       = "sixs:sbsmedv"
+  fieldEmitter SixsSbsMedVGisaxs = "sixs:sbsmedvgisaxs"
+  fieldEmitter SixsSbsUhv        = "sixs:sbsuhv"
 
 instance FieldParsable InputType where
   fieldParser = go =<< takeText
@@ -543,6 +543,8 @@ instance FieldParsable InputType where
         | toLower t == "sixs:flyscanuhv" = pure SixsFlyUhv
         | toLower t == "sixs:flyscanuhv2" = pure SixsFlyUhv
         | toLower t == "sixs:flyscanuhvtest" = pure SixsFlyUhv
+        | toLower t == "sixs:sbsmedhfixdetector" = pure SixsSbsMedHGisaxs
+        | toLower t == "sixs:sbsmedvfixdetector" = pure SixsSbsMedVGisaxs
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'
