@@ -131,6 +131,8 @@ import           Hkl.Lattice
 import           Paths_hkl
 
 -- TODO
+-- hkl new engine ne fonctionne pas bien... voir avec une lattice hexagonale...
+-- si pas de detecteur la logique minput deprecated ne fonctionne pas...
 -- ajouter un XpadFlat -> ajouter 3.2 dans le nom
 -- ajouter un parametre pour exclude les n premiers points et les m derniers points de chaque scan.
 -- adapter angles -> cglm
