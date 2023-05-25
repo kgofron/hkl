@@ -416,41 +416,46 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                                          datasetp "SIXS/i14-c-c02-op-mono/lambda"))
 
       -- geometry
-      let dataSourcePaths'Sixs'Uhv'Axes :: [DataSourcePath Double]
-          dataSourcePaths'Sixs'Uhv'Axes
-            = [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
-                                                                               `H5Or`
-                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")
-                                                                               `H5Or`
-                                                                               datasetp "UHV_MU"
-                                                                               `H5Or`
-                                                                               datasetp "mu_xps"))
+      let sixs'Uhv'Mu
+            = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")
+                                                                             `H5Or`
+                                                                             datasetp "UHV_MU"
+                                                                             `H5Or`
+                                                                             datasetp "mu_xps"))
+      let sixs'Uhv'Omega
+            = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
+                                                                             `H5Or`
+                                                                             datasetp "UHV_OMEGA"
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega")
+                                                                             `H5Or`
+                                                                             datasetp "omega_xps"))
+      let sixs'Uhv'Delta
+            = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
+                                                                             `H5Or`
+                                                                             datasetp "UHV_DELTA"
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")
+                                                                             `H5Or`
+                                                                             datasetp "delta_xps"))
 
-              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
-                                                                               `H5Or`
-                                                                               datasetp "UHV_OMEGA"
-                                                                               `H5Or`
-                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega")))
+      let sixs'Uhv'Gamma
+            = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
+                                                                             `H5Or`
+                                                                             datasetp "UHV_GAMMA"
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma")
+                                                                             `H5Or`
+                                                                             datasetp "gamma_xps"))
 
-              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
-                                                                               `H5Or`
-                                                                               datasetp "UHV_DELTA"
-                                                                               `H5Or`
-                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")))
-
-              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
-                                                                               `H5Or`
-                                                                               datasetp "UHV_GAMMA"
-                                                                               `H5Or`
-                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma")))
-              ]
-
-      let dataSourcePath'Geometry'Uhv'Sixs :: DataSourcePath Geometry
-          dataSourcePath'Geometry'Uhv'Sixs
+      let dataSourcePath'Geometry'Sixs'Uhv :: DataSourcePath Geometry
+          dataSourcePath'Geometry'Sixs'Uhv
             = DataSourcePath'Geometry
               (Geometry'Factory Uhv)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              dataSourcePaths'Sixs'Uhv'Axes
+              [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma]
 
       let sixs'Med'Beta
             = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "beta"
@@ -590,7 +595,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        (mkTimeStamp'Fly msub)
          SixsFlyUhv -> DataSourcePath'DataFrameQCustom
                           (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                          dataSourcePath'Geometry'Uhv'Sixs
+                          dataSourcePath'Geometry'Sixs'Uhv
                           (mkDetector'Sixs'Fly detector)
                           (mkTimeStamp'Fly msub)
          SixsFlyUhvGisaxs -> DataSourcePath'DataFrameQCustom
@@ -598,19 +603,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                             (DataSourcePath'Geometry
                               sixsUhvGisaxs
                               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                              [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/mu_xps")
-                              , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega_xps")
-                              , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eix")
-                                                      `H5Or`
-                                                      hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tx.1" $ datasetp "position_pre"))
-                                `DataSourcePath'Double'Or`
-                                DataSourcePath'Double'Const 0
-                              , DataSourcePath'Double(hdf5p (grouppat 0 $ groupp "scan_data" $ datasetp "eiz")
-                                                      `H5Or`
-                                                      hdf5p (grouppat 0 $ groupp "SIXS" $ groupp "i14-c-cx1-dt-det_tz.1" $ datasetp "position_pre"))
-                                `DataSourcePath'Double'Or`
-                                DataSourcePath'Double'Const 0
-                              ])
+                              [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
                             (mkDetector'Sixs'Fly detector)
                             (mkTimeStamp'Fly msub)
          SixsSbsMedH -> DataSourcePath'DataFrameQCustom
@@ -641,7 +634,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                              (mkTimeStamp'Sbs msub)
          SixsSbsUhv -> DataSourcePath'DataFrameQCustom
                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-                      dataSourcePath'Geometry'Uhv'Sixs
+                      dataSourcePath'Geometry'Sixs'Uhv
                       (mkDetector'Sixs'Sbs detector)
                       (mkTimeStamp'Sbs msub)
 

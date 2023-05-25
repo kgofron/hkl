@@ -107,13 +107,6 @@ sixsMedVGisaxs
       ]
     )
 
-  -- # TODO translate the detector, must be done after the detrot.
-        -- if eix != 0.0:
-        --     pixels[2] += -eix * 1e-3
-        -- if eiz != 0.0:
-        --     pixels[1] += eiz * 1e-3
-
-
 sixsUhvGisaxs :: Geometry
 sixsUhvGisaxs
   = Geometry'Custom
