@@ -136,7 +136,6 @@ import           Paths_hkl
 -- adapter hkl -> cglm
 -- adapter angles -> cglm
 -- ajouter ofset sur les angles
--- simplifier les input
 -- implementer les q/tth_timestap0 et q/tth_index
 -- implementer les corrections de polarisation
 -- gui merge de cube.

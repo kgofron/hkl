@@ -408,6 +408,15 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                           datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att_old"))))
             0 0 mAttenuationMax
 
+      -- timestamp
+      let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
+          mkTimeStamp'Sbs msub'
+            = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
+
+      let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
+          mkTimeStamp'Fly msub'
+            = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+
       -- wavelength
       let dataSourcePath'WaveLength'Sixs ::  DataSourcePath Double
           dataSourcePath'WaveLength'Sixs
@@ -547,14 +556,21 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
                [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
 
-       -- timestamp
-      let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
-          mkTimeStamp'Sbs msub'
-            = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
+      let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DataSourcePath Geometry -> DataSourcePath DataFrameQCustom
+          dataSourcePath'DataFrameQCustom'Sixs'Fly g
+            = DataSourcePath'DataFrameQCustom
+              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+              g
+              (mkDetector'Sixs'Fly detector)
+              (mkTimeStamp'Fly msub)
 
-      let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
-          mkTimeStamp'Fly msub'
-            = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+      let dataSourcePath'DataFrameQCustom'Sixs'Sbs :: DataSourcePath Geometry -> DataSourcePath DataFrameQCustom
+          dataSourcePath'DataFrameQCustom'Sixs'Sbs g
+            = DataSourcePath'DataFrameQCustom
+              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
+              g
+              (mkDetector'Sixs'Sbs detector)
+              (mkTimeStamp'Sbs msub)
 
       case inputtype of
          CristalK6C -> DataSourcePath'DataFrameQCustom
@@ -605,66 +621,18 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                     (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
                     detector)
                    (mkTimeStamp'Sbs msub)
-         SixsFlyMedH -> DataSourcePath'DataFrameQCustom
-                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                       dataSourcePath'Geometry'Sixs'MedH
-                       (mkDetector'Sixs'Fly detector)
-                       (mkTimeStamp'Fly msub)
-         SixsFlyMedHGisaxs -> DataSourcePath'DataFrameQCustom
-                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                             dataSourcePath'Geometry'Sixs'MedHGisaxs
-                             (mkDetector'Sixs'Fly detector)
-                             (mkTimeStamp'Fly msub)
-         SixsFlyMedV -> DataSourcePath'DataFrameQCustom
-                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                       dataSourcePath'Geometry'Sixs'MedV
-                       (mkDetector'Sixs'Fly detector)
-                       (mkTimeStamp'Fly msub)
-         SixsFlyMedVGisaxs -> DataSourcePath'DataFrameQCustom
-                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                             dataSourcePath'Geometry'Sixs'MedVGisaxs
-                             (mkDetector'Sixs'Fly detector)
-                             (mkTimeStamp'Fly msub)
-         SixsFlyUhv -> DataSourcePath'DataFrameQCustom
-                          (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                          dataSourcePath'Geometry'Sixs'Uhv
-                          (mkDetector'Sixs'Fly detector)
-                          (mkTimeStamp'Fly msub)
-         SixsFlyUhvGisaxs -> DataSourcePath'DataFrameQCustom
-                            (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                            dataSourcePath'Geometry'Sixs'UhvGisaxs
-                            (mkDetector'Sixs'Fly detector)
-                            (mkTimeStamp'Fly msub)
-         SixsSbsMedH -> DataSourcePath'DataFrameQCustom
-                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-                       dataSourcePath'Geometry'Sixs'MedH
-                       (mkDetector'Sixs'Sbs detector)
-                       (mkTimeStamp'Sbs msub)
-         SixsSbsMedHGisaxs -> DataSourcePath'DataFrameQCustom
-                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                             dataSourcePath'Geometry'Sixs'MedHGisaxs
-                             (mkDetector'Sixs'Sbs detector)
-                             (mkTimeStamp'Sbs msub)
-         SixsSbsMedV -> DataSourcePath'DataFrameQCustom
-                       (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-                       dataSourcePath'Geometry'Sixs'MedV
-                       (mkDetector'Sixs'Sbs detector)
-                       (mkTimeStamp'Sbs msub)
-         SixsSbsMedVGisaxs -> DataSourcePath'DataFrameQCustom
-                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-                             dataSourcePath'Geometry'Sixs'MedVGisaxs
-                             (mkDetector'Sixs'Sbs detector)
-                             (mkTimeStamp'Sbs msub)
-         SixsSbsUhv -> DataSourcePath'DataFrameQCustom
-                      (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-                      dataSourcePath'Geometry'Sixs'Uhv
-                      (mkDetector'Sixs'Sbs detector)
-                      (mkTimeStamp'Sbs msub)
-         SixsSbsUhvGisaxs -> DataSourcePath'DataFrameQCustom
-                            (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-                            dataSourcePath'Geometry'Sixs'UhvGisaxs
-                            (mkDetector'Sixs'Sbs detector)
-                            (mkTimeStamp'Sbs msub)
+         SixsFlyMedH -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedH
+         SixsFlyMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedHGisaxs
+         SixsFlyMedV -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedV
+         SixsFlyMedVGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedVGisaxs
+         SixsFlyUhv -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'Uhv
+         SixsFlyUhvGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'UhvGisaxs
+         SixsSbsMedH -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedH
+         SixsSbsMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedHGisaxs
+         SixsSbsMedV -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedV
+         SixsSbsMedVGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedVGisaxs
+         SixsSbsUhv -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'Uhv
+         SixsSbsUhvGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'UhvGisaxs
 
 
 {-# INLINE spaceQCustom #-}
