@@ -416,6 +416,21 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                                          datasetp "SIXS/i14-c-c02-op-mono/lambda"))
 
       -- geometry
+      let sixs'eix
+            = DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eix")
+                                    `H5Or`
+                                    hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tx.1/position_pre"))
+              `DataSourcePath'Double'Or`
+              DataSourcePath'Double'Const 0
+
+      let sixs'eiz
+            = DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eiz")
+                                    `H5Or`
+                                    hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tz.1/position_pre"))
+              `DataSourcePath'Double'Or`
+              DataSourcePath'Double'Const 0
+
+
       let sixs'Uhv'Mu
             = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                              `H5Or`
@@ -457,6 +472,13 @@ guess'DataSourcePath'DataFrameQCustom common msub =
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
               [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma]
 
+      let dataSourcePath'Geometry'Sixs'UhvGisaxs :: DataSourcePath Geometry
+          dataSourcePath'Geometry'Sixs'UhvGisaxs
+            = (DataSourcePath'Geometry
+                sixsUhvGisaxs
+                (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+                [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
+
       let sixs'Med'Beta
             = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "beta"
                                                                              `H5Or`
@@ -496,19 +518,6 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                                                                              `H5Or`
                                                                              datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")))
 
-      let sixs'eix
-            = DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eix")
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tx.1/position_pre"))
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double'Const 0
-
-      let sixs'eiz
-            = DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eiz")
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tz.1/position_pre"))
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double'Const 0
 
       let dataSourcePath'Geometry'Sixs'MedH ::  DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedH
@@ -517,6 +526,12 @@ guess'DataSourcePath'DataFrameQCustom common msub =
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
               [ sixs'Med'Beta, sixs'MedH'Mu, sixs'MedH'Gamma, sixs'MedH'Delta ]
 
+      let dataSourcePath'Geometry'Sixs'MedHGisaxs ::  DataSourcePath Geometry
+          dataSourcePath'Geometry'Sixs'MedHGisaxs
+            = (DataSourcePath'Geometry
+               sixsMedHGisaxs
+               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+               [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ])
 
       let dataSourcePath'Geometry'Sixs'MedV :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedV
@@ -524,6 +539,13 @@ guess'DataSourcePath'DataFrameQCustom common msub =
               (Geometry'Factory MedV)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
               [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'MedV'Gamma, sixs'MedV'Delta, sixs'MedV'Etaa ]
+
+      let dataSourcePath'Geometry'Sixs'MedVGisaxs :: DataSourcePath Geometry
+          dataSourcePath'Geometry'Sixs'MedVGisaxs
+            = (DataSourcePath'Geometry
+               sixsMedVGisaxs
+               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+               [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
 
        -- timestamp
       let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
@@ -588,11 +610,21 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        dataSourcePath'Geometry'Sixs'MedH
                        (mkDetector'Sixs'Fly detector)
                        (mkTimeStamp'Fly msub)
+         SixsFlyMedHGisaxs -> DataSourcePath'DataFrameQCustom
+                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                             dataSourcePath'Geometry'Sixs'MedHGisaxs
+                             (mkDetector'Sixs'Fly detector)
+                             (mkTimeStamp'Fly msub)
          SixsFlyMedV -> DataSourcePath'DataFrameQCustom
                        (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                        dataSourcePath'Geometry'Sixs'MedV
                        (mkDetector'Sixs'Fly detector)
                        (mkTimeStamp'Fly msub)
+         SixsFlyMedVGisaxs -> DataSourcePath'DataFrameQCustom
+                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
+                             dataSourcePath'Geometry'Sixs'MedVGisaxs
+                             (mkDetector'Sixs'Fly detector)
+                             (mkTimeStamp'Fly msub)
          SixsFlyUhv -> DataSourcePath'DataFrameQCustom
                           (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
                           dataSourcePath'Geometry'Sixs'Uhv
@@ -600,10 +632,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                           (mkTimeStamp'Fly msub)
          SixsFlyUhvGisaxs -> DataSourcePath'DataFrameQCustom
                             (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                            (DataSourcePath'Geometry
-                              sixsUhvGisaxs
-                              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                              [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
+                            dataSourcePath'Geometry'Sixs'UhvGisaxs
                             (mkDetector'Sixs'Fly detector)
                             (mkTimeStamp'Fly msub)
          SixsSbsMedH -> DataSourcePath'DataFrameQCustom
@@ -613,10 +642,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        (mkTimeStamp'Sbs msub)
          SixsSbsMedHGisaxs -> DataSourcePath'DataFrameQCustom
                              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-                             (DataSourcePath'Geometry
-                               sixsMedHGisaxs
-                               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                               [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ])
+                             dataSourcePath'Geometry'Sixs'MedHGisaxs
                              (mkDetector'Sixs'Sbs detector)
                              (mkTimeStamp'Sbs msub)
          SixsSbsMedV -> DataSourcePath'DataFrameQCustom
@@ -626,10 +652,7 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                        (mkTimeStamp'Sbs msub)
          SixsSbsMedVGisaxs -> DataSourcePath'DataFrameQCustom
                              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-                             (DataSourcePath'Geometry
-                               sixsMedVGisaxs
-                               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                               [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
+                             dataSourcePath'Geometry'Sixs'MedVGisaxs
                              (mkDetector'Sixs'Sbs detector)
                              (mkTimeStamp'Sbs msub)
          SixsSbsUhv -> DataSourcePath'DataFrameQCustom
@@ -637,6 +660,11 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                       dataSourcePath'Geometry'Sixs'Uhv
                       (mkDetector'Sixs'Sbs detector)
                       (mkTimeStamp'Sbs msub)
+         SixsSbsUhvGisaxs -> DataSourcePath'DataFrameQCustom
+                            (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
+                            dataSourcePath'Geometry'Sixs'UhvGisaxs
+                            (mkDetector'Sixs'Sbs detector)
+                            (mkTimeStamp'Sbs msub)
 
 
 {-# INLINE spaceQCustom #-}

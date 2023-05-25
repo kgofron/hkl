@@ -191,7 +191,9 @@ guess'DataSourcePath'Sample common sample =
                         MarsFlyscan       -> marsSamplePath
                         MarsSbs           -> marsSamplePath
                         SixsFlyMedH       -> medHSamplePath
+                        SixsFlyMedHGisaxs -> medHSamplePath
                         SixsFlyMedV       -> medVSamplePath
+                        SixsFlyMedVGisaxs -> medVSamplePath
                         SixsFlyUhv        -> uhvSamplePath
                         SixsFlyUhvGisaxs  -> uhvSamplePath
                         SixsSbsMedH       -> medHSamplePath
@@ -199,6 +201,7 @@ guess'DataSourcePath'Sample common sample =
                         SixsSbsMedV       -> medVSamplePath
                         SixsSbsMedVGisaxs -> medVSamplePath
                         SixsSbsUhv        -> uhvSamplePath
+                        SixsSbsUhvGisaxs  -> uhvSamplePath
 
      overload'DataSourcePath'Sample sample samplePath
 

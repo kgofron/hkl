@@ -307,7 +307,9 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
                                                                 MarsFlyscan -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
                                                                 MarsSbs -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
                                                                 SixsFlyMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                                SixsFlyMedHGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                                 SixsFlyMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                                SixsFlyMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                                 SixsFlyUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                                 SixsFlyUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                                 SixsSbsMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
@@ -315,6 +317,7 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
                                                                 SixsSbsMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                                 SixsSbsMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                                 SixsSbsUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                                SixsSbsUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                     (Just deprecated) -> case deprecated of
                                                                           SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
                                                                           SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70

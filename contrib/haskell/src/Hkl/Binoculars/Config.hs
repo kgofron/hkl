@@ -502,14 +502,17 @@ data InputType = CristalK6C
                | MarsFlyscan
                | MarsSbs
                | SixsFlyMedH
+               | SixsFlyMedHGisaxs
                | SixsFlyMedV
+               | SixsFlyMedVGisaxs
                | SixsFlyUhv
                | SixsFlyUhvGisaxs
                | SixsSbsMedH
-               | SixsSbsMedHGisaxs  -- rename sixs:medhgisaxs
+               | SixsSbsMedHGisaxs
                | SixsSbsMedV
-               | SixsSbsMedVGisaxs -- split sixs:medvgisaxs
+               | SixsSbsMedVGisaxs
                | SixsSbsUhv
+               | SixsSbsUhvGisaxs
   deriving (Eq, Show, Enum, Bounded)
 
 instance Arbitrary InputType where
@@ -520,7 +523,9 @@ instance FieldEmitter InputType where
   fieldEmitter MarsFlyscan       = "mars:flyscan"
   fieldEmitter MarsSbs           = "mars:sbs"
   fieldEmitter SixsFlyMedH       = "sixs:flymedh"
+  fieldEmitter SixsFlyMedHGisaxs = "sixs:flymedhgisaxs"
   fieldEmitter SixsFlyMedV       = "sixs:flymedv"
+  fieldEmitter SixsFlyMedVGisaxs = "sixs:flymedvgisaxs"
   fieldEmitter SixsFlyUhv        = "sixs:flyuhv"
   fieldEmitter SixsFlyUhvGisaxs  = "sixs:flyuhvgisaxs"
   fieldEmitter SixsSbsMedH       = "sixs:sbsmedh"
@@ -528,6 +533,7 @@ instance FieldEmitter InputType where
   fieldEmitter SixsSbsMedV       = "sixs:sbsmedv"
   fieldEmitter SixsSbsMedVGisaxs = "sixs:sbsmedvgisaxs"
   fieldEmitter SixsSbsUhv        = "sixs:sbsuhv"
+  fieldEmitter SixsSbsUhvGisaxs  = "sixs:sbsuhvgisaxs"
 
 instance FieldParsable InputType where
   fieldParser = go =<< takeText
