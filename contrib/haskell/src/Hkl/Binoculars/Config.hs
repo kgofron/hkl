@@ -990,6 +990,6 @@ replace' proj msub i l dtmpl midx = unpack
                           . replace "{first}" (pack . show . inf $ i)
                           . replace "{limits}" l
                           . replace "{projection}" (case msub of
-                                                      (Just sub) -> fieldEmitter sub
+                                                      Just sub -> fieldEmitter sub
                                                       Nothing -> fieldEmitter proj)
                           . unDestinationTmpl . addOverwrite midx $ dtmpl
