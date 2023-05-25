@@ -133,9 +133,7 @@ import           Paths_hkl
 -- TODO
 -- ajouter un XpadFlat -> ajouter 3.2 dans le nom
 -- ajouter un parametre pour exclude les n premiers points et les m derniers points de chaque scan.
--- adapter hkl -> cglm
 -- adapter angles -> cglm
--- ajouter ofset sur les angles
 -- implementer les q/tth_timestap0 et q/tth_index
 -- implementer les corrections de polarisation
 -- gui merge de cube.

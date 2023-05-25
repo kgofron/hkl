@@ -284,6 +284,9 @@ type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace 
  -> CSize -- size_t n_limits
  -> CDouble -- double index
  -> C'HklBinocularsQCustomSubProjectionEnum -- int subprojection
+ -> CDouble -- uqx
+ -> CDouble -- uqy
+ -> CDouble -- uqz
  -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_int32_t" \

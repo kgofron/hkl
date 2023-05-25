@@ -36,39 +36,41 @@ module Hkl.Binoculars.Projections.QCustom
     , updateQCustom
     ) where
 
-import           Control.Applicative             ((<|>))
-import           Control.Concurrent.Async        (mapConcurrently)
-import           Control.Monad.Catch             (MonadThrow)
-import           Control.Monad.IO.Class          (MonadIO (liftIO))
-import           Control.Monad.Logger            (MonadLogger, logDebugN,
-                                                  logInfoN)
-import           Control.Monad.Reader            (MonadReader, ask, forM_,
-                                                  forever)
-import           Data.Aeson                      (FromJSON, ToJSON,
-                                                  eitherDecode', encode)
-import           Data.Array.Repa                 (Array)
-import           Data.Array.Repa.Index           (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
-import           Data.ByteString.Lazy            (fromStrict, toStrict)
-import           Data.HashMap.Lazy               (fromList)
-import           Data.Ini                        (Ini (..))
-import           Data.Ini.Config.Bidir           (FieldValue (..))
-import           Data.Maybe                      (fromJust, fromMaybe)
-import           Data.Text                       (pack, unpack)
-import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
-import           Data.Text.IO                    (putStr)
-import           Data.Vector.Storable.Mutable    (unsafeWith)
-import           Foreign.C.Types                 (CDouble (..))
-import           Foreign.ForeignPtr              (ForeignPtr, withForeignPtr)
-import           GHC.Generics                    (Generic)
-import           Generic.Random                  (genericArbitraryU)
-import           Path                            (Abs, Dir, Path)
-import           Pipes                           (Pipe, await, each, runEffect,
-                                                  yield, (>->))
-import           Pipes.Prelude                   (filter, map, tee, toListM)
-import           Pipes.Safe                      (MonadSafe, runSafeT)
-import           Test.QuickCheck                 (Arbitrary (..))
-import           Text.Printf                     (printf)
+import           Control.Applicative               ((<|>))
+import           Control.Concurrent.Async          (mapConcurrently)
+import           Control.Monad.Catch               (MonadThrow)
+import           Control.Monad.IO.Class            (MonadIO (liftIO))
+import           Control.Monad.Logger              (MonadLogger, logDebugN,
+                                                    logInfoN)
+import           Control.Monad.Reader              (MonadReader, ask, forM_,
+                                                    forever)
+import           Data.Aeson                        (FromJSON, ToJSON,
+                                                    eitherDecode', encode)
+import           Data.Array.Repa                   (Array)
+import           Data.Array.Repa.Index             (DIM2, DIM3)
+import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
+import           Data.ByteString.Lazy              (fromStrict, toStrict)
+import           Data.HashMap.Lazy                 (fromList)
+import           Data.Ini                          (Ini (..))
+import           Data.Ini.Config.Bidir             (FieldValue (..))
+import           Data.Maybe                        (fromJust, fromMaybe)
+import           Data.Text                         (pack, unpack)
+import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
+import           Data.Text.IO                      (putStr)
+import           Data.Vector.Storable.Mutable      (unsafeWith)
+import           Foreign.C.Types                   (CDouble (..))
+import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
+import           GHC.Generics                      (Generic)
+import           Generic.Random                    (genericArbitraryU)
+import           Numeric.Units.Dimensional.Prelude (Angle, degree, radian, (*~),
+                                                    (/~))
+import           Path                              (Abs, Dir, Path)
+import           Pipes                             (Pipe, await, each,
+                                                    runEffect, yield, (>->))
+import           Pipes.Prelude                     (filter, map, tee, toListM)
+import           Pipes.Safe                        (MonadSafe, runSafeT)
+import           Test.QuickCheck                   (Arbitrary (..))
+import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
@@ -82,7 +84,7 @@ import           Hkl.Detector
 import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.Image
-import           Hkl.Orphan                      ()
+import           Hkl.Orphan                        ()
 import           Hkl.Pipes
 import           Hkl.Types
 import           Hkl.Utils
@@ -178,6 +180,9 @@ data instance Config 'QCustomProjection
     , binocularsConfig'QCustom'ProjectionLimits       :: Maybe (RLimits DIM3)
     , binocularsConfig'QCustom'DataPath               :: DataSourcePath DataFrameQCustom
     , binocularsConfig'QCustom'SubProjection          :: Maybe HklBinocularsQCustomSubProjectionEnum
+    , binocularsConfig'QCustom'Uqx                    :: Degree
+    , binocularsConfig'QCustom'Uqy                    :: Degree
+    , binocularsConfig'QCustom'Uqz                    :: Degree
     } deriving (Show, Generic)
 
 instance Arbitrary (Config 'QCustomProjection) where
@@ -195,6 +200,9 @@ default'BinocularsConfig'QCustom
     , binocularsConfig'QCustom'ProjectionLimits  = Nothing
     , binocularsConfig'QCustom'DataPath = default'DataSourcePath'DataFrameQCustom
     , binocularsConfig'QCustom'SubProjection = Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
+    , binocularsConfig'QCustom'Uqx = Degree (0.0 *~ degree)
+    , binocularsConfig'QCustom'Uqy = Degree (0.0 *~ degree)
+    , binocularsConfig'QCustom'Uqz = Degree (0.0 *~ degree)
     }
 
 
@@ -210,6 +218,9 @@ instance HasIniConfig 'QCustomProjection where
     resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
     limits <- parseMb cfg "projection" "limits"
     let msubprojection = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
+    uqx <- parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
+    uqy <- parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
+    uqz <- parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
 
     -- customize a bunch of parameters
 
@@ -232,7 +243,7 @@ instance HasIniConfig 'QCustomProjection where
                  Right Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection
                  Right (Just d)  -> overload'DataSourcePath'DataFrameQCustom common subprojection d
 
-    pure $ BinocularsConfig'QCustom common surface_orientation projectiontype resolution limits datapath subprojection
+    pure $ BinocularsConfig'QCustom common surface_orientation projectiontype resolution limits datapath subprojection uqx uqy uqz
 
 
 instance ToIni (Config 'QCustomProjection) where
@@ -246,6 +257,40 @@ instance ToIni (Config 'QCustomProjection) where
                                                           <> elemFDef' "resolution" binocularsConfig'QCustom'ProjectionResolution c default'BinocularsConfig'QCustom
                                                           <> elemFMbDef' "limits" binocularsConfig'QCustom'ProjectionLimits c default'BinocularsConfig'QCustom
                                                           <> elemFMbDef' "subprojection" binocularsConfig'QCustom'SubProjection c default'BinocularsConfig'QCustom
+                                                          <> elemFDef "uqx" binocularsConfig'QCustom'Uqx c default'BinocularsConfig'QCustom
+                                                          [ "rotation around the x-axis of the sample in the surface basis system -- degree"
+                                                          , ""
+                                                          , "in this basis, the x-axis is colinear to the surface of the sample along the x-rays."
+                                                          , ""
+                                                          , " `<not set>` - use the default value `0.0`"
+                                                          , " `a value`   - use this value"
+                                                          ]
+                                                          <> elemFDef "uqy" binocularsConfig'QCustom'Uqy c default'BinocularsConfig'QCustom
+                                                          [ "rotation around the y-axis of the sample in the surface basis system -- degree"
+                                                          , ""
+                                                          , "in this basis, the y-axis is colinear to the surface of the sample and"
+                                                          , "forme a directe basis with x-axis and z-axis."
+                                                          , ""
+                                                          , "examples:"
+                                                          , "  - all motors set to zero and a vertical surface - y-axis along -z (labo basis)"
+                                                          , "  - all motors set to zero and an horizontal surcafe - y-axis along y (labo basis)"
+                                                          , ""
+                                                          , " `<not set>` - use the default value `0.0`"
+                                                          , " `a value`   - use this value"
+                                                          ]
+                                                          <> elemFDef "uqz" binocularsConfig'QCustom'Uqz c default'BinocularsConfig'QCustom
+                                                          [ "rotation around the z-axis of the sample in the surface basis system -- degree"
+                                                          , ""
+                                                          , "in this basis, the z-axis is perpendicular to the surface of the sample."
+                                                          , ""
+                                                          , "examples:"
+                                                          , "  - all motors set to zero and a vertical surface - z-axis along y (labo basis)"
+                                                          , "  - all motors set to zero and an horizontal surcafe - z-axis along z (labo basis)"
+                                                          , ""
+                                                          , ""
+                                                          , " `<not set>` - use the default value `0.0`"
+                                                          , " `a value`   - use this value"
+                                                          ]
                                            )]
 
                 , iniGlobals = []
@@ -636,8 +681,18 @@ guess'DataSourcePath'DataFrameQCustom common msub =
 
 
 {-# INLINE spaceQCustom #-}
-spaceQCustom :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> HklBinocularsSurfaceOrientationEnum -> Maybe (RLimits DIM3) -> HklBinocularsQCustomSubProjectionEnum -> Space DIM3 -> DataFrameQCustom -> IO (DataFrameSpace DIM3)
-spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace) (DataFrameQCustom att g img index) =
+spaceQCustom :: Detector a DIM2
+             -> Array F DIM3 Double
+             -> Resolutions DIM3
+             -> Maybe Mask
+             -> HklBinocularsSurfaceOrientationEnum
+             -> Maybe (RLimits DIM3)
+             -> HklBinocularsQCustomSubProjectionEnum
+             -> Angle Double -> Angle Double -> Angle Double
+             -> Space DIM3
+             -> DataFrameQCustom
+             -> IO (DataFrameSpace DIM3)
+spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withForeignPtr g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -648,11 +703,11 @@ spaceQCustom det pixels rs mmask' surf mlimits subprojection space@(Space fSpace
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian))
     (ImageWord16 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian))
     (ImageWord32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection)
+      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian))
 
   return (DataFrameSpace img space att)
 
@@ -691,6 +746,9 @@ processQCustomP = do
   let datapaths = binocularsConfig'QCustom'DataPath conf
   let subprojection = fromJust (binocularsConfig'QCustom'SubProjection conf) -- should not be Maybe
   let projectionType = binocularsConfig'QCustom'ProjectionType conf
+  let (Degree uqx) = binocularsConfig'QCustom'Uqx conf
+  let (Degree uqy) = binocularsConfig'QCustom'Uqy conf
+  let (Degree uqz) = binocularsConfig'QCustom'Uqz conf
 
   -- built from the config
   output' <- liftIO $ destination' projectionType (Just subprojection) inputRange mlimits destination overwrite
@@ -721,7 +779,7 @@ processQCustomP = do
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
     >-> framesQCustomP datapaths
-    >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
+    >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz)
     >-> accumulateP c
 
   logDebugN "stop gessing final cube size"
@@ -737,7 +795,7 @@ processQCustomP = do
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              >-> framesQCustomP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
-                             >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection)
+                             >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz)
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs

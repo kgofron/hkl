@@ -550,6 +550,10 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
 		case HKL_BINOCULARS_SURFACE_ORIENTATION_NUM_ORIENTATION: \
 			break;						\
 		}							\
+                                                                        \
+                CGLM_ALIGN_MAT vec3s euler_xyz = {{uqx, uqy, uqz}};     \
+                m_holder_s = glms_mat4_mul(m_holder_s, glms_euler_xyz(euler_xyz)); \
+                                                                        \
 		m_holder_s = glms_mat4_inv(m_holder_s);                 \
                                                                         \
 		darray_size(space->items) = 0;				\

@@ -228,7 +228,11 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
                                                        const HklBinocularsAxisLimits **limits, \
                                                        size_t n_limits, \
                                                        double timestamp, \
-                                                       const HklBinocularsQCustomSubProjectionEnum subprojection)
+                                                       const HklBinocularsQCustomSubProjectionEnum subprojection, \
+                                                       double uqx,      \
+                                                       double uqy,      \
+                                                       double uqz      \
+                )
 
 
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(int32_t);
