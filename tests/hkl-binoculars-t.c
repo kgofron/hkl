@@ -476,28 +476,43 @@ static void test_projection(void)
         int res = TRUE;
         HklFactory *factory = hkl_factory_get_by_name("ZAXIS", NULL);
         HklGeometry *geometry = hkl_factory_create_new_geometry(factory);
+
+        /* prepare the sample */
         HklSample *sample = hkl_sample_new("hkl projection");
+	HklLattice *lattice = hkl_lattice_new(2.556, 2.556, 2.556,
+                                              90 * HKL_DEGTORAD,
+                                              90 * HKL_DEGTORAD,
+                                              120 * HKL_DEGTORAD,
+                                              NULL);
+	hkl_sample_lattice_set(sample, lattice);
+	hkl_lattice_free(lattice);
+
+        /* ux = -89.7639 */
+        /* uy = 0.0252 */
+        /* uz = 13.5010 */
 
         /* the geometry positions */
+
         static double axes[3][4] = {{0, 0, 0, 0},
                                     {10, 10, 10, 10},
                                     {30, 30, 30, 30}};
 
         /* the expected result for the three axes of the 1st detector */
-        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{0, -1, 0},
-                                                                           {0, -1, 0},
-                                                                           {0, -1, 0},
-                                                                           {0, -1, -1},
-                                                                           {0, 0, 0},
-                                                                           {0, 0, 0},
-                                                                           {0, 0, 0}};
-        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{3, 20, 9},
-                                                                           {3, 20, 11},
-                                                                           {3, 20, 9},
-                                                                           {3, 20, 9},
-                                                                           {2, 20, 9},
-                                                                           {2, 20, 9},
-                                                                           {3, 20, 9}};
+        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14, -2, 0},
+                                                                           {-14, -2, 0},
+                                                                           {-14, -2, 0},
+                                                                           {-14, -2, -2},
+                                                                           {-13, 0, 0},
+                                                                           {-13, 0, 0},
+                                                                           {-13, -1, 0}};
+
+        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
+                                                                           {1, 34, 19},
+                                                                           {1, 34, 14},
+                                                                           {1, 33, 15},
+                                                                           {0, 33, 15},
+                                                                           {0, 33, 15},
+                                                                           {0, 33, 15}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;

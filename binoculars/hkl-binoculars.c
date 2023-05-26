@@ -963,9 +963,9 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
                 CGLM_ALIGN_MAT mat4s m_holder_s = hkl_binoculars_holder_transformation_get(holder_s); \
                                                                         \
                 const HklMatrix *UB = hkl_sample_UB_get(sample);        \
-                CGLM_ALIGN_MAT mat4s ub = {{{UB->data[0][0], UB->data[0][1], UB->data[0][2], 0}, \
-                                            {UB->data[1][0], UB->data[1][1], UB->data[1][2], 0}, \
-                                            {UB->data[2][0], UB->data[2][1], UB->data[2][2], 0}, \
+                CGLM_ALIGN_MAT mat4s ub = {{{UB->data[0][0], UB->data[1][0], UB->data[2][0], 0}, \
+                                            {UB->data[0][1], UB->data[1][1], UB->data[2][1], 0}, \
+                                            {UB->data[0][2], UB->data[1][2], UB->data[2][2], 0}, \
                                             {0, 0, 0, 1}}};             \
                 glms_mat4_print(ub, stdout);                            \
                 m_holder_s = glms_mat4_mul(m_holder_s, ub);             \
@@ -1157,7 +1157,9 @@ unsigned int hkl_binoculars_cube_cmp(const HklBinocularsCube *self, const HklBin
         /* } */
 
         if(res){
+                fprintf(stdout, "cube: self\n");
                 hkl_binoculars_cube_fprintf(stdout, self);
+                fprintf(stdout, "cube: other\n");
                 hkl_binoculars_cube_fprintf(stdout, other);
         }
 
