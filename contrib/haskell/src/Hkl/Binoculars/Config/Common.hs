@@ -74,6 +74,8 @@ data BinocularsConfig'Common
     , binocularsConfig'Common'Maskmatrix             :: Maybe MaskLocation
     , binocularsConfig'Common'Wavelength             :: Maybe Double
     , binocularsConfig'Common'ImageSumMax            :: Maybe Double
+    , binocularsConfig'Common'SkipFirstPoints        :: Maybe Int
+    , binocularsConfig'Common'SkipLastPoints         :: Maybe Int
     } deriving (Eq, Show, Generic)
 
 default'BinocularsConfig'Common :: BinocularsConfig'Common
@@ -95,6 +97,8 @@ default'BinocularsConfig'Common
     , binocularsConfig'Common'Maskmatrix = Nothing
     , binocularsConfig'Common'Wavelength = Nothing
     , binocularsConfig'Common'ImageSumMax = Nothing
+    , binocularsConfig'Common'SkipFirstPoints = Nothing
+    , binocularsConfig'Common'SkipLastPoints = Nothing
     }
 
 instance Arbitrary BinocularsConfig'Common where
@@ -261,6 +265,18 @@ instance ToIni  BinocularsConfig'Common where
                                                       , " `<not set>` - process all images."
                                                       , " `max`       - process images only if the sum of all the pixels is lower than `max`"
                                                       ]
+                                                      <> elemFMbDef "skip_first_points" binocularsConfig'Common'SkipFirstPoints c default'BinocularsConfig'Common
+                                                      [ "skip the first `n` points of each scan."
+                                                      , ""
+                                                      , " `<not set>` - process all images."
+                                                      , " `n`         - skip the first `n` points (`n` included)"
+                                                      ]
+                                                      <> elemFMbDef "skip_last_points" binocularsConfig'Common'SkipLastPoints c default'BinocularsConfig'Common
+                                                      [ "skip the last `n` points of each scan."
+                                                      , ""
+                                                      , " `<not set>` - process all images."
+                                                      , " `n`         - skip the last `n` points (`n` included)"
+                                                      ]
                                             )
                                          ]
 
@@ -335,10 +351,12 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
     maskmatrix <- parseMb cfg "input" "maskmatrix"
     wavelength <- parseMb cfg "input" "wavelength"
     image_sum_max <- parseMb cfg "input" "image_sum_max"
+    skip_first_points <- parseMb cfg "input" "skip_first_points"
+    skip_last_points <- parseMb cfg "input" "skip_last_points"
 
     -- customize a bunch of parameters
 
-    pure $ BinocularsConfig'Common ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max maskmatrix wavelength image_sum_max
+    pure $ BinocularsConfig'Common ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max maskmatrix wavelength image_sum_max skip_first_points skip_last_points
 
 parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
 parse' c s f = parseIniFile c $ section s (fieldMbOf f auto')
