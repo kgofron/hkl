@@ -131,14 +131,14 @@ import           Hkl.Lattice
 import           Paths_hkl
 
 -- TODO
--- hkl new engine ne fonctionne pas bien... voir avec une lattice hexagonale...
--- si pas de detecteur la logique minput deprecated ne fonctionne pas...
--- ajouter un XpadFlat -> ajouter 3.2 dans le nom
+-- basculer hkl
 -- ajouter un parametre pour exclude les n premiers points et les m derniers points de chaque scan.
+-- - skipfirstpoints and skiplastpoints
+-- implementer les q/tth_scantime et q/tth_scanindex
 -- adapter angles -> cglm
--- implementer les q/tth_timestap0 et q/tth_index
 -- implementer les corrections de polarisation
 -- gui merge de cube.
+-- ajouter un XpadFlat -> ajouter 3.2 dans le nom
 
 -- Class FieldEmitter
 
