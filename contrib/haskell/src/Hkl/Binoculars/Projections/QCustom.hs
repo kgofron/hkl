@@ -210,17 +210,9 @@ instance HasIniConfig 'QCustomProjection where
 
   getConfig (ConfigContent cfg) (Args'QCustomProjection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities
-    surface_orientation <- parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
-    let edatapath = parseMb cfg "input" "datapath"
-
-    -- section projection
     projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
-    resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
-    limits <- parseMb cfg "projection" "limits"
+
     let msubprojection = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
-    uqx <- parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
-    uqy <- parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
-    uqz <- parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
 
     -- customize a bunch of parameters
 
@@ -237,13 +229,20 @@ instance HasIniConfig 'QCustomProjection where
                           PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
                           TestProjection -> msubprojection
 
-        -- compute the datatype
-    let datapath = case edatapath of
-                 Left _ -> guess'DataSourcePath'DataFrameQCustom common subprojection
-                 Right Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection
-                 Right (Just d)  -> overload'DataSourcePath'DataFrameQCustom common subprojection d
-
-    pure $ BinocularsConfig'QCustom common surface_orientation projectiontype resolution limits datapath subprojection uqx uqy uqz
+    BinocularsConfig'QCustom
+      <$> pure common
+      <*> parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
+      <*> pure projectiontype
+      <*> parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
+      <*> parseMb cfg "projection" "limits"
+      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom common subprojection) (parse' cfg "input" "datapath")
+      (\md -> case md of
+               Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection
+               Just d ->  overload'DataSourcePath'DataFrameQCustom common subprojection d))
+      <*> pure subprojection
+      <*> parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
+      <*> parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
+      <*> parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
 
 
 instance ToIni (Config 'QCustomProjection) where

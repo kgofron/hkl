@@ -29,6 +29,8 @@ module Hkl.Binoculars.Config.Common
     , elemFDef'
     , elemFMbDef
     , elemFMbDef'
+    , eitherF
+    , parse'
     , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
