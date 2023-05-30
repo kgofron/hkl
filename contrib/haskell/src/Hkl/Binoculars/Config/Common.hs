@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -323,27 +324,30 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
                                               )
 
   BinocularsConfig'Common
-    <$> (eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
-            let ns = case mb of
-                       Nothing -> [ncapmax, ncoresmax - 1]
-                       Just b  -> [b, ncapmax, ncoresmax -1]
-            pure $ NCores (minimum ns))
+    <$> eitherF error (parse' cfg "dispatcher" "ncores")
+    (\mb -> do
+        let ns = case mb of
+                   Nothing -> [ncapmax, ncoresmax - 1]
+                   Just b  -> [b, ncapmax, ncoresmax -1]
+        pure $ NCores (minimum ns))
     <*> parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination default'BinocularsConfig'Common)
     <*> parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite default'BinocularsConfig'Common)
     <*> pure inputtype
     <*> parseMb cfg "input" "nexusdir"
     <*> parseMb cfg "input" "inputtmpl"
-    <*> (eitherF error (parse' cfg "input" "inputrange") $ \mb -> do
-            case mr <|> mb of
-              Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
-              Just r -> pure r)
+    <*> eitherF error (parse' cfg "input" "inputrange")
+    (\mb -> do
+        case mr <|> mb of
+          Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
+          Just r -> pure r)
     <*> pure detector
-    <*> (eitherF error (parse' cfg "input" "centralpixel") $ \mc -> do
-            case mc of
-              Nothing -> pure (binocularsConfig'Common'Centralpixel default'BinocularsConfig'Common)
-              Just c -> if c `inDetector` detector
-                       then pure c
-                       else error $ "The central pixel " <> show c <> " is not compatible with the detector")
+    <*> eitherF error (parse' cfg "input" "centralpixel")
+    (\mc -> do
+        case mc of
+          Nothing -> pure (binocularsConfig'Common'Centralpixel default'BinocularsConfig'Common)
+          Just c -> if c `inDetector` detector
+                   then pure c
+                   else error $ "The central pixel " <> show c <> " is not compatible with the detector")
     <*> parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd default'BinocularsConfig'Common)
     <*> parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot default'BinocularsConfig'Common)
     <*> parseMb cfg "input" "attenuation_coefficient"
@@ -367,9 +371,9 @@ parseF c s f = eitherF error (parse' c s f)
 
 parseFDef :: HasFieldValue p
           => Text -> Text -> Text -> p -> Either String p
-parseFDef c s f def = parseF c s f $ \mb -> case mb of
-                                             Nothing -> Right def
-                                             Just b  -> Right b
+parseFDef c s f def = parseF c s f $ \case
+  Nothing -> Right def
+  Just b  -> Right b
 
 parseMb ::  HasFieldValue r
         => Text -> Text -> Text -> Either String (Maybe r)
@@ -377,7 +381,7 @@ parseMb c s f = eitherF error (parse' c s f) pure
 
 parseMbDef :: HasFieldValue r
            => Text -> Text -> Text -> Maybe r -> Maybe r
-parseMbDef c s f def = eitherF error (parse' c s f) (\mb -> mb <|> def)
+parseMbDef c s f def = eitherF error (parse' c s f) (<|> def)
 
 elemFDef' :: HasFieldComment w => Text -> (v -> w) -> v -> v -> [(Text, Text)]
 elemFDef' k f v d = elemFDef k f v d (fieldComment (f v))
