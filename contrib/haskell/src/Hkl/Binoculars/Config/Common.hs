@@ -286,77 +286,73 @@ instance ToIni  BinocularsConfig'Common where
 parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> Capabilities -> Either String BinocularsConfig'Common
 parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
   = do
-    -- section dispatcher
-    ncores <- eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
-      let ns = case mb of
-            Nothing -> [ncapmax, ncoresmax - 1]
-            Just b  -> [b, ncapmax, ncoresmax -1]
-      pure $ NCores (minimum ns)
-    destination <- parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination default'BinocularsConfig'Common)
-    overwrite <- parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite default'BinocularsConfig'Common)
+  minputtype <- parseMb cfg "input" "type"
+  let minputtypedeprecated = eitherF (const Nothing) (parse' cfg "input" "type") id
+  let inputtype = case minputtype of
+                    Nothing -> case minputtypedeprecated of
+                                Nothing -> binocularsConfig'Common'InputType default'BinocularsConfig'Common
+                                Just deprecated -> case deprecated of
+                                                    SixsFlyMedVEiger -> SixsFlyMedV
+                                                    SixsFlyMedVS70 -> SixsFlyMedV
+                                                    SixsFlyScanUhvGisaxsEiger -> SixsFlyUhv
+                                                    SixsFlyScanUhvUfxc -> SixsFlyUhv
+                    Just i -> i
 
-    -- section input
-    minputtype <- parseMb cfg "input" "type"
-    let minputtypedeprecated = eitherF (const Nothing) (parse' cfg "input" "type") id
-    let inputtype = case minputtype of
-          Nothing -> case minputtypedeprecated of
-                      Nothing -> binocularsConfig'Common'InputType default'BinocularsConfig'Common
-                      Just deprecated -> case deprecated of
-                                          SixsFlyMedVEiger -> SixsFlyMedV
-                                          SixsFlyMedVS70 -> SixsFlyMedV
-                                          SixsFlyScanUhvGisaxsEiger -> SixsFlyUhv
-                                          SixsFlyScanUhvUfxc -> SixsFlyUhv
-          Just i -> i
-    nexusdir <- parseMb cfg "input" "nexusdir"
-    inputtmpl <- parseMb cfg "input" "inputtmpl"
-    inputrange <- eitherF error (parse' cfg "input" "inputrange") $ \mb -> do
-      let mr' = mr <|> mb
-      case mr' of
-        Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
-        Just r -> pure r
-    detector <- parseFDef cfg "input" "detector" (case minputtypedeprecated of
-                                                    Nothing -> case inputtype of
-                                                                CristalK6C -> mkDetector HklBinocularsDetectorEnum'XpadFlatCorrected
-                                                                MarsFlyscan -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
-                                                                MarsSbs -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
-                                                                SixsFlyMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsFlyMedHGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsFlyMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsFlyMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsFlyUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsFlyUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsSbsMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsSbsMedHGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsSbsMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsSbsMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsSbsUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                                SixsSbsUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                    (Just deprecated) -> case deprecated of
-                                                                          SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
-                                                                          SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70
-                                                                          SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
-                                                                          SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
-                                                )
+  detector <- parseFDef cfg "input" "detector" (case minputtypedeprecated of
+                                                 Nothing -> case inputtype of
+                                                             CristalK6C -> mkDetector HklBinocularsDetectorEnum'XpadFlatCorrected
+                                                             MarsFlyscan -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+                                                             MarsSbs -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+                                                             SixsFlyMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsFlyMedHGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsFlyMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsFlyMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsFlyUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsFlyUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsSbsMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsSbsMedHGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsSbsMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsSbsMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsSbsUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                             SixsSbsUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
+                                                 (Just deprecated) -> case deprecated of
+                                                                       SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
+                                                                       SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70
+                                                                       SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
+                                                                       SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
+                                              )
 
-    centralpixel <- eitherF error (parse' cfg "input" "centralpixel") $ \mc -> do
-      case mc of
-        Nothing -> pure (binocularsConfig'Common'Centralpixel default'BinocularsConfig'Common)
-        Just c -> if c `inDetector` detector
-                 then pure c
-                 else error $ "The central pixel " <> show c <> " is not compatible with the detector"
-    sdd <- parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd default'BinocularsConfig'Common)
-    detrot <- parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot default'BinocularsConfig'Common)
-    attenuation_coefficient <- parseMb cfg "input" "attenuation_coefficient"
-    attenuation_max <- parseMb cfg "input" "attenuation_max"
-    maskmatrix <- parseMb cfg "input" "maskmatrix"
-    wavelength <- parseMb cfg "input" "wavelength"
-    image_sum_max <- parseMb cfg "input" "image_sum_max"
-    skip_first_points <- parseMb cfg "input" "skip_first_points"
-    skip_last_points <- parseMb cfg "input" "skip_last_points"
-
-    -- customize a bunch of parameters
-
-    pure $ BinocularsConfig'Common ncores destination overwrite inputtype nexusdir inputtmpl inputrange detector centralpixel sdd detrot attenuation_coefficient attenuation_max maskmatrix wavelength image_sum_max skip_first_points skip_last_points
+  BinocularsConfig'Common
+    <$> (eitherF error (parse' cfg "dispatcher" "ncores") $ \mb -> do
+            let ns = case mb of
+                       Nothing -> [ncapmax, ncoresmax - 1]
+                       Just b  -> [b, ncapmax, ncoresmax -1]
+            pure $ NCores (minimum ns))
+    <*> parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination default'BinocularsConfig'Common)
+    <*> parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite default'BinocularsConfig'Common)
+    <*> pure inputtype
+    <*> parseMb cfg "input" "nexusdir"
+    <*> parseMb cfg "input" "inputtmpl"
+    <*> (eitherF error (parse' cfg "input" "inputrange") $ \mb -> do
+            case mr <|> mb of
+              Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line"
+              Just r -> pure r)
+    <*> pure detector
+    <*> (eitherF error (parse' cfg "input" "centralpixel") $ \mc -> do
+            case mc of
+              Nothing -> pure (binocularsConfig'Common'Centralpixel default'BinocularsConfig'Common)
+              Just c -> if c `inDetector` detector
+                       then pure c
+                       else error $ "The central pixel " <> show c <> " is not compatible with the detector")
+    <*> parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd default'BinocularsConfig'Common)
+    <*> parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot default'BinocularsConfig'Common)
+    <*> parseMb cfg "input" "attenuation_coefficient"
+    <*> parseMb cfg "input" "attenuation_max"
+    <*> parseMb cfg "input" "maskmatrix"
+    <*> parseMb cfg "input" "wavelength"
+    <*> parseMb cfg "input" "image_sum_max"
+    <*> parseMb cfg "input" "skip_first_points"
+    <*> parseMb cfg "input" "skip_last_points"
 
 parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
 parse' c s f = parseIniFile c $ section s (fieldMbOf f auto')
