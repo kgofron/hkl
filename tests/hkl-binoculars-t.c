@@ -399,7 +399,43 @@ static void hkl_projection(void)
         int res = TRUE;
         HklFactory *factory = hkl_factory_get_by_name("ZAXIS", NULL);
         HklGeometry *geometry = hkl_factory_create_new_geometry(factory);
+
+        /* prepare the sample */
         HklSample *sample = hkl_sample_new("hkl projection");
+	HklLattice *lattice = hkl_lattice_new(2.556, 2.556, 2.556,
+                                              90 * HKL_DEGTORAD,
+                                              90 * HKL_DEGTORAD,
+                                              120 * HKL_DEGTORAD,
+                                              NULL);
+	hkl_sample_lattice_set(sample, lattice);
+	hkl_lattice_free(lattice);
+
+        /* ux = -89.7639 */
+        /* uy = 0.0252 */
+        /* uz = 13.5010 */
+
+        /* the geometry positions */
+
+        static double axes[3][4] = {{0, 0, 0, 0},
+                                    {10, 10, 10, 10},
+                                    {30, 30, 30, 30}};
+
+        /* the expected result for the three axes of the 1st detector */
+        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14, -2, 0},
+                                                                           {-14, -2, 0},
+                                                                           {-14, -2, 0},
+                                                                           {-14, -2, -2},
+                                                                           {-13, 0, 0},
+                                                                           {-13, 0, 0},
+                                                                           {-13, -1, 0}};
+
+        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
+                                                                           {1, 34, 19},
+                                                                           {1, 34, 14},
+                                                                           {1, 33, 15},
+                                                                           {0, 33, 15},
+                                                                           {0, 33, 15},
+                                                                           {0, 33, 15}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
@@ -409,15 +445,11 @@ static void hkl_projection(void)
                 HklBinocularsSpace *space;
                 double *pixels_coordinates;
                 uint8_t *mask;
-                ptrdiff_t min, max;
                 HklBinocularsAxisLimits *h_lims, *k_lims, *l_lims;
 
-                min = -1 / 0.05, max = 1 / 0.05;
-                h_lims = hkl_binoculars_axis_limits_new(&min, &max);
-                min = -1 / 0.05, max = 1 / 0.05;
-                k_lims = hkl_binoculars_axis_limits_new(&min, &max);
-                min = -1 / 0.05, max = 1 / 0.05;
-                l_lims = hkl_binoculars_axis_limits_new(&min, &max);
+                h_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
+                k_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
+                l_lims = hkl_binoculars_axis_limits_new(NULL, NULL);
 
                 const HklBinocularsAxisLimits *limits[] = {h_lims, k_lims, l_lims};
 
@@ -425,6 +457,10 @@ static void hkl_projection(void)
                 space = hkl_binoculars_space_new(width * height, 3);
                 cube = hkl_binoculars_cube_new_empty();
                 pixels_coordinates = hkl_binoculars_detector_2d_coordinates_get(n);
+                hkl_binoculars_detector_2d_sixs_calibration(n, pixels_coordinates, width, height,
+                                                            100, 100, 1,
+                                                            0, 0);
+
                 mask = hkl_binoculars_detector_2d_mask_get(n);
 
                 for(i=0; i<3; ++i){
@@ -433,7 +469,7 @@ static void hkl_projection(void)
                         size_t pixels_coordinates_dims[] = {3, height, width};
                         double resolutions[] = {0.05, 0.05, 0.05};
 
-                        hkl_geometry_randomize(geometry);
+                        hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL);
 
                         hkl_binoculars_space_hkl_uint32_t (space,
                                                            geometry,
@@ -449,10 +485,14 @@ static void hkl_projection(void)
                                                            mask,
                                                            limits,
                                                            ARRAY_SIZE(limits)); // size_t n_limits);
-
                         hkl_binoculars_cube_add_space(cube, space);
 
                         free(img);
+                }
+
+                for(i=0; i<ARRAY_SIZE(imax[n]); ++i){
+                        res &= imin[n][i] == darray_item(cube->axes, i).imin;
+                        res &= imax[n][i] == darray_item(cube->axes, i).imax;
                 }
 
                 free(mask);
@@ -465,7 +505,7 @@ static void hkl_projection(void)
         }
 
         hkl_sample_free(sample);
-        hkl_geometry_free(geometry);
+	hkl_geometry_free(geometry);
 
         ok(res == TRUE, __func__);
 }
