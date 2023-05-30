@@ -281,10 +281,7 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
 
     -- section input
     minputtype <- parseMb cfg "input" "type"
-    let eminputtypedeprecated = parseMb cfg "input" "type"
-    let minputtypedeprecated = case eminputtypedeprecated of
-                                 Left _   -> Nothing
-                                 Right mi -> mi
+    let minputtypedeprecated = eitherF (const Nothing) (parse' cfg "input" "type") id
     let inputtype = case minputtype of
           Nothing -> case minputtypedeprecated of
                       Nothing -> binocularsConfig'Common'InputType default'BinocularsConfig'Common
