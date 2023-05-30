@@ -288,7 +288,7 @@ processTestP = do
 
   logDebugN "stop gessing final cube size"
 
-  logInfoN (pack $ printf "let's do an Test projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
+  logInfoN (pack $ printf "let's do a Test projection of %d %s image(s) on %d core(s)" ntot (show det) cap)
 
   liftIO $ withProgressBar ntot $ \pb -> do
     r' <- mapConcurrently (\job -> withCubeAccumulator guessed $ \c ->
