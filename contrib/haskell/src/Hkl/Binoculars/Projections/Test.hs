@@ -156,29 +156,18 @@ overload'DataSourcePath'DataFrameTest common sample (DataFrameTest qCustomPath s
 instance HasIniConfig 'TestProjection where
 
   getConfig (ConfigContent cfg) (Args'TestProjection mr) capabilities = do
-
-    let ecommon = parse'BinocularsConfig'Common cfg mr capabilities
-    case ecommon of
-      Left err -> error err
-      Right common -> do
-
-        -- section input
-        sample <- parse'BinocularsConfig'Sample cfg
-        mdatapath <- parseMb cfg "input" "datapath"
-
-        -- section projection
-        projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType default'BinocularsConfig'Test)
-        resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution default'BinocularsConfig'Test)
-        limits <- parseMb cfg "projection" "limits"
-
-        -- customize a bunch of parameters
-
-        -- compute the datatype
-        let datapath = case mdatapath of
-                     Nothing -> guess'DataSourcePath'DataFrameTest common sample
-                     Just d  -> overload'DataSourcePath'DataFrameTest common sample d
-
-        pure $ BinocularsConfig'Test common sample projectiontype resolution limits datapath
+    common <- parse'BinocularsConfig'Common cfg mr capabilities
+    sample <- parse'BinocularsConfig'Sample cfg
+    BinocularsConfig'Test
+      <$> pure common
+      <*> pure sample
+      <*> parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType default'BinocularsConfig'Test)
+      <*> parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution default'BinocularsConfig'Test)
+      <*> parseMb cfg "projection" "limits"
+      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameTest common sample) (parse' cfg "input" "datapath")
+           (\md -> case md of
+                    Nothing -> guess'DataSourcePath'DataFrameTest common sample
+                    Just d  ->  overload'DataSourcePath'DataFrameTest common sample d))
 
 
 instance ToIni (Config 'TestProjection) where
