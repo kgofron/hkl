@@ -170,9 +170,9 @@ instance HasIniConfig 'HklProjection where
       <*> parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution default'BinocularsConfig'Hkl)
       <*> parseMb cfg "projection" "limits"
       <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameHkl common sample) (parse' cfg "input" "datapath")
-      (\md -> case md of
-               Nothing -> guess'DataSourcePath'DataFrameHkl common sample
-               Just d  ->  overload'DataSourcePath'DataFrameHkl common sample d))
+           (\md -> case md of
+                    Nothing -> guess'DataSourcePath'DataFrameHkl common sample
+                    Just d  ->  overload'DataSourcePath'DataFrameHkl common sample d))
 
 
 instance ToIni (Config 'HklProjection) where
