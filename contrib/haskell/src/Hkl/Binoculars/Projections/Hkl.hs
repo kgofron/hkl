@@ -160,28 +160,19 @@ instance HasIniConfig 'HklProjection where
 
   getConfig (ConfigContent cfg) (Args'HklProjection mr) capabilities = do
 
-    let ecommon = parse'BinocularsConfig'Common cfg mr capabilities
-    case ecommon of
-      Left err -> error err
-      Right common -> do
+    common <- parse'BinocularsConfig'Common cfg mr capabilities
+    sample <- parse'BinocularsConfig'Sample cfg
 
-        -- section input
-        sample <- parse'BinocularsConfig'Sample cfg
-        mdatapath <- parseMb cfg "input" "datapath"
-
-        -- section projection
-        projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'Hkl'ProjectionType default'BinocularsConfig'Hkl)
-        resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution default'BinocularsConfig'Hkl)
-        limits <- parseMb cfg "projection" "limits"
-
-        -- customize a bunch of parameters
-
-        -- compute the datatype
-        let datapath = case mdatapath of
-                     Nothing -> guess'DataSourcePath'DataFrameHkl common sample
-                     Just d  -> overload'DataSourcePath'DataFrameHkl common sample d
-
-        pure $ BinocularsConfig'Hkl common sample projectiontype resolution limits datapath
+    BinocularsConfig'Hkl
+      <$> pure common
+      <*> pure sample
+      <*> parseFDef cfg "projection" "type" (binocularsConfig'Hkl'ProjectionType default'BinocularsConfig'Hkl)
+      <*> parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution default'BinocularsConfig'Hkl)
+      <*> parseMb cfg "projection" "limits"
+      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameHkl common sample) (parse' cfg "input" "datapath")
+      (\md -> case md of
+               Nothing -> guess'DataSourcePath'DataFrameHkl common sample
+               Just d  ->  overload'DataSourcePath'DataFrameHkl common sample d))
 
 
 instance ToIni (Config 'HklProjection) where
