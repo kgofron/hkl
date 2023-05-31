@@ -87,39 +87,28 @@ newtype instance Args 'AnglesProjection = Args'AnglesProjection (Maybe ConfigRan
 instance HasIniConfig 'AnglesProjection where
 
   getConfig (ConfigContent cfg) (Args'AnglesProjection mr) capabilities = do
-    -- (ConfigContent cfg) <- liftIO $ readConfig mf
-
-    let ecommon = parse'BinocularsConfig'Common cfg mr capabilities
-    case ecommon of
-      Left err -> error err
-      Right common -> do
-
-        -- section input
-        mdatapath <- parseMb cfg "input" "datapath"
-
-        -- section projection
-        projectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Angles'ProjectionType default'BinocularsConfig'Angles)
-        resolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Angles'ProjectionResolution default'BinocularsConfig'Angles)
-        limits <- parseMb cfg "projection" "limits"
-
-        sampleAxis <- parseFDef cfg "input" "sample_axis" $ case projectionType of
-                                                             AnglesProjection   -> SampleAxis "omega"
-                                                             Angles2Projection  -> SampleAxis "mu"
-                                                             HklProjection      -> undefined
-                                                             QCustomProjection  -> undefined
-                                                             QIndexProjection   -> undefined
-                                                             QparQperProjection -> undefined
-                                                             QxQyQzProjection   -> undefined
-                                                             RealSpaceProjection -> undefined
-                                                             PixelsProjection -> undefined
-                                                             TestProjection  -> undefined
-
-        -- compute the datatype
-        let datapath = case mdatapath of
-                         Nothing -> guess'DataSourcePath'DataFrameQCustom common Nothing
-                         Just d  -> overload'DataSourcePath'DataFrameQCustom common Nothing d
-
-        pure $ BinocularsConfig'Angles common projectionType resolution limits sampleAxis datapath
+    common <- parse'BinocularsConfig'Common cfg mr capabilities
+    projectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Angles'ProjectionType default'BinocularsConfig'Angles)
+    BinocularsConfig'Angles
+      <$> pure common
+      <*> pure projectionType
+      <*> parseFDef cfg "projection" "resolution" (binocularsConfig'Angles'ProjectionResolution default'BinocularsConfig'Angles)
+      <*> parseMb cfg "projection" "limits"
+      <*> (parseFDef cfg "input" "sample_axis" $ case projectionType of
+                                                   AnglesProjection   -> SampleAxis "omega"
+                                                   Angles2Projection  -> SampleAxis "mu"
+                                                   HklProjection      -> undefined
+                                                   QCustomProjection  -> undefined
+                                                   QIndexProjection   -> undefined
+                                                   QparQperProjection -> undefined
+                                                   QxQyQzProjection   -> undefined
+                                                   RealSpaceProjection -> undefined
+                                                   PixelsProjection -> undefined
+                                                   TestProjection  -> undefined)
+      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom common Nothing) (parse' cfg "input" "datapath")
+           (\md -> case md of
+                    Nothing -> guess'DataSourcePath'DataFrameQCustom common Nothing
+                    Just d  ->  overload'DataSourcePath'DataFrameQCustom common Nothing d))
 
 
 instance ToIni (Config 'AnglesProjection) where
