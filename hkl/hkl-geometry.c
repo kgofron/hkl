@@ -35,6 +35,7 @@
 #include "hkl-geometry-private.h"       // for _HklGeometry, etc
 #include "hkl-interval-private.h"       // for HklInterval
 #include "hkl-macros-private.h"         // for HKL_MALLOC
+#include "hkl-matrix-private.h"
 #include "hkl-parameter-private.h"      // for _HklParameter, etc
 #include "hkl-quaternion-private.h"     // for _HklQuaternion, etc
 #include "hkl-source-private.h"         // for HklSource, hkl_source_init
@@ -76,6 +77,21 @@ static size_t hkl_geometry_add_axis(HklGeometry *self, const HklParameter *axis)
 	darray_append(self->axes, hkl_parameter_new_copy(axis));
 
 	return darray_size(self->axes) - 1;
+}
+
+static void hkl_vector_project_into_reciprocal_space(HklVector *self,
+                                                     const HklGeometry *geometry,
+                                                     const HklSample *sample)
+{
+        HklQuaternion qs = hkl_geometry_sample_rotation_get(geometry, sample);
+        HklMatrix RUB;
+        HklMatrix RUB_1;
+
+        hkl_quaternion_to_matrix(&qs, &RUB);
+        hkl_matrix_times_matrix(&RUB, hkl_sample_UB_get(sample));
+        hkl_matrix_inv(&RUB, &RUB_1);
+
+        hkl_matrix_times_vector(&RUB_1, self);
 }
 
 /*******************/
@@ -940,9 +956,29 @@ HklVector hkl_geometry_ki_get(const HklGeometry *self)
 }
 
 /**
+ * hkl_geometry_ki_abc_get:
+ * @self: the self #HklGeometry
+ * @sample: the sample #HklSample
+ *
+ * return the ki vector in the sample lattice reciprocal coordinates
+ * basis.
+ *
+ * Returns: the ki vector as an #HklVector.
+ **/
+HklVector hkl_geometry_ki_abc_get(const HklGeometry *self,
+                                  const HklSample *sample)
+{
+        HklVector ki_abc = hkl_geometry_ki_get(self);
+
+        hkl_vector_project_into_reciprocal_space(&ki_abc, self, sample);
+
+        return ki_abc;
+}
+
+/**
  * hkl_geometry_kf_get:
- * @self: the self @HklGeometry@
- * @detector: the @HklDetector@
+ * @self: the self #HklGeometry
+ * @detector: the #HklDetector
  *
  * return the kf vector in the laboratory
  * basis.
@@ -953,6 +989,28 @@ HklVector hkl_geometry_kf_get(const HklGeometry *self,
 			      const HklDetector *detector)
 {
 	return self->ops->kf_get(self, detector);
+}
+
+/**
+ * hkl_geometry_kf_abc_get:
+ * @self: the self #HklGeometry
+ * @detector: the #HklDetector
+ * @sample: the sample #HklSample
+ *
+ * return the kf vector in the sample reciprocal lattice coordinates
+ * basis.
+ *
+ * Returns: the kf vector.
+ **/
+HklVector hkl_geometry_kf_abc_get(const HklGeometry *self,
+                                  const HklDetector *detector,
+                                  const HklSample* sample)
+{
+        HklVector kf_abc = hkl_geometry_kf_get(self, detector);
+
+        hkl_vector_project_into_reciprocal_space(&kf_abc, self, sample);
+
+        return kf_abc;
 }
 
 /*******************/

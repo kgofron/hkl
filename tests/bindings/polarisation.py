@@ -276,6 +276,15 @@ def get_kinc_kscat(config, values):
 
     return kinc, kscat
 
+def get_kinc_kscat_v2(config, values):
+    sample, detector, geometry, engines = new_hkl_diffractometer(config)
+    geometry.axis_values_set(values, Hkl.UnitEnum.USER)
+
+    kinc = geometry.ki_abc_get(sample).data
+    kscat = geometry.kf_abc_get(detector, sample).data
+
+    return kinc, kscat
+
 ##############
 # Unit tests #
 ##############
@@ -445,6 +454,10 @@ class Polarisation(unittest.TestCase):
         print(kinc, kscat)
         assert_almost_equal(kinc, [2.6300, -1.0000,  0.0000], decimal=4)
         assert_almost_equal(kscat, [2.6300,  1.0000,  0.0000], decimal=4)
+        kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
+        print(kinc, kscat)
+        assert_almost_equal(kinc, [2.6300, -1.0000,  0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.6300,  1.0000,  0.0000], decimal=4)
 
         # Reflection: ( 0.0,  3.0,  0.0)
         # angles: 0.00000    32.21601     90.00000     0.00000    0.00000     64.43202
@@ -453,6 +466,10 @@ class Polarisation(unittest.TestCase):
         gaga = ca(config, [0.0, 3.0, 0.0])
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
+        print(kinc, kscat)
+        assert_almost_equal(kinc, [2.3805, -1.5000,  0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.3805,  1.5000,  0.0000], decimal=4)
+        kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
         assert_almost_equal(kinc, [2.3805, -1.5000,  0.0000], decimal=4)
         assert_almost_equal(kscat, [2.3805,  1.5000,  0.0000], decimal=4)
@@ -467,6 +484,10 @@ class Polarisation(unittest.TestCase):
         print(kinc, kscat)
         assert_almost_equal(kinc, [1.9791, -2.0000,  0.0000], decimal=4)
         assert_almost_equal(kscat, [1.9791, 2.0000,  0.0000], decimal=4)
+        kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
+        print(kinc, kscat)
+        assert_almost_equal(kinc, [1.9791, -2.0000,  0.0000], decimal=4)
+        assert_almost_equal(kscat, [1.9791, 2.0000,  0.0000], decimal=4)
 
         # Reflection: ( 1.0,  3.0,  0.0)
         # angles: 0.00000    52.62572     90.00000     0.00000    0.00000     68.38154
@@ -475,6 +496,10 @@ class Polarisation(unittest.TestCase):
         gaga = ca(config, [1.0, 3.0, 0.0])
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
+        print(kinc, kscat)
+        assert_almost_equal(kinc, [1.7079, -2.2360,  0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.7079,  0.7640,  0.0000], decimal=4)
+        kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
         assert_almost_equal(kinc, [1.7079, -2.2360,  0.0000], decimal=4)
         assert_almost_equal(kscat, [2.7079,  0.7640,  0.0000], decimal=4)
@@ -489,6 +514,10 @@ class Polarisation(unittest.TestCase):
         print(kinc, kscat)
         assert_almost_equal(kinc, [1.3577, -2.4644,  0.0000], decimal=4)
         assert_almost_equal(kscat, [2.3577,  1.5356,  0.0000], decimal=4)
+        kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
+        print(kinc, kscat)
+        assert_almost_equal(kinc, [1.3577, -2.4644,  0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.3577,  1.5356,  0.0000], decimal=4)
 
         # Reflection: ( 2.0,  3.0,  0.0)
         # angles: 0.00000    49.97822     90.00000     0.00000    0.00000     46.82633
@@ -497,6 +526,10 @@ class Polarisation(unittest.TestCase):
         gaga = ca(config, [2.0, 3.0, 0.0])
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
+        print(kinc, kscat)
+        assert_almost_equal(kinc, [0.7974, -2.6983,  0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.7974,  0.3017,  0.0000], decimal=4)
+        kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
         assert_almost_equal(kinc, [0.7974, -2.6983,  0.0000], decimal=4)
         assert_almost_equal(kscat, [2.7974,  0.3017,  0.0000], decimal=4)

@@ -59,8 +59,15 @@ HKLAPI HklQuaternion *hkl_geometry_detector_rotation_get_binding(const HklGeomet
 
 HKLAPI HklVector *hkl_geometry_ki_get_binding(const HklGeometry *self);
 
+HKLAPI HklVector *hkl_geometry_ki_abc_get_binding(const HklGeometry *self,
+                                                  const HklSample *sample);
+
 HKLAPI HklVector *hkl_geometry_kf_get_binding(const HklGeometry *self,
                                               const HklDetector *detector);
+
+HKLAPI HklVector *hkl_geometry_kf_abc_get_binding(const HklGeometry *self,
+                                                  const HklDetector *detector,
+                                                  const HklSample *sample);
 
 /*******************/
 /* HklGeometryList */

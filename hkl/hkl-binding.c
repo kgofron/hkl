@@ -185,6 +185,24 @@ HklVector *hkl_geometry_ki_get_binding(const HklGeometry *self)
 }
 
 /**
+ * hkl_geometry_ki_abc_get_binding: (rename-to hkl_geometry_ki_abc_get)
+ * @self: the self #HklGeometry
+ * @sample: the sample to project into #HklSample.
+ *
+ * return the ki vector in the sample lattice recipocal.
+ * basis.
+ *
+ * Returns: (transfer full): the ki vector.
+ **/
+HklVector *hkl_geometry_ki_abc_get_binding(const HklGeometry *self,
+                                           const HklSample *sample)
+{
+	HklVector v = hkl_geometry_ki_abc_get(self, sample);
+
+	return hkl_vector_dup(&v);
+}
+
+/**
  * hkl_geometry_kf_get_binding: (rename-to hkl_geometry_kf_get)
  * @self: the self #HklGeometry
  * @detector: the self #HklDetector
@@ -198,6 +216,26 @@ HklVector *hkl_geometry_kf_get_binding(const HklGeometry *self,
                                        const HklDetector *detector)
 {
 	HklVector v = hkl_geometry_kf_get(self, detector);
+
+	return hkl_vector_dup(&v);
+}
+
+/**
+ * hkl_geometry_kf_abc_get_binding: (rename-to hkl_geometry_kf_abc_get)
+ * @self: the self #HklGeometry
+ * @detector: the self #HklDetector
+ * @sample: the sample to project into #HklSample.
+ *
+ * return the kf vector in the laboratory
+ * basis.
+ *
+ * Returns: (transfer full): the kf vector.
+ **/
+HklVector *hkl_geometry_kf_abc_get_binding(const HklGeometry *self,
+                                           const HklDetector *detector,
+                                           const HklSample *sample)
+{
+	HklVector v = hkl_geometry_kf_abc_get(self, detector, sample);
 
 	return hkl_vector_dup(&v);
 }
