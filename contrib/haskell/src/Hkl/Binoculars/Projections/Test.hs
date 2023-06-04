@@ -233,6 +233,8 @@ processTestP = do
   let nexusDir = binocularsConfig'Common'Nexusdir common
   let tmpl = binocularsConfig'Common'Tmpl common
   let maskMatrix = binocularsConfig'Common'Maskmatrix common
+  let mSkipFirstPoints = binocularsConfig'Common'SkipFirstPoints common
+  let mSkipLastPoints = binocularsConfig'Common'SkipLastPoints common
 
   -- directly from the specific config
   let mlimits = binocularsConfig'Test'ProjectionLimits conf
@@ -248,7 +250,7 @@ processTestP = do
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot NoNormalisation
 
   let fns = concatMap (replicate 1) (toList filenames)
-  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP datapaths
+  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP mSkipFirstPoints mSkipLastPoints datapaths
   let ntot = sum (Prelude.map clength chunks)
   let jobs = chunk (quot ntot cap) chunks
 
@@ -290,7 +292,7 @@ processTestP = do
 -- FramesTestP
 
 instance ChunkP (DataFrameTest' DataSourcePath) where
-  chunkP (DataFrameTest p _) = chunkP p
+  chunkP sf sl (DataFrameTest p _) = chunkP sf sl p
 
 instance FramesP (DataFrameTest' DataSourcePath) (DataFrameTest' Identity) where
   framesP (DataFrameTest qcustom sample) = skipMalformed $ forever $ do

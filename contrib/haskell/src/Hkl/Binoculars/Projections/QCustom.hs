@@ -93,6 +93,8 @@ import           Hkl.Utils
 -- QCustom Projection --
 -----------------------
 
+-- Cursor
+
 data DataFrameQCustom
     = DataFrameQCustom
       Attenuation -- attenuation
@@ -733,6 +735,8 @@ processQCustomP = do
   let nexusDir = binocularsConfig'Common'Nexusdir common
   let tmpl = binocularsConfig'Common'Tmpl common
   let maskMatrix = binocularsConfig'Common'Maskmatrix common
+  let mSkipFirstPoints = binocularsConfig'Common'SkipFirstPoints common
+  let mSkipLastPoints = binocularsConfig'Common'SkipLastPoints common
 
   -- directly from the specific config
   let mlimits = binocularsConfig'QCustom'ProjectionLimits conf
@@ -754,7 +758,7 @@ processQCustomP = do
   -- compute the jobs
 
   let fns = concatMap (replicate 1) (toList filenames)
-  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP datapaths
+  chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP mSkipFirstPoints mSkipLastPoints datapaths
   let ntot = sum (Prelude.map clength chunks)
   let jobs = chunk (quot ntot cap) chunks
 
@@ -798,17 +802,18 @@ processQCustomP = do
 
 
 instance ChunkP (DataSourcePath DataFrameQCustom) where
-    chunkP (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _) =
+    chunkP mSkipFirst mSkipLast (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _) =
       skipMalformed $ forever $ do
       fp <- await
       withFileP (openFile' fp) $ \f ->
         withHdf5PathP f i $ \i' -> do
         (_, ss) <- liftIO $ datasetShape i'
         case head ss of
-          (Just n) -> yield $ case ma of
-            DataSourcePath'NoAttenuation -> Chunk fp 0 (fromIntegral n - 1)
-            (DataSourcePath'Attenuation _ off _ _) -> Chunk fp 0 (fromIntegral n - 1 - off)
-            (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk fp 0 (fromIntegral n -1)
+          (Just n) -> yield $ let (Chunk _ from to) = cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk fp 0 (fromIntegral n - 1))
+                             in case ma of
+                                  DataSourcePath'NoAttenuation -> Chunk fp from to
+                                  (DataSourcePath'Attenuation _ off _ _) -> Chunk fp from (to - off)
+                                  (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk fp from to
           Nothing  -> error "can not extract length"
 
 instance FramesP (DataSourcePath DataFrameQCustom) DataFrameQCustom where

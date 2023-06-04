@@ -18,6 +18,7 @@ module Hkl.Binoculars.Common
   , InputFn(..)
   , addSpace
   , chunk
+  , cclip
   , clength
   , mkCube'
   , toList
@@ -40,6 +41,12 @@ import           Hkl.Orphan                 ()
 
 data Chunk n a = Chunk !a !n !n
 deriving instance (Show n, Show a) => Show (Chunk n a)
+
+cclip :: (Num n, Ord n) => n -> n -> Chunk n a -> Chunk n a
+cclip skipL skipH (Chunk a l h) = let nl = if l + skipL > h then l else l + skipL
+                                      nh = if h - skipH < l then h else h - skipH
+                                  in Chunk a nl nh
+{-# SPECIALIZE cclip :: Int -> Int -> Chunk Int FilePath -> Chunk Int FilePath #-}
 
 clength :: Num n => Chunk n a -> n
 clength (Chunk _ l h) = h - l + 1

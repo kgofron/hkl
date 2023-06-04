@@ -131,8 +131,6 @@ import           Hkl.Lattice
 import           Paths_hkl
 
 -- TODO
--- ajouter un parametre pour exclude les n premiers points et les m derniers points de chaque scan.
--- - skipfirstpoints and skiplastpoints
 -- implementer les q/tth_scantime et q/tth_scanindex
 -- adapter angles -> cglm
 -- implementer les corrections de polarisation

@@ -56,7 +56,7 @@ import           Hkl.Detector
 -- class ChunkP
 
 class ChunkP a where
-  chunkP :: MonadSafe m => a -> Pipe FilePath (Chunk Int FilePath) m ()
+  chunkP :: MonadSafe m => Maybe Int -> Maybe Int -> a -> Pipe FilePath (Chunk Int FilePath) m ()
 
 -- class FramesP
 class ChunkP a => FramesP a b where
