@@ -209,7 +209,7 @@ processAnglesP = do
     runSafeT $ runEffect $
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
-    >-> framesQCustomP datapaths
+    >-> framesP datapaths
     >-> project det 3 (spaceAngles det pixels res mask' mlimits sampleAxis)
     >-> accumulateP c
 
@@ -224,7 +224,7 @@ processAnglesP = do
                              runSafeT $ runEffect $
                              each job
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                             >-> framesQCustomP datapaths
+                             >-> framesP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
                              >-> project det 3 (spaceAngles det pixels res mask' mlimits sampleAxis)
                              >-> tee (accumulateP c)

@@ -2,7 +2,7 @@ RTS = +RTS -N8 -RTS
 RUN = cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- $(RTS)
 PROCESS = $(RUN) --debug process
 #PROCESS = cd ../..; binoculars-ng process
-PROCESS_DBG = cd ../..; ./bootstrap gdb --args dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng --debug process
+PROCESS_DBG = cd ../..; ./bootstrap gdb --args `cabal list-bin binoculars-ng` --debug process
 
 mars:
 #	$(PROCESS) data/test/config_mars_ruche_rel_flyscan.ini
@@ -83,7 +83,7 @@ ssd:
 #	$(PROCESS) data/test/config_ssd_sixs_flymedv_v2.txt 836-916
 #	$(PROCESS) /home/picca/test-data/dpath/config_dpath.txt 488
 #	$(PROCESS) /home/picca/test-data/dpath/config_dpath2.txt 488
-	$(PROCESS) /home/picca/test-data/translation/config_ech6eiger.txt 912-913
+	$(PROCESS_DBG) /home/picca/test-data/translation/config_ech6eiger.txt 912-913
 
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224

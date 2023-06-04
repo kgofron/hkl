@@ -295,7 +295,7 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
                 Just deprecated -> Right $ case deprecated of
                                             SixsFlyMedVEiger          -> SixsFlyMedV
                                             SixsFlyMedVS70            -> SixsFlyMedV
-                                            SixsFlyScanUhvGisaxsEiger -> SixsFlyUhv
+                                            SixsFlyScanUhvGisaxsEiger -> SixsFlyUhvGisaxs
                                             SixsFlyScanUhvUfxc        -> SixsFlyUhv
   detector <- parseFDef cfg "input" "detector" (case minputtypedeprecated of
                                                  Nothing -> case inputtype of
@@ -314,11 +314,11 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
                                                              SixsSbsMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                              SixsSbsUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
                                                              SixsSbsUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common
-                                                 (Just deprecated) -> case deprecated of
-                                                                       SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
-                                                                       SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70
-                                                                       SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
-                                                                       SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
+                                                 Just deprecated -> case deprecated of
+                                                                     SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
+                                                                     SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70
+                                                                     SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
+                                                                     SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
                                               )
 
   BinocularsConfig'Common

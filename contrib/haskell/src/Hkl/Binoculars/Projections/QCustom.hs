@@ -27,7 +27,7 @@ module Hkl.Binoculars.Projections.QCustom
     , Config(..)
     , DataFrameQCustom(..)
     , DataSourcePath(..)
-    , FramesQCustomP(..)
+    , FramesP(..)
     , default'DataSourcePath'DataFrameQCustom
     , guess'DataSourcePath'DataFrameQCustom
     , newQCustom
@@ -65,10 +65,10 @@ import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Units.Dimensional.Prelude (Angle, degree, radian, (*~),
                                                     (/~))
 import           Path                              (Abs, Dir, Path)
-import           Pipes                             (Pipe, await, each,
-                                                    runEffect, yield, (>->))
+import           Pipes                             (await, each, runEffect,
+                                                    yield, (>->))
 import           Pipes.Prelude                     (filter, map, tee, toListM)
-import           Pipes.Safe                        (MonadSafe, runSafeT)
+import           Pipes.Safe                        (runSafeT)
 import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
@@ -714,10 +714,6 @@ spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz space@(
 -- Pipe --
 ----------
 
-class ChunkP a => FramesQCustomP a where
-  framesQCustomP :: MonadSafe m
-                 => a -> Pipe (FilePath, [Int]) DataFrameQCustom m ()
-
 processQCustomP :: (MonadIO m, MonadLogger m, MonadReader (Config 'QCustomProjection) m, MonadThrow m)
                 => m ()
 processQCustomP = do
@@ -777,7 +773,7 @@ processQCustomP = do
     runSafeT $ runEffect $
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
-    >-> framesQCustomP datapaths
+    >-> framesP datapaths
     >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz)
     >-> accumulateP c
 
@@ -792,7 +788,7 @@ processQCustomP = do
                              runSafeT $ runEffect $
                              each job
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
-                             >-> framesQCustomP datapaths
+                             >-> framesP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
                              >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz)
                              >-> tee (accumulateP c)
@@ -815,8 +811,8 @@ instance ChunkP (DataSourcePath DataFrameQCustom) where
             (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk fp 0 (fromIntegral n -1)
           Nothing  -> error "can not extract length"
 
-instance FramesQCustomP (DataSourcePath DataFrameQCustom) where
-    framesQCustomP p =
+instance FramesP (DataSourcePath DataFrameQCustom) DataFrameQCustom where
+    framesP p =
         skipMalformed $ forever $ do
           (fn, js) <- await
           withFileP (openFile' fn) $ \f ->

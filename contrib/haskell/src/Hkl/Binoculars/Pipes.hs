@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2022 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -19,6 +19,7 @@
 module Hkl.Binoculars.Pipes
   ( Chunk(..)
   , ChunkP(..)
+  , FramesP(..)
   , accumulateP
   , progress
   , project
@@ -52,10 +53,15 @@ import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
 
--- ChunkP
+-- class ChunkP
 
 class ChunkP a where
   chunkP :: MonadSafe m => a -> Pipe FilePath (Chunk Int FilePath) m ()
+
+-- class FramesP
+class ChunkP a => FramesP a b where
+  framesP :: MonadSafe m
+          => a -> Pipe (FilePath, [Int]) b m ()
 
 -- Project
 

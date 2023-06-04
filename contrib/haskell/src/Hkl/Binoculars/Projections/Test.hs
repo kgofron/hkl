@@ -53,11 +53,10 @@ import           Foreign.C.Types                    (CDouble (..))
 import           Foreign.ForeignPtr                 (withForeignPtr)
 import           GHC.Generics                       (Generic)
 import           Path                               (Abs, Dir, Path)
-import           Pipes                              (Pipe, await, each,
-                                                     runEffect, (>->))
+import           Pipes                              (await, each, runEffect,
+                                                     (>->))
 import           Pipes.Prelude                      (filter, map, tee, toListM)
-import           Pipes.Safe                         (MonadSafe, runSafeP,
-                                                     runSafeT)
+import           Pipes.Safe                         (runSafeP, runSafeT)
 import           Test.QuickCheck                    (Arbitrary (..))
 import           Text.Printf                        (printf)
 
@@ -214,11 +213,6 @@ spaceTest det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameTest (Data
 -- Pipe --
 ----------
 
-class ChunkP a => FramesTestP a where
-  framesTestP :: MonadSafe m
-             => a -> Pipe (FilePath, [Int]) (DataFrameTest' Identity) m ()
-
-
 processTestP :: (MonadIO m, MonadLogger m, MonadReader (Config 'TestProjection) m, MonadThrow m)
             => m ()
 processTestP = do
@@ -271,7 +265,7 @@ processTestP = do
     runSafeT $ runEffect $
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
-    >-> framesTestP datapaths
+    >-> framesP datapaths
     >-> project det 3 (spaceTest det pixels res mask' mlimits)
     >-> accumulateP c
 
@@ -285,7 +279,7 @@ processTestP = do
                              each job
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              -- >-> tee Pipes.Prelude.print
-                             >-> framesTestP datapaths
+                             >-> framesP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameTest (DataFrameQCustom _ _ img _) _) -> filterSumImage mImageSumMax img)
                              >-> project det 3 (spaceTest det pixels res mask' mlimits)
                              >-> tee (accumulateP c)
@@ -298,8 +292,8 @@ processTestP = do
 instance ChunkP (DataFrameTest' DataSourcePath) where
   chunkP (DataFrameTest p _) = chunkP p
 
-instance FramesTestP (DataFrameTest' DataSourcePath) where
-  framesTestP (DataFrameTest qcustom sample) = skipMalformed $ forever $ do
+instance FramesP (DataFrameTest' DataSourcePath) (DataFrameTest' Identity) where
+  framesP (DataFrameTest qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
     withFileP (openFile' fp) $ \f ->
       withDataSourceP f qcustom $ \qcustomAcq ->
