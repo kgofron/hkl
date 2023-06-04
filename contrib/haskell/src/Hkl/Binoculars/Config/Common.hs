@@ -289,18 +289,14 @@ instance ToIni  BinocularsConfig'Common where
 parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> Capabilities -> Either String BinocularsConfig'Common
 parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
   = do
-  minputtype <- parseMb cfg "input" "type"
   let minputtypedeprecated = eitherF (const Nothing) (parse' cfg "input" "type") id
-  let inputtype = case minputtype of
-                    Nothing -> case minputtypedeprecated of
-                                Nothing -> binocularsConfig'Common'InputType default'BinocularsConfig'Common
-                                Just deprecated -> case deprecated of
-                                                    SixsFlyMedVEiger -> SixsFlyMedV
-                                                    SixsFlyMedVS70 -> SixsFlyMedV
-                                                    SixsFlyScanUhvGisaxsEiger -> SixsFlyUhv
-                                                    SixsFlyScanUhvUfxc -> SixsFlyUhv
-                    Just i -> i
-
+  inputtype <- case minputtypedeprecated of
+                Nothing -> parseFDef cfg "input" "type" (binocularsConfig'Common'InputType default'BinocularsConfig'Common)
+                Just deprecated -> Right $ case deprecated of
+                                            SixsFlyMedVEiger          -> SixsFlyMedV
+                                            SixsFlyMedVS70            -> SixsFlyMedV
+                                            SixsFlyScanUhvGisaxsEiger -> SixsFlyUhv
+                                            SixsFlyScanUhvUfxc        -> SixsFlyUhv
   detector <- parseFDef cfg "input" "detector" (case minputtypedeprecated of
                                                  Nothing -> case inputtype of
                                                              CristalK6C -> mkDetector HklBinocularsDetectorEnum'XpadFlatCorrected
