@@ -23,6 +23,9 @@ sdd = 1.148           # sample to detector distance (m)
 detrot = 90.0
 # attenuation_coefficient = 1.742
 maskmatrix = /home/picca/test-data/translation/mask1.npy
+skip_first_points = 10
+skip_last_points = 20
+
 ## choose PROJECTION plus resolution
 ## projections: realspace, pixels, hklprojection, hkprojection, qxqyqzprojection, qparqperprojection
 [projection]

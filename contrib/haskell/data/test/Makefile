@@ -83,7 +83,7 @@ ssd:
 #	$(PROCESS) data/test/config_ssd_sixs_flymedv_v2.txt 836-916
 #	$(PROCESS) /home/picca/test-data/dpath/config_dpath.txt 488
 #	$(PROCESS) /home/picca/test-data/dpath/config_dpath2.txt 488
-	$(PROCESS_DBG) /home/picca/test-data/translation/config_ech6eiger.txt 912-913
+	$(PROCESS) /home/picca/test-data/translation/config_ech6eiger.txt 912-913
 
 #binoculars process config_m1018_32h_Qxyz.txt 173-187- 190-195
 #binoculars process config_m1018_32h_Qxyz.txt 217-224
