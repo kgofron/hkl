@@ -132,15 +132,14 @@ import           Hkl.Types
 import           Paths_hkl
 
 -- TODO
--- cube null
--- ajouter une source de donnee venant du fichier de config.
--- - Datasource de config qui prendrait la precedence sur tout le reste.
--- gerer les datat sources qui n'ont pas la meme dimensionnalite genre un scalar et un array.
+-- comment documenter la section geometry.values
+-- gerer les data sources qui n'ont pas la meme dimensionnalite genre un scalar et un array.
 -- implementer les q/tth_scantime et q/tth_scanindex
 -- adapter angles -> cglm
 -- implementer les corrections de polarisation
 -- gui merge de cube.
 -- ajouter un XpadFlat -> ajouter 3.2 dans le nom
+-- comment orienter dans l'espace qpar pour le gisax lorsque l'on passe par l'origin signbit.
 
 -- Class FieldEmitter
 
