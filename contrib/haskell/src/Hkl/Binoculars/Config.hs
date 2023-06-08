@@ -128,6 +128,7 @@ import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Exception
 import           Hkl.Lattice
+import           Hkl.Types
 import           Paths_hkl
 
 -- TODO
@@ -303,10 +304,6 @@ getCapabilities :: IO Capabilities
 getCapabilities = Capabilities
                   <$> getNumCapabilities
                   <*> getNumProcessors
-
--- ConfigContent
-
-newtype ConfigContent = ConfigContent Text
 
 -- ConfigRange
 

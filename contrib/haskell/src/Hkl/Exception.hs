@@ -14,6 +14,8 @@ import           Data.Text             (Text)
 import           Data.Typeable         (Typeable)
 import           Path                  (Abs, Dir, Path)
 
+import           Hkl.Types
+
 data HklDetectorException = MaskShapeNotcompatible Text
                           | NoDefaultMask
     deriving (Show, Typeable)
@@ -40,7 +42,8 @@ instance Exception HklBinocularsConfigException
 
 
 data HklDataSourceException
-  = CanNotOpenDataSource'Double'Or HklDataSourceException HklDataSourceException
+  = CanNotOpenDataSource'Double'Ini Section Key
+  | CanNotOpenDataSource'Double'Or HklDataSourceException HklDataSourceException
   | CanNotOpenDataSource'Sample'Or HklDataSourceException HklDataSourceException
   | HklDataSourceException'HklH5Exception HklH5Exception
   deriving (Show, Typeable)

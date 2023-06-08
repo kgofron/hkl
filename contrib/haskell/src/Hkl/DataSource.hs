@@ -58,6 +58,7 @@ import           Test.QuickCheck                   (Arbitrary (..), oneof)
 import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Config
+import           Hkl.Binoculars.Config.Common
 import           Hkl.C.Hkl
 import           Hkl.Detector
 import           Hkl.Exception
@@ -248,6 +249,7 @@ instance Arbitrary (DataSourcePath Degree) where
 instance DataSource Double where
   data DataSourcePath Double
     = DataSourcePath'Double (Hdf5Path Z Double)
+    | DataSourcePath'Double'Ini ConfigContent Section Key
     | DataSourcePath'Double'Const Double
     | DataSourcePath'Double'Or (DataSourcePath Double) (DataSourcePath Double)
     deriving (Generic, Show, FromJSON, ToJSON)
@@ -258,6 +260,11 @@ instance DataSource Double where
 
   withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Double ds)
   withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
+  withDataSourceP _ (DataSourcePath'Double'Ini (ConfigContent cfg) s k) g =
+      eitherF (const $ throwM $ CanNotOpenDataSource'Double'Ini s k) (parse' cfg s k)
+      (\mv -> case mv of
+               Nothing -> throwM $ CanNotOpenDataSource'Double'Ini s k
+               Just v  ->  g (DataSourceAcq'Double'Const v))
   withDataSourceP f (DataSourcePath'Double'Or l r) g = withDataSourceP f l g
                                                        `catch`
                                                        \exl -> withDataSourceP f r g

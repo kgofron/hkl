@@ -1,21 +1,24 @@
-{-# LANGUAGE GADTs         #-}
-{-# LANGUAGE UnicodeSyntax #-}
-
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE UnicodeSyntax              #-}
 
 module Hkl.Types ( AbsDirPath
                  , Beamline(..)
-                 , beamlineUpper
+                 , ConfigContent(..)
+                 , Key
                  , SampleName
+                 , Section
                  , Timestamp(..)
                  , Trajectory
-                   -- hdf5
-                 , H5Path
+                 , beamlineUpper
                  , module X
                  ) where
 
+import           Data.Aeson  (FromJSON (..), ToJSON (..))
 import           Data.Char   (toUpper)
+import           Data.String (IsString)
+import           Data.Text   (Text)
 
-import           Hkl.H5
 import           Hkl.Lattice as X
 
 -- Common
@@ -34,7 +37,27 @@ instance Show Beamline where
 beamlineUpper ∷ Beamline → String
 beamlineUpper b = [toUpper x | x ← show b]
 
--- Index
+-- ConfigContent
+
+newtype ConfigContent
+  = ConfigContent Text
+  deriving (IsString, Show, FromJSON, ToJSON)
+
+-- Key
+
+-- newtype Key = Key Text
+--   deriving (IsString, Show, FromJSON, ToJSON)
+
+type Key = Text
+
+-- Section
+
+-- newtype Section = Section Text
+--   deriving (IsString, Show, FromJSON, ToJSON)
+
+type Section = Text
+
+-- Timestamp
 
 newtype Timestamp = Timestamp { unTimestamp :: Double }
   deriving Show
