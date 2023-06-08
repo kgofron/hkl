@@ -150,22 +150,9 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 
 /* subprojection for QCustom */
 
-/* - delta_gamma_[omega|mu]_uhv for the uhv gemetry */
-
-/*   delta = arctan2(qy_surf, qx_surf) */
-/*   gamma = arcsin(qz_surf / sqrt(qx_surf**2 + qy_surf**2)) */
-/*   omega or mu */
-
-/* subprojection of angles */
-
-/* - delta_gamma_[omega|mu|beta]_med */
-
-/*   delta = arcsin(z_lab / sqrt(x_lab**2 + y_lab**2)) - beta */
-/*   gamma = arctan2(y_lab, x_lab) */
-/*   omega or mu or beta */
-
+/* <echantillon-axis>_qpar_qper */
+/* <echantillon-axis>_q */
 /* q_index / tth_index  ( index = numero du scan) (optional) */
-
 /* q_timescan0 / tth_timescan0   (timescan0 = timestamp du 1er point du scan (constant pour 1 scan)) */
 
 /* angles */

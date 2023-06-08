@@ -131,6 +131,10 @@ import           Hkl.Lattice
 import           Paths_hkl
 
 -- TODO
+-- cube null
+-- ajouter une source de donnee venant du fichier de config.
+-- - Datasource de config qui prendrait la precedence sur tout le reste.
+-- gerer les datat sources qui n'ont pas la meme dimensionnalite genre un scalar et un array.
 -- implementer les q/tth_scantime et q/tth_scanindex
 -- adapter angles -> cglm
 -- implementer les corrections de polarisation
