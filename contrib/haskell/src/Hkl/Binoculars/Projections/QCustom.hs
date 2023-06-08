@@ -535,13 +535,19 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                 [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
 
       let sixs'Med'Beta
-            = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "beta"
+            = DataSourcePath'Double(hdf5p $ grouppat 0 (groupp "scan_data" (datasetp "beta"
                                                                              `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch")))
+                                                                              datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch"))
+                                                        `H5Or`
+                                                        datasetp "SIXS/i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch"))
+              `DataSourcePath'Double'Or`
+              DataSourcePath'Double'Const 0
       let sixs'MedH'Mu
             = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                              `H5Or`
                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/mu")))
+              `DataSourcePath'Double'Or`
+              DataSourcePath'Double'Const 0
       let sixs'MedV'Mu
             = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                              `H5Or`
