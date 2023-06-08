@@ -86,7 +86,7 @@ newtype instance Args 'AnglesProjection = Args'AnglesProjection (Maybe ConfigRan
 
 instance HasIniConfig 'AnglesProjection where
 
-  getConfig (ConfigContent cfg) (Args'AnglesProjection mr) capabilities = do
+  getConfig content@(ConfigContent cfg) (Args'AnglesProjection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities
     projectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Angles'ProjectionType default'BinocularsConfig'Angles)
     BinocularsConfig'Angles
@@ -105,9 +105,9 @@ instance HasIniConfig 'AnglesProjection where
                                                    RealSpaceProjection -> undefined
                                                    PixelsProjection -> undefined
                                                    TestProjection  -> undefined)
-      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom common Nothing) (parse' cfg "input" "datapath")
+      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom common Nothing content) (parse' cfg "input" "datapath")
            (\md -> case md of
-                    Nothing -> guess'DataSourcePath'DataFrameQCustom common Nothing
+                    Nothing -> guess'DataSourcePath'DataFrameQCustom common Nothing content
                     Just d  ->  overload'DataSourcePath'DataFrameQCustom common Nothing d))
 
 

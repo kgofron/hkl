@@ -154,7 +154,7 @@ overload'DataSourcePath'DataFrameTest common sample (DataFrameTest qCustomPath s
 
 instance HasIniConfig 'TestProjection where
 
-  getConfig (ConfigContent cfg) (Args'TestProjection mr) capabilities = do
+  getConfig content@(ConfigContent cfg) (Args'TestProjection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities
     sample <- parse'BinocularsConfig'Sample cfg
     BinocularsConfig'Test
@@ -163,9 +163,9 @@ instance HasIniConfig 'TestProjection where
       <*> parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType default'BinocularsConfig'Test)
       <*> parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution default'BinocularsConfig'Test)
       <*> parseMb cfg "projection" "limits"
-      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameTest common sample) (parse' cfg "input" "datapath")
+      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameTest common sample content) (parse' cfg "input" "datapath")
            (\md -> case md of
-                    Nothing -> guess'DataSourcePath'DataFrameTest common sample
+                    Nothing -> guess'DataSourcePath'DataFrameTest common sample content
                     Just d  ->  overload'DataSourcePath'DataFrameTest common sample d))
 
 
@@ -311,10 +311,11 @@ instance FramesP (DataFrameTest' DataSourcePath) (DataFrameTest' Identity) where
 
 guess'DataSourcePath'DataFrameTest :: BinocularsConfig'Common
                                   -> BinocularsConfig'Sample
+                                  -> ConfigContent
                                   -> DataFrameTest' DataSourcePath
-guess'DataSourcePath'DataFrameTest common sample
+guess'DataSourcePath'DataFrameTest common sample content
   = DataFrameTest
-    (guess'DataSourcePath'DataFrameQCustom common Nothing)
+    (guess'DataSourcePath'DataFrameQCustom common Nothing content)
     (guess'DataSourcePath'Sample common sample)
 
 ---------

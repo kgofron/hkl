@@ -210,7 +210,7 @@ default'BinocularsConfig'QCustom
 
 instance HasIniConfig 'QCustomProjection where
 
-  getConfig (ConfigContent cfg) (Args'QCustomProjection mr) capabilities = do
+  getConfig content@(ConfigContent cfg) (Args'QCustomProjection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities
     projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
 
@@ -237,9 +237,9 @@ instance HasIniConfig 'QCustomProjection where
       <*> pure projectiontype
       <*> parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
       <*> parseMb cfg "projection" "limits"
-      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom common subprojection) (parse' cfg "input" "datapath")
+      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom common subprojection content) (parse' cfg "input" "datapath")
       (\md -> case md of
-               Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection
+               Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection content
                Just d ->  overload'DataSourcePath'DataFrameQCustom common subprojection d))
       <*> pure subprojection
       <*> parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
@@ -422,8 +422,9 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
 
 guess'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
                                       -> Maybe HklBinocularsQCustomSubProjectionEnum
+                                      -> ConfigContent
                                       -> DataSourcePath DataFrameQCustom
-guess'DataSourcePath'DataFrameQCustom common msub =
+guess'DataSourcePath'DataFrameQCustom common msub cfg =
     do
       let inputtype = binocularsConfig'Common'InputType common
       let mAttenuationCoefficient = binocularsConfig'Common'AttenuationCoefficient common
@@ -535,13 +536,14 @@ guess'DataSourcePath'DataFrameQCustom common msub =
                 [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
 
       let sixs'Med'Beta
-            = DataSourcePath'Double(hdf5p $ grouppat 0 (groupp "scan_data" (datasetp "beta"
-                                                                             `H5Or`
-                                                                              datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch"))
+            = DataSourcePath'Double'Ini cfg "custom" "beta"
+              `DataSourcePath'Double'Or`
+
+              DataSourcePath'Double(hdf5p $ grouppat 0 (groupp "scan_data" (datasetp "beta"
+                                                                            `H5Or`
+                                                                            datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch"))
                                                         `H5Or`
                                                         datasetp "SIXS/i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch"))
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double'Const 0
       let sixs'MedH'Mu
             = DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                              `H5Or`
