@@ -1262,6 +1262,10 @@ HklBinocularsCube *hkl_binoculars_cube_new_empty_from_cube(const HklBinocularsCu
 	HklBinocularsCube *self = empty_cube_from_axes(&cube->axes);
         if(NULL != self)
                 calloc_cube(self);
+        else{
+                self = hkl_binoculars_cube_new_empty();
+        }
+
 
 	return self;
 }
