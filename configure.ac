@@ -256,6 +256,7 @@ AC_CONFIG_FILES([Makefile
 		 gui/Makefile
 		 data/Makefile
 		 contrib/Makefile
+		 contrib/haskell/Makefile
 		 contrib/sixs/Makefile
 		 contrib/petra3/Makefile
 ])
