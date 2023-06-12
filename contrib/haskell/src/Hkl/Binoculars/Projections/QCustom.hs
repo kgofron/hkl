@@ -402,6 +402,7 @@ overloadTimestampPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'SampleaxisQTth -> DataSourcePath'Timestamp'NoTimestamp
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma

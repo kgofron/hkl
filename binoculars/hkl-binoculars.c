@@ -514,6 +514,14 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 names = names_sampleaxis_qpar_qper;
                 break;
         }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH:
+        {
+                static const char *names_sampleaxis_q_tth[] = {"sample axis", "q", "tth"};
+                assert(ARRAY_SIZE(names_sampleaxis_q_tth) <= darray_size(space->axes));
+                assert(ARRAY_SIZE(names_sampleaxis_q_tth) <= n_resolutions);
+                names = names_sampleaxis_q_tth;
+                break;
+        }
         default:
         {
                 static const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};
@@ -934,6 +942,33 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                 item.indexes_0[0] = rint(axis / resolutions[0]); \
                                                 item.indexes_0[1] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[1]); \
                                                 item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
+                                                item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                        darray_append(space->items, item); \
+                                        }                               \
+                                }                                       \
+                                break;                                  \
+                        }                                               \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH: \
+                {                                                       \
+                        const HklParameter *p = hkl_geometry_axis_get(geometry, sample_axis, NULL); \
+                        if (NULL != p){                                 \
+                                double axis = hkl_parameter_value_get(p, HKL_UNIT_USER); \
+                                                                        \
+                                for(i=0;i<n_pixels;++i){                \
+                                        if(not_masked(masked, i)){      \
+                                                CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                                v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                                v = glms_vec3_scale_as(v, k); \
+                                                v = glms_vec3_sub(v , ki); \
+                                                v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+                                                item.indexes_0[0] = rint(axis / resolutions[0]); \
+                                                item.indexes_0[1] = rint(glms_vec3_norm(v) / resolutions[1]); \
+                                                item.indexes_0[2] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[2]); \
                                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
