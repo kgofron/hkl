@@ -405,8 +405,8 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP:
         {
                 static const char *names_q_timestamp[] = {"q", "timestamp"};
-                assert(ARRAY_SIZE(names_q_timestamp) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_q_timestamp) == n_resolutions);
+                assert(ARRAY_SIZE(names_q_timestamp) <= darray_size(space->axes));
+                assert(ARRAY_SIZE(names_q_timestamp) <= n_resolutions);
                 names = names_q_timestamp;
                 break;
         }
@@ -421,8 +421,8 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER:
         {
                 static const char *names_qpar_qper[] = {"qpar", "qper"};
-                assert(ARRAY_SIZE(names_qpar_qper) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_qpar_qper) == n_resolutions);
+                assert(ARRAY_SIZE(names_qpar_qper) <= darray_size(space->axes));
+                assert(ARRAY_SIZE(names_qpar_qper) <= n_resolutions);
                 names = names_qpar_qper;
                 break;
         }
@@ -509,16 +509,16 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER:
         {
                 static const char *names_sampleaxis_qpar_qper[] = {"sample axis", "qpars", "qper"};
-                assert(ARRAY_SIZE(names_sampleaxis_qpar_qper) <= darray_size(space->axes));
-                assert(ARRAY_SIZE(names_sampleaxis_qpar_qper) <= n_resolutions);
+                assert(ARRAY_SIZE(names_sampleaxis_qpar_qper) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_sampleaxis_qpar_qper) == n_resolutions);
                 names = names_sampleaxis_qpar_qper;
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH:
         {
                 static const char *names_sampleaxis_q_tth[] = {"sample axis", "q", "tth"};
-                assert(ARRAY_SIZE(names_sampleaxis_q_tth) <= darray_size(space->axes));
-                assert(ARRAY_SIZE(names_sampleaxis_q_tth) <= n_resolutions);
+                assert(ARRAY_SIZE(names_sampleaxis_q_tth) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_sampleaxis_q_tth) == n_resolutions);
                 names = names_sampleaxis_q_tth;
                 break;
         }
