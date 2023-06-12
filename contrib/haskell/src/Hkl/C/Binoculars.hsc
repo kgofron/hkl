@@ -183,8 +183,8 @@ instance Enum HklBinocularsSurfaceOrientationEnum where
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP
-#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER
-#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_SAMPLEAXIS
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TTH
 
 data HklBinocularsQCustomSubProjectionEnum
   = HklBinocularsQCustomSubProjectionEnum'QxQyQz
@@ -202,8 +202,8 @@ data HklBinocularsQCustomSubProjectionEnum
   | HklBinocularsQCustomSubProjectionEnum'YZTimestamp
   | HklBinocularsQCustomSubProjectionEnum'QQparQper
   | HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp
-  | HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper
-  | HklBinocularsQCustomSubProjectionEnum'SampleaxisQTth
+  | HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis
+  | HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsQCustomSubProjectionEnum where
@@ -223,8 +223,8 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'YZTimestamp
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER = HklBinocularsQCustomSubProjectionEnum'QQparQper
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp
-    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER = HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper
-    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH = HklBinocularsQCustomSubProjectionEnum'SampleaxisQTth
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_SAMPLEAXIS = HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TTH = HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth
     | otherwise = error "Non supported HklBinocularsQCustomSubProjectionEnum value"
 
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQyQz = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ
@@ -242,8 +242,8 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
   fromEnum HklBinocularsQCustomSubProjectionEnum'YZTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP
   fromEnum HklBinocularsQCustomSubProjectionEnum'QQparQper = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER
   fromEnum HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP
-  fromEnum HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER
-  fromEnum HklBinocularsQCustomSubProjectionEnum'SampleaxisQTth = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH
+  fromEnum HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_SAMPLEAXIS
+  fromEnum HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TTH
 
 #opaque_t HklBinocularsSpace
 

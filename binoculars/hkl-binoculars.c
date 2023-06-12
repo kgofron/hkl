@@ -506,20 +506,20 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 names = names_qpars_qper_timestamp;
                 break;
         }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_SAMPLEAXIS:
         {
-                static const char *names_sampleaxis_qpar_qper[] = {"sample axis", "qpars", "qper"};
-                assert(ARRAY_SIZE(names_sampleaxis_qpar_qper) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_sampleaxis_qpar_qper) == n_resolutions);
-                names = names_sampleaxis_qpar_qper;
+                static const char *names_qpar_qper_sampleaxis[] = {"qpars", "qper", "sample axis"};
+                assert(ARRAY_SIZE(names_qpar_qper_sampleaxis) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_qpar_qper_sampleaxis) == n_resolutions);
+                names = names_qpar_qper_sampleaxis;
                 break;
         }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TTH:
         {
-                static const char *names_sampleaxis_q_tth[] = {"sample axis", "q", "tth"};
-                assert(ARRAY_SIZE(names_sampleaxis_q_tth) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_sampleaxis_q_tth) == n_resolutions);
-                names = names_sampleaxis_q_tth;
+                static const char *names_q_sampleaxis_tth[] = {"q", "sample axis", "tth"};
+                assert(ARRAY_SIZE(names_q_sampleaxis_tth) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_q_sampleaxis_tth) == n_resolutions);
+                names = names_q_sampleaxis_tth;
                 break;
         }
         default:
@@ -924,7 +924,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER: \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_SAMPLEAXIS: \
                 {                                                       \
                         const HklParameter *p = hkl_geometry_axis_get(geometry, sample_axis, NULL); \
                         if (NULL != p){                                 \
@@ -939,9 +939,9 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-                                                item.indexes_0[0] = rint(axis / resolutions[0]); \
-                                                item.indexes_0[1] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[1]); \
-                                                item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
+                                                item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
+                                                item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
+                                                item.indexes_0[2] = rint(axis / resolutions[2]); \
                                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -951,7 +951,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                 break;                                  \
                         }                                               \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_Q_TTH: \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TTH: \
                 {                                                       \
                         const HklParameter *p = hkl_geometry_axis_get(geometry, sample_axis, NULL); \
                         if (NULL != p){                                 \
@@ -966,8 +966,8 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-                                                item.indexes_0[0] = rint(axis / resolutions[0]); \
-                                                item.indexes_0[1] = rint(glms_vec3_norm(v) / resolutions[1]); \
+                                                item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                                item.indexes_0[1] = rint(axis / resolutions[1]); \
                                                 item.indexes_0[2] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[2]); \
                                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
