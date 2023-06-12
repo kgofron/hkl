@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -232,15 +233,15 @@ instance HasIniConfig 'QCustomProjection where
                           TestProjection -> msubprojection
 
     BinocularsConfig'QCustom
-      <$> pure common
-      <*> parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
+      common
+      <$> parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
       <*> pure projectiontype
       <*> parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
       <*> parseMb cfg "projection" "limits"
-      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom common subprojection content) (parse' cfg "input" "datapath")
-      (\md -> case md of
-               Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection content
-               Just d ->  overload'DataSourcePath'DataFrameQCustom common subprojection d))
+      <*> pure (eitherF (const $ guess'DataSourcePath'DataFrameQCustom common subprojection content) (parse' cfg "input" "datapath")
+                (\case
+                    Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection content
+                    Just d ->  overload'DataSourcePath'DataFrameQCustom common subprojection d))
       <*> pure subprojection
       <*> parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
       <*> parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
@@ -536,10 +537,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
 
       let dataSourcePath'Geometry'Sixs'UhvGisaxs :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'UhvGisaxs
-            = (DataSourcePath'Geometry
-                sixsUhvGisaxs
-                (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-                [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
+            = DataSourcePath'Geometry
+              sixsUhvGisaxs
+              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ]
 
       let sixs'Med'Beta
             = DataSourcePath'Double'Ini cfg "geometry.values" "beta"
@@ -610,10 +611,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
 
       let dataSourcePath'Geometry'Sixs'MedHGisaxs ::  DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedHGisaxs
-            = (DataSourcePath'Geometry
-               sixsMedHGisaxs
-               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-               [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ])
+            = DataSourcePath'Geometry
+              sixsMedHGisaxs
+              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ]
 
       let dataSourcePath'Geometry'Sixs'MedV :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedV
@@ -624,10 +625,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
 
       let dataSourcePath'Geometry'Sixs'MedVGisaxs :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedVGisaxs
-            = (DataSourcePath'Geometry
-               sixsMedVGisaxs
-               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-               [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
+            = DataSourcePath'Geometry
+              sixsMedVGisaxs
+              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ]
 
       let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DataSourcePath Geometry -> DataSourcePath DataFrameQCustom
           dataSourcePath'DataFrameQCustom'Sixs'Fly g
