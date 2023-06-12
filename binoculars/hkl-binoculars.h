@@ -149,9 +149,8 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /***************/
 
 /* subprojection for QCustom */
-
 /* <echantillon-axis>_qpar_qper */
-/* <echantillon-axis>_q */
+/* <echantillon-axis>_q_tth */
 /* q_index / tth_index  ( index = numero du scan) (optional) */
 /* q_timescan0 / tth_timescan0   (timescan0 = timestamp du 1er point du scan (constant pour 1 scan)) */
 
@@ -195,6 +194,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;

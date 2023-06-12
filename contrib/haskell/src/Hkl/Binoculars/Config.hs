@@ -358,6 +358,7 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'XYZ               = "x_y_z"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'YZTimestamp       = "y_z_timestamp"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QQparQper         = "q_qpar_qper"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp = "qpars_qper_timestamp"
 
 instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
   fieldParser = go =<< takeText

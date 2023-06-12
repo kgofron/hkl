@@ -498,6 +498,14 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 names = names_q_qpar_qper;
                 break;
         }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP:
+        {
+                static const char *names_qpars_qper_timestamp[] = {"qpars", "qper", "timestamp"};
+                assert(ARRAY_SIZE(names_qpars_qper_timestamp) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_qpars_qper_timestamp) == n_resolutions);
+                names = names_qpars_qper_timestamp;
+                break;
+        }
         default:
         {
                 static const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};
@@ -863,6 +871,37 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
 					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * weight); \
                                                                         \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP: \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
+                                        item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
+					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
+                                        item.intensity = rint((double)image[i] * weight); \
+                                                                        \
+                                        if(v.raw[1] != 0.0){            \
+                                                if(signbit(v.raw[1]) != 0){ \
+                                                        item.indexes_0[0] = -item.indexes_0[0]; \
+                                                }                       \
+                                        }else{                          \
+                                                if(signbit(v.raw[0]) != 0){ \
+                                                        item.indexes_0[0] = -item.indexes_0[0]; \
+                                                }                       \
+                                        }                               \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
                                 }                                       \
