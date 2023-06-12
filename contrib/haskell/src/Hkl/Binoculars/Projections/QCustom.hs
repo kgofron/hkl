@@ -186,6 +186,7 @@ data instance Config 'QCustomProjection
     , binocularsConfig'QCustom'Uqx                    :: Degree
     , binocularsConfig'QCustom'Uqy                    :: Degree
     , binocularsConfig'QCustom'Uqz                    :: Degree
+    , binocularsConfig'QCustom'SampleAxis             :: Maybe SampleAxis
     } deriving (Show, Generic)
 
 instance Arbitrary (Config 'QCustomProjection) where
@@ -206,6 +207,7 @@ default'BinocularsConfig'QCustom
     , binocularsConfig'QCustom'Uqx = Degree (0.0 *~ degree)
     , binocularsConfig'QCustom'Uqy = Degree (0.0 *~ degree)
     , binocularsConfig'QCustom'Uqz = Degree (0.0 *~ degree)
+    , binocularsConfig'QCustom'SampleAxis = Nothing
     }
 
 
@@ -246,6 +248,7 @@ instance HasIniConfig 'QCustomProjection where
       <*> parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
       <*> parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
       <*> parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
+      <*> parseMb cfg "projection" "sampleaxis"
 
 
 instance ToIni (Config 'QCustomProjection) where
@@ -292,6 +295,12 @@ instance ToIni (Config 'QCustomProjection) where
                                                           , ""
                                                           , " `<not set>` - use the default value `0.0`"
                                                           , " `a value`   - use this value"
+                                                          ]
+                                                          <> elemFMbDef "sampleaxis" binocularsConfig'QCustom'SampleAxis c default'BinocularsConfig'QCustom
+                                                          [ "the name of the sample axis expected by some subprojections."
+                                                          , ""
+                                                          , " `<not set>` - for all subprojections which does not expect a value."
+                                                          , " `a value`   - use this value for the subprojection expecting this axis."
                                                           ]
                                            )]
 
@@ -392,6 +401,7 @@ overloadTimestampPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> idx
+                   HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper -> DataSourcePath'Timestamp'NoTimestamp
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
@@ -719,10 +729,11 @@ spaceQCustom :: Detector a DIM2
              -> Maybe (RLimits DIM3)
              -> HklBinocularsQCustomSubProjectionEnum
              -> Angle Double -> Angle Double -> Angle Double
+             -> Maybe SampleAxis
              -> Space DIM3
              -> DataFrameQCustom
              -> IO (DataFrameSpace DIM3)
-spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz space@(Space fSpace) (DataFrameQCustom att g img index) =
+spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz mSampleAxis space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
   withForeignPtr g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -730,14 +741,15 @@ spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz space@(
   withPixelsDims pixels $ \ndim dims ->
   withMaybeMask mmask' $ \ mask'' ->
   withMaybeLimits mlimits rs $ \nlimits limits ->
+  withMaybeSampleAxis mSampleAxis $ \sampleAxis ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian))
+      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis
     (ImageWord16 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian))
+      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis
     (ImageWord32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian))
+      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis
 
   return (DataFrameSpace img space att)
 
@@ -777,6 +789,7 @@ processQCustomP = do
   let (Degree uqx) = binocularsConfig'QCustom'Uqx conf
   let (Degree uqy) = binocularsConfig'QCustom'Uqy conf
   let (Degree uqz) = binocularsConfig'QCustom'Uqz conf
+  let mSampleAxis = binocularsConfig'QCustom'SampleAxis conf
 
   -- built from the config
   output' <- liftIO $ destination' projectionType (Just subprojection) inputRange mlimits destination overwrite
@@ -807,7 +820,7 @@ processQCustomP = do
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
     >-> framesP datapaths
-    >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz)
+    >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz mSampleAxis)
     >-> accumulateP c
 
   logDebugN "stop gessing final cube size"
@@ -823,7 +836,7 @@ processQCustomP = do
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              >-> framesP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
-                             >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz)
+                             >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz mSampleAxis)
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs

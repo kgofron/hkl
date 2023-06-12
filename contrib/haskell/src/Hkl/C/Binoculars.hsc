@@ -183,6 +183,7 @@ instance Enum HklBinocularsSurfaceOrientationEnum where
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER
 
 data HklBinocularsQCustomSubProjectionEnum
   = HklBinocularsQCustomSubProjectionEnum'QxQyQz
@@ -200,6 +201,7 @@ data HklBinocularsQCustomSubProjectionEnum
   | HklBinocularsQCustomSubProjectionEnum'YZTimestamp
   | HklBinocularsQCustomSubProjectionEnum'QQparQper
   | HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp
+  | HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsQCustomSubProjectionEnum where
@@ -219,6 +221,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'YZTimestamp
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER = HklBinocularsQCustomSubProjectionEnum'QQparQper
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER = HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper
     | otherwise = error "Non supported HklBinocularsQCustomSubProjectionEnum value"
 
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQyQz = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ
@@ -236,6 +239,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
   fromEnum HklBinocularsQCustomSubProjectionEnum'YZTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP
   fromEnum HklBinocularsQCustomSubProjectionEnum'QQparQper = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER
   fromEnum HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP
+  fromEnum HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_SAMPLEAXIS_QPAR_QPER
 
 #opaque_t HklBinocularsSpace
 
@@ -290,6 +294,7 @@ type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace 
  -> CDouble -- uqx
  -> CDouble -- uqy
  -> CDouble -- uqz
+ -> CString -- const char *sample_axis
  -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_int32_t" \

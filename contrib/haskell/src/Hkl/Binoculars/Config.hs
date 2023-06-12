@@ -359,6 +359,7 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'YZTimestamp       = "y_z_timestamp"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QQparQper         = "q_qpar_qper"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp = "qpars_qper_timestamp"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'SampleaxisQparQper = "sampleaxis_qpar_qper"
 
 instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
   fieldParser = go =<< takeText
@@ -873,6 +874,9 @@ instance HasFieldValue SampleAxis where
   fieldvalue = FieldValue { fvParse = Right . SampleAxis . uncomment
                           , fvEmit = \(SampleAxis t) -> t
                           }
+
+instance Arbitrary SampleAxis where
+  arbitrary = pure $ SampleAxis "omega"
 
 -- BinocularsPreConfig
 

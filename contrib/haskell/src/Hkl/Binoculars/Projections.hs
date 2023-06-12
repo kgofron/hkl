@@ -19,6 +19,7 @@ module Hkl.Binoculars.Projections
   , saveCube
   , withMaybeLimits
   , withMaybeMask
+  , withMaybeSampleAxis
   , withNPixels
   , withPixelsDims
   , withResolutions
@@ -122,6 +123,10 @@ withMaybeMask :: Maybe Mask -> (Ptr CBool -> IO r) -> IO r
 withMaybeMask mm f = case mm of
                        Nothing  -> f nullPtr
                        (Just m) -> withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
+
+withMaybeSampleAxis :: Maybe SampleAxis -> (CString -> IO r) -> IO r
+withMaybeSampleAxis Nothing f  = f nullPtr
+withMaybeSampleAxis (Just a) f = withSampleAxis a f
 
 withResolutions :: Shape sh => Resolutions sh -> (Int -> Ptr Double -> IO r) -> IO r
 withResolutions = withArrayLen . toList
