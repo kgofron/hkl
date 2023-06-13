@@ -135,11 +135,13 @@ import           Paths_hkl
 -- comment documenter la section geometry.values
 -- gerer les data sources qui n'ont pas la meme dimensionnalite genre un scalar et un array.
 -- implementer les q/tth_scantime et q/tth_scanindex
--- adapter angles -> cglm
 -- implementer les corrections de polarisation
 -- gui merge de cube.
 -- ajouter un XpadFlat -> ajouter 3.2 dans le nom
 -- comment orienter dans l'espace qpar pour le gisax lorsque l'on passe par l'origin signbit.
+-- adapter angles -> cglm 0 -> subprojection
+--  - delta_lab, gamma_lab, <sample-axis>
+--  - gamma_lab, delta_lab, <sample_axis>
 
 -- Class FieldEmitter
 
