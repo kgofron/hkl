@@ -355,8 +355,7 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QPhiQy            = "q_phi_qy"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QPhiQz            = "q_phi_qz"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QStereo           = "q_stereo"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'AnglesZaxisOmega  = "angles_zaxis_omega"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu     = "angles_zaxis_mu"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis = "deltalab_gammalab_sampleaxis"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'XYZ               = "x_y_z"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'YZTimestamp       = "y_z_timestamp"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QQparQper         = "q_qpar_qper"
@@ -376,6 +375,8 @@ instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
       go :: Text -> Parser HklBinocularsQCustomSubProjectionEnum
       go t
         | toLower t == "q_index" = pure HklBinocularsQCustomSubProjectionEnum'QTimestamp
+        | toLower t == "angle_zaxis_omega" = pure HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis
+        | toLower t == "angle_zaxis_mu" = pure HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'

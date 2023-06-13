@@ -458,20 +458,12 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 names = names_q_stereo;
                 break;
         }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_DELTALAB_GAMMALAB_SAMPLEAXIS:
         {
-                static const char *names_angles_zaxis_omega[] = {"delta", "gamma", "omega"};
-                assert(ARRAY_SIZE(names_angles_zaxis_omega) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_angles_zaxis_omega) == n_resolutions);
-                names = names_angles_zaxis_omega;
-                break;
-        }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU:
-        {
-                static const char *names_angles_zaxis_mu[] = {"delta", "gamma", "mu"};
-                assert(ARRAY_SIZE(names_angles_zaxis_mu) == darray_size(space->axes));
-                assert(ARRAY_SIZE(names_angles_zaxis_mu) == n_resolutions);
-                names = names_angles_zaxis_mu;
+                static const char *names_deltalab_gammalab_sampleaxis[] = {"deltalab", "gammalab", "sampleaxis"};
+                assert(ARRAY_SIZE(names_deltalab_gammalab_sampleaxis) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_deltalab_gammalab_sampleaxis) == n_resolutions);
+                names = names_deltalab_gammalab_sampleaxis;
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:
@@ -786,46 +778,29 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_OMEGA: \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_DELTALAB_GAMMALAB_SAMPLEAXIS: \
                 {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                        const HklParameter *p = hkl_geometry_axis_get(geometry, sample_axis, NULL); \
+                        if (NULL != p){                                 \
+                                int axis = rint(hkl_parameter_value_get(p, HKL_UNIT_USER) / resolutions[2]); \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                for(i=0;i<n_pixels;++i){                \
+                                        if(not_masked(masked, i)){      \
+                                                CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
-					item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
-					item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = rint(glms_vec3_norm(v) / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                                v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                                v = glms_vec3_scale_as(v, k); \
+                                                v = glms_vec3_sub(v , ki); \
+                                                v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
-                                }                                       \
-                        }                                               \
-                        break;                                          \
-                }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_ANGLES_ZAXIS_MU: \
-                {                                                       \
-                        for(i=0;i<n_pixels;++i){                        \
-                                if(not_masked(masked, i)){              \
-                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
+                                                item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
+                                                item.indexes_0[2] = axis; \
+                                                item.intensity = rint((double)image[i] * weight); \
                                                                         \
-                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        v = glms_vec3_scale_as(v, k);   \
-                                        v = glms_vec3_sub(v , ki);      \
-                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
-                                                                        \
-					item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
-					item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
-					item.indexes_0[2] = REMOVED;	\
-                                        item.intensity = rint((double)image[i] * weight); \
-                                                                        \
-                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
-                                                darray_append(space->items, item); \
+                                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                        darray_append(space->items, item); \
+                                        }                               \
                                 }                                       \
                         }                                               \
                         break;                                          \
@@ -928,7 +903,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         const HklParameter *p = hkl_geometry_axis_get(geometry, sample_axis, NULL); \
                         if (NULL != p){                                 \
-                                double axis = hkl_parameter_value_get(p, HKL_UNIT_USER); \
+                                int axis = rint(hkl_parameter_value_get(p, HKL_UNIT_USER) / resolutions[2]); \
                                                                         \
                                 for(i=0;i<n_pixels;++i){                \
                                         if(not_masked(masked, i)){      \
@@ -941,7 +916,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                                 item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
                                                 item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
-                                                item.indexes_0[2] = rint(axis / resolutions[2]); \
+                                                item.indexes_0[2] = axis; \
                                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -955,7 +930,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                 {                                                       \
                         const HklParameter *p = hkl_geometry_axis_get(geometry, sample_axis, NULL); \
                         if (NULL != p){                                 \
-                                double axis = hkl_parameter_value_get(p, HKL_UNIT_USER); \
+                                int axis = rint(hkl_parameter_value_get(p, HKL_UNIT_USER) / resolutions[1]); \
                                                                         \
                                 for(i=0;i<n_pixels;++i){                \
                                         if(not_masked(masked, i)){      \
@@ -967,7 +942,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
                                                 item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-                                                item.indexes_0[1] = rint(axis / resolutions[1]); \
+                                                item.indexes_0[1] = axis; \
                                                 item.indexes_0[2] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[2]); \
                                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \

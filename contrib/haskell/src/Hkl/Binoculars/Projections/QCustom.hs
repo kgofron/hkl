@@ -395,8 +395,7 @@ overloadTimestampPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisOmega -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'AnglesZaxisMu -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timestamp'NoTimestamp
