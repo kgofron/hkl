@@ -789,12 +789,9 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                 CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
                                                 v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                                v = glms_vec3_scale_as(v, k); \
-                                                v = glms_vec3_sub(v , ki); \
-                                                v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-                                                item.indexes_0[0] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[0]); \
-                                                item.indexes_0[1] = rint(atan2(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]), v.raw[2]) / M_PI * 180 / resolutions[1]); \
+                                                item.indexes_0[0] = rint(atan2(v.raw[2], sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1])) / M_PI * 180 / resolutions[0]); \
+                                                item.indexes_0[1] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[1]); \
                                                 item.indexes_0[2] = axis; \
                                                 item.intensity = rint((double)image[i] * weight); \
                                                                         \
