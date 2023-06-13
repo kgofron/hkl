@@ -363,7 +363,7 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth     = "q_sampleaxis_tth"
 
 instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
-  fieldParser = go =<< takeText
+  fieldParser = go . strip . uncomment . toLower =<< takeText
     where
       err t =  "Unsupported "
                ++ show (typeRep (Proxy :: Proxy HklBinocularsQCustomSubProjectionEnum))
@@ -372,10 +372,9 @@ instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
                ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: HklBinocularsQCustomSubProjectionEnum])
 
       go :: Text -> Parser HklBinocularsQCustomSubProjectionEnum
-      go t
-        | toLower t == "q_index" = pure HklBinocularsQCustomSubProjectionEnum'QTimestamp
-        | toLower t == "angle_zaxis_omega" = pure HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis
-        | toLower t == "angle_zaxis_mu" = pure HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis
+      go "q_index" = pure HklBinocularsQCustomSubProjectionEnum'QTimestamp
+      go "angle_zaxis_omega" = pure HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis
+      go "angle_zaxis_mu" = pure HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'
@@ -483,7 +482,7 @@ instance FieldEmitter InputTypeDeprecated where
   fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc"
 
 instance FieldParsable InputTypeDeprecated where
-  fieldParser = go =<< takeText
+  fieldParser = go . strip . uncomment . toLower =<< takeText
     where
       err t =  "Unsupported "
                ++ show (typeRep (Proxy :: Proxy InputTypeDeprecated))
@@ -537,7 +536,7 @@ instance FieldEmitter InputType where
   fieldEmitter SixsSbsUhvGisaxs  = "sixs:sbsuhvgisaxs"
 
 instance FieldParsable InputType where
-  fieldParser = go =<< takeText
+  fieldParser = go . strip . uncomment . toLower =<< takeText
     where
       err t =  "Unsupported "
                ++ show (typeRep (Proxy :: Proxy InputType))
@@ -546,12 +545,11 @@ instance FieldParsable InputType where
                ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: InputType])
 
       go :: Text -> Parser InputType
-      go t
-        | toLower t == "sixs:flyscanuhv" = pure SixsFlyUhv
-        | toLower t == "sixs:flyscanuhv2" = pure SixsFlyUhv
-        | toLower t == "sixs:flyscanuhvtest" = pure SixsFlyUhv
-        | toLower t == "sixs:sbsmedhfixdetector" = pure SixsSbsMedHGisaxs
-        | toLower t == "sixs:sbsmedvfixdetector" = pure SixsSbsMedVGisaxs
+      go "sixs:flyscanuhv" = pure SixsFlyUhv
+      go "sixs:flyscanuhv2" = pure SixsFlyUhv
+      go "sixs:flyscanuhvtest" = pure SixsFlyUhv
+      go "sixs:sbsmedhfixdetector" = pure SixsSbsMedHGisaxs
+      go "sixs:sbsmedvfixdetector" = pure SixsSbsMedVGisaxs
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'
@@ -640,7 +638,7 @@ instance FieldEmitter ProjectionType where
   fieldEmitter TestProjection      = "test"
 
 instance FieldParsable ProjectionType where
-  fieldParser = go =<< takeText
+  fieldParser = go . strip . uncomment . toLower =<< takeText
     where
       err t =  "Unsupported "
                ++ show (typeRep (Proxy :: Proxy ProjectionType))
@@ -649,16 +647,15 @@ instance FieldParsable ProjectionType where
                ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: ProjectionType])
 
       go :: Text -> Parser ProjectionType
-      go t
-        | toLower t == "sixs:anglesprojection" = pure AnglesProjection
-        | toLower t == "sixs:angles2projection" = pure Angles2Projection
-        | toLower t == "sixs:qindex" = pure QIndexProjection
-        | toLower t == "sixs:qxqyqzprojection" = pure QxQyQzProjection
-        | toLower t == "sixs:qparqperprojection" = pure QparQperProjection
-        | toLower t == "sixs:hklprojection" = pure HklProjection
-        | toLower t == "sixs:realspace" = pure RealSpaceProjection
-        | toLower t == "sixs:pixels" = pure PixelsProjection
-        | toLower t == "qcustom2" = pure QCustomProjection
+      go "sixs:anglesprojection" = pure AnglesProjection
+      go "sixs:angles2projection" = pure Angles2Projection
+      go "sixs:qindex" = pure QIndexProjection
+      go "sixs:qxqyqzprojection" = pure QxQyQzProjection
+      go "sixs:qparqperprojection" = pure QparQperProjection
+      go "sixs:hklprojection" = pure HklProjection
+      go "sixs:realspace" = pure RealSpaceProjection
+      go "sixs:pixels" = pure PixelsProjection
+      go "qcustom2" = pure QCustomProjection
       go t = case parseEnum (err t) t of
         Right p   -> pure p
         Left err' -> fail err'
