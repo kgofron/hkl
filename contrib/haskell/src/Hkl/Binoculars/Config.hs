@@ -138,7 +138,6 @@ import           Paths_hkl
 -- implementer les corrections de polarisation
 -- gui merge de cube.
 -- ajouter un XpadFlat -> ajouter 3.2 dans le nom
--- comment orienter dans l'espace qpar pour le gisax lorsque l'on passe par l'origin signbit.
 -- adapter angles -> cglm 0 -> subprojection
 --  - delta_lab, gamma_lab, <sample-axis>
 --  - gamma_lab, delta_lab, <sample_axis>
