@@ -217,22 +217,39 @@ instance HasIniConfig 'QCustomProjection where
     common <- parse'BinocularsConfig'Common cfg mr capabilities
     projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
 
-    let msubprojection = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
+    let msubprojection' = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
+    let msubprojection = case projectiontype of
+                           QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QTimestamp
+                           QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
+                           QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
+                           AnglesProjection -> msubprojection'
+                           Angles2Projection -> msubprojection'
+                           HklProjection -> msubprojection'
+                           QCustomProjection -> msubprojection'
+                           RealSpaceProjection -> Just HklBinocularsQCustomSubProjectionEnum'XYZ
+                           PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
+                           TestProjection -> msubprojection'
 
-    -- customize a bunch of parameters
+    let errorMissingSampleAxis = case msubprojection of
+                                   Nothing -> Nothing
+                                   Just sub -> case sub of
+                                                HklBinocularsQCustomSubProjectionEnum'QxQyQz -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QTimestamp -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QparQper -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QPhiQx -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QPhiQy -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QPhiQz -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QStereo -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> error "expect a valid  [projection] 'sampleaxis' key"
+                                                HklBinocularsQCustomSubProjectionEnum'XYZ -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QQparQper -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> error "expect a valid [projection] 'sampleaxis' key"
+                                                HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> error "expect a valid [projection] 'sampleaxis' key"
 
-    -- fix the subprojection depending on the projection type
-    let subprojection = case projectiontype of
-                          QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QTimestamp
-                          QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
-                          QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
-                          AnglesProjection -> msubprojection
-                          Angles2Projection -> msubprojection
-                          HklProjection -> msubprojection
-                          QCustomProjection -> msubprojection
-                          RealSpaceProjection -> Just HklBinocularsQCustomSubProjectionEnum'XYZ
-                          PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
-                          TestProjection -> msubprojection
 
     BinocularsConfig'QCustom
       common
@@ -240,16 +257,19 @@ instance HasIniConfig 'QCustomProjection where
       <*> pure projectiontype
       <*> parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
       <*> parseMb cfg "projection" "limits"
-      <*> pure (eitherF (const $ guess'DataSourcePath'DataFrameQCustom common subprojection content) (parse' cfg "input" "datapath")
+      <*> pure (eitherF (const $ guess'DataSourcePath'DataFrameQCustom common msubprojection content) (parse' cfg "input" "datapath")
                 (\case
-                    Nothing -> guess'DataSourcePath'DataFrameQCustom common subprojection content
-                    Just d ->  overload'DataSourcePath'DataFrameQCustom common subprojection d))
-      <*> pure subprojection
+                    Nothing -> guess'DataSourcePath'DataFrameQCustom common msubprojection content
+                    Just d ->  overload'DataSourcePath'DataFrameQCustom common msubprojection d))
+      <*> pure msubprojection
       <*> parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
       <*> parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
       <*> parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
-      <*> parseMb cfg "projection" "sampleaxis"
-
+      <*> pure (eitherF (const $ errorMissingSampleAxis) (parse' cfg "projection" "sampleaxis")
+                (\case
+                    Nothing -> errorMissingSampleAxis
+                    Just d  -> Just d
+                ))
 
 instance ToIni (Config 'QCustomProjection) where
 
