@@ -508,7 +508,7 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_SAMPLEAXIS:
         {
-                static const char *names_qpar_qper_sampleaxis[] = {"qpars", "qper", "sample axis"};
+                static const char *names_qpar_qper_sampleaxis[] = {"qpar", "qper", "sample axis"};
                 assert(ARRAY_SIZE(names_qpar_qper_sampleaxis) == darray_size(space->axes));
                 assert(ARRAY_SIZE(names_qpar_qper_sampleaxis) == n_resolutions);
                 names = names_qpar_qper_sampleaxis;
