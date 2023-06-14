@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -40,45 +40,45 @@
 
 /* Display all the node informations */
 
-static herr_t attribute_info(hid_t location_id, const char *attr_name, const H5A_info_t *ainfo, void *op_data)
-{
-	printf("    Attribute: %d %s\n", location_id, attr_name);
+/* static herr_t attribute_info(hid_t location_id, const char *attr_name, const H5A_info_t *ainfo, void *op_data) */
+/* { */
+/* 	printf("    Attribute: %ld %s\n", location_id, attr_name); */
 
-	return 0;
-}
+/* 	return 0; */
+/* } */
 
-static herr_t file_info(hid_t loc_id, const char *name, const H5L_info_t *info, void *opdata)
-{
-	H5O_info_t statbuf;
-	hsize_t n = 0;
+/* static herr_t file_info(hid_t loc_id, const char *name, const H5L_info_t *info, void *opdata) */
+/* { */
+/* 	H5O_info_t statbuf; */
+/* 	hsize_t n = 0; */
 
-	/*
-	 * Get type of the object and display its name and type.
-	 * The name of the object is passed to this function by
-	 * the Library. Some magic :-)
-	 */
-	H5Oget_info_by_name(loc_id, name, &statbuf, H5P_DEFAULT);
-	switch (statbuf.type) {
-	case H5O_TYPE_UNKNOWN:
-		printf(" Object with name %s is an unknown type\n", name);
-		break;
-	case H5O_TYPE_GROUP:
-		printf(" Object with name %s is a group\n", name);
-		break;
-	case H5O_TYPE_DATASET:
-		printf(" Object with name %s is a dataset\n", name);
-		break;
-	case H5O_TYPE_NAMED_DATATYPE:
-		printf(" Object with name %s is a named datatype\n", name);
-		break;
-	default:
-		printf(" Unable to identify an object ");
-	}
+/* 	/\* */
+/* 	 * Get type of the object and display its name and type. */
+/* 	 * The name of the object is passed to this function by */
+/* 	 * the Library. Some magic :-) */
+/* 	 *\/ */
+/* 	H5Oget_info_by_name(loc_id, name, &statbuf, H5P_DEFAULT); */
+/* 	switch (statbuf.type) { */
+/* 	case H5O_TYPE_UNKNOWN: */
+/* 		printf(" Object with name %s is an unknown type\n", name); */
+/* 		break; */
+/* 	case H5O_TYPE_GROUP: */
+/* 		printf(" Object with name %s is a group\n", name); */
+/* 		break; */
+/* 	case H5O_TYPE_DATASET: */
+/* 		printf(" Object with name %s is a dataset\n", name); */
+/* 		break; */
+/* 	case H5O_TYPE_NAMED_DATATYPE: */
+/* 		printf(" Object with name %s is a named datatype\n", name); */
+/* 		break; */
+/* 	default: */
+/* 		printf(" Unable to identify an object "); */
+/* 	} */
 
-	H5Aiterate_by_name(loc_id,  name, H5_INDEX_NAME, H5_ITER_NATIVE, &n, attribute_info, NULL, H5P_DEFAULT);
+/* 	H5Aiterate_by_name(loc_id,  name, H5_INDEX_NAME, H5_ITER_NATIVE, &n, attribute_info, NULL, H5P_DEFAULT); */
 
-	return 0;
-}
+/* 	return 0; */
+/* } */
 
 typedef struct _HklDataframeSixsUhv HklDataframeSixsUhv;
 
@@ -291,7 +291,7 @@ static herr_t hkl_dataframe_geometry_get(const HklDataframe dataframe, HklGeomet
 			 H5S_ALL, H5S_ALL,
 			 H5P_DEFAULT, &wavelength);
 	if(status >= 0)
-		hkl_geometry_wavelength_set(*geometry, wavelength, HKL_UNIT_USER, NULL);
+		status = hkl_geometry_wavelength_set(*geometry, wavelength, HKL_UNIT_USER, NULL);
 	H5Tclose(datatype);
 
 	/* read the axis positions of the ith dataframe */
@@ -311,7 +311,7 @@ static herr_t hkl_dataframe_geometry_get(const HklDataframe dataframe, HklGeomet
 			 dataframe.i, &axes[3]) < 0)
 		goto out;
 
-	hkl_geometry_axis_values_set(*geometry, axes, 4, HKL_UNIT_USER, NULL);
+	status = hkl_geometry_axis_values_set(*geometry, axes, 4, HKL_UNIT_USER, NULL);
 	/* hkl_geometry_fprintf(stdout, *geometry); */
 	/* fprintf(stdout, "\n"); */
 
