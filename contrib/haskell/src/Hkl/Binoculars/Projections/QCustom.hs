@@ -509,11 +509,19 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               `DataSourcePath'Double'Or`
               DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eix")
                                     `H5Or`
+                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/dt/tab-mt_tx.1/position"))
+                                    `H5Or`
+                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx2/dt/tab-mt_tx.1/position"))
+                                    `H5Or`
                                     hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tx.1/position_pre"))
       let sixs'eiz
             = DataSourcePath'Double'Ini cfg "geometry.values" "eiz"
               `DataSourcePath'Double'Or`
               DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eiz")
+                                    `H5Or`
+                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/dt/tab-mt_tz.1/position"))
+                                    `H5Or`
+                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx2/dt/tab-mt_tz.1/position"))
                                     `H5Or`
                                     hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tz.1/position_pre"))
 

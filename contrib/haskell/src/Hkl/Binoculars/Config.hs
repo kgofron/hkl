@@ -130,6 +130,11 @@ import           Hkl.Types
 import           Paths_hkl
 
 -- TODO
+-- rendre le parametre surface_orientation obligatoire pour les q
+-- revoir le message d'erreur lorsque un des moteur est manquant, c'est incomprehensible... exemple:
+--   "CanNotOpenDataSource'Double'Or (CanNotOpenDataSource'Double'Ini \"geometry.values\" \"beta\") (CanNotOpenDataSource'Double'Or (CanNotOpenDataSource'Double'Ini \"geometry.values\" \"mu\") (CanNotOpenDataSource'Double'Or (CanNotOpenDataSource'Double'Ini \"geometry.values\" \"eix\") (HklDataSourceException'HklH5Exception (CanNotOpenH5Or (CanNotOpenDataset \"scan_data/eix\") (CanNotOpenDataset \"SIXS/i14-c-cx1-dt-det_tx.1/position_pre\")))))"
+--   ici le probleme c'est eix...
+--	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_eiger.txt 640
 -- comment documenter la section geometry.values
 -- gerer les data sources qui n'ont pas la meme dimensionnalite genre un scalar et un array.
 -- implementer les q/tth_scantime et q/tth_scanindex
