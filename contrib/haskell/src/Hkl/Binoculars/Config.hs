@@ -135,7 +135,10 @@ import           Paths_hkl
 --   "CanNotOpenDataSource'Double'Or (CanNotOpenDataSource'Double'Ini \"geometry.values\" \"beta\") (CanNotOpenDataSource'Double'Or (CanNotOpenDataSource'Double'Ini \"geometry.values\" \"mu\") (CanNotOpenDataSource'Double'Or (CanNotOpenDataSource'Double'Ini \"geometry.values\" \"eix\") (HklDataSourceException'HklH5Exception (CanNotOpenH5Or (CanNotOpenDataset \"scan_data/eix\") (CanNotOpenDataset \"SIXS/i14-c-cx1-dt-det_tx.1/position_pre\")))))"
 --   ici le probleme c'est eix...
 --	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_eiger.txt 640
+-- gerer les mask en int64 uint64 etc...
+--   /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run3/Lacaze/mask_eiger.npy
 -- comment documenter la section geometry.values
+--   migrer le code de config-ini vers ini afin de resoudre ce probleme.
 -- gerer les data sources qui n'ont pas la meme dimensionnalite genre un scalar et un array.
 -- implementer les q/tth_scantime et q/tth_scanindex
 -- implementer les corrections de polarisation
