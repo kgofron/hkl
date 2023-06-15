@@ -217,7 +217,8 @@ static void qcustom_projection(void)
                                                                ARRAY_SIZE(limits),
                                                                0.0,
                                                                HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ,
-                                                               0, 0, 0);
+                                                               0, 0, 0,
+                                                               NULL);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
@@ -294,7 +295,8 @@ static void qparqper_projection(void)
                                                                ARRAY_SIZE(limits),
                                                                0.0,
                                                                HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER,
-                                                               0, 0, 0);
+                                                               0, 0, 0,
+                                                               NULL);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
@@ -371,7 +373,8 @@ static void qxqyqz_projection(void)
                                                                ARRAY_SIZE(limits),
                                                                0.0,
                                                                HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ,
-                                                               0, 0, 0);
+                                                               0, 0, 0,
+                                                               NULL);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
