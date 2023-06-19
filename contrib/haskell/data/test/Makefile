@@ -5,6 +5,9 @@ PROCESS = $(RUN) --debug process
 #PROCESS_DBG = cd ../..; ./bootstrap gdb --args $(cabal list-bin binoculars-ng) --debug process
 PROCESS_DBG = cd ../..; ./bootstrap gdb --args dist-newstyle/build/x86_64-linux/ghc-8.8.4/hkl-0.1.0.0/x/binoculars-ng/build/binoculars-ng/binoculars-ng --debug process
 
+cristal:
+	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
+
 mars:
 #	$(PROCESS) data/test/config_mars_ruche_rel_flyscan.ini
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 173
@@ -106,4 +109,4 @@ ssd:
 #binoculars process configV2_m1018_32h_Qxyz_Vhkl.txt 45-48 62-63 67-68
 #binoculars process config_m1018_32h_HKL.txt 33-36
 
-.PHONY: mars ord05133 sixs ssd
+.PHONI: cristal mars ord05133 sixs ssd
