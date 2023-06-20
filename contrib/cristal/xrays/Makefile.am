@@ -1,10 +1,10 @@
-SUBDIRS = xrays .
 # Process this file with automake to produce Makefile.in
 
 AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
 	-I$(top_srcdir)/third-party \
+	-I.. \
 	-DPKGDATA=\""$(pkgdatadir)"\" \
 	-fPIC -DPIC \
 	$(CGLM_CFLAGS) \
@@ -17,7 +17,16 @@ AM_LDFLAGS = -version-info 0:0:0 \
 	$(GLIB_LIBS) \
 	$(HDF5_LIBS)
 
-noinst_PROGRAMS = little-data
+noinst_LIBRARIES = libhkl-xrays.a
+libhkl_xrays_a_SOURCES = \
+	usage.c \
+	xrays-droplet.c \
+	xrays-droplet.h \
+	xrays-image.c \
+	xrays-image.h \
+	xrays-image-spe.c \
+	xrays-image-spe.h \
+	xrays-macros.h
 
 # Support for GNU Flymake, in Emacs.
 check-syntax: AM_CFLAGS += -fsyntax-only -pipe

@@ -257,6 +257,7 @@ AC_CONFIG_FILES([Makefile
 		 data/Makefile
 		 contrib/Makefile
 		 contrib/cristal/Makefile
+		 contrib/cristal/xrays/Makefile
 		 contrib/haskell/Makefile
 		 contrib/sixs/Makefile
 		 contrib/petra3/Makefile

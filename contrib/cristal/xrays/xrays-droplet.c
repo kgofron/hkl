@@ -1,3 +1,24 @@
+/* This file is part of the hkl library.
+ *
+ * The hkl library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The hkl library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright (C) 2003-2023 Synchrotron SOLEIL
+ *                         L'Orme des Merisiers Saint-Aubin
+ *                         BP 48 91192 GIF-sur-YVETTE CEDEX
+ *
+ * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -13,7 +34,7 @@ XRaysDroplet *xrays_droplet_new(XRaysImage const *dark, double trigger,
 		double seuil, double ADU_per_photon, int cosmic, int contour)
 {
 	XRaysDroplet *droplet;
-	
+
 	if (dark->type != XRAYS_IMAGE_USHORT
 			|| !trigger
 			|| !seuil
@@ -112,17 +133,17 @@ static void droplet_intensity_and_coordinates(XRaysDroplet *droplet, unsigned sh
 		} while (*pcont >= 0);
 	}
 	droplet->I_tot += *intensity;
-	if (*intensity > droplet->I_max) 
+	if (*intensity > droplet->I_max)
 		droplet->I_max = *intensity;
 
 	*gtt = pgtt;
 	*contour = pcont;
 }
 
-/* 
+/*
  * Traitement du fichier gtt afin d'en extraire les photons X. La première
  * ètape consiste à déterminer le barricentre de chaques gouttes ainsi que
- * leur poids puis à convertire ces gouttes en photons X en fonction de ce 
+ * leur poids puis à convertire ces gouttes en photons X en fonction de ce
  * poids.
  * Ici on rajoute ou pas la bordure.
  * La fonction retourne le pourcentage de l'energie restitué par le
@@ -149,13 +170,11 @@ static void droplet_treatment(XRaysDroplet *droplet, unsigned short int const *d
 	float reste;
 	float I_gtt;
 	size_t width;
-	size_t height;
 
 	imgs = data;
 	dark = droplet->dark->data;
 	indic = droplet->indic->data;
 	width = droplet->dark->width;
-	height = droplet->dark->height;
 	image_traite = droplet->img->data;
 	histogram = droplet->histogram->data;
 	droplet->I_traitement = 0;
@@ -169,7 +188,7 @@ static void droplet_treatment(XRaysDroplet *droplet, unsigned short int const *d
 	pcont1 = pcont2 = droplet->gtt->data;
 	pcont1 += droplet->gtt->len;
 	pcont2 += droplet->gtt->len;
-	
+
 	for(i=0; i<droplet->nb_gouttes; ++i) {
 		x = y = I_gtt = 0;
 
@@ -241,7 +260,7 @@ static void droplet_treatment(XRaysDroplet *droplet, unsigned short int const *d
  * le haut du tableau.
  * Lors de la recherche des gouttes et des contours, on utilise le tableau
  * indic qui a les mêmes dimensions que l'image à traiter et qui indique si
- * un pixel appartient déjà à une goutte, ou s'il s'agit d'un contour, à combien 
+ * un pixel appartient déjà à une goutte, ou s'il s'agit d'un contour, à combien
  * de gouttes voisines il appartient.
  */
 static void find_droplets(XRaysDroplet *droplet, unsigned short int const *data, size_t size)
