@@ -20,8 +20,7 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 
-#ifndef __XRAYS_IMAGE_H__
-#define __XRAYS_IMAGE_H__
+#pragma once
 
 #include <stdlib.h>
 #include "xrays-macros.h"
@@ -91,5 +90,3 @@ extern void xrays_image_div(XRaysImage *img, double d);
 extern void xrays_image_convert(XRaysImage *dst, XRaysImage const *src);
 
 XRAYS_END_DECLS
-
-#endif

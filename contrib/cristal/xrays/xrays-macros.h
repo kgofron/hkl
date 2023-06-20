@@ -20,8 +20,7 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 
-#ifndef __XRAYS_MACROS_H__
-#define __XRAYS_MACROS_H__
+#pragma once
 
 /* Guard C code in headers, while including them from C++ */
 #ifdef __cplusplus
@@ -48,8 +47,6 @@
 # ifndef __attribute__
 #  define __attribute__(x)
 # endif
-#endif
-
 #endif
 
 XRAYS_BEGIN_DECLS

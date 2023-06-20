@@ -19,8 +19,7 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
-#ifndef __XRAYS_DROPLET_H__
-#define __XRAYS_DROPLET_H__
+#pragma once
 
 #include <stdlib.h>
 #include "xrays-image.h"
@@ -79,5 +78,3 @@ extern int xrays_droplet_add_images(XRaysDroplet *droplet, XRaysImage const *img
 extern void xrays_droplet_reset(XRaysDroplet *droplet);
 
 XRAYS_END_DECLS
-
-#endif
