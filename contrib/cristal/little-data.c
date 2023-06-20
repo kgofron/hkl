@@ -61,6 +61,8 @@ int main_1()
                 fprintf(stdout, "Can not allocate array\n");
                 goto exit;
         }
+        img = xrays_image_attach(XRAYS_IMAGE_USHORT, DIM2, DIM1, 1, arr);
+
         file_id = H5Fopen(fn, H5F_ACC_RDONLY, H5P_DEFAULT);
         if(file_id < 0){
                 fprintf(stdout, "Can not open file\n");
@@ -118,7 +120,6 @@ int main_1()
                         goto close_mem_space;
                 }
 
-                img = xrays_image_attach(XRAYS_IMAGE_USHORT, DIM2, DIM1, 1, arr);
                 xrays_droplet_add_images(droplet, img);
         }
 
