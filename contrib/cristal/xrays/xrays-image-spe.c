@@ -26,7 +26,6 @@ XRaysImage* xrays_image_spe_read(FILE *file)
 {
 	WINXHEAD *header;
 	XRaysImage *img;
-	int size_element;
 	XRaysImageType type;
 
 	rewind(file);
@@ -35,19 +34,15 @@ XRaysImage* xrays_image_spe_read(FILE *file)
 
 	switch (header->datatype){
 		case 0:
-			size_element = sizeof(float);
 			type = XRAYS_IMAGE_FLOAT;
 			break;
 		case 1:
-			size_element = sizeof(int);
 			type = XRAYS_IMAGE_INT;
 			break;
 		case 2:
-			size_element = sizeof(short int);
 			type = XRAYS_IMAGE_SHORT;
 			break;
 		case 3:
-			size_element = sizeof(unsigned short int);
 			type = XRAYS_IMAGE_USHORT;
 			break;
 		default:
