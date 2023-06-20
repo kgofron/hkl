@@ -459,7 +459,19 @@ void xrays_image_convert(XRaysImage *dst, XRaysImage const *src)
 		}\
 	} while(0);
 
-#define XRAYS_CONVERT_MIN_MAX(a, b, c, d)\
+#define XRAYS_CONVERT_INTEGRAL(a, b)                                    \
+	do{                                                             \
+		int i;                                                  \
+		int nb_elements = dst->width * dst->height * dst->len;  \
+		a *data1 = dst->data;                                   \
+		b *data2 = src->data;                                   \
+		for(i=0;i<nb_elements;++i){                             \
+			data1[i] = rint(data2[i]);                      \
+		}                                                       \
+	} while(0);
+
+
+#define XRAYS_CONVERT_MIN_MAX(a, b, c, d)       \
 	do{\
 		double min;\
 		double max;\
@@ -491,7 +503,7 @@ void xrays_image_convert(XRaysImage *dst, XRaysImage const *src)
 				case XRAYS_IMAGE_INT:
 				case XRAYS_IMAGE_LONG:
 				case XRAYS_IMAGE_FLOAT:
-                                        XRAYS_CONVERT(unsigned short int, float);
+                                        XRAYS_CONVERT_INTEGRAL(unsigned short int, float);
 					break;
 			}
 			break;

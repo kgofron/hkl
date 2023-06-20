@@ -425,15 +425,15 @@ void xrays_droplet_save_hdf5(const char *fn, const XRaysDroplet *droplet)
         dims[0] = droplet->histogram->width;
         dataspace_id = H5Screate_simple(1, dims, NULL);
         dataset_id = H5Dcreate(groupe_id, "histogram",
-                               H5T_NATIVE_UINT64, dataspace_id,
+                               H5T_NATIVE_INT64, dataspace_id,
                                H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT64,
+        status = H5Dwrite(dataset_id, H5T_NATIVE_INT64,
                           H5S_ALL, H5S_ALL,
                           H5P_DEFAULT, droplet->histogram->data);
         status = H5Dclose(dataset_id);
         status = H5Sclose(dataspace_id);
 
-        // create image dark
+        // create dark dark
         dims[0] = droplet->dark->width;
         dims[1] = droplet->dark->height;
         dataspace_id = H5Screate_simple(2, dims, NULL);
