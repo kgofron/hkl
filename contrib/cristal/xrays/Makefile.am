@@ -26,6 +26,7 @@ libhkl_xrays_la_SOURCES = \
 	xrays-image.h \
 	xrays-image-spe.c \
 	xrays-image-spe.h \
+	xrays-image-dat.c \
 	xrays-macros.h
 
 # Support for GNU Flymake, in Emacs.

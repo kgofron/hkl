@@ -31,7 +31,7 @@
  * Allocate the memory for the Droplet structure.
  */
 XRaysDroplet *xrays_droplet_new(XRaysImage const *dark, double trigger,
-		double seuil, double ADU_per_photon, int cosmic, int contour)
+                                double seuil, double ADU_per_photon, int cosmic, int contour)
 {
 	XRaysDroplet *droplet;
 

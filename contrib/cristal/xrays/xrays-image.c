@@ -60,6 +60,9 @@ static XRaysImageFileType file_type(char const *filename)
 	if (!strcmp(ext, ".spe") || !strcmp(ext, ".SPE"))
 		return XRAYS_IMAGE_FILE_SPE;
 
+        if (!strcmp(ext, ".dat"))
+            return XRAYS_IMAGE_FILE_DAT;
+
 	return XRAYS_IMAGE_FILE_UNKNOWN;
 }
 
@@ -116,7 +119,7 @@ XRaysImage* xrays_image_new_copy(XRaysImage const *src)
 	return img;
 }
 
-XRaysImage* xrays_image_from_file(char const *filename)
+XRaysImage* xrays_image_from_file(char const *filename, size_t width, size_t height)
 {
 	XRaysImage *img;
 	FILE *file;
@@ -127,11 +130,14 @@ XRaysImage* xrays_image_from_file(char const *filename)
 		return img;
 
 	switch(file_type(filename)) {
-		case XRAYS_IMAGE_FILE_SPE:
-			img = xrays_image_spe_read(file);
-			break;
-		case XRAYS_IMAGE_FILE_UNKNOWN:
-			break;
+        case XRAYS_IMAGE_FILE_SPE:
+                img = xrays_image_spe_read(file);
+                break;
+        case XRAYS_IMAGE_FILE_DAT:
+                img = xrays_image_from_file_dat(file, width, height);
+                break;
+        case XRAYS_IMAGE_FILE_UNKNOWN:
+                break;
 	}
 	fclose(file);
 

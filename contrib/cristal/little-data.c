@@ -26,7 +26,7 @@
 #include "xrays/xrays-droplet.h"
 
 #define FILENAME "/home/experiences/instrumentation/picca/Clair/scan-22046_andor3_balor.h5"
-
+#define DARK_PATH "/home/experiences/instrumentation/picca/Clair/RefDarkImage.dat"
 
 #define IMAGEPATH "/entry/instrument/balor/data"
 #define DIM0 3100
@@ -54,6 +54,7 @@ int main_1()
         XRaysDroplet *droplet;
         XRaysImage *dark = NULL;
         XRaysImage *img;
+        XRaysImage *tmp;
 
         arr = malloc(dims[1] * dims[2] * sizeof(*arr));
         if(arr == NULL){
@@ -83,6 +84,18 @@ int main_1()
                 goto close_mem_space;
         }
 
+        /* load the dark */
+        tmp = xrays_image_from_file(DARK_PATH, DIM1, DIM2);
+        if (NULL == tmp){
+                fprintf(stdout, "Can no read the dark image!\n");
+                goto free_dark;
+        }
+
+        dark = xrays_image_new(XRAYS_IMAGE_USHORT, DIM1, DIM2, 1);
+        xrays_image_convert(dark, tmp);
+        xrays_image_free(tmp);
+
+
         droplet = xrays_droplet_new(dark, 25, 50, 682, 1, 0);
         if(NULL == droplet){
                 fprintf(stdout, "Can not create the droplet\n");
@@ -111,6 +124,8 @@ int main_1()
 
         xrays_droplet_free(droplet);
 free_droplet:
+        xrays_image_free(dark);
+free_dark:
         H5Sclose(file_space_id);
 close_mem_space:
         H5Sclose(mem_space_id);

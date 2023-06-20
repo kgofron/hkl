@@ -32,6 +32,7 @@ typedef struct _XRaysImage XRaysImage;
 enum _XRaysImageFileType
 {
 	XRAYS_IMAGE_FILE_SPE,
+        XRAYS_IMAGE_FILE_DAT,
 	XRAYS_IMAGE_FILE_UNKNOWN,
 };
 
@@ -63,7 +64,8 @@ extern XRaysImage* xrays_image_new(XRaysImageType type,
 
 extern XRaysImage* xrays_image_new_copy(XRaysImage const *img);
 
-extern XRaysImage* xrays_image_from_file(char const *filename);
+extern XRaysImage* xrays_image_from_file(char const *filename, size_t width, size_t height);
+extern XRaysImage* xrays_image_from_file_dat(FILE *f, size_t width, size_t height);
 
 extern void xrays_image_free(XRaysImage *img);
 
