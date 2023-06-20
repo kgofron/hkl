@@ -196,6 +196,7 @@ static void droplet_treatment(XRaysDroplet *droplet, unsigned short int const *d
         pcont1 += droplet->gtt->len;
         pcont2 += droplet->gtt->len;
 
+        fprintf(stderr, " nb: %d", droplet->nb_gouttes);
         for(i=0; i<droplet->nb_gouttes; ++i) {
                 x = y = I_gtt = 0;
 
@@ -206,9 +207,11 @@ static void droplet_treatment(XRaysDroplet *droplet, unsigned short int const *d
                 droplet_intensity_and_coordinates(droplet, data, &pgtt1, &pcont1, &I_gtt, &x, &y);
 
                 // On range dans l'histogramme les ADU
-                fprintf(stderr, " %f", I_gtt);
-                if(I_gtt < droplet->histogram->width)
+                if(I_gtt < droplet->histogram->width){
                         histogram[(unsigned int)I_gtt] += 1;
+                        fprintf(stderr, " %f %d", I_gtt, histogram[(unsigned int)I_gtt]);
+                }
+
 
                 // on vérifie que la goutte n'est pas un cosmic
                 if (droplet->cosmic && I_gtt > droplet->cosmic && I_gtt < 10*droplet->cosmic) {
@@ -425,9 +428,9 @@ void xrays_droplet_save_hdf5(const char *fn, const XRaysDroplet *droplet)
         dims[0] = droplet->histogram->width;
         dataspace_id = H5Screate_simple(1, dims, NULL);
         dataset_id = H5Dcreate(groupe_id, "histogram",
-                               H5T_NATIVE_INT64, dataspace_id,
+                               H5T_NATIVE_INT, dataspace_id,
                                H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_NATIVE_INT64,
+        status = H5Dwrite(dataset_id, H5T_NATIVE_INT,
                           H5S_ALL, H5S_ALL,
                           H5P_DEFAULT, droplet->histogram->data);
         status = H5Dclose(dataset_id);
