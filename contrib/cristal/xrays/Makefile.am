@@ -17,8 +17,8 @@ AM_LDFLAGS = -version-info 0:0:0 \
 	$(GLIB_LIBS) \
 	$(HDF5_LIBS)
 
-noinst_LIBRARIES = libhkl-xrays.a
-libhkl_xrays_a_SOURCES = \
+noinst_LTLIBRARIES = libhkl-xrays.la
+libhkl_xrays_la_SOURCES = \
 	usage.c \
 	xrays-droplet.c \
 	xrays-droplet.h \

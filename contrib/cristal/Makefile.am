@@ -1,3 +1,4 @@
+
 SUBDIRS = xrays .
 # Process this file with automake to produce Makefile.in
 
@@ -12,12 +13,13 @@ AM_CFLAGS = \
 	$(HDF5_CFLAGS)
 #	-ftrack-macro-expansion=0
 
-AM_LDFLAGS = -version-info 0:0:0 \
+AM_LDFLAGS = \
 	$(CGLM_LIBS) \
 	$(GLIB_LIBS) \
 	$(HDF5_LIBS)
 
 noinst_PROGRAMS = little-data
+little_data_LDADD = xrays/libhkl-xrays.la
 
 # Support for GNU Flymake, in Emacs.
 check-syntax: AM_CFLAGS += -fsyntax-only -pipe

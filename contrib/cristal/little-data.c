@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <hdf5.h>
 
+#include "xrays/xrays-droplet.h"
+
 #define FILENAME "/home/experiences/instrumentation/picca/Clair/scan-22046_andor3_balor.h5"
 
 
@@ -49,6 +51,10 @@ int main_1()
         hid_t file_space_id;
         hid_t mem_space_id;
 
+        XRaysDroplet *droplet;
+        XRaysImage *dark = NULL;
+        XRaysImage *img;
+
         arr = malloc(dims[1] * dims[2] * sizeof(*arr));
         if(arr == NULL){
                 fprintf(stdout, "Can not allocate array\n");
@@ -73,8 +79,14 @@ int main_1()
 
         file_space_id = H5Dget_space(dataset_id);
         if(file_space_id<0){
-                fprintf(stdout, "can not get dataset dataspace\n");
+                fprintf(stdout, "Can not get dataset dataspace\n");
                 goto close_mem_space;
+        }
+
+        droplet = xrays_droplet_new(dark, 25, 50, 682, 1, 0);
+        if(NULL == droplet){
+                fprintf(stdout, "Can not create the droplet\n");
+                goto free_droplet;
         }
 
         for(i=0; i<dims[0]; ++i){
@@ -92,10 +104,14 @@ int main_1()
                         fprintf(stdout, "Can not read dataset content\n");
                         goto close_mem_space;
                 }
+
+                img = xrays_image_attach(XRAYS_IMAGE_USHORT, DIM2, DIM1, 1, arr);
+                xrays_droplet_add_images(droplet, img);
         }
 
+        xrays_droplet_free(droplet);
+free_droplet:
         H5Sclose(file_space_id);
-
 close_mem_space:
         H5Sclose(mem_space_id);
 close_dataset:
