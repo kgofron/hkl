@@ -491,6 +491,7 @@ void xrays_image_convert(XRaysImage *dst, XRaysImage const *src)
 				case XRAYS_IMAGE_INT:
 				case XRAYS_IMAGE_LONG:
 				case XRAYS_IMAGE_FLOAT:
+                                        XRAYS_CONVERT(unsigned short int, float);
 					break;
 			}
 			break;

@@ -77,4 +77,6 @@ extern int xrays_droplet_add_images(XRaysDroplet *droplet, XRaysImage const *img
 
 extern void xrays_droplet_reset(XRaysDroplet *droplet);
 
+extern void xrays_droplet_save_hdf5(const char* filename, const XRaysDroplet *droplet);
+
 XRAYS_END_DECLS

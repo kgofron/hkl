@@ -27,9 +27,10 @@
 
 #define FILENAME "/home/experiences/instrumentation/picca/Clair/scan-22046_andor3_balor.h5"
 #define DARK_PATH "/home/experiences/instrumentation/picca/Clair/RefDarkImage.dat"
+#define OUTPUT "/home/experiences/instrumentation/picca/Clair/droplet.hdf5"
 
 #define IMAGEPATH "/entry/instrument/balor/data"
-#define DIM0 3100
+#define DIM0 3100  /* 3100 */
 #define DIM1 4104
 #define DIM2 4128
 
@@ -97,8 +98,7 @@ int main_1()
         xrays_image_convert(dark, tmp);
         xrays_image_free(tmp);
 
-
-        droplet = xrays_droplet_new(dark, 25, 50, 682, 1, 0);
+        droplet = xrays_droplet_new(dark, 30, 200, 300, 1, 0);
         if(NULL == droplet){
                 fprintf(stdout, "Can not create the droplet\n");
                 goto free_droplet;
@@ -122,6 +122,8 @@ int main_1()
 
                 xrays_droplet_add_images(droplet, img);
         }
+
+        xrays_droplet_save_hdf5(OUTPUT, droplet);
 
         xrays_droplet_free(droplet);
 free_droplet:

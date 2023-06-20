@@ -19,13 +19,16 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
 
-#include <xrays/xrays-droplet.h>
-#include <xrays/xrays-macros.h>
+#include <hdf5.h>
+
+#include "xrays/xrays-droplet.h"
+#include "xrays/xrays-macros.h"
 
 /*
  * Allocate the memory for the Droplet structure.
@@ -203,6 +206,7 @@ static void droplet_treatment(XRaysDroplet *droplet, unsigned short int const *d
                 droplet_intensity_and_coordinates(droplet, data, &pgtt1, &pcont1, &I_gtt, &x, &y);
 
                 // On range dans l'histogramme les ADU
+                fprintf(stderr, " %f", I_gtt);
                 if(I_gtt < droplet->histogram->width)
                         histogram[(unsigned int)I_gtt] += 1;
 
@@ -399,4 +403,65 @@ int xrays_droplet_add_images(XRaysDroplet *droplet, XRaysImage const *imgs)
         }
 
         return res;
+}
+
+
+void xrays_droplet_save_hdf5(const char *fn, const XRaysDroplet *droplet)
+{
+        hid_t file_id;
+        hid_t groupe_id;
+        hid_t dataset_id;
+        hid_t dataspace_id;
+        herr_t status;
+        hsize_t dims[2];
+
+        file_id = H5Fcreate(fn, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+        groupe_id = H5Gcreate(file_id, "droplet",
+                              H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+
+        // create histogram dataset
+        dims[0] = droplet->histogram->width;
+        dataspace_id = H5Screate_simple(1, dims, NULL);
+        dataset_id = H5Dcreate(groupe_id, "histogram",
+                               H5T_NATIVE_UINT64, dataspace_id,
+                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT64,
+                          H5S_ALL, H5S_ALL,
+                          H5P_DEFAULT, droplet->histogram->data);
+        status = H5Dclose(dataset_id);
+        status = H5Sclose(dataspace_id);
+
+        // create image dark
+        dims[0] = droplet->dark->width;
+        dims[1] = droplet->dark->height;
+        dataspace_id = H5Screate_simple(2, dims, NULL);
+        dataset_id = H5Dcreate(groupe_id, "dark",
+                               H5T_NATIVE_UINT16, dataspace_id,
+                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT16,
+                          H5S_ALL, H5S_ALL,
+                          H5P_DEFAULT, droplet->dark->data);
+        status = H5Dclose(dataset_id);
+        status = H5Sclose(dataspace_id);
+
+        // create image dataset
+        dims[0] = droplet->img->width;
+        dims[1] = droplet->img->height;
+        dataspace_id = H5Screate_simple(2, dims, NULL);
+        dataset_id = H5Dcreate(groupe_id, "image",
+                               H5T_NATIVE_UINT32, dataspace_id,
+                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT32,
+                          H5S_ALL, H5S_ALL,
+                          H5P_DEFAULT, droplet->img->data);
+        status = H5Dclose(dataset_id);
+        status = H5Sclose(dataspace_id);
+
+        // terminate access and free identifiers
+        status = H5Gclose(groupe_id);
+        status = H5Fclose(file_id);
+
+        assert(status >= 0);
 }
