@@ -24,15 +24,14 @@
 
 XRaysImage* xrays_image_spe_read(FILE *file)
 {
-	WINXHEAD *header;
+	WINXHEAD header;
 	XRaysImage *img;
 	XRaysImageType type;
 
 	rewind(file);
-	header = malloc(sizeof(*header));
-	fread(header, sizeof(*header), 1, file);
+	fread(&header, sizeof(header), 1, file);
 
-	switch (header->datatype){
+	switch (header.datatype){
 		case 0:
 			type = XRAYS_IMAGE_FLOAT;
 			break;
@@ -51,11 +50,9 @@ XRaysImage* xrays_image_spe_read(FILE *file)
 			break;
 	}
 
-	img = xrays_image_new(type, header->xdim, header->ydim, header->NumFrames);
+	img = xrays_image_new(type, header.xdim, header.ydim, header.NumFrames);
 	if (img)
-		fread(img->data, img->elem_size, header->xdim * header->ydim * header->NumFrames, file);
-
-	free(header);
+		fread(img->data, img->elem_size, header.xdim * header.ydim * header.NumFrames, file);
 
 	return img;
 }

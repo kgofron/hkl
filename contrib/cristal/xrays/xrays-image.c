@@ -57,12 +57,16 @@ static XRaysImageFileType file_type(char const *filename)
 	char *ext;
 
 	ext = strchr(filename, '.');
+        if (NULL == ext)
+                goto fail;
+
 	if (!strcmp(ext, ".spe") || !strcmp(ext, ".SPE"))
 		return XRAYS_IMAGE_FILE_SPE;
 
         if (!strcmp(ext, ".dat"))
             return XRAYS_IMAGE_FILE_DAT;
 
+fail:
 	return XRAYS_IMAGE_FILE_UNKNOWN;
 }
 
