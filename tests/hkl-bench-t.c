@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -25,7 +25,8 @@
 #include "hkl.h"
 
 static void hkl_test_bench_run_real(HklEngine *engine, HklGeometry *geometry,
-				    double values[], size_t n_values, size_t n)
+				    size_t n_values, double values[n_values],
+                                    size_t n)
 {
 	size_t i;
 	const darray_string *modes = hkl_engine_modes_names_get(engine);
@@ -83,20 +84,19 @@ static void hkl_test_bench_run_real(HklEngine *engine, HklGeometry *geometry,
 }
 
 static void hkl_test_bench_run_v(HklEngineList *engines, HklGeometry *geometry,
-				 char const *name, unsigned int n, ...)
+				 char const *name, int n, size_t n_values, ...)
 {
 	va_list ap;
 	size_t i;
 	HklEngine *engine = hkl_engine_list_engine_get_by_name(engines, name, NULL);
-	size_t n_values = darray_size(*hkl_engine_pseudo_axis_names_get(engine));
 	double values[n_values];
 
-	va_start(ap, n);
+	va_start(ap, n_values);
 	for(i=0; i<n_values; ++i)
 		values[i] = va_arg(ap, double);
 	va_end(ap);
 
-	hkl_test_bench_run_real(engine, geometry, values, n_values, n);
+	hkl_test_bench_run_real(engine, geometry, n_values, values, n);
 }
 
 static void hkl_test_bench_k6c(int n)
@@ -118,11 +118,11 @@ static void hkl_test_bench_k6c(int n)
 	engines = hkl_factory_create_new_engine_list(factory);
 	hkl_engine_list_init(engines, geom, detector, sample);
 
-	hkl_test_bench_run_v(engines, geom, "hkl", n, 1., 0., 0.);
-	hkl_test_bench_run_v(engines, geom, "eulerians", n, 0., 90*HKL_DEGTORAD, 0.);
-	hkl_test_bench_run_v(engines, geom, "psi", n, 10.*HKL_DEGTORAD);
-	hkl_test_bench_run_v(engines, geom, "q2", n, 1., 10.*HKL_DEGTORAD);
-	hkl_test_bench_run_v(engines, geom, "qper_qpar", n, 1., 1.);
+	hkl_test_bench_run_v(engines, geom, "hkl", n, 3, 1., 0., 0.);
+	hkl_test_bench_run_v(engines, geom, "eulerians", n, 3, 0., 90*HKL_DEGTORAD, 0.);
+	hkl_test_bench_run_v(engines, geom, "psi", n, 1, 10.*HKL_DEGTORAD);
+	hkl_test_bench_run_v(engines, geom, "q2", n, 2, 1., 10.*HKL_DEGTORAD);
+	hkl_test_bench_run_v(engines, geom, "qper_qpar", n, 2, 1., 1.);
 
 	hkl_engine_list_free(engines);
 	hkl_sample_free(sample);
