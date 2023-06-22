@@ -98,7 +98,7 @@ int main_1()
         xrays_image_convert(dark, tmp);
         xrays_image_free(tmp);
 
-        droplet = xrays_droplet_new(dark, 30, 200, 250, 1, 0);
+        droplet = xrays_droplet_new(dark, 23, 430, 645, 7000, 1);
         if(NULL == droplet){
                 fprintf(stdout, "Can not create the droplet\n");
                 goto free_droplet;

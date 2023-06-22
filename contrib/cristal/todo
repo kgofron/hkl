@@ -7,8 +7,14 @@ qui genere alors un fichier scan-22046_andor3_balor-little-data.npy
 5) sorti un histogramme pour determiner les parametres ADU etc... 30, 887
 4) mesure les temps de traitement
 5) decider du format de sortie.
-
-plus tard...
+   - index image
+   - x gtt
+   - y gtt
+   - I gtt+contour
+   - I gtt
+   - I contour
+   - nb pixel gtt
+   - nb pixels contour.
 
 format du scan npy, avec
 3 colonnes
