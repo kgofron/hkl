@@ -462,6 +462,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let mAttenuationCoefficient = binocularsConfig'Common'AttenuationCoefficient common
       let detector =  binocularsConfig'Common'Detector common
       let mAttenuationMax = binocularsConfig'Common'AttenuationMax common
+      let mAttenuationShift = binocularsConfig'Common'AttenuationShift common
       let mWavelength = binocularsConfig'Common'Wavelength common
 
       -- attenuation
@@ -471,7 +472,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
             (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "attenuation"
                                                                             `H5Or`
                                                                             datasetp "attenuation_old")))
-            2 0 mAttenuationMax
+            (fromMaybe 2 mAttenuationShift) 0 mAttenuationMax
 
       let dataSourcePath'Attenuation'SixsSBS :: DataSourcePath Attenuation
           dataSourcePath'Attenuation'SixsSBS =
@@ -485,7 +486,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                                           datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att")
                                           `H5Or`
                                           datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att_old"))))
-            0 0 mAttenuationMax
+            (fromMaybe 0 mAttenuationShift) 0 mAttenuationMax
 
       -- timestamp
       let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp

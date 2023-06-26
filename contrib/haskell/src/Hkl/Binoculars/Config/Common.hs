@@ -74,6 +74,7 @@ data BinocularsConfig'Common
     , binocularsConfig'Common'Detrot                 :: Degree
     , binocularsConfig'Common'AttenuationCoefficient :: Maybe Double
     , binocularsConfig'Common'AttenuationMax         :: Maybe Float
+    , binocularsConfig'Common'AttenuationShift       :: Maybe Int
     , binocularsConfig'Common'Maskmatrix             :: Maybe MaskLocation
     , binocularsConfig'Common'Wavelength             :: Maybe Double
     , binocularsConfig'Common'ImageSumMax            :: Maybe Double
@@ -97,6 +98,7 @@ default'BinocularsConfig'Common
     , binocularsConfig'Common'Detrot = Degree (0 *~ degree)
     , binocularsConfig'Common'AttenuationCoefficient = Nothing
     , binocularsConfig'Common'AttenuationMax = Nothing
+    , binocularsConfig'Common'AttenuationShift = Nothing
     , binocularsConfig'Common'Maskmatrix = Nothing
     , binocularsConfig'Common'Wavelength = Nothing
     , binocularsConfig'Common'ImageSumMax = Nothing
@@ -244,6 +246,19 @@ instance ToIni  BinocularsConfig'Common where
                                                       , "This parameter has an effect only if the `attenuation_coefficient`"
                                                       , "was previously set."
                                                       ]
+                                                      <> elemFMbDef "attenuation_shift" binocularsConfig'Common'AttenuationShift c default'BinocularsConfig'Common
+                                                      [ "shift the index of the attenuation."
+                                                      , ""
+                                                      , " `<not set>` - use the default offset. (0 or 2 depending of the kind of scan)"
+                                                      , " `shift`     - force the shift to the given value."
+                                                      , ""
+                                                      , "This `shift` correspond to a decalage between the attenuator values and the images."
+                                                      , "the attenuation corresponding to the image at the position `n` in a scan"
+                                                      , "is in fact `n + shift`"
+                                                      , ""
+                                                      , "This parameter has an effect only if the `attenuation_coefficient`"
+                                                      , "was previously set."
+                                                      ]
                                                       <> elemFMbDef "maskmatrix" binocularsConfig'Common'Maskmatrix c default'BinocularsConfig'Common
                                                       [ "name of the file which contain the detector mask or `default`"
                                                       , ""
@@ -350,6 +365,7 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
     <*> parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot default'BinocularsConfig'Common)
     <*> parseMb cfg "input" "attenuation_coefficient"
     <*> parseMb cfg "input" "attenuation_max"
+    <*> parseMb cfg "input" "attenuation_shift"
     <*> parseMb cfg "input" "maskmatrix"
     <*> parseMb cfg "input" "wavelength"
     <*> parseMb cfg "input" "image_sum_max"
