@@ -31,7 +31,9 @@ module Hkl.DataSource
   ) where
 
 import           Bindings.HDF5.Core                (Location)
-import           Bindings.HDF5.Dataset             (getDatasetType)
+import           Bindings.HDF5.Dataset             (getDatasetSpace,
+                                                    getDatasetType)
+import           Bindings.HDF5.Dataspace           (getSimpleDataspaceExtentNPoints)
 import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
                                                     typeIDsEqual)
 import           Control.Exception                 (throwIO)
@@ -258,7 +260,14 @@ instance DataSource Double where
     = DataSourceAcq'Double Dataset
     | DataSourceAcq'Double'Const Double
 
-  withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Double ds)
+  withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> do
+    space <- liftIO $ getDatasetSpace ds
+    l <- liftIO $ getSimpleDataspaceExtentNPoints space
+    case l of
+      1 -> do
+        v <- liftIO $ extract0DStreamValue ds
+        g (DataSourceAcq'Double'Const v)
+      _ -> g (DataSourceAcq'Double ds)
   withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
   withDataSourceP _ (DataSourcePath'Double'Ini (ConfigContent cfg) s k) g =
       eitherF (const $ throwM $ CanNotOpenDataSource'Double'Ini s k) (parse' cfg s k)
