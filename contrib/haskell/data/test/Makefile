@@ -78,6 +78,7 @@ sixs:
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_3.ini 50-55
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom_20220739.ini 900
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_20220739.ini 900
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run3/20221521_Bendounan/binoculars/config_test.txt 16
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run3/20221521_Bendounan/binoculars/config_map_hkl-limit18.cfg 1026-1244
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Hennet_20220364_2/binoculars/config_sbs_eiger.txt 199
 
