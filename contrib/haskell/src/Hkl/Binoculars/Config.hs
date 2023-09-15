@@ -67,6 +67,7 @@ module Hkl.Binoculars.Config
 
 
 import           Control.Applicative               (many, (<|>))
+import           Control.Lens                      (makeLenses)
 import           Control.Monad.Catch               (MonadThrow, throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
@@ -80,11 +81,12 @@ import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
 import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Hashable                     (Hashable)
-import           Data.Ini                          (Ini (..), parseValue,
-                                                    printIni, readIniFile)
-import           Data.Ini.Config.Bidir             (FieldValue (..), bool,
-                                                    listWithSeparator, number,
-                                                    text)
+import           Data.Ini                          (Ini (..), printIni)
+import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
+                                                    bool, field, getIniValue,
+                                                    ini, listWithSeparator,
+                                                    number, parseIni, section,
+                                                    text, (.=))
 import           Data.List                         (find, isInfixOf, length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
 import           Data.String                       (IsString)
@@ -238,11 +240,6 @@ instance HasFieldValue (Int, Int) where
 data family Config (a :: ProjectionType)
 data family DataPath (a :: ProjectionType)
 data family Args (a :: ProjectionType)
-
-readConfig' :: Maybe FilePath -> IO (Either String Ini)
-readConfig' mf = readIniFile =<< case mf of
-                       Nothing  -> getDataFileName "data/test/config_manip1.cfg"
-                       (Just f) -> pure f
 
 readConfig :: Maybe FilePath -> IO ConfigContent
 readConfig mf = do
@@ -895,6 +892,18 @@ newtype BinocularsPreConfig =
   BinocularsPreConfig { _binocularsPreConfigProjectionType :: ProjectionType }
                          deriving (Eq, Show)
 
+makeLenses ''BinocularsPreConfig
+
+binocularsPreConfigDefault :: BinocularsPreConfig
+binocularsPreConfigDefault = BinocularsPreConfig
+  { _binocularsPreConfigProjectionType = QxQyQzProjection }
+
+binocularsPreConfigSpec :: IniSpec BinocularsPreConfig ()
+binocularsPreConfigSpec = do
+  section "projection" $ do
+    binocularsPreConfigProjectionType .= field "type" parsable
+
+
 ---------------
 -- functions --
 ---------------
@@ -971,10 +980,13 @@ getMask ml d = case ml of
                 (Just "default") -> Just <$> getDetectorDefaultMask d
                 (Just fname)     -> Just <$> getDetectorMask d (unMaskLocation fname)
 
+getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig
+getPreConfig' (ConfigContent cfg) = do
+  let r = parseIni cfg (ini binocularsPreConfigDefault binocularsPreConfigSpec)
+  mapRight getIniValue r
+
 getPreConfig :: Maybe FilePath -> IO (Either String BinocularsPreConfig)
-getPreConfig mf = readConfig' mf >>= \case
-  Left err -> pure $ Left err
-  Right ini' -> pure $ BinocularsPreConfig <$>  parseValue "projection" "type" fieldParser ini'
+getPreConfig mf = getPreConfig' <$> readConfig mf
 
 addOverwrite :: Maybe Int -> DestinationTmpl -> DestinationTmpl
 addOverwrite midx tmpl = case midx of
