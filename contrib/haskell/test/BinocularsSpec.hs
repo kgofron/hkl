@@ -8,13 +8,13 @@ module BinocularsSpec
   where
 
 
+import           Control.Monad                      (forM_)
 import           Data.Aeson                         (Result (..), fromJSON,
                                                      toJSON)
 import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Attoparsec.Text               (parseOnly)
 import           Data.Either                        (isRight)
 import           Data.HashMap.Lazy                  (fromList)
-import           Data.Ini                           (Ini (..), parseIni)
 import           Data.List.NonEmpty                 (NonEmpty (..))
 import           Numeric.Interval                   (singleton, (...))
 import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
@@ -68,30 +68,16 @@ spec = do
     prop "quickcheck" $
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
 
-  describe "parse ini file" $ do
-    it "File With Comment" $ do
-      (shouldBe
-       (parseIni
-         "[TEST]\n\
-         \Key=value\n\
-         \#comment\n")
-        (Right
-          (Ini
-            { iniSections =
-                fromList
-                [ ( "TEST"
-                  , [ ("Key", "value") ])
-                ]
-            , iniGlobals = []
-            })))
-
   describe "read and parse binoculars configuration" $ do
     it "deprecated inputype" $ do
-      content <- readConfig =<< Just <$> getDataFileName "data/test/config_ech6eiger.txt"
-      capabilities <- getCapabilities
-      let args = Args'QCustomProjection (Just $ ConfigRange (InputRange (120...135) :| [InputRange (137...453)]))
-      let cfg = getConfig content args capabilities
-      isRight cfg `shouldBe` True
+      forM_ [ "data/test/config_ech6eiger.txt"
+            , "data/test/config_sixs_ruche_parsing.ini"
+            ] $ \f -> do
+        content <- readConfig =<< Just <$> getDataFileName f
+        capabilities <- getCapabilities
+        let args = Args'QCustomProjection (Just $ ConfigRange (InputRange (120...135) :| [InputRange (137...453)]))
+        let cfg = getConfig content args capabilities
+        isRight cfg `shouldBe` True
 
   -- describe "read and parse binoculars Configuration" $ do
   --   it "hkl projection" $ do

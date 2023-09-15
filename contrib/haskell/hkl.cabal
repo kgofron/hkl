@@ -46,8 +46,7 @@ library
   build-depends: hmatrix >= 0.17
   build-depends: hmatrix-gsl >= 0.17
   build-depends: ini
-  build-depends: QuickCheck
-  build-depends: quickcheck-text
+  build-depends: lens
   build-depends: monad-logger
   build-depends: monad-loops >= 0.4.2
   build-depends: mtl
@@ -55,6 +54,8 @@ library
   build-depends: path-io
   build-depends: pipes >= 4.1.2
   build-depends: pipes-safe >= 2.2.0
+  build-depends: QuickCheck
+  build-depends: quickcheck-text
   build-depends: repa
   build-depends: terminal-progress-bar
   build-depends: text
