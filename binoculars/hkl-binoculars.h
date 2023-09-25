@@ -152,6 +152,10 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /* q_index / tth_index  ( index = numero du scan) (optional) */
 /* q_timescan0 / tth_timescan0   (timescan0 = timestamp du 1er point du scan (constant pour 1 scan)) */
 
+/* Adding the polarization correction from fit2D */
+/* dans un premier temps faire (1 - (epsilon (0, 1, 0) . kf) ^ 2) */
+/* pola = "0.5 * (1.0 + cos(tth)**2 - factor * cos(2.0 * (chi + axis_offset)) * (1.0 - cos(tth)**2))" */
+
 /* angles */
 
 #define HKL_BINOCULARS_SPACE_ANGLES_DECL(image_t)			\
