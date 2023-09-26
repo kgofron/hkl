@@ -194,8 +194,8 @@ instance ToIni (Config 'HklProjection) where
 ----------------
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameHkl' Identity -> IO (DataFrameSpace DIM3)
-spaceHkl det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img _) samplePath) = do
+spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameHkl' Identity -> IO (DataFrameSpace DIM3)
+spaceHkl det pixels rs mmask' mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img _) samplePath) = do
   withNPixels det $ \nPixels ->
     withForeignPtr g $ \geometry ->
     withSample samplePath $ \sample ->
@@ -207,11 +207,11 @@ spaceHkl det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameHkl (DataFr
     withForeignPtr fSpace $ \pSpace -> do
     case img of
       (ImageInt32 arr) -> unsafeWith arr $ \i -> do
-        {-# SCC "hkl_binoculars_space_hkl_int32_t" #-} c'hkl_binoculars_space_hkl_int32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
+        {-# SCC "hkl_binoculars_space_hkl_int32_t" #-} c'hkl_binoculars_space_hkl_int32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
       (ImageWord16 arr) -> unsafeWith arr $ \i -> do
-        {-# SCC "hkl_binoculars_space_hkl_uint16_t" #-} c'hkl_binoculars_space_hkl_uint16_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
+        {-# SCC "hkl_binoculars_space_hkl_uint16_t" #-} c'hkl_binoculars_space_hkl_uint16_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
       (ImageWord32 arr) -> unsafeWith arr $ \i -> do
-        {-# SCC "hkl_binoculars_space_hkl_uint32_t" #-} c'hkl_binoculars_space_hkl_uint32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
+        {-# SCC "hkl_binoculars_space_hkl_uint32_t" #-} c'hkl_binoculars_space_hkl_uint32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
     return (DataFrameSpace img space att)
 
 ----------
@@ -240,6 +240,7 @@ processHklP = do
   let maskMatrix = binocularsConfig'Common'Maskmatrix common
   let mSkipFirstPoints = binocularsConfig'Common'SkipFirstPoints common
   let mSkipLastPoints = binocularsConfig'Common'SkipLastPoints common
+  let doPolarizationCorrection = binocularsConfig'Common'PolarizationCorrection common
 
   -- directly from the specific config
   let mlimits = binocularsConfig'Hkl'ProjectionLimits conf
@@ -273,7 +274,7 @@ processHklP = do
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
     >-> framesP datapaths
-    >-> project det 3 (spaceHkl det pixels res mask' mlimits)
+    >-> project det 3 (spaceHkl det pixels res mask' mlimits doPolarizationCorrection)
     >-> accumulateP c
 
   logDebugN "stop gessing final cube size"
@@ -288,7 +289,7 @@ processHklP = do
                              -- >-> tee Pipes.Prelude.print
                              >-> framesP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameHkl (DataFrameQCustom _ _ img _) _) -> filterSumImage mImageSumMax img)
-                             >-> project det 3 (spaceHkl det pixels res mask' mlimits)
+                             >-> project det 3 (spaceHkl det pixels res mask' mlimits doPolarizationCorrection)
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs

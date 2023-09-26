@@ -295,6 +295,7 @@ type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace 
  -> CDouble -- uqy
  -> CDouble -- uqz
  -> CString -- const char *sample_axis
+ -> CInt -- int do_polarization_correction
  -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_int32_t" \
@@ -320,6 +321,7 @@ type C'ProjectionTypeHkl t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *sel
   -> Ptr CBool -- const uint8_t *mask
   -> Ptr (Ptr C'HklBinocularsAxisLimits) -- const HklBinocularsAxisLimits
   -> CSize -- size_t n_limits
+  -> CInt -- int do_polarization_correction
   -> IO ()
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_int32_t" \

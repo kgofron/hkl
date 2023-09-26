@@ -80,6 +80,7 @@ data BinocularsConfig'Common
     , binocularsConfig'Common'ImageSumMax            :: Maybe Double
     , binocularsConfig'Common'SkipFirstPoints        :: Maybe Int
     , binocularsConfig'Common'SkipLastPoints         :: Maybe Int
+    , binocularsConfig'Common'PolarizationCorrection :: Bool
     } deriving (Eq, Show, Generic)
 
 default'BinocularsConfig'Common :: BinocularsConfig'Common
@@ -104,6 +105,7 @@ default'BinocularsConfig'Common
     , binocularsConfig'Common'ImageSumMax = Nothing
     , binocularsConfig'Common'SkipFirstPoints = Nothing
     , binocularsConfig'Common'SkipLastPoints = Nothing
+    , binocularsConfig'Common'PolarizationCorrection = False
     }
 
 instance Arbitrary BinocularsConfig'Common where
@@ -295,6 +297,11 @@ instance ToIni  BinocularsConfig'Common where
                                                       , " `<not set>` - process all images."
                                                       , " `n`         - skip the last `n` points (`n` included)"
                                                       ]
+                                                      <> elemFDef "polarization_correction" binocularsConfig'Common'PolarizationCorrection c default'BinocularsConfig'Common
+                                                      [ " `true` - apply the polarization correctionthe to the intensities."
+                                                      , " `false` - do not apply the polarization correction."
+                                                      , " to avoid overwriting them."
+                                                      ]
                                             )
                                          ]
 
@@ -371,6 +378,7 @@ parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
     <*> parseMb cfg "input" "image_sum_max"
     <*> parseMb cfg "input" "skip_first_points"
     <*> parseMb cfg "input" "skip_last_points"
+    <*> parseFDef cfg "input" "polarization_correction" (binocularsConfig'Common'PolarizationCorrection default'BinocularsConfig'Common)
 
 parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
 parse' c s f = parseIniFile c $ section s (fieldMbOf f auto')

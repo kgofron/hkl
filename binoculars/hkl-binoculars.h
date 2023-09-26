@@ -222,7 +222,8 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
                                                        double uqx,      \
                                                        double uqy,      \
                                                        double uqz,      \
-                                                       const char *sample_axis \
+                                                       const char *sample_axis, \
+                                                       int do_polarisation_correction \
                 )
 
 
@@ -246,7 +247,9 @@ HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint32_t);
                                                    size_t n_resolutions, \
                                                    const uint8_t *masked, \
                                                    const HklBinocularsAxisLimits **limits, \
-                                                   size_t n_limits)
+                                                   size_t n_limits,     \
+                                                   int do_polarisation_correction \
+                )
 
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint16_t);
@@ -268,7 +271,9 @@ HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint32_t);
                                                     size_t n_resolutions, \
                                                     const uint8_t *masked, \
                                                     const HklBinocularsAxisLimits **limits, \
-                                                    size_t n_limits)
+                                                    size_t n_limits,    \
+                                                    int do_polarisation_correction \
+                )
 
 
 HKLAPI extern HKL_BINOCULARS_SPACE_TEST_DECL(int32_t);

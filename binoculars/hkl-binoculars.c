@@ -531,6 +531,17 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
         return NULL == masked || 0 == masked[idx];
 }
 
+static inline double polarisation(vec3s kf, double weight, int do_polarisation)
+{
+        if (do_polarisation){
+                CGLM_ALIGN_MAT vec3s epsilon = {{0, 1, 0}};
+                float p = glms_vec3_dot(epsilon, kf) / glms_vec3_norm2(kf);
+                weight = weight / (1 - p*p);
+        }
+
+        return weight;
+}
+
 #define HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(image_t)			\
         HKL_BINOCULARS_SPACE_QCUSTOM_DECL(image_t)			\
         {                                                               \
@@ -587,6 +598,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v, ki);       \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -609,6 +621,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -631,6 +644,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -653,6 +667,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -697,6 +712,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -719,6 +735,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -741,6 +758,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -763,6 +781,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -789,6 +808,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                 CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
                                                 v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                                weight = polarisation(v, weight, do_polarisation_correction); \
                                                                         \
                                                 item.indexes_0[0] = rint(atan2(v.raw[2], sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1])) / M_PI * 180 / resolutions[0]); \
                                                 item.indexes_0[1] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[1]); \
@@ -810,6 +830,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         glms_vec3_print(v, stdout);     \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         glms_mat4_print(m_holder_d, stdout); \
                                         glms_vec3_print(v, stdout);     \
                                                                         \
@@ -831,6 +852,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                                                         \
 					item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
@@ -851,6 +873,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -873,6 +896,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        weight = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -908,6 +932,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                                 v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                                 v = glms_vec3_scale_as(v, k); \
+                                                weight = polarisation(v, weight, do_polarisation_correction); \
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -935,6 +960,7 @@ static inline int not_masked(const uint8_t *masked, size_t idx)
                                                                         \
                                                 v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                                 v = glms_vec3_scale_as(v, k); \
+                                                weight = polarisation(v, weight, do_polarisation_correction); \
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -1007,6 +1033,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                                                         \
                                 v = glms_mat4_mulv3(m_holder_d, v, 1);  \
                                 v = glms_vec3_scale_as(v, K);           \
+                                weight = polarisation(v, weight, do_polarisation_correction); \
                                 v = glms_vec3_sub(v, ki);               \
                                 v = glms_mat4_mulv3(m_holder_s, v, 0);  \
                                                                         \
@@ -1076,6 +1103,7 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
                                                                         \
                                 v = glms_mat4_mulv3(m_holder_d, v, 1);  \
                                 v = glms_vec3_scale_as(v, K);           \
+                                weight = polarisation(v, weight, do_polarisation_correction); \
                                 v = glms_vec3_sub(v, ki);               \
                                 v = glms_mat4_mulv3(m_holder_s, v, 0);  \
                                                                         \

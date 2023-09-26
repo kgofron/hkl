@@ -189,8 +189,8 @@ instance ToIni (Config 'TestProjection) where
 ----------------
 
 {-# INLINE spaceTest #-}
-spaceTest :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Space DIM3 -> DataFrameTest' Identity -> IO (DataFrameSpace DIM3)
-spaceTest det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameTest (DataFrameQCustom att g img _) samplePath) = do
+spaceTest :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameTest' Identity -> IO (DataFrameSpace DIM3)
+spaceTest det pixels rs mmask' mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameTest (DataFrameQCustom att g img _) samplePath) = do
   withNPixels det $ \nPixels ->
     withForeignPtr g $ \geometry ->
     withSample samplePath $ \sample ->
@@ -202,11 +202,11 @@ spaceTest det pixels rs mmask' mlimits space@(Space fSpace) (DataFrameTest (Data
     withForeignPtr fSpace $ \pSpace -> do
     case img of
       (ImageInt32 arr) -> unsafeWith arr $ \i -> do
-        {-# SCC "test_binoculars_space_test_int32_t" #-} c'hkl_binoculars_space_test_int32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
+        {-# SCC "test_binoculars_space_test_int32_t" #-} c'hkl_binoculars_space_test_int32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
       (ImageWord16 arr) -> unsafeWith arr $ \i -> do
-        {-# SCC "test_binoculars_space_test_uint16_t" #-} c'hkl_binoculars_space_test_uint16_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
+        {-# SCC "test_binoculars_space_test_uint16_t" #-} c'hkl_binoculars_space_test_uint16_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
       (ImageWord32 arr) -> unsafeWith arr $ \i -> do
-        {-# SCC "test_binoculars_space_test_uint32_t" #-} c'hkl_binoculars_space_test_uint32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits)
+        {-# SCC "test_binoculars_space_test_uint32_t" #-} c'hkl_binoculars_space_test_uint32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
     return (DataFrameSpace img space att)
 
 ----------
@@ -235,6 +235,7 @@ processTestP = do
   let maskMatrix = binocularsConfig'Common'Maskmatrix common
   let mSkipFirstPoints = binocularsConfig'Common'SkipFirstPoints common
   let mSkipLastPoints = binocularsConfig'Common'SkipLastPoints common
+  let doPolarizationCorrection = binocularsConfig'Common'PolarizationCorrection common
 
   -- directly from the specific config
   let mlimits = binocularsConfig'Test'ProjectionLimits conf
@@ -268,7 +269,7 @@ processTestP = do
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
     >-> framesP datapaths
-    >-> project det 3 (spaceTest det pixels res mask' mlimits)
+    >-> project det 3 (spaceTest det pixels res mask' mlimits doPolarizationCorrection)
     >-> accumulateP c
 
   logDebugN "stop gessing final cube size"
@@ -283,7 +284,7 @@ processTestP = do
                              -- >-> tee Pipes.Prelude.print
                              >-> framesP datapaths
                              >-> Pipes.Prelude.filter (\(DataFrameTest (DataFrameQCustom _ _ img _) _) -> filterSumImage mImageSumMax img)
-                             >-> project det 3 (spaceTest det pixels res mask' mlimits)
+                             >-> project det 3 (spaceTest det pixels res mask' mlimits doPolarizationCorrection)
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs
