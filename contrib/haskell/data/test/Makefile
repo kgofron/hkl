@@ -68,8 +68,8 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_xpad.txt 356
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_xpad.txt 537
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_eiger.txt 306
-	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_eiger.txt 640
-# TODO	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_Andreazza/binoculars/config3_ech1.txt 77-78
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Mozhzhukhina_20220548/binoculars/config_sbs_eiger.txt 640
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_Andreazza/binoculars/config3_ech1.txt 77-78
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_1.ini 912
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_1.ini 913
 #	$(PROCESS) data/test/config_sixs_ruche_qcustom2_1.ini 912-913
@@ -81,6 +81,7 @@ sixs:
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run3/20221521_Bendounan/binoculars/config_test.txt 16
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run3/20221521_Bendounan/binoculars/config_map_hkl-limit18.cfg 1026-1244
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2023/Run2/Hennet_20220364_2/binoculars/config_sbs_eiger.txt 199
+	$(PROCESS) data/test/config_sixs_ruche_polarization.ini 112
 
 ssd:
 #	$(PROCESS) data/test/config_ssd_cristal_qparqper.ini
