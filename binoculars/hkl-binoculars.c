@@ -538,7 +538,6 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                 float p = glms_vec3_dot(epsilon, kf) / glms_vec3_norm2(kf);
                 weight = weight / (1 - p*p);
         }
-
         return weight;
 }
 
@@ -547,6 +546,7 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
         {                                                               \
 		size_t i;						\
                 HklBinocularsSpaceItem item;                            \
+                double correction;                                      \
 		const char **names = axis_name_from_subprojection(subprojection, space, n_resolutions); \
 		assert(n_pixels == space->max_items);			\
                                                                         \
@@ -598,14 +598,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v, ki);       \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
                                         item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
                                         item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
                                         item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -621,14 +621,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
 					item.indexes_0[1] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -644,14 +644,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
 					item.indexes_0[1] = rint(timestamp / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -667,14 +667,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
                                         item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -690,13 +690,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -712,14 +713,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
 					item.indexes_0[1] = rint((atan2(v.raw[2], -v.raw[1])) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[0] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -735,14 +736,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
 					item.indexes_0[1] = rint((atan2(v.raw[2], v.raw[0])) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[1] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -758,14 +759,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
 					item.indexes_0[1] = rint((atan2(v.raw[0], v.raw[1])) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -781,7 +782,7 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
@@ -789,7 +790,7 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
 					double ratio = v.raw[2] + item.indexes_0[0]; \
 					item.indexes_0[1] = rint(v.raw[0] / ratio / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[1] / ratio / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -808,12 +809,12 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                 CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
                                                 v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                                weight = polarisation(v, weight, do_polarisation_correction); \
+                                                correction = polarisation(v, weight, do_polarisation_correction); \
                                                                         \
                                                 item.indexes_0[0] = rint(atan2(v.raw[2], sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1])) / M_PI * 180 / resolutions[0]); \
                                                 item.indexes_0[1] = rint(atan2(v.raw[1], v.raw[0]) / M_PI * 180 / resolutions[1]); \
                                                 item.indexes_0[2] = axis; \
-                                                item.intensity = rint((double)image[i] * weight); \
+                                                item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                         darray_append(space->items, item); \
@@ -830,14 +831,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         glms_vec3_print(v, stdout);     \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         glms_mat4_print(m_holder_d, stdout); \
                                         glms_vec3_print(v, stdout);     \
                                                                         \
 					item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -852,12 +853,12 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                         CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                                                         \
 					item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -873,14 +874,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
 					item.indexes_0[1] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
@@ -896,14 +897,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                         v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                         v = glms_vec3_scale_as(v, k);   \
-                                        weight = polarisation(v, weight, do_polarisation_correction); \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
 					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
                                         item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
-                                        item.intensity = rint((double)image[i] * weight); \
+                                        item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(v.raw[1] != 0.0){            \
                                                 if(signbit(v.raw[1]) != 0){ \
@@ -932,14 +933,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                                 v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                                 v = glms_vec3_scale_as(v, k); \
-                                                weight = polarisation(v, weight, do_polarisation_correction); \
+                                                correction = polarisation(v, weight, do_polarisation_correction); \
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
                                                 item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
                                                 item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
                                                 item.indexes_0[2] = axis; \
-                                                item.intensity = rint((double)image[i] * weight); \
+                                                item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                         darray_append(space->items, item); \
@@ -960,14 +961,14 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                                         \
                                                 v = glms_mat4_mulv3(m_holder_d, v, 1); \
                                                 v = glms_vec3_scale_as(v, k); \
-                                                weight = polarisation(v, weight, do_polarisation_correction); \
+                                                correction = polarisation(v, weight, do_polarisation_correction); \
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
                                                 item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
                                                 item.indexes_0[1] = axis; \
                                                 item.indexes_0[2] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[2]); \
-                                                item.intensity = rint((double)image[i] * weight); \
+                                                item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                         darray_append(space->items, item); \
@@ -991,7 +992,8 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
 #define HKL_BINOCULARS_SPACE_HKL_IMPL(image_t)                          \
         HKL_BINOCULARS_SPACE_HKL_DECL(image_t)                          \
         {                                                               \
-                size_t i;                                            \
+                size_t i;                                               \
+                double correction;                                      \
                 const char * names[] = {"H", "K", "L"};                 \
                 HklBinocularsSpaceItem item;                            \
                                                                         \
@@ -1033,14 +1035,14 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                                                                         \
                                 v = glms_mat4_mulv3(m_holder_d, v, 1);  \
                                 v = glms_vec3_scale_as(v, K);           \
-                                weight = polarisation(v, weight, do_polarisation_correction); \
+                                correction = polarisation(v, weight, do_polarisation_correction); \
                                 v = glms_vec3_sub(v, ki);               \
                                 v = glms_mat4_mulv3(m_holder_s, v, 0);  \
                                                                         \
                                 item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
                                 item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
                                 item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                item.intensity = rint((double)image[i] * weight); \
+                                item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                         darray_append(space->items, item); \
@@ -1061,8 +1063,9 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
 #define HKL_BINOCULARS_SPACE_TEST_IMPL(image_t)                         \
         HKL_BINOCULARS_SPACE_TEST_DECL(image_t)                         \
         {                                                               \
-                size_t i;                                            \
+                size_t i;                                               \
                 const char * names[] = {"H", "K", "L"};                 \
+                double correction;                                      \
                 HklBinocularsSpaceItem item;                            \
                                                                         \
                 assert(ARRAY_SIZE(names) == darray_size(space->axes));  \
@@ -1103,14 +1106,14 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
                                                                         \
                                 v = glms_mat4_mulv3(m_holder_d, v, 1);  \
                                 v = glms_vec3_scale_as(v, K);           \
-                                weight = polarisation(v, weight, do_polarisation_correction); \
+                                correction = polarisation(v, weight, do_polarisation_correction); \
                                 v = glms_vec3_sub(v, ki);               \
                                 v = glms_mat4_mulv3(m_holder_s, v, 0);  \
                                                                         \
                                 item.indexes_0[0] = rint(v.raw[0] / resolutions[0]); \
                                 item.indexes_0[1] = rint(v.raw[1] / resolutions[1]); \
                                 item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
-                                item.intensity = rint((double)image[i] * weight); \
+                                item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                         darray_append(space->items, item); \
