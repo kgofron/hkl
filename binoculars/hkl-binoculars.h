@@ -134,6 +134,8 @@ HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBin
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocularsCube *cube1,
                                                                const HklBinocularsCube *cube2);
 
+HKLAPI extern unsigned int hkl_binoculars_cube_cmp(const HklBinocularsCube *self,
+                                                   const HklBinocularsCube *other);
 
 HKLAPI extern void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
                                                  const HklBinocularsSpace *space);
