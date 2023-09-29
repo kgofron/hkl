@@ -74,7 +74,7 @@ Build-Depends: debhelper (>= 10),
  libghc-temporary-dev,
  libghc-temporary-prof,
  libhdf5-dev,
- libhkl-dev (>= 5.0.0.3357-1~),
+ libhkl-dev (>= 5.0.0.3372-1~),
 Build-Depends-Indep: ghc-doc,
  libghc-quickcheck2-doc,
  libghc-aeson-doc,
@@ -106,7 +106,7 @@ Build-Depends-Indep: ghc-doc,
  libghc-unordered-containers-doc,
  libghc-vector-doc,
 Standards-Version: 4.5.0
-X-Description: WARNING: No synopsis available for package hkl-0.1.0.0
+X-Description: WARNING: No synopsis available for package hkl-0.1.0.1
 
 Package: libghc-hkl-dev
 Architecture: any
