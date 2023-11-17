@@ -75,6 +75,7 @@ static inline GQuark hkl_parameter_error_quark (void)
 typedef enum {
 	HKL_PARAMETER_ERROR_MIN_MAX_SET, /* can not set the min max */
 	HKL_PARAMETER_ERROR_VALUE_SET, /* can not set the value */
+        HKL_PARAMETER_ERROR_INIT, /* error when initializing parameter */
 } HklParameterError;
 
 /****************/
@@ -272,7 +273,8 @@ extern HklParameter *hkl_parameter_new(const char *name, const char *description
 				       double min, double value, double max,
 				       int fit, int changed,
 				       const HklUnit *unit,
-				       const HklUnit *punit);
+				       const HklUnit *punit,
+                                       GError **error);
 
 extern int hkl_parameter_init_copy(HklParameter *self, const HklParameter *src,
 				   GError **error);

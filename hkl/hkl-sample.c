@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -346,17 +346,17 @@ HklSample* hkl_sample_new(const char *name)
 				     -M_PI, 0., M_PI,
 				     TRUE, TRUE,
 				     &hkl_unit_angle_rad,
-				     &hkl_unit_angle_deg);
+				     &hkl_unit_angle_deg, NULL);
 	self->uy = hkl_parameter_new("uy", "the sample rotation around $\vec{y}$",
 				     -M_PI, 0., M_PI,
 				     TRUE, TRUE,
 				     &hkl_unit_angle_rad,
-				     &hkl_unit_angle_deg);
+				     &hkl_unit_angle_deg, NULL);
 	self->uz = hkl_parameter_new("uz", "the sample rotation around $\vec{z}$",
 				     -M_PI, 0., M_PI,
 				     TRUE, TRUE,
 				     &hkl_unit_angle_rad,
-				     &hkl_unit_angle_deg);
+				     &hkl_unit_angle_deg, NULL);
 
 	hkl_sample_compute_UB(self);
 	list_head_init(&self->reflections);

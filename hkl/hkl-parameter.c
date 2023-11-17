@@ -37,26 +37,62 @@ static int hkl_parameter_init(HklParameter *self, const char *name,
 			      const char *description,
 			      double min, double value, double max,
 			      int fit, int changed,
-			      const HklUnit *unit, const HklUnit *punit)
+			      const HklUnit *unit, const HklUnit *punit,
+                              GError **error)
 {
-	if (min <= value
-	    && value <= max
-	    && strcmp(name, "")
-	    && strcmp(description, "")
-	    && hkl_unit_compatible(unit, punit)) {
-		self->name = name;
-		self->description = description;
-		self->range.min = min;
-		self->range.max = max;
-		self->_value = value;
-		self->unit = unit;
-		self->punit = punit;
-		self->fit = fit;
-		self->changed = changed;
-		self->ops = &hkl_parameter_operations_defaults;
-                self->type = Parameter();
-	} else
-		return FALSE;
+        g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+        if (value < min) {
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_INIT,
+			    "Cannot set parameter value (%g) which is strictly bellow the minimum (%g) allowed\n",
+			    value, min);
+                return FALSE;
+        }
+        if (value > max) {
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_INIT,
+			    "Cannot set parameter value (%g) which is higher than the maximum (%g) allowed\n",
+			    value, max);
+                return FALSE;
+        }
+        if (!strcmp(name, "")){
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_INIT,
+			    "Cannot set an empty parameter name\n");
+                return FALSE;
+        }
+        if (!strcmp(description, "")){
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_INIT,
+			    "Cannot set an empty parameter description\n");
+                return FALSE;
+        }
+        if(!hkl_unit_compatible(unit, punit)){
+		g_set_error(error,
+			    HKL_PARAMETER_ERROR,
+			    HKL_PARAMETER_ERROR_INIT,
+			    "Cannot set uncompatible parameter unit (%s) and punit (%s)\n",
+                            unit->name ? unit->name : "NULL",
+                            punit->name ? punit->name : "NULL");
+                return FALSE;
+        }
+
+        self->name = name;
+        self->description = description;
+        self->range.min = min;
+        self->range.max = max;
+        self->_value = value;
+        self->unit = unit;
+        self->punit = punit;
+        self->fit = fit;
+        self->changed = changed;
+        self->ops = &hkl_parameter_operations_defaults;
+        self->type = Parameter();
 
 	return TRUE;
 }
@@ -79,23 +115,28 @@ static int hkl_parameter_init(HklParameter *self, const char *name,
 HklParameter *hkl_parameter_new(const char *name, const char *description,
 				double min, double value, double max,
 				int fit, int changed,
-				const HklUnit *unit, const HklUnit *punit)
+				const HklUnit *unit, const HklUnit *punit,
+                                GError **err)
 {
-	HklParameter *self = g_new(HklParameter, 1);
+        g_return_val_if_fail (err == NULL || *err == NULL, NULL);
+
+        HklParameter *self = g_new(HklParameter, 1);
 
 	if (!hkl_parameter_init(self,
 				name, description,
 				min, value, max,
 				fit, changed,
-				unit, punit)) {
-                goto fail;
-	}
+				unit, punit, err)) {
+                // assert that error was set by the sub-function
+                g_assert (err == NULL || *err != NULL);
+                free(self);
+                return NULL;
+        }
+
+        // otherwise continue, no error occurred
+        g_assert (err == NULL || *err == NULL);
 
 	return self;
-
-fail:
-        free(self);
-        return NULL;
 }
 
 /**
