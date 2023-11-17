@@ -249,6 +249,7 @@ instance HasIniConfig 'QCustomProjection where
                                                 HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> Nothing
                                                 HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> error "expect a valid [projection] 'sampleaxis' key"
                                                 HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> error "expect a valid [projection] 'sampleaxis' key"
+                                                HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> error "expect a valid [projection] 'sampleaxis' key"
 
 
     BinocularsConfig'QCustom
@@ -422,6 +423,7 @@ overloadTimestampPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> idx
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma

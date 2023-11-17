@@ -514,6 +514,14 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 names = names_q_sampleaxis_tth;
                 break;
         }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TIMESTAMP:
+        {
+                static const char *names_q_sampleaxis_timestamp[] = {"q", "sample axis", "timestamp"};
+                assert(ARRAY_SIZE(names_q_sampleaxis_timestamp) == darray_size(space->axes));
+                assert(ARRAY_SIZE(names_q_sampleaxis_timestamp) == n_resolutions);
+                names = names_q_sampleaxis_timestamp;
+                break;
+        }
         default:
         {
                 static const char *names_qx_qy_qz[] = {"qx", "qy", "qz"};
@@ -968,6 +976,34 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                                                 item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
                                                 item.indexes_0[1] = axis; \
                                                 item.indexes_0[2] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[2]); \
+                                                item.intensity = rint((double)image[i] * correction); \
+                                                                        \
+                                                if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                        darray_append(space->items, item); \
+                                        }                               \
+                                }                                       \
+                                break;                                  \
+                        }                                               \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TIMESTAMP: \
+                {                                                       \
+                        const HklParameter *p = hkl_geometry_axis_get(geometry, sample_axis, NULL); \
+                        if (NULL != p){                                 \
+                                int axis = rint(hkl_parameter_value_get(p, HKL_UNIT_USER) / resolutions[1]); \
+                                                                        \
+                                for(i=0;i<n_pixels;++i){                \
+                                        if(not_masked(masked, i)){      \
+                                                CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                                v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                                v = glms_vec3_scale_as(v, k); \
+                                                correction = polarisation(v, weight, do_polarisation_correction); \
+                                                v = glms_vec3_sub(v , ki); \
+                                                v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+                                                item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                                item.indexes_0[1] = axis; \
+                                                item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                                 item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \

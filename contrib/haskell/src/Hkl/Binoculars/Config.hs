@@ -363,12 +363,13 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QPhiQz            = "q_phi_qz"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QStereo           = "q_stereo"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis = "deltalab_gammalab_sampleaxis"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'XYZ               = "x_y_z"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'YZTimestamp       = "y_z_timestamp"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QQparQper         = "q_qpar_qper"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp = "qpars_qper_timestamp"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis = "qpar_qper_sampleaxis"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth     = "q_sampleaxis_tth"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'XYZ                  = "x_y_z"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'YZTimestamp          = "y_z_timestamp"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QQparQper            = "q_qpar_qper"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp   = "qpars_qper_timestamp"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis   = "qpar_qper_sampleaxis"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth       = "q_sampleaxis_tth"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp = "q_sampleaxis_timestamp"
 
 instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
   fieldParser = go . strip . uncomment . toLower =<< takeText
