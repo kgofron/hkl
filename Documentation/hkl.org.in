@@ -873,6 +873,7 @@ git clone git://repo.or.cz/hkl.git
 ** @VERSION@
 *** DONE fix the segfault when trying to create a non valid HklLattice <2023-11-17 Fri>
 *** DONE added the q_sampleaxis_timestamp custom projection to binoculars-ng <2023-11-17 Fri>
+*** DONE added the [qx_qy|qx_qz|qy_qz]_timestamp custom projection to binoculars-ng <2023-11-20 Mon>
 ** 5.0.0.2661 <2020-10-02 Fri>
 *** DONE Only finite float values are allow when setting an HklParameter value or range.
     When using =hkl_parameter_value_set= or
