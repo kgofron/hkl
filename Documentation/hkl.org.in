@@ -871,6 +871,7 @@ git clone git://repo.or.cz/hkl.git
    #+END_QUOTE
 * Releases
 ** @VERSION@
+** 5.0.0.3381 <2023-11-21 mar.>
 *** DONE fix for real the HklLattice segfault <2023-11-21 mar.>
 *** DONE added the [qx_qy|qx_qz|qy_qz]_timestamp custom projection to binoculars-ng <2023-11-20 Mon>
 *** DONE added the q_sampleaxis_timestamp custom projection to binoculars-ng <2023-11-17 Fri>
