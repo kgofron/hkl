@@ -128,13 +128,13 @@ HklParameter *hkl_parameter_new(const char *name, const char *description,
 				fit, changed,
 				unit, punit, err)) {
                 // assert that error was set by the sub-function
-                g_assert (err == NULL || *err != NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 free(self);
                 return NULL;
         }
 
         // otherwise continue, no error occurred
-        g_assert (err == NULL || *err == NULL);
+        hkl_assert (err == NULL || *err == NULL);
 
 	return self;
 }

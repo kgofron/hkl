@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2021 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021, 2023 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -49,15 +49,15 @@
 		ok(error == NULL, __func__);				\
 		hkl_parameter_free(p);					\
 	}while(0);
-\
+
 #define SET_LATTICE(_lattice, _a, _b, _c, _alpha, _beta, _gamma) do{	\
-	SET_PARAM(_lattice, a, _a);						\
-	SET_PARAM(_lattice, b, _b);						\
-	SET_PARAM(_lattice, c, _c);						\
-	SET_PARAM(_lattice, alpha, _alpha);					\
-	SET_PARAM(_lattice, beta, _beta);					\
-	SET_PARAM(_lattice, gamma, _gamma);					\
-}while(0);
+		SET_PARAM(_lattice, a, _a);				\
+		SET_PARAM(_lattice, b, _b);				\
+		SET_PARAM(_lattice, c, _c);				\
+		SET_PARAM(_lattice, alpha, _alpha);			\
+		SET_PARAM(_lattice, beta, _beta);			\
+		SET_PARAM(_lattice, gamma, _gamma);			\
+	}while(0);
 
 static void new(void)
 {
@@ -74,6 +74,15 @@ static void new(void)
 	error = NULL;
 	lattice = hkl_lattice_new(1.54, 1.54, 1.54,
 				  90*HKL_DEGTORAD, 10*HKL_DEGTORAD, 120*HKL_DEGTORAD,
+				  &error);
+	ok(NULL == lattice, __func__);
+	ok(error != NULL, __func__);
+	g_clear_error(&error);
+
+	/* check GError generation */
+	error = NULL;
+	lattice = hkl_lattice_new(1.54, 1.54, 1.54,
+				  90*HKL_DEGTORAD, (90+360)*HKL_DEGTORAD, 90*HKL_DEGTORAD,
 				  &error);
 	ok(NULL == lattice, __func__);
 	ok(error != NULL, __func__);
@@ -345,7 +354,7 @@ static void get_1_B(void)
 
 int main(void)
 {
-	plan(139);
+	plan(141);
 
 	new();
 	new_copy();

@@ -108,7 +108,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
                                       &hkl_unit_length_nm,
                                       &hkl_unit_length_nm, err);
         if (!parameter) {
-                hkl_assert (err == NULL || *err == NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 return FALSE;
         }else{
                 self->a = parameter;
@@ -122,7 +122,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
                                       &hkl_unit_length_nm,
                                       err);
         if (!parameter) {
-                hkl_assert (err == NULL || *err == NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 hkl_parameter_free(self->a);
                 return FALSE;
         }else{
@@ -137,7 +137,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
                                       &hkl_unit_length_nm,
                                       err);
         if (!parameter) {
-                hkl_assert (err == NULL || *err == NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 hkl_parameter_free(self->b);
                 hkl_parameter_free(self->a);
                 return FALSE;
@@ -154,7 +154,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
                                       &hkl_unit_angle_deg,
                                       err);
         if (!parameter) {
-                hkl_assert (err == NULL || *err == NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 hkl_parameter_free(self->c);
                 hkl_parameter_free(self->b);
                 hkl_parameter_free(self->a);
@@ -172,7 +172,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
                                       &hkl_unit_angle_deg,
                                       err);
         if (!parameter) {
-                hkl_assert (err == NULL || *err == NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 hkl_parameter_free(self->alpha);
                 hkl_parameter_free(self->c);
                 hkl_parameter_free(self->b);
@@ -191,7 +191,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
                                       &hkl_unit_angle_deg,
                                       err);
         if (!parameter) {
-                hkl_assert (err == NULL || *err == NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 hkl_parameter_free(self->beta);
                 hkl_parameter_free(self->alpha);
                 hkl_parameter_free(self->c);
@@ -211,7 +211,7 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
                                       &hkl_unit_length_nm,
                                       err);
         if (!parameter) {
-                hkl_assert (err == NULL || *err == NULL);
+                hkl_assert (err == NULL || *err != NULL);
                 hkl_parameter_free(self->gamma);
                 hkl_parameter_free(self->beta);
                 hkl_parameter_free(self->alpha);

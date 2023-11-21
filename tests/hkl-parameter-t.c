@@ -29,7 +29,7 @@
 static void new(void)
 {
 	HklParameter *p;
-	GError *error;
+	GError *error = NULL;
         int res = TRUE;
 
 	res &= DIAG(NULL == hkl_parameter_new("", "", 2, 1, 3,
