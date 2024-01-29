@@ -13,7 +13,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -ddump-simpl -ddump-to-file -ddump-splices #-}
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -506,6 +506,12 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
             = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
       -- wavelength
+      let dataSourcePath'WaveLength'Mars :: DataSourcePath Double
+          dataSourcePath'WaveLength'Mars
+            = DataSourcePath'Double ( hdf5p $ grouppat 0 $ datasetp "MARS/d03-1-c03__op__mono1-config_#2/lambda" )
+              `DataSourcePath'Double'Or`
+              DataSourcePath'Double'Const 1.537591
+
       let dataSourcePath'WaveLength'Sixs ::  DataSourcePath Double
           dataSourcePath'WaveLength'Sixs
             = DataSourcePath'Double (hdf5p $ grouppat 0 (datasetp "SIXS/Monochromator/wavelength"
@@ -713,11 +719,12 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                         detector)
                       (mkTimeStamp'Sbs msub)
          MarsFlyscan -> DataSourcePath'DataFrameQCustom
-                       (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
-                                                               (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
+                       (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
+                       -- (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
+                       --                                         (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
                        (DataSourcePath'Geometry
                          (Geometry'Factory Mars)
-                         (overloadWaveLength mWavelength (DataSourcePath'Double'Const 1.537591))
+                         (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
                          [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
@@ -733,7 +740,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                    (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
                    (DataSourcePath'Geometry
                      (Geometry'Factory Mars)
-                     (overloadWaveLength mWavelength (DataSourcePath'Double'Const 1.537591))
+                     (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
                      [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
