@@ -26,14 +26,110 @@
 #include <hdf5.h>
 #include <ini.h>
 
+#include "hkl-binoculars.h"
+
 /* #define FILENAME "/home/picca/test-data/translation/Pt2Ag20S2_75_a2scan_deltaeiz_00912.nxs" */
 #define FILENAME "/nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_andreazza/Pt2Ag20S2_75/Pt2Ag20S2_75_a2scan_deltaeiz_00912.nxs"
-
+#define INI "../contrib/haskell/data/test/config_sixs_ruche_qcustom2_3.ini"
 
 #define IMAGEPATH "com/scan_data/eiger_image"
 #define DIM0 920
 #define DIM1 1065
 #define DIM2 1030
+
+typedef enum _HklBinocularsInputTypeDeprecatedEnum
+{
+	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLY_MEDV_EIGER,
+	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLY_MEDV_S70,
+	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLYSCAN_UHV_GISAXS_EIGER,
+	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLYSCAN_UHV_UFXC,
+	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_NUM,
+} HklBinocularsInputTypeDeprecatedEnum;
+
+/* instance FieldEmitter InputTypeDeprecated where */
+/*   fieldEmitter SixsFlyMedVEiger          = "sixs:flymedveiger" */
+/*   fieldEmitter SixsFlyMedVS70            = "sixs:flymedvs70" */
+/*   fieldEmitter SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger" */
+/*   fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc" */
+
+/* instance FieldParsable InputTypeDeprecated where */
+/*   fieldParser = go . strip . uncomment . toLower =<< takeText */
+/*     where */
+/*       err t =  "Unsupported " */
+/*                ++ show (typeRep (Proxy :: Proxy InputTypeDeprecated)) */
+/*                ++ " :" ++ unpack t */
+/*                ++ " Supported ones are: " */
+/*                ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: InputTypeDeprecated]) */
+
+/*       go :: Text -> Parser InputTypeDeprecated */
+/*       go t = case parseEnum (err t) t of */
+/*         Right p   -> pure p */
+/*         Left err' -> fail err' */
+
+/* instance HasFieldValue InputTypeDeprecated where */
+/*   fieldvalue = parsable */
+
+
+typedef enum _HklBinocularsInputTypeEnum
+{
+	HKL_BINOCULARS_INPUT_TYPE_CRISTAL_K6C,
+	HKL_BINOCULARS_INPUT_TYPE_MARS_FLYSCAN,
+	HKL_BINOCULARS_INPUT_TYPE_MARS_SBS,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH_GISAXS,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_GISAXS,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH_GISAXS,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV_GISAXS,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV_GISAXS,
+        /* Add new your detectors here */
+        HKL_BINOCULARS_INPUT_TYPE_NUM,
+} HklBinocularsInputTypeEnum;
+
+
+/* instance Arbitrary InputType where */
+/*   arbitrary = elements ([minBound .. maxBound] :: [InputType]) */
+
+/* instance FieldEmitter InputType where */
+/*   fieldEmitter CristalK6C        = "cristal:k6c" */
+/*   fieldEmitter MarsFlyscan       = "mars:flyscan" */
+/*   fieldEmitter MarsSbs           = "mars:sbs" */
+/*   fieldEmitter SixsFlyMedH       = "sixs:flymedh" */
+/*   fieldEmitter SixsFlyMedHGisaxs = "sixs:flymedhgisaxs" */
+/*   fieldEmitter SixsFlyMedV       = "sixs:flymedv" */
+/*   fieldEmitter SixsFlyMedVGisaxs = "sixs:flymedvgisaxs" */
+/*   fieldEmitter SixsFlyUhv        = "sixs:flyuhv" */
+/*   fieldEmitter SixsFlyUhvGisaxs  = "sixs:flyuhvgisaxs" */
+/*   fieldEmitter SixsSbsMedH       = "sixs:sbsmedh" */
+/*   fieldEmitter SixsSbsMedHGisaxs = "sixs:sbsmedhgisaxs" */
+/*   fieldEmitter SixsSbsMedV       = "sixs:sbsmedv" */
+/*   fieldEmitter SixsSbsMedVGisaxs = "sixs:sbsmedvgisaxs" */
+/*   fieldEmitter SixsSbsUhv        = "sixs:sbsuhv" */
+/*   fieldEmitter SixsSbsUhvGisaxs  = "sixs:sbsuhvgisaxs" */
+
+/* instance FieldParsable InputType where */
+/*   fieldParser = go . strip . uncomment . toLower =<< takeText */
+/*     where */
+/*       err t =  "Unsupported " */
+/*                ++ show (typeRep (Proxy :: Proxy InputType)) */
+/*                ++ " :" ++ unpack t */
+/*                ++ " Supported ones are: " */
+/*                ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: InputType]) */
+
+/*       go :: Text -> Parser InputType */
+/*       go "sixs:flyscanuhv" = pure SixsFlyUhv */
+/*       go "sixs:flyscanuhv2" = pure SixsFlyUhv */
+/*       go "sixs:flyscanuhvtest" = pure SixsFlyUhv */
+/*       go "sixs:sbsmedhfixdetector" = pure SixsSbsMedHGisaxs */
+/*       go "sixs:sbsmedvfixdetector" = pure SixsSbsMedVGisaxs */
+/*       go t = case parseEnum (err t) t of */
+/*         Right p   -> pure p */
+/*         Left err' -> fail err' */
 
 int main_1()
 {
@@ -111,42 +207,38 @@ exit:
 }
 
 
-typedef struct
+typedef struct _HklBinocularsConfig
 {
-    int version;
-    const char* name;
-    const char* email;
-} configuration;
+	HklBinocularsInputTypeEnum input_type;
+} HklBinocularsConfig;
 
-static int handler(void* user, const char* section, const char* name,
+static int handler(void* user,
+		   const char* section,
+		   const char* name,
                    const char* value)
 {
-    configuration* pconfig = (configuration*)user;
+	HklBinocularsConfig* pconfig = user;
 
-    #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("protocol", "version")) {
-        pconfig->version = atoi(value);
-    } else if (MATCH("user", "name")) {
-        pconfig->name = strdup(value);
-    } else if (MATCH("user", "email")) {
-        pconfig->email = strdup(value);
+#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+    if (MATCH("input", "inputtype")) {
+	    pconfig->input_type = atoi(value);
     } else {
-        return 0;  /* unknown section/name, error */
+	    return 0;  /* unknown section/name, error */
     }
     return 1;
 }
 
 int main_binoculars()
 {
-    configuration config;
+	HklBinocularsConfig config;
 
-    if (ini_parse("../contrib/haskell/data/test/config_sixs_ruche_qcustom2_3.ini", handler, &config) < 0) {
-        printf("Can't load 'binoculars config file'\n");
-        return 1;
-    }
-    printf("Config loaded from 'test.ini': version=%d, name=%s, email=%s\n",
-        config.version, config.name, config.email);
-    return 0;
+	if (ini_parse(INI, handler, &config) < 0) {
+		printf("Can't load 'binoculars config file'\n");
+		return 1;
+	}
+	printf("Config loaded from 'test.ini': inputtype=%d\n",
+	       config.input_type);
+	return 0;
 }
 
 
