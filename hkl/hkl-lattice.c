@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2022, 2023 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022, 2023, 2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -87,10 +87,10 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
 			    GError **err)
 {
 	HklLattice *self = NULL;
-        HklParameter *parameter = NULL;
+	HklParameter *parameter = NULL;
 	double volume;
 
-        g_return_val_if_fail (err == NULL || *err == NULL, NULL);
+	g_return_val_if_fail (err == NULL || *err == NULL, NULL);
 
 	if(!check_lattice_param(a, b, c, alpha, beta, gamma, &volume, err))
 	{
@@ -101,129 +101,123 @@ HklLattice *hkl_lattice_new(double a, double b, double c,
 
 	self = g_new(HklLattice, 1);
 
-        /* a */
-        parameter = hkl_parameter_new("a", "The length of the first lattice vector",
-                                      0, a, a+10,
-                                      TRUE, TRUE,
-                                      &hkl_unit_length_nm,
-                                      &hkl_unit_length_nm, err);
-        if (!parameter) {
-                hkl_assert (err == NULL || *err != NULL);
-                return FALSE;
-        }else{
-                self->a = parameter;
-        }
+	/* a */
+	parameter = hkl_parameter_new("a", "The length of the first lattice vector",
+				      0, a, a+10,
+				      TRUE, TRUE,
+				      &hkl_unit_length_nm,
+				      &hkl_unit_length_nm, err);
+	if (!parameter) {
+		hkl_assert (err == NULL || *err != NULL);
+		goto failed;
+	}else{
+		self->a = parameter;
+	}
 
-        /* b */
+	/* b */
 	parameter = hkl_parameter_new("b", "The length of the second lattice vector",
-                                      0, b, b+10,
-                                      TRUE, TRUE,
-                                      &hkl_unit_length_nm,
-                                      &hkl_unit_length_nm,
-                                      err);
-        if (!parameter) {
-                hkl_assert (err == NULL || *err != NULL);
-                hkl_parameter_free(self->a);
-                return FALSE;
-        }else{
-                self->b = parameter;
-        }
+				      0, b, b+10,
+				      TRUE, TRUE,
+				      &hkl_unit_length_nm,
+				      &hkl_unit_length_nm,
+				      err);
+	if (!parameter) {
+		hkl_assert (err == NULL || *err != NULL);
+		goto free_a;
+	}else{
+		self->b = parameter;
+	}
 
-        /* c */
+	/* c */
 	parameter = hkl_parameter_new("c", "The length of the third lattice vector",
-                                      0, c, c+10,
-                                      TRUE, TRUE,
-                                      &hkl_unit_length_nm,
-                                      &hkl_unit_length_nm,
-                                      err);
-        if (!parameter) {
-                hkl_assert (err == NULL || *err != NULL);
-                hkl_parameter_free(self->b);
-                hkl_parameter_free(self->a);
-                return FALSE;
-        }else{
-                self->c = parameter;
-        }
+				      0, c, c+10,
+				      TRUE, TRUE,
+				      &hkl_unit_length_nm,
+				      &hkl_unit_length_nm,
+				      err);
+	if (!parameter) {
+		hkl_assert (err == NULL || *err != NULL);
+		goto free_b;
+	}else{
+		self->c = parameter;
+	}
 
-        /* alpha */
+	/* alpha */
 	parameter = hkl_parameter_new("alpha",
-                                      "The angle between the second and third lattice vector",
-                                      -M_PI, alpha, M_PI,
-                                      TRUE, TRUE,
-                                      &hkl_unit_angle_rad,
-                                      &hkl_unit_angle_deg,
-                                      err);
-        if (!parameter) {
-                hkl_assert (err == NULL || *err != NULL);
-                hkl_parameter_free(self->c);
-                hkl_parameter_free(self->b);
-                hkl_parameter_free(self->a);
-                return FALSE;
-        }else{
-                self->alpha = parameter;
-        }
+				      "The angle between the second and third lattice vector",
+				      -M_PI, alpha, M_PI,
+				      TRUE, TRUE,
+				      &hkl_unit_angle_rad,
+				      &hkl_unit_angle_deg,
+				      err);
+	if (!parameter) {
+		hkl_assert (err == NULL || *err != NULL);
+		goto free_c;
+	}else{
+		self->alpha = parameter;
+	}
 
-        /* beta */
+	/* beta */
 	parameter = hkl_parameter_new("beta",
-                                      "The angle between the first and third lattice vector",
-                                      -M_PI, beta, M_PI,
-                                      TRUE, TRUE,
-                                      &hkl_unit_angle_rad,
-                                      &hkl_unit_angle_deg,
-                                      err);
-        if (!parameter) {
-                hkl_assert (err == NULL || *err != NULL);
-                hkl_parameter_free(self->alpha);
-                hkl_parameter_free(self->c);
-                hkl_parameter_free(self->b);
-                hkl_parameter_free(self->a);
-                return FALSE;
-        }else{
-                self->beta = parameter;
-        }
+				      "The angle between the first and third lattice vector",
+				      -M_PI, beta, M_PI,
+				      TRUE, TRUE,
+				      &hkl_unit_angle_rad,
+				      &hkl_unit_angle_deg,
+				      err);
+	if (!parameter) {
+		hkl_assert (err == NULL || *err != NULL);
+		goto free_alpha;
+	}else{
+		self->beta = parameter;
+	}
 
-        /* gamma */
+	/* gamma */
 	parameter = hkl_parameter_new("gamma",
-                                      "The angle between the first and second lattice vector",
-                                      -M_PI, gamma, M_PI,
-                                      TRUE, TRUE,
-                                      &hkl_unit_angle_rad,
-                                      &hkl_unit_angle_deg,
-                                      err);
-        if (!parameter) {
-                hkl_assert (err == NULL || *err != NULL);
-                hkl_parameter_free(self->beta);
-                hkl_parameter_free(self->alpha);
-                hkl_parameter_free(self->c);
-                hkl_parameter_free(self->b);
-                hkl_parameter_free(self->a);
-                return FALSE;
-        }else{
-                self->gamma = parameter;
-        }
+				      "The angle between the first and second lattice vector",
+				      -M_PI, gamma, M_PI,
+				      TRUE, TRUE,
+				      &hkl_unit_angle_rad,
+				      &hkl_unit_angle_deg,
+				      err);
+	if (!parameter) {
+		hkl_assert (err == NULL || *err != NULL);
+		goto free_beta;
+	}else{
+		self->gamma = parameter;
+	}
 
-        /* volume */
+	/* volume */
 	parameter = hkl_parameter_new("volume",
-                                      "The volume of the lattice",
-                                      0, volume, a*b*c,
-                                      FALSE, FALSE,
-                                      &hkl_unit_length_nm,
-                                      &hkl_unit_length_nm,
-                                      err);
-        if (!parameter) {
-                hkl_assert (err == NULL || *err != NULL);
-                hkl_parameter_free(self->gamma);
-                hkl_parameter_free(self->beta);
-                hkl_parameter_free(self->alpha);
-                hkl_parameter_free(self->c);
-                hkl_parameter_free(self->b);
-                hkl_parameter_free(self->a);
-                return FALSE;
-        }else{
-                self->volume = parameter;
-        }
+				      "The volume of the lattice",
+				      0, volume, a*b*c,
+				      FALSE, FALSE,
+				      &hkl_unit_length_nm,
+				      &hkl_unit_length_nm,
+				      err);
+	if (!parameter) {
+		hkl_assert (err == NULL || *err != NULL);
+		goto free_gamma;
+	}else{
+		self->volume = parameter;
+	}
 
 	return self;
+
+free_gamma:
+	hkl_parameter_free(self->gamma);
+free_beta:
+	hkl_parameter_free(self->beta);
+free_alpha:
+	hkl_parameter_free(self->alpha);
+free_c:
+	hkl_parameter_free(self->c);
+free_b:
+	hkl_parameter_free(self->b);
+free_a:
+	hkl_parameter_free(self->a);
+failed:
+	return FALSE;
 }
 
 /**
