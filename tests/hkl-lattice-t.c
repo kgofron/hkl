@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2021, 2023 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2021, 2023, 2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -143,6 +143,11 @@ static void set(void)
 				    90*HKL_DEGTORAD, 10*HKL_DEGTORAD, 120*HKL_DEGTORAD,
 				    HKL_UNIT_DEFAULT, NULL),
 	   __func__);
+
+	/* check that the lattice was not changed */
+	CHECK_LATTICE(lattice,
+		      1.54, 1.54, 1.54,
+		      90*HKL_DEGTORAD, 90*HKL_DEGTORAD, 90*HKL_DEGTORAD);
 
 	/* can not set this lattice with GError */
 	error = NULL;
@@ -354,7 +359,7 @@ static void get_1_B(void)
 
 int main(void)
 {
-	plan(141);
+	plan(147);
 
 	new();
 	new_copy();

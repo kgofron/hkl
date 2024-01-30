@@ -477,33 +477,93 @@ int hkl_lattice_set(HklLattice *self,
 {
 	hkl_error (error == NULL || *error == NULL);
 
-	double _a, _b, _c, _alpha, _beta, _gamma;
-	double _volume;
+	double new_a, previous_a;
+	double new_b, previous_b;
+	double new_c, previous_c;
+	double new_alpha, previous_alpha;
+	double new_beta, previous_beta;
+	double new_gamma, previous_gamma;
+	double new_volume;
 
-	_a = convert_to_default(self->a, a, unit_type);
-	_b = convert_to_default(self->b, b, unit_type);
-	_c = convert_to_default(self->c, c, unit_type);
-	_alpha = convert_to_default(self->alpha, alpha, unit_type);
-	_beta = convert_to_default(self->beta, beta, unit_type);
-	_gamma = convert_to_default(self->gamma, gamma, unit_type);
+	new_a = convert_to_default(self->a, a, unit_type);
+	new_b = convert_to_default(self->b, b, unit_type);
+	new_c = convert_to_default(self->c, c, unit_type);
+	new_alpha = convert_to_default(self->alpha, alpha, unit_type);
+	new_beta = convert_to_default(self->beta, beta, unit_type);
+	new_gamma = convert_to_default(self->gamma, gamma, unit_type);
 
 	/* need to do the conversion before the check */
-	if(!check_lattice_param(_a, _b, _c, _alpha, _beta, _gamma, &_volume, error)){
+	if(!check_lattice_param(new_a, new_b, new_c, new_alpha, new_beta, new_gamma, &new_volume, error)){
 		hkl_assert (error == NULL || *error != NULL);
 		return FALSE;
 	}
 	hkl_assert (error == NULL || *error == NULL);
 
-	IGNORE(hkl_parameter_value_set(self->a, _a, HKL_UNIT_DEFAULT, NULL));
-	IGNORE(hkl_parameter_value_set(self->b, _b, HKL_UNIT_DEFAULT, NULL));
-	IGNORE(hkl_parameter_value_set(self->c, _c, HKL_UNIT_DEFAULT, NULL));
-	IGNORE(hkl_parameter_value_set(self->alpha, _alpha, HKL_UNIT_DEFAULT, NULL));
-	IGNORE(hkl_parameter_value_set(self->beta, _beta, HKL_UNIT_DEFAULT, NULL));
-	IGNORE(hkl_parameter_value_set(self->gamma, _gamma, HKL_UNIT_DEFAULT, NULL));
+	/* check a */
+	if(!hkl_parameter_value_set(self->a, new_a, HKL_UNIT_DEFAULT, NULL)){
+		hkl_assert (error == NULL || *error != NULL);
+		goto failed;
+	}
+	hkl_assert (error == NULL || *error == NULL);
 
-	IGNORE(hkl_parameter_value_set(self->volume, _volume, HKL_UNIT_DEFAULT, NULL));
+	if(!hkl_parameter_value_set(self->b, new_b, HKL_UNIT_DEFAULT, NULL)){
+		hkl_assert (error == NULL || *error != NULL);
+		goto restore_a;
+	}
+	hkl_assert (error == NULL || *error == NULL);
+
+	if(!hkl_parameter_value_set(self->c, new_c, HKL_UNIT_DEFAULT, NULL)){
+		hkl_assert (error == NULL || *error != NULL);
+		goto restore_b;
+	}
+	hkl_assert (error == NULL || *error == NULL);
+
+	if(!hkl_parameter_value_set(self->alpha, new_alpha, HKL_UNIT_DEFAULT, NULL)){
+		hkl_assert (error == NULL || *error != NULL);
+		goto restore_c;
+	}
+	hkl_assert (error == NULL || *error == NULL);
+
+	if(!hkl_parameter_value_set(self->beta, new_beta, HKL_UNIT_DEFAULT, NULL)){
+		hkl_assert (error == NULL || *error != NULL);
+		goto restore_alpha;
+	}
+	hkl_assert (error == NULL || *error == NULL);
+
+	if(!hkl_parameter_value_set(self->gamma, new_gamma, HKL_UNIT_DEFAULT, NULL)){
+		hkl_assert (error == NULL || *error != NULL);
+		goto restore_beta;
+	}
+	hkl_assert (error == NULL || *error == NULL);
+
+	if(!hkl_parameter_value_set(self->volume, new_volume, HKL_UNIT_DEFAULT, NULL)){
+		hkl_assert (error == NULL || *error != NULL);
+		goto restore_gamma;
+	}
+	hkl_assert (error == NULL || *error == NULL);
 
 	return TRUE;
+
+restore_gamma:
+	IGNORE(hkl_parameter_value_set(self->gamma, previous_gamma,
+				       HKL_UNIT_DEFAULT, NULL));
+restore_beta:
+	IGNORE(hkl_parameter_value_set(self->beta, previous_beta,
+				       HKL_UNIT_DEFAULT, NULL));
+restore_alpha:
+	IGNORE(hkl_parameter_value_set(self->alpha, previous_alpha,
+				       HKL_UNIT_DEFAULT, NULL));
+restore_c:
+	IGNORE(hkl_parameter_value_set(self->c, previous_c,
+				       HKL_UNIT_DEFAULT, NULL));
+restore_b:
+	IGNORE(hkl_parameter_value_set(self->b, previous_b,
+				       HKL_UNIT_DEFAULT, NULL));
+restore_a:
+	IGNORE(hkl_parameter_value_set(self->a, previous_a,
+				       HKL_UNIT_DEFAULT, NULL));
+failed:
+	return FALSE;
 }
 
 /**
