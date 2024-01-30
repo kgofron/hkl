@@ -8,13 +8,15 @@ AM_CFLAGS = \
 	-fPIC -DPIC \
 	$(CGLM_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(HDF5_CFLAGS)
+	$(HDF5_CFLAGS) \
+	$(INIH_CFLAGS)
 #	-ftrack-macro-expansion=0
 
 AM_LDFLAGS = -version-info 0:0:0 \
 	$(CGLM_LIBS) \
 	$(GLIB_LIBS) \
-	$(HDF5_LIBS)
+	$(HDF5_LIBS) \
+	$(INIH_LIBS)
 
 lib_LIBRARIES = libhkl-binoculars.a
 libhkl_binoculars_a_SOURCES = \

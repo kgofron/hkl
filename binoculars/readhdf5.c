@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2023 Synchrotron SOLEIL
+ * Copyright (C) 2003-2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -21,7 +21,10 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
+
 #include <hdf5.h>
+#include <ini.h>
 
 /* #define FILENAME "/home/picca/test-data/translation/Pt2Ag20S2_75_a2scan_deltaeiz_00912.nxs" */
 #define FILENAME "/nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_andreazza/Pt2Ag20S2_75/Pt2Ag20S2_75_a2scan_deltaeiz_00912.nxs"
@@ -105,6 +108,45 @@ release_arr:
         free(arr);
 exit:
         return 0;
+}
+
+
+typedef struct
+{
+    int version;
+    const char* name;
+    const char* email;
+} configuration;
+
+static int handler(void* user, const char* section, const char* name,
+                   const char* value)
+{
+    configuration* pconfig = (configuration*)user;
+
+    #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+    if (MATCH("protocol", "version")) {
+        pconfig->version = atoi(value);
+    } else if (MATCH("user", "name")) {
+        pconfig->name = strdup(value);
+    } else if (MATCH("user", "email")) {
+        pconfig->email = strdup(value);
+    } else {
+        return 0;  /* unknown section/name, error */
+    }
+    return 1;
+}
+
+int main_binoculars()
+{
+    configuration config;
+
+    if (ini_parse("../contrib/haskell/data/test/config_sixs_ruche_qcustom2_3.ini", handler, &config) < 0) {
+        printf("Can't load 'binoculars config file'\n");
+        return 1;
+    }
+    printf("Config loaded from 'test.ini': version=%d, name=%s, email=%s\n",
+        config.version, config.name, config.email);
+    return 0;
 }
 
 
