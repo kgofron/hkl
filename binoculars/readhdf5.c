@@ -26,7 +26,11 @@
 #include <hdf5.h>
 #include <ini.h>
 
+#include "datatype99.h"
 #include "hkl-binoculars.h"
+
+#define SUCCESS 0
+#define FAILED -1
 
 /* #define FILENAME "/home/picca/test-data/translation/Pt2Ag20S2_75_a2scan_deltaeiz_00912.nxs" */
 #define FILENAME "/nfs/ruche-sixs/sixs-soleil/com-sixs/2021/Run3/20201559_andreazza/Pt2Ag20S2_75/Pt2Ag20S2_75_a2scan_deltaeiz_00912.nxs"
@@ -72,7 +76,7 @@ typedef enum _HklBinocularsInputTypeDeprecatedEnum
 
 typedef enum _HklBinocularsInputTypeEnum
 {
-	HKL_BINOCULARS_INPUT_TYPE_CRISTAL_K6C,
+	HKL_BINOCULARS_INPUT_TYPE_CRISTAL_K6C = 0,
 	HKL_BINOCULARS_INPUT_TYPE_MARS_FLYSCAN,
 	HKL_BINOCULARS_INPUT_TYPE_MARS_SBS,
 	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH,
@@ -91,45 +95,60 @@ typedef enum _HklBinocularsInputTypeEnum
         HKL_BINOCULARS_INPUT_TYPE_NUM,
 } HklBinocularsInputTypeEnum;
 
+static inline const char* input_type_as_string(HklBinocularsInputTypeEnum type)
+{
+	const char *value = "sixs:flyuhv"; /* the default value*/
 
-/* instance Arbitrary InputType where */
-/*   arbitrary = elements ([minBound .. maxBound] :: [InputType]) */
+	switch(type){
+	case HKL_BINOCULARS_INPUT_TYPE_CRISTAL_K6C: { value = "cristal:k6c"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_MARS_FLYSCAN: { value = "mars:flyscan"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_MARS_SBS: { value = "mars:sbs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH: { value = "sixs:flymedh"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH_GISAXS: { value = "sixs:flymedhgisaxs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV: { value = "sixs:flymedv"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_GISAXS: { value = "sixs:flymedvgisaxs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV: { value = "sixs:flyuhv"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS: { value = "sixs:flyuhvgisaxs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH: { value = "sixs:sbsmedh"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH_GISAXS: { value = "sixs:sbsmedhgisaxs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV: { value = "sixs:sbsmedv"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV_GISAXS: { value = "sixs:sbsmedvgisaxs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV: { value = "sixs:sbsuhv"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV_GISAXS: { value = "sixs:sbsuhvgisaxs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_NUM: /* do nothing */
+	}
+	return value;
+}
 
-/* instance FieldEmitter InputType where */
-/*   fieldEmitter CristalK6C        = "cristal:k6c" */
-/*   fieldEmitter MarsFlyscan       = "mars:flyscan" */
-/*   fieldEmitter MarsSbs           = "mars:sbs" */
-/*   fieldEmitter SixsFlyMedH       = "sixs:flymedh" */
-/*   fieldEmitter SixsFlyMedHGisaxs = "sixs:flymedhgisaxs" */
-/*   fieldEmitter SixsFlyMedV       = "sixs:flymedv" */
-/*   fieldEmitter SixsFlyMedVGisaxs = "sixs:flymedvgisaxs" */
-/*   fieldEmitter SixsFlyUhv        = "sixs:flyuhv" */
-/*   fieldEmitter SixsFlyUhvGisaxs  = "sixs:flyuhvgisaxs" */
-/*   fieldEmitter SixsSbsMedH       = "sixs:sbsmedh" */
-/*   fieldEmitter SixsSbsMedHGisaxs = "sixs:sbsmedhgisaxs" */
-/*   fieldEmitter SixsSbsMedV       = "sixs:sbsmedv" */
-/*   fieldEmitter SixsSbsMedVGisaxs = "sixs:sbsmedvgisaxs" */
-/*   fieldEmitter SixsSbsUhv        = "sixs:sbsuhv" */
-/*   fieldEmitter SixsSbsUhvGisaxs  = "sixs:sbsuhvgisaxs" */
+static inline int input_type_from_string(const char *value,
+					 HklBinocularsInputTypeEnum *type)
+{
+	HklBinocularsInputTypeEnum i;
+        char *err_msg;
+        size_t err_msg_size;
+	FILE *stream;
 
-/* instance FieldParsable InputType where */
-/*   fieldParser = go . strip . uncomment . toLower =<< takeText */
-/*     where */
-/*       err t =  "Unsupported " */
-/*                ++ show (typeRep (Proxy :: Proxy InputType)) */
-/*                ++ " :" ++ unpack t */
-/*                ++ " Supported ones are: " */
-/*                ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: InputType]) */
+	for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
+		if (0 == strcmp(value, input_type_as_string(i))){
+			*type = i;
+			return SUCCESS;
+		}
+	}
 
-/*       go :: Text -> Parser InputType */
-/*       go "sixs:flyscanuhv" = pure SixsFlyUhv */
-/*       go "sixs:flyscanuhv2" = pure SixsFlyUhv */
-/*       go "sixs:flyscanuhvtest" = pure SixsFlyUhv */
-/*       go "sixs:sbsmedhfixdetector" = pure SixsSbsMedHGisaxs */
-/*       go "sixs:sbsmedvfixdetector" = pure SixsSbsMedVGisaxs */
-/*       go t = case parseEnum (err t) t of */
-/*         Right p   -> pure p */
-/*         Left err' -> fail err' */
+        stream = open_memstream(&err_msg, &err_msg_size);
+        if (NULL == stream) goto fail;
+
+	fprintf(stream, "Unsupported input_type: %s : Supported one are:", value);
+	for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
+		fprintf(stream, " \"%s\"", input_type_as_string(i));
+	}
+	fprintf(stream, "\n");
+	fclose(stream);
+
+	fprintf(stdout, "%s", err_msg);
+fail:
+	return FAILED;
+}
 
 int main_1()
 {
@@ -219,9 +238,11 @@ static int handler(void* user,
 {
 	HklBinocularsConfig* pconfig = user;
 
+	fprintf(stdout, "s: '%s', n: '%s', v: '%s'\n", section, name, value);
+
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("input", "inputtype")) {
-	    pconfig->input_type = atoi(value);
+    if (MATCH("input", "type")) {
+	    return !input_type_from_string(value, &pconfig->input_type);
     } else {
 	    return 0;  /* unknown section/name, error */
     }
@@ -234,15 +255,17 @@ int main_binoculars()
 
 	if (ini_parse(INI, handler, &config) < 0) {
 		printf("Can't load 'binoculars config file'\n");
-		return 1;
+		return FAILED;
 	}
-	printf("Config loaded from 'test.ini': inputtype=%d\n",
-	       config.input_type);
-	return 0;
+	fprintf(stdout,
+		"Config loaded from 'test.ini': inputtype=%s\n",
+		input_type_as_string(config.input_type));
+
+	return SUCCESS;
 }
 
 
-int main()
+int main_read()
 {
         size_t i;
 
@@ -250,4 +273,11 @@ int main()
                 main_1();
         }
         fprintf(stdout, "octets: %ld", DIM0 * DIM1 * DIM2 * sizeof(uint32_t));
+
+	return SUCCESS;
+}
+
+int main()
+{
+	return main_binoculars();
 }
