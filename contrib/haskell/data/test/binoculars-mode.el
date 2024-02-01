@@ -1,4 +1,4 @@
-;;; binoculars-mode --- Mode dedicated to binoculars-ng configuration  -*- lexical-binding: t; -*-
+;;; binoculars-mode --- Mode dedicated to binoculars configuration  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024  Synchrotron-soleil.
 

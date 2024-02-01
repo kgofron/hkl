@@ -27,6 +27,7 @@
 #include <ini.h>
 
 #include "datatype99.h"
+#include "hkl/ccan/array_size/array_size.h"
 #include "hkl-binoculars.h"
 
 #define SUCCESS 0
@@ -49,30 +50,6 @@ typedef enum _HklBinocularsInputTypeDeprecatedEnum
 	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLYSCAN_UHV_UFXC,
 	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_NUM,
 } HklBinocularsInputTypeDeprecatedEnum;
-
-/* instance FieldEmitter InputTypeDeprecated where */
-/*   fieldEmitter SixsFlyMedVEiger          = "sixs:flymedveiger" */
-/*   fieldEmitter SixsFlyMedVS70            = "sixs:flymedvs70" */
-/*   fieldEmitter SixsFlyScanUhvGisaxsEiger = "sixs:gisaxuhveiger" */
-/*   fieldEmitter SixsFlyScanUhvUfxc        = "sixs:flyscanuhvufxc" */
-
-/* instance FieldParsable InputTypeDeprecated where */
-/*   fieldParser = go . strip . uncomment . toLower =<< takeText */
-/*     where */
-/*       err t =  "Unsupported " */
-/*                ++ show (typeRep (Proxy :: Proxy InputTypeDeprecated)) */
-/*                ++ " :" ++ unpack t */
-/*                ++ " Supported ones are: " */
-/*                ++ unpack (unwords $ Prelude.map fieldEmitter [minBound..maxBound :: InputTypeDeprecated]) */
-
-/*       go :: Text -> Parser InputTypeDeprecated */
-/*       go t = case parseEnum (err t) t of */
-/*         Right p   -> pure p */
-/*         Left err' -> fail err' */
-
-/* instance HasFieldValue InputTypeDeprecated where */
-/*   fieldvalue = parsable */
-
 
 typedef enum _HklBinocularsInputTypeEnum
 {
@@ -138,32 +115,34 @@ static inline int input_type_from_string(const char *value,
         size_t err_msg_size;
 	FILE *stream;
 
-        /* check first deprecated input type names */
-        if(true == strstarts(value, "sixs:flymedveiger")){
-                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV;
-                return SUCCESS;
-        } else if (true == strstarts(value, "sixs:flymedvs70")) {
-                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV;
-                return SUCCESS;
-        } else if (true == strstarts(value, "sixs:gisaxuhveiger")) {
-                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS;
-                return SUCCESS;
-        } else if (true == strstarts(value, "sixs:flyscanuhvufxc")) {
-                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV;
-                return SUCCESS;
-        } else if (true == strstarts(value, "sixs:flyscanuhv2")) {
-                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV;
-                return SUCCESS;
-        } else {
-                /* now check all supported input type */
-                for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
-                        if (true == strstarts(value, input_type_as_string(i))){
-                                *type = i;
-                                return SUCCESS;
-                        }
+        struct {
+                const char* name;
+                HklBinocularsInputTypeEnum type;
+        } deprecated[] = {
+                {"sixs:flymedveiger", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV},
+                {"sixs:flymedvs70", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV},
+                {"sixs:gisaxuhveiger", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS},
+                {"sixs:flyscanuhvufxc", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV},
+                {"sixs:flyscanuhv2", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV},
+        };
+
+        /* check deprecated input types */
+        for(i=0; i<ARRAY_SIZE(deprecated); ++i){
+                if (true == strstarts(value, deprecated[i].name)){
+                        *type = deprecated[i].type;
+                        return SUCCESS;
                 }
         }
 
+        /* now check all supported input type */
+        for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
+                if (true == strstarts(value, input_type_as_string(i))){
+                        *type = i;
+                        return SUCCESS;
+                }
+        }
+
+        /* no result -> error */
         stream = open_memstream(&err_msg, &err_msg_size);
         if (NULL == stream) goto fail;
 
