@@ -120,6 +120,16 @@ static inline const char* input_type_as_string(HklBinocularsInputTypeEnum type)
 	return value;
 }
 
+/**
+* strstarts - does @str start with @prefix?
+* @str: string to examine
+* @prefix: prefix to look for.
+*/
+static bool strstarts(const char *str, const char *prefix)
+{
+        return strncmp(str, prefix, strlen(prefix)) == 0;
+}
+
 static inline int input_type_from_string(const char *value,
 					 HklBinocularsInputTypeEnum *type)
 {
@@ -128,17 +138,36 @@ static inline int input_type_from_string(const char *value,
         size_t err_msg_size;
 	FILE *stream;
 
-	for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
-		if (0 == strcmp(value, input_type_as_string(i))){
-			*type = i;
-			return SUCCESS;
-		}
-	}
+        /* check first deprecated input type names */
+        if(true == strstarts(value, "sixs:flymedveiger")){
+                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV;
+                return SUCCESS;
+        } else if (true == strstarts(value, "sixs:flymedvs70")) {
+                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV;
+                return SUCCESS;
+        } else if (true == strstarts(value, "sixs:gisaxuhveiger")) {
+                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS;
+                return SUCCESS;
+        } else if (true == strstarts(value, "sixs:flyscanuhvufxc")) {
+                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV;
+                return SUCCESS;
+        } else if (true == strstarts(value, "sixs:flyscanuhv2")) {
+                *type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV;
+                return SUCCESS;
+        } else {
+                /* now check all supported input type */
+                for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
+                        if (true == strstarts(value, input_type_as_string(i))){
+                                *type = i;
+                                return SUCCESS;
+                        }
+                }
+        }
 
         stream = open_memstream(&err_msg, &err_msg_size);
         if (NULL == stream) goto fail;
 
-	fprintf(stream, "Unsupported input_type: %s : Supported one are:", value);
+	fprintf(stream, "Unsupported input.type: %s : Supported one are:", value);
 	for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
 		fprintf(stream, " \"%s\"", input_type_as_string(i));
 	}
