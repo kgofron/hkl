@@ -63,7 +63,11 @@ typedef enum _HklBinocularsInputTypeEnum
 	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_S70,
 	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS_EIGER,
 	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_UFXC,
-	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_2,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLYSCAN_UHV,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLYSCAN_UHV_2,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLYSCAN_UHV_TEST,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH_FIX_DETECTOR,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV_FIX_DETECTOR,
 	/* Add new input type here */
 	HKL_BINOCULARS_INPUT_TYPE_NUM,
 } HklBinocularsInputTypeEnum;
@@ -90,7 +94,11 @@ static inline const char* input_type_as_string(HklBinocularsInputTypeEnum type)
 	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_S70: return "sixs:flymedvs70";
 	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS_EIGER: return "sixs:gisaxuhveiger";
 	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_UFXC: return "sixs:flyscanuhvufxc";
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_2: return "sixs:flyscanuhv2";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLYSCAN_UHV: return "sixs:flyscanuhv";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLYSCAN_UHV_2: return "sixs:flyscanuhv2";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLYSCAN_UHV_TEST: return "sixs:flyscanuhvtest";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH_FIX_DETECTOR: return "sixs:sbsmedhfixdetector";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV_FIX_DETECTOR: return "sixs:sbsmedvfixdetector";
 	case HKL_BINOCULARS_INPUT_TYPE_NUM: /* do nothing */
 	}
 	return "sixs:flyuhv";
@@ -213,17 +221,17 @@ exit:
 }
 
 
-typedef struct _HklBinocularsConfig
+typedef struct _HklBinocularsPreConfig
 {
 	HklBinocularsInputTypeEnum input_type;
-} HklBinocularsConfig;
+} HklBinocularsPreConfig;
 
-static int handler(void* user,
+static int handler_preconfig(void* user,
 		   const char* section,
 		   const char* name,
 		   const char* value)
 {
-	HklBinocularsConfig* pconfig = user;
+	HklBinocularsPreConfig* pconfig = user;
 
 	fprintf(stdout, "s: '%s', n: '%s', v: '%s'\n", section, name, value);
 
@@ -238,12 +246,13 @@ static int handler(void* user,
 
 int main_binoculars()
 {
-	HklBinocularsConfig config;
+	HklBinocularsPreConfig config;
 
-	if (ini_parse(INI, handler, &config) < 0) {
-		printf("Can't load 'binoculars config file'\n");
+	if (ini_parse(INI, handler_preconfig, &config) < 0) {
+		printf("Can't load 'binoculars pre-config file'\n");
 		return FAILED;
 	}
+
 	fprintf(stdout,
 		"Config loaded from 'test.ini': inputtype=%s\n",
 		input_type_as_string(config.input_type));
