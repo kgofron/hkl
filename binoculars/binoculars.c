@@ -244,6 +244,72 @@ static int handler_preconfig(void* user,
     return 1;
 }
 
+/**********/
+/* Config */
+/**********/
+
+typedef int ncores_t;
+typedef const char *destination_tmpl_t;
+typedef const char *nexus_dir_t;
+typedef const char *input_tmpl_t;
+
+datatype(
+	InputRange,
+	(InputRange_Singleton, int),
+	(InputRange_FromTo, int, int)
+	);
+
+typedef InputRange* ConfigRange;
+
+typedef struct _central_pixel_t
+{
+	int x;
+	int y;
+} central_pixel_t;
+
+typedef double meter_t;
+typedef double degree_t;
+typedef double *attenuation_coefficient_t;
+typedef double *attenuation_max_t;
+typedef int *attenuation_shift_t;
+typedef const char *mask_location_t;
+
+typedef struct _HklBinocularsConfigCommon
+{
+	ncores_t ncores;
+	destination_tmpl_t destination_tmpl;
+	bool overwrite;
+	HklBinocularsInputTypeEnum input_type;
+	nexus_dir_t nexus_dir;
+	input_tmpl_t input_tmpl;
+	ConfigRange config_range;
+	HklBinocularsDetectorEnum detector;
+	central_pixel_t central_pixel;
+	meter_t sdd;
+	degree_t detrot;
+	attenuation_coefficient_t attenuation_coefficient;
+	attenuation_max_t attenuation_max;
+	attenuation_shift_t attenuation_shift;
+	mask_location_t mask_location;
+	double *wavelength;
+	double *image_sum_max;
+	int *skip_first_points;
+	int *skip_last_points;
+	bool polarization_correction;
+} HklBinocularsConfigCommon;
+
+#define DEFAULT_BINOCULARS_CONFIG_COMMON \
+	.ncores = 4,			 \
+		.destination_tmpl = "{projection}_{first}-{last}_{limits}.h5", \
+		.overwrite = false,					\
+		.input_type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV, \
+		.config_range = InputRange_Singleton(1),	      \
+		.detector = HKL_BINOCULARS_DETECTOR_DEFAULT,	      \
+		.central_pixel = {0, 0},			      \
+		.sdd = 1.0,					      \
+		.detrot = 0.0,					      \
+		.polarization_correction = false,
+
 int main_binoculars()
 {
 	HklBinocularsPreConfig config;
