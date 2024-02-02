@@ -741,10 +741,29 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                    (DataSourcePath'Geometry
                      (Geometry'Factory Mars)
                      (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
-                     [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
-                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
-                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
+                     [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/omega"
+                                                                   `H5Or`
+                                                                   datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.1_#2/raw_value"))
+
+                       `DataSourcePath'Double'Or`
+                       DataSourcePath'Double'Const 0
+                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/chi"
+                                                                   `H5Or`
+                                                                   datasetp "MARS/d03-1-cx2__ex__gonio-mt_rs_#2/raw_value"))
+                       `DataSourcePath'Double'Or`
+                       DataSourcePath'Double'Const 0
+                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/phi"
+                                                                   `H5Or`
+                                                                   datasetpattr ("long_name", "d03-1-cx2/ex/gonio-mt_rz/position")
+                                                                   `H5Or`
+                                                                   datasetp "MARS/d03-1-cx2__ex__gonio-mt_rz_#2/raw_value"))
+                       `DataSourcePath'Double'Or`
+                       DataSourcePath'Double'Const 0
+                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/tth"
+                                                                   `H5Or`
+                                                                   datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.2_#2/raw_value"))
+                       `DataSourcePath'Double'Or`
+                       DataSourcePath'Double'Const 0
                      ])
                    (DataSourcePath'Image
                     (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
