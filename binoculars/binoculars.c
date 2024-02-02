@@ -236,17 +236,17 @@ static int handler_preconfig(void* user,
 	fprintf(stdout, "s: '%s', n: '%s', v: '%s'\n", section, name, value);
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("input", "type")) {
-	    return !input_type_from_string(value, &pconfig->input_type);
-    } else {
-	    return 0;  /* unknown section/name, error */
-    }
-    return 1;
+	if (MATCH("input", "type")) {
+		return !input_type_from_string(value, &pconfig->input_type);
+	} else {
+		return 0;  /* unknown section/name, error */
+	}
+	return 1;
 }
 
-/**********/
-/* Config */
-/**********/
+/*****************/
+/* Config Common */
+/*****************/
 
 typedef int ncores_t;
 typedef const char *destination_tmpl_t;
@@ -266,6 +266,7 @@ typedef struct _central_pixel_t
 	int x;
 	int y;
 } central_pixel_t;
+
 
 typedef double meter_t;
 typedef double degree_t;
@@ -310,18 +311,158 @@ typedef struct _HklBinocularsConfigCommon
 		.detrot = 0.0,					      \
 		.polarization_correction = false,
 
+static int handler_config_common(void* user,
+				 const char* section,
+				 const char* name,
+				 const char* value)
+{
+	HklBinocularsConfigCommon* config = user;
+
+	fprintf(stdout, "s: '%s', n: '%s', v: '%s'\n", section, name, value);
+
+#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+	if (MATCH("input", "detector")) {
+		/* TODO */
+	} else if (MATCH("dispatcher", "ncores")){
+		/* TODO */
+	} else if (MATCH("dispatcher", "destination")){
+		/* TODO */
+	} else if (MATCH("dispatcher", "overwrite")){
+		/* TODO */
+	} else if (MATCH("input", "nexusdir")){
+		/* TODO */
+	} else if (MATCH("input", "inputtmpl")){
+		/* TODO */
+	} else if (MATCH("input", "inputrange")){
+		/* TODO */
+	} else if (MATCH("input", "centralpixel")){
+		/* TODO */
+	} else if (MATCH("input", "sdd")){
+		/* TODO */
+	} else if (MATCH("input", "detrot")){
+		/* TODO */
+	} else if (MATCH("input", "attenuation_coefficient")){
+		/* TODO */
+	} else if (MATCH("input", "attenuation_max")){
+		/* TODO */
+	} else if (MATCH("input", "attenuation_shift")){
+		/* TODO */
+	} else if (MATCH("input", "maskmatrix")){
+		/* TODO */
+	} else if (MATCH("input", "wavelength")){
+		/* TODO */
+	} else if (MATCH("input", "image_sum_max")){
+		/* TODO */
+	} else if (MATCH("input", "skip_first_points")){
+		/* TODO */
+	} else if (MATCH("input", "skip_last_points")){
+		/* TODO */
+	} else if (MATCH("input", "polarization_correction")){
+		/* TODO */
+	} else {
+		return 0;  /* unknown section/name, error */
+	}
+	return 1;
+
+/* parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> Capabilities -> Either String BinocularsConfig'Common */
+/* parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax) */
+/*   = do */
+/*   let minputtypedeprecated = eitherF (const Nothing) (parse' cfg "input" "type") id */
+/*   inputtype <- case minputtypedeprecated of */
+/*                 Nothing -> parseFDef cfg "input" "type" (binocularsConfig'Common'InputType default'BinocularsConfig'Common) */
+/*                 Just deprecated -> Right $ case deprecated of */
+/*                                             SixsFlyMedVEiger          -> SixsFlyMedV */
+/*                                             SixsFlyMedVS70            -> SixsFlyMedV */
+/*                                             SixsFlyScanUhvGisaxsEiger -> SixsFlyUhvGisaxs */
+/*                                             SixsFlyScanUhvUfxc        -> SixsFlyUhv */
+/*   detector <- parseFDef cfg "input" "detector" (case minputtypedeprecated of */
+/*                                                  Nothing -> case inputtype of */
+/*                                                              CristalK6C -> mkDetector HklBinocularsDetectorEnum'XpadFlatCorrected */
+/*                                                              MarsFlyscan -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad */
+/*                                                              MarsSbs -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad */
+/*                                                              SixsFlyMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsFlyMedHGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsFlyMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsFlyMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsFlyUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsFlyUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsSbsMedH -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsSbsMedHGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsSbsMedV -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsSbsMedVGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsSbsUhv -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                              SixsSbsUhvGisaxs -> binocularsConfig'Common'Detector default'BinocularsConfig'Common */
+/*                                                  Just deprecated -> case deprecated of */
+/*                                                                      SixsFlyMedVEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M */
+/*                                                                      SixsFlyMedVS70 -> mkDetector HklBinocularsDetectorEnum'ImxpadS70 */
+/*                                                                      SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M */
+/*                                                                      SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc */
+/*                                               ) */
+
+/*   BinocularsConfig'Common */
+/*     <$> eitherF error (parse' cfg "dispatcher" "ncores") */
+/*     (\mb -> do */
+/*         let ns = case mb of */
+/*                    Nothing -> [ncapmax, ncoresmax - 1] */
+/*                    Just b  -> [b, ncapmax, ncoresmax -1] */
+/*         pure $ NCores (minimum ns)) */
+/*     <*> parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination default'BinocularsConfig'Common) */
+/*     <*> parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite default'BinocularsConfig'Common) */
+/*     <*> pure inputtype */
+/*     <*> parseMb cfg "input" "nexusdir" */
+/*     <*> parseMb cfg "input" "inputtmpl" */
+/*     <*> eitherF error (parse' cfg "input" "inputrange") */
+/*     (\mb -> do */
+/*         case mr <|> mb of */
+/*           Nothing -> error "please provide an input range either in the config file with the \"inputrange\" key under the \"input\" section, or on the command line" */
+/*           Just r -> pure r) */
+/*     <*> pure detector */
+/*     <*> eitherF error (parse' cfg "input" "centralpixel") */
+/*     (\mc -> do */
+/*         case mc of */
+/*           Nothing -> pure (binocularsConfig'Common'Centralpixel default'BinocularsConfig'Common) */
+/*           Just c -> if c `inDetector` detector */
+/*                    then pure c */
+/*                    else error $ "The central pixel " <> show c <> " is not compatible with the detector") */
+/*     <*> parseFDef cfg "input" "sdd" (binocularsConfig'Common'Sdd default'BinocularsConfig'Common) */
+/*     <*> parseFDef cfg "input" "detrot" (binocularsConfig'Common'Detrot default'BinocularsConfig'Common) */
+/*     <*> parseMb cfg "input" "attenuation_coefficient" */
+/*     <*> parseMb cfg "input" "attenuation_max" */
+/*     <*> parseMb cfg "input" "attenuation_shift" */
+/*     <*> parseMb cfg "input" "maskmatrix" */
+/*     <*> parseMb cfg "input" "wavelength" */
+/*     <*> parseMb cfg "input" "image_sum_max" */
+/*     <*> parseMb cfg "input" "skip_first_points" */
+/*     <*> parseMb cfg "input" "skip_last_points" */
+/*     <*> parseFDef cfg "input" "polarization_correction" (binocularsConfig'Common'PolarizationCorrection default'BinocularsConfig'Common) */
+
+}
+
 int main_binoculars()
 {
-	HklBinocularsPreConfig config;
+	HklBinocularsPreConfig pre_config;
+	HklBinocularsConfigCommon *config_common;
 
-	if (ini_parse(INI, handler_preconfig, &config) < 0) {
+	/* first pass */
+	if (ini_parse(INI, handler_preconfig, &pre_config) < 0) {
 		printf("Can't load 'binoculars pre-config file'\n");
+		return FAILED;
+	}
+
+	/* second pass */
+	config_common = g_new0(HklBinocularsConfigCommon, 1);
+	/* TODO first add the default values, then surcharge with the
+	 * values from the file. beware, some value should not be
+	 * replace by with deprecated input_type whcih also fix the
+	 * detector */
+	if(ini_parse(INI, handler_config_common, &config_common) < 0) {
+		printf("Can not load binoculars configuration file\n");
 		return FAILED;
 	}
 
 	fprintf(stdout,
 		"Config loaded from 'test.ini': inputtype=%s\n",
-		input_type_as_string(config.input_type));
+		input_type_as_string(pre_config.input_type));
 
 	return SUCCESS;
 }
