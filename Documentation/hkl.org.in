@@ -1301,3 +1301,10 @@ And also available via the Python binding.
 
 ** packaging
 *** TODO add a .spec file for rpm generation.
+** TODO binoculars-ng
+*** TODO remove usage of repa.
+This package is no more provided by Debian. Try to find a replacement
+for the Shape.
+*** TODO [mars] Exclude data based on the actuator position.
+For exemple remove all data's where phi > 268 and phi < 272 and phi > 88 phi < 92
+=/nfs/ruche/mars-soleil/com-mars/2024_Run1/20232102/binoculars/config_qxqyqz.ini= for scan 127-135.
