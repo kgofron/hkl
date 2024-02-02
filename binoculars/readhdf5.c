@@ -42,15 +42,6 @@
 #define DIM1 1065
 #define DIM2 1030
 
-typedef enum _HklBinocularsInputTypeDeprecatedEnum
-{
-	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLY_MEDV_EIGER,
-	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLY_MEDV_S70,
-	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLYSCAN_UHV_GISAXS_EIGER,
-	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_SIXS_FLYSCAN_UHV_UFXC,
-	HKL_BINOCULARS_INPUT_TYPE_DEPRECATED_NUM,
-} HklBinocularsInputTypeDeprecatedEnum;
-
 typedef enum _HklBinocularsInputTypeEnum
 {
 	HKL_BINOCULARS_INPUT_TYPE_CRISTAL_K6C = 0,
@@ -68,33 +59,41 @@ typedef enum _HklBinocularsInputTypeEnum
 	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV_GISAXS,
 	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV,
 	HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV_GISAXS,
-        /* Add new your detectors here */
-        HKL_BINOCULARS_INPUT_TYPE_NUM,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_EIGER,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_S70,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS_EIGER,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_UFXC,
+	HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_2,
+	/* Add new input type here */
+	HKL_BINOCULARS_INPUT_TYPE_NUM,
 } HklBinocularsInputTypeEnum;
 
 static inline const char* input_type_as_string(HklBinocularsInputTypeEnum type)
 {
-	const char *value = "sixs:flyuhv"; /* the default value*/
-
 	switch(type){
-	case HKL_BINOCULARS_INPUT_TYPE_CRISTAL_K6C: { value = "cristal:k6c"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_MARS_FLYSCAN: { value = "mars:flyscan"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_MARS_SBS: { value = "mars:sbs"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH: { value = "sixs:flymedh"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH_GISAXS: { value = "sixs:flymedhgisaxs"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV: { value = "sixs:flymedv"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_GISAXS: { value = "sixs:flymedvgisaxs"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV: { value = "sixs:flyuhv"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS: { value = "sixs:flyuhvgisaxs"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH: { value = "sixs:sbsmedh"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH_GISAXS: { value = "sixs:sbsmedhgisaxs"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV: { value = "sixs:sbsmedv"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV_GISAXS: { value = "sixs:sbsmedvgisaxs"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV: { value = "sixs:sbsuhv"; break; }
-	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV_GISAXS: { value = "sixs:sbsuhvgisaxs"; break; }
+	case HKL_BINOCULARS_INPUT_TYPE_CRISTAL_K6C: return "cristal:k6c";
+	case HKL_BINOCULARS_INPUT_TYPE_MARS_FLYSCAN: return "mars:flyscan";
+	case HKL_BINOCULARS_INPUT_TYPE_MARS_SBS: return "mars:sbs";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH: return "sixs:flymedh";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDH_GISAXS: return "sixs:flymedhgisaxs";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV: return "sixs:flymedv";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_GISAXS: return "sixs:flymedvgisaxs";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV: return "sixs:flyuhv";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS: return "sixs:flyuhvgisaxs";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH: return "sixs:sbsmedh";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDH_GISAXS: return "sixs:sbsmedhgisaxs";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV: return "sixs:sbsmedv";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_MEDV_GISAXS: return "sixs:sbsmedvgisaxs";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV: return "sixs:sbsuhv";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_SBS_UHV_GISAXS: return "sixs:sbsuhvgisaxs";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_EIGER: return "sixs:flymedveiger";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV_S70: return "sixs:flymedvs70";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS_EIGER: return "sixs:gisaxuhveiger";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_UFXC: return "sixs:flyscanuhvufxc";
+	case HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_2: return "sixs:flyscanuhv2";
 	case HKL_BINOCULARS_INPUT_TYPE_NUM: /* do nothing */
 	}
-	return value;
+	return "sixs:flyuhv";
 }
 
 /**
@@ -104,47 +103,27 @@ static inline const char* input_type_as_string(HklBinocularsInputTypeEnum type)
 */
 static bool strstarts(const char *str, const char *prefix)
 {
-        return strncmp(str, prefix, strlen(prefix)) == 0;
+	return strncmp(str, prefix, strlen(prefix)) == 0;
 }
 
 static inline int input_type_from_string(const char *value,
 					 HklBinocularsInputTypeEnum *type)
 {
 	HklBinocularsInputTypeEnum i;
-        char *err_msg;
-        size_t err_msg_size;
+	char *err_msg;
+	size_t err_msg_size;
 	FILE *stream;
 
-        struct {
-                const char* name;
-                HklBinocularsInputTypeEnum type;
-        } deprecated[] = {
-                {"sixs:flymedveiger", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV},
-                {"sixs:flymedvs70", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_MEDV},
-                {"sixs:gisaxuhveiger", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV_GISAXS},
-                {"sixs:flyscanuhvufxc", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV},
-                {"sixs:flyscanuhv2", HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV},
-        };
+	for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
+		if (true == strstarts(value, input_type_as_string(i))){
+			*type = i;
+			return SUCCESS;
+		}
+	}
 
-        /* check deprecated input types */
-        for(i=0; i<ARRAY_SIZE(deprecated); ++i){
-                if (true == strstarts(value, deprecated[i].name)){
-                        *type = deprecated[i].type;
-                        return SUCCESS;
-                }
-        }
-
-        /* now check all supported input type */
-        for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
-                if (true == strstarts(value, input_type_as_string(i))){
-                        *type = i;
-                        return SUCCESS;
-                }
-        }
-
-        /* no result -> error */
-        stream = open_memstream(&err_msg, &err_msg_size);
-        if (NULL == stream) goto fail;
+	/* no result -> error */
+	stream = open_memstream(&err_msg, &err_msg_size);
+	if (NULL == stream) goto fail;
 
 	fprintf(stream, "Unsupported input.type: %s : Supported one are:", value);
 	for(i=0; i<HKL_BINOCULARS_INPUT_TYPE_NUM; ++i){
@@ -160,77 +139,77 @@ fail:
 
 int main_1()
 {
-        size_t i;
-        const char *fn = FILENAME;
-        const char *images_path = IMAGEPATH;
-        herr_t err;
-        hsize_t dims[] = {DIM0, DIM1, DIM2};
-        hsize_t start[] = {0, 0, 0};
-        hsize_t stride[] = {1, 1, 1};
-        hsize_t count[3] = {1, DIM1, DIM2};
-        hsize_t block[3] = {1, 1, 1};;
-        uint32_t *arr;
+	size_t i;
+	const char *fn = FILENAME;
+	const char *images_path = IMAGEPATH;
+	herr_t err;
+	hsize_t dims[] = {DIM0, DIM1, DIM2};
+	hsize_t start[] = {0, 0, 0};
+	hsize_t stride[] = {1, 1, 1};
+	hsize_t count[3] = {1, DIM1, DIM2};
+	hsize_t block[3] = {1, 1, 1};;
+	uint32_t *arr;
 
-        hid_t file_id;
-        hid_t dataset_id;
-        hid_t file_space_id;
-        hid_t mem_space_id;
+	hid_t file_id;
+	hid_t dataset_id;
+	hid_t file_space_id;
+	hid_t mem_space_id;
 
-        arr = malloc(dims[1] * dims[2] * sizeof(*arr));
-        if(arr == NULL){
-                fprintf(stdout, "Can not allocate array\n");
-                goto exit;
-        }
-        file_id = H5Fopen(fn, H5F_ACC_RDONLY, H5P_DEFAULT);
-        if(file_id < 0){
-                fprintf(stdout, "Can not open file\n");
-                goto release_arr;
-        }
-        dataset_id = H5Dopen(file_id, images_path, H5P_DEFAULT);
-        if(dataset_id < 0){
-                fprintf(stdout, "can not open dataset\n");
-                goto close_file;
-        }
+	arr = malloc(dims[1] * dims[2] * sizeof(*arr));
+	if(arr == NULL){
+		fprintf(stdout, "Can not allocate array\n");
+		goto exit;
+	}
+	file_id = H5Fopen(fn, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if(file_id < 0){
+		fprintf(stdout, "Can not open file\n");
+		goto release_arr;
+	}
+	dataset_id = H5Dopen(file_id, images_path, H5P_DEFAULT);
+	if(dataset_id < 0){
+		fprintf(stdout, "can not open dataset\n");
+		goto close_file;
+	}
 
-        mem_space_id = H5Screate_simple(2, &dims[1], &dims[1]);
-        if(mem_space_id < 0){
-                fprintf(stdout, "Can not create memory dataspace\n");
-                goto close_dataset;
-        }
+	mem_space_id = H5Screate_simple(2, &dims[1], &dims[1]);
+	if(mem_space_id < 0){
+		fprintf(stdout, "Can not create memory dataspace\n");
+		goto close_dataset;
+	}
 
-        file_space_id = H5Dget_space(dataset_id);
-        if(file_space_id<0){
-                fprintf(stdout, "can not get dataset dataspace\n");
-                goto close_mem_space;
-        }
+	file_space_id = H5Dget_space(dataset_id);
+	if(file_space_id<0){
+		fprintf(stdout, "can not get dataset dataspace\n");
+		goto close_mem_space;
+	}
 
-        for(i=0; i<dims[0]; ++i){
-                start[0] = i;
-                err = H5Sselect_hyperslab (file_space_id, H5S_SELECT_SET, start, stride, count, block);
-                if(err<0){
-                        fprintf(stdout, "can not select hyperslab\n");
-                        goto close_mem_space;
-                }
+	for(i=0; i<dims[0]; ++i){
+		start[0] = i;
+		err = H5Sselect_hyperslab (file_space_id, H5S_SELECT_SET, start, stride, count, block);
+		if(err<0){
+			fprintf(stdout, "can not select hyperslab\n");
+			goto close_mem_space;
+		}
 
-                err = H5Dread(dataset_id, H5T_NATIVE_UINT32, mem_space_id, file_space_id, H5P_DEFAULT, arr);
-                if(err<0){
-                        fprintf(stdout, "Can not read dataset content\n");
-                        goto close_mem_space;
-                }
-        }
+		err = H5Dread(dataset_id, H5T_NATIVE_UINT32, mem_space_id, file_space_id, H5P_DEFAULT, arr);
+		if(err<0){
+			fprintf(stdout, "Can not read dataset content\n");
+			goto close_mem_space;
+		}
+	}
 
-        H5Sclose(file_space_id);
+	H5Sclose(file_space_id);
 
 close_mem_space:
-        H5Sclose(mem_space_id);
+	H5Sclose(mem_space_id);
 close_dataset:
-        H5Dclose(dataset_id);
+	H5Dclose(dataset_id);
 close_file:
-        H5Fclose(file_id);
+	H5Fclose(file_id);
 release_arr:
-        free(arr);
+	free(arr);
 exit:
-        return 0;
+	return 0;
 }
 
 
@@ -242,7 +221,7 @@ typedef struct _HklBinocularsConfig
 static int handler(void* user,
 		   const char* section,
 		   const char* name,
-                   const char* value)
+		   const char* value)
 {
 	HklBinocularsConfig* pconfig = user;
 
@@ -275,12 +254,12 @@ int main_binoculars()
 
 int main_read()
 {
-        size_t i;
+	size_t i;
 
-        for(i=0; i<10; ++i){
-                main_1();
-        }
-        fprintf(stdout, "octets: %ld", DIM0 * DIM1 * DIM2 * sizeof(uint32_t));
+	for(i=0; i<10; ++i){
+		main_1();
+	}
+	fprintf(stdout, "octets: %ld", DIM0 * DIM1 * DIM2 * sizeof(uint32_t));
 
 	return SUCCESS;
 }
