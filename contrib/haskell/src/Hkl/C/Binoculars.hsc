@@ -13,7 +13,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -104,6 +104,7 @@ instance Shape sh => Monoid (Cube sh) where
 #num HKL_BINOCULARS_DETECTOR_UFXC
 #num HKL_BINOCULARS_DETECTOR_MERLIN
 #num HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
+#num HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512
 
 data HklBinocularsDetectorEnum
   = HklBinocularsDetectorEnum'ImxpadS140
@@ -113,6 +114,7 @@ data HklBinocularsDetectorEnum
   | HklBinocularsDetectorEnum'Ufxc
   | HklBinocularsDetectorEnum'Merlin
   | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+  | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsDetectorEnum where
@@ -124,6 +126,7 @@ instance Enum HklBinocularsDetectorEnum where
     | n == c'HKL_BINOCULARS_DETECTOR_UFXC = HklBinocularsDetectorEnum'Ufxc
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = HklBinocularsDetectorEnum'Merlin
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
+    | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512 = HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512
     | otherwise = error "Non supported Detector type"
 
   fromEnum HklBinocularsDetectorEnum'ImxpadS140 = c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140
@@ -133,6 +136,7 @@ instance Enum HklBinocularsDetectorEnum where
   fromEnum HklBinocularsDetectorEnum'Ufxc =  c'HKL_BINOCULARS_DETECTOR_UFXC
   fromEnum HklBinocularsDetectorEnum'Merlin =  c'HKL_BINOCULARS_DETECTOR_MERLIN
   fromEnum HklBinocularsDetectorEnum'MerlinMedipix3rxQuad = c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
+  fromEnum HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 = c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512
 
 #ccall hkl_binoculars_detector_2d_coordinates_get, <HklBinocularsDetectorEnum> -> IO (Ptr CDouble)
 #ccall hkl_binoculars_detector_2d_mask_get, <HklBinocularsDetectorEnum> -> IO (Ptr CBool)
