@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2023 Synchrotron SOLEIL
+ * Copyright (C) 2003-2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -433,12 +433,14 @@ static void hkl_projection(void)
                                                                            {-14, -2, -2},
                                                                            {-13, 0, 0},
                                                                            {-13, 0, 0},
+                                                                           {-13, -1, 0},
                                                                            {-13, -1, 0}};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
                                                                            {1, 34, 19},
                                                                            {1, 34, 14},
                                                                            {1, 33, 15},
+                                                                           {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15}};
@@ -475,7 +477,7 @@ static void hkl_projection(void)
                         size_t pixels_coordinates_dims[] = {3, height, width};
                         double resolutions[] = {0.05, 0.05, 0.05};
 
-                        hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL);
+                        IGNORE(hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL));
 
                         hkl_binoculars_space_hkl_uint32_t (space,
                                                            geometry,
@@ -551,12 +553,14 @@ static void test_projection(void)
                                                                            {-14, -2, -2},
                                                                            {-13, 0, 0},
                                                                            {-13, 0, 0},
+                                                                           {-13, -1, 0},
                                                                            {-13, -1, 0}};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
                                                                            {1, 34, 19},
                                                                            {1, 34, 14},
                                                                            {1, 33, 15},
+                                                                           {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15}};
@@ -600,7 +604,7 @@ static void test_projection(void)
                         size_t pixels_coordinates_dims[] = {3, height, width};
                         double resolutions[] = {0.05, 0.05, 0.05};
 
-                        hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL);
+                        IGNORE(hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL));
 
                         hkl_binoculars_space_hkl_uint32_t (space,
                                                            geometry,
@@ -641,10 +645,10 @@ static void test_projection(void)
 
                 res &= DIAG(!hkl_binoculars_cube_cmp(cube, cube2));
                 for(i=0; i<ARRAY_SIZE(imax[n]); ++i){
-                        res &= imin[n][i] == darray_item(cube->axes, i).imin;
-                        res &= imax[n][i] == darray_item(cube->axes, i).imax;
-                        res &= imin[n][i] == darray_item(cube2->axes, i).imin;
-                        res &= imax[n][i] == darray_item(cube2->axes, i).imax;
+                        res &= DIAG(imin[n][i] == darray_item(cube->axes, i).imin);
+                        res &= DIAG(imax[n][i] == darray_item(cube->axes, i).imax);
+                        res &= DIAG(imin[n][i] == darray_item(cube2->axes, i).imin);
+                        res &= DIAG(imax[n][i] == darray_item(cube2->axes, i).imax);
                 }
 
                 free(mask);

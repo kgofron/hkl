@@ -9,8 +9,8 @@ AM_CFLAGS = \
 	$(CGLM_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(HDF5_CFLAGS) \
-	$(INIH_CFLAGS)
-#	-ftrack-macro-expansion=0
+	$(INIH_CFLAGS) \
+	-ftrack-macro-expansion=0
 
 AM_LDFLAGS = -version-info 0:0:0 \
 	$(CGLM_LIBS) \

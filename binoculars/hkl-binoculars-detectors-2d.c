@@ -13,12 +13,13 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2023 Synchrotron SOLEIL
+ * Copyright (C) 2003-2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "datatype99.h"
@@ -100,26 +101,35 @@ struct imxpad_t {
 #define IMXPAD(pixel_size_, chip_w_, chip_h_) (struct imxpad_t)		\
         {.square=SQUARE(pixel_size_), .chip_w=chip_w_, .chip_h=chip_h_}
 
-struct tiling_t {
+struct tilling_t {
         struct square_t square;
         int module_width;
         int module_height;
         int gap_width;
         int gap_height;
+        bool fill_gap;
 };
 
-#define TILING(module_width_, module_height_, gap_width_, gap_height_, pixel_size_) (struct tiling_t) \
-        {.square=SQUARE(pixel_size_), .module_width=module_width_, .module_height=module_height_, .gap_width=gap_width_, .gap_height=gap_height_}
+#define TILLING(module_width_, module_height_, gap_width_, gap_height_, pixel_size_, fill_gap_) \
+        (struct tilling_t) {                                            \
+                .square=SQUARE(pixel_size_),                            \
+                        .module_width=module_width_,                    \
+                        .module_height=module_height_,                  \
+                        .gap_width=gap_width_,                          \
+                        .gap_height=gap_height_,                        \
+                        .fill_gap=fill_gap_,                            \
+                        }
 
 datatype(
         DetectorType,
         (ImXpadS70, struct imxpad_t),
         (ImXpadS140, struct imxpad_t),
         (XpadFlatCorrected, struct square_t),
-        (Eiger1M, struct tiling_t),
+        (Eiger1M, struct tilling_t),
         (Ufxc, struct square_t),
         (Merlin, struct square_t),
-        (MerlinMedipix3RXQuad, struct tiling_t)
+        (MerlinMedipix3RXQuad, struct tilling_t),
+        (MerlinMedipix3RXQuad512, struct tilling_t)
         );
 
 struct detector_t {
@@ -141,13 +151,15 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                 DETECTOR(ImXpadS70,
                          SHAPE(560, 120), IMXPAD(130e-6, 80, 120)),
                 DETECTOR(Eiger1M,
-                         SHAPE(1030, 1065), TILING(1030, 514, 10, 37, 75e-6)),
+                         SHAPE(1030, 1065), TILLING(1030, 514, 10, 37, 75e-6, true)),
                 DETECTOR(Ufxc,
                          SHAPE(257, 256), SQUARE(75e-6)),
                 DETECTOR(Merlin,
                          SHAPE(256, 256), SQUARE(55e-6)),
                 DETECTOR(MerlinMedipix3RXQuad,
-                         SHAPE(515, 515), TILING(256, 256, 3, 3, 55e-6)),
+                         SHAPE(515, 515), TILLING(256, 256, 3, 3, 55e-6, true)),
+                DETECTOR(MerlinMedipix3RXQuad512,
+                         SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false)),
         };
 
         if (n > ARRAY_SIZE(detectors))
@@ -166,6 +178,16 @@ static inline double *coordinates_new(const struct shape_t *shape)
 {
         return g_new0(double, 3 * shape_size(*shape));
 }
+
+static inline double tilling_coordinates_pattern(int i,
+                                                 double pixel_size,
+                                                 int module_size, int gap_size)
+{
+        div_t q = div(i, module_size);
+
+        return (i + q.quot * gap_size + 0.5) * pixel_size;
+}
+
 
 static inline double imxpad_coordinates_pattern(int i, int chip, double s)
 {
@@ -187,6 +209,68 @@ static inline double imxpad_coordinates_pattern(int i, int chip, double s)
                 return s * (i + 3 * q.quot + 2.5);
         }
         return NAN;
+}
+
+static inline double *coordinates_rectangle(const struct shape_t *shape,
+                                            double p_w, double p_h)
+{
+        int i;
+        double *arr = coordinates_new(shape);
+        double *y, *z;
+
+        /* y */
+        y = y_coordinates(arr, *shape);
+        for(i=0; i<shape->width; ++i)
+                y[i] = - (0.5 + i) * p_w;
+        replicate_row(y, *shape, shape->height);
+
+        /* z */
+        z = z_coordinates(arr, *shape);
+        for(i=0; i<shape->height; ++i){
+                double *row = get_row(z, *shape, i);
+                fill_row(row, *shape, (0.5 + i) * p_h);
+        }
+
+        return arr;
+
+}
+
+static inline double* coordinates_get_tilling(const struct shape_t *shape,
+                                              const struct tilling_t *tilling)
+{
+        int i;
+        double *arr;
+
+        if (tilling->fill_gap){
+                arr = coordinates_rectangle(shape,
+                                            tilling->square.pixel_size,
+                                            tilling->square.pixel_size);
+        }else{
+                double *z, *y;
+
+                arr = coordinates_new(shape);
+                /* y */
+                y = y_coordinates(arr, *shape);
+                for(i=0; i<shape->width; ++i){
+                        y[i] = - tilling_coordinates_pattern(i,
+                                                             tilling->square.pixel_size,
+                                                             tilling->module_width,
+                                                             tilling->gap_width);
+                }
+                replicate_row(y, *shape, shape->height);
+
+                /* z */
+                z = z_coordinates(arr, *shape);
+                for(i=0; i<shape->height; ++i){
+                        double *row = get_row(z, *shape, i);
+                        fill_row(row, *shape,
+                                 tilling_coordinates_pattern(i,
+                                                             tilling->square.pixel_size,
+                                                             tilling->module_height,
+                                                             tilling->gap_height));
+                }
+        }
+        return arr;
 }
 
 static inline double *coordinates_get_imxpad(const struct shape_t *shape,
@@ -216,30 +300,6 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
         }
 
         return arr;
-}
-
-static inline double *coordinates_rectangle(const struct shape_t *shape,
-                                            double p_w, double p_h)
-{
-        int i;
-        double *arr = coordinates_new(shape);
-        double *y, *z;
-
-        /* y */
-        y = y_coordinates(arr, *shape);
-        for(i=0; i<shape->width; ++i)
-                y[i] = - (0.5 + i) * p_w;
-        replicate_row(y, *shape, shape->height);
-
-        /* z */
-        z = z_coordinates(arr, *shape);
-        for(i=0; i<shape->height; ++i){
-                double *row = get_row(z, *shape, i);
-                fill_row(row, *shape, (0.5 + i) * p_h);
-        }
-
-        return arr;
-
 }
 
 static inline void flip_z(const struct shape_t *shape, double *arr)
@@ -323,28 +383,31 @@ static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
         return arr;
 }
 
-static inline uint8_t *mask_get_tiling(const struct shape_t *shape,
-                                       const struct tiling_t *tiling)
+static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
+                                        const struct tilling_t *tilling)
 {
         int i;
         uint8_t *arr = no_mask(shape);
 
-        /* columns */
-        for(i=tiling->module_width;
-            i<shape->width;
-            i=i+tiling->module_width + tiling->gap_width){
-                uint8_t *col = get_col(arr, i);
-                fill_column(col, *shape, 1);
-                replicate_column(col, *shape, tiling->gap_width);
-        }
 
-        /* rows */
-        for(i=tiling->module_height;
-            i<shape->height;
-            i=i+tiling->module_height + tiling->gap_height){
-                uint8_t *row = get_row(arr, *shape, i);
-                fill_row(row, *shape, 1);
-                replicate_row(row, *shape, tiling->gap_height);
+        if(tilling->fill_gap){
+                /* columns */
+                for(i=tilling->module_width;
+                    i<shape->width;
+                    i=i+tilling->module_width + tilling->gap_width){
+                        uint8_t *col = get_col(arr, i);
+                        fill_column(col, *shape, 1);
+                        replicate_column(col, *shape, tilling->gap_width);
+                }
+
+                /* rows */
+                for(i=tilling->module_height;
+                    i<shape->height;
+                    i=i+tilling->module_height + tilling->gap_height){
+                        uint8_t *row = get_row(arr, *shape, i);
+                        fill_row(row, *shape, 1);
+                        replicate_row(row, *shape, tilling->gap_height);
+                }
         }
 
         return arr;
@@ -473,9 +536,9 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_square(&detector.shape,
                                                      square);
                 }
-                of(Eiger1M, tiling){
+                of(Eiger1M, tilling){
                         arr = coordinates_get_square(&detector.shape,
-                                                     &tiling->square);
+                                                     &tilling->square);
                         flip_z(&detector.shape, arr);
                 }
                 of(Ufxc, square){
@@ -486,9 +549,13 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_square(&detector.shape,
                                                      square);
                 }
-                of(MerlinMedipix3RXQuad, tiling){
+                of(MerlinMedipix3RXQuad, tilling){
                         arr = coordinates_get_square(&detector.shape,
-                                                     &tiling->square);
+                                                     &tilling->square);
+                }
+                of(MerlinMedipix3RXQuad512, tilling){
+                        arr = coordinates_get_tilling(&detector.shape,
+                                                      tilling);
                 }
         }
         return arr;
@@ -531,9 +598,9 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(XpadFlatCorrected){
                         arr = mask_get_xpad_flat_corrected(&detector.shape);
                 }
-                of(Eiger1M, tiling){
-                        arr = mask_get_tiling(&detector.shape,
-                                              tiling);
+                of(Eiger1M, tilling){
+                        arr = mask_get_tilling(&detector.shape,
+                                               tilling);
                 }
                 of(Ufxc){
                         arr = no_mask(&detector.shape);
@@ -541,9 +608,13 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(Merlin){
                         arr = no_mask(&detector.shape);
                 }
-                of(MerlinMedipix3RXQuad, tiling){
-                        arr = mask_get_tiling(&detector.shape,
-                                              tiling);
+                of(MerlinMedipix3RXQuad, tilling){
+                        arr = mask_get_tilling(&detector.shape,
+                                               tilling);
+                }
+                of(MerlinMedipix3RXQuad512, tilling){
+                        arr = mask_get_tilling(&detector.shape,
+                                               tilling);
                 }
                 otherwise {
                         arr = no_mask(&detector.shape);
