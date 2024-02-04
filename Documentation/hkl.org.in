@@ -1289,6 +1289,146 @@ And also available via the Python binding.
     - [ ] need a nice css for the generated doc.
     - [ ] check if org-info.js could be usefull
     - [ ] add documentation explaining the sector-cuts a la hkl
+*** TODO bug with asymptote on macbook
+picca@cush:~/src/repo.or.cz/hkl$ export MESA_GL_VERSION_OVERRIDE=4.5
+picca@cush:~/src/repo.or.cz/hkl$ make
+
+gives
+
+/usr/bin/asy -config "" -d -render=4 -f png -o 3S+1D.png 3S+1D.asy
+0:1(10): error: GLSL 3.00 is not supported. Supported versions are: 1.10, 1.20, 1.30, 1.40, 1.50, 3.30, 1.00 ES, and 3.00 ES
+
+GL Compile error
+1: #version 300
+2: #extension GL_ARB_uniform_buffer_object : enable
+3: #define MATERIAL
+4: #define ORTHOGRAPHIC
+5: #define Nlights 3
+6: #define Nmaterials 48
+7: #define WIDTH
+8: in vec3 position;
+9:
+10: #ifdef NORMAL
+11:
+12: #ifndef ORTHOGRAPHIC
+13: uniform mat4 viewMat;
+14: out vec3 ViewPosition;
+15: #endif
+16:
+17: uniform mat3 normMat;
+18: in vec3 normal;
+19: out vec3 Normal;
+20:
+21: #endif
+22:
+23: #ifdef MATERIAL
+24: in int material;
+25: flat out int materialIndex;
+26: #endif
+27:
+28: #ifdef COLOR
+29: in vec4 color;
+30: out vec4 Color;
+31: #endif
+32:
+33: #ifdef WIDTH
+34: in float width;
+35: #endif
+36:
+37: uniform mat4 projViewMat;
+38:
+39: void main()
+40: {
+41:   vec4 v=vec4(position,1.0);
+42:   gl_Position=projViewMat*v;
+43: #ifdef NORMAL
+44: #ifndef ORTHOGRAPHIC
+45:   ViewPosition=(viewMat*v).xyz;
+46: #endif
+47:   Normal=normalize(normal*normMat);
+48: #endif
+49:
+50: #ifdef COLOR
+51:   Color=color;
+52: #endif
+53:
+54: #ifdef WIDTH
+55:   gl_PointSize=width;
+56: #endif
+57:
+58: #ifdef MATERIAL
+59:   materialIndex=material;
+60: #endif
+61: }
+/usr/bin/asy -config "" -d -render=4 -f png -o B_b3_y.png B_b3_y.asy
+0:1(10): error: GLSL 3.00 is not supported. Supported versions are: 1.10, 1.20, 1.30, 1.40, 1.50, 3.30, 1.00 ES, and 3.00 ES
+
+GL Compile error
+1: #version 300
+2: #extension GL_ARB_uniform_buffer_object : enable
+3: #define MATERIAL
+4: #define ORTHOGRAPHIC
+5: #define Nlights 3
+6: #define Nmaterials 48
+7: #define WIDTH
+8: in vec3 position;
+9:
+10: #ifdef NORMAL
+11:
+12: #ifndef ORTHOGRAPHIC
+13: uniform mat4 viewMat;
+14: out vec3 ViewPosition;
+15: #endif
+16:
+17: uniform mat3 normMat;
+18: in vec3 normal;
+19: out vec3 Normal;
+20:
+21: #endif
+22:
+23: #ifdef MATERIAL
+24: in int material;
+25: flat out int materialIndex;
+26: #endif
+27:
+28: #ifdef COLOR
+29: in vec4 color;
+30: out vec4 Color;
+31: #endif
+32:
+33: #ifdef WIDTH
+34: in float width;
+35: #endif
+36:
+37: uniform mat4 projViewMat;
+38:
+39: void main()
+40: {
+41:   vec4 v=vec4(position,1.0);
+42:   gl_Position=projViewMat*v;
+43: #ifdef NORMAL
+44: #ifndef ORTHOGRAPHIC
+45:   ViewPosition=(viewMat*v).xyz;
+46: #endif
+47:   Normal=normalize(normal*normMat);
+48: #endif
+49:
+50: #ifdef COLOR
+51:   Color=color;
+52: #endif
+53:
+54: #ifdef WIDTH
+55:   gl_PointSize=width;
+56: #endif
+57:
+58: #ifdef MATERIAL
+59:   materialIndex=material;
+60: #endif
+61: }
+/usr/bin/asy -config "" -d -render=4 -f png -o B_a.png B_a.asy
+0:1(10): error: GLSL 3.00 is not supported. Supported versions are: 1.10, 1.20, 1.30, 1.40, 1.50, 3.30, 1.00 ES, and 3.00 ES
+
+
 ** [0/3] gui
    - [ ] change the color of fitparameter cells if they differ from
      the current sample values
