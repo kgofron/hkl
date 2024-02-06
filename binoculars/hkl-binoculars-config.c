@@ -438,6 +438,62 @@ static int handler_config_common(void* user,
 
 }
 
+/*****************/
+/* Sample Config */
+/*****************/
+
+typedef struct _HklBinocularsConfigSample
+{
+        double *maybe_a;
+        double *maybe_b;
+        double *maybe_c;
+        degree_t *maybe_alpha;
+        degree_t *maybe_beta;
+        degree_t *maybe_gamma;
+        degree_t *maybe_ux;
+        degree_t *maybe_uy;
+        degree_t *maybe_uz;
+
+} HklBinocularsConfigSample;
+
+static int handler_config_sample(void* user,
+				 const char* section,
+				 const char* name,
+				 const char* value)
+{
+	HklBinocularsConfigSample* config = user;
+
+	fprintf(stdout, "s: '%s', n: '%s', v: '%s'\n", section, name, value);
+
+#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+        if (MATCH("input", "a")){
+                /* TODO */
+        }else if (MATCH("input", "b")){
+                /* TODO */
+        }else if (MATCH("input", "c")){
+                /* TODO */
+        }else if (MATCH("input", "alpha")){
+                /* TODO */
+        }else if (MATCH("input", "beta")){
+                /* TODO */
+        }else if (MATCH("input", "gamma")){
+                /* TODO */
+        }else if (MATCH("input", "ux")){
+                /* TODO */
+        }else if (MATCH("input", "uy")){
+                /* TODO */
+        }else if (MATCH("input", "uz")){
+                /* TODO */
+	} else {
+		return 0;  /* unknown section/name, error */
+	}
+	return 1;
+}
+
+/*************************/
+/* Parse the full config */
+/*************************/
+
 int hkl_binoculars_config()
 {
 	HklBinocularsPreConfig pre_config;
@@ -463,6 +519,8 @@ int hkl_binoculars_config()
 	fprintf(stdout,
 		"Config loaded from 'test.ini': inputtype=%s\n",
 		input_type_as_string(pre_config.input_type));
+
+        /* overload with the command line */
 
 	return SUCCESS;
 }
