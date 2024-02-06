@@ -43,7 +43,10 @@ libhkl_binoculars_a_SOURCES = \
 installed_mainheaderdir = $(includedir)/hkl-@VMAJ@
 dist_installed_mainheader_DATA = hkl-binoculars.h
 
-bin_PROGRAMS = binoculars
+bin_PROGRAMS = binoculars-hkl
+binoculars_SOURCES = \
+	binoculars-hkl.c \
+	$libhkl_binoculars_a_SOURCES
 
 # Support for GNU Flymake, in Emacs.
 check-syntax: AM_CFLAGS += -fsyntax-only -pipe
