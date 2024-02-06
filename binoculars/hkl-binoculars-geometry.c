@@ -22,6 +22,8 @@
 
 /* #define DEBUG */
 
+#include <cglm/version.h>
+
 #include "hkl-binoculars-private.h"
 
 mat4s hkl_binoculars_parameter_transformation_get(const HklParameter *self)
@@ -41,7 +43,7 @@ mat4s hkl_binoculars_parameter_transformation_get(const HklParameter *self)
                         float angle = self->_value;
                         CGLM_ALIGN_MAT vec3s axis = {{axis_v->data[0], axis_v->data[1], axis_v->data[2]}};
 
-#if (CGLM_VERSION_MAJOR <= 0 && CGLM_VERSION_MINOR <= 9 && CGLM_VERSION_PATH < 1)
+#if ((CGLM_VERSION_MAJOR * 10000 + CGLM_VERSION_MINOR * 100 + CGLM_VERSION_PATCH) < 902)
                         CGLM_ALIGN_MAT mat4s m = glms_mat4_identity();
                         r = glms_rotate_atm(m, pivot, angle, axis);
 #else
