@@ -1,3 +1,4 @@
+#pragma once
 /* This file is part of the hkl library.
  *
  * The hkl library is free software: you can redistribute it and/or modify
@@ -20,9 +21,6 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 
-#include "hkl-binoculars-config-private.h"
+#include "hkl.h"
 
-int main()
-{
-	return hkl_binoculars_config();
-}
+HKLAPI int hkl_binoculars_config();
