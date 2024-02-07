@@ -20,9 +20,19 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 
+#include <argp.h>
 #include "hkl-binoculars-config-private.h"
 
-int main()
+
+const char *argp_program_version =
+	"binoculars-hkl 0.1";
+
+const char *argp_program_bug_address =
+	"Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>";
+
+int main(int argc, char *argv[])
 {
+	argp_parse(0, argc, argv, 0, 0, 0);
+
 	return hkl_binoculars_config();
 }
