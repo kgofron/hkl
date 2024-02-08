@@ -21,6 +21,38 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 
+#include "datatype99.h"
 #include "hkl.h"
+
+datatype(
+	FilePath,
+	(FilePath_FileAbs, char *)
+	);
+
+datatype(
+	InputRange,
+	(InputRange_FromTo, int, int),
+	(InputRange_At, int)
+	);
+
+datatype(
+	ConfigRange,
+	(ConfigRange_List, InputRange*)
+	);
+
+
+datatype(
+	ProjectionType,
+	(ProjectionType_Angles),
+	(ProjectionType_Angles2),
+ 	(ProjectionType_Hkl),
+	(ProjectionType_QCustom),
+	(ProjectionType_QIndex),
+	(ProjectionType_QparQper),
+	(ProjectionType_QxQyQz),
+	(ProjectionType_RealSpace),
+	(ProjectionType_Pixels),
+	(ProjectionType_Test)
+	);
 
 HKLAPI int hkl_binoculars_config();

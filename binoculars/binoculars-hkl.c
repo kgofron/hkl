@@ -20,9 +20,13 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 
+#include <stdio.h>
 #include <argp.h>
-#include "hkl-binoculars-config-private.h"
+#include <assert.h>
+#include <stdbool.h>
 
+#include "datatype99.h"
+#include "hkl-binoculars-config-private.h"
 
 const char *argp_program_version =
 	"binoculars-hkl 0.1";
@@ -30,9 +34,314 @@ const char *argp_program_version =
 const char *argp_program_bug_address =
 	"Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>";
 
+datatype(
+	Options,
+	(Process, FilePath*, ConfigRange*),
+	(CfgNew, ProjectionType*, FilePath*),
+	(CfgUpdate, FilePath*, ConfigRange*)
+	);
+
+datatype(
+	FullOptions,
+	(FullOptions_Binoculars, bool, Options)
+	);
+
+/** Argp Wrapper Functions **/
+
+const char* argp_key(int key, char* keystr)
+{
+	keystr[0] = key;
+	keystr[1] = 0;
+
+	switch(key)
+	{
+	case ARGP_KEY_ARG:     return "ARGP_KEY_ARG";
+	case ARGP_KEY_ARGS:    return "ARGP_KEY_ARGS";
+	case ARGP_KEY_END:     return "ARGP_KEY_END";
+	case ARGP_KEY_NO_ARGS: return "ARGP_KEY_NO_ARGS";
+	case ARGP_KEY_INIT:    return "ARGP_KEY_INIT";
+	case ARGP_KEY_SUCCESS: return "ARGP_KEY_SUCCESS";
+	case ARGP_KEY_ERROR:   return "ARGP_KEY_ERROR";
+	case ARGP_KEY_FINI:    return "ARGP_KEY_FINI";
+	}
+
+	return keystr;
+};
+
+/** Logging **/
+
+struct arg_global
+{
+	int verbosity;
+	Options option;
+};
+
+
+static void log_printf(struct arg_global* g, int level, const char* fmt, ...)
+{
+	va_list ap;
+	FILE* f = stdout;
+
+	if(g->verbosity < level)
+		return;
+
+	if(level == 0)
+		f = stderr;
+
+	va_start(ap, fmt);
+
+	vfprintf(f, fmt, ap);
+
+	va_end(ap);
+}
+
+static struct argp_option opt_global[] =
+{
+	{ "verbose", 'v', "level", OPTION_ARG_OPTIONAL, "Increase or set the verbosity level.", -1},
+	{ "quiet", 'q', 0, 0, "Set verbosity to 0.", -1},
+	{ 0 }
+};
+
+static char doc_global[] =
+	"\n"
+	"binoculars your data'."
+	"\v"
+	"Supported commands are:\n"
+	"  process    Process a projection.\n"
+	"  cfg-new    Create a new config.\n"
+	"  cfg-update Update a config file."
+	;
+
+
+/***************/
+/* Sub Command */
+/***************/
+
+struct arg_subcmd
+{
+	struct arg_global* global;
+
+	char* name;
+};
+
+/* process */
+
+static struct argp_option opt_process[] = {
+	{ "config", 'c', "FILE", 0, "The config file." },
+	{ "ranges", 'r', "RANGES", 0, "Range of files to process." },
+	{ 0 }
+};
+
+static error_t parse_process(int key, char* arg, struct argp_state* state)
+{
+	struct arg_subcmd* aa = state->input;
+	char keystr[2];
+
+	assert( aa );
+	assert( aa->global );
+
+	log_printf(aa->global, 3, "x aa: parsing %s = '%s'\n",
+		   argp_key(key, keystr), arg ? arg : "(null)");
+
+	switch(key)
+	{
+	case 'c':
+		/* TODO */
+		log_printf(aa->global, 2, "x process: -c, config = %s \n", arg);
+		break;
+
+	case 'r':
+		/* TODO */
+		log_printf(aa->global, 2, "x process: -r, ranges = %s \n", arg);
+		break;
+
+	default:
+		return ARGP_ERR_UNKNOWN;
+	}
+	return 0;
+}
+
+static struct argp argp_process = { opt_process, parse_process, 0, 0 };
+
+/* cfg-new */
+
+static struct argp_option opt_cfg_new[] = {
+	{ "projection", 'p', "PROJECTION", 0, "The expected projection." },
+	{ "nexudir", 'd', "NEXUSDIR", 0, "Directory where data are located." },
+	{ 0 }
+};
+
+static error_t parse_cfg_new(int key, char* arg, struct argp_state* state)
+{
+	struct arg_subcmd* aa = state->input;
+	char keystr[2];
+
+	assert( aa );
+	assert( aa->global );
+
+	log_printf(aa->global, 3, "x cfg-new: parsing %s = '%s'\n",
+		   argp_key(key, keystr), arg ? arg : "(null)");
+
+	switch(key)
+	{
+	case 'p':
+		/* TODO */
+		log_printf(aa->global, 2, "x cfg-new: -p, projection = %s \n", arg);
+		break;
+
+	case 'd':
+		/* TODO */
+		log_printf(aa->global, 2, "x cfg-new: -d, nexusdir= %s \n", arg);
+		break;
+
+	default:
+		return ARGP_ERR_UNKNOWN;
+	}
+	return 0;
+}
+
+static struct argp argp_cfg_new = { opt_cfg_new, parse_cfg_new, 0, 0 };
+
+/* cfg-update */
+
+static struct argp_option opt_cfg_update[] = {
+	{ "config", 'c', "FILE", 0, "The config file." },
+	{ "ranges", 'r', "RANGES", 0, "Range of files expected." },
+	{ 0 }
+};
+
+static error_t parse_cfg_update(int key, char* arg, struct argp_state* state)
+{
+	struct arg_subcmd* aa = state->input;
+	char keystr[2];
+
+	assert( aa );
+	assert( aa->global );
+
+	log_printf(aa->global, 3, "x aa: parsing %s = '%s'\n",
+		   argp_key(key, keystr), arg ? arg : "(null)");
+
+	switch(key)
+	{
+	case 'c':
+		/* TODO */
+		log_printf(aa->global, 2, "x cfg-update: -c, config = %s \n", arg);
+		break;
+
+	case 'r':
+		/* TODO */
+		log_printf(aa->global, 2, "x cfg-update: -r, ranges = %s \n", arg);
+		break;
+
+	default:
+		return ARGP_ERR_UNKNOWN;
+	}
+	return 0;
+}
+
+static struct argp argp_cfg_update = { opt_cfg_update, parse_cfg_update, 0, 0 };
+
+
+void cmd_subcmd(const char *name, struct argp_state* state, struct argp* argp_subcmd)
+{
+	struct arg_subcmd aa = {
+		.global = state->input,
+	};
+	int    argc = state->argc - state->next + 1;
+	char** argv = &state->argv[state->next - 1];
+	char*  argv0 =  argv[0];
+
+	log_printf(aa.global, 3, "x %s: begin (argc = %d, argv[0] = %s)\n",
+		   name, argc, argv[0]);
+
+	argv[0] = malloc(strlen(state->name) + strlen(" subcmd") + 1);
+
+	if(!argv[0])
+		argp_failure(state, 1, ENOMEM, 0);
+
+	sprintf(argv[0], "%s %s", state->name, name);
+
+	argp_parse(argp_subcmd, argc, argv, ARGP_IN_ORDER, &argc, &aa);
+
+	free(argv[0]);
+
+	argv[0] = argv0;
+
+	state->next += argc - 1;
+
+	log_printf(aa.global, 3, "x %s: end (next = %d, argv[next] = %s)\n",
+		   name, state->next, state->argv[state->next]);
+
+	return;
+}
+
+static error_t
+parse_global(int key, char* arg, struct argp_state* state)
+{
+	struct arg_global* global = state->input;
+	char keystr[2];
+
+	log_printf(global, 3, "x: parsing %s = '%s'\n",
+		   argp_key(key, keystr), arg ? arg : "(null)");
+
+	switch(key)
+	{
+	case 'v':
+		if(arg)
+			global->verbosity = atoi(arg);
+		else
+			global->verbosity++;
+		log_printf(global, 2, "x: set verbosity to %d\n", global->verbosity);
+		break;
+
+	case 'q':
+		log_printf(global, 2, "x: setting verbosity to 0\n");
+		global->verbosity = 0;
+		break;
+
+	case ARGP_KEY_ARG:
+		assert( arg );
+		if(strcmp(arg, "process") == 0) {
+			cmd_subcmd(arg, state, &argp_process);
+		} else if (strcmp(arg, "cfg-new") == 0) {
+			cmd_subcmd(arg, state, &argp_cfg_new);
+		} else if (strcmp(arg, "cfg-update") == 0) {
+			cmd_subcmd(arg, state, &argp_cfg_update);
+		} else {
+			argp_error(state, "%s is not a valid command", arg);
+		}
+		break;
+
+	default:
+		return ARGP_ERR_UNKNOWN;
+	}
+
+	return 0;
+}
+
+
+
+static struct argp argp = { opt_global, parse_global, "[<cmd> [CMD-OPTIONS]]...", doc_global };
+
+void cmd_global(int argc, char**argv)
+{
+	struct arg_global global = {
+		.verbosity=1, /* default verbosity */
+	};
+
+	log_printf(&global, 3, "x: begin (argc = %d, argv[0] = %s)\n",
+		   argc, argv[0]);
+
+	argp_parse(&argp, argc, argv, ARGP_IN_ORDER, NULL, &global);
+}
+
+
+
 int main(int argc, char *argv[])
 {
-	argp_parse(0, argc, argv, 0, 0, 0);
+	cmd_global(argc, argv);
 
-	return hkl_binoculars_config();
+	/* hkl_binoculars_config(); */
+
+	exit(0);
 }
