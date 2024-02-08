@@ -29,6 +29,7 @@
 #include "datatype99.h"
 #include "hkl/ccan/array_size/array_size.h"
 #include "hkl-binoculars.h"
+#include "hkl-binoculars-config-private.h"
 
 #define SUCCESS 0
 #define FAILED -1
@@ -102,6 +103,67 @@ static inline const char* input_type_as_string(HklBinocularsInputTypeEnum type)
 	case HKL_BINOCULARS_INPUT_TYPE_NUM: /* do nothing */
 	}
 	return "sixs:flyuhv";
+}
+
+darray_input_range *parse_input_ranges(const char* arg)
+{
+	/* TODO */
+	return NULL;
+}
+
+void input_range_fprintf(FILE *f, const InputRange *range)
+{
+	if(NULL == range){
+		fprintf(f, "NULL");
+		return;
+	}
+
+	match(*range){
+		of(InputRange_FromTo, from, to){
+			fprintf(f, "InputRange_FromTo %d %d", *from, *to);
+		}
+		of(InputRange_At, at){
+			fprintf(f, "InputRange_At %d", *at);
+		}
+	}
+}
+
+void darray_input_range_fprintf(FILE *f, const darray_input_range* ranges)
+{
+	InputRange *range;
+
+	if(NULL == ranges){
+		fprintf(f, "NULL");
+		return;
+	}
+
+	fprintf(f, "[");
+	darray_foreach(range, *ranges){
+		fprintf(f, " ");
+		input_range_fprintf(f, range);
+	}
+	fprintf(f, " ]");
+}
+
+void projection_type_fprintf(FILE *f, const ProjectionType *projection)
+{
+	if(NULL == projection){
+		fprintf(f, "NULL");
+		return;
+	}
+
+	match(*projection){
+		of(ProjectionType_Angles) fprintf(f, "ProjectionType_Angles");
+		of(ProjectionType_Angles2) fprintf(f, "ProjectionType_Angles2");
+ 		of(ProjectionType_Hkl) fprintf(f, "ProjectionType_Hkl");
+		of(ProjectionType_QCustom) fprintf(f, "ProjectionType_QCusto");
+		of(ProjectionType_QIndex) fprintf(f, "ProjectionType_QInde");
+		of(ProjectionType_QparQper) fprintf(f, "ProjectionType_QparQper");
+		of(ProjectionType_QxQyQz) fprintf(f, "ProjectionType_QxQyQz");
+		of(ProjectionType_RealSpace) fprintf(f, "ProjectionType_RealSpace");
+		of(ProjectionType_Pixels) fprintf(f, "ProjectionType_Pixels");
+		of(ProjectionType_Test) fprintf(f, "ProjectionType_Test");
+	}
 }
 
 /**
@@ -253,14 +315,6 @@ typedef const char *destination_tmpl_t;
 typedef const char *nexus_dir_t;
 typedef const char *input_tmpl_t;
 
-datatype(
-	InputRange,
-	(InputRange_Singleton, int),
-	(InputRange_FromTo, int, int)
-	);
-
-typedef InputRange* ConfigRange;
-
 typedef struct _central_pixel_t
 {
 	int x;
@@ -283,7 +337,7 @@ typedef struct _HklBinocularsConfigCommon
 	HklBinocularsInputTypeEnum input_type;
 	nexus_dir_t nexus_dir;
 	input_tmpl_t input_tmpl;
-	ConfigRange config_range;
+	darray_input_range input_ranges;
 	HklBinocularsDetectorEnum detector;
 	central_pixel_t central_pixel;
 	meter_t sdd;

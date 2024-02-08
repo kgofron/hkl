@@ -21,13 +21,10 @@
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
 
+#include <stdio.h>
+
 #include "datatype99.h"
 #include "hkl.h"
-
-datatype(
-	FilePath,
-	(FilePath_FileAbs, char *)
-	);
 
 datatype(
 	InputRange,
@@ -35,10 +32,13 @@ datatype(
 	(InputRange_At, int)
 	);
 
-datatype(
-	ConfigRange,
-	(ConfigRange_List, InputRange*)
-	);
+void input_range_fprintf(FILE*, const InputRange *);
+
+typedef darray(InputRange) darray_input_range;
+
+darray_input_range *parse_input_ranges(const char*);
+
+void darray_input_range_fprintf(FILE *, const darray_input_range*);
 
 
 datatype(
@@ -54,5 +54,8 @@ datatype(
 	(ProjectionType_Pixels),
 	(ProjectionType_Test)
 	);
+
+
+void projection_type_fprintf(FILE *, const ProjectionType*);
 
 HKLAPI int hkl_binoculars_config();

@@ -35,16 +35,44 @@ const char *argp_program_bug_address =
 	"Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>";
 
 datatype(
-	Options,
-	(Process, FilePath*, ConfigRange*),
-	(CfgNew, ProjectionType*, FilePath*),
-	(CfgUpdate, FilePath*, ConfigRange*)
+	Option,
+	(Process, char *, darray_input_range*),
+	(CfgNew, ProjectionType*, char *),
+	(CfgUpdate, char *, darray_input_range*)
 	);
 
-datatype(
-	FullOptions,
-	(FullOptions_Binoculars, bool, Options)
-	);
+static void option_fprintf(FILE *f, const Option* option)
+{
+	match(*option){
+		of(Process, file, r){
+			fprintf(f, "Process(");
+			if(NULL != file)
+				fprintf(f, "%s, ", *file);
+			else
+				fprintf(f, "NULL, ");
+			darray_input_range_fprintf(f, *r);
+			fprintf(f, ")");
+		}
+		of(CfgNew, p, file){
+			fprintf(f, "CfgNew(");
+			projection_type_fprintf(f, *p);
+			if(NULL != file)
+				fprintf(f, ", %s", *file);
+			else
+				fprintf(f, ", NULL");
+			fprintf(f, ")");
+		}
+		of(CfgUpdate, file, r){
+			fprintf(f, "CfgUpdate(");
+			if(NULL != file)
+				fprintf(f, "%s, ", *file);
+			else
+				fprintf(f, "NULL, ");
+			darray_input_range_fprintf(f, *r);
+			fprintf(f, ")");
+		}
+	}
+}
 
 /** Argp Wrapper Functions **/
 
@@ -73,8 +101,16 @@ const char* argp_key(int key, char* keystr)
 struct arg_global
 {
 	int verbosity;
-	Options option;
+	Option option;
 };
+
+void arg_global_fprintf(FILE * f, const struct arg_global *global)
+{
+	fprintf(f, "arg_global(verbosity: %d", global->verbosity);
+	fprintf(f, ", option: ");
+	option_fprintf(f, &global->option);
+	fprintf(f, ")");
+}
 
 
 static void log_printf(struct arg_global* g, int level, const char* fmt, ...)
@@ -120,22 +156,20 @@ static char doc_global[] =
 struct arg_subcmd
 {
 	struct arg_global* global;
-
-	char* name;
+	char *filepath;
+	darray_input_range *input_ranges;
+	int arg_mandatory;
+	int arg_count;
 };
 
 /* process */
-
-static struct argp_option opt_process[] = {
-	{ "config", 'c', "FILE", 0, "The config file." },
-	{ "ranges", 'r', "RANGES", 0, "Range of files to process." },
-	{ 0 }
-};
 
 static error_t parse_process(int key, char* arg, struct argp_state* state)
 {
 	struct arg_subcmd* aa = state->input;
 	char keystr[2];
+	static int mandatory = 1;
+	static int max_count = 2;
 
 	assert( aa );
 	assert( aa->global );
@@ -145,29 +179,50 @@ static error_t parse_process(int key, char* arg, struct argp_state* state)
 
 	switch(key)
 	{
-	case 'c':
-		/* TODO */
-		log_printf(aa->global, 2, "x process: -c, config = %s \n", arg);
+	case ARGP_KEY_INIT:
+		log_printf(aa->global, 2, "x: process: set the number of arguments already seen to zero\n");
+		aa->filepath = NULL;
+		aa->input_ranges = NULL;
+		aa->arg_count = 0;
+		aa->arg_mandatory = 0;
 		break;
+	case ARGP_KEY_ARG:
+		assert( arg );
 
-	case 'r':
-		/* TODO */
-		log_printf(aa->global, 2, "x process: -r, ranges = %s \n", arg);
+		switch(aa->arg_count){
+		case 0:
+			aa->filepath = strdup(arg);
+			aa->arg_mandatory++;
+			break;
+		case 1:
+			aa->input_ranges = parse_input_ranges(arg);
+			break;
+		}
+		aa->arg_count++;
+		log_printf(aa->global, 2, "x: process: found argument %d %s\n", aa->arg_count, arg);
 		break;
-
+	case ARGP_KEY_END:
+		if (aa->arg_mandatory > mandatory)
+			argp_failure (state, 1, 0, "too many arguments");
+		else if (aa->arg_mandatory < mandatory)
+			argp_failure (state, 1, 0, "too few arguments");
+		if (aa->arg_count > max_count)
+			argp_failure (state, 1, 0, "too many arguments");
+		aa->global->option = Process(aa->filepath, aa->input_ranges);
+		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}
 	return 0;
 }
 
-static struct argp argp_process = { opt_process, parse_process, 0, 0 };
+static struct argp argp_process = { 0, parse_process, "FILE RANGE", 0, 0 };
 
 /* cfg-new */
 
 static struct argp_option opt_cfg_new[] = {
 	{ "projection", 'p', "PROJECTION", 0, "The expected projection." },
-	{ "nexudir", 'd', "NEXUSDIR", 0, "Directory where data are located." },
+	{ "nexudir", 'd', "NEXUSDIR", OPTION_ARG_OPTIONAL, "Directory where data are located." },
 	{ 0 }
 };
 
@@ -193,7 +248,6 @@ static error_t parse_cfg_new(int key, char* arg, struct argp_state* state)
 		/* TODO */
 		log_printf(aa->global, 2, "x cfg-new: -d, nexusdir= %s \n", arg);
 		break;
-
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}
@@ -206,7 +260,7 @@ static struct argp argp_cfg_new = { opt_cfg_new, parse_cfg_new, 0, 0 };
 
 static struct argp_option opt_cfg_update[] = {
 	{ "config", 'c', "FILE", 0, "The config file." },
-	{ "ranges", 'r', "RANGES", 0, "Range of files expected." },
+	{ "ranges", 'r', "RANGES", OPTION_ARG_OPTIONAL, "Range of files expected." },
 	{ 0 }
 };
 
@@ -311,7 +365,10 @@ parse_global(int key, char* arg, struct argp_state* state)
 			argp_error(state, "%s is not a valid command", arg);
 		}
 		break;
-
+	case ARGP_KEY_END:
+		arg_global_fprintf(stdout, global);
+		fprintf(stdout, "\n");
+		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}
