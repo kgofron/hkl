@@ -34,45 +34,39 @@ const char *argp_program_version =
 const char *argp_program_bug_address =
 	"Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>";
 
+// Deriver implementation {
+#define DATATYPE99_DERIVE_FPrintF_IMPL(name, variants)                  \
+        ML99_prefixedBlock(                                             \
+                v(inline static void name##_fprintf(FILE *stream, name self)), \
+                ML99_prefixedBlock(                                     \
+                        v(match(self)),                                 \
+                        ML99_listMapInPlace(ML99_compose(v(genArm), v(ML99_untuple)), v(variants))))
+
+#define genArm_IMPL(tag, sig)                                           \
+        ML99_TERMS(                                                     \
+                DATATYPE99_assertAttrIsPresent(v(tag##_FPrintF_fmt)),   \
+                ML99_prefixedBlock(                                     \
+                        DATATYPE99_of(v(tag), ML99_indexedArgs(ML99_listLen(v(sig)))), \
+                        ML99_invokeStmt(v(fprintf), v(stream), DATATYPE99_attrValue(v(tag##_FPrintF_fmt)))))
+#define genArm_ARITY 1
+// (Deriver implementation)
+
+#define Process_FPrintF_fmt attr("Process(\"%s\", %p)", *_0, *_1)
+#define CfgNew_FPrintF_fmt attr("CfgNew(%p, %s)", *_0, *_1)
+#define CfgUpdate_FPrintF_fmt attr("CfgNew(\"%s\", %p)", *_0, *_1)
+
 datatype(
+	derive(FPrintF),
 	Option,
 	(Process, char *, darray_input_range*),
 	(CfgNew, ProjectionType*, char *),
 	(CfgUpdate, char *, darray_input_range*)
 	);
 
-static void option_fprintf(FILE *f, const Option* option)
-{
-	match(*option){
-		of(Process, file, r){
-			fprintf(f, "Process(");
-			if(NULL != file)
-				fprintf(f, "%s, ", *file);
-			else
-				fprintf(f, "NULL, ");
-			darray_input_range_fprintf(f, *r);
-			fprintf(f, ")");
-		}
-		of(CfgNew, p, file){
-			fprintf(f, "CfgNew(");
-			projection_type_fprintf(f, *p);
-			if(NULL != file)
-				fprintf(f, ", %s", *file);
-			else
-				fprintf(f, ", NULL");
-			fprintf(f, ")");
-		}
-		of(CfgUpdate, file, r){
-			fprintf(f, "CfgUpdate(");
-			if(NULL != file)
-				fprintf(f, "%s, ", *file);
-			else
-				fprintf(f, "NULL, ");
-			darray_input_range_fprintf(f, *r);
-			fprintf(f, ")");
-		}
-	}
-}
+#undef Process_FPrintF_fmt
+#undef CfgNew_FPrintF_fmt
+#undef CfgUpdate_FPrintF_fmt
+
 
 /** Argp Wrapper Functions **/
 
@@ -108,7 +102,7 @@ void arg_global_fprintf(FILE * f, const struct arg_global *global)
 {
 	fprintf(f, "arg_global(verbosity: %d", global->verbosity);
 	fprintf(f, ", option: ");
-	option_fprintf(f, &global->option);
+	Option_fprintf(f, global->option);
 	fprintf(f, ")");
 }
 
