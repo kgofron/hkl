@@ -26,6 +26,7 @@
 #include <stdbool.h>
 
 #include "datatype99.h"
+#include "hkl/ccan/array_size/array_size.h"
 #include "hkl-binoculars-config-private.h"
 
 const char *argp_program_version =
@@ -67,6 +68,10 @@ datatype(
 #undef CfgNew_FPrintF_fmt
 #undef CfgUpdate_FPrintF_fmt
 
+datatype(
+        SubCmd,
+        (MkSubCmd, const char*, struct argp)
+        );
 
 /** Argp Wrapper Functions **/
 
@@ -131,17 +136,6 @@ static struct argp_option opt_global[] =
 	{ "quiet", 'q', 0, 0, "Set verbosity to 0.", -1},
 	{ 0 }
 };
-
-static char doc_global[] =
-	"\n"
-	"binoculars your data'."
-	"\v"
-	"Supported commands are:\n"
-	"  process    Process a projection.\n"
-	"  cfg-new    Create a new config.\n"
-	"  cfg-update Update a config file."
-	;
-
 
 /***************/
 /* Sub Command */
@@ -210,12 +204,11 @@ static error_t parse_process(int key, char* arg, struct argp_state* state)
 	return 0;
 }
 
-static struct argp argp_process = { 0, parse_process, "FILE RANGE", 0, 0 };
+static struct argp argp_process = { 0, parse_process, "FILE RANGE" };
 
 /* cfg-new */
 
 static struct argp_option opt_cfg_new[] = {
-	{ "projection", 'p', "PROJECTION", 0, "The expected projection." },
 	{ "nexudir", 'd', "NEXUSDIR", OPTION_ARG_OPTIONAL, "Directory where data are located." },
 	{ 0 }
 };
@@ -248,12 +241,11 @@ static error_t parse_cfg_new(int key, char* arg, struct argp_state* state)
 	return 0;
 }
 
-static struct argp argp_cfg_new = { opt_cfg_new, parse_cfg_new, 0, 0 };
+static struct argp argp_cfg_new = { opt_cfg_new, parse_cfg_new, "PROJECTION"};
 
 /* cfg-update */
 
 static struct argp_option opt_cfg_update[] = {
-	{ "config", 'c', "FILE", 0, "The config file." },
 	{ "ranges", 'r', "RANGES", OPTION_ARG_OPTIONAL, "Range of files expected." },
 	{ 0 }
 };
@@ -287,7 +279,7 @@ static error_t parse_cfg_update(int key, char* arg, struct argp_state* state)
 	return 0;
 }
 
-static struct argp argp_cfg_update = { opt_cfg_update, parse_cfg_update, 0, 0 };
+static struct argp argp_cfg_update = { opt_cfg_update, parse_cfg_update, "FILE" };
 
 
 void cmd_subcmd(const char *name, struct argp_state* state, struct argp* argp_subcmd)
@@ -328,6 +320,12 @@ parse_global(int key, char* arg, struct argp_state* state)
 {
 	struct arg_global* global = state->input;
 	char keystr[2];
+        const SubCmd sub_cmds[] = {
+                MkSubCmd("process", argp_process),
+                MkSubCmd("cfg-new", argp_cfg_new),
+                MkSubCmd("cfg-update", argp_cfg_update),
+        };
+
 
 	log_printf(global, 3, "x: parsing %s = '%s'\n",
 		   argp_key(key, keystr), arg ? arg : "(null)");
@@ -348,16 +346,18 @@ parse_global(int key, char* arg, struct argp_state* state)
 		break;
 
 	case ARGP_KEY_ARG:
+                int i;
 		assert( arg );
-		if(strcmp(arg, "process") == 0) {
-			cmd_subcmd(arg, state, &argp_process);
-		} else if (strcmp(arg, "cfg-new") == 0) {
-			cmd_subcmd(arg, state, &argp_cfg_new);
-		} else if (strcmp(arg, "cfg-update") == 0) {
-			cmd_subcmd(arg, state, &argp_cfg_update);
-		} else {
-			argp_error(state, "%s is not a valid command", arg);
-		}
+                for(i=0;i<ARRAY_SIZE(sub_cmds); ++i){
+                        ifLet(sub_cmds[i], MkSubCmd, name, parser){
+                                if(0 == strcmp(arg, *name)){
+                                        cmd_subcmd(*name, state, parser);
+                                        goto out;
+                                }
+                        }
+                }
+                /* no matching subcommand */
+                argp_error(state, "%s is not a valid command", arg);
 		break;
 	case ARGP_KEY_END:
 		arg_global_fprintf(stdout, global);
@@ -367,12 +367,21 @@ parse_global(int key, char* arg, struct argp_state* state)
 		return ARGP_ERR_UNKNOWN;
 	}
 
+out:
 	return 0;
 }
 
+static char doc_global[] =
+	"\n"
+	"binoculars - bin's your data."
+	"\v"
+	"Supported commands are:\n"
+	"  process    Process a projection.\n"
+	"  cfg-new    Create a new config.\n"
+	"  cfg-update Update a config file."
+	;
 
-
-static struct argp argp = { opt_global, parse_global, "[<cmd> [CMD-OPTIONS]]...", doc_global };
+static struct argp argp_global = { opt_global, parse_global, "[<cmd> [CMD-OPTIONS]]...", doc_global };
 
 void cmd_global(int argc, char**argv)
 {
@@ -383,7 +392,7 @@ void cmd_global(int argc, char**argv)
 	log_printf(&global, 3, "x: begin (argc = %d, argv[0] = %s)\n",
 		   argc, argv[0]);
 
-	argp_parse(&argp, argc, argv, ARGP_IN_ORDER, NULL, &global);
+	argp_parse(&argp_global, argc, argv, ARGP_IN_ORDER, NULL, &global);
 }
 
 
