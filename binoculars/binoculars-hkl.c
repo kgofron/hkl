@@ -68,11 +68,6 @@ datatype(
 #undef CfgNew_FPrintF_fmt
 #undef CfgUpdate_FPrintF_fmt
 
-datatype(
-        SubCmd,
-        (MkSubCmd, const char*, struct argp)
-        );
-
 /** Argp Wrapper Functions **/
 
 const char* argp_key(int key, char* keystr)
@@ -97,27 +92,28 @@ const char* argp_key(int key, char* keystr)
 
 /** Logging **/
 
-struct arg_global
+struct _HklBinocularsCmdArgs
 {
 	int verbosity;
 	Option option;
 };
 
-void arg_global_fprintf(FILE * f, const struct arg_global *global)
+typedef struct _HklBinocularsCmdArgs HklBinocularsCmdArgs;
+
+static void hkl_binoculars_cmd_args_fprintf(FILE * f, const HklBinocularsCmdArgs *args)
 {
-	fprintf(f, "arg_global(verbosity: %d", global->verbosity);
+	fprintf(f, "HklBinocularsCmdArgs(verbosity: %d", args->verbosity);
 	fprintf(f, ", option: ");
-	Option_fprintf(f, global->option);
+	Option_fprintf(f, args->option);
 	fprintf(f, ")");
 }
 
-
-static void log_printf(struct arg_global* g, int level, const char* fmt, ...)
+static void log_printf(const HklBinocularsCmdArgs* args, int level, const char* fmt, ...)
 {
 	va_list ap;
 	FILE* f = stdout;
 
-	if(g->verbosity < level)
+	if(args->verbosity < level)
 		return;
 
 	if(level == 0)
@@ -132,8 +128,8 @@ static void log_printf(struct arg_global* g, int level, const char* fmt, ...)
 
 static struct argp_option opt_global[] =
 {
-	{ "verbose", 'v', "level", OPTION_ARG_OPTIONAL, "Increase or set the verbosity level.", -1},
-	{ "quiet", 'q', 0, 0, "Set verbosity to 0.", -1},
+	{ "verbose", 'v', "level", OPTION_ARG_OPTIONAL, "Increase or set the verbosity level.", -1 },
+	{ "quiet", 'q', 0, 0, "Set verbosity to 0.", -1 },
 	{ 0 }
 };
 
@@ -143,7 +139,7 @@ static struct argp_option opt_global[] =
 
 struct arg_subcmd
 {
-	struct arg_global* global;
+	HklBinocularsCmdArgs* global;
 	char *filepath;
 	darray_input_range *input_ranges;
 	int arg_mandatory;
@@ -169,8 +165,7 @@ static error_t parse_process(int key, char* arg, struct argp_state* state)
 	{
 	case ARGP_KEY_INIT:
 		log_printf(aa->global, 2, "x: process: set the number of arguments already seen to zero\n");
-		aa->filepath = NULL;
-		aa->input_ranges = NULL;
+		aa->global->option = Process(NULL, NULL);
 		aa->arg_count = 0;
 		aa->arg_mandatory = 0;
 		break;
@@ -315,10 +310,15 @@ void cmd_subcmd(const char *name, struct argp_state* state, struct argp* argp_su
 	return;
 }
 
+datatype(
+	SubCmd,
+	(MkSubCmd, const char*, struct argp)
+	);
+
 static error_t
 parse_global(int key, char* arg, struct argp_state* state)
 {
-	struct arg_global* global = state->input;
+	HklBinocularsCmdArgs* global = state->input;
 	char keystr[2];
         const SubCmd sub_cmds[] = {
                 MkSubCmd("process", argp_process),
@@ -360,7 +360,7 @@ parse_global(int key, char* arg, struct argp_state* state)
                 argp_error(state, "%s is not a valid command", arg);
 		break;
 	case ARGP_KEY_END:
-		arg_global_fprintf(stdout, global);
+		hkl_binoculars_cmd_args_fprintf(stdout, global);
 		fprintf(stdout, "\n");
 		break;
 	default:
@@ -385,7 +385,7 @@ static struct argp argp_global = { opt_global, parse_global, "[<cmd> [CMD-OPTION
 
 void cmd_global(int argc, char**argv)
 {
-	struct arg_global global = {
+	HklBinocularsCmdArgs global = {
 		.verbosity=1, /* default verbosity */
 	};
 
