@@ -56,7 +56,6 @@ library
   build-depends: pipes-safe >= 2.2.0
   build-depends: QuickCheck
   build-depends: quickcheck-text
-  build-depends: repa
   build-depends: terminal-progress-bar
   build-depends: text
   build-depends: transformers >= 0.3
@@ -95,6 +94,7 @@ library
   exposed-modules: Hkl.Orphan
   exposed-modules: Hkl.Parameter
   exposed-modules: Hkl.Pipes
+  exposed-modules: Hkl.Repa
   exposed-modules: Hkl.Sample
   exposed-modules: Hkl.Types
   exposed-modules: Hkl.Utils
@@ -165,7 +165,6 @@ test-suite hkl-test
   build-depends: ini
   build-depends: intervals
   build-depends: path
-  build-depends: repa
   build-depends: temporary
   build-depends: text
 

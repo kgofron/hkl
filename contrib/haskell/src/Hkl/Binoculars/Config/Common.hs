@@ -12,7 +12,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -38,7 +38,6 @@ module Hkl.Binoculars.Config.Common
     ) where
 
 import           Control.Applicative               ((<|>))
-import           Data.Array.Repa.Index             (DIM2)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
 import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
@@ -58,6 +57,7 @@ import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Orphan                        ()
+import           Hkl.Repa
 
 data BinocularsConfig'Common
   = BinocularsConfig'Common

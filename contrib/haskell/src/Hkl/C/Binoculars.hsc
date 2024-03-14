@@ -25,7 +25,6 @@
 
 module Hkl.C.Binoculars where
 
-import           Data.Array.Repa       (Shape)
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
@@ -35,6 +34,7 @@ import           Foreign.Ptr           (FunPtr, Ptr)
 import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Hkl.C.Hkl
+import           Hkl.Repa
 
 withForeignPtrs :: [ForeignPtr a] -> ([Ptr a] -> IO r) -> IO r
 withForeignPtrs []       f = f []

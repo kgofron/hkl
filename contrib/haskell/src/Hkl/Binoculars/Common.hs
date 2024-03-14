@@ -3,7 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -26,7 +26,6 @@ module Hkl.Binoculars.Common
   ) where
 
 import           Control.Exception          (bracket)
-import           Data.Array.Repa            (Shape)
 import           Data.IORef                 (IORef, newIORef, readIORef)
 import           Foreign.ForeignPtr         (withForeignPtr)
 import           Foreign.Marshal.Array      (withArrayLen)
@@ -38,6 +37,7 @@ import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.Image
 import           Hkl.Orphan                 ()
+import           Hkl.Repa
 
 data Chunk n a = Chunk !a !n !n
 deriving instance (Show n, Show a) => Show (Chunk n a)

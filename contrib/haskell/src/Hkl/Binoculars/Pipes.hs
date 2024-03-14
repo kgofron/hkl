@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -32,8 +32,6 @@ module Hkl.Binoculars.Pipes
 import           Control.Monad              (forever)
 import           Control.Monad.Catch        (tryJust)
 import           Control.Monad.IO.Class     (MonadIO (liftIO))
-import           Data.Array.Repa            (Shape)
-import           Data.Array.Repa.Index      (DIM2)
 import           Data.IORef                 (IORef, readIORef)
 import           Pipes                      (Consumer, Pipe, Proxy, await,
                                              yield)
@@ -52,6 +50,7 @@ import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
+import           Hkl.Repa
 
 -- class ChunkP
 

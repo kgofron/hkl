@@ -10,6 +10,7 @@ AM_CFLAGS = \
 	$(GSL_CFLAGS) \
 	$(HDF5_CFLAGS) \
 	$(INIH_CFLAGS) \
+	-fPIC \
 	-ftrack-macro-expansion=0
 
 AM_LDFLAGS = -version-info 0:0:0 \

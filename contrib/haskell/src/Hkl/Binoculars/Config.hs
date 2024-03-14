@@ -13,7 +13,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-, 20242024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -72,7 +72,6 @@ import           Control.Monad.Catch               (MonadThrow, throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
-import           Data.Array.Repa.Index             (DIM2, DIM3)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, satisfy,
                                                     sepBy, signed, takeText)
@@ -128,6 +127,7 @@ import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Exception
 import           Hkl.Lattice
+import           Hkl.Repa
 import           Hkl.Types
 import           Paths_hkl
 

@@ -47,9 +47,6 @@ import           Control.Monad.Reader              (MonadReader, ask, forM_,
                                                     forever)
 import           Data.Aeson                        (FromJSON, ToJSON,
                                                     eitherDecode', encode)
-import           Data.Array.Repa                   (Array)
-import           Data.Array.Repa.Index             (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr   (F, toForeignPtr)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
@@ -87,6 +84,7 @@ import           Hkl.H5
 import           Hkl.Image
 import           Hkl.Orphan                        ()
 import           Hkl.Pipes
+import           Hkl.Repa
 import           Hkl.Types
 import           Hkl.Utils
 

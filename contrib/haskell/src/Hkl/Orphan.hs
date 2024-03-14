@@ -6,21 +6,18 @@
 
 module Hkl.Orphan where
 
-import           Data.Aeson                      (FromJSON (..), ToJSON (..),
-                                                  Value (..))
-import           Data.Array.Repa                 (Array, Shape, extent,
-                                                  showShape)
-import           Data.Array.Repa.Repr.ForeignPtr (F)
-import           Data.ByteString.Char8           (ByteString)
-import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
-import           Foreign.Storable                (Storable)
-import           GHC.Base                        (Alternative (..))
-import           Path                            (Abs, Dir, Path, mkAbsDir)
-import           Test.QuickCheck                 (Arbitrary (..), elements)
+import           Data.Aeson            (FromJSON (..), ToJSON (..), Value (..))
+import           Data.ByteString.Char8 (ByteString)
+import           Data.Text.Encoding    (decodeUtf8, encodeUtf8)
+import           Foreign.Storable      (Storable)
+import           GHC.Base              (Alternative (..))
+import           Path                  (Abs, Dir, Path, mkAbsDir)
+import           Test.QuickCheck       (Arbitrary (..), elements)
 
-import           Prelude                         hiding (unwords)
+import           Prelude               hiding (unwords)
 
 import           Hkl.C.Binoculars
+import           Hkl.Repa
 
 ---------------
 -- Arbitrary --

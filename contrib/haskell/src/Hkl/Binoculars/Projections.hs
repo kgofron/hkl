@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -26,34 +26,31 @@ module Hkl.Binoculars.Projections
   , withSampleAxis
   ) where
 
-import           Control.Monad                   (zipWithM)
-import           Control.Monad.Catch             (MonadThrow)
-import           Control.Monad.IO.Class          (MonadIO (liftIO))
-import           Control.Monad.Logger            (MonadLogger, logDebugN)
-import           Control.Monad.Trans.Reader      (ReaderT, runReaderT)
-import           Data.Array.Repa                 (Array, Shape, extent,
-                                                  listOfShape, size)
-import           Data.Array.Repa.Index           (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
-import           Data.ByteString                 (useAsCString)
-import           Data.Text.Encoding              (encodeUtf8)
-import           Foreign.C.String                (CString, withCString)
-import           Foreign.C.Types                 (CBool, CSize (..))
-import           Foreign.ForeignPtr              (ForeignPtr, newForeignPtr,
-                                                  withForeignPtr)
-import           Foreign.Marshal.Alloc           (alloca)
-import           Foreign.Marshal.Array           (withArrayLen)
-import           Foreign.Ptr                     (Ptr, nullPtr)
-import           Foreign.Storable                (poke)
-import           GHC.Exts                        (IsList (..))
+import           Control.Monad              (zipWithM)
+import           Control.Monad.Catch        (MonadThrow)
+import           Control.Monad.IO.Class     (MonadIO (liftIO))
+import           Control.Monad.Logger       (MonadLogger, logDebugN)
+import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
+import           Data.ByteString            (useAsCString)
+import           Data.Text.Encoding         (encodeUtf8)
+import           Foreign.C.String           (CString, withCString)
+import           Foreign.C.Types            (CBool, CSize (..))
+import           Foreign.ForeignPtr         (ForeignPtr, newForeignPtr,
+                                             withForeignPtr)
+import           Foreign.Marshal.Alloc      (alloca)
+import           Foreign.Marshal.Array      (withArrayLen)
+import           Foreign.Ptr                (Ptr, nullPtr)
+import           Foreign.Storable           (poke)
+import           GHC.Exts                   (IsList (..))
 
-import           Prelude                         hiding (drop)
+import           Prelude                    hiding (drop)
 
 import           Hkl.Binoculars.Config
 import           Hkl.C
 import           Hkl.Detector
-import           Hkl.Orphan                      ()
-import           Hkl.Utils                       hiding (withCString)
+import           Hkl.Orphan                 ()
+import           Hkl.Repa
+import           Hkl.Utils                  hiding (withCString)
 
 
 cmd :: (HasIniConfig a, ToIni (Config a), MonadLogger m, MonadThrow m, MonadIO m)

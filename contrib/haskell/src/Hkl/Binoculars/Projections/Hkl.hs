@@ -12,7 +12,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -40,9 +40,6 @@ import           Control.Monad.Reader               (MonadReader, ask, forM_,
                                                      forever)
 import           Data.Aeson                         (FromJSON, ToJSON,
                                                      eitherDecode', encode)
-import           Data.Array.Repa                    (Array)
-import           Data.Array.Repa.Index              (DIM2, DIM3)
-import           Data.Array.Repa.Repr.ForeignPtr    (F, toForeignPtr)
 import           Data.ByteString.Lazy               (fromStrict, toStrict)
 import           Data.Functor.Identity              (Identity)
 import           Data.HashMap.Strict                (fromList)
@@ -78,6 +75,7 @@ import           Hkl.HKD
 import           Hkl.Image
 import           Hkl.Orphan                         ()
 import           Hkl.Pipes
+import           Hkl.Repa
 import           Hkl.Sample
 import           Hkl.Utils
 

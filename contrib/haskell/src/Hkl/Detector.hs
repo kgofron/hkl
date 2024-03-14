@@ -34,10 +34,6 @@ import           Control.Monad.IO.Class            (MonadIO, liftIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..),
                                                     object, pairs, withObject,
                                                     (.:), (.=))
-import           Data.Array.Repa                   (Array, Shape, inShape)
-import           Data.Array.Repa.Index             (DIM0, DIM2, DIM3, Z (..),
-                                                    ix2, ix3, (:.) (..))
-import           Data.Array.Repa.Repr.ForeignPtr   (F, fromForeignPtr)
 import           Data.List                         (find, sort)
 import           Data.Text                         (Text, pack, unpack, unwords)
 import           Foreign.C.String                  (peekCString, withCString)
@@ -57,6 +53,7 @@ import           Test.QuickCheck                   (Arbitrary (..), elements)
 import           Hkl.C.Binoculars
 import           Hkl.C.Hkl
 import           Hkl.Exception
+import           Hkl.Repa
 
 data PyFAI deriving (Eq, Show)
 data Hkl deriving (Eq, Show)

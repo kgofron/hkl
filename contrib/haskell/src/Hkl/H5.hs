@@ -11,7 +11,7 @@
 
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -102,10 +102,6 @@ import           Bindings.HDF5.Raw               (H5L_info_t, HErr_t (HErr_t),
 import           Control.Exception               (bracket, throwIO, try)
 import           Control.Monad.Extra             (fromMaybeM)
 import           Data.Aeson                      (FromJSON (..), ToJSON (..))
-import           Data.Array.Repa                 (Array, Shape, extent,
-                                                  linearIndex, listOfShape,
-                                                  size)
-import           Data.Array.Repa.Repr.ForeignPtr (F, toForeignPtr)
 import           Data.ByteString.Char8           (ByteString, pack, packCString,
                                                   unpack)
 import           Data.IORef                      (modifyIORef', newIORef,
@@ -131,6 +127,7 @@ import           Test.QuickCheck                 (Arbitrary (..), oneof)
 import           Hkl.Detector
 import           Hkl.Exception
 import           Hkl.Orphan                      ()
+import           Hkl.Repa
 
 import           Prelude                         hiding (head)
 

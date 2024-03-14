@@ -11,7 +11,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -41,8 +41,6 @@ import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
-import           Data.Array.Repa                   (size)
-import           Data.Array.Repa.Index             (DIM1, DIM2, DIM3, Z)
 import           Data.Int                          (Int32)
 import           Data.Kind                         (Type)
 import           Data.Vector.Storable              (Vector, fromList)
@@ -68,6 +66,7 @@ import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.Image
 import           Hkl.Pipes
+import           Hkl.Repa
 import           Hkl.Types
 
 --------------------
