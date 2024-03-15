@@ -44,7 +44,7 @@ AM_LDFLAGS = -Wl,--whole-archive,$(top_builddir)/hkl/.libs/libhkl.a,--no-whole-a
 
 LDADD = $(top_builddir)/hkl/libhkl.la \
 	$(top_builddir)/hkl/api2/libhkl2.la \
-	$(top_builddir)/binoculars/libhkl-binoculars.a \
+	$(top_builddir)/binoculars/libhkl-binoculars.la \
 	$(top_builddir)/tests/tap/libtap.a \
 	$(GLIB_LIBS) \
 	$(GOBJECT_LIBS) \

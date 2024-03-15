@@ -18,7 +18,7 @@ AM_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(HDF5_LIBS)
 
-bin_PROGRAMS = little-data
+noinst_PROGRAMS = little-data
 little_data_LDADD = xrays/libhkl-xrays.la
 
 # Support for GNU Flymake, in Emacs.

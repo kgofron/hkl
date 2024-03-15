@@ -5,7 +5,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection --enable-
 
 SUBDIRS = hkl third-party
 if BINOCULARS
-SUBDIRS += binoculars
+SUBDIRS += binoculars contrib/haskell
 endif
 if HKL3D
 SUBDIRS += hkl3d data

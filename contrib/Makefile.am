@@ -1,1 +1,1 @@
-SUBDIRS = cristal haskell sixs petra3
+SUBDIRS = cristal sixs petra3
