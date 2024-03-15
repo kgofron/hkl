@@ -477,20 +477,20 @@ int hkl_lattice_set(HklLattice *self,
 {
 	hkl_error (error == NULL || *error == NULL);
 
-	double new_a, previous_a;
-	double new_b, previous_b;
-	double new_c, previous_c;
-	double new_alpha, previous_alpha;
-	double new_beta, previous_beta;
-	double new_gamma, previous_gamma;
-	double new_volume;
+	double previous_a = hkl_parameter_value_get(self->a, HKL_UNIT_DEFAULT);
+	double previous_b = hkl_parameter_value_get(self->b, HKL_UNIT_DEFAULT);
+	double previous_c = hkl_parameter_value_get(self->c, HKL_UNIT_DEFAULT);
+	double previous_alpha = hkl_parameter_value_get(self->alpha, HKL_UNIT_DEFAULT);
+	double previous_beta = hkl_parameter_value_get(self->beta, HKL_UNIT_DEFAULT);
+	double previous_gamma = hkl_parameter_value_get(self->gamma, HKL_UNIT_DEFAULT);
 
-	new_a = convert_to_default(self->a, a, unit_type);
-	new_b = convert_to_default(self->b, b, unit_type);
-	new_c = convert_to_default(self->c, c, unit_type);
-	new_alpha = convert_to_default(self->alpha, alpha, unit_type);
-	new_beta = convert_to_default(self->beta, beta, unit_type);
-	new_gamma = convert_to_default(self->gamma, gamma, unit_type);
+	double new_a = convert_to_default(self->a, a, unit_type);
+	double new_b = convert_to_default(self->b, b, unit_type);
+	double new_c = convert_to_default(self->c, c, unit_type);
+	double new_alpha = convert_to_default(self->alpha, alpha, unit_type);
+	double new_beta = convert_to_default(self->beta, beta, unit_type);
+	double new_gamma = convert_to_default(self->gamma, gamma, unit_type);
+	double new_volume;
 
 	/* need to do the conversion before the check */
 	if(!check_lattice_param(new_a, new_b, new_c, new_alpha, new_beta, new_gamma, &new_volume, error)){
