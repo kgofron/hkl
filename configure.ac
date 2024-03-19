@@ -237,6 +237,7 @@ AM_CONDITIONAL([CONTRIB], [test x$enable_contrib != xno])
 
 AC_CONFIG_FILES([Makefile
                  binoculars/Makefile
+                 binoculars-ng/Makefile
 		 hkl/Makefile
 		 hkl/api2/Makefile
 		 hkl/ccan/Makefile
@@ -259,7 +260,6 @@ AC_CONFIG_FILES([Makefile
 		 contrib/Makefile
 		 contrib/cristal/Makefile
 		 contrib/cristal/xrays/Makefile
-		 contrib/haskell/Makefile
 		 contrib/sixs/Makefile
 		 contrib/petra3/Makefile
 ])
