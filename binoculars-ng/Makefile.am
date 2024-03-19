@@ -107,57 +107,101 @@ sources=\
 	app/Main.hs
 
 CLEANFILES=\
+	src/Hkl/Binoculars.dyn_hi \
+	src/Hkl/Binoculars.dyn_o \
 	src/Hkl/Binoculars.hi \
-	src/Hkl/Binoculars/Config.hi \
-	src/Hkl/Binoculars/Config.dyn_o \
-	src/Hkl/Binoculars/Config.dyn_hi \
-	src/Hkl/Binoculars/Config/Common.hi \
-	src/Hkl/Binoculars/Config/Sample.hi \
+	src/Hkl/Binoculars/Command.dyn_hi \
+	src/Hkl/Binoculars/Command.dyn_o \
 	src/Hkl/Binoculars/Command.hi \
+	src/Hkl/Binoculars/Common.dyn_hi \
+	src/Hkl/Binoculars/Common.dyn_o \
 	src/Hkl/Binoculars/Common.hi \
+	src/Hkl/Binoculars/Config.dyn_hi \
+	src/Hkl/Binoculars/Config.dyn_o \
+	src/Hkl/Binoculars/Config.hi \
+	src/Hkl/Binoculars/Config/Common.dyn_hi \
+	src/Hkl/Binoculars/Config/Common.dyn_o \
+	src/Hkl/Binoculars/Config/Common.hi \
+	src/Hkl/Binoculars/Config/Sample.dyn_hi \
+	src/Hkl/Binoculars/Config/Sample.dyn_o \
+	src/Hkl/Binoculars/Config/Sample.hi \
+	src/Hkl/Binoculars/Pipes.dyn_hi \
+	src/Hkl/Binoculars/Pipes.dyn_o \
 	src/Hkl/Binoculars/Pipes.hi \
+	src/Hkl/Binoculars/Projections.dyn_hi \
+	src/Hkl/Binoculars/Projections.dyn_o \
 	src/Hkl/Binoculars/Projections.hi \
+	src/Hkl/Binoculars/Projections/Angles.dyn_hi \
+	src/Hkl/Binoculars/Projections/Angles.dyn_o \
 	src/Hkl/Binoculars/Projections/Angles.hi \
+	src/Hkl/Binoculars/Projections/Hkl.dyn_hi \
+	src/Hkl/Binoculars/Projections/Hkl.dyn_o \
 	src/Hkl/Binoculars/Projections/Hkl.hi \
+	src/Hkl/Binoculars/Projections/QCustom.dyn_hi \
+	src/Hkl/Binoculars/Projections/QCustom.dyn_o \
 	src/Hkl/Binoculars/Projections/QCustom.hi \
+	src/Hkl/Binoculars/Projections/Test.dyn_hi \
+	src/Hkl/Binoculars/Projections/Test.dyn_o \
 	src/Hkl/Binoculars/Projections/Test.hi \
+	src/Hkl/C.dyn_hi \
+	src/Hkl/C.dyn_o \
 	src/Hkl/C.hi \
-	src/Hkl/C/Hkl.dyn_hi \
-	src/Hkl/C/Hkl.dyn_o \
-	src/Hkl/C/Hkl.hi \
-	src/Hkl/C/Hkl.hs \
 	src/Hkl/C/Binoculars.dyn_hi \
 	src/Hkl/C/Binoculars.dyn_o \
 	src/Hkl/C/Binoculars.hi \
 	src/Hkl/C/Binoculars.hs \
+	src/Hkl/C/Hkl.dyn_hi \
+	src/Hkl/C/Hkl.dyn_o \
+	src/Hkl/C/Hkl.hi \
+	src/Hkl/C/Hkl.hs \
+	src/Hkl/DataSource.dyn_hi \
+	src/Hkl/DataSource.dyn_o \
 	src/Hkl/DataSource.hi \
 	src/Hkl/Detector.dyn_hi \
 	src/Hkl/Detector.dyn_o \
 	src/Hkl/Detector.hi \
-	src/Hkl/Exception.dyn_o \
 	src/Hkl/Exception.dyn_hi \
+	src/Hkl/Exception.dyn_o \
 	src/Hkl/Exception.hi \
+	src/Hkl/Geometry.dyn_hi \
+	src/Hkl/Geometry.dyn_o \
 	src/Hkl/Geometry.hi \
+	src/Hkl/H5.dyn_hi \
+	src/Hkl/H5.dyn_o \
 	src/Hkl/H5.hi \
 	src/Hkl/H5_stub.h \
+	src/Hkl/HKD.dyn_hi \
+	src/Hkl/HKD.dyn_o \
 	src/Hkl/HKD.hi \
+	src/Hkl/Image.dyn_hi \
+	src/Hkl/Image.dyn_o \
 	src/Hkl/Image.hi \
 	src/Hkl/Lattice.dyn_hi \
 	src/Hkl/Lattice.dyn_o \
 	src/Hkl/Lattice.hi \
-	src/Hkl/Orphan.dyn_o \
 	src/Hkl/Orphan.dyn_hi \
+	src/Hkl/Orphan.dyn_o \
 	src/Hkl/Orphan.hi \
+	src/Hkl/Parameter.dyn_hi \
+	src/Hkl/Parameter.dyn_o \
 	src/Hkl/Parameter.hi \
+	src/Hkl/Pipes.dyn_hi \
+	src/Hkl/Pipes.dyn_o \
 	src/Hkl/Pipes.hi \
-	src/Hkl/Repa.dyn_o \
 	src/Hkl/Repa.dyn_hi \
+	src/Hkl/Repa.dyn_o \
 	src/Hkl/Repa.hi \
+	src/Hkl/Sample.dyn_hi \
+	src/Hkl/Sample.dyn_o \
 	src/Hkl/Sample.hi \
 	src/Hkl/Types.dyn_hi \
 	src/Hkl/Types.dyn_o \
 	src/Hkl/Types.hi \
+	src/Hkl/Utils.dyn_hi \
+	src/Hkl/Utils.dyn_o \
 	src/Hkl/Utils.hi \
+	src/Main.dyn_hi \
+	src/Main.dyn_o \
 	src/Main.hi \
 	src/Paths_hkl.dyn_hi \
 	src/Paths_hkl.dyn_o \
