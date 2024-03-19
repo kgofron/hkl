@@ -1,18 +1,30 @@
 AM_CFLAGS=\
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/binoculars \
-	-I$$(ghc-pkg field bindings-DSL include-dirs | cut -d' ' -f 2) \
+	-I$$($(GHCPKG) field bindings-DSL include-dirs | cut -d' ' -f 2) \
 	$(GLIB_CFLAGS)
 
 AM_LDFLAGS=\
 	$(GLIB_LIBS) \
 	$(GSL_LIBS)
 
-#.hsc.hs:
-#	hsc2hs --cflag=$(AM_CFLAGS) -o $@ $<
+AM_GHCFLAGS=\
+	-O \
+	-i$(srcdir)/src \
+	-i$(builddir)/src \
+	-outputdir=$(builddir)/src
 
-#.hs.o:
-#	ghc --make -i$(srcdir)/src -i$(builddir)/src -outputdir=$(builddir)/src -c -O -o $@ $<
+GHCLINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(GHC) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) $(AM_GHCFLAGS) $(GHCFLAGS) -o $@
+
+.hsc.o:
+# fake in order to let automake generate clean rules for _OBJECTS files
+	$(HSC2HS) --cflag=$(AM_CFLAGS) -o $@ $<
+
+.hs.o:
+# fake in order to let automake generate clean rules for _OBJECTS files
+	$(GHC) --make $(AM_GHCFLAGS) -c -o $@ $<
 
 packages=\
 aeson \
@@ -92,59 +104,77 @@ sources=\
 	src/Hkl/Types.hs \
 	src/Hkl/Utils.hs \
 	src/Paths_hkl.hs \
-	app/Binoculars.hs
+	app/Main.hs
 
 CLEANFILES=\
-	src/Hkl/C/Hkl.hs \
-	src/Hkl/C/Binoculars.hs \
-	src/Paths_hkl.dyn_hi \
-	src/Paths_hkl.dyn_o \
-	src/Hkl/Exception.dyn_o \
+	src/Hkl/Binoculars.hi \
+	src/Hkl/Binoculars/Config.hi \
 	src/Hkl/Binoculars/Config.dyn_o \
 	src/Hkl/Binoculars/Config.dyn_hi \
-	src/Hkl/Lattice.dyn_hi \
-	src/Hkl/Detector.dyn_hi \
-	src/Hkl/Types.dyn_hi \
-	src/Hkl/Exception.dyn_hi \
-	src/Hkl/Detector.dyn_o \
-	src/Hkl/Types.dyn_o \
-	src/Hkl/C/Binoculars.dyn_hi \
-	src/Hkl/C/Hkl.dyn_o \
+	src/Hkl/Binoculars/Config/Common.hi \
+	src/Hkl/Binoculars/Config/Sample.hi \
+	src/Hkl/Binoculars/Command.hi \
+	src/Hkl/Binoculars/Common.hi \
+	src/Hkl/Binoculars/Pipes.hi \
+	src/Hkl/Binoculars/Projections.hi \
+	src/Hkl/Binoculars/Projections/Angles.hi \
+	src/Hkl/Binoculars/Projections/Hkl.hi \
+	src/Hkl/Binoculars/Projections/QCustom.hi \
+	src/Hkl/Binoculars/Projections/Test.hi \
+	src/Hkl/C.hi \
 	src/Hkl/C/Hkl.dyn_hi \
+	src/Hkl/C/Hkl.dyn_o \
+	src/Hkl/C/Hkl.hi \
+	src/Hkl/C/Hkl.hs \
+	src/Hkl/C/Binoculars.dyn_hi \
 	src/Hkl/C/Binoculars.dyn_o \
+	src/Hkl/C/Binoculars.hi \
+	src/Hkl/C/Binoculars.hs \
+	src/Hkl/DataSource.hi \
+	src/Hkl/Detector.dyn_hi \
+	src/Hkl/Detector.dyn_o \
+	src/Hkl/Detector.hi \
+	src/Hkl/Exception.dyn_o \
+	src/Hkl/Exception.dyn_hi \
+	src/Hkl/Exception.hi \
+	src/Hkl/Geometry.hi \
+	src/Hkl/H5.hi \
+	src/Hkl/H5_stub.h \
+	src/Hkl/HKD.hi \
+	src/Hkl/Image.hi \
+	src/Hkl/Lattice.dyn_hi \
+	src/Hkl/Lattice.dyn_o \
+	src/Hkl/Lattice.hi \
+	src/Hkl/Orphan.dyn_o \
+	src/Hkl/Orphan.dyn_hi \
+	src/Hkl/Orphan.hi \
+	src/Hkl/Parameter.hi \
+	src/Hkl/Pipes.hi \
 	src/Hkl/Repa.dyn_o \
 	src/Hkl/Repa.dyn_hi \
-	src/Hkl/Lattice.dyn_o \
-	src/Hkl/H5_stub.h \
-	src/Hkl/Orphan.dyn_o \
-	src/Hkl/Orphan.dyn_hi
+	src/Hkl/Repa.hi \
+	src/Hkl/Sample.hi \
+	src/Hkl/Types.dyn_hi \
+	src/Hkl/Types.dyn_o \
+	src/Hkl/Types.hi \
+	src/Hkl/Utils.hi \
+	src/Main.hi \
+	src/Paths_hkl.dyn_hi \
+	src/Paths_hkl.dyn_o \
+	src/Paths_hkl.hi
 
 bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES = $(hsc_sources) $(sources)
-
-binoculars-ng$(EXEEXT):
-	mkdir -p $(builddir)/src/Hkl/C/
-	hsc2hs --cflag=$(AM_CFLAGS) -o $(builddir)/src/Hkl/C/Hkl.hs $(srcdir)/src/Hkl/C/Hkl.hsc
-	hsc2hs --cflag=$(AM_CFLAGS) -o $(builddir)/src/Hkl/C/Binoculars.hs $(srcdir)/src/Hkl/C/Binoculars.hsc
-	$(LIBTOOL) -v --mode=link --tag=CC ghc -o binoculars-ng \
-	-no-keep-o-files -no-keep-hi-files \
-	-i$(srcdir)/src -i$(builddir)/src \
-	-outputdir=$(builddir)/src \
-	$(top_builddir)/binoculars/libhkl-binoculars.la \
+binoculars_ng_LDADD = \
 	$(top_builddir)/hkl/libhkl.la \
-	$(builddir)/src/Hkl/C/Hkl.hs \
-	$(builddir)/src/Hkl/C/Binoculars.hs \
-	$(srcdir)/app/Binoculars.hs
+	$(top_builddir)/binoculars/libhkl-binoculars.la
+binoculars_ng_LINK=$(GHCLINK) $(srcdir)/app/Main.hs
 
-# binoculars_ng_SOURCES = $(hsc_sources) $(sources)
-# binoculars_ng_LDADD = \
-# 	$(top_builddir)/hkl/libhkl.la \
-# 	$(top_builddir)/binoculars/libhkl-binoculars.la
-# binoculars_ng_LINK=$(LIBTOOL) -v --mode=link --tag=CC ghc -o binoculars-ng \
-# 	$$(for p in $(packages); do \
-# 		echo "-package-id=$$(ghc-pkg field $$p id | cut -d' ' -f 2)"; \
-# 	done)
-
-
-# force linkage using gcc for binoculars_ng
-# nodist_EXTRA_binoculars_ng_SOURCES = dummy.c
+binoculars-ng$(EXEEXT): $(binoculars_ng_DEPENDENCIES) $(EXTRA_binoculars_ng_DEPENDENCIES)
+	@rm -f binoculars-ng$(EXEEXT)
+	mkdir -p $(builddir)/src/Hkl/C/
+	@rm -f src/Hkl/C/Hkl.hs
+	$(HSC2HS) --cflag=$(AM_CFLAGS) -o src/Hkl/C/Hkl.hs $(srcdir)/src/Hkl/C/Hkl.hsc
+	@rm -f src/Hkl/C/Binoculars.hs
+	$(HSC2HS) --cflag=$(AM_CFLAGS) -o src/Hkl/C/Binoculars.hs $(srcdir)/src/Hkl/C/Binoculars.hsc
+	$(AM_V_GEN)$(binoculars_ng_LINK) $(binoculars_ng_LDADD) $(LIBS)

@@ -177,6 +177,18 @@ AM_COND_IF([BINOCULARS],
            [PKG_CHECK_MODULES([HDF5], [hdf5-serial >= 1.8.13])
             PKG_CHECK_MODULES([CGLM], [cglm >= 0.7])
             PKG_CHECK_MODULES([INIH], [inih >= 55])
+            AC_PATH_PROG([GHC], [ghc])
+            if test -z "$GHC" ; then
+               AC_MSG_ERROR([ghc was not found])
+            fi
+            AC_PATH_PROG([HSC2HS], [hsc2hs])
+            if test -z "$HSC2HS" ; then
+               AC_MSG_ERROR([hsc2hs was not found])
+            fi
+            AC_PATH_PROG([GHCPKG], [ghc-pkg])
+            if test -z "$GHCPKG" ; then
+               AC_MSG_ERROR([ghc-pkg was not found])
+            fi
 ])
 
 dnl *******************************
