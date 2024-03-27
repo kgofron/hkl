@@ -116,6 +116,7 @@ CLEANFILES=\
 	$(sources:.hs=.dyn_o) \
 	$(sources:.hs=.hi) \
 	$(sources:.hs=.o) \
+	cabal.project.local \
 	src/Hkl/H5_stub.h \
 	src/Main.dyn_hi \
 	src/Main.dyn_o \
@@ -137,3 +138,26 @@ binoculars-ng$(EXEEXT): $(binoculars_ng_DEPENDENCIES) $(EXTRA_binoculars_ng_DEPE
 	@rm -f src/Hkl/C/Binoculars.hs
 	$(HSC2HS) --cflag=$(AM_CFLAGS) -o src/Hkl/C/Binoculars.hs $(srcdir)/src/Hkl/C/Binoculars.hsc
 	$(AM_V_GEN)$(binoculars_ng_LINK) $(binoculars_ng_LDADD) $(LIBS)
+
+
+# when developping with cabal
+cabal:
+	@rm -f cabal.project.local
+	cabal configure \
+		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
+		--extra-lib-dirs=$(abs_top_builddir)/binoculars/.libs \
+		--extra-include-dirs=$(abs_top_srcdir) \
+		--extra-include-dirs=$(abs_top_srcdir)/binoculars \
+		-fuseHklDev \
+		--enable-profiling \
+		--enable-library-profiling \
+		--library-profiling-detail=toplevel-functions \
+		--profiling-detail=toplevel-functions \
+		--enable-optimization
+	$(EMACS) -f haskell-compile
+
+clean-local:
+	cabal clean
+
+
+.PHONY: cabal
