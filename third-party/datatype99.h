@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Hirrolot
+Copyright (c) 2020-2023 Hirrolot
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@ SOFTWARE.
 
 #include <metalang99.h>
 
-#if !ML99_VERSION_COMPATIBLE(1, 13, 0)
-#error Please, update Metalang99 to v1.13.0 or later.
+#if !ML99_VERSION_COMPATIBLE(1, 13, 2)
+#error Please, update Metalang99 to v1.13.2 or later.
 #endif
 
 #ifndef DATATYPE99_NO_ALIASES
@@ -99,7 +99,7 @@ SOFTWARE.
 
 #define DATATYPE99_MAJOR 1
 #define DATATYPE99_MINOR 6
-#define DATATYPE99_PATCH 0
+#define DATATYPE99_PATCH 4
 
 #define DATATYPE99_VERSION_COMPATIBLE(x, y, z)                                                     \
     (DATATYPE99_MAJOR == (x) &&                                                                    \
@@ -385,6 +385,8 @@ static const UnitT99 unit_v99 = '\0';
     v(inline static DATATYPE99_PRIV_CTOR_ATTRS name tag_ params {                                  \
         name result;                                                                               \
         result.tag = tag_##Tag;                                                                    \
+        result.data.dummy = '\0'; /* Ensure that we always initialise memory (even if the variant  \
+                                     has no parameters). */                                        \
         { assigned_fields }                                                                        \
         return result;                                                                             \
     })
