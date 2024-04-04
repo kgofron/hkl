@@ -4,7 +4,6 @@ SUBDIRS += bindings
 endif
 
 all_tests = \
-	hkl-binoculars-t \
 	hkl-unit-t \
 	hkl-bench-t \
 	hkl-axis-t \
@@ -34,7 +33,6 @@ AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
 	-I$(top_srcdir)/third-party \
-	-I$(top_srcdir)/binoculars \
 	-I$(top_srcdir)/tests \
 	$(GLIB_CFLAGS) \
 	$(GOBJECT_CFLAGS) \
@@ -44,11 +42,21 @@ AM_LDFLAGS = -Wl,--whole-archive,$(top_builddir)/hkl/.libs/libhkl.a,--no-whole-a
 
 LDADD = $(top_builddir)/hkl/libhkl.la \
 	$(top_builddir)/hkl/api2/libhkl2.la \
-	$(top_builddir)/binoculars/libhkl-binoculars.la \
 	$(top_builddir)/tests/tap/libtap.a \
 	$(GLIB_LIBS) \
 	$(GOBJECT_LIBS) \
 	$(GSL_LIBS)
+
+if BINOCULARS
+
+all_tests += hkl-binoculars-t
+
+AM_CPPFLAGS += -I$(top_srcdir)/binoculars-ng/binoculars
+
+LDADD += $(top_builddir)/binoculars-ng/binoculars/libhkl-binoculars.la
+
+endif
+
 
 if HKL3D
 

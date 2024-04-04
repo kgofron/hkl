@@ -1,6 +1,8 @@
+SUBDIRS = binoculars
+
 AM_CFLAGS=\
 	-I$(top_srcdir) \
-	-I$(top_srcdir)/binoculars \
+	-I$(top_srcdir)/binoculars-ng/binoculars \
 	-I$$($(GHCPKG) field bindings-DSL include-dirs | cut -d' ' -f 2) \
 	$(GLIB_CFLAGS)
 
@@ -127,7 +129,7 @@ bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES = $(hsc_sources) $(sources)
 binoculars_ng_LDADD = \
 	$(top_builddir)/hkl/libhkl.la \
-	$(top_builddir)/binoculars/libhkl-binoculars.la
+	$(top_builddir)/binoculars-ng/binoculars/libhkl-binoculars.la
 binoculars_ng_LINK=$(GHCLINK) $(srcdir)/app/Main.hs
 
 binoculars-ng$(EXEEXT): $(binoculars_ng_DEPENDENCIES) $(EXTRA_binoculars_ng_DEPENDENCIES)
@@ -145,9 +147,9 @@ cabal:
 	@rm -f cabal.project.local
 	cabal configure \
 		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
-		--extra-lib-dirs=$(abs_top_builddir)/binoculars/.libs \
+		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
 		--extra-include-dirs=$(abs_top_srcdir) \
-		--extra-include-dirs=$(abs_top_srcdir)/binoculars \
+		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
 		-fuseHklDev \
 		--enable-profiling \
 		--enable-library-profiling \

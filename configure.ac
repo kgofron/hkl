@@ -248,13 +248,12 @@ OPTION_DEFAULT_OFF([contrib], [compile the contrib part])
 AM_CONDITIONAL([CONTRIB], [test x$enable_contrib != xno])
 
 AC_CONFIG_FILES([Makefile
-                 binoculars/Makefile
+                 binoculars-ng/binoculars/Makefile
                  binoculars-ng/Makefile
 		 hkl/Makefile
 		 hkl/api2/Makefile
 		 hkl/ccan/Makefile
 		 hkl.pc
-                 hkl-binoculars.pc
 		 hkl3d/Makefile
 		 hkl3d.pc
 		 tests/Makefile

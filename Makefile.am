@@ -5,7 +5,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection --enable-
 
 SUBDIRS = hkl third-party
 if BINOCULARS
-SUBDIRS += binoculars binoculars-ng
+SUBDIRS += binoculars-ng
 endif
 if HKL3D
 SUBDIRS += hkl3d data
@@ -21,13 +21,13 @@ if CONTRIB
 SUBDIRS += contrib
 endif
 
-EXTRA_DIST = hkl.pc.in hkl-binoculars.pc.in hkl3d.pc.in
+EXTRA_DIST = hkl.pc.in hkl3d.pc.in
 
 installed_mainheaderdir = $(includedir)/hkl-@VMAJ@
 dist_installed_mainheader_DATA = hkl.h
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = hkl.pc hkl-binoculars.pc
+pkgconfig_DATA = hkl.pc
 
 if HKL3D
 #for not do not install
