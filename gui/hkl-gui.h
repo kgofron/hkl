@@ -30,4 +30,4 @@
 #define HKL_GUI_TYPE_WINDOW (hkl_gui_window_get_type ())
 G_DECLARE_FINAL_TYPE (HklGuiWindow, hkl_gui_window, HKL_GUI, WINDOW, GObject)
 
-	HklGuiWindow* hkl_gui_window_new (void);
+HklGuiWindow* hkl_gui_window_new (void);

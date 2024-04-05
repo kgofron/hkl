@@ -264,7 +264,7 @@ HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint32_t);
 
 /* test */
 
-#define HKL_BINOCULARS_SPACE_TEST_DECL(image_t)			\
+#define HKL_BINOCULARS_SPACE_TEST_DECL(image_t)				\
         void hkl_binoculars_space_test_ ## image_t (HklBinocularsSpace *space, \
                                                     const HklGeometry *geometry, \
                                                     const HklSample *sample, \

@@ -49,23 +49,23 @@ typedef darray(HklBinocularsAxis) darray_axis;
 /*********/
 
 /* TODO how to avoid hardcoding the size of indexes_0 */
-typedef struct _HklBinocularsSpaceItem HklBinocularsSpaceItem;
-struct _HklBinocularsSpaceItem
-{
-        ptrdiff_t indexes_0[3]; /* for now hardcode the max number of axes */
-        uint32_t intensity;
-};
+				  typedef struct _HklBinocularsSpaceItem HklBinocularsSpaceItem;
+				  struct _HklBinocularsSpaceItem
+				  {
+					  ptrdiff_t indexes_0[3]; /* for now hardcode the max number of axes */
+					  uint32_t intensity;
+				  };
 
 
 typedef darray(HklBinocularsSpaceItem) darray_HklBinocularsSpaceItem;
 
 
-struct _HklBinocularsSpace
-{
-        darray_axis axes;
-        size_t max_items;
-        darray_HklBinocularsSpaceItem items;
-};
+				       struct _HklBinocularsSpace
+				       {
+					       darray_axis axes;
+					       size_t max_items;
+					       darray_HklBinocularsSpaceItem items;
+				       };
 
 /********/
 /* Cube */

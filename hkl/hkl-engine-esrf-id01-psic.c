@@ -18,7 +18,7 @@
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  * Copyright (C) 2023      ESRF - The European Synchrotron
- * 						   71 Avenue des Martyrs
+ *						   71 Avenue des Martyrs
  *                         Grenoble
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
@@ -47,7 +47,7 @@
 /* Geometry */
 /************/
 
-#define HKL_GEOMETRY_PSIC_DESCRIPTION				\
+#define HKL_GEOMETRY_PSIC_DESCRIPTION					\
 	"+ xrays source fix allong the :math:`\\vec{x}` direction (1, 0, 0)\n" \
 	"+ 3 axes for the sample\n"					\
 	"\n"								\
@@ -64,7 +64,7 @@ static const char* hkl_geometry_PSIC_axes[] = {MU, ETA, PHI, NU, DELTA};
 
 static HklGeometry *hkl_geometry_new_PSIC(const HklFactory *factory)
 {
-  HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
+	HklGeometry *self = hkl_geometry_new(factory, &hkl_geometry_operations_defaults);
 	HklHolder *h;
 
 	h = hkl_geometry_add_holder(self);

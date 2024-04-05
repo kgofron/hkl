@@ -46,7 +46,7 @@ typedef enum  {
 
 G_DECLARE_FINAL_TYPE (HklGuiEngine, hkl_gui_engine, HKL_GUI, ENGINE, GObject)
 
-	HklGuiEngine* hkl_gui_engine_new (HklEngine* engine);
+HklGuiEngine* hkl_gui_engine_new (HklEngine* engine);
 
 void hkl_gui_engine_set_engine (HklGuiEngine *gui_engine,
 				HklEngine *engine);

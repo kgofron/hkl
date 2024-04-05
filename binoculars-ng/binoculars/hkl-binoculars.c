@@ -898,7 +898,7 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER:   \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER:	\
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
@@ -1137,7 +1137,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                 HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
                 HklHolder *holder_d = hkl_geometry_detector_holder_get(geometry, detector); \
                 CGLM_ALIGN_MAT mat4s m_holder_d = hkl_binoculars_holder_transformation_get(holder_d); \
-                const HklVector ki_v = hkl_geometry_ki_get(geometry);        \
+                const HklVector ki_v = hkl_geometry_ki_get(geometry);	\
                 CGLM_ALIGN_MAT vec3s ki = {{ki_v.data[0], ki_v.data[1], ki_v.data[2]}}; \
                 float K = glms_vec3_norm(ki);                           \
                 HklHolder *holder_s = hkl_geometry_sample_holder_get(geometry,sample); \
@@ -1208,7 +1208,7 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
                 HklDetector *detector = hkl_detector_factory_new(HKL_DETECTOR_TYPE_0D); \
                 HklHolder *holder_d = hkl_geometry_detector_holder_get(geometry, detector); \
                 CGLM_ALIGN_MAT mat4s m_holder_d = hkl_binoculars_holder_transformation_get(holder_d); \
-                const HklVector ki_v = hkl_geometry_ki_get(geometry);        \
+                const HklVector ki_v = hkl_geometry_ki_get(geometry);	\
                 CGLM_ALIGN_MAT vec3s ki = {{ki_v.data[0], ki_v.data[1], ki_v.data[2]}}; \
                 float K = glms_vec3_norm(ki);                           \
                 HklHolder *holder_s = hkl_geometry_sample_holder_get(geometry,sample); \

@@ -155,7 +155,7 @@ void projection_type_fprintf(FILE *f, const ProjectionType *projection)
 	match(*projection){
 		of(ProjectionType_Angles) fprintf(f, "ProjectionType_Angles");
 		of(ProjectionType_Angles2) fprintf(f, "ProjectionType_Angles2");
- 		of(ProjectionType_Hkl) fprintf(f, "ProjectionType_Hkl");
+		of(ProjectionType_Hkl) fprintf(f, "ProjectionType_Hkl");
 		of(ProjectionType_QCustom) fprintf(f, "ProjectionType_QCusto");
 		of(ProjectionType_QIndex) fprintf(f, "ProjectionType_QInde");
 		of(ProjectionType_QparQper) fprintf(f, "ProjectionType_QparQper");
@@ -167,10 +167,10 @@ void projection_type_fprintf(FILE *f, const ProjectionType *projection)
 }
 
 /**
-* strstarts - does @str start with @prefix?
-* @str: string to examine
-* @prefix: prefix to look for.
-*/
+ * strstarts - does @str start with @prefix?
+ * @str: string to examine
+ * @prefix: prefix to look for.
+ */
 static bool strstarts(const char *str, const char *prefix)
 {
 	return strncmp(str, prefix, strlen(prefix)) == 0;
@@ -289,9 +289,9 @@ typedef struct _HklBinocularsPreConfig
 } HklBinocularsPreConfig;
 
 static int handler_preconfig(void* user,
-		   const char* section,
-		   const char* name,
-		   const char* value)
+			     const char* section,
+			     const char* name,
+			     const char* value)
 {
 	HklBinocularsPreConfig* pconfig = user;
 
@@ -353,16 +353,16 @@ typedef struct _HklBinocularsConfigCommon
 	bool polarization_correction;
 } HklBinocularsConfigCommon;
 
-#define DEFAULT_BINOCULARS_CONFIG_COMMON \
-	.ncores = 4,			 \
+#define DEFAULT_BINOCULARS_CONFIG_COMMON				\
+	.ncores = 4,							\
 		.destination_tmpl = "{projection}_{first}-{last}_{limits}.h5", \
 		.overwrite = false,					\
-		.input_type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV, \
-		.config_range = InputRange_Singleton(1),	      \
-		.detector = HKL_BINOCULARS_DETECTOR_DEFAULT,	      \
-		.central_pixel = {0, 0},			      \
-		.sdd = 1.0,					      \
-		.detrot = 0.0,					      \
+		.input_type = HKL_BINOCULARS_INPUT_TYPE_SIXS_FLY_UHV,	\
+		.config_range = InputRange_Singleton(1),		\
+		.detector = HKL_BINOCULARS_DETECTOR_DEFAULT,		\
+		.central_pixel = {0, 0},				\
+		.sdd = 1.0,						\
+		.detrot = 0.0,						\
 		.polarization_correction = false,
 
 static int handler_config_common(void* user,

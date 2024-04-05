@@ -36,26 +36,26 @@ void input_range_fprintf(FILE*, const InputRange *);
 
 typedef darray(InputRange) darray_input_range;
 
-darray_input_range *parse_input_ranges(const char*);
+			   darray_input_range *parse_input_ranges(const char*);
 
-void darray_input_range_fprintf(FILE *, const darray_input_range*);
-
-
-datatype(
-	ProjectionType,
-	(ProjectionType_Angles),
-	(ProjectionType_Angles2),
- 	(ProjectionType_Hkl),
-	(ProjectionType_QCustom),
-	(ProjectionType_QIndex),
-	(ProjectionType_QparQper),
-	(ProjectionType_QxQyQz),
-	(ProjectionType_RealSpace),
-	(ProjectionType_Pixels),
-	(ProjectionType_Test)
-	);
+			   void darray_input_range_fprintf(FILE *, const darray_input_range*);
 
 
-void projection_type_fprintf(FILE *, const ProjectionType*);
+			   datatype(
+				   ProjectionType,
+				   (ProjectionType_Angles),
+				   (ProjectionType_Angles2),
+				   (ProjectionType_Hkl),
+				   (ProjectionType_QCustom),
+				   (ProjectionType_QIndex),
+				   (ProjectionType_QparQper),
+				   (ProjectionType_QxQyQz),
+				   (ProjectionType_RealSpace),
+				   (ProjectionType_Pixels),
+				   (ProjectionType_Test)
+				   );
 
-HKLAPI int hkl_binoculars_config();
+
+			   void projection_type_fprintf(FILE *, const ProjectionType*);
+
+			   HKLAPI int hkl_binoculars_config();
