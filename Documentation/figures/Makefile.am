@@ -1,8 +1,8 @@
 .asy.png:
-	-@ASY@ -config "" -d -render=4 -f png -o $@ $<
+	-LIBGL_ALWAYS_SOFTWARE=true @ASY@ -config "" -d -render=4 -f png -o $(@:.png=) $<
 
 .asy.pdf:
-	-@ASY@ -config "" -d -render=0 -f pdf -noprc -o $@ $<
+	--LIBGL_ALWAYS_SOFTWARE=true @ASY@ -config "" -d -render=0 -f pdf -noprc -o $@ $<
 
 .gnuplot.svg:
 	-@GNUPLOT@ $<
