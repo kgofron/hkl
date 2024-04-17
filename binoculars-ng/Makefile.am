@@ -13,18 +13,13 @@ AM_LDFLAGS=\
 AM_GHCFLAGS=\
 	-O \
 	-i$(srcdir)/src \
-	-i$(builddir)/src
-#	-outputdir=$(builddir)/src
-
-GHCLINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(GHC) $(AM_GHCFLAGS) $(GHCFLAGS) -o $@
+	-i$(builddir)/src \
+	-outputdir=$(builddir)/src
 
 .hsc.hs:
-# fake in order to let automake generate clean rules for _OBJECTS files
 	$(HSC2HS) --cflag=$(AM_CFLAGS) -o $@ $<
 
 .hs.o:
-# fake in order to let automake generate clean rules for _OBJECTS files
 	$(GHC) --make $(AM_GHCFLAGS) -c -o $@ $<
 
 hsc_sources=\
@@ -62,6 +57,8 @@ sources=\
 	src/Hkl/Utils.hs \
 	src/Paths_hkl.hs
 
+EXTRA_DIST=$(sources)
+
 CLEANFILES=\
 	$(hsc_sources:.hsc=.dyn_hi) \
 	$(hsc_sources:.hsc=.dyn_o) \
@@ -80,7 +77,7 @@ CLEANFILES=\
 
 
 bin_PROGRAMS = binoculars-ng
-binoculars_ng_SOURCES = $(hsc_sources) app/Main.hs
+binoculars_ng_SOURCES = $(hsc_sources) src/Main.hs
 binoculars_ng_GHCFLAGS=\
 	-package aeson \
 	-package async \
@@ -123,17 +120,8 @@ binoculars_ng_GHCFLAGS=\
 binoculars_ng_LDADD = \
 	$(top_builddir)/hkl/libhkl.la \
 	$(top_builddir)/binoculars-ng/binoculars/libhkl-binoculars.la
-binoculars_ng_LINK=$(GHCLINK) $(binoculars_ng_GHCFLAGS) $(sources:.hs=.o)
-
-# binoculars-ng$(EXEEXT): $(binoculars_ng_DEPENDENCIES) $(EXTRA_binoculars_ng_DEPENDENCIES)
-# 	@rm -f binoculars-ng$(EXEEXT)
-# 	mkdir -p $(builddir)/src/Hkl/C/
-# 	@rm -f src/Hkl/C/Hkl.hs
-# 	$(HSC2HS) --cflag=$(AM_CFLAGS) -o src/Hkl/C/Hkl.hs $(srcdir)/src/Hkl/C/Hkl.hsc
-# 	@rm -f src/Hkl/C/Binoculars.hs
-# 	$(HSC2HS) --cflag=$(AM_CFLAGS) -o src/Hkl/C/Binoculars.hs $(srcdir)/src/Hkl/C/Binoculars.hsc
-# 	$(AM_V_GEN)$(binoculars_ng_LINK) $(binoculars_ng_LDADD) $(LIBS)
-
+binoculars_ng_LINK= $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(GHC) $(AM_GHCFLAGS) $(GHCFLAGS) $(binoculars_ng_GHCFLAGS) $(sources:.hs=.o) -o $@
 
 # when developping with cabal
 cabal:
