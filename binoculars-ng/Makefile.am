@@ -77,6 +77,10 @@ CLEANFILES=\
 	src/Main.hi
 
 
+src/Hkl/C/Binoculars.o: src/Hkl/C/Hkl.o
+
+src/Main.hs: src/Hkl/C/Binoculars.o
+
 bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES = $(hsc_sources) src/Main.hs
 binoculars_ng_GHCFLAGS=\
