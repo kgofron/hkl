@@ -152,6 +152,8 @@ AM_COND_IF([HKL_DOC],
 	    AC_PATH_PROG([EMACS], [emacs], [no])
 	    dnl *** gnuplot ***
 	    AC_PATH_PROG([GNUPLOT], [gnuplot], [echo])
+            dnl *** xvfb-run ***
+            AC_PATH_PROG([XVFB_RUN], [xvfb-run], [echo])
 	   ])
 
 dnl *** mathkjax ***

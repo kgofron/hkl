@@ -1,8 +1,10 @@
+XVFB_FLAGS=-s "-screen 0 1024x768x24 -ac +extension GLX +render -noreset"
+
 .asy.png:
-	-LIBGL_ALWAYS_SOFTWARE=true @ASY@ -config "" -d -render=4 -f png -o $(@:.png=) $<
+	-LIBGL_ALWAYS_SOFTWARE=true @XVFB_RUN@ $(XVFB_FLAGS) @ASY@ -config "" -d -render=4 -f png -o $(@:.png=) $<
 
 .asy.pdf:
-	--LIBGL_ALWAYS_SOFTWARE=true @ASY@ -config "" -d -render=0 -f pdf -noprc -o $@ $<
+	--LIBGL_ALWAYS_SOFTWARE=true @XVFB_RUN@ $(XVFB_FLAGS) @ASY@ -config "" -d -render=0 -f pdf -noprc -o $@ $<
 
 .gnuplot.svg:
 	-@GNUPLOT@ $<
