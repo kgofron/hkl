@@ -10,8 +10,7 @@
 AM_CPPFLAGS = -Wextra -D_DEFAULT_SOURCE \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
-	-I$(top_srcdir)/third-party \
-	-ftrack-macro-expansion=0 \
+	$(DATATYPE99_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GOBJECT_CFLAGS) \
 	$(GSL_CFLAGS)

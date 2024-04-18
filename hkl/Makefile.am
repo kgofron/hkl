@@ -9,8 +9,7 @@ AM_CFLAGS = \
 	-DG_LOG_DOMAIN=\"Hkl\" \
 	-I$(top_builddir) \
 	-I$(top_srcdir) \
-	-I$(top_srcdir)/third-party/ \
-	-ftrack-macro-expansion=0 \
+	$(DATATYPE99_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS)
 

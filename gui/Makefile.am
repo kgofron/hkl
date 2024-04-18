@@ -10,9 +10,8 @@ AM_CFLAGS = \
 	-DGSEAL_ENABLE \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
-	-I$(top_srcdir)/third-party/ \
-	-ftrack-macro-expansion=0 \
 	-Wno-misleading-indentation \
+	$(DATATYPE99_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS) \
 	$(GTK_CFLAGS)

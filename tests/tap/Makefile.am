@@ -1,7 +1,7 @@
 AM_CFLAGS = \
 	-I$(top_srcdir) \
-	-I$(top_srcdir)/third-party \
 	-I$(abs_top_srcdir)/tests \
+	$(DATATYPE99_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS)
 

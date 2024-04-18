@@ -247,6 +247,23 @@ OPTION_DEFAULT_OFF([contrib], [compile the contrib part])
 
 AM_CONDITIONAL([CONTRIB], [test x$enable_contrib != xno])
 
+
+dnl ******************
+dnl *** datatype99 ***
+dnl ******************
+
+OPTION_DEFAULT_OFF([datatype99], [use the system datatype99])
+AC_CHECK_HEADERS([datatype99.h], [], [enable_datatype99=no])
+
+DATATYPE99_CFLAGS="-ftrack-macro-expansion=0"
+AM_CONDITIONAL([DATATYPE99], [test x$enable_datatype99 != xno])
+AM_COND_IF([DATATYPE99],
+        [],
+        [DATATYPE99_CFLAGS=$DATATYPE99_CFLAGS' -I$(top_srcdir)/third-party/']
+        )
+AC_SUBST(DATATYPE99_CFLAGS)
+
+
 AC_CONFIG_FILES([Makefile
                  binoculars-ng/binoculars/Makefile
                  binoculars-ng/Makefile

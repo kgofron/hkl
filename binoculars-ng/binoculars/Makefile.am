@@ -3,14 +3,13 @@
 AM_CFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/hkl \
-	-I$(top_srcdir)/third-party \
 	-DPKGDATA=\""$(pkgdatadir)"\" \
 	$(CGLM_CFLAGS) \
+	$(DATATYPE99_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS) \
 	$(HDF5_CFLAGS) \
-	$(INIH_CFLAGS) \
-	-ftrack-macro-expansion=0
+	$(INIH_CFLAGS)
 
 AM_LDFLAGS = -version-info 0:0:0 \
 	$(top_builddir)/hkl/libhkl.la \

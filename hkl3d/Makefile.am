@@ -7,9 +7,8 @@ AM_CXXFLAGS = \
 	-I$(top_srcdir)/hkl \
 	-I$(top_srcdir)/hkl3d \
 	-I$(top_srcdir)/hkl3d/bullet/src\
-	-I$(top_srcdir)/third-party/ \
-	-ftrack-macro-expansion=0 \
 	$(BULLET_CFLAGS) \
+	$(DATATYPE99_CFLAGS) \
 	$(G3D_CFLAGS) \
 	$(YAML_CFLAGS)
 

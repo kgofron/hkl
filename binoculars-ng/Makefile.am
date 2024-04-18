@@ -4,6 +4,7 @@ AM_CFLAGS=\
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/binoculars-ng/binoculars \
 	-I$$($(GHCPKG) field bindings-DSL include-dirs | cut -d' ' -f 2) \
+	$(DATATYPE99_CFLAGS) \
 	$(GLIB_CFLAGS)
 
 AM_LDFLAGS=\
@@ -17,7 +18,7 @@ AM_GHCFLAGS=\
 	-outputdir=$(builddir)/src
 
 .hsc.hs:
-	$(HSC2HS) --cflag=$(AM_CFLAGS) -o $@ $<
+	$(HSC2HS) $$(echo "$(AM_CFLAGS)" | sed "s%-ftrack-macro-expansion=0%%") -o $@ $<
 
 .hs.o:
 	$(GHC) --make $(AM_GHCFLAGS) -c -o $@ $<
