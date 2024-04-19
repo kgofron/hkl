@@ -12,6 +12,11 @@ AM_LDFLAGS=\
 	$(GSL_LIBS)
 
 AM_GHCFLAGS=\
+	-g \
+	-rtsopts \
+	-threaded \
+	-with-rtsopts=-N4 \
+	-Wall \
 	-O \
 	-i$(srcdir)/src \
 	-i$(builddir)/src \
@@ -127,6 +132,32 @@ binoculars_ng_LDADD = \
 	$(top_builddir)/binoculars-ng/binoculars/libhkl-binoculars.la
 binoculars_ng_LINK= $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(GHC) $(AM_GHCFLAGS) $(GHCFLAGS) $(binoculars_ng_GHCFLAGS) $(sources:.hs=.o) -o $@
+
+
+###############
+# local tests #
+###############
+
+RTS = +RTS -N8 -RTS
+RUN = /usr/bin/time -v ./binoculars-ng $(RTS)
+PROCESS = $(RUN) --debug process
+PROCESS_DBG=gdb --args ./binoculars-ng --debug process
+
+cristal: binoculars-ng
+	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
+
+mars: binoculars-ng
+#	$(PROCESS) data/test/config_mars_ruche_rel_flyscan.ini
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 173
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 153
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 132
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 105
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 78
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 75
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2022_Run1/20211749/binoculars/config_qxqyqz.ini 75
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2022_Run1/20211749/binoculars/config_qxqyqz.ini 145
+#	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/HR_XRD_CX2/binoculars/config_qxqyqz.ini 473
+	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/20232102/binoculars/config_qxqyqz.ini 272
 
 # when developping with cabal
 cabal:
