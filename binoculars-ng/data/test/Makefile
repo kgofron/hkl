@@ -1,5 +1,5 @@
 RTS = +RTS -N8 -RTS
-RUN = cd ../..; /usr/bin/time -v ./bootstrap cabal run binoculars-ng -- $(RTS)
+RUN = cd ../..; /usr/bin/time -v ./binoculars-ng $(RTS)
 PROCESS = $(RUN) --debug process
 #PROCESS = cd ../..; binoculars-ng process
 PROCESS_DBG=cd ../.. ; ./bootstrap gdb --args $$(cabal list-bin binoculars-ng) --debug process

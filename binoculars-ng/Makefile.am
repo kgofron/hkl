@@ -82,9 +82,11 @@ CLEANFILES=\
 	src/Main.hi
 
 
-src/Hkl/C/Binoculars.o: src/Hkl/C/Hkl.o
+src/Hkl/C/Binoculars.o: src/Hkl/C/Hkl.o src/Hkl/C/Hkl.hs
 
-src/Main.hs: src/Hkl/C/Binoculars.o
+$(sources) src/Main.hs : src/Hkl/C/Binoculars.o src/Hkl/C/Binoculars.hs
+
+src/Main.o : $(sources)
 
 bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES = $(hsc_sources) src/Main.hs
@@ -132,7 +134,6 @@ binoculars_ng_LDADD = \
 	$(top_builddir)/binoculars-ng/binoculars/libhkl-binoculars.la
 binoculars_ng_LINK= $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(GHC) $(AM_GHCFLAGS) $(GHCFLAGS) $(binoculars_ng_GHCFLAGS) $(sources:.hs=.o) -o $@
-
 
 ###############
 # local tests #

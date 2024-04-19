@@ -766,7 +766,9 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                        DataSourcePath'Double'Const 0
                      ])
                    (DataSourcePath'Image
-                    (hdf5p $ datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image"))
+                    (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
+                             `H5Or`
+                             datasetpattr ("interpretation", "image")))
                     detector)
                    (mkTimeStamp'Sbs msub)
          SixsFlyMedH -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedH
