@@ -160,6 +160,9 @@ mars: binoculars-ng
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/HR_XRD_CX2/binoculars/config_qxqyqz.ini 473
 	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/20232102/binoculars/config_qxqyqz.ini 272
 
+sixs: binoculars-ng
+	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546
+
 # when developping with cabal
 cabal:
 	@rm -f cabal.project.local
