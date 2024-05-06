@@ -139,7 +139,7 @@ binoculars_ng_LINK= $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLF
 # local tests #
 ###############
 
-RTS = +RTS -N8 -RTS
+RTS = +RTS -N4 -RTS
 RUN = /usr/bin/time -v ./binoculars-ng $(RTS)
 PROCESS = $(RUN) --debug process
 PROCESS_DBG=gdb --args ./binoculars-ng --debug process
@@ -158,7 +158,20 @@ mars: binoculars-ng
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2022_Run1/20211749/binoculars/config_qxqyqz.ini 75
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2022_Run1/20211749/binoculars/config_qxqyqz.ini 145
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/HR_XRD_CX2/binoculars/config_qxqyqz.ini 473
-	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/20232102/binoculars/config_qxqyqz.ini 272
+#
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 72-82
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 100-111
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 129-138
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 158-167
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 186-195
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 207-216
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 228-237
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 246-255
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 261-271
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 285-294
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 306-315
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 329-338
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
 
 sixs: binoculars-ng
 	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546
