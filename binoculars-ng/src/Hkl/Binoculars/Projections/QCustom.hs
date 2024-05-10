@@ -139,11 +139,14 @@ default'DataSourcePath'DataFrameQCustom
     (DataSourcePath'Geometry
       (Geometry'Factory Uhv)
       (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
-      [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
-      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
-      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
-      , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
-      ])
+      (DataSourcePath'List
+       [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
+       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
+       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
+       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
+       ]
+      )
+    )
     (DataSourcePath'Image
       (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
       defaultDetector)
@@ -579,14 +582,14 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
             = DataSourcePath'Geometry
               (Geometry'Factory Uhv)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma]
+              (DataSourcePath'List [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma])
 
       let dataSourcePath'Geometry'Sixs'UhvGisaxs :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'UhvGisaxs
             = DataSourcePath'Geometry
               sixsUhvGisaxs
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ]
+              (DataSourcePath'List [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
 
       let sixs'Med'Beta
             = DataSourcePath'Double'Ini cfg "geometry.values" "beta"
@@ -653,28 +656,28 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
             = DataSourcePath'Geometry
               (Geometry'Factory MedH)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              [ sixs'Med'Beta, sixs'MedH'Mu, sixs'MedH'Gamma, sixs'MedH'Delta ]
+              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'MedH'Gamma, sixs'MedH'Delta ])
 
       let dataSourcePath'Geometry'Sixs'MedHGisaxs ::  DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedHGisaxs
             = DataSourcePath'Geometry
               sixsMedHGisaxs
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ]
+              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ])
 
       let dataSourcePath'Geometry'Sixs'MedV :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedV
             = DataSourcePath'Geometry
               (Geometry'Factory MedV)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'MedV'Gamma, sixs'MedV'Delta, sixs'MedV'Etaa ]
+              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'MedV'Gamma, sixs'MedV'Delta, sixs'MedV'Etaa ])
 
       let dataSourcePath'Geometry'Sixs'MedVGisaxs :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedVGisaxs
             = DataSourcePath'Geometry
               sixsMedVGisaxs
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
-              [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ]
+              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
 
       let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DataSourcePath Geometry -> DataSourcePath DataFrameQCustom
           dataSourcePath'DataFrameQCustom'Sixs'Fly g
@@ -698,13 +701,15 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                       (DataSourcePath'Geometry
                         (Geometry'Factory K6c)
                         (overloadWaveLength mWavelength (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
-                        [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position")
-                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position")
-                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position")
-                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1")
-                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position")
-                        , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position")
-                        ]
+                        (DataSourcePath'List
+                         [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position")
+                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position")
+                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position")
+                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1")
+                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position")
+                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position")
+                         ]
+                        )
                       )
                       (DataSourcePath'Image
                         (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05")
@@ -717,11 +722,14 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                        (DataSourcePath'Geometry
                          (Geometry'Factory Mars)
                          (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
-                         [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
-                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
-                         , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
-                         ])
+                         (DataSourcePath'List
+                          [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
+                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
+                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
+                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
+                          ]
+                         )
+                        )
                        (DataSourcePath'Image
                          (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
                                               `H5Or`
@@ -733,30 +741,33 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                    (DataSourcePath'Geometry
                      (Geometry'Factory Mars)
                      (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
-                     [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/omega"
-                                                                   `H5Or`
-                                                                   datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.1_#2/raw_value"))
+                     (DataSourcePath'List
+                      [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/omega"
+                                                                    `H5Or`
+                                                                     datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.1_#2/raw_value"))
 
-                       `DataSourcePath'Double'Or`
-                       DataSourcePath'Double'Const 0
-                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/chi"
-                                                                   `H5Or`
-                                                                   datasetp "MARS/d03-1-cx2__ex__gonio-mt_rs_#2/raw_value"))
-                       `DataSourcePath'Double'Or`
-                       DataSourcePath'Double'Const 0
-                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/phi"
-                                                                   `H5Or`
-                                                                   datasetpattr ("long_name", "d03-1-cx2/ex/gonio-mt_rz/position")
-                                                                   `H5Or`
-                                                                   datasetp "MARS/d03-1-cx2__ex__gonio-mt_rz_#2/raw_value"))
-                       `DataSourcePath'Double'Or`
-                       DataSourcePath'Double'Const 0
-                     , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/tth"
-                                                                   `H5Or`
-                                                                   datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.2_#2/raw_value"))
-                       `DataSourcePath'Double'Or`
-                       DataSourcePath'Double'Const 0
-                     ])
+                        `DataSourcePath'Double'Or`
+                         DataSourcePath'Double'Const 0
+                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/chi"
+                                                                    `H5Or`
+                                                                    datasetp "MARS/d03-1-cx2__ex__gonio-mt_rs_#2/raw_value"))
+                        `DataSourcePath'Double'Or`
+                        DataSourcePath'Double'Const 0
+                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/phi"
+                                                                    `H5Or`
+                                                                    datasetpattr ("long_name", "d03-1-cx2/ex/gonio-mt_rz/position")
+                                                                    `H5Or`
+                                                                    datasetp "MARS/d03-1-cx2__ex__gonio-mt_rz_#2/raw_value"))
+                        `DataSourcePath'Double'Or`
+                        DataSourcePath'Double'Const 0
+                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/tth"
+                                                                    `H5Or`
+                                                                    datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.2_#2/raw_value"))
+                        `DataSourcePath'Double'Or`
+                        DataSourcePath'Double'Const 0
+                      ]
+                     )
+                    )
                    (DataSourcePath'Image
                     (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
                              `H5Or`

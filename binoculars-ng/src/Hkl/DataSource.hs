@@ -152,6 +152,9 @@ instance Is1DStreamable Dataset Double where
 instance Is1DStreamable Dataset Float where
   extract1DStreamValue = getPosition
 
+instance Is1DStreamable (DataSourceAcq [Double]) (Data.Vector.Storable.Vector CDouble) where
+  extract1DStreamValue (DataSourceAcq'List ds) i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
+
 instance Is1DStreamable (DataSourceAcq Float) Float where
   extract1DStreamValue (DataSourceAcq'Float ds) = extract1DStreamValue ds
 
@@ -175,9 +178,6 @@ instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
   extract1DStreamValue (DataSourceAcq'Timestamp ds) i = Timestamp <$> extract1DStreamValue ds i
   extract1DStreamValue DataSourceAcq'Timestamp'NoTimestamp _ = returnIO $ Timestamp 0
 
-instance Is1DStreamable  [DataSourceAcq Double] (Data.Vector.Storable.Vector CDouble) where
-  extract1DStreamValue ds i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
-
 ----------------
 -- DataSource --
 ----------------
@@ -195,12 +195,9 @@ class DataSource a where
                               `catch`
                               \exl -> withDataSourceP f r g
                                      `catch`
-                                     \exr -> throwM $ CanNotOpenDataSource'Double'Or exl exr
-
-
+                                     \exr -> throwM $ CanNotOpenDataSource'Or exl exr
 
 -- DataSource (instances)
-
 
 -- Attenuation
 
@@ -273,6 +270,22 @@ instance DataSource Double where
                Just v  ->  g (DataSourceAcq'Double'Const v))
   withDataSourceP f (DataSourcePath'Double'Or l r) g = withDataSourcePOr f l r g
 
+-- [Double]
+
+nest :: [(r -> a) -> a] -> ([r] -> a) -> a
+nest xs = runCont (Prelude.mapM cont xs)
+
+instance DataSource [Double] where
+    data DataSourcePath [Double]
+        = DataSourcePath'List [DataSourcePath Double]
+          deriving (Generic, FromJSON, Show, ToJSON)
+
+    data DataSourceAcq [Double]
+        = DataSourceAcq'List [DataSourceAcq Double]
+
+    withDataSourceP f (DataSourcePath'List ps) g
+        = nest (Prelude.map (withDataSourceP f) ps) (\as -> g $ (DataSourceAcq'List as))
+
 -- Float
 
 instance DataSource Float where
@@ -288,17 +301,11 @@ instance DataSource Float where
 
 -- Geometry
 
-nest :: [(r -> a) -> a] -> ([r] -> a) -> a
-nest xs = runCont (Prelude.mapM cont xs)
-
-withAxesPathP :: (MonadSafe m, Location l) => l -> [DataSourcePath Double] -> ([DataSourceAcq Double] -> m a) -> m a
-withAxesPathP f dpaths = nest (Prelude.map (withDataSourceP f) dpaths)
-
 instance DataSource Geometry where
   data DataSourcePath Geometry =
     DataSourcePath'Geometry { geometryGeometry       :: Geometry
                             , geometryPathWavelength :: DataSourcePath Double
-                            , geometryPathAxes       :: [DataSourcePath Double]
+                            , geometryPathAxes       :: DataSourcePath [Double]
                             }
     | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
     deriving (Generic, Show, FromJSON, ToJSON)
@@ -306,24 +313,24 @@ instance DataSource Geometry where
   data DataSourceAcq Geometry
     = DataSourceAcq'Geometry'MedVEiger
       (DataSourceAcq Double)
-      [DataSourceAcq Double]
+      (DataSourceAcq [Double])
       (DataSourceAcq Double)
       (DataSourceAcq Double)
     | DataSourceAcq'Geometry
       (ForeignPtr C'HklGeometry)
       (DataSourceAcq Double)
-      [DataSourceAcq Double]
+      (DataSourceAcq [Double])
 
 
   withDataSourceP f (DataSourcePath'Geometry g w as) gg =
     withDataSourceP f w $ \w' ->
-    withAxesPathP f as $ \as' -> do
+    withDataSourceP f as $ \as' -> do
     fptr <- liftIO $ newGeometry g
     gg (DataSourceAcq'Geometry fptr w' as')
   withDataSourceP f (DataSourcePath'Geometry'Fix w) gg =
     withDataSourceP f w $ \w' -> do
     fptr <- liftIO $ newGeometry fixed
-    gg (DataSourceAcq'Geometry fptr w' [])
+    gg (DataSourceAcq'Geometry fptr w' (DataSourceAcq'List []))
 
 -- Image
 
