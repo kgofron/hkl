@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -277,7 +278,8 @@ instance DataSource Double where
 instance DataSource Float where
   newtype DataSourcePath Float
     = DataSourcePath'Float (Hdf5Path DIM1 Float)
-    deriving (Generic, Show, FromJSON, ToJSON)
+    deriving (Generic, Show)
+    deriving anyclass (FromJSON, ToJSON)
 
   newtype DataSourceAcq Float
     = DataSourceAcq'Float Dataset
@@ -358,7 +360,8 @@ instance DataSource Image where
 instance DataSource Int where
   newtype DataSourcePath Int
     = DataSourcePath'Int Int
-    deriving (Generic, Show, FromJSON, ToJSON)
+    deriving (Generic, Show)
+    deriving anyclass (FromJSON, ToJSON)
 
   newtype DataSourceAcq Int
     = DataSourceAcq'Int Int
