@@ -36,8 +36,6 @@ import           Data.HashMap.Lazy            (fromList)
 import           Data.Ini                     (Ini (..))
 import           Data.Text                    (Text)
 import           GHC.Generics                 (Generic)
-import           Generic.Random               (genericArbitraryU)
-import           Test.QuickCheck              (Arbitrary (..))
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Config.Common
@@ -109,9 +107,6 @@ instance Is0DStreamable (DataSourceAcq Sample) Sample where
     <*> (Parameter "uz"
          <$> extract0DStreamValue uz
          <*> pure (Range 0 0))
-
-instance Arbitrary (DataSourcePath Sample) where
-  arbitrary = DataSourcePath'Sample <$> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary <*> arbitrary  <*> arbitrary <*> arbitrary
 
 default'DataSourcePath'Sample :: DataSourcePath Sample
 default'DataSourcePath'Sample = DataSourcePath'Sample
@@ -229,9 +224,6 @@ default'BinocularsConfig'Sample
     , binocularsConfig'Sample'Uy = Nothing
     , binocularsConfig'Sample'Uz = Nothing
     }
-
-instance Arbitrary BinocularsConfig'Sample where
-  arbitrary = genericArbitraryU
 
 instance ToIni BinocularsConfig'Sample where
   toIni c = Ini { iniSections = fromList [ ("input", elemFMbDef "a" binocularsConfig'Sample'A c default'BinocularsConfig'Sample

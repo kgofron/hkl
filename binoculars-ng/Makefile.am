@@ -122,8 +122,6 @@ binoculars_ng_GHCFLAGS=\
 	-package path-io \
 	-package pipes \
 	-package pipes-safe \
-	-package QuickCheck \
-	-package quickcheck-text \
 	-package terminal-progress-bar \
 	-package text \
 	-package transformers \

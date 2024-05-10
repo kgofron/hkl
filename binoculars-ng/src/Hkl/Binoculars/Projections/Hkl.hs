@@ -57,7 +57,6 @@ import           Pipes                              (await, each, runEffect,
                                                      (>->))
 import           Pipes.Prelude                      (filter, map, tee, toListM)
 import           Pipes.Safe                         (runSafeP, runSafeT)
-import           Test.QuickCheck                    (Arbitrary (..))
 import           Text.Printf                        (printf)
 
 import           Hkl.Binoculars.Common
@@ -93,9 +92,6 @@ data DataFrameHkl' f
 deriving instance Show (DataFrameHkl' DataSourcePath)
 instance FromJSON (DataFrameHkl' DataSourcePath)
 instance ToJSON (DataFrameHkl' DataSourcePath)
-
-instance Arbitrary (DataFrameHkl' DataSourcePath) where
-  arbitrary = DataFrameHkl <$> arbitrary  <*> arbitrary
 
 defaultDataSourcePath'DataFrameHkl :: DataFrameHkl' DataSourcePath
 defaultDataSourcePath'DataFrameHkl = DataFrameHkl

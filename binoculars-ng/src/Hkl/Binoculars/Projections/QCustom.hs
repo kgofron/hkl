@@ -59,7 +59,6 @@ import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
 import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
 import           GHC.Generics                      (Generic)
-import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Units.Dimensional.Prelude (Angle, degree, radian, (*~),
                                                     (/~))
 import           Path                              (Abs, Dir, Path)
@@ -67,7 +66,6 @@ import           Pipes                             (await, each, runEffect,
                                                     yield, (>->))
 import           Pipes.Prelude                     (filter, map, tee, toListM)
 import           Pipes.Safe                        (runSafeT)
-import           Test.QuickCheck                   (Arbitrary (..))
 import           Text.Printf                       (printf)
 
 import           Hkl.Binoculars.Common
@@ -132,9 +130,6 @@ instance Is1DStreamable (DataSourceAcq DataFrameQCustom) DataFrameQCustom where
       <*> extract1DStreamValue img i
       <*> extract1DStreamValue idx i
 
-instance Arbitrary (DataSourcePath DataFrameQCustom) where
-  arbitrary = DataSourcePath'DataFrameQCustom <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-
 default'DataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
 default'DataSourcePath'DataFrameQCustom
   = DataSourcePath'DataFrameQCustom
@@ -186,9 +181,6 @@ data instance Config 'QCustomProjection
     , binocularsConfig'QCustom'Uqz                    :: Degree
     , binocularsConfig'QCustom'SampleAxis             :: Maybe SampleAxis
     } deriving (Show, Generic)
-
-instance Arbitrary (Config 'QCustomProjection) where
-  arbitrary = genericArbitraryU
 
 newtype instance Args 'QCustomProjection = Args'QCustomProjection (Maybe ConfigRange)
 

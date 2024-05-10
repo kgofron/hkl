@@ -53,7 +53,6 @@ import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe, catch, throwM)
-import           Test.QuickCheck                   (Arbitrary (..), oneof)
 
 import           Prelude                           hiding (filter)
 
@@ -228,14 +227,6 @@ instance DataSource Attenuation where
   withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
   withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
 
-instance Arbitrary (DataSourcePath Attenuation) where
-  arbitrary = oneof
-    [ DataSourcePath'Attenuation <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-    , DataSourcePath'ApplyedAttenuationFactor <$> arbitrary
-    , pure DataSourcePath'NoAttenuation
-    ]
-
-
 -- Degree
 
 instance DataSource Degree where
@@ -250,12 +241,6 @@ instance DataSource Degree where
 
   withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
   withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
-
-instance Arbitrary (DataSourcePath Degree) where
-  arbitrary = oneof
-    [ DataSourcePath'Degree <$> arbitrary
-    , DataSourcePath'Degree'Const <$> arbitrary
-    ]
 
 -- Double
 
@@ -287,13 +272,6 @@ instance DataSource Double where
                Just v  ->  g (DataSourceAcq'Double'Const v))
   withDataSourceP f (DataSourcePath'Double'Or l r) g = withDataSourcePOr f l r g
 
-instance Arbitrary (DataSourcePath Double) where
-  arbitrary = oneof
-    [ DataSourcePath'Double <$> arbitrary
-    , DataSourcePath'Double'Const <$> arbitrary
-    ]
-
-
 -- Float
 
 instance DataSource Float where
@@ -305,10 +283,6 @@ instance DataSource Float where
     = DataSourceAcq'Float Dataset
 
   withDataSourceP f (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
-
-instance Arbitrary (DataSourcePath Float) where
-  arbitrary = DataSourcePath'Float <$> arbitrary
-
 
 -- Geometry
 
@@ -349,11 +323,6 @@ instance DataSource Geometry where
     fptr <- liftIO $ newGeometry fixed
     gg (DataSourceAcq'Geometry fptr w' [])
 
-instance Arbitrary (DataSourcePath Geometry) where
-  arbitrary = oneof
-    -- TODO add the Geometry constructor
-    [ DataSourcePath'Geometry'Fix <$> arbitrary]
-
 -- Image
 
 condM :: (Monad m) => [(m Bool, m a)] -> m a
@@ -384,9 +353,6 @@ instance DataSource Image where
                 g (DataSourceAcq'Image'Word32 ds det arr))
           ]
 
-instance Arbitrary (DataSourcePath Image) where
-  arbitrary = DataSourcePath'Image <$> arbitrary <*> arbitrary
-
 -- Int
 
 instance DataSource Int where
@@ -412,6 +378,3 @@ instance DataSource Timestamp where
 
   withDataSourceP f (DataSourcePath'Timestamp p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timestamp ds)
   withDataSourceP _ DataSourcePath'Timestamp'NoTimestamp g = g DataSourceAcq'Timestamp'NoTimestamp
-
-instance Arbitrary (DataSourcePath Timestamp) where
-  arbitrary = DataSourcePath'Timestamp <$> arbitrary
