@@ -12,7 +12,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -37,13 +37,11 @@ import           Data.Ini                     (Ini (..))
 import           Data.Text                    (Text)
 import           GHC.Generics                 (Generic)
 import           Generic.Random               (genericArbitraryU)
-import           Pipes.Safe                   (catch, throwM)
 import           Test.QuickCheck              (Arbitrary (..))
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Config.Common
 import           Hkl.DataSource
-import           Hkl.Exception
 import           Hkl.H5
 import           Hkl.Lattice
 import           Hkl.Parameter
@@ -90,11 +88,7 @@ instance DataSource Sample where
     withDataSourceP f ux $ \ux' ->
     withDataSourceP f uy $ \uy' ->
     withDataSourceP f uz $ \uz' -> g (DataSourceAcq'Sample a' b' c' alpha' beta' gamma' ux' uy' uz')
-  withDataSourceP f (DataSourcePath'Sample'Or l r) g = withDataSourceP f l g
-                                                       `catch`
-                                                       \exl -> withDataSourceP f r g
-                                                              `catch`
-                                                              \exr -> throwM $ CanNotOpenDataSource'Sample'Or exl exr
+  withDataSourceP f (DataSourcePath'Sample'Or l r) g = withDataSourcePOr f l r g
 
 instance Is0DStreamable (DataSourceAcq Sample) Sample where
   extract0DStreamValue (DataSourceAcq'Sample a b c alpha beta gamma ux uy uz) =

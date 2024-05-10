@@ -186,9 +186,21 @@ class DataSource a where
   data DataSourcePath a :: Type
   data DataSourceAcq a :: Type
 
-  withDataSourceP :: (Location l, MonadSafe m) => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+  withDataSourceP :: (Location l, MonadSafe m)
+                    => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+
+  withDataSourcePOr :: (Location l, MonadSafe m)
+                      => l -> DataSourcePath a -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+  withDataSourcePOr f l r g = withDataSourceP f l g
+                              `catch`
+                              \exl -> withDataSourceP f r g
+                                     `catch`
+                                     \exr -> throwM $ CanNotOpenDataSource'Double'Or exl exr
+
+
 
 -- DataSource (instances)
+
 
 -- Attenuation
 
@@ -273,11 +285,7 @@ instance DataSource Double where
       (\mv -> case mv of
                Nothing -> throwM $ CanNotOpenDataSource'Double'Ini s k
                Just v  ->  g (DataSourceAcq'Double'Const v))
-  withDataSourceP f (DataSourcePath'Double'Or l r) g = withDataSourceP f l g
-                                                       `catch`
-                                                       \exl -> withDataSourceP f r g
-                                                              `catch`
-                                                              \exr -> throwM $ CanNotOpenDataSource'Double'Or exl exr
+  withDataSourceP f (DataSourcePath'Double'Or l r) g = withDataSourcePOr f l r g
 
 instance Arbitrary (DataSourcePath Double) where
   arbitrary = oneof
