@@ -7,6 +7,7 @@
 module Hkl.Geometry
        ( Factory(..)
        , Geometry(..)
+       , GeometryState(..)
        , factoryFromString
        , fixed
        , newFactory
@@ -82,6 +83,10 @@ data Geometry
   | Geometry'Factory Factory
     deriving (Generic, FromJSON, Show, ToJSON)
 
+data GeometryState
+    = GeometryState Double (Vector CDouble)
+      deriving (Generic, FromJSON, Show, ToJSON)
+
 fixed :: Geometry
 fixed
   = Geometry'Custom
@@ -151,8 +156,8 @@ newGeometry (Geometry'Custom g)
       axes g' = foldTree (\x xsss -> if null xsss then [[x]] else concatMap (map (x:)) xsss) g'
 newGeometry (Geometry'Factory f) = newForeignPtr p'hkl_geometry_free =<< c'hkl_factory_create_new_geometry =<< newFactory f
 
-pokeGeometry :: ForeignPtr C'HklGeometry -> Double -> Vector CDouble -> IO ()
-pokeGeometry fptr lw vs =
+pokeGeometry :: ForeignPtr C'HklGeometry -> GeometryState -> IO ()
+pokeGeometry fptr (GeometryState lw vs) =
   withForeignPtr fptr $ \ptr -> do
   -- set the source
   let wavelength = CDouble lw

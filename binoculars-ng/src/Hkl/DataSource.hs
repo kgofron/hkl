@@ -166,7 +166,7 @@ instance Is1DStreamable (DataSourceAcq Geometry) (ForeignPtr C'HklGeometry) wher
     extract1DStreamValue (DataSourceAcq'Geometry fptr w' as') i = do
       w <- extract0DStreamValue w'
       as <- extract1DStreamValue as' i
-      pokeGeometry fptr w as
+      pokeGeometry fptr (GeometryState w as)
       return fptr
 
 instance Is1DStreamable (DataSourceAcq Image) Image where

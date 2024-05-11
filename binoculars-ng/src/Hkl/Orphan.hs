@@ -9,6 +9,7 @@ module Hkl.Orphan where
 import           Data.Aeson            (FromJSON (..), ToJSON (..), Value (..))
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Text.Encoding    (decodeUtf8, encodeUtf8)
+import           Foreign.C             (CDouble (..))
 import           Foreign.Storable      (Storable)
 import           GHC.Base              (Alternative (..))
 import           Path                  (Abs, Dir, Path, mkAbsDir)
@@ -43,6 +44,13 @@ instance ToJSON ByteString where
 instance FromJSON ByteString where
     parseJSON (String t) = pure . encodeUtf8 $ t
     parseJSON _          = GHC.Base.empty
+    {-# INLINE parseJSON #-}
+
+instance ToJSON CDouble where
+    toJSON (CDouble d) = toJSON d
+
+instance FromJSON CDouble where
+    parseJSON = parseJSON
     {-# INLINE parseJSON #-}
 
 ----------
