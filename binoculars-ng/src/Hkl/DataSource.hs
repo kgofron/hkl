@@ -162,7 +162,6 @@ instance Is1DStreamable (DataSourceAcq Float) Attenuation where
   extract1DStreamValue (DataSourceAcq'Float ds) i = Attenuation <$> extract1DStreamValue ds i
 
 instance Is1DStreamable (DataSourceAcq Geometry) (ForeignPtr C'HklGeometry) where
-    extract1DStreamValue (DataSourceAcq'Geometry'MedVEiger _w' _as' _eix' _eyz') _i = undefined
     extract1DStreamValue (DataSourceAcq'Geometry fptr w' as') i = do
       w <- extract0DStreamValue w'
       as <- extract1DStreamValue as' i
@@ -311,12 +310,7 @@ instance DataSource Geometry where
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Geometry
-    = DataSourceAcq'Geometry'MedVEiger
-      (DataSourceAcq Double)
-      (DataSourceAcq [Double])
-      (DataSourceAcq Double)
-      (DataSourceAcq Double)
-    | DataSourceAcq'Geometry
+    = DataSourceAcq'Geometry
       (ForeignPtr C'HklGeometry)
       (DataSourceAcq Double)
       (DataSourceAcq [Double])
