@@ -66,6 +66,7 @@ import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
+import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.HKD
 import           Hkl.Image
@@ -186,7 +187,7 @@ instance ToIni (Config 'TestProjection) where
 spaceTest :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameTest' Identity -> IO (DataFrameSpace DIM3)
 spaceTest det pixels rs mmask' mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameTest (DataFrameQCustom att g img _) samplePath) = do
   withNPixels det $ \nPixels ->
-    withForeignPtr g $ \geometry ->
+    withGeometry g $ \geometry ->
     withSample samplePath $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withResolutions rs $ \nr r ->

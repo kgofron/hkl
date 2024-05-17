@@ -8,15 +8,12 @@ module Hkl.Geometry
        ( Factory(..)
        , Geometry(..)
        , GeometryState(..)
-       , factoryFromString
        , fixed
-       , newFactory
-       , newGeometry
-       , pokeGeometry
        , sixsMedHGisaxs
        , sixsMedVGisaxs
        , sixsUhvGisaxs
        , zaxis
+       , withGeometry
        ) where
 
 import           Data.Aeson            (FromJSON (..), ToJSON (..))
@@ -50,16 +47,16 @@ instance Show Factory where
   show MedV              = "SOLEIL SIXS MED2+3"
   show SoleilSiriusKappa = "SOLEIL SIRIUS KAPPA"
 
-factoryFromString :: String -> Factory
-factoryFromString s
-  | s == "K6C"  = K6c
-  | s == undefined = Fixe
-  | s == "ZAXIS" = Uhv
-  | s == "SOLEIL MARS" = Mars
-  | s == undefined = MedH
-  | s == "SOLEIL SIXS MED2+3" = MedV
-  | s == "SOLEIL SIRIUS KAPPA" = SoleilSiriusKappa
-  | otherwise   = error $ "unknown diffractometer type:" ++ s
+-- factoryFromString :: String -> Factory
+-- factoryFromString s
+--   | s == "K6C"  = K6c
+--   | s == undefined = Fixe
+--   | s == "ZAXIS" = Uhv
+--   | s == "SOLEIL MARS" = Mars
+--   | s == undefined = MedH
+--   | s == "SOLEIL SIXS MED2+3" = MedV
+--   | s == "SOLEIL SIRIUS KAPPA" = SoleilSiriusKappa
+--   | otherwise   = error $ "unknown diffractometer type:" ++ s
 
 newFactory :: Factory -> IO (Ptr C'HklFactory)
 newFactory f = Foreign.C.withCString (show f) $ \cname -> c'hkl_factory_get_by_name cname nullPtr
@@ -78,19 +75,20 @@ data Axis
   = Axis String Transformation Unit
   deriving (Generic, FromJSON, Show, ToJSON)
 
-data Geometry
-  = Geometry'Custom (Tree Axis)
-  | Geometry'Factory Factory
-    deriving (Generic, FromJSON, Show, ToJSON)
-
 data GeometryState
     = GeometryState Double (Vector CDouble)
       deriving (Generic, FromJSON, Show, ToJSON)
+
+data Geometry
+  = Geometry'Custom (Tree Axis) (Maybe GeometryState)
+  | Geometry'Factory Factory (Maybe GeometryState)
+    deriving (Generic, FromJSON, Show, ToJSON)
 
 fixed :: Geometry
 fixed
   = Geometry'Custom
     (Node (Axis "mu" (Rotation 0 0 1) Unit'Angle'Degree) [ Node (Axis "omega" (Rotation 0 (-1) 0) Unit'Angle'Degree) [] ])
+    Nothing
 
 
 sixsMedHGisaxs :: Geometry
@@ -101,7 +99,7 @@ sixsMedHGisaxs
       , Node (Axis "eix" (Translation 0 0 (-1)) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 1 0) Unit'Length'MilliMeter) [] ]
       ]
     )
-
+    Nothing
 
 sixsMedVGisaxs :: Geometry
 sixsMedVGisaxs
@@ -111,6 +109,7 @@ sixsMedVGisaxs
       , Node (Axis "eix" (Translation 0 0 (-1)) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 1 0) Unit'Length'MilliMeter) [] ]
       ]
     )
+    Nothing
 
 sixsUhvGisaxs :: Geometry
 sixsUhvGisaxs
@@ -120,6 +119,7 @@ sixsUhvGisaxs
       , Node (Axis "eix" (Translation 0 (-1) 0) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 0 1) Unit'Length'MilliMeter) []]
       ]
     )
+    Nothing
 
 zaxis :: Geometry
 zaxis
@@ -129,13 +129,30 @@ zaxis
       , Node (Axis "delta" (Rotation 0 (-1) 0) Unit'Angle'Degree) [ Node (Axis "gamma" (Rotation 0 0 1) Unit'Angle'Degree) [] ]
       ]
     )
+    Nothing
+
+pokeGeometry :: ForeignPtr C'HklGeometry -> GeometryState -> IO ()
+pokeGeometry fptr (GeometryState lw vs) =
+  withForeignPtr fptr $ \ptr -> do
+  -- set the source
+  let wavelength = CDouble lw
+  c'hkl_geometry_wavelength_set ptr wavelength c'HKL_UNIT_USER nullPtr
+
+  -- set the axes
+  let n = toEnum . V.length $ vs
+  V.unsafeWith vs $ \values ->
+    c'hkl_geometry_axis_values_set ptr values n c'HKL_UNIT_USER nullPtr
 
 newGeometry :: Geometry -> IO (ForeignPtr C'HklGeometry)
-newGeometry (Geometry'Custom g)
+newGeometry (Geometry'Custom g ms)
   = do
   gPtr <- c'hkl_geometry_new nullPtr nullPtr
   mapM_ (addHolder gPtr) (axes g)
-  newForeignPtr p'hkl_geometry_free gPtr
+  fptr <- newForeignPtr p'hkl_geometry_free gPtr
+  case ms of
+    Nothing  -> return ()
+    (Just s) -> pokeGeometry fptr s
+  return fptr
     where
       addHolder :: Ptr C'HklGeometry -> [Axis] -> IO ()
       addHolder gPtr axs = do
@@ -154,16 +171,14 @@ newGeometry (Geometry'Custom g)
 
       axes :: Tree Axis -> [[Axis]]
       axes g' = foldTree (\x xsss -> if null xsss then [[x]] else concatMap (map (x:)) xsss) g'
-newGeometry (Geometry'Factory f) = newForeignPtr p'hkl_geometry_free =<< c'hkl_factory_create_new_geometry =<< newFactory f
+newGeometry (Geometry'Factory f ms)
+    = do fptr <- newForeignPtr p'hkl_geometry_free =<< c'hkl_factory_create_new_geometry =<< newFactory f
+         case ms of
+           Nothing  -> return ()
+           (Just s) -> pokeGeometry fptr s
+         return fptr
 
-pokeGeometry :: ForeignPtr C'HklGeometry -> GeometryState -> IO ()
-pokeGeometry fptr (GeometryState lw vs) =
-  withForeignPtr fptr $ \ptr -> do
-  -- set the source
-  let wavelength = CDouble lw
-  c'hkl_geometry_wavelength_set ptr wavelength c'HKL_UNIT_USER nullPtr
-
-  -- set the axes
-  let n = toEnum . V.length $ vs
-  V.unsafeWith vs $ \values ->
-    c'hkl_geometry_axis_values_set ptr values n c'HKL_UNIT_USER nullPtr
+withGeometry :: Geometry -> (Ptr C'HklGeometry -> IO r) -> IO r
+withGeometry g f
+    = do fptr <- newGeometry g
+         withForeignPtr fptr f

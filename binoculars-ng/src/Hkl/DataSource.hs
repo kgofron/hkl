@@ -48,7 +48,6 @@ import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, unsafeNew)
 import           Data.Word                         (Word16, Word32)
 import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (ForeignPtr)
 import           GHC.Base                          (returnIO)
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
@@ -59,7 +58,6 @@ import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Config.Common
-import           Hkl.C.Hkl
 import           Hkl.Detector
 import           Hkl.Exception
 import           Hkl.Geometry
@@ -161,12 +159,14 @@ instance Is1DStreamable (DataSourceAcq Float) Float where
 instance Is1DStreamable (DataSourceAcq Float) Attenuation where
   extract1DStreamValue (DataSourceAcq'Float ds) i = Attenuation <$> extract1DStreamValue ds i
 
-instance Is1DStreamable (DataSourceAcq Geometry) (ForeignPtr C'HklGeometry) where
-    extract1DStreamValue (DataSourceAcq'Geometry fptr w' as') i = do
-      w <- extract0DStreamValue w'
-      as <- extract1DStreamValue as' i
-      pokeGeometry fptr (GeometryState w as)
-      return fptr
+instance  Is1DStreamable (DataSourceAcq Geometry) Geometry where
+     extract1DStreamValue (DataSourceAcq'Geometry g w' as') i =
+         do w <- extract0DStreamValue w'
+            as <- extract1DStreamValue as' i
+            let state = GeometryState w as
+            pure $ case g of
+                     (Geometry'Custom axes _) -> Geometry'Custom axes (Just state)
+                     (Geometry'Factory factory _) -> Geometry'Factory factory (Just state)
 
 instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Int32 ds det buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
@@ -311,20 +311,17 @@ instance DataSource Geometry where
 
   data DataSourceAcq Geometry
     = DataSourceAcq'Geometry
-      (ForeignPtr C'HklGeometry)
+      Geometry
       (DataSourceAcq Double)
       (DataSourceAcq [Double])
-
 
   withDataSourceP f (DataSourcePath'Geometry g w as) gg =
     withDataSourceP f w $ \w' ->
     withDataSourceP f as $ \as' -> do
-    fptr <- liftIO $ newGeometry g
-    gg (DataSourceAcq'Geometry fptr w' as')
+    gg (DataSourceAcq'Geometry g w' as')
   withDataSourceP f (DataSourcePath'Geometry'Fix w) gg =
     withDataSourceP f w $ \w' -> do
-    fptr <- liftIO $ newGeometry fixed
-    gg (DataSourceAcq'Geometry fptr w' (DataSourceAcq'List []))
+    gg (DataSourceAcq'Geometry fixed w' (DataSourceAcq'List []))
 
 -- Image
 

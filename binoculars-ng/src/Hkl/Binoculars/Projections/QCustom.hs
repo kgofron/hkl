@@ -57,7 +57,7 @@ import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (putStr)
 import           Data.Vector.Storable.Mutable      (unsafeWith)
 import           Foreign.C.Types                   (CDouble (..))
-import           Foreign.ForeignPtr                (ForeignPtr, withForeignPtr)
+import           Foreign.ForeignPtr                (withForeignPtr)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (Angle, degree, radian, (*~),
                                                     (/~))
@@ -74,7 +74,6 @@ import           Hkl.Binoculars.Config.Common
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
-import           Hkl.C.Hkl
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
@@ -95,7 +94,7 @@ import           Hkl.Utils
 data DataFrameQCustom
     = DataFrameQCustom
       Attenuation -- attenuation
-      (ForeignPtr C'HklGeometry) -- geometry
+      Geometry -- geometry
       Image -- image
       Timestamp -- timestamp in double
     deriving Show
@@ -137,7 +136,7 @@ default'DataSourcePath'DataFrameQCustom
       (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
       2 0 Nothing)
     (DataSourcePath'Geometry
-      (Geometry'Factory Uhv)
+      (Geometry'Factory Uhv Nothing)
       (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
       (DataSourcePath'List
        [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
@@ -580,7 +579,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let dataSourcePath'Geometry'Sixs'Uhv :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'Uhv
             = DataSourcePath'Geometry
-              (Geometry'Factory Uhv)
+              (Geometry'Factory Uhv Nothing)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma])
 
@@ -654,7 +653,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let dataSourcePath'Geometry'Sixs'MedH ::  DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedH
             = DataSourcePath'Geometry
-              (Geometry'Factory MedH)
+              (Geometry'Factory MedH Nothing)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'MedH'Gamma, sixs'MedH'Delta ])
 
@@ -668,7 +667,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let dataSourcePath'Geometry'Sixs'MedV :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedV
             = DataSourcePath'Geometry
-              (Geometry'Factory MedV)
+              (Geometry'Factory MedV Nothing)
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'MedV'Gamma, sixs'MedV'Delta, sixs'MedV'Etaa ])
 
@@ -699,7 +698,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
          CristalK6C -> DataSourcePath'DataFrameQCustom
                       (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
                       (DataSourcePath'Geometry
-                        (Geometry'Factory K6c)
+                        (Geometry'Factory K6c Nothing)
                         (overloadWaveLength mWavelength (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
                         (DataSourcePath'List
                          [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position")
@@ -720,7 +719,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                        -- (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
                        --                                         (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
                        (DataSourcePath'Geometry
-                         (Geometry'Factory Mars)
+                         (Geometry'Factory Mars Nothing)
                          (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
                          (DataSourcePath'List
                           [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
@@ -739,7 +738,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
          MarsSbs -> DataSourcePath'DataFrameQCustom
                    (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
                    (DataSourcePath'Geometry
-                     (Geometry'Factory Mars)
+                     (Geometry'Factory Mars Nothing)
                      (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
                      (DataSourcePath'List
                       [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/omega"
@@ -804,7 +803,7 @@ spaceQCustom :: Detector a DIM2
              -> IO (DataFrameSpace DIM3)
 spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz mSampleAxis doPolarizationCorrection space@(Space fSpace) (DataFrameQCustom att g img index) =
   withNPixels det $ \nPixels ->
-  withForeignPtr g $ \geometry ->
+  withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
   withResolutions rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->

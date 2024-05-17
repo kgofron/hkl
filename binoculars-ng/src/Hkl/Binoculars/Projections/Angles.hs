@@ -51,6 +51,7 @@ import           Hkl.Binoculars.Projections
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
 import           Hkl.Detector
+import           Hkl.Geometry
 import           Hkl.Image
 import           Hkl.Repa
 import           Hkl.Utils
@@ -134,7 +135,7 @@ instance ToIni (Config 'AnglesProjection) where
 spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> SampleAxis -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
 spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQCustom att g img _) =
   withNPixels det $ \nPixels ->
-  withForeignPtr g $ \geometry ->
+  withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
   withResolutions rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
