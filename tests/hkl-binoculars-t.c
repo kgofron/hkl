@@ -160,7 +160,7 @@ static void angles_projection(void)
         ok(res == TRUE, __func__);
 }
 
-static void qcustom_projection(void)
+static int qcustom_projection_sub(HklBinocularsQCustomSubProjectionEnum subprojection)
 {
         size_t n;
         int res = TRUE;
@@ -216,9 +216,9 @@ static void qcustom_projection(void)
                                                                limits,
                                                                ARRAY_SIZE(limits),
                                                                0.0,
-                                                               HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ,
+                                                               subprojection,
                                                                0, 0, 0,
-                                                               NULL,
+                                                               "omega",
                                                                0);
 
                         hkl_binoculars_cube_add_space(cube, space);
@@ -237,9 +237,20 @@ static void qcustom_projection(void)
 
 	hkl_geometry_free(geometry);
 
-        ok(res == TRUE, __func__);
+        return res;
 }
 
+
+static void qcustom_projection(void)
+{
+        int res = TRUE;
+        int i;
+
+        for(i=0; i<HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS; ++i)
+                res &= qcustom_projection_sub(i);
+
+        ok(res == TRUE, __func__);
+}
 
 static void qparqper_projection(void)
 {
