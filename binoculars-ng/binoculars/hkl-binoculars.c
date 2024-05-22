@@ -381,29 +381,106 @@ HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
 struct _HklBinocularsProjectionAxis
 {
         const char *name;
+        const char *description;
 };
 
 typedef struct _HklBinocularsProjectionAxis HklBinocularsProjectionAxis;
 
-static const HklBinocularsProjectionAxis azimuth = { .name="azimuth", };
-static const HklBinocularsProjectionAxis deltalab = { .name="deltalab", };
-static const HklBinocularsProjectionAxis gammalab = { .name="gammalab", };
-static const HklBinocularsProjectionAxis q = { .name="q", };
-static const HklBinocularsProjectionAxis qpar = { .name="qpar", };
-static const HklBinocularsProjectionAxis qpars = { .name="qpars", };
-static const HklBinocularsProjectionAxis qper = { .name="qper", };
-static const HklBinocularsProjectionAxis qx = { .name="qx", };
-static const HklBinocularsProjectionAxis qy = { .name="qy", };
-static const HklBinocularsProjectionAxis qz = { .name="qz", };
-static const HklBinocularsProjectionAxis phi = { .name="phi", };
-static const HklBinocularsProjectionAxis sampleaxis = { .name="sampleaxis", };
-static const HklBinocularsProjectionAxis timestamp = { .name="timestamp", };
-static const HklBinocularsProjectionAxis tth = { .name="tth", };
-static const HklBinocularsProjectionAxis xp = { .name="xp", };
-static const HklBinocularsProjectionAxis yp = { .name="yp", };
-static const HklBinocularsProjectionAxis x = { .name="x", };
-static const HklBinocularsProjectionAxis y = { .name="y", };
-static const HklBinocularsProjectionAxis z = { .name="z", };
+static const HklBinocularsProjectionAxis azimuth =
+{
+        .name = "azimuth",
+        .description = "The azimuthal angle in the yz plan",
+};
+static const HklBinocularsProjectionAxis deltalab =
+{
+        .name = "deltalab",
+        .description = "The delta horizontal deviation in the lab basis",
+};
+static const HklBinocularsProjectionAxis gammalab =
+{
+        .name = "gammalab",
+        .description = "The gamma elevation in the lab basis",
+};
+static const HklBinocularsProjectionAxis q =
+{
+        .name = "q",
+        .description = "The norm of the q vector",
+};
+static const HklBinocularsProjectionAxis qpar =
+{
+        .name = "qpar",
+        .description = "The norm of the q vector projected onto the plan parallel to the surface."
+};
+static const HklBinocularsProjectionAxis qpars =
+{
+        .name = "qpars",
+        .description = "The signed norm of the q vector projected onto the plan parallel to the surface."
+};
+static const HklBinocularsProjectionAxis qper =
+{
+        .name = "qper",
+        .description = "The norm of the q vector projected onto the surface vector (perpendicular to the surface)."
+};
+static const HklBinocularsProjectionAxis qx =
+{
+        .name = "qx",
+        .description = "The x coordinate of the Q vector in the sample basis."
+};
+static const HklBinocularsProjectionAxis qy =
+{
+        .name = "qy",
+        .description = "The y coordinate of the Q vector in the sample basis."
+};
+static const HklBinocularsProjectionAxis qz =
+{
+        .name = "qz",
+        .description = "The z coordinate of the Q vector in the sample basis."
+};
+static const HklBinocularsProjectionAxis phi =
+{
+        .name = "phi",
+        .description = "The azimuthal angle in the yz plan",
+};
+static const HklBinocularsProjectionAxis sampleaxis =
+{
+        .name = "sampleaxis",
+        .description = "The name of a sample axis",
+};
+static const HklBinocularsProjectionAxis timestamp =
+{
+        .name = "timestamp",
+        .description = "The timestamp of each image",
+};
+static const HklBinocularsProjectionAxis tth =
+{
+        .name = "tth",
+        .description = "The 2 * theta angle.",
+};
+static const HklBinocularsProjectionAxis xp =
+{
+        .name = "xp",
+        .description = "The x coordinate of pixels projected in the yz plan",
+};
+static const HklBinocularsProjectionAxis yp =
+{
+        .name="yp",
+        .description = "The y coordinate of pixels projected in the yz plan",
+};
+static const HklBinocularsProjectionAxis x =
+{
+        .name="x",
+        .description = "The x coordinate of pixels",
+};
+static const HklBinocularsProjectionAxis y =
+{
+        .name="y",
+        .description = "The y coordinate of pixels",
+};
+static const HklBinocularsProjectionAxis z =
+{
+        .name="z",
+        .description = "The z coordinate of pixels",
+};
 
 
 static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjectionEnum subprojection,
