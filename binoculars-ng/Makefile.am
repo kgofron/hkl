@@ -86,7 +86,7 @@ src/Hkl/C/Binoculars.o: src/Hkl/C/Hkl.o src/Hkl/C/Hkl.hs
 
 $(sources) src/Main.hs : src/Hkl/C/Binoculars.o src/Hkl/C/Binoculars.hs
 
-src/Main.o : $(sources)
+src/Main.o : $(hsc_sources) $(sources)
 
 bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES = $(hsc_sources) src/Main.hs

@@ -192,6 +192,7 @@ instance Enum HklBinocularsSurfaceOrientationEnum where
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_TIMESTAMP
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QZ_TIMESTAMP
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH
 
 data HklBinocularsQCustomSubProjectionEnum
   = HklBinocularsQCustomSubProjectionEnum'QxQyQz
@@ -214,6 +215,7 @@ data HklBinocularsQCustomSubProjectionEnum
   | HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp
   | HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp
   | HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp
+  | HklBinocularsQCustomSubProjectionEnum'TthAzimuth
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsQCustomSubProjectionEnum where
@@ -238,6 +240,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QZ_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH = HklBinocularsQCustomSubProjectionEnum'TthAzimuth
     | otherwise = error "Non supported HklBinocularsQCustomSubProjectionEnum value"
 
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQyQz = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ
@@ -260,6 +263,7 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_TIMESTAMP
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QZ_TIMESTAMP
   fromEnum HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP
+  fromEnum HklBinocularsQCustomSubProjectionEnum'TthAzimuth = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH
 
 #opaque_t HklBinocularsSpace
 

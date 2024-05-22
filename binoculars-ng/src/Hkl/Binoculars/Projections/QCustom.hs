@@ -245,6 +245,7 @@ instance HasIniConfig 'QCustomProjection where
                                                 HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> Nothing
                                                 HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> Nothing
                                                 HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> Nothing
 
 
     BinocularsConfig'QCustom
@@ -424,6 +425,7 @@ overloadTimestampPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> idx
+                   HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> DataSourcePath'Timestamp'NoTimestamp
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma

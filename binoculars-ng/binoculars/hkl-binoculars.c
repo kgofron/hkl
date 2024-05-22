@@ -389,7 +389,7 @@ typedef struct _HklBinocularsProjectionAxis HklBinocularsProjectionAxis;
 static const HklBinocularsProjectionAxis azimuth =
 {
         .name = "azimuth",
-        .description = "The azimuthal angle in the yz plan",
+        .description = "The azimuthal angle in the yz plan of the kf vector",
 };
 static const HklBinocularsProjectionAxis deltalab =
 {
@@ -439,7 +439,7 @@ static const HklBinocularsProjectionAxis qz =
 static const HklBinocularsProjectionAxis phi =
 {
         .name = "phi",
-        .description = "The azimuthal angle in the yz plan",
+        .description = "The azimuthal angle in the yz plan of the q vector",
 };
 static const HklBinocularsProjectionAxis sampleaxis =
 {
@@ -606,6 +606,11 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 PROJECTION(qy, qz, timestamp);
                 break;
         }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH:
+        {
+                PROJECTION(tth, azimuth);
+                break;
+        }
         default:
         {
                 PROJECTION(qx, qy, qz);
@@ -630,24 +635,60 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
         return weight;
 }
 
-static inline double compute_q(vec3s v)
+static inline double compute_q(vec3s q)
 {
-        return glms_vec3_norm(v);
+        return glms_vec3_norm(q);
 }
 
-static inline double compute_qx(vec3s v)
+static inline double compute_qx(vec3s q)
 {
-        return v.raw[0];
+        return q.raw[0];
 }
 
-static inline double compute_qy(vec3s v)
+static inline double compute_qy(vec3s q)
 {
-        return v.raw[1];
+        return q.raw[1];
 }
 
-static inline double compute_qz(vec3s v)
+static inline double compute_qz(vec3s q)
 {
-        return v.raw[2];
+        return q.raw[2];
+}
+
+static inline double compute_qpar(vec3s q)
+{
+        return sqrt(q.raw[0] * q.raw[0] + q.raw[1] * q.raw[1]);
+}
+
+static inline double compute_qpar_signed(vec3s q)
+{
+        float qpar = compute_qpar(q);
+
+        if(q.raw[1] != 0.0){
+                if(signbit(q.raw[1]) != 0){
+                        qpar = -qpar;
+                }
+        }else{
+                if(signbit(q.raw[0]) != 0){
+                        qpar = -qpar;
+                }
+        }
+        return qpar;
+}
+
+static inline double compute_qper(vec3s q)
+{
+        return compute_qz(q);
+}
+
+static inline double compute_tth(float q, float k)
+{
+        return asin(q / 2 / k) * 2 / M_PI * 180;
+}
+
+static inline double compute_azimuth(vec3s kf)
+{
+        return (atan2(kf.raw[2], kf.raw[1])) / M_PI * 180;
 }
 
 #define HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(image_t)			\
@@ -734,8 +775,10 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[1]); \
+                                        float q = compute_q(v);         \
+                                        float tth = compute_tth(q, k);  \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
+					item.indexes_0[1] = rint(tth / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
@@ -757,7 +800,8 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
 					item.indexes_0[1] = rint(timestamp / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
                                         item.intensity = rint((double)image[i] * correction); \
@@ -780,8 +824,10 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
-                                        item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
+                                        float qpar = compute_qpar(v);   \
+                                        float qper = compute_qper(v);   \
+					item.indexes_0[0] = rint(qpar / resolutions[0]); \
+                                        item.indexes_0[1] = rint(qper / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
@@ -803,8 +849,10 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
-					item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
+                                        float qpar = compute_qpar(v);   \
+                                        float qper = compute_qper(v);   \
+					item.indexes_0[0] = rint(qpar / resolutions[0]); \
+                                        item.indexes_0[1] = rint(qper / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
@@ -826,7 +874,8 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
 					item.indexes_0[1] = rint((atan2(v.raw[2], -v.raw[1])) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[0] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
@@ -849,7 +898,8 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
 					item.indexes_0[1] = rint((atan2(v.raw[2], v.raw[0])) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[1] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
@@ -872,7 +922,8 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
 					item.indexes_0[1] = rint((atan2(v.raw[0], v.raw[1])) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
@@ -895,7 +946,8 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
 					double ratio = v.raw[2] + item.indexes_0[0]; \
 					item.indexes_0[1] = rint(v.raw[0] / ratio / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[1] / ratio / resolutions[2]); \
@@ -987,9 +1039,12 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
-					item.indexes_0[1] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[1]); \
-					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
+                                        float q = compute_q(v);         \
+                                        float qpar = compute_qpar(v); \
+                                        float qper = compute_qper(v);   \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
+					item.indexes_0[1] = rint(qpar / resolutions[1]); \
+					item.indexes_0[2] = rint(qper / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -1010,20 +1065,13 @@ static inline double compute_qz(vec3s v)
                                         v = glms_vec3_sub(v , ki);      \
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-					item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
-                                        item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
+                                        float qpars = compute_qpar_signed(v); \
+                                        float qper = compute_qper(v);   \
+					item.indexes_0[0] = rint(qpars / resolutions[0]); \
+                                        item.indexes_0[1] = rint(qper / resolutions[1]); \
 					item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
-                                        if(v.raw[1] != 0.0){            \
-                                                if(signbit(v.raw[1]) != 0){ \
-                                                        item.indexes_0[0] = -item.indexes_0[0]; \
-                                                }                       \
-                                        }else{                          \
-                                                if(signbit(v.raw[0]) != 0){ \
-                                                        item.indexes_0[0] = -item.indexes_0[0]; \
-                                                }                       \
-                                        }                               \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
                                                 darray_append(space->items, item); \
                                 }                                       \
@@ -1046,8 +1094,10 @@ static inline double compute_qz(vec3s v)
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-                                                item.indexes_0[0] = rint(sqrt(v.raw[0] * v.raw[0] + v.raw[1] * v.raw[1]) / resolutions[0]); \
-                                                item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
+                                                float qpar = compute_qpar(v); \
+                                                float qper = compute_qper(v); \
+                                                item.indexes_0[0] = rint(qpar / resolutions[0]); \
+                                                item.indexes_0[1] = rint(qper / resolutions[1]); \
                                                 item.indexes_0[2] = axis; \
                                                 item.intensity = rint((double)image[i] * correction); \
                                                                         \
@@ -1074,9 +1124,11 @@ static inline double compute_qz(vec3s v)
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-                                                item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                                float q = compute_q(v); \
+                                                double tth = compute_tth(q, k); \
+                                                item.indexes_0[0] = rint(q / resolutions[0]); \
                                                 item.indexes_0[1] = axis; \
-                                                item.indexes_0[2] = rint(asin(glms_vec3_norm(v) / 2 / k) * 2 / M_PI * 180 / resolutions[2]); \
+                                                item.indexes_0[2] = rint(tth / resolutions[2]); \
                                                 item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                                 if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
@@ -1102,7 +1154,8 @@ static inline double compute_qz(vec3s v)
                                                 v = glms_vec3_sub(v , ki); \
                                                 v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
-                                                item.indexes_0[0] = rint(glms_vec3_norm(v) / resolutions[0]); \
+                                                float q = compute_q(v); \
+                                                item.indexes_0[0] = rint(q / resolutions[0]); \
                                                 item.indexes_0[1] = axis; \
                                                 item.indexes_0[2] = rint(timestamp / resolutions[2]); \
                                                 item.intensity = rint((double)image[i] * correction); \
@@ -1175,6 +1228,32 @@ static inline double compute_qz(vec3s v)
                                         item.indexes_0[0] = rint(v.raw[1] / resolutions[0]); \
                                         item.indexes_0[1] = rint(v.raw[2] / resolutions[1]); \
                                         item.indexes_0[2] = rint(timestamp / resolutions[2]); \
+                                        item.intensity = rint((double)image[i] * correction); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH: \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        double azimuth = compute_azimuth(v); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+                                        float q = compute_q(v);         \
+                                        double tth = compute_tth(q, k); \
+					item.indexes_0[0] = rint(tth / resolutions[0]); \
+					item.indexes_0[1] = rint(azimuth / resolutions[1]); \
+					item.indexes_0[2] = REMOVED;    \
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
