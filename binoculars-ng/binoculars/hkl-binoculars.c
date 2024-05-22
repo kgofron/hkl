@@ -483,309 +483,132 @@ static const HklBinocularsProjectionAxis z =
 };
 
 
+#define PROJECTION(...) do {                                            \
+                int i;                                                  \
+                int n;                                                  \
+                static const HklBinocularsProjectionAxis axes[] = {__VA_ARGS__}; \
+                static const char *axes_names[ARRAY_SIZE(axes)];        \
+                                                                        \
+                n = ARRAY_SIZE(axes);                                   \
+                assert(n <= darray_size(space->axes));                  \
+                assert(n <= n_resolutions);                             \
+                                                                        \
+                for(i=0; i<n; ++i)                                      \
+                        axes_names[i] = axes[i].name;                   \
+                names = axes_names;                                     \
+        }while(0)
+
 static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjectionEnum subprojection,
                                                  HklBinocularsSpace *space,
                                                  int n_resolutions)
 {
         const char **names;
-        int i;
-        int n;
 
         switch(subprojection){
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ:
         case HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qx, qy, qz};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qx, qy, qz);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TTH_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, tth, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, tth, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_TIMESTAMP:
         {
-
-                static const HklBinocularsProjectionAxis axes[] = {qpar, qper, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qpar, qper, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qpar, qper};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qpar, qper);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, phi, qx};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, phi, qx);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, phi, qy};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, phi, qy);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, phi, qz};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, phi, qz);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, xp, yp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, xp, yp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_DELTALAB_GAMMALAB_SAMPLEAXIS:
         {
-                static const HklBinocularsProjectionAxis axes[] = {deltalab, gammalab, sampleaxis};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(deltalab, gammalab, sampleaxis);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_X_Y_Z:
         {
-                static const HklBinocularsProjectionAxis axes[] = {x, y, z};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(x, y, z);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Y_Z_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {y, z, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(y, z, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_QPAR_QPER:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, qpar, qper};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, qpar, qper);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPARS_QPER_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qpars, qper, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qpars, qper, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER_SAMPLEAXIS:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qpar, qper, sampleaxis};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qpar, qper, sampleaxis);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TTH:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, sampleaxis, tth};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, sampleaxis, tth);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SAMPLEAXIS_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {q, sampleaxis, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(q, sampleaxis, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qx, qy, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qx, qy, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QZ_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qx, qz, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qx, qz, timestamp);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qy, qz, timestamp};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qy, qz, timestamp);
                 break;
         }
         default:
         {
-                static const HklBinocularsProjectionAxis axes[] = {qx, qy, qz};
-                static const char *axes_names[ARRAY_SIZE(axes)];
-
-                n = ARRAY_SIZE(axes);
-                assert(n <= darray_size(space->axes));
-                assert(n <= n_resolutions);
-
-                for(i=0; i<n; ++i)
-                        axes_names[i] = axes[i].name;
-                names = axes_names;
+                PROJECTION(qx, qy, qz);
                 break;
         }
         }
@@ -805,6 +628,26 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
                 weight = weight / (1 - p*p);
         }
         return weight;
+}
+
+static inline double compute_q(vec3s v)
+{
+        return glms_vec3_norm(v);
+}
+
+static inline double compute_qx(vec3s v)
+{
+        return v.raw[0];
+}
+
+static inline double compute_qy(vec3s v)
+{
+        return v.raw[1];
+}
+
+static inline double compute_qz(vec3s v)
+{
+        return v.raw[2];
 }
 
 #define HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(image_t)			\
