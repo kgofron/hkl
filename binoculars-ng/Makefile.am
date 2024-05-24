@@ -23,7 +23,7 @@ AM_GHCFLAGS=\
 	-outputdir=$(builddir)/src
 
 .hsc.hs:
-	$(HSC2HS) $$(echo "$(AM_CFLAGS)" | sed "s%-ftrack-macro-expansion=0%%") -o $@ $<
+	$(HSC2HS) $$(echo "$(AM_CFLAGS)" | sed -e "s%-ftrack-macro-expansion=0%%" -e "s%-pthread%%") -o $@ $<
 
 .hs.o:
 	$(GHC) --make $(AM_GHCFLAGS) -c -o $@ $<
