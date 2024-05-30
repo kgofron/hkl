@@ -108,6 +108,10 @@ instance Is0DStreamable (DataSourceAcq Double) Double where
   extract0DStreamValue (DataSourceAcq'Double d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Double'Const a) = pure a
 
+instance Is0DStreamable (DataSourceAcq Timescan0) Timescan0 where
+  extract0DStreamValue (DataSourceAcq'Timescan0 ds) = Timescan0 <$> extract0DStreamValue ds
+  extract0DStreamValue DataSourceAcq'Timescan0'NoTimescan0 = returnIO $ Timescan0 0
+
 --------------------
 -- Is1DStreamable --
 --------------------
@@ -379,3 +383,17 @@ instance DataSource Timestamp where
 
   withDataSourceP f (DataSourcePath'Timestamp p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timestamp ds)
   withDataSourceP _ DataSourcePath'Timestamp'NoTimestamp g = g DataSourceAcq'Timestamp'NoTimestamp
+
+-- Timescan0
+
+instance DataSource Timescan0 where
+  data DataSourcePath Timescan0
+    = DataSourcePath'Timescan0 (Hdf5Path DIM1 Double)
+    | DataSourcePath'Timescan0'NoTimescan0
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq Timescan0 = DataSourceAcq'Timescan0 Dataset
+                               | DataSourceAcq'Timescan0'NoTimescan0
+
+  withDataSourceP f (DataSourcePath'Timescan0 p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timescan0 ds)
+  withDataSourceP _ DataSourcePath'Timescan0'NoTimescan0 g = g DataSourceAcq'Timescan0'NoTimescan0

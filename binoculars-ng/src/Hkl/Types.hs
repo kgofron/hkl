@@ -9,6 +9,7 @@ module Hkl.Types ( AbsDirPath
                  , SampleName
                  , Section
                  , Timestamp(..)
+                 , Timescan0(..)
                  , Trajectory
                  , beamlineUpper
                  , module X
@@ -60,6 +61,11 @@ type Section = Text
 -- Timestamp
 
 newtype Timestamp = Timestamp { unTimestamp :: Double }
+  deriving Show
+
+-- Timescan0
+
+newtype Timescan0 = Timescan0 { unTimescan0 :: Double }
   deriving Show
 
 --  Trajectory

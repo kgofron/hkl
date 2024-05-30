@@ -451,6 +451,11 @@ static const HklBinocularsProjectionAxis timestamp =
         .name = "timestamp",
         .description = "The timestamp of each image",
 };
+static const HklBinocularsProjectionAxis timescan0 =
+{
+        .name = "timescan0",
+        .description = "The timestamp of the first image of a scan",
+};
 static const HklBinocularsProjectionAxis tth =
 {
         .name = "tth",
@@ -611,9 +616,9 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 PROJECTION(tth, azimuth);
                 break;
         }
-        default:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESCAN0:
         {
-                PROJECTION(qx, qy, qz);
+                PROJECTION(q, timescan0);
                 break;
         }
         }
@@ -1254,6 +1259,30 @@ static inline double compute_azimuth(vec3s kf)
 					item.indexes_0[0] = rint(tth / resolutions[0]); \
 					item.indexes_0[1] = rint(azimuth / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;    \
+                                        item.intensity = rint((double)image[i] * correction); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESCAN0:	\
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint(q / resolutions[0]); \
+					item.indexes_0[1] = rint(timescan0 / resolutions[1]); \
+					item.indexes_0[2] = REMOVED;	\
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \

@@ -133,7 +133,7 @@ instance ToIni (Config 'AnglesProjection) where
 
 {-# INLINE spaceAngles #-}
 spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> SampleAxis -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
-spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQCustom att g img _) =
+spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQCustom att g img _ _) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -226,7 +226,7 @@ processAnglesP = do
                              each job
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              >-> framesP datapaths
-                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
+                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _ _) -> filterSumImage mImageSumMax img)
                              >-> project det 3 (spaceAngles det pixels res mask' mlimits sampleAxis)
                              >-> tee (accumulateP c)
                              >-> progress pb

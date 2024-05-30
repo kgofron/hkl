@@ -140,7 +140,7 @@ binoculars_ng_LINK= $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLF
 RTS = +RTS -N4 -RTS
 RUN = /usr/bin/time -v ./binoculars-ng $(RTS)
 PROCESS = $(RUN) --debug process
-PROCESS_DBG=gdb --args ./binoculars-ng --debug process
+PROCESS_DBG=gdb --args .libs/binoculars-ng process
 
 cristal: binoculars-ng
 	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
@@ -173,7 +173,8 @@ mars: binoculars-ng
 	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
 
 sixs: binoculars-ng
-	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546
+	$(PROCESS) data/test/config_sixs_ruche_20231857.ini 356-390
 
 # when developping with cabal
 cabal:

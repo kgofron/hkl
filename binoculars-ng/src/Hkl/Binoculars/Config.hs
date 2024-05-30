@@ -373,7 +373,8 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp        = "qx_qy_timestamp"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp        = "qx_qz_timestamp"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp        = "qy_qz_timestamp"
-  fieldEmitter HklBinocularsQCustomSubProjectionEnum'TthAzimuth        = "tth_azimuth"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'TthAzimuth           = "tth_azimuth"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QTimescan0           = "q_timescan0"
 
 instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
   fieldParser = go . strip . uncomment . toLower =<< takeText

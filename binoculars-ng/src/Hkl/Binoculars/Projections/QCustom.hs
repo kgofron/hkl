@@ -97,6 +97,7 @@ data DataFrameQCustom
       Geometry -- geometry
       Image -- image
       Timestamp -- timestamp in double
+      Timescan0 -- timescan0 in double
     deriving Show
 
 instance DataSource DataFrameQCustom where
@@ -106,6 +107,7 @@ instance DataSource DataFrameQCustom where
       (DataSourcePath Geometry)
       (DataSourcePath Image)
       (DataSourcePath Timestamp)
+      (DataSourcePath Timescan0)
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq DataFrameQCustom
@@ -114,20 +116,23 @@ instance DataSource DataFrameQCustom where
       (DataSourceAcq Geometry)
       (DataSourceAcq Image)
       (DataSourceAcq Timestamp)
+      (DataSourceAcq Timescan0)
 
-  withDataSourceP f (DataSourcePath'DataFrameQCustom a g i idx) gg =
+  withDataSourceP f (DataSourcePath'DataFrameQCustom a g i idx t0) gg =
     withDataSourceP f a $ \a' ->
     withDataSourceP f g $ \g' ->
     withDataSourceP f i $ \i' ->
-    withDataSourceP f idx $ \idx' -> gg (DataSourceAcq'DataFrameQCustom a' g' i' idx')
+    withDataSourceP f idx $ \idx' ->
+    withDataSourceP f t0 $ \t0' -> gg (DataSourceAcq'DataFrameQCustom a' g' i' idx' t0')
 
 instance Is1DStreamable (DataSourceAcq DataFrameQCustom) DataFrameQCustom where
-    extract1DStreamValue (DataSourceAcq'DataFrameQCustom att geom img idx) i =
+    extract1DStreamValue (DataSourceAcq'DataFrameQCustom att geom img idx t0) i =
       DataFrameQCustom
       <$> extract1DStreamValue att i
       <*> extract1DStreamValue geom i
       <*> extract1DStreamValue img i
       <*> extract1DStreamValue idx i
+      <*> extract0DStreamValue t0
 
 default'DataSourcePath'DataFrameQCustom :: DataSourcePath DataFrameQCustom
 default'DataSourcePath'DataFrameQCustom
@@ -150,6 +155,7 @@ default'DataSourcePath'DataFrameQCustom
       (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
       defaultDetector)
     (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+    (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
 instance HasFieldComment (DataSourcePath DataFrameQCustom) where
   fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
@@ -246,6 +252,7 @@ instance HasIniConfig 'QCustomProjection where
                                                 HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> Nothing
                                                 HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> Nothing
                                                 HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> Nothing
+                                                HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> Nothing
 
 
     BinocularsConfig'QCustom
@@ -426,6 +433,35 @@ overloadTimestampPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> idx
                    HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> DataSourcePath'Timestamp'NoTimestamp
+
+overloadTimescan0Path :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0 -> DataSourcePath Timescan0
+overloadTimescan0Path msub idx =
+  case msub of
+    Nothing -> DataSourcePath'Timescan0'NoTimescan0
+    (Just sub) -> case sub of
+                   HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> idx
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
@@ -442,7 +478,7 @@ overload'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
                                          -> Maybe HklBinocularsQCustomSubProjectionEnum
                                          -> DataSourcePath DataFrameQCustom
                                          -> DataSourcePath DataFrameQCustom
-overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQCustom attenuationPath' geometryPath imagePath indexP)
+overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQCustom attenuationPath' geometryPath imagePath indexP timescan0P)
   = let mAttCoef = binocularsConfig'Common'AttenuationCoefficient common
         mMaxAtt = binocularsConfig'Common'AttenuationMax common
         mWavelength = binocularsConfig'Common'Wavelength common
@@ -452,8 +488,9 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
         newGeometryPath = overloadGeometryPath mWavelength geometryPath
         newImagePath = overloadImagePath detector imagePath
         newTimestampPath = overloadTimestampPath msub indexP
+        newTimescan0Path = overloadTimescan0Path msub timescan0P
     in
-      DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newTimestampPath
+      DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newTimestampPath newTimescan0Path
 
 
 guess'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
@@ -500,6 +537,15 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp
           mkTimeStamp'Fly msub'
             = overloadTimestampPath msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+
+      -- timescan0
+      let mkTimescan0'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0
+          mkTimescan0'Sbs msub'
+            = overloadTimescan0Path msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
+
+      let mkTimescan0'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0
+          mkTimescan0'Fly msub'
+            = overloadTimescan0Path msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
       -- wavelength
       let dataSourcePath'WaveLength'Mars :: DataSourcePath Double
@@ -687,6 +733,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               g
               (mkDetector'Sixs'Fly detector)
               (mkTimeStamp'Fly msub)
+              (mkTimescan0'Fly msub)
 
       let dataSourcePath'DataFrameQCustom'Sixs'Sbs :: DataSourcePath Geometry -> DataSourcePath DataFrameQCustom
           dataSourcePath'DataFrameQCustom'Sixs'Sbs g
@@ -695,6 +742,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               g
               (mkDetector'Sixs'Sbs detector)
               (mkTimeStamp'Sbs msub)
+              (mkTimescan0'Sbs msub)
 
       case inputtype of
          CristalK6C -> DataSourcePath'DataFrameQCustom
@@ -716,6 +764,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                         (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05")
                         detector)
                       (mkTimeStamp'Sbs msub)
+                      (mkTimescan0'Sbs msub)
          MarsFlyscan -> DataSourcePath'DataFrameQCustom
                        (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
                        -- (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
@@ -737,6 +786,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                                               datasetp "scan_data/merlin_quad_image"))
                          detector)
                        (mkTimeStamp'Fly msub)
+                       (mkTimescan0'Sbs msub)
          MarsSbs -> DataSourcePath'DataFrameQCustom
                    (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
                    (DataSourcePath'Geometry
@@ -775,6 +825,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                              datasetpattr ("interpretation", "image")))
                     detector)
                    (mkTimeStamp'Sbs msub)
+                   (mkTimescan0'Sbs msub)
          SixsFlyMedH -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedH
          SixsFlyMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedHGisaxs
          SixsFlyMedV -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedV
@@ -803,7 +854,7 @@ spaceQCustom :: Detector a DIM2
              -> Space DIM3
              -> DataFrameQCustom
              -> IO (DataFrameSpace DIM3)
-spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz mSampleAxis doPolarizationCorrection space@(Space fSpace) (DataFrameQCustom att g img index) =
+spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz mSampleAxis doPolarizationCorrection space@(Space fSpace) (DataFrameQCustom att g img index timescan0) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
@@ -815,11 +866,11 @@ spaceQCustom det pixels rs mmask' surf mlimits subprojection uqx uqy uqz mSample
   withForeignPtr fSpace $ \pSpace -> do
   case img of
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
+      {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (CDouble . unTimescan0 $ timescan0) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
     (ImageWord16 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
+      {-# SCC "hkl_binoculars_space_qcustom_uint16_t" #-} c'hkl_binoculars_space_qcustom_uint16_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (CDouble . unTimescan0 $ timescan0) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
     (ImageWord32 arr) -> unsafeWith arr $ \i -> do
-      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
+      {-# SCC "hkl_binoculars_space_qcustom_uint32_t" #-} c'hkl_binoculars_space_qcustom_uint32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (CDouble . unTimescan0 $ timescan0) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
 
   return (DataFrameSpace img space att)
 
@@ -906,7 +957,7 @@ processQCustomP = do
                              each job
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              >-> framesP datapaths
-                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _) -> filterSumImage mImageSumMax img)
+                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _ _) -> filterSumImage mImageSumMax img)
                              >-> project det 3 (spaceQCustom det pixels res mask' surfaceOrientation mlimits subprojection uqx uqy uqz mSampleAxis doPolarizationCorrection)
                              >-> tee (accumulateP c)
                              >-> progress pb
@@ -915,7 +966,7 @@ processQCustomP = do
 
 
 instance ChunkP (DataSourcePath DataFrameQCustom) where
-    chunkP mSkipFirst mSkipLast (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _) =
+    chunkP mSkipFirst mSkipLast (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _ _) =
       skipMalformed $ forever $ do
       fp <- await
       withFileP (openFile' fp) $ \f ->

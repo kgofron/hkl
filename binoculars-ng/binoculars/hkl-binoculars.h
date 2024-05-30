@@ -206,6 +206,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QZ_TIMESTAMP,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESCAN0,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;
@@ -226,6 +227,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
                                                        const HklBinocularsAxisLimits **limits, \
                                                        size_t n_limits, \
                                                        double timestamp, \
+                                                       double timescan0, \
                                                        const HklBinocularsQCustomSubProjectionEnum subprojection, \
                                                        double uqx,      \
                                                        double uqy,      \
