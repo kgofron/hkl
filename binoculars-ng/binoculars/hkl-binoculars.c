@@ -25,6 +25,8 @@
 #ifdef DEBUG
 # define CGLM_DEFINE_PRINTS
 # define CGLM_PRINT_PRECISION 7
+#else
+# define NDEBUG
 #endif
 
 #include <stdio.h>
