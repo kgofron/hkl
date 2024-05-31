@@ -40,7 +40,8 @@ release:
 	./autogen.sh
 	./configure $(AM_DISTCHECK_CONFIGURE_FLAGS)
 	$(MAKE)
-	$(MAKE) distcheck
+# distcheck does not works due to a limitation of hsc2hs
+	$(MAKE) check
 	git tag v`./configure -V | head -n 1 | awk '{print $$3}'`
 
 
