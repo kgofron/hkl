@@ -507,7 +507,7 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                                                  HklBinocularsSpace *space,
                                                  int n_resolutions)
 {
-        const char **names;
+        const char **names = NULL;
 
         switch(subprojection){
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ:
@@ -622,6 +622,10 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 break;
         }
         }
+
+	if (NULL == names)
+		PROJECTION(qx, qy, qz);
+
         return names;
 }
 
