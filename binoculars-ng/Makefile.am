@@ -37,7 +37,7 @@ bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES=$(EXTRA_DIST)
 binoculars-ng$(EXEEXT):
 	@rm -f cabal.project.local
-	cabal build $(srcdir) \
+	$(CABAL) build $(srcdir) \
 		-fuseHklDev \
 		--disable-shared \
 		--enable-optimization \
@@ -47,7 +47,7 @@ binoculars-ng$(EXEEXT):
 		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
 		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
 		--offline
-	$(LN_S) $(shell cabal list-bin binoculars-ng) $@
+	$(LN_S) $(shell $(CABAL) list-bin binoculars-ng) $@
 
 CLEANFILES=\
 	cabal.project.local
