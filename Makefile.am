@@ -35,8 +35,8 @@ noinst_DATA = hkl3d.pc
 endif
 
 release:
-	cd scripts && ./clean-all
-	-git commit -a -m "pre-release"
+#	cd scripts && ./clean-all
+#	-git commit -a -m "pre-release"
 	./autogen.sh
 	./configure $(AM_DISTCHECK_CONFIGURE_FLAGS)
 	$(MAKE)
@@ -44,9 +44,11 @@ release:
 	$(MAKE) check
 	git tag v`./configure -V | head -n 1 | awk '{print $$3}'`
 
+tag:
+	git tag v`./configure -V | head -n 1 | awk '{print $$3}'`
 
 ## lcov part
-.PHONY: lcov genlcov lcov-clean release
+.PHONY: lcov genlcov lcov-clean release tag
 # use recursive makes in order to ignore errors during check
 lcov:
 	-$(MAKE) $(AM_MAKEFLAGS) -k check
