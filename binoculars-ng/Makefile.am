@@ -1,7 +1,7 @@
 SUBDIRS = binoculars
 
 EXTRA_DIST= \
-	hkl.cabal \
+	src/Hkl.hs \
 	src/Hkl/Binoculars.hs \
 	src/Hkl/Binoculars/Command.hs \
 	src/Hkl/Binoculars/Common.hs \
@@ -17,27 +17,35 @@ EXTRA_DIST= \
 	src/Hkl/C.hs \
 	src/Hkl/C/Binoculars.hsc \
 	src/Hkl/C/Hkl.hsc \
+	src/Hkl/DArray.hs \
 	src/Hkl/DataSource.hs \
 	src/Hkl/Detector.hs \
+	src/Hkl/Engine.hs \
 	src/Hkl/Exception.hs \
 	src/Hkl/Geometry.hs \
 	src/Hkl/H5.hs \
 	src/Hkl/HKD.hs \
 	src/Hkl/Image.hs \
 	src/Hkl/Lattice.hs \
+	src/Hkl/MyMatrix.hs \
 	src/Hkl/Orphan.hs \
 	src/Hkl/Parameter.hs \
 	src/Hkl/Pipes.hs \
 	src/Hkl/Repa.hs \
 	src/Hkl/Sample.hs \
 	src/Hkl/Types.hs \
-	src/Hkl/Utils.hs
+	src/Hkl/Utils.hs \
+	src/Main.hs
 
 bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES=$(EXTRA_DIST)
+
 binoculars-ng$(EXEEXT):
 	@rm -f cabal.project.local
-	$(CABAL) build $(srcdir) \
+	touch empty-config-file
+	$(CABAL) \
+		--config-file=empty-config-file \
+		build \
 		-fuseHklDev \
 		--disable-shared \
 		--enable-optimization \
@@ -47,10 +55,13 @@ binoculars-ng$(EXEEXT):
 		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
 		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
 		--offline
-	$(LN_S) $(shell $(CABAL) list-bin binoculars-ng) $@
+	$(LN_S) -f $$($(CABAL) \
+			--config-file=empty-config-file \
+			list-bin binoculars-ng) $@
 
 CLEANFILES=\
-	cabal.project.local
+	cabal.project.local \
+	empty-config-file
 
 clean-local:
 	-cabal clean

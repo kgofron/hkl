@@ -260,6 +260,7 @@ AC_SUBST(DATATYPE99_CFLAGS)
 
 AC_CONFIG_FILES([Makefile
                  binoculars-ng/binoculars/Makefile
+                 binoculars-ng/hkl.cabal
                  binoculars-ng/Makefile
 		 hkl/Makefile
 		 hkl/api2/Makefile
