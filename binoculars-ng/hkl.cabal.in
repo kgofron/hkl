@@ -150,7 +150,7 @@ executable binoculars-ng
     pkgconfig-depends: hkl
     extra-libraries: hkl-binoculars
 
-  main-is: @srcdir@/src/Main.hs
+  main-is: @srcdir@/app/Main.hs
 
 
 test-suite hkl-test
