@@ -178,9 +178,18 @@ test-suite hkl-test
 
   hs-source-dirs: @srcdir@/test
 
-  main-is: Spec.hs
+  main-is: @srcdir@/test/Spec.hs
 
   other-modules: BinocularsSpec
   other-modules: Paths_hkl
 
   type: exitcode-stdio-1.0
+
+  if flag(useHklDev)
+    extra-libraries: hkl
+    extra-libraries: hkl-binoculars
+
+    pkgconfig-depends: glib-2.0
+  else
+    pkgconfig-depends: hkl
+    extra-libraries: hkl-binoculars

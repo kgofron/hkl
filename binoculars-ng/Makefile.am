@@ -1,6 +1,8 @@
 SUBDIRS = binoculars
 
-EXTRA_DIST= \
+bin_PROGRAMS = binoculars-ng
+binoculars_ng_SOURCES=\
+	app/Main.hs \
 	src/Hkl.hs \
 	src/Hkl/Binoculars.hs \
 	src/Hkl/Binoculars/Command.hs \
@@ -34,12 +36,7 @@ EXTRA_DIST= \
 	src/Hkl/Repa.hs \
 	src/Hkl/Sample.hs \
 	src/Hkl/Types.hs \
-	src/Hkl/Utils.hs \
-	src/Main.hs
-
-bin_PROGRAMS = binoculars-ng
-binoculars_ng_SOURCES=$(EXTRA_DIST)
-
+	src/Hkl/Utils.hs
 binoculars-ng$(EXEEXT):
 	@rm -f cabal.project.local
 	touch empty-config-file
@@ -63,8 +60,30 @@ CLEANFILES=\
 	cabal.project.local \
 	empty-config-file
 
+test_SOURCES=\
+	data/test/config_ech6eiger.txt \
+	data/test/config_sixs_ruche_parsing.ini \
+	test/BinocularsSpec.hs \
+	test/Spec.hs
+
+check-local:
+	$(CABAL) \
+		--config-file=empty-config-file \
+		build \
+		-fuseHklDev \
+		--extra-include-dirs=$(abs_top_srcdir) \
+		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
+		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
+		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
+		hkl-test
+	hkl_datadir=$(srcdir) $$($(CABAL) \
+		--config-file=empty-config-file \
+		list-bin hkl-test)
+
 clean-local:
 	-cabal clean
+
+EXTRA_DIST = $(binoculars_ng_SOURCES) $(test_SOURCES)
 
 ###############
 # local tests #

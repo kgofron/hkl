@@ -11,7 +11,6 @@ module BinocularsSpec
 import           Control.Monad                      (forM_)
 import           Data.Aeson                         (Result (..), fromJSON,
                                                      toJSON)
-import           Data.Array.Repa.Index              (DIM2, DIM3)
 import           Data.Attoparsec.Text               (parseOnly)
 import           Data.Either                        (isRight)
 import           Data.HashMap.Lazy                  (fromList)
@@ -28,6 +27,7 @@ import           Hkl.Binoculars.Config.Sample
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
+import           Hkl.Repa
 import           Paths_hkl
 
 import           Prelude                            hiding (putStrLn, readFile)
