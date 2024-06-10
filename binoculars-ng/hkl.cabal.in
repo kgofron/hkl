@@ -178,7 +178,7 @@ test-suite hkl-test
 
   hs-source-dirs: @srcdir@/test
 
-  main-is: @srcdir@/test/Spec.hs
+  main-is: Spec.hs
 
   other-modules: BinocularsSpec
   other-modules: Paths_hkl
