@@ -37,7 +37,7 @@ binoculars_ng_SOURCES=\
 	src/Hkl/Sample.hs \
 	src/Hkl/Types.hs \
 	src/Hkl/Utils.hs
-binoculars-ng$(EXEEXT):
+binoculars-ng$(EXEEXT): $(binoculars_ng_SOURCES)
 	@rm -f cabal.project.local
 	touch empty-config-file
 	$(CABAL) \
@@ -72,7 +72,7 @@ test_sources=\
 	test/BinocularsSpec.hs \
 	test/Spec.hs
 
-hkl-test$(EEXE):
+hkl-test$(EXEEXT): $(test_sources)
 	@rm -f cabal.project.local
 	touch empty-config-file
 	$(CABAL) \
