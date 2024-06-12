@@ -96,7 +96,7 @@ sixsMedHGisaxs
   = Geometry'Custom
     ( Node (Axis "" NoTransformation Unit'NoUnit)
       [ Node (Axis "beta" (Rotation 0 (-1) 0) Unit'Angle'Degree) [Node (Axis "mu" (Rotation 0 0 1) Unit'Angle'Degree) [] ]
-      , Node (Axis "eix" (Translation 0 0 (-1)) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 1 0) Unit'Length'MilliMeter) [] ]
+      , Node (Axis "eix" (Translation 0 (-1) 0) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 0 1) Unit'Length'MilliMeter) []]
       ]
     )
     Nothing
@@ -106,7 +106,7 @@ sixsMedVGisaxs
   = Geometry'Custom
     ( Node (Axis "" NoTransformation Unit'NoUnit)
       [ Node (Axis "beta" (Rotation 0 (-1) 0) Unit'Angle'Degree) [Node (Axis "mu" (Rotation 0  0 1) Unit'Angle'Degree) [Node (Axis "omega" (Rotation 0 (-1) 0) Unit'Angle'Degree) [] ] ]
-      , Node (Axis "eix" (Translation 0 0 (-1)) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 1 0) Unit'Length'MilliMeter) [] ]
+      , Node (Axis "eix" (Translation 0 (-1) 0) Unit'Length'MilliMeter) [Node (Axis "eiz" (Translation 0 0 1) Unit'Length'MilliMeter) []]
       ]
     )
     Nothing
