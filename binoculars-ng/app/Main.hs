@@ -1,6 +1,8 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-
-    Copyright  : Copyright (C) 2014-2023 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -16,6 +18,8 @@ import           Control.Monad.IO.Class    (MonadIO)
 import           Control.Monad.Logger      (LogLevel (LevelDebug), LoggingT,
                                             MonadLogger, filterLogger,
                                             runStdoutLoggingT)
+import           Control.Monad.Reader      (MonadReader, ReaderT, ask,
+                                            runReaderT)
 import           Data.Attoparsec.Text      (parseOnly)
 import           Data.Text                 (pack)
 import           Options.Applicative       (CommandFields, Mod, argument,
@@ -73,21 +77,37 @@ options = FullOptions
           <$> debug
           <*> hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand)
 
-run :: (MonadIO m, MonadLogger m, MonadThrow m) => Options -> m ()
-run (Process mf mr)  = process mf mr
-run (CfgNew p mf)    = new p mf
-run (CfgUpdate f mr) = update f mr
+newtype App a =
+    App { unApp :: ReaderT FullOptions (LoggingT IO) a }
+    deriving newtype
+    ( Applicative
+    , Functor
+    , Monad
+    , MonadIO
+    , MonadReader FullOptions
+    , MonadLogger
+    , MonadThrow
+    )
 
+runApp :: FullOptions -> (LoggingT IO a -> IO a) -> App a -> IO a
+runApp env runLogging action =
+  runLogging $ runReaderT (unApp action) env
+
+app :: App ()
+app = do
+  (FullOptions _ o) <- ask
+  case o of
+    (Process mf mr)  -> process mf mr
+    (CfgNew p mf)    -> new p mf
+    (CfgUpdate f mr) -> update f mr
 
 main :: IO ()
 main = do
-  (FullOptions d opts') <- execParser opts
-  runStdoutLoggingT $ debugLogging d $ run opts'
-    where
-      debugLogging :: Bool -> LoggingT m a -> LoggingT m a
-      debugLogging d = if d then id else filterLogger (\_ l -> l /=LevelDebug)
-
-      opts = info (options <**> helper)
+  let opts = info (options <**> helper)
              ( fullDesc
-               <> progDesc "binoculars subcommand"
-               <> header "binoculars - bin your data's" )
+             <> progDesc "binoculars subcommand"
+             <> header "binoculars - bin your data's" )
+  fopts@(FullOptions d _) <- execParser opts
+  let debugLogging = if d then id else filterLogger (\_ l -> l /=LevelDebug)
+  let runLogging = runStdoutLoggingT . debugLogging
+  runApp fopts runLogging app
