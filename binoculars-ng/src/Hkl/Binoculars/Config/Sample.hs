@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
@@ -329,13 +330,13 @@ instance ToIni BinocularsConfig'Sample where
 
 parse'BinocularsConfig'Sample :: Text -> Either String BinocularsConfig'Sample
 parse'BinocularsConfig'Sample cfg
-  = BinocularsConfig'Sample
-    <$> parseMb cfg "input" "a"
-    <*> parseMb cfg "input" "b"
-    <*> parseMb cfg "input" "c"
-    <*> parseMb cfg "input" "alpha"
-    <*> parseMb cfg "input" "beta"
-    <*> parseMb cfg "input" "gamma"
-    <*> parseMb cfg "input" "ux"
-    <*> parseMb cfg "input" "uy"
-    <*> parseMb cfg "input" "uz"
+    = do binocularsConfig'Sample'A <- parseMb cfg "input" "a"
+         binocularsConfig'Sample'B <- parseMb cfg "input" "b"
+         binocularsConfig'Sample'C <- parseMb cfg "input" "c"
+         binocularsConfig'Sample'Alpha <- parseMb cfg "input" "alpha"
+         binocularsConfig'Sample'Beta <- parseMb cfg "input" "beta"
+         binocularsConfig'Sample'Gamma <- parseMb cfg "input" "gamma"
+         binocularsConfig'Sample'Ux <- parseMb cfg "input" "ux"
+         binocularsConfig'Sample'Uy <- parseMb cfg "input" "uy"
+         binocularsConfig'Sample'Uz <- parseMb cfg "input" "uz"
+         pure BinocularsConfig'Sample{..}
