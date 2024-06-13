@@ -60,16 +60,6 @@ import           Hkl.Utils
 -- Config --
 ------------
 
-data instance Config 'AnglesProjection = BinocularsConfig'Angles
-  { binocularsConfig'Angles'Common                 :: BinocularsConfig'Common
-  , binocularsConfig'Angles'ProjectionType         :: ProjectionType
-  , binocularsConfig'Angles'ProjectionResolution   :: Resolutions DIM3
-  , binocularsConfig'Angles'ProjectionLimits       :: Maybe (RLimits DIM3)
-  , binocularsConfig'Angles'SampleAxis             :: SampleAxis
-  , binocularsConfig'Angles'DataPath               :: DataSourcePath DataFrameQCustom
- } deriving (Show)
-
-
 default'BinocularsConfig'Angles :: Config 'AnglesProjection
 default'BinocularsConfig'Angles
   = BinocularsConfig'Angles
@@ -81,9 +71,19 @@ default'BinocularsConfig'Angles
     , binocularsConfig'Angles'SampleAxis = SampleAxis "omega"
     }
 
-newtype instance Args 'AnglesProjection = Args'AnglesProjection (Maybe ConfigRange)
-
 instance HasIniConfig 'AnglesProjection where
+  data instance Config 'AnglesProjection
+      = BinocularsConfig'Angles
+        { binocularsConfig'Angles'Common                 :: BinocularsConfig'Common
+        , binocularsConfig'Angles'ProjectionType         :: ProjectionType
+        , binocularsConfig'Angles'ProjectionResolution   :: Resolutions DIM3
+        , binocularsConfig'Angles'ProjectionLimits       :: Maybe (RLimits DIM3)
+        , binocularsConfig'Angles'SampleAxis             :: SampleAxis
+        , binocularsConfig'Angles'DataPath               :: DataSourcePath DataFrameQCustom
+        } deriving (Show)
+
+  newtype Args 'AnglesProjection
+      = Args'AnglesProjection (Maybe ConfigRange)
 
   getConfig content@(ConfigContent cfg) (Args'AnglesProjection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities

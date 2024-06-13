@@ -175,23 +175,6 @@ instance HasFieldValue (DataSourcePath DataFrameQCustom) where
 -- Config --
 ------------
 
-data instance Config 'QCustomProjection
-  = BinocularsConfig'QCustom
-    { binocularsConfig'QCustom'Common :: BinocularsConfig'Common
-    , binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum     :: HklBinocularsSurfaceOrientationEnum
-    , binocularsConfig'QCustom'ProjectionType         :: ProjectionType
-    , binocularsConfig'QCustom'ProjectionResolution   :: Resolutions DIM3
-    , binocularsConfig'QCustom'ProjectionLimits       :: Maybe (RLimits DIM3)
-    , binocularsConfig'QCustom'DataPath               :: DataSourcePath DataFrameQCustom
-    , binocularsConfig'QCustom'SubProjection          :: Maybe HklBinocularsQCustomSubProjectionEnum
-    , binocularsConfig'QCustom'Uqx                    :: Degree
-    , binocularsConfig'QCustom'Uqy                    :: Degree
-    , binocularsConfig'QCustom'Uqz                    :: Degree
-    , binocularsConfig'QCustom'SampleAxis             :: Maybe SampleAxis
-    } deriving (Show, Generic)
-
-newtype instance Args 'QCustomProjection = Args'QCustomProjection (Maybe ConfigRange)
-
 default'BinocularsConfig'QCustom :: Config 'QCustomProjection
 default'BinocularsConfig'QCustom
   = BinocularsConfig'QCustom
@@ -208,8 +191,24 @@ default'BinocularsConfig'QCustom
     , binocularsConfig'QCustom'SampleAxis = Nothing
     }
 
-
 instance HasIniConfig 'QCustomProjection where
+  data Config 'QCustomProjection
+      = BinocularsConfig'QCustom
+        { binocularsConfig'QCustom'Common :: BinocularsConfig'Common
+        , binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum     :: HklBinocularsSurfaceOrientationEnum
+        , binocularsConfig'QCustom'ProjectionType         :: ProjectionType
+        , binocularsConfig'QCustom'ProjectionResolution   :: Resolutions DIM3
+        , binocularsConfig'QCustom'ProjectionLimits       :: Maybe (RLimits DIM3)
+        , binocularsConfig'QCustom'DataPath               :: DataSourcePath DataFrameQCustom
+        , binocularsConfig'QCustom'SubProjection          :: Maybe HklBinocularsQCustomSubProjectionEnum
+        , binocularsConfig'QCustom'Uqx                    :: Degree
+        , binocularsConfig'QCustom'Uqy                    :: Degree
+        , binocularsConfig'QCustom'Uqz                    :: Degree
+        , binocularsConfig'QCustom'SampleAxis             :: Maybe SampleAxis
+        } deriving (Show, Generic)
+
+  newtype Args 'QCustomProjection
+      = Args'QCustomProjection (Maybe ConfigRange)
 
   getConfig content@(ConfigContent cfg) (Args'QCustomProjection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities

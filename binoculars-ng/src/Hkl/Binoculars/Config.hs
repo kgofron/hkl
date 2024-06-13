@@ -25,14 +25,11 @@
 
 module Hkl.Binoculars.Config
     ( Angstrom(..)
-    , Args
     , Attenuation(..)
     , BinocularsPreConfig(..)
     , Capabilities(..)
-    , Config
     , ConfigContent(..)
     , ConfigRange(..)
-    , DataPath
     , Degree(..)
     , DestinationTmpl(..)
     , FieldEmitter(..)
@@ -237,16 +234,11 @@ instance HasFieldValue (Int, Int) where
 
 -- Class HasIniConfig
 
-data family Config (a :: ProjectionType)
-data family DataPath (a :: ProjectionType)
-data family Args (a :: ProjectionType)
-
 readConfig :: Maybe FilePath -> IO ConfigContent
 readConfig mf = do
   cfg <- readFile =<< case mf of
                        Nothing  -> getDataFileName "data/test/config_manip1.cfg"
                        (Just f) -> pure f
-  -- return $ ConfigContent cfg
   return $ ConfigContent $ unlines $ [fixHeader l | l <- lines cfg]
     where
       fixHeader :: Text -> Text
@@ -255,6 +247,8 @@ readConfig mf = do
         (Just n) -> take n l
 
 class HasIniConfig (a :: ProjectionType) where
+  data Config a
+  data Args a
 
   getConfig :: ConfigContent
             -> Args a

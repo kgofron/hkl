@@ -114,18 +114,6 @@ instance HasFieldValue (DataFrameTest' DataSourcePath) where
 -- Config --
 ------------
 
-data instance Config 'TestProjection
-  = BinocularsConfig'Test
-    { binocularsConfig'Test'Common                 :: BinocularsConfig'Common
-    , binocularsConfig'Test'Sample                 :: BinocularsConfig'Sample
-    , binocularsConfig'Test'ProjectionType         :: ProjectionType
-    , binocularsConfig'Test'ProjectionResolution   :: Resolutions DIM3
-    , binocularsConfig'Test'ProjectionLimits       :: Maybe (RLimits DIM3)
-    , binocularsConfig'Test'DataPath               :: DataFrameTest' DataSourcePath
-    } deriving (Generic)
-
-newtype instance Args 'TestProjection = Args'TestProjection (Maybe ConfigRange)
-
 default'BinocularsConfig'Test :: Config 'TestProjection
 default'BinocularsConfig'Test
   = BinocularsConfig'Test
@@ -148,6 +136,17 @@ overload'DataSourcePath'DataFrameTest common sample (DataFrameTest qCustomPath s
     newSamplePath = overload'DataSourcePath'Sample sample samplePath
 
 instance HasIniConfig 'TestProjection where
+  data Config 'TestProjection
+    = BinocularsConfig'Test
+      { binocularsConfig'Test'Common                 :: BinocularsConfig'Common
+      , binocularsConfig'Test'Sample                 :: BinocularsConfig'Sample
+      , binocularsConfig'Test'ProjectionType         :: ProjectionType
+      , binocularsConfig'Test'ProjectionResolution   :: Resolutions DIM3
+      , binocularsConfig'Test'ProjectionLimits       :: Maybe (RLimits DIM3)
+      , binocularsConfig'Test'DataPath               :: DataFrameTest' DataSourcePath
+      } deriving (Generic)
+
+  newtype Args 'TestProjection = Args'TestProjection (Maybe ConfigRange)
 
   getConfig content@(ConfigContent cfg) (Args'TestProjection mr) capabilities = do
     common <- parse'BinocularsConfig'Common cfg mr capabilities

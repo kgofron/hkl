@@ -117,18 +117,6 @@ instance HasFieldValue (DataFrameHkl' DataSourcePath) where
 -- Config --
 ------------
 
-data instance Config 'HklProjection
-  = BinocularsConfig'Hkl
-    { binocularsConfig'Hkl'Common                 :: BinocularsConfig'Common
-    , binocularsConfig'Hkl'Sample                 :: BinocularsConfig'Sample
-    , binocularsConfig'Hkl'ProjectionType         :: ProjectionType
-    , binocularsConfig'Hkl'ProjectionResolution   :: Resolutions DIM3
-    , binocularsConfig'Hkl'ProjectionLimits       :: Maybe (RLimits DIM3)
-    , binocularsConfig'Hkl'DataPath               :: DataFrameHkl' DataSourcePath
-    } deriving (Generic)
-
-newtype instance Args 'HklProjection = Args'HklProjection (Maybe ConfigRange)
-
 default'BinocularsConfig'Hkl :: Config 'HklProjection
 default'BinocularsConfig'Hkl
   = BinocularsConfig'Hkl
@@ -151,6 +139,18 @@ overload'DataSourcePath'DataFrameHkl common sample (DataFrameHkl qCustomPath sam
     newSamplePath = overload'DataSourcePath'Sample sample samplePath
 
 instance HasIniConfig 'HklProjection where
+  data Config 'HklProjection
+    = BinocularsConfig'Hkl
+      { binocularsConfig'Hkl'Common                 :: BinocularsConfig'Common
+      , binocularsConfig'Hkl'Sample                 :: BinocularsConfig'Sample
+      , binocularsConfig'Hkl'ProjectionType         :: ProjectionType
+      , binocularsConfig'Hkl'ProjectionResolution   :: Resolutions DIM3
+      , binocularsConfig'Hkl'ProjectionLimits       :: Maybe (RLimits DIM3)
+      , binocularsConfig'Hkl'DataPath               :: DataFrameHkl' DataSourcePath
+      } deriving (Generic)
+
+  newtype Args 'HklProjection
+      = Args'HklProjection (Maybe ConfigRange)
 
   getConfig content@(ConfigContent cfg) (Args'HklProjection mr) capabilities = do
 
