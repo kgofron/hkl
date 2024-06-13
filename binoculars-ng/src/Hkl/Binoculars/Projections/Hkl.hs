@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -152,22 +153,17 @@ instance HasIniConfig 'HklProjection where
   newtype Args 'HklProjection
       = Args'HklProjection (Maybe ConfigRange)
 
-  getConfig content@(ConfigContent cfg) (Args'HklProjection mr) capabilities = do
-
-    common <- parse'BinocularsConfig'Common cfg mr capabilities
-    sample <- parse'BinocularsConfig'Sample cfg
-
-    BinocularsConfig'Hkl
-      <$> pure common
-      <*> pure sample
-      <*> parseFDef cfg "projection" "type" (binocularsConfig'Hkl'ProjectionType default'BinocularsConfig'Hkl)
-      <*> parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution default'BinocularsConfig'Hkl)
-      <*> parseMb cfg "projection" "limits"
-      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameHkl common sample content) (parse' cfg "input" "datapath")
-           (\md -> case md of
-                    Nothing -> guess'DataSourcePath'DataFrameHkl common sample content
-                    Just d  ->  overload'DataSourcePath'DataFrameHkl common sample d))
-
+  getConfig content@(ConfigContent cfg) (Args'HklProjection mr) capabilities
+      = do binocularsConfig'Hkl'Common <- parse'BinocularsConfig'Common cfg mr capabilities
+           binocularsConfig'Hkl'Sample <- parse'BinocularsConfig'Sample cfg
+           binocularsConfig'Hkl'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Hkl'ProjectionType default'BinocularsConfig'Hkl)
+           binocularsConfig'Hkl'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution default'BinocularsConfig'Hkl)
+           binocularsConfig'Hkl'ProjectionLimits <- parseMb cfg "projection" "limits"
+           binocularsConfig'Hkl'DataPath <- pure $ eitherF (const $ guess'DataSourcePath'DataFrameHkl binocularsConfig'Hkl'Common binocularsConfig'Hkl'Sample content) (parse' cfg "input" "datapath")
+                                           (\md -> case md of
+                                                    Nothing -> guess'DataSourcePath'DataFrameHkl binocularsConfig'Hkl'Common binocularsConfig'Hkl'Sample content
+                                                    Just d  ->  overload'DataSourcePath'DataFrameHkl binocularsConfig'Hkl'Common binocularsConfig'Hkl'Sample d)
+           pure BinocularsConfig'Hkl{..}
 
 instance ToIni (Config 'HklProjection) where
   toIni c = toIni (binocularsConfig'Hkl'Common c)
