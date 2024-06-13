@@ -7,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
@@ -210,69 +211,67 @@ instance HasIniConfig 'QCustomProjection where
   newtype Args 'QCustomProjection
       = Args'QCustomProjection (Maybe ConfigRange)
 
-  getConfig content@(ConfigContent cfg) (Args'QCustomProjection mr) capabilities = do
-    common <- parse'BinocularsConfig'Common cfg mr capabilities
-    projectiontype <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
+  getConfig content@(ConfigContent cfg) (Args'QCustomProjection mr) capabilities
+      = do binocularsConfig'QCustom'Common <- parse'BinocularsConfig'Common cfg mr capabilities
+           binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum <-  parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
+           binocularsConfig'QCustom'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
+           let msubprojection' = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
+           let binocularsConfig'QCustom'SubProjection
+                   = case binocularsConfig'QCustom'ProjectionType of
+                       QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QTimestamp
+                       QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
+                       QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
+                       AnglesProjection -> msubprojection'
+                       Angles2Projection -> msubprojection'
+                       HklProjection -> msubprojection'
+                       QCustomProjection -> msubprojection'
+                       RealSpaceProjection -> Just HklBinocularsQCustomSubProjectionEnum'XYZ
+                       PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
+                       TestProjection -> msubprojection'
 
-    let msubprojection' = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
-    let msubprojection = case projectiontype of
-                           QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QTimestamp
-                           QparQperProjection -> Just HklBinocularsQCustomSubProjectionEnum'QparQper
-                           QxQyQzProjection -> Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
-                           AnglesProjection -> msubprojection'
-                           Angles2Projection -> msubprojection'
-                           HklProjection -> msubprojection'
-                           QCustomProjection -> msubprojection'
-                           RealSpaceProjection -> Just HklBinocularsQCustomSubProjectionEnum'XYZ
-                           PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
-                           TestProjection -> msubprojection'
+           binocularsConfig'QCustom'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
+           binocularsConfig'QCustom'ProjectionLimits <- parseMb cfg "projection" "limits"
+           binocularsConfig'QCustom'DataPath <- pure (eitherF (const $ guess'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content) (parse' cfg "input" "datapath")
+                                                                 (\case
+                                                                   Nothing -> guess'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content
+                                                                   Just d ->  overload'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection d))
 
-    let errorMissingSampleAxis = case msubprojection of
-                                   Nothing -> Nothing
-                                   Just sub -> case sub of
-                                                HklBinocularsQCustomSubProjectionEnum'QxQyQz -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QparQper -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QPhiQx -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QPhiQy -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QPhiQz -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QStereo -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> error "expect a valid  [projection] 'sampleaxis' key"
-                                                HklBinocularsQCustomSubProjectionEnum'XYZ -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QQparQper -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> error "expect a valid [projection] 'sampleaxis' key"
-                                                HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> error "expect a valid [projection] 'sampleaxis' key"
-                                                HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> error "expect a valid [projection] 'sampleaxis' key"
-                                                HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> Nothing
-                                                HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> Nothing
+           binocularsConfig'QCustom'Uqx <- parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
+           binocularsConfig'QCustom'Uqy <- parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
+           binocularsConfig'QCustom'Uqz <- parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
 
-
-    BinocularsConfig'QCustom
-      common
-      <$> parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
-      <*> pure projectiontype
-      <*> parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
-      <*> parseMb cfg "projection" "limits"
-      <*> pure (eitherF (const $ guess'DataSourcePath'DataFrameQCustom common msubprojection content) (parse' cfg "input" "datapath")
-                (\case
-                    Nothing -> guess'DataSourcePath'DataFrameQCustom common msubprojection content
-                    Just d ->  overload'DataSourcePath'DataFrameQCustom common msubprojection d))
-      <*> pure msubprojection
-      <*> parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
-      <*> parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
-      <*> parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
-      <*> pure (eitherF (const $ errorMissingSampleAxis) (parse' cfg "projection" "sampleaxis")
-                (\case
-                    Nothing -> errorMissingSampleAxis
-                    Just d  -> Just d
-                ))
+           let errorMissingSampleAxis
+                   = case binocularsConfig'QCustom'SubProjection of
+                       Nothing -> Nothing
+                       Just sub -> case sub of
+                                    HklBinocularsQCustomSubProjectionEnum'QxQyQz -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QparQper -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QPhiQx -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QPhiQy -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QPhiQz -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QStereo -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> error "expect a valid  [projection] 'sampleaxis' key"
+                                    HklBinocularsQCustomSubProjectionEnum'XYZ -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QQparQper -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> error "expect a valid [projection] 'sampleaxis' key"
+                                    HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> error "expect a valid [projection] 'sampleaxis' key"
+                                    HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> error "expect a valid [projection] 'sampleaxis' key"
+                                    HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> Nothing
+           binocularsConfig'QCustom'SampleAxis <- pure (eitherF (const $ errorMissingSampleAxis) (parse' cfg "projection" "sampleaxis")
+                                                                   (\case
+                                                                     Nothing -> errorMissingSampleAxis
+                                                                     Just d  -> Just d
+                                                                   ))
+           pure BinocularsConfig'QCustom{..}
 
 instance ToIni (Config 'QCustomProjection) where
 
