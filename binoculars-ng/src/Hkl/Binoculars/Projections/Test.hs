@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -148,19 +149,17 @@ instance HasIniConfig 'TestProjection where
 
   newtype Args 'TestProjection = Args'TestProjection (Maybe ConfigRange)
 
-  getConfig content@(ConfigContent cfg) (Args'TestProjection mr) capabilities = do
-    common <- parse'BinocularsConfig'Common cfg mr capabilities
-    sample <- parse'BinocularsConfig'Sample cfg
-    BinocularsConfig'Test
-      <$> pure common
-      <*> pure sample
-      <*> parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType default'BinocularsConfig'Test)
-      <*> parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution default'BinocularsConfig'Test)
-      <*> parseMb cfg "projection" "limits"
-      <*> (pure $ eitherF (const $ guess'DataSourcePath'DataFrameTest common sample content) (parse' cfg "input" "datapath")
-           (\md -> case md of
-                    Nothing -> guess'DataSourcePath'DataFrameTest common sample content
-                    Just d  ->  overload'DataSourcePath'DataFrameTest common sample d))
+  getConfig content@(ConfigContent cfg) (Args'TestProjection mr) capabilities
+      = do binocularsConfig'Test'Common <- parse'BinocularsConfig'Common cfg mr capabilities
+           binocularsConfig'Test'Sample <- parse'BinocularsConfig'Sample cfg
+           binocularsConfig'Test'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType default'BinocularsConfig'Test)
+           binocularsConfig'Test'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution default'BinocularsConfig'Test)
+           binocularsConfig'Test'ProjectionLimits <- parseMb cfg "projection" "limits"
+           binocularsConfig'Test'DataPath <- (pure $ eitherF (const $ guess'DataSourcePath'DataFrameTest binocularsConfig'Test'Common binocularsConfig'Test'Sample content) (parse' cfg "input" "datapath")
+                                             (\md -> case md of
+                                                      Nothing -> guess'DataSourcePath'DataFrameTest binocularsConfig'Test'Common binocularsConfig'Test'Sample content
+                                                      Just d  ->  overload'DataSourcePath'DataFrameTest binocularsConfig'Test'Common binocularsConfig'Test'Sample d))
+           pure BinocularsConfig'Test{..}
 
 
 instance ToIni (Config 'TestProjection) where
