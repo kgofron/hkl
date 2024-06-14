@@ -59,7 +59,6 @@ module Hkl.Binoculars.Config
     , getPreConfig
     , mergeIni
     , readConfig
-    , serializeConfig
     ) where
 
 
@@ -257,8 +256,8 @@ class HasIniConfig (a :: k) where
 
   toIni :: (Config a) -> Ini
 
-serializeConfig :: HasIniConfig a => Config a -> Text
-serializeConfig = printIni . toIni
+  serializeConfig :: Config a -> Text
+  serializeConfig = printIni . toIni
 
 mergeHash :: (Eq k, Hashable k, Semigroup v) => HashMap k v -> HashMap k v -> HashMap k v
 mergeHash = unionWith f
