@@ -61,17 +61,6 @@ import           Hkl.Utils
 -- Config --
 ------------
 
-default'BinocularsConfig'Angles :: Config 'AnglesProjection
-default'BinocularsConfig'Angles
-  = BinocularsConfig'Angles
-    { binocularsConfig'Angles'Common = defaultConfig
-    , binocularsConfig'Angles'ProjectionType = AnglesProjection
-    , binocularsConfig'Angles'ProjectionResolution = Resolutions3 1 1 1
-    , binocularsConfig'Angles'ProjectionLimits = Nothing
-    , binocularsConfig'Angles'DataPath = default'DataSourcePath'DataFrameQCustom
-    , binocularsConfig'Angles'SampleAxis = SampleAxis "omega"
-    }
-
 instance HasIniConfig 'AnglesProjection where
   data instance Config 'AnglesProjection
       = BinocularsConfig'Angles
@@ -86,10 +75,20 @@ instance HasIniConfig 'AnglesProjection where
   newtype Args 'AnglesProjection
       = Args'AnglesProjection (Maybe ConfigRange)
 
+  defaultConfig
+      = BinocularsConfig'Angles
+        { binocularsConfig'Angles'Common = defaultConfig
+        , binocularsConfig'Angles'ProjectionType = AnglesProjection
+        , binocularsConfig'Angles'ProjectionResolution = Resolutions3 1 1 1
+        , binocularsConfig'Angles'ProjectionLimits = Nothing
+        , binocularsConfig'Angles'DataPath = default'DataSourcePath'DataFrameQCustom
+        , binocularsConfig'Angles'SampleAxis = SampleAxis "omega"
+        }
+
   getConfig content@(ConfigContent cfg) (Args'AnglesProjection mr) capabilities
       = do binocularsConfig'Angles'Common <- getConfig content (Args'Common mr) capabilities
-           binocularsConfig'Angles'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Angles'ProjectionType default'BinocularsConfig'Angles)
-           binocularsConfig'Angles'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Angles'ProjectionResolution default'BinocularsConfig'Angles)
+           binocularsConfig'Angles'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Angles'ProjectionType defaultConfig)
+           binocularsConfig'Angles'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Angles'ProjectionResolution defaultConfig)
            binocularsConfig'Angles'ProjectionLimits <- parseMb cfg "projection" "limits"
            binocularsConfig'Angles'SampleAxis <- parseFDef cfg "input" "sample_axis" $ case binocularsConfig'Angles'ProjectionType of
                                                                                         AnglesProjection   -> SampleAxis "omega"
@@ -110,16 +109,16 @@ instance HasIniConfig 'AnglesProjection where
 
   toIni c = toIni (binocularsConfig'Angles'Common c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Angles'DataPath c default'BinocularsConfig'Angles
-                                                     <> elemFDef "sample_axis" binocularsConfig'Angles'SampleAxis c default'BinocularsConfig'Angles
+            Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Angles'DataPath c defaultConfig
+                                                     <> elemFDef "sample_axis" binocularsConfig'Angles'SampleAxis c defaultConfig
                                                      [ "the name of the sample axis"
                                                      , ""
                                                      , "default value: `omega`"
                                                      ]
                                             )
-                                         , ("projection", elemFDef' "type" binocularsConfig'Angles'ProjectionType c default'BinocularsConfig'Angles
-                                                          <> elemFDef' "resolution" binocularsConfig'Angles'ProjectionResolution c default'BinocularsConfig'Angles
-                                                          <> elemFMbDef' "limits" binocularsConfig'Angles'ProjectionLimits c default'BinocularsConfig'Angles
+                                         , ("projection", elemFDef' "type" binocularsConfig'Angles'ProjectionType c defaultConfig
+                                                          <> elemFDef' "resolution" binocularsConfig'Angles'ProjectionResolution c defaultConfig
+                                                          <> elemFMbDef' "limits" binocularsConfig'Angles'ProjectionLimits c defaultConfig
                                            )]
                 , iniGlobals = []
                 }
@@ -240,7 +239,7 @@ processAngles mf mr = cmd processAnglesP mf (Args'AnglesProjection mr)
 newAngles :: (MonadIO m, MonadLogger m, MonadThrow m)
           => Path Abs Dir -> m ()
 newAngles cwd = do
-  let conf = default'BinocularsConfig'Angles
+  let conf = defaultConfig
              { binocularsConfig'Angles'Common = defaultConfig
                                                 { binocularsConfig'Common'Nexusdir = Just cwd }
              }

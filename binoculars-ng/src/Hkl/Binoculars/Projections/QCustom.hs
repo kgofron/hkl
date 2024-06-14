@@ -177,22 +177,6 @@ instance HasFieldValue (DataSourcePath DataFrameQCustom) where
 -- Config --
 ------------
 
-default'BinocularsConfig'QCustom :: Config 'QCustomProjection
-default'BinocularsConfig'QCustom
-  = BinocularsConfig'QCustom
-    { binocularsConfig'QCustom'Common = defaultConfig
-    , binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum = HklBinocularsSurfaceOrientationEnum'Vertical
-    , binocularsConfig'QCustom'ProjectionType = QCustomProjection
-    , binocularsConfig'QCustom'ProjectionResolution = Resolutions3 0.01 0.01 0.01
-    , binocularsConfig'QCustom'ProjectionLimits  = Nothing
-    , binocularsConfig'QCustom'DataPath = default'DataSourcePath'DataFrameQCustom
-    , binocularsConfig'QCustom'SubProjection = Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
-    , binocularsConfig'QCustom'Uqx = Degree (0.0 *~ degree)
-    , binocularsConfig'QCustom'Uqy = Degree (0.0 *~ degree)
-    , binocularsConfig'QCustom'Uqz = Degree (0.0 *~ degree)
-    , binocularsConfig'QCustom'SampleAxis = Nothing
-    }
-
 instance HasIniConfig 'QCustomProjection where
   data Config 'QCustomProjection
       = BinocularsConfig'QCustom
@@ -212,11 +196,26 @@ instance HasIniConfig 'QCustomProjection where
   newtype Args 'QCustomProjection
       = Args'QCustomProjection (Maybe ConfigRange)
 
+  defaultConfig
+      = BinocularsConfig'QCustom
+        { binocularsConfig'QCustom'Common = defaultConfig
+        , binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum = HklBinocularsSurfaceOrientationEnum'Vertical
+        , binocularsConfig'QCustom'ProjectionType = QCustomProjection
+        , binocularsConfig'QCustom'ProjectionResolution = Resolutions3 0.01 0.01 0.01
+        , binocularsConfig'QCustom'ProjectionLimits  = Nothing
+        , binocularsConfig'QCustom'DataPath = default'DataSourcePath'DataFrameQCustom
+        , binocularsConfig'QCustom'SubProjection = Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
+        , binocularsConfig'QCustom'Uqx = Degree (0.0 *~ degree)
+        , binocularsConfig'QCustom'Uqy = Degree (0.0 *~ degree)
+        , binocularsConfig'QCustom'Uqz = Degree (0.0 *~ degree)
+        , binocularsConfig'QCustom'SampleAxis = Nothing
+        }
+
   getConfig content@(ConfigContent cfg) (Args'QCustomProjection mr) capabilities
       = do binocularsConfig'QCustom'Common <- getConfig content (Args'Common mr) capabilities
-           binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum <-  parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
-           binocularsConfig'QCustom'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
-           let msubprojection' = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)
+           binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum <-  parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum defaultConfig)
+           binocularsConfig'QCustom'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType defaultConfig)
+           let msubprojection' = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection defaultConfig)
            let binocularsConfig'QCustom'SubProjection
                    = case binocularsConfig'QCustom'ProjectionType of
                        QIndexProjection -> Just HklBinocularsQCustomSubProjectionEnum'QTimestamp
@@ -230,16 +229,16 @@ instance HasIniConfig 'QCustomProjection where
                        PixelsProjection -> Just HklBinocularsQCustomSubProjectionEnum'YZTimestamp
                        TestProjection -> msubprojection'
 
-           binocularsConfig'QCustom'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution default'BinocularsConfig'QCustom)
+           binocularsConfig'QCustom'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution defaultConfig)
            binocularsConfig'QCustom'ProjectionLimits <- parseMb cfg "projection" "limits"
            binocularsConfig'QCustom'DataPath <- pure (eitherF (const $ guess'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content) (parse' cfg "input" "datapath")
                                                                  (\case
                                                                    Nothing -> guess'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content
                                                                    Just d ->  overload'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection d))
 
-           binocularsConfig'QCustom'Uqx <- parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx default'BinocularsConfig'QCustom)
-           binocularsConfig'QCustom'Uqy <- parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy default'BinocularsConfig'QCustom)
-           binocularsConfig'QCustom'Uqz <- parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz default'BinocularsConfig'QCustom)
+           binocularsConfig'QCustom'Uqx <- parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx defaultConfig)
+           binocularsConfig'QCustom'Uqy <- parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy defaultConfig)
+           binocularsConfig'QCustom'Uqz <- parseFDef cfg "projection" "uqz" (binocularsConfig'QCustom'Uqz defaultConfig)
 
            let errorMissingSampleAxis
                    = case binocularsConfig'QCustom'SubProjection of
@@ -276,14 +275,14 @@ instance HasIniConfig 'QCustomProjection where
 
   toIni c = toIni (binocularsConfig'QCustom'Common c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input",    elemFDef' "surface_orientation" binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum c default'BinocularsConfig'QCustom
-                                                     <> elemFDef' "datapath" binocularsConfig'QCustom'DataPath c default'BinocularsConfig'QCustom
+            Ini { iniSections = fromList [ ("input",    elemFDef' "surface_orientation" binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum c defaultConfig
+                                                     <> elemFDef' "datapath" binocularsConfig'QCustom'DataPath c defaultConfig
                                            )
-                                         , ("projection",    elemFDef' "type" binocularsConfig'QCustom'ProjectionType c default'BinocularsConfig'QCustom
-                                                          <> elemFDef' "resolution" binocularsConfig'QCustom'ProjectionResolution c default'BinocularsConfig'QCustom
-                                                          <> elemFMbDef' "limits" binocularsConfig'QCustom'ProjectionLimits c default'BinocularsConfig'QCustom
-                                                          <> elemFMbDef' "subprojection" binocularsConfig'QCustom'SubProjection c default'BinocularsConfig'QCustom
-                                                          <> elemFDef "uqx" binocularsConfig'QCustom'Uqx c default'BinocularsConfig'QCustom
+                                         , ("projection",    elemFDef' "type" binocularsConfig'QCustom'ProjectionType c defaultConfig
+                                                          <> elemFDef' "resolution" binocularsConfig'QCustom'ProjectionResolution c defaultConfig
+                                                          <> elemFMbDef' "limits" binocularsConfig'QCustom'ProjectionLimits c defaultConfig
+                                                          <> elemFMbDef' "subprojection" binocularsConfig'QCustom'SubProjection c defaultConfig
+                                                          <> elemFDef "uqx" binocularsConfig'QCustom'Uqx c defaultConfig
                                                           [ "rotation around the x-axis of the sample in the surface basis system -- degree"
                                                           , ""
                                                           , "in this basis, the x-axis is colinear to the surface of the sample along the x-rays."
@@ -291,7 +290,7 @@ instance HasIniConfig 'QCustomProjection where
                                                           , " `<not set>` - use the default value `0.0`"
                                                           , " `a value`   - use this value"
                                                           ]
-                                                          <> elemFDef "uqy" binocularsConfig'QCustom'Uqy c default'BinocularsConfig'QCustom
+                                                          <> elemFDef "uqy" binocularsConfig'QCustom'Uqy c defaultConfig
                                                           [ "rotation around the y-axis of the sample in the surface basis system -- degree"
                                                           , ""
                                                           , "in this basis, the y-axis is colinear to the surface of the sample and"
@@ -304,7 +303,7 @@ instance HasIniConfig 'QCustomProjection where
                                                           , " `<not set>` - use the default value `0.0`"
                                                           , " `a value`   - use this value"
                                                           ]
-                                                          <> elemFDef "uqz" binocularsConfig'QCustom'Uqz c default'BinocularsConfig'QCustom
+                                                          <> elemFDef "uqz" binocularsConfig'QCustom'Uqz c defaultConfig
                                                           [ "rotation around the z-axis of the sample in the surface basis system -- degree"
                                                           , ""
                                                           , "in this basis, the z-axis is perpendicular to the surface of the sample."
@@ -317,7 +316,7 @@ instance HasIniConfig 'QCustomProjection where
                                                           , " `<not set>` - use the default value `0.0`"
                                                           , " `a value`   - use this value"
                                                           ]
-                                                          <> elemFMbDef "sampleaxis" binocularsConfig'QCustom'SampleAxis c default'BinocularsConfig'QCustom
+                                                          <> elemFMbDef "sampleaxis" binocularsConfig'QCustom'SampleAxis c defaultConfig
                                                           [ "the name of the sample axis expected by some subprojections."
                                                           , ""
                                                           , " `<not set>` - for all subprojections which does not expect a value."
@@ -995,7 +994,7 @@ processQCustom mf mr = cmd processQCustomP mf (Args'QCustomProjection mr)
 newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()
 newQCustom cwd = do
-  let conf = default'BinocularsConfig'QCustom
+  let conf = defaultConfig
              { binocularsConfig'QCustom'Common = defaultConfig
                                                  { binocularsConfig'Common'Nexusdir = Just cwd }
              }

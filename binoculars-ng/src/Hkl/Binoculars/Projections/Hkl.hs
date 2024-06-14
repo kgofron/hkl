@@ -118,17 +118,6 @@ instance HasFieldValue (DataFrameHkl' DataSourcePath) where
 -- Config --
 ------------
 
-default'BinocularsConfig'Hkl :: Config 'HklProjection
-default'BinocularsConfig'Hkl
-  = BinocularsConfig'Hkl
-    { binocularsConfig'Hkl'Common = defaultConfig
-    , binocularsConfig'Hkl'Sample = defaultConfig
-    , binocularsConfig'Hkl'ProjectionType = HklProjection
-    , binocularsConfig'Hkl'ProjectionResolution = Resolutions3 0.01 0.01 0.01
-    , binocularsConfig'Hkl'ProjectionLimits  = Nothing
-    , binocularsConfig'Hkl'DataPath = defaultDataSourcePath'DataFrameHkl
-    }
-
 overload'DataSourcePath'DataFrameHkl :: Config Common
                                      -> Config Sample
                                      -> DataFrameHkl' DataSourcePath
@@ -153,11 +142,21 @@ instance HasIniConfig 'HklProjection where
   newtype Args 'HklProjection
       = Args'HklProjection (Maybe ConfigRange)
 
+  defaultConfig
+      = BinocularsConfig'Hkl
+        { binocularsConfig'Hkl'Common = defaultConfig
+        , binocularsConfig'Hkl'Sample = defaultConfig
+        , binocularsConfig'Hkl'ProjectionType = HklProjection
+        , binocularsConfig'Hkl'ProjectionResolution = Resolutions3 0.01 0.01 0.01
+        , binocularsConfig'Hkl'ProjectionLimits  = Nothing
+        , binocularsConfig'Hkl'DataPath = defaultDataSourcePath'DataFrameHkl
+        }
+
   getConfig content@(ConfigContent cfg) (Args'HklProjection mr) capabilities
       = do binocularsConfig'Hkl'Common <- getConfig content (Args'Common mr) capabilities
            binocularsConfig'Hkl'Sample <- getConfig content Args'Sample capabilities
-           binocularsConfig'Hkl'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Hkl'ProjectionType default'BinocularsConfig'Hkl)
-           binocularsConfig'Hkl'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution default'BinocularsConfig'Hkl)
+           binocularsConfig'Hkl'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Hkl'ProjectionType defaultConfig)
+           binocularsConfig'Hkl'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution defaultConfig)
            binocularsConfig'Hkl'ProjectionLimits <- parseMb cfg "projection" "limits"
            binocularsConfig'Hkl'DataPath <- pure $ eitherF (const $ guess'DataSourcePath'DataFrameHkl binocularsConfig'Hkl'Common binocularsConfig'Hkl'Sample content) (parse' cfg "input" "datapath")
                                            (\md -> case md of
@@ -169,10 +168,10 @@ instance HasIniConfig 'HklProjection where
             `mergeIni`
             toIni (binocularsConfig'Hkl'Sample c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Hkl'DataPath c default'BinocularsConfig'Hkl)
-                                         , ("projection", elemFDef' "type" binocularsConfig'Hkl'ProjectionType c default'BinocularsConfig'Hkl
-                                                          <> elemFDef' "resolution" binocularsConfig'Hkl'ProjectionResolution c default'BinocularsConfig'Hkl
-                                                          <> elemFMbDef' "limits" binocularsConfig'Hkl'ProjectionLimits c default'BinocularsConfig'Hkl
+            Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Hkl'DataPath c defaultConfig)
+                                         , ("projection", elemFDef' "type" binocularsConfig'Hkl'ProjectionType c defaultConfig
+                                                          <> elemFDef' "resolution" binocularsConfig'Hkl'ProjectionResolution c defaultConfig
+                                                          <> elemFMbDef' "limits" binocularsConfig'Hkl'ProjectionLimits c defaultConfig
                                            )
                                          ]
                 , iniGlobals = []
@@ -324,7 +323,7 @@ processHkl mf mr = cmd processHklP mf (Args'HklProjection mr)
 newHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
        => Path Abs Dir -> m ()
 newHkl cwd = do
-  let conf = default'BinocularsConfig'Hkl
+  let conf = defaultConfig
              { binocularsConfig'Hkl'Common = defaultConfig
                                              { binocularsConfig'Common'Nexusdir = Just cwd }
              }

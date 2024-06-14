@@ -115,17 +115,6 @@ instance HasFieldValue (DataFrameTest' DataSourcePath) where
 -- Config --
 ------------
 
-default'BinocularsConfig'Test :: Config 'TestProjection
-default'BinocularsConfig'Test
-  = BinocularsConfig'Test
-    { binocularsConfig'Test'Common = defaultConfig
-    , binocularsConfig'Test'Sample = defaultConfig
-    , binocularsConfig'Test'ProjectionType = TestProjection
-    , binocularsConfig'Test'ProjectionResolution = Resolutions3 0.01 0.01 0.01
-    , binocularsConfig'Test'ProjectionLimits  = Nothing
-    , binocularsConfig'Test'DataPath = defaultDataSourcePath'DataFrameTest
-    }
-
 overload'DataSourcePath'DataFrameTest :: Config Common
                                       -> Config Sample
                                       -> DataFrameTest' DataSourcePath
@@ -149,11 +138,21 @@ instance HasIniConfig 'TestProjection where
 
   newtype Args 'TestProjection = Args'TestProjection (Maybe ConfigRange)
 
+  defaultConfig
+      = BinocularsConfig'Test
+        { binocularsConfig'Test'Common = defaultConfig
+        , binocularsConfig'Test'Sample = defaultConfig
+        , binocularsConfig'Test'ProjectionType = TestProjection
+        , binocularsConfig'Test'ProjectionResolution = Resolutions3 0.01 0.01 0.01
+        , binocularsConfig'Test'ProjectionLimits  = Nothing
+        , binocularsConfig'Test'DataPath = defaultDataSourcePath'DataFrameTest
+        }
+
   getConfig content@(ConfigContent cfg) (Args'TestProjection mr) capabilities
       = do binocularsConfig'Test'Common <- getConfig content (Args'Common mr) capabilities
            binocularsConfig'Test'Sample <- getConfig content Args'Sample capabilities
-           binocularsConfig'Test'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType default'BinocularsConfig'Test)
-           binocularsConfig'Test'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution default'BinocularsConfig'Test)
+           binocularsConfig'Test'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType defaultConfig)
+           binocularsConfig'Test'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution defaultConfig)
            binocularsConfig'Test'ProjectionLimits <- parseMb cfg "projection" "limits"
            binocularsConfig'Test'DataPath <- (pure $ eitherF (const $ guess'DataSourcePath'DataFrameTest binocularsConfig'Test'Common binocularsConfig'Test'Sample content) (parse' cfg "input" "datapath")
                                              (\md -> case md of
@@ -165,10 +164,10 @@ instance HasIniConfig 'TestProjection where
             `mergeIni`
             toIni (binocularsConfig'Test'Sample c)
             `mergeIni`
-            Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Test'DataPath c default'BinocularsConfig'Test)
-                                         , ("projection", elemFDef' "type" binocularsConfig'Test'ProjectionType c default'BinocularsConfig'Test
-                                                          <> elemFDef' "resolution" binocularsConfig'Test'ProjectionResolution c default'BinocularsConfig'Test
-                                                          <> elemFMbDef' "limits" binocularsConfig'Test'ProjectionLimits c default'BinocularsConfig'Test
+            Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Test'DataPath c defaultConfig)
+                                         , ("projection", elemFDef' "type" binocularsConfig'Test'ProjectionType c defaultConfig
+                                                          <> elemFDef' "resolution" binocularsConfig'Test'ProjectionResolution c defaultConfig
+                                                          <> elemFMbDef' "limits" binocularsConfig'Test'ProjectionLimits c defaultConfig
                                            )
                                          ]
                 , iniGlobals = []
@@ -320,7 +319,7 @@ processTest mf mr = cmd processTestP mf (Args'TestProjection mr)
 newTest :: (MonadIO m, MonadLogger m, MonadThrow m)
        => Path Abs Dir -> m ()
 newTest cwd = do
-  let conf = default'BinocularsConfig'Test
+  let conf = defaultConfig
              { binocularsConfig'Test'Common = defaultConfig
                                              { binocularsConfig'Common'Nexusdir = Just cwd }
              }
