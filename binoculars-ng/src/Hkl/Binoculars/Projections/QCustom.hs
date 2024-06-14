@@ -6,6 +6,7 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -195,7 +196,7 @@ default'BinocularsConfig'QCustom
 instance HasIniConfig 'QCustomProjection where
   data Config 'QCustomProjection
       = BinocularsConfig'QCustom
-        { binocularsConfig'QCustom'Common :: BinocularsConfig'Common
+        { binocularsConfig'QCustom'Common :: Config Common
         , binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum     :: HklBinocularsSurfaceOrientationEnum
         , binocularsConfig'QCustom'ProjectionType         :: ProjectionType
         , binocularsConfig'QCustom'ProjectionResolution   :: Resolutions DIM3
@@ -272,8 +273,6 @@ instance HasIniConfig 'QCustomProjection where
                                                                      Just d  -> Just d
                                                                    ))
            pure BinocularsConfig'QCustom{..}
-
-instance ToIni (Config 'QCustomProjection) where
 
   toIni c = toIni (binocularsConfig'QCustom'Common c)
             `mergeIni`
@@ -472,7 +471,7 @@ overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geomet
 overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
 overloadImagePath det (DataSourcePath'Image p _) = DataSourcePath'Image p det
 
-overload'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
+overload'DataSourcePath'DataFrameQCustom :: Config Common
                                          -> Maybe HklBinocularsQCustomSubProjectionEnum
                                          -> DataSourcePath DataFrameQCustom
                                          -> DataSourcePath DataFrameQCustom
@@ -491,7 +490,7 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
       DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newTimestampPath newTimescan0Path
 
 
-guess'DataSourcePath'DataFrameQCustom :: BinocularsConfig'Common
+guess'DataSourcePath'DataFrameQCustom :: Config Common
                                       -> Maybe HklBinocularsQCustomSubProjectionEnum
                                       -> ConfigContent
                                       -> DataSourcePath DataFrameQCustom

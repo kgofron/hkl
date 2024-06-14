@@ -24,7 +24,7 @@
 -}
 
 module Hkl.Binoculars.Config.Sample
-    ( BinocularsConfig'Sample(..)
+    ( Config(..)
     , default'BinocularsConfig'Sample
     , default'DataSourcePath'Sample
     , guess'DataSourcePath'Sample
@@ -122,7 +122,7 @@ default'DataSourcePath'Sample = DataSourcePath'Sample
   (DataSourcePath'Degree(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Uz"))
 
 
-overload'DataSourcePath'Sample :: BinocularsConfig'Sample
+overload'DataSourcePath'Sample :: Config Sample
                                -> DataSourcePath Sample
                                -> DataSourcePath Sample
 overload'DataSourcePath'Sample (BinocularsConfig'Sample ma mb mc malpha mbeta mgamma mux muy muz) (DataSourcePath'Sample pa pb pc palpha pbeta pgamma pux puy puz)
@@ -141,8 +141,8 @@ overload'DataSourcePath'Sample c (DataSourcePath'Sample'Or l r)
     (overload'DataSourcePath'Sample c l)
     (overload'DataSourcePath'Sample c r)
 
-guess'DataSourcePath'Sample :: BinocularsConfig'Common
-                           -> BinocularsConfig'Sample
+guess'DataSourcePath'Sample :: Config Common
+                           -> Config Sample
                            -> DataSourcePath Sample
 guess'DataSourcePath'Sample common sample =
   do let inputType = binocularsConfig'Common'InputType common
@@ -199,20 +199,7 @@ guess'DataSourcePath'Sample common sample =
 -- Config --
 ------------
 
-data BinocularsConfig'Sample
-  = BinocularsConfig'Sample
-    { binocularsConfig'Sample'A     :: Maybe Double
-    , binocularsConfig'Sample'B     :: Maybe Double
-    , binocularsConfig'Sample'C     :: Maybe Double
-    , binocularsConfig'Sample'Alpha :: Maybe Degree
-    , binocularsConfig'Sample'Beta  :: Maybe Degree
-    , binocularsConfig'Sample'Gamma :: Maybe Degree
-    , binocularsConfig'Sample'Ux    :: Maybe Degree
-    , binocularsConfig'Sample'Uy    :: Maybe Degree
-    , binocularsConfig'Sample'Uz    :: Maybe Degree
-} deriving (Eq, Show, Generic)
-
-default'BinocularsConfig'Sample :: BinocularsConfig'Sample
+default'BinocularsConfig'Sample :: Config Sample
 default'BinocularsConfig'Sample
   = BinocularsConfig'Sample
     { binocularsConfig'Sample'A = Nothing
@@ -226,8 +213,22 @@ default'BinocularsConfig'Sample
     , binocularsConfig'Sample'Uz = Nothing
     }
 
-instance ToIni BinocularsConfig'Sample where
-  toIni c = Ini { iniSections = fromList [ ("input", elemFMbDef "a" binocularsConfig'Sample'A c default'BinocularsConfig'Sample
+instance HasIniConfig Sample where
+
+    data Config Sample
+        = BinocularsConfig'Sample
+          { binocularsConfig'Sample'A     :: Maybe Double
+          , binocularsConfig'Sample'B     :: Maybe Double
+          , binocularsConfig'Sample'C     :: Maybe Double
+          , binocularsConfig'Sample'Alpha :: Maybe Degree
+          , binocularsConfig'Sample'Beta  :: Maybe Degree
+          , binocularsConfig'Sample'Gamma :: Maybe Degree
+          , binocularsConfig'Sample'Ux    :: Maybe Degree
+          , binocularsConfig'Sample'Uy    :: Maybe Degree
+          , binocularsConfig'Sample'Uz    :: Maybe Degree
+          } deriving (Eq, Show, Generic)
+
+    toIni c = Ini { iniSections = fromList [ ("input", elemFMbDef "a" binocularsConfig'Sample'A c default'BinocularsConfig'Sample
                                                      [ "`a` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `b`, `c`, `alpha`, `beta` and `gamma`"
@@ -328,7 +329,7 @@ instance ToIni BinocularsConfig'Sample where
                 , iniGlobals = []
                 }
 
-parse'BinocularsConfig'Sample :: Text -> Either String BinocularsConfig'Sample
+parse'BinocularsConfig'Sample :: Text -> Either String (Config Sample)
 parse'BinocularsConfig'Sample cfg
     = do binocularsConfig'Sample'A <- parseMb cfg "input" "a"
          binocularsConfig'Sample'B <- parseMb cfg "input" "b"

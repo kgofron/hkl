@@ -126,10 +126,10 @@ default'BinocularsConfig'Test
     , binocularsConfig'Test'DataPath = defaultDataSourcePath'DataFrameTest
     }
 
-overload'DataSourcePath'DataFrameTest :: BinocularsConfig'Common
-                                     -> BinocularsConfig'Sample
-                                     -> DataFrameTest' DataSourcePath
-                                     -> DataFrameTest' DataSourcePath
+overload'DataSourcePath'DataFrameTest :: Config Common
+                                      -> Config Sample
+                                      -> DataFrameTest' DataSourcePath
+                                      -> DataFrameTest' DataSourcePath
 overload'DataSourcePath'DataFrameTest common sample (DataFrameTest qCustomPath samplePath)
   = DataFrameTest newQCustomPath newSamplePath
   where
@@ -139,8 +139,8 @@ overload'DataSourcePath'DataFrameTest common sample (DataFrameTest qCustomPath s
 instance HasIniConfig 'TestProjection where
   data Config 'TestProjection
     = BinocularsConfig'Test
-      { binocularsConfig'Test'Common                 :: BinocularsConfig'Common
-      , binocularsConfig'Test'Sample                 :: BinocularsConfig'Sample
+      { binocularsConfig'Test'Common                 :: Config Common
+      , binocularsConfig'Test'Sample                 :: Config Sample
       , binocularsConfig'Test'ProjectionType         :: ProjectionType
       , binocularsConfig'Test'ProjectionResolution   :: Resolutions DIM3
       , binocularsConfig'Test'ProjectionLimits       :: Maybe (RLimits DIM3)
@@ -161,8 +161,6 @@ instance HasIniConfig 'TestProjection where
                                                       Just d  ->  overload'DataSourcePath'DataFrameTest binocularsConfig'Test'Common binocularsConfig'Test'Sample d))
            pure BinocularsConfig'Test{..}
 
-
-instance ToIni (Config 'TestProjection) where
   toIni c = toIni (binocularsConfig'Test'Common c)
             `mergeIni`
             toIni (binocularsConfig'Test'Sample c)
@@ -303,10 +301,10 @@ instance FramesP (DataFrameTest' DataSourcePath) (DataFrameTest' Identity) where
 -- Inputs --
 ------------
 
-guess'DataSourcePath'DataFrameTest :: BinocularsConfig'Common
-                                  -> BinocularsConfig'Sample
-                                  -> ConfigContent
-                                  -> DataFrameTest' DataSourcePath
+guess'DataSourcePath'DataFrameTest :: Config Common
+                                   -> Config Sample
+                                   -> ConfigContent
+                                   -> DataFrameTest' DataSourcePath
 guess'DataSourcePath'DataFrameTest common sample content
   = DataFrameTest
     (guess'DataSourcePath'DataFrameQCustom common Nothing content)

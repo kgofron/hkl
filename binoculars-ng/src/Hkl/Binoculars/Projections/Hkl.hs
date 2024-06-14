@@ -129,8 +129,8 @@ default'BinocularsConfig'Hkl
     , binocularsConfig'Hkl'DataPath = defaultDataSourcePath'DataFrameHkl
     }
 
-overload'DataSourcePath'DataFrameHkl :: BinocularsConfig'Common
-                                     -> BinocularsConfig'Sample
+overload'DataSourcePath'DataFrameHkl :: Config Common
+                                     -> Config Sample
                                      -> DataFrameHkl' DataSourcePath
                                      -> DataFrameHkl' DataSourcePath
 overload'DataSourcePath'DataFrameHkl common sample (DataFrameHkl qCustomPath samplePath)
@@ -142,8 +142,8 @@ overload'DataSourcePath'DataFrameHkl common sample (DataFrameHkl qCustomPath sam
 instance HasIniConfig 'HklProjection where
   data Config 'HklProjection
     = BinocularsConfig'Hkl
-      { binocularsConfig'Hkl'Common                 :: BinocularsConfig'Common
-      , binocularsConfig'Hkl'Sample                 :: BinocularsConfig'Sample
+      { binocularsConfig'Hkl'Common                 :: Config Common
+      , binocularsConfig'Hkl'Sample                 :: Config Sample
       , binocularsConfig'Hkl'ProjectionType         :: ProjectionType
       , binocularsConfig'Hkl'ProjectionResolution   :: Resolutions DIM3
       , binocularsConfig'Hkl'ProjectionLimits       :: Maybe (RLimits DIM3)
@@ -165,7 +165,6 @@ instance HasIniConfig 'HklProjection where
                                                     Just d  ->  overload'DataSourcePath'DataFrameHkl binocularsConfig'Hkl'Common binocularsConfig'Hkl'Sample d)
            pure BinocularsConfig'Hkl{..}
 
-instance ToIni (Config 'HklProjection) where
   toIni c = toIni (binocularsConfig'Hkl'Common c)
             `mergeIni`
             toIni (binocularsConfig'Hkl'Sample c)
@@ -306,8 +305,8 @@ instance FramesP (DataFrameHkl' DataSourcePath) (DataFrameHkl' Identity) where
 -- Inputs --
 ------------
 
-guess'DataSourcePath'DataFrameHkl :: BinocularsConfig'Common
-                                  -> BinocularsConfig'Sample
+guess'DataSourcePath'DataFrameHkl :: Config Common
+                                  -> Config Sample
                                   -> ConfigContent
                                   -> DataFrameHkl' DataSourcePath
 guess'DataSourcePath'DataFrameHkl common sample content

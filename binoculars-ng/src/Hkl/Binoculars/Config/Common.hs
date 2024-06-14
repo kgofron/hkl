@@ -24,7 +24,8 @@
 -}
 
 module Hkl.Binoculars.Config.Common
-    ( BinocularsConfig'Common(..)
+    ( Config(..)
+    , Common
     , default'BinocularsConfig'Common
     , elemFDef
     , elemFDef'
@@ -48,11 +49,9 @@ import           Data.List.NonEmpty                (NonEmpty (..))
 import           Data.Maybe                        (fromMaybe)
 import           Data.Text                         (Text, pack)
 import           GHC.Generics                      (Generic)
-import           Generic.Random                    (genericArbitraryU)
 import           Numeric.Interval                  (singleton)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
-import           Test.QuickCheck                   (Arbitrary (..))
 
 import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
@@ -60,31 +59,9 @@ import           Hkl.Detector
 import           Hkl.Orphan                        ()
 import           Hkl.Repa
 
-data BinocularsConfig'Common
-  = BinocularsConfig'Common
-    { binocularsConfig'Common'NCores                 :: NCores
-    , binocularsConfig'Common'Destination            :: DestinationTmpl
-    , binocularsConfig'Common'Overwrite              :: Bool
-    , binocularsConfig'Common'InputType              :: InputType
-    , binocularsConfig'Common'Nexusdir               :: Maybe (Path Abs Dir)
-    , binocularsConfig'Common'Tmpl                   :: Maybe InputTmpl
-    , binocularsConfig'Common'InputRange             :: ConfigRange
-    , binocularsConfig'Common'Detector               :: Detector Hkl DIM2
-    , binocularsConfig'Common'Centralpixel           :: (Int, Int)
-    , binocularsConfig'Common'Sdd                    :: Meter
-    , binocularsConfig'Common'Detrot                 :: Degree
-    , binocularsConfig'Common'AttenuationCoefficient :: Maybe Double
-    , binocularsConfig'Common'AttenuationMax         :: Maybe Float
-    , binocularsConfig'Common'AttenuationShift       :: Maybe Int
-    , binocularsConfig'Common'Maskmatrix             :: Maybe MaskLocation
-    , binocularsConfig'Common'Wavelength             :: Maybe Double
-    , binocularsConfig'Common'ImageSumMax            :: Maybe Double
-    , binocularsConfig'Common'SkipFirstPoints        :: Maybe Int
-    , binocularsConfig'Common'SkipLastPoints         :: Maybe Int
-    , binocularsConfig'Common'PolarizationCorrection :: Bool
-    } deriving (Eq, Show, Generic)
+data Common
 
-default'BinocularsConfig'Common :: BinocularsConfig'Common
+default'BinocularsConfig'Common :: Config Common
 default'BinocularsConfig'Common
   = BinocularsConfig'Common
     { binocularsConfig'Common'NCores = NCores 4
@@ -109,12 +86,34 @@ default'BinocularsConfig'Common
     , binocularsConfig'Common'PolarizationCorrection = False
     }
 
-instance Arbitrary BinocularsConfig'Common where
-  arbitrary = genericArbitraryU
 
--- TODO prendre les valeurs par default definie precedemment.
-instance ToIni  BinocularsConfig'Common where
-  toIni c = Ini { iniSections = fromList [ ("dispatcher", elemFDef "ncores" binocularsConfig'Common'NCores c default'BinocularsConfig'Common
+instance HasIniConfig Common where
+
+    data Config Common
+        = BinocularsConfig'Common
+          { binocularsConfig'Common'NCores                 :: NCores
+          , binocularsConfig'Common'Destination            :: DestinationTmpl
+          , binocularsConfig'Common'Overwrite              :: Bool
+          , binocularsConfig'Common'InputType              :: InputType
+          , binocularsConfig'Common'Nexusdir               :: Maybe (Path Abs Dir)
+          , binocularsConfig'Common'Tmpl                   :: Maybe InputTmpl
+          , binocularsConfig'Common'InputRange             :: ConfigRange
+          , binocularsConfig'Common'Detector               :: Detector Hkl DIM2
+          , binocularsConfig'Common'Centralpixel           :: (Int, Int)
+          , binocularsConfig'Common'Sdd                    :: Meter
+          , binocularsConfig'Common'Detrot                 :: Degree
+          , binocularsConfig'Common'AttenuationCoefficient :: Maybe Double
+          , binocularsConfig'Common'AttenuationMax         :: Maybe Float
+          , binocularsConfig'Common'AttenuationShift       :: Maybe Int
+          , binocularsConfig'Common'Maskmatrix             :: Maybe MaskLocation
+          , binocularsConfig'Common'Wavelength             :: Maybe Double
+          , binocularsConfig'Common'ImageSumMax            :: Maybe Double
+          , binocularsConfig'Common'SkipFirstPoints        :: Maybe Int
+          , binocularsConfig'Common'SkipLastPoints         :: Maybe Int
+          , binocularsConfig'Common'PolarizationCorrection :: Bool
+          } deriving (Eq, Show, Generic)
+
+    toIni c = Ini { iniSections = fromList [ ("dispatcher", elemFDef "ncores" binocularsConfig'Common'NCores c default'BinocularsConfig'Common
                                                           [ "the number of cores use for computation."
                                                           , "the effective number of core used depends on the real number of core available on your computer."
                                                           , "at maximum this value could be one less that the pysical number of core."
@@ -310,7 +309,7 @@ instance ToIni  BinocularsConfig'Common where
                 }
 
 
-parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> Capabilities -> Either String BinocularsConfig'Common
+parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> Capabilities -> Either String (Config Common)
 parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
     = do
          let minputtypedeprecated = eitherF (const Nothing) (parse' cfg "input" "type") id

@@ -6,6 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
@@ -49,7 +50,6 @@ module Hkl.Binoculars.Config
     , Resolutions(..)
     , RLimits(..)
     , SampleAxis(..)
-    , ToIni(..)
     , auto
     , auto'
     , destination'
@@ -246,7 +246,7 @@ readConfig mf = do
         Nothing  -> l
         (Just n) -> take n l
 
-class HasIniConfig (a :: ProjectionType) where
+class HasIniConfig (a :: k) where
   data Config a
   data Args a
 
@@ -255,12 +255,9 @@ class HasIniConfig (a :: ProjectionType) where
             -> Capabilities
             -> Either String (Config a)
 
--- Class ToIni
+  toIni :: (Config a) -> Ini
 
-class ToIni a where
-  toIni :: a -> Ini
-
-serializeConfig :: ToIni a => a -> Text
+serializeConfig :: HasIniConfig a => Config a -> Text
 serializeConfig = printIni . toIni
 
 mergeHash :: (Eq k, Hashable k, Semigroup v) => HashMap k v -> HashMap k v -> HashMap k v

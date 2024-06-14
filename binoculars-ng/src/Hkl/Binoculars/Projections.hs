@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
 {-
     Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
@@ -24,7 +25,7 @@ module Hkl.Binoculars.Projections
   , withPixelsDims
   , withResolutions
   , withSampleAxis
-  ) where
+   ) where
 
 import           Control.Monad              (zipWithM)
 import           Control.Monad.Catch        (MonadThrow)
@@ -53,7 +54,7 @@ import           Hkl.Repa
 import           Hkl.Utils                  hiding (withCString)
 
 
-cmd :: (HasIniConfig a, ToIni (Config a), MonadLogger m, MonadThrow m, MonadIO m)
+cmd :: (HasIniConfig a, MonadLogger m, MonadThrow m, MonadIO m)
     => ReaderT (Config a) m () -> Maybe FilePath -> Args a -> m ()
 cmd action mf args
   = do

@@ -75,7 +75,7 @@ default'BinocularsConfig'Angles
 instance HasIniConfig 'AnglesProjection where
   data instance Config 'AnglesProjection
       = BinocularsConfig'Angles
-        { binocularsConfig'Angles'Common                 :: BinocularsConfig'Common
+        { binocularsConfig'Angles'Common                 :: Config Common
         , binocularsConfig'Angles'ProjectionType         :: ProjectionType
         , binocularsConfig'Angles'ProjectionResolution   :: Resolutions DIM3
         , binocularsConfig'Angles'ProjectionLimits       :: Maybe (RLimits DIM3)
@@ -108,7 +108,6 @@ instance HasIniConfig 'AnglesProjection where
                                                        Just d  ->  overload'DataSourcePath'DataFrameQCustom binocularsConfig'Angles'Common Nothing d)
            pure BinocularsConfig'Angles{..}
 
-instance ToIni (Config 'AnglesProjection) where
   toIni c = toIni (binocularsConfig'Angles'Common c)
             `mergeIni`
             Ini { iniSections = fromList [ ("input", elemFDef' "datapath" binocularsConfig'Angles'DataPath c default'BinocularsConfig'Angles
