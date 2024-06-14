@@ -118,7 +118,7 @@ instance HasFieldValue (DataFrameTest' DataSourcePath) where
 default'BinocularsConfig'Test :: Config 'TestProjection
 default'BinocularsConfig'Test
   = BinocularsConfig'Test
-    { binocularsConfig'Test'Common = default'BinocularsConfig'Common
+    { binocularsConfig'Test'Common = defaultConfig
     , binocularsConfig'Test'Sample = default'BinocularsConfig'Sample
     , binocularsConfig'Test'ProjectionType = TestProjection
     , binocularsConfig'Test'ProjectionResolution = Resolutions3 0.01 0.01 0.01
@@ -321,7 +321,7 @@ newTest :: (MonadIO m, MonadLogger m, MonadThrow m)
        => Path Abs Dir -> m ()
 newTest cwd = do
   let conf = default'BinocularsConfig'Test
-             { binocularsConfig'Test'Common = default'BinocularsConfig'Common
+             { binocularsConfig'Test'Common = defaultConfig
                                              { binocularsConfig'Common'Nexusdir = Just cwd }
              }
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf

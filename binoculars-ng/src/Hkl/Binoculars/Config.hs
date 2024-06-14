@@ -249,6 +249,8 @@ class HasIniConfig (a :: k) where
   data Config a
   data Args a
 
+  defaultConfig :: Config a
+
   getConfig :: ConfigContent
             -> Args a
             -> Capabilities

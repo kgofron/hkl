@@ -64,7 +64,7 @@ import           Hkl.Utils
 default'BinocularsConfig'Angles :: Config 'AnglesProjection
 default'BinocularsConfig'Angles
   = BinocularsConfig'Angles
-    { binocularsConfig'Angles'Common = default'BinocularsConfig'Common
+    { binocularsConfig'Angles'Common = defaultConfig
     , binocularsConfig'Angles'ProjectionType = AnglesProjection
     , binocularsConfig'Angles'ProjectionResolution = Resolutions3 1 1 1
     , binocularsConfig'Angles'ProjectionLimits = Nothing
@@ -241,7 +241,7 @@ newAngles :: (MonadIO m, MonadLogger m, MonadThrow m)
           => Path Abs Dir -> m ()
 newAngles cwd = do
   let conf = default'BinocularsConfig'Angles
-             { binocularsConfig'Angles'Common = default'BinocularsConfig'Common
+             { binocularsConfig'Angles'Common = defaultConfig
                                                 { binocularsConfig'Common'Nexusdir = Just cwd }
              }
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf

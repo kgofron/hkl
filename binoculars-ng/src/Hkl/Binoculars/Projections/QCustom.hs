@@ -180,7 +180,7 @@ instance HasFieldValue (DataSourcePath DataFrameQCustom) where
 default'BinocularsConfig'QCustom :: Config 'QCustomProjection
 default'BinocularsConfig'QCustom
   = BinocularsConfig'QCustom
-    { binocularsConfig'QCustom'Common = default'BinocularsConfig'Common
+    { binocularsConfig'QCustom'Common = defaultConfig
     , binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum = HklBinocularsSurfaceOrientationEnum'Vertical
     , binocularsConfig'QCustom'ProjectionType = QCustomProjection
     , binocularsConfig'QCustom'ProjectionResolution = Resolutions3 0.01 0.01 0.01
@@ -996,7 +996,7 @@ newQCustom :: (MonadIO m, MonadLogger m, MonadThrow m)
            => Path Abs Dir -> m ()
 newQCustom cwd = do
   let conf = default'BinocularsConfig'QCustom
-             { binocularsConfig'QCustom'Common = default'BinocularsConfig'Common
+             { binocularsConfig'QCustom'Common = defaultConfig
                                                  { binocularsConfig'Common'Nexusdir = Just cwd }
              }
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf

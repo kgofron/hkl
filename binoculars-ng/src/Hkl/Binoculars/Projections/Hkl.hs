@@ -121,7 +121,7 @@ instance HasFieldValue (DataFrameHkl' DataSourcePath) where
 default'BinocularsConfig'Hkl :: Config 'HklProjection
 default'BinocularsConfig'Hkl
   = BinocularsConfig'Hkl
-    { binocularsConfig'Hkl'Common = default'BinocularsConfig'Common
+    { binocularsConfig'Hkl'Common = defaultConfig
     , binocularsConfig'Hkl'Sample = default'BinocularsConfig'Sample
     , binocularsConfig'Hkl'ProjectionType = HklProjection
     , binocularsConfig'Hkl'ProjectionResolution = Resolutions3 0.01 0.01 0.01
@@ -325,7 +325,7 @@ newHkl :: (MonadIO m, MonadLogger m, MonadThrow m)
        => Path Abs Dir -> m ()
 newHkl cwd = do
   let conf = default'BinocularsConfig'Hkl
-             { binocularsConfig'Hkl'Common = default'BinocularsConfig'Common
+             { binocularsConfig'Hkl'Common = defaultConfig
                                              { binocularsConfig'Common'Nexusdir = Just cwd }
              }
   liftIO $ Data.Text.IO.putStr $ serializeConfig conf
