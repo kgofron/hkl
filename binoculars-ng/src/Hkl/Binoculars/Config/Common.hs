@@ -24,8 +24,9 @@
 -}
 
 module Hkl.Binoculars.Config.Common
-    ( Config(..)
+    ( Args(..)
     , Common
+    , Config(..)
     , default'BinocularsConfig'Common
     , elemFDef
     , elemFDef'
@@ -33,7 +34,6 @@ module Hkl.Binoculars.Config.Common
     , elemFMbDef'
     , eitherF
     , parse'
-    , parse'BinocularsConfig'Common
     , parseFDef
     , parseMb
     , parseMbDef
@@ -112,6 +112,9 @@ instance HasIniConfig Common where
           , binocularsConfig'Common'SkipLastPoints         :: Maybe Int
           , binocularsConfig'Common'PolarizationCorrection :: Bool
           } deriving (Eq, Show, Generic)
+
+    data Args Common
+        = Args'Common (Maybe ConfigRange)
 
     toIni c = Ini { iniSections = fromList [ ("dispatcher", elemFDef "ncores" binocularsConfig'Common'NCores c default'BinocularsConfig'Common
                                                           [ "the number of cores use for computation."
@@ -308,10 +311,8 @@ instance HasIniConfig Common where
                 , iniGlobals = []
                 }
 
-
-parse'BinocularsConfig'Common :: Text -> Maybe ConfigRange -> Capabilities -> Either String (Config Common)
-parse'BinocularsConfig'Common cfg mr (Capabilities ncapmax ncoresmax)
-    = do
+    getConfig (ConfigContent cfg) (Args'Common mr) (Capabilities ncapmax ncoresmax)
+        = do
          let minputtypedeprecated = eitherF (const Nothing) (parse' cfg "input" "type") id
 
          binocularsConfig'Common'NCores <- eitherF error (parse' cfg "dispatcher" "ncores")

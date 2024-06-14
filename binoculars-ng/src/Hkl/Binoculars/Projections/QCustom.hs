@@ -213,7 +213,7 @@ instance HasIniConfig 'QCustomProjection where
       = Args'QCustomProjection (Maybe ConfigRange)
 
   getConfig content@(ConfigContent cfg) (Args'QCustomProjection mr) capabilities
-      = do binocularsConfig'QCustom'Common <- parse'BinocularsConfig'Common cfg mr capabilities
+      = do binocularsConfig'QCustom'Common <- getConfig content (Args'Common mr) capabilities
            binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum <-  parseFDef cfg "input" "surface_orientation" (binocularsConfig'QCustom'HklBinocularsSurfaceOrientationEnum default'BinocularsConfig'QCustom)
            binocularsConfig'QCustom'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'QCustom'ProjectionType default'BinocularsConfig'QCustom)
            let msubprojection' = parseMbDef cfg "projection" "subprojection" (binocularsConfig'QCustom'SubProjection default'BinocularsConfig'QCustom)

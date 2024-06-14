@@ -150,7 +150,7 @@ instance HasIniConfig 'TestProjection where
   newtype Args 'TestProjection = Args'TestProjection (Maybe ConfigRange)
 
   getConfig content@(ConfigContent cfg) (Args'TestProjection mr) capabilities
-      = do binocularsConfig'Test'Common <- parse'BinocularsConfig'Common cfg mr capabilities
+      = do binocularsConfig'Test'Common <- getConfig content (Args'Common mr) capabilities
            binocularsConfig'Test'Sample <- parse'BinocularsConfig'Sample cfg
            binocularsConfig'Test'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Test'ProjectionType default'BinocularsConfig'Test)
            binocularsConfig'Test'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Test'ProjectionResolution default'BinocularsConfig'Test)

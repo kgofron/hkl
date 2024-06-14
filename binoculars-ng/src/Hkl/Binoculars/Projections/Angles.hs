@@ -87,7 +87,7 @@ instance HasIniConfig 'AnglesProjection where
       = Args'AnglesProjection (Maybe ConfigRange)
 
   getConfig content@(ConfigContent cfg) (Args'AnglesProjection mr) capabilities
-      = do binocularsConfig'Angles'Common <- parse'BinocularsConfig'Common cfg mr capabilities
+      = do binocularsConfig'Angles'Common <- getConfig content (Args'Common mr) capabilities
            binocularsConfig'Angles'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Angles'ProjectionType default'BinocularsConfig'Angles)
            binocularsConfig'Angles'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Angles'ProjectionResolution default'BinocularsConfig'Angles)
            binocularsConfig'Angles'ProjectionLimits <- parseMb cfg "projection" "limits"
