@@ -155,7 +155,7 @@ instance HasIniConfig 'HklProjection where
 
   getConfig content@(ConfigContent cfg) (Args'HklProjection mr) capabilities
       = do binocularsConfig'Hkl'Common <- getConfig content (Args'Common mr) capabilities
-           binocularsConfig'Hkl'Sample <- parse'BinocularsConfig'Sample cfg
+           binocularsConfig'Hkl'Sample <- getConfig content Args'Sample capabilities
            binocularsConfig'Hkl'ProjectionType <- parseFDef cfg "projection" "type" (binocularsConfig'Hkl'ProjectionType default'BinocularsConfig'Hkl)
            binocularsConfig'Hkl'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'Hkl'ProjectionResolution default'BinocularsConfig'Hkl)
            binocularsConfig'Hkl'ProjectionLimits <- parseMb cfg "projection" "limits"

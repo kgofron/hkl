@@ -24,18 +24,17 @@
 -}
 
 module Hkl.Binoculars.Config.Sample
-    ( Config(..)
+    ( Args(..)
+    , Config(..)
     , default'BinocularsConfig'Sample
     , default'DataSourcePath'Sample
     , guess'DataSourcePath'Sample
     , overload'DataSourcePath'Sample
-    , parse'BinocularsConfig'Sample
     ) where
 
 import           Data.Aeson                   (FromJSON, ToJSON)
 import           Data.HashMap.Lazy            (fromList)
 import           Data.Ini                     (Ini (..))
-import           Data.Text                    (Text)
 import           GHC.Generics                 (Generic)
 
 import           Hkl.Binoculars.Config
@@ -228,6 +227,9 @@ instance HasIniConfig Sample where
           , binocularsConfig'Sample'Uz    :: Maybe Degree
           } deriving (Eq, Show, Generic)
 
+    data Args Sample
+        = Args'Sample
+
     toIni c = Ini { iniSections = fromList [ ("input", elemFMbDef "a" binocularsConfig'Sample'A c default'BinocularsConfig'Sample
                                                      [ "`a` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
@@ -329,15 +331,14 @@ instance HasIniConfig Sample where
                 , iniGlobals = []
                 }
 
-parse'BinocularsConfig'Sample :: Text -> Either String (Config Sample)
-parse'BinocularsConfig'Sample cfg
-    = do binocularsConfig'Sample'A <- parseMb cfg "input" "a"
-         binocularsConfig'Sample'B <- parseMb cfg "input" "b"
-         binocularsConfig'Sample'C <- parseMb cfg "input" "c"
-         binocularsConfig'Sample'Alpha <- parseMb cfg "input" "alpha"
-         binocularsConfig'Sample'Beta <- parseMb cfg "input" "beta"
-         binocularsConfig'Sample'Gamma <- parseMb cfg "input" "gamma"
-         binocularsConfig'Sample'Ux <- parseMb cfg "input" "ux"
-         binocularsConfig'Sample'Uy <- parseMb cfg "input" "uy"
-         binocularsConfig'Sample'Uz <- parseMb cfg "input" "uz"
-         pure BinocularsConfig'Sample{..}
+    getConfig (ConfigContent cfg) _ _
+        = do binocularsConfig'Sample'A <- parseMb cfg "input" "a"
+             binocularsConfig'Sample'B <- parseMb cfg "input" "b"
+             binocularsConfig'Sample'C <- parseMb cfg "input" "c"
+             binocularsConfig'Sample'Alpha <- parseMb cfg "input" "alpha"
+             binocularsConfig'Sample'Beta <- parseMb cfg "input" "beta"
+             binocularsConfig'Sample'Gamma <- parseMb cfg "input" "gamma"
+             binocularsConfig'Sample'Ux <- parseMb cfg "input" "ux"
+             binocularsConfig'Sample'Uy <- parseMb cfg "input" "uy"
+             binocularsConfig'Sample'Uz <- parseMb cfg "input" "uz"
+             pure BinocularsConfig'Sample{..}
