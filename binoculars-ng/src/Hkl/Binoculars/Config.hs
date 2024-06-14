@@ -62,7 +62,7 @@ module Hkl.Binoculars.Config
     ) where
 
 
-import           Control.Applicative               (many, (<|>))
+import           Control.Applicative               (many, optional, (<|>))
 import           Control.Lens                      (makeLenses)
 import           Control.Monad.Catch               (MonadThrow, throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
@@ -254,7 +254,7 @@ class HasIniConfig (a :: k) where
             -> Capabilities
             -> Either String (Config a)
 
-  toIni :: (Config a) -> Ini
+  toIni :: Config a -> Ini
 
   serializeConfig :: Config a -> Text
   serializeConfig = printIni . toIni
@@ -794,7 +794,7 @@ limitsP' = Limits
            <*> lim
   where
     lim :: Parser (Maybe Double)
-    lim = (Just <$> double) <|> return Nothing
+    lim = optional double
 
 showLimit :: Maybe Double -> Text
 showLimit (Just l) = pack $ printf "%f" l
