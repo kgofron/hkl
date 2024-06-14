@@ -122,7 +122,7 @@ default'BinocularsConfig'Hkl :: Config 'HklProjection
 default'BinocularsConfig'Hkl
   = BinocularsConfig'Hkl
     { binocularsConfig'Hkl'Common = defaultConfig
-    , binocularsConfig'Hkl'Sample = default'BinocularsConfig'Sample
+    , binocularsConfig'Hkl'Sample = defaultConfig
     , binocularsConfig'Hkl'ProjectionType = HklProjection
     , binocularsConfig'Hkl'ProjectionResolution = Resolutions3 0.01 0.01 0.01
     , binocularsConfig'Hkl'ProjectionLimits  = Nothing

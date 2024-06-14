@@ -119,7 +119,7 @@ default'BinocularsConfig'Test :: Config 'TestProjection
 default'BinocularsConfig'Test
   = BinocularsConfig'Test
     { binocularsConfig'Test'Common = defaultConfig
-    , binocularsConfig'Test'Sample = default'BinocularsConfig'Sample
+    , binocularsConfig'Test'Sample = defaultConfig
     , binocularsConfig'Test'ProjectionType = TestProjection
     , binocularsConfig'Test'ProjectionResolution = Resolutions3 0.01 0.01 0.01
     , binocularsConfig'Test'ProjectionLimits  = Nothing

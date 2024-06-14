@@ -26,7 +26,6 @@
 module Hkl.Binoculars.Config.Sample
     ( Args(..)
     , Config(..)
-    , default'BinocularsConfig'Sample
     , default'DataSourcePath'Sample
     , guess'DataSourcePath'Sample
     , overload'DataSourcePath'Sample
@@ -198,20 +197,6 @@ guess'DataSourcePath'Sample common sample =
 -- Config --
 ------------
 
-default'BinocularsConfig'Sample :: Config Sample
-default'BinocularsConfig'Sample
-  = BinocularsConfig'Sample
-    { binocularsConfig'Sample'A = Nothing
-    , binocularsConfig'Sample'B = Nothing
-    , binocularsConfig'Sample'C = Nothing
-    , binocularsConfig'Sample'Alpha = Nothing
-    , binocularsConfig'Sample'Beta = Nothing
-    , binocularsConfig'Sample'Gamma = Nothing
-    , binocularsConfig'Sample'Ux = Nothing
-    , binocularsConfig'Sample'Uy = Nothing
-    , binocularsConfig'Sample'Uz = Nothing
-    }
-
 instance HasIniConfig Sample where
 
     data Config Sample
@@ -230,7 +215,20 @@ instance HasIniConfig Sample where
     data Args Sample
         = Args'Sample
 
-    toIni c = Ini { iniSections = fromList [ ("input", elemFMbDef "a" binocularsConfig'Sample'A c default'BinocularsConfig'Sample
+    defaultConfig
+        = BinocularsConfig'Sample
+          { binocularsConfig'Sample'A = Nothing
+          , binocularsConfig'Sample'B = Nothing
+          , binocularsConfig'Sample'C = Nothing
+          , binocularsConfig'Sample'Alpha = Nothing
+          , binocularsConfig'Sample'Beta = Nothing
+          , binocularsConfig'Sample'Gamma = Nothing
+          , binocularsConfig'Sample'Ux = Nothing
+          , binocularsConfig'Sample'Uy = Nothing
+          , binocularsConfig'Sample'Uz = Nothing
+          }
+
+    toIni c = Ini { iniSections = fromList [ ("input", elemFMbDef "a" binocularsConfig'Sample'A c defaultConfig
                                                      [ "`a` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `b`, `c`, `alpha`, `beta` and `gamma`"
@@ -239,7 +237,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `a` from the data file."
                                                      , " `a`         - override `a` with this value."
                                                      ]
-                                                     <> elemFMbDef "b" binocularsConfig'Sample'B c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "b" binocularsConfig'Sample'B c defaultConfig
                                                      [ "`b` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `c`, `alpha`, `beta` and `gamma`"
@@ -248,7 +246,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `b` from the data file."
                                                      , " `b`         - override `b` with this value."
                                                      ]
-                                                     <> elemFMbDef "c" binocularsConfig'Sample'C c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "c" binocularsConfig'Sample'C c defaultConfig
                                                      [ "`c` parameter of the sample lattice (same unit than the wavelength)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `alpha`, `beta` and `gamma`"
@@ -257,7 +255,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `c` from the data file."
                                                      , " `c`         - override `c` with this value."
                                                      ]
-                                                     <> elemFMbDef "alpha" binocularsConfig'Sample'Alpha c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "alpha" binocularsConfig'Sample'Alpha c defaultConfig
                                                      [ "`alpha` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `beta` and `gamma`"
@@ -266,7 +264,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `alpha` from the data file."
                                                      , " `alpha`     - override `alpha` with this value."
                                                      ]
-                                                     <> elemFMbDef "beta" binocularsConfig'Sample'Beta c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "beta" binocularsConfig'Sample'Beta c defaultConfig
                                                      [ "`beta` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `alpha`, and `gamma`"
@@ -275,7 +273,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `beta` from the data file."
                                                      , " `beta`      - override `beta` with this value."
                                                      ]
-                                                     <> elemFMbDef "gamma" binocularsConfig'Sample'Gamma c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "gamma" binocularsConfig'Sample'Gamma c defaultConfig
                                                      [ "`gamma` parameter of the sample lattice (Degree)."
                                                      , ""
                                                      , "This parameter with the 5 others, `a`, `b`, `c`, `alpha` and `beta`"
@@ -284,7 +282,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `gamma` from the data file."
                                                      , " `gamma`     - override `gamma` with this value."
                                                      ]
-                                                     <> elemFMbDef "ux" binocularsConfig'Sample'Ux c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "ux" binocularsConfig'Sample'Ux c defaultConfig
                                                      [ "`ux` rotation of the sample around the x axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
@@ -298,7 +296,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `ux` from the data file."
                                                      , " `ux`        - override `ux` with this value."
                                                      ]
-                                                     <> elemFMbDef "uy" binocularsConfig'Sample'Uy c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "uy" binocularsConfig'Sample'Uy c defaultConfig
                                                      [ "`uy` rotation of the sample around the y axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
@@ -312,7 +310,7 @@ instance HasIniConfig Sample where
                                                      , " `<not set>` - read `uy` from the data file."
                                                      , " `uy`        - override `uy` with this value."
                                                      ]
-                                                     <> elemFMbDef "uz" binocularsConfig'Sample'Uz c default'BinocularsConfig'Sample
+                                                     <> elemFMbDef "uz" binocularsConfig'Sample'Uz c defaultConfig
                                                      [ "`uz` rotation of the sample around the z axis"
                                                      , ""
                                                      , "`ux`, `uy`, `uz` are the eulerian angles, which define"
