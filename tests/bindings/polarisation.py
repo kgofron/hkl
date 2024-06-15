@@ -210,7 +210,7 @@ def parse_reflection(line):
 
 
 def parse(filename, dtype):
-    with open(filename, "r") as f:
+    with open(filename) as f:
         for line in f:
             if str(line).find("Wavelength") != -1:
                 wavelength = float(line.split()[1])
