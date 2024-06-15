@@ -3,6 +3,7 @@ SUBDIRS = binoculars
 bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES=\
 	app/Main.hs \
+	hkl.cabal \
 	src/Hkl.hs \
 	src/Hkl/Binoculars.hs \
 	src/Hkl/Binoculars/Command.hs \
