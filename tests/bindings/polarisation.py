@@ -7,15 +7,17 @@ import unittest
 
 from gi.repository import GLib
 import gi
+
 gi.require_version("Hkl", "5.0")
 from gi.repository import Hkl
-from numpy import (array, cross, dot, empty, hstack, reshape, vstack)
+from numpy import array, cross, dot, empty, hstack, reshape, vstack
 from numpy.linalg import inv, norm
 from numpy.testing import assert_almost_equal
 
 #########
 # Types #
 #########
+
 
 class Lattice(NamedTuple):
     a: float
@@ -27,8 +29,8 @@ class Lattice(NamedTuple):
 
 
 class Reflection(NamedTuple):
-    hkl : List[float]
-    values : List[float]
+    hkl: List[float]
+    values: List[float]
 
 
 class Sample(NamedTuple):
@@ -68,9 +70,11 @@ class HklDiffractometer(NamedTuple):
     geometry: Hkl.Geometry
     engines: Hkl.EngineList
 
+
 ##################
 # Helper methods #
 ##################
+
 
 def hkl_matrix_to_numpy(m):
     M = empty((3, 3))
@@ -90,15 +94,18 @@ def from_numpy_to_hkl_vector(v):
 # Hkl Type constructors #
 #########################
 
+
 def new_hkl_sample(config):
     # sample
     sample = Hkl.Sample.new("test")
-    lattice = Hkl.Lattice.new(config.lattice.a,
-                              config.lattice.b,
-                              config.lattice.c,
-                              math.radians(config.lattice.alpha),
-                              math.radians(config.lattice.beta),
-                              math.radians(config.lattice.gamma))
+    lattice = Hkl.Lattice.new(
+        config.lattice.a,
+        config.lattice.b,
+        config.lattice.c,
+        math.radians(config.lattice.alpha),
+        math.radians(config.lattice.beta),
+        math.radians(config.lattice.gamma),
+    )
     sample.lattice_set(lattice)
 
     parameter = sample.ux_get()
@@ -140,21 +147,26 @@ def new_hkl_diffractometer(config):
     detector = new_hkl_detector(config.detector)
 
     # add reflection or0
-    geometry = new_hkl_geometry(config.dtype,
-                                config.source.wavelength,
-                                config.sample.or0.values)
-    or0 = sample.add_reflection(geometry, detector,
-                                config.sample.or0.hkl[0],
-                                config.sample.or0.hkl[1],
-                                config.sample.or0.hkl[2])
+    geometry = new_hkl_geometry(
+        config.dtype, config.source.wavelength, config.sample.or0.values
+    )
+    or0 = sample.add_reflection(
+        geometry,
+        detector,
+        config.sample.or0.hkl[0],
+        config.sample.or0.hkl[1],
+        config.sample.or0.hkl[2],
+    )
 
     # add reflection or1
-    geometry.axis_values_set(config.sample.or1.values,
-                             Hkl.UnitEnum.USER)
-    or1 = sample.add_reflection(geometry, detector,
-                                config.sample.or1.hkl[0],
-                                config.sample.or1.hkl[1],
-                                config.sample.or1.hkl[2])
+    geometry.axis_values_set(config.sample.or1.values, Hkl.UnitEnum.USER)
+    or1 = sample.add_reflection(
+        geometry,
+        detector,
+        config.sample.or1.hkl[0],
+        config.sample.or1.hkl[1],
+        config.sample.or1.hkl[2],
+    )
 
     # compute UB with or0 and or1
     # sample.compute_UB_busing_levy(or0, or1)
@@ -169,15 +181,17 @@ def new_hkl_diffractometer(config):
 
     return HklDiffractometer(sample, detector, geometry, engines)
 
+
 #################
 # Config parser #
 #################
+
 
 def find(filename):
     if os.path.exists(filename):
         return filename
     else:
-        datadir = os.getenv('DATADIR')
+        datadir = os.getenv("DATADIR")
         if datadir:
             filename = os.path.join(datadir, filename)
             if os.path.exists(filename):
@@ -196,33 +210,45 @@ def parse_reflection(line):
 
 
 def parse(filename, dtype):
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         for line in f:
-            if str(line).find('Wavelength') != -1:
+            if str(line).find("Wavelength") != -1:
                 wavelength = float(line.split()[1])
                 energy = 12.39842 / wavelength
-            if str(line).find('A') != -1 and str(line).find('B') != -1 and str(line).find('C') != -1:
+            if (
+                str(line).find("A") != -1
+                and str(line).find("B") != -1
+                and str(line).find("C") != -1
+            ):
                 abc = line.split()
                 a = float(abc[1])
                 b = float(abc[3])
                 c = float(abc[5])
-            if str(line).find('Alpha') != -1 and str(line).find('Beta') != -1 and str(line).find('Gamma') != -1:
+            if (
+                str(line).find("Alpha") != -1
+                and str(line).find("Beta") != -1
+                and str(line).find("Gamma") != -1
+            ):
                 abg = line.split()
                 alpha = float(abg[1])
                 beta = float(abg[3])
                 gamma = float(abg[5])
-            if str(line).find('R0') != -1:
+            if str(line).find("R0") != -1:
                 or0 = parse_reflection(line)
-            if str(line).find('R1') != -1:
+            if str(line).find("R1") != -1:
                 or1 = parse_reflection(line)
-            if str(line).find('Ux') != -1 and str(line).find('Uy') != -1 and str(line).find('Uz') != -1:
+            if (
+                str(line).find("Ux") != -1
+                and str(line).find("Uy") != -1
+                and str(line).find("Uz") != -1
+            ):
                 uxuyuz = line.split()
                 ux = float(uxuyuz[1])
                 uy = float(uxuyuz[3])
                 uz = float(uxuyuz[5])
-            if str(line).find('Engine') != -1:
+            if str(line).find("Engine") != -1:
                 engine_name = line.split()[1]
-            if str(line).find('Mode') != -1:
+            if str(line).find("Mode") != -1:
                 mode_name = line.split()[1]
 
         lattice = Lattice(a, b, c, alpha, beta, gamma)
@@ -237,12 +263,12 @@ def parse(filename, dtype):
 # hight level method #
 ######################
 
-def ca(config, hkl, engine_name='hkl'):
+
+def ca(config, hkl, engine_name="hkl"):
     sample, detector, geometry, engines = new_hkl_diffractometer(config)
     engines.init(geometry, detector, sample)
     engine = engines.engine_get_by_name(engine_name)
-    solutions = engine.pseudo_axis_values_set(hkl,
-                                              Hkl.UnitEnum.USER)
+    solutions = engine.pseudo_axis_values_set(hkl, Hkl.UnitEnum.USER)
     first_solution = solutions.items()[0]
     values = first_solution.geometry_get().axis_values_get(Hkl.UnitEnum.USER)
     return Reflection(hkl, values)
@@ -260,6 +286,7 @@ def get_R_and_P(config, values):
     P = hkl_matrix_to_numpy(geometry.detector_rotation_get(detector).to_matrix())
     return R, P
 
+
 def get_kinc_kscat(config, values):
     sample, detector, geometry, engines = new_hkl_diffractometer(config)
     geometry.axis_values_set(values, Hkl.UnitEnum.USER)
@@ -276,6 +303,7 @@ def get_kinc_kscat(config, values):
 
     return kinc, kscat
 
+
 def get_kinc_kscat_v2(config, values):
     sample, detector, geometry, engines = new_hkl_diffractometer(config)
     geometry.axis_values_set(values, Hkl.UnitEnum.USER)
@@ -285,16 +313,18 @@ def get_kinc_kscat_v2(config, values):
 
     return kinc, kscat
 
+
 ##############
 # Unit tests #
 ##############
+
 
 class Polarisation(unittest.TestCase):
     def test_petraIII(self):
         dtype = "E6C"
         # RUBh = kf - ki = (P ki - ki) = (P - I) ki
 
-        config = parse(find('crystal.ini'), dtype)
+        config = parse(find("crystal.ini"), dtype)
         print(config)
 
         gaga = ca(config, [0.5, 14.5, 0.43])
@@ -314,7 +344,14 @@ class Polarisation(unittest.TestCase):
         # values_w = [0, 42.73321, 83.66607, 0, 0, 68.27333]
         # values_w = [0, 45.37981, 84.10117, 0, 0, 74.95312]
         # values_w = [0, 48.29079, 84.47230, 0, 0, 81.96226]
-        values_w = [0, 51.48568, 84.79259, 0, 0, 89.37964]  # mu, omega, chi, phi, gamma, delta
+        values_w = [
+            0,
+            51.48568,
+            84.79259,
+            0,
+            0,
+            89.37964,
+        ]  # mu, omega, chi, phi, gamma, delta
 
         R, P = get_R_and_P(config, values_w)
         print("R: ")
@@ -330,16 +367,16 @@ class Polarisation(unittest.TestCase):
         cstar = dot(RUB, [0, 0, 1])
 
         # transformation matrix: reciprocal space --> laboratory
-        T = hstack((reshape(astar, (3, 1)),
-                    reshape(bstar, (3, 1)),
-                    reshape(cstar, (3, 1))))
-        Tbis = vstack((reshape(astar, (1, 3)),
-                       reshape(bstar, (1, 3)),
-                       reshape(cstar, (1, 3))))
+        T = hstack(
+            (reshape(astar, (3, 1)), reshape(bstar, (3, 1)), reshape(cstar, (3, 1)))
+        )
+        Tbis = vstack(
+            (reshape(astar, (1, 3)), reshape(bstar, (1, 3)), reshape(cstar, (1, 3)))
+        )
         # transformation matrix: laboratory --> reciprocal space
         Tinv = inv(T)
 
-        print('')
+        print("")
         # print 'cstar in laboratory frame       :',cstar
         # print 'cstar in laboratory frame from T:',dot(T, hkl)
         # print 'cstar in rec. space from Tinv   :',dot(Tinv, dot(T, hkl))
@@ -351,21 +388,33 @@ class Polarisation(unittest.TestCase):
         # compute Q
         Q = kf - ki
 
-        print('')
-        print('Energy (keV):', config.source)
-        print('Lattice parameters:', config.sample.lattice)
-        print('1st orienting reflection:', config.sample.or0.hkl, 'with angles: ', config.sample.or0.values)
-        print('2nd orienting reflection:', config.sample.or1.hkl, 'with angles: ', config.sample.or1.values)
-        print('')
+        print("")
+        print("Energy (keV):", config.source)
+        print("Lattice parameters:", config.sample.lattice)
+        print(
+            "1st orienting reflection:",
+            config.sample.or0.hkl,
+            "with angles: ",
+            config.sample.or0.values,
+        )
+        print(
+            "2nd orienting reflection:",
+            config.sample.or1.hkl,
+            "with angles: ",
+            config.sample.or1.values,
+        )
+        print("")
 
-        print('UB matrix:')
+        print("UB matrix:")
         print(UB)
-        print('')
-        print('Transformation matrix T(reciprocal space)--> laboratory frame:')
-        print(T,)
-        print('')
-        print('')
-        print('Transformation matrix T(laboratory frame)--> reciprocal space :')
+        print("")
+        print("Transformation matrix T(reciprocal space)--> laboratory frame:")
+        print(
+            T,
+        )
+        print("")
+        print("")
+        print("Transformation matrix T(laboratory frame)--> reciprocal space :")
         print(Tinv)
 
         # compute Q
@@ -379,7 +428,7 @@ class Polarisation(unittest.TestCase):
         # hkl = [0.5, 13.5, 0.43]
         hkl = [0.5, 14.5, 0.43]
 
-        '''
+        """
         print ''
         print 'Q in lab. frame from code   :', dot(dot(R, UB), hkl), ', normalized:',(dot(dot(R, UB), hkl))/norm(dot(dot(R, UB), hkl)), ', norm:', norm(dot(dot(R, UB), hkl))
         print 'Q in lab. frame from T      :', dot(T, hkl), ', normalized:', (dot(T, hkl))/norm(dot(T, hkl)), ', norm:', norm(dot(T, hkl))
@@ -391,16 +440,16 @@ class Polarisation(unittest.TestCase):
         print ''
         print 'kf',kf,', norm:',norm(kf)
         print 'ki',ki,', norm:',norm(ki)
-        '''
-        print('')
-        print('Q in rec. space from Tinv of T   :', dot(Tinv, dot(T, hkl)))
-        print('')
+        """
+        print("")
+        print("Q in rec. space from Tinv of T   :", dot(Tinv, dot(T, hkl)))
+        print("")
         #
         # compute u1, u2, u3 in reciprocal space coordinates
         # u1,u2,u3 in laboratory frame
-        u1xyz = ki+kf
+        u1xyz = ki + kf
         u2xyz = cross(ki, kf)
-        u3xyz = ki-kf
+        u3xyz = ki - kf
         # print '(u1,u2,u3) in laboratory frame:',u1xyz,u2xyz,u3xyz
         # u1,u2,u3 in reciprocal space
         u1 = dot(Tinv, u1xyz) / norm(dot(Tinv, u1xyz))
@@ -409,24 +458,27 @@ class Polarisation(unittest.TestCase):
         u1 = dot(Tinv, u1xyz)
         u2 = dot(Tinv, u2xyz)
         u3 = dot(Tinv, u3xyz)
-        print('(u1,u2,u3) in reciprocal space from Tinv, unnormalized:',\
-            u1, u2, u3)
-        print('(u1,u2,u3) in reciprocal space from Tinv, normalized to 1:',\
-            dot(Tinv, u1xyz) / norm(dot(Tinv, u1xyz)), \
-            dot(Tinv, u2xyz) / norm(dot(Tinv, u2xyz)), \
-            dot(Tinv, u3xyz) / norm(dot(Tinv, u3xyz)))
+        print("(u1,u2,u3) in reciprocal space from Tinv, unnormalized:", u1, u2, u3)
+        print(
+            "(u1,u2,u3) in reciprocal space from Tinv, normalized to 1:",
+            dot(Tinv, u1xyz) / norm(dot(Tinv, u1xyz)),
+            dot(Tinv, u2xyz) / norm(dot(Tinv, u2xyz)),
+            dot(Tinv, u3xyz) / norm(dot(Tinv, u3xyz)),
+        )
         # print '(u1,u2,u3) in reciprocal space from Tinv:', \
         #    dot(Tinv, u1xyz), dot(Tinv, u2xyz), dot(Tinv, u3xyz)
-        print('')
+        print("")
         # TRANSFORMATION MATRIX reciprocal lattice basis to u1 u2 u3 basis
-        ABC = hstack((reshape([1, 0, 0], (3, 1)),
-                      reshape([0, 1, 0], (3, 1)),
-                      reshape([0, 0, 1], (3, 1))))
-        U = hstack((reshape(u1, (3, 1)),
-                    reshape(u2, (3, 1)),
-                    reshape(u3, (3, 1))))
+        ABC = hstack(
+            (
+                reshape([1, 0, 0], (3, 1)),
+                reshape([0, 1, 0], (3, 1)),
+                reshape([0, 0, 1], (3, 1)),
+            )
+        )
+        U = hstack((reshape(u1, (3, 1)), reshape(u2, (3, 1)), reshape(u3, (3, 1))))
         M = dot(ABC, inv(U))
-        print('Transformation matrix reciprocal lattice basis to u1 u2 u3 basis:')
+        print("Transformation matrix reciprocal lattice basis to u1 u2 u3 basis:")
         print(M)
 
         # keep in order to pass the test
@@ -436,7 +488,7 @@ class Polarisation(unittest.TestCase):
         dtype = "E6C"
         # RUBh = kf - ki = (P ki - ki) = (P - I) ki
 
-        config = parse(find('sample1.txt'), dtype)
+        config = parse(find("sample1.txt"), dtype)
         print(config)
 
         ## Test:
@@ -452,12 +504,12 @@ class Polarisation(unittest.TestCase):
         gaga = ca(config, [0.0, 2.0, 0.0])
         kinc, kscat = get_kinc_kscat(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [2.6300, -1.0000,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.6300,  1.0000,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [2.6300, -1.0000, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.6300, 1.0000, 0.0000], decimal=4)
         kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [2.6300, -1.0000,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.6300,  1.0000,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [2.6300, -1.0000, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.6300, 1.0000, 0.0000], decimal=4)
 
         # Reflection: ( 0.0,  3.0,  0.0)
         # angles: 0.00000    32.21601     90.00000     0.00000    0.00000     64.43202
@@ -467,12 +519,12 @@ class Polarisation(unittest.TestCase):
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [2.3805, -1.5000,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.3805,  1.5000,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [2.3805, -1.5000, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.3805, 1.5000, 0.0000], decimal=4)
         kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [2.3805, -1.5000,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.3805,  1.5000,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [2.3805, -1.5000, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.3805, 1.5000, 0.0000], decimal=4)
 
         # Reflection: ( 0.0,  4.0,  0.0)
         # angles: 0.00000    45.30143     90.00000     0.00000    0.00000     90.60284
@@ -482,12 +534,12 @@ class Polarisation(unittest.TestCase):
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [1.9791, -2.0000,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [1.9791, 2.0000,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [1.9791, -2.0000, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [1.9791, 2.0000, 0.0000], decimal=4)
         kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [1.9791, -2.0000,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [1.9791, 2.0000,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [1.9791, -2.0000, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [1.9791, 2.0000, 0.0000], decimal=4)
 
         # Reflection: ( 1.0,  3.0,  0.0)
         # angles: 0.00000    52.62572     90.00000     0.00000    0.00000     68.38154
@@ -497,12 +549,12 @@ class Polarisation(unittest.TestCase):
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [1.7079, -2.2360,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.7079,  0.7640,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [1.7079, -2.2360, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.7079, 0.7640, 0.0000], decimal=4)
         kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [1.7079, -2.2360,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.7079,  0.7640,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [1.7079, -2.2360, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.7079, 0.7640, 0.0000], decimal=4)
 
         # Reflection: ( 1.0,  4.0,  0.0)
         # angles: 0.00000    61.14891     90.00000     0.00000    0.00000     94.22532
@@ -512,12 +564,12 @@ class Polarisation(unittest.TestCase):
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [1.3577, -2.4644,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.3577,  1.5356,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [1.3577, -2.4644, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.3577, 1.5356, 0.0000], decimal=4)
         kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [1.3577, -2.4644,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.3577,  1.5356,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [1.3577, -2.4644, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.3577, 1.5356, 0.0000], decimal=4)
 
         # Reflection: ( 2.0,  3.0,  0.0)
         # angles: 0.00000    49.97822     90.00000     0.00000    0.00000     46.82633
@@ -527,14 +579,15 @@ class Polarisation(unittest.TestCase):
         print(gaga)
         kinc, kscat = get_kinc_kscat(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [0.7974, -2.6983,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.7974,  0.3017,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [0.7974, -2.6983, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.7974, 0.3017, 0.0000], decimal=4)
         kinc, kscat = get_kinc_kscat_v2(config, gaga.values)
         print(kinc, kscat)
-        assert_almost_equal(kinc, [0.7974, -2.6983,  0.0000], decimal=4)
-        assert_almost_equal(kscat, [2.7974,  0.3017,  0.0000], decimal=4)
+        assert_almost_equal(kinc, [0.7974, -2.6983, 0.0000], decimal=4)
+        assert_almost_equal(kscat, [2.7974, 0.3017, 0.0000], decimal=4)
 
         self.assertTrue(True)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main(verbosity=2)

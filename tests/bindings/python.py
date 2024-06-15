@@ -25,6 +25,7 @@ import math
 import unittest
 from gi.repository import GLib
 import gi
+
 gi.require_version("Hkl", "5.0")
 from gi.repository import Hkl
 
@@ -96,13 +97,13 @@ class TestAPI(unittest.TestCase):
 
         # get the config for a given geometry and create the
         # corresponding HklGeometry
-        factory = Hkl.factories()['K6C']
+        factory = Hkl.factories()["K6C"]
         geometry = factory.create_new_geometry()
         detector = Hkl.Detector.factory_new(Hkl.DetectorType(0))
         sample = Hkl.Sample.new("toto")
 
         # source access
-        wavelength = 1.
+        wavelength = 1.0
         geometry.wavelength_set(wavelength, Hkl.UnitEnum.USER)
         self.assertTrue(wavelength == geometry.wavelength_get(Hkl.UnitEnum.USER))  # noqa
 
@@ -153,9 +154,9 @@ class TestAPI(unittest.TestCase):
 
         detector = Hkl.Detector.factory_new(Hkl.DetectorType(0))
 
-        factory = Hkl.factories()['K6C']
+        factory = Hkl.factories()["K6C"]
         geometry = factory.create_new_geometry()
-        values_w = [0., 30., 0., 0., 0., 60.]
+        values_w = [0.0, 30.0, 0.0, 0.0, 0.0, 60.0]
         geometry.axis_values_set(values_w, Hkl.UnitEnum.USER)
 
         sample = Hkl.Sample.new("toto")
@@ -179,13 +180,12 @@ class TestAPI(unittest.TestCase):
         # set the hkl engine and get the results
         for _ in range(100):
             try:
-                solutions = hkl.pseudo_axis_values_set(values,
-                                                       Hkl.UnitEnum.USER)
+                solutions = hkl.pseudo_axis_values_set(values, Hkl.UnitEnum.USER)
                 self.assertTrue(type(solutions) is Hkl.GeometryList)
                 for item in solutions.items():
                     self.assertTrue(type(item) is Hkl.GeometryListItem)
                     self.assertTrue(type(item.geometry_get()) is Hkl.Geometry)
-                values[1] += .01
+                values[1] += 0.01
             except GLib.GError as err:
                 print(values, err)
 
@@ -222,11 +222,14 @@ class TestAPI(unittest.TestCase):
 
                 # check that parameters are writable.
                 values = engine.parameters_values_get(Hkl.UnitEnum.USER)
-                values = [1.] * len(values)
+                values = [1.0] * len(values)
                 engine.parameters_values_set(values, Hkl.UnitEnum.USER)
-                [self.assertTrue(ref == v)
-                 for ref, v in zip(values,
-                                   engine.parameters_values_get(Hkl.UnitEnum.USER))]
+                [
+                    self.assertTrue(ref == v)
+                    for ref, v in zip(
+                        values, engine.parameters_values_get(Hkl.UnitEnum.USER)
+                    )
+                ]
 
                 axes_r = engine.axis_names_get(Hkl.EngineAxisNamesGet.READ)
                 self.assertTrue(type(axes_r) is list)
@@ -284,18 +287,15 @@ class TestAPI(unittest.TestCase):
     @unittest.skip("for testing figures")
     def test_doc_example(self):
         # execfile("../../Documentation/sphinx/source/bindings/python.py")
-        execfile(
-            "../../Documentation/sphinx/source/pyplots/trajectory_simple.py")
-        execfile(
-            "../../Documentation/sphinx/source/pyplots/trajectory_full.py")
+        execfile("../../Documentation/sphinx/source/pyplots/trajectory_simple.py")
+        execfile("../../Documentation/sphinx/source/pyplots/trajectory_full.py")
 
         self.assertTrue(False)
 
     def test_lattice_api(self):
-        lattice = Hkl.Lattice.new(1.54, 1.54, 1.54,
-                                  math.radians(90.),
-                                  math.radians(90.),
-                                  math.radians(90.))
+        lattice = Hkl.Lattice.new(
+            1.54, 1.54, 1.54, math.radians(90.0), math.radians(90.0), math.radians(90.0)
+        )
         lattice2 = lattice.copy()
 
         # check all the accessors
@@ -322,8 +322,9 @@ class TestAPI(unittest.TestCase):
         lattice.set(1, 2, 3, 90, 90, 90, Hkl.UnitEnum.USER)
 
         # this new lattice is different from the one in the sample
-        self.assertTrue(lattice.get(Hkl.UnitEnum.DEFAULT)
-                        != lattice2.get(Hkl.UnitEnum.DEFAULT))
+        self.assertTrue(
+            lattice.get(Hkl.UnitEnum.DEFAULT) != lattice2.get(Hkl.UnitEnum.DEFAULT)
+        )
 
         del lattice2
         del lattice
@@ -345,10 +346,9 @@ class TestAPI(unittest.TestCase):
         self.assertTrue(copy.name_get() != sample.name_get())
 
         # set the lattice parameters
-        lattice = Hkl.Lattice.new(1.54, 1.54, 1.54,
-                                  math.radians(90.),
-                                  math.radians(90.),
-                                  math.radians(90.))
+        lattice = Hkl.Lattice.new(
+            1.54, 1.54, 1.54, math.radians(90.0), math.radians(90.0), math.radians(90.0)
+        )
         sample.lattice_set(lattice)
 
         # change the lattice parameter by expanding the tuple from
@@ -391,12 +391,11 @@ class TestAPI(unittest.TestCase):
         del lattice
 
     def test_reflection_api(self):
-
         detector = Hkl.Detector.factory_new(Hkl.DetectorType(0))
 
-        factory = Hkl.factories()['K6C']
+        factory = Hkl.factories()["K6C"]
         geometry = factory.create_new_geometry()
-        values_w = [0., 30., 0., 0., 0., 60.]
+        values_w = [0.0, 30.0, 0.0, 0.0, 0.0, 60.0]
         geometry.axis_values_set(values_w, Hkl.UnitEnum.USER)
 
         sample = Hkl.Sample.new("toto")
@@ -430,5 +429,6 @@ class TestAPI(unittest.TestCase):
         del reflections
         del sample
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main(verbosity=2)
