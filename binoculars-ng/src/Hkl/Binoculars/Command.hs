@@ -13,7 +13,8 @@
     Portability: GHC only (not tested)
 -}
 module Hkl.Binoculars.Command
-  ( new
+  ( merge
+  , new
   , process
   , update
   ) where
@@ -31,6 +32,12 @@ import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.Binoculars.Projections.Test
 import           Hkl.Utils
+
+merge :: (MonadLogger m, MonadThrow m, MonadIO m)
+      => FilePath -> [FilePath] -> m ()
+merge f fs = do
+  logDebugNSH f
+  logDebugNSH fs
 
 {-# SPECIALIZE process :: Maybe FilePath -> Maybe ConfigRange ->LoggingT IO () #-}
 process :: (MonadLogger m, MonadThrow m, MonadIO m)

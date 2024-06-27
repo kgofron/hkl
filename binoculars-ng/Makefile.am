@@ -102,6 +102,7 @@ RTS = +RTS -N4 -RTS
 RUN = /usr/bin/time -v ./binoculars-ng $(RTS)
 PROCESS = $(RUN) --debug process
 PROCESS_DBG=gdb --args .libs/binoculars-ng process
+MERGE = $(RUN) --debug merge
 
 cristal: binoculars-ng
 	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
@@ -119,19 +120,20 @@ mars: binoculars-ng
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/HR_XRD_CX2/binoculars/config_qxqyqz.ini 473
 # TODO, de simages ont un drole de pattern, il faut donc pouvoir supprimer des images dans un scan donné.
 # TODO, une idée pourrait être d'associer un masque spécifique à un point de scan.
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 73-82
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 100-111
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 129-138
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 158-167
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 186-195
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 207-216
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 228-237
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 246-255
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 261-271
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 285-294
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 306-315
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 329-338
-	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
+	$(MERGE) -o merge.h5 scan*.hdf5
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 73-82
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 100-111
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 129-138
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 158-167
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 186-195
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 207-216
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 228-237
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 246-255
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 261-271
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 285-294
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 306-315
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 329-338
+#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
 
 sixs: binoculars-ng
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546

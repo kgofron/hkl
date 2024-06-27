@@ -25,9 +25,10 @@ import           Data.Text                 (pack)
 import           Options.Applicative       (CommandFields, Mod, argument,
                                             command, eitherReader, execParser,
                                             fullDesc, header, help, helper,
-                                            hsubparser, info, long, metavar,
-                                            optional, progDesc, short, str,
-                                            switch, (<**>))
+                                            hsubparser, info, long, many,
+                                            metavar, optional, progDesc, short,
+                                            str, strOption, switch, value,
+                                            (<**>))
 import           Options.Applicative.Types (Parser)
 
 
@@ -40,6 +41,7 @@ data FullOptions = FullOptions Bool Options
 data Options = Process (Maybe FilePath) (Maybe ConfigRange)
              | CfgNew ProjectionType (Maybe FilePath)
              | CfgUpdate FilePath (Maybe ConfigRange)
+             | Merge FilePath [FilePath]
   deriving Show
 
 debug :: Parser Bool
@@ -72,10 +74,18 @@ cfgUpdateOption = CfgUpdate
 cfgUpdateCommand :: Mod CommandFields Options
 cfgUpdateCommand = command "cfg-update" (info cfgUpdateOption (progDesc "update config files"))
 
+mergeOption :: Parser Options
+mergeOption = Merge
+              <$> strOption ( long "output" <> short 'o' <> metavar "FILE" <> value "merged.h5" <> help "Write output to FILE" )
+              <*> (many $ (argument str (metavar "INPUTFILES...")))
+
+mergeCommand :: Mod CommandFields Options
+mergeCommand = command "merge" (info mergeOption (progDesc "merges binoculars files"))
+
 options :: Parser FullOptions
 options = FullOptions
           <$> debug
-          <*> hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand)
+          <*> hsubparser (processCommand <> cfgNewCommand <> cfgUpdateCommand <> mergeCommand)
 
 newtype App a =
     App { unApp :: ReaderT FullOptions (LoggingT IO) a }
@@ -100,6 +110,7 @@ app = do
     (Process mf mr)  -> process mf mr
     (CfgNew p mf)    -> new p mf
     (CfgUpdate f mr) -> update f mr
+    (Merge f fs)     -> merge f fs
 
 main :: IO ()
 main = do
