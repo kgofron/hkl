@@ -31,6 +31,7 @@ import           Hkl.Binoculars.Projections.Angles
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.Binoculars.Projections.Test
+import           Hkl.C.Binoculars
 import           Hkl.Utils
 
 merge :: (MonadLogger m, MonadThrow m, MonadIO m)
@@ -38,6 +39,8 @@ merge :: (MonadLogger m, MonadThrow m, MonadIO m)
 merge f fs = do
   logDebugNSH f
   logDebugNSH fs
+  liftIO $ cube'FromFile (fs !! 0)
+  return ()
 
 {-# SPECIALIZE process :: Maybe FilePath -> Maybe ConfigRange ->LoggingT IO () #-}
 process :: (MonadLogger m, MonadThrow m, MonadIO m)

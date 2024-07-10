@@ -120,6 +120,14 @@ static inline void hkl_binoculars_axis_init(HklBinocularsAxis *self,
 	self->imax = imax;
 }
 
+void hkl_binoculars_axis_init_from_array(HklBinocularsAxis *self,
+                                         const char *name,
+                                         double *arr,
+                                         size_t n_arr)
+{
+        hkl_binoculars_axis_init(self, name, arr[0], arr[1], arr[2], arr[3]);
+}
+
 static inline int hkl_binoculars_axis_cmp(const HklBinocularsAxis *self,
                                           const HklBinocularsAxis *other)
 {
@@ -1470,7 +1478,7 @@ static inline ptrdiff_t compute_offset0(const darray_axis *axes)
 	return offset;
 }
 
-static inline HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes)
+HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes)
 {
         HklBinocularsCube *self = NULL;
 

@@ -44,6 +44,10 @@ struct _HklBinocularsAxis
 
 typedef darray(HklBinocularsAxis) darray_axis;
 
+extern void hkl_binoculars_axis_init_from_array(HklBinocularsAxis *self,
+                                                const char *name,
+                                                double *arr,
+                                                size_t n_arr);
 /*********/
 /* Space */
 /*********/
@@ -83,6 +87,8 @@ static inline size_t axis_size(const HklBinocularsAxis *self)
 {
 	return self->imax - self->imin + 1;
 }
+
+extern HklBinocularsCube *empty_cube_from_axes(const darray_axis *axes);
 
 /************/
 /* Geometry */

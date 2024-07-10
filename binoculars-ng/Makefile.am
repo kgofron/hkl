@@ -37,7 +37,25 @@ binoculars_ng_SOURCES=\
 	src/Hkl/Repa.hs \
 	src/Hkl/Sample.hs \
 	src/Hkl/Types.hs \
-	src/Hkl/Utils.hs
+	src/Hkl/Utils.hs \
+        binoculars/hkl-binoculars-detectors-2d.c \
+        binoculars/hkl-binoculars.c \
+        binoculars/hkl-binoculars-config.c \
+        binoculars/hkl-binoculars-cnpy.c \
+        binoculars/hkl-binoculars-geometry.c \
+        binoculars/hkl-binoculars-hdf5.c \
+        $(top_srcdir)/hkl/hkl-axis.c \
+        $(top_srcdir)/hkl/hkl-geometry.c \
+        $(top_srcdir)/hkl/hkl-interval.c \
+        $(top_srcdir)/hkl/hkl-lattice.c \
+        $(top_srcdir)/hkl/hkl-macros.c \
+        $(top_srcdir)/hkl/hkl-matrix.c \
+        $(top_srcdir)/hkl/hkl-parameter.c \
+        $(top_srcdir)/hkl/hkl-quaternion.c \
+        $(top_srcdir)/hkl/hkl-sample.c \
+        $(top_srcdir)/hkl/hkl-source.c \
+        $(top_srcdir)/hkl/hkl-unit.c \
+        $(top_srcdir)/hkl/hkl-vector.c
 binoculars-ng$(EXEEXT): $(binoculars_ng_SOURCES)
 	@rm -f cabal.project.local
 	touch empty-config-file
@@ -49,7 +67,10 @@ binoculars-ng$(EXEEXT): $(binoculars_ng_SOURCES)
 		--enable-optimization \
 		--enable-static \
 		--extra-include-dirs=$(abs_top_srcdir) \
+		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng \
 		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
+		--extra-include-dirs=$(abs_top_srcdir)/hkl \
+		--extra-include-dirs=$(abs_top_srcdir)/third-party \
 		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
 		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
 		--offline \
@@ -57,6 +78,8 @@ binoculars-ng$(EXEEXT): $(binoculars_ng_SOURCES)
 	$(LN_S) -f $$($(CABAL) \
 			--config-file=empty-config-file \
 			list-bin $@) $@
+
+EXTRA_binoculars_ng_DEPENDENCIES=binoculars/lbhkl-binoculars.la
 
 CLEANFILES=\
 	cabal.project.local \
@@ -103,6 +126,7 @@ RUN = /usr/bin/time -v ./binoculars-ng $(RTS)
 PROCESS = $(RUN) --debug process
 PROCESS_DBG=gdb --args .libs/binoculars-ng process
 MERGE = $(RUN) --debug merge
+MERGE_DBG = gdb --args ./binoculars-ng merge
 
 cristal: binoculars-ng
 	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
@@ -138,3 +162,6 @@ mars: binoculars-ng
 sixs: binoculars-ng
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546
 	$(PROCESS) data/test/config_sixs_ruche_20231857.ini 356-390
+
+merge: binoculars-ng
+	$(MERGE_DBG) -o merge.h5 *.hdf5

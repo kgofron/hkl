@@ -113,6 +113,8 @@ HKLAPI extern HklBinocularsSpace *hkl_binoculars_space_new(size_t n_indexes_0,
 
 HKLAPI extern void hkl_binoculars_space_free(HklBinocularsSpace *self);
 
+HKLAPI extern void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *space);
+
 /********/
 /* Cube */
 /********/
@@ -129,6 +131,8 @@ HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_empty(void);
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_empty_from_cube(const HklBinocularsCube *src);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_copy(const HklBinocularsCube *src);
+
+HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_file(const char *fname);
 
 HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_from_space(const HklBinocularsSpace *space);
 

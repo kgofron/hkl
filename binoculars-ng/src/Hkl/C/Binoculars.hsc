@@ -28,7 +28,7 @@ module Hkl.C.Binoculars where
 import           Data.Int              (Int32)
 import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
-import           Foreign.C.String      (CString)
+import           Foreign.C.String      (CString, withCString)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, withForeignPtr)
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           System.IO.Unsafe      (unsafePerformIO)
@@ -84,11 +84,17 @@ instance Shape sh => Monoid (Cube sh) where
   {-# INLINE mempty #-}
   mempty = EmptyCube
 
+cube'FromFile :: String -> IO (Cube sh)
+cube'FromFile fn = withCString fn $ \cfn -> do
+  ptr <- c'hkl_binoculars_cube_new_from_file cfn
+  newCube ptr
+
 #ccall hkl_binoculars_cube_add_space, Ptr <HklBinocularsCube> -> Ptr <HklBinocularsSpace> -> IO ()
 #ccall hkl_binoculars_cube_free, Ptr <HklBinocularsCube> -> IO ()
 #ccall hkl_binoculars_cube_new, CSize -> Ptr (Ptr <HklBinocularsSpace>) -> IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_empty, IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_empty_from_cube, Ptr <HklBinocularsCube> -> IO (Ptr <HklBinocularsCube>)
+#ccall hkl_binoculars_cube_new_from_file, CString -> IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_save_hdf5, CString -> CString -> Ptr <HklBinocularsCube> -> IO ()
 
 --------------
