@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2023 Synchrotron SOLEIL
+ * Copyright (C) 2003-2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -111,7 +111,7 @@ void hkl_binoculars_cube_save_hdf5(const char *fn,
                            array. */
                         arr[0] = axis_idx++;
                         dataspace_id = H5Screate_simple(ARRAY_SIZE(dims), dims, NULL);
-                        dataset_id = H5Dcreate(groupe_axes_id, axis->name,
+                        dataset_id = H5Dcreate(groupe_axes_id, g_quark_to_string(axis->name),
                                                H5T_NATIVE_DOUBLE, dataspace_id,
                                                H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
                         status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE,

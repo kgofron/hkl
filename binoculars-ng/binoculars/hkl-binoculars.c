@@ -113,7 +113,7 @@ static inline void hkl_binoculars_axis_init(HklBinocularsAxis *self,
                                             ptrdiff_t imax,
                                             double resolution)
 {
-	self->name = name;
+	self->name = g_quark_from_string(name);
 	self->index = index;
 	self->resolution = resolution;
 	self->imin = imin;
@@ -125,7 +125,7 @@ static inline int hkl_binoculars_axis_cmp(const HklBinocularsAxis *self,
 {
         int res = 0;
 
-        res |= strcmp(self->name, other->name);
+        res |= self->name != other->name;
         res |= self->index != other->index;
         res |= self->resolution != other->resolution;
         res |= self->imin != other->imin;
@@ -164,7 +164,8 @@ static inline void hkl_binoculars_axis_merge(HklBinocularsAxis *self, const HklB
 void hkl_binoculars_axis_fprintf(FILE *f, const HklBinocularsAxis *self)
 {
 	fprintf(f, "%s : %ld min: %f(%ld) max: %f(%ld) res: %f size: %ld",
-		self->name, self->index,
+		g_quark_to_string(self->name),
+                self->index,
 		axis_min(self), self->imin,
                 axis_max(self), self->imax,
 		self->resolution, axis_size(self));

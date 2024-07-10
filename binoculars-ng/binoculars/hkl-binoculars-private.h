@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2023 Synchrotron SOLEIL
+ * Copyright (C) 2003-2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -35,7 +35,7 @@
 
 struct _HklBinocularsAxis
 {
-	const char *name; /* the name of the axis */
+	GQuark name; /* the name of the axis */
 	size_t index; /* the index of the axis of the projection used */
 	double resolution; /* the resolution of the bins */
 	ptrdiff_t imin; /* the minimum index of the axis min = imin * resolution */
