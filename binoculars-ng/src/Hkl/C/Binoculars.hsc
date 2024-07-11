@@ -111,6 +111,7 @@ cube'FromFile fn = withCString fn $ \cfn -> do
 #num HKL_BINOCULARS_DETECTOR_MERLIN
 #num HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
 #num HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512
+#num HKL_BINOCULARS_DETECTOR_CIRPAD
 
 data HklBinocularsDetectorEnum
   = HklBinocularsDetectorEnum'ImxpadS140
@@ -121,6 +122,7 @@ data HklBinocularsDetectorEnum
   | HklBinocularsDetectorEnum'Merlin
   | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
   | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512
+  | HklBinocularsDetectorEnum'Cirpad
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsDetectorEnum where
@@ -133,6 +135,7 @@ instance Enum HklBinocularsDetectorEnum where
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = HklBinocularsDetectorEnum'Merlin
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512 = HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512
+    | n == c'HKL_BINOCULARS_DETECTOR_CIRPAD = HklBinocularsDetectorEnum'Cirpad
     | otherwise = error "Non supported Detector type"
 
   fromEnum HklBinocularsDetectorEnum'ImxpadS140 = c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140
@@ -143,6 +146,7 @@ instance Enum HklBinocularsDetectorEnum where
   fromEnum HklBinocularsDetectorEnum'Merlin =  c'HKL_BINOCULARS_DETECTOR_MERLIN
   fromEnum HklBinocularsDetectorEnum'MerlinMedipix3rxQuad = c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
   fromEnum HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 = c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512
+  fromEnum HklBinocularsDetectorEnum'Cirpad = c'HKL_BINOCULARS_DETECTOR_CIRPAD
 
 #ccall hkl_binoculars_detector_2d_coordinates_get, <HklBinocularsDetectorEnum> -> IO (Ptr CDouble)
 #ccall hkl_binoculars_detector_2d_mask_get, <HklBinocularsDetectorEnum> -> IO (Ptr CBool)

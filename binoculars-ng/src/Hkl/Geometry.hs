@@ -8,6 +8,7 @@ module Hkl.Geometry
        ( Factory(..)
        , Geometry(..)
        , GeometryState(..)
+       , cirpad
        , fixed
        , sixsMedHGisaxs
        , sixsMedVGisaxs
@@ -83,6 +84,15 @@ data Geometry
   = Geometry'Custom (Tree Axis) (Maybe GeometryState)
   | Geometry'Factory Factory (Maybe GeometryState)
     deriving (Generic, FromJSON, Show, ToJSON)
+
+cirpad :: Geometry
+cirpad = Geometry'Custom
+    ( Node (Axis "" NoTransformation Unit'NoUnit)
+      [ Node (Axis "" NoTransformation Unit'NoUnit) []
+      , Node (Axis "delta" (Translation 0 (-1) 0) Unit'Angle'Degree) [Node (Axis "gamma" (Translation 0 0 1) Unit'Angle'Degree) []]
+      ]
+    )
+    Nothing
 
 fixed :: Geometry
 fixed

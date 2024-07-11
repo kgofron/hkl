@@ -111,7 +111,7 @@ struct tilling_t {
 };
 
 #define TILLING(module_width_, module_height_, gap_width_, gap_height_, pixel_size_, fill_gap_) \
-        (struct tilling_t) {                                            \
+        (struct tilling_t){                                             \
                 .square=SQUARE(pixel_size_),                            \
                         .module_width=module_width_,                    \
                         .module_height=module_height_,                  \
@@ -129,7 +129,8 @@ datatype(
         (Ufxc, struct square_t),
         (Merlin, struct square_t),
         (MerlinMedipix3RXQuad, struct tilling_t),
-        (MerlinMedipix3RXQuad512, struct tilling_t)
+        (MerlinMedipix3RXQuad512, struct tilling_t),
+        (Cirpad, struct square_t)
         );
 
 struct detector_t {
@@ -160,6 +161,8 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                          SHAPE(515, 515), TILLING(256, 256, 3, 3, 55e-6, true)),
                 DETECTOR(MerlinMedipix3RXQuad512,
                          SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false)),
+                DETECTOR(Cirpad,
+                         SHAPE(560, 2400), SQUARE(130e-6)),
         };
 
         if (n > ARRAY_SIZE(detectors))
@@ -556,6 +559,10 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                 of(MerlinMedipix3RXQuad512, tilling){
                         arr = coordinates_get_tilling(&detector.shape,
                                                       tilling);
+                }
+                of(Cirpad, square){
+                        arr = coordinates_get_square(&detector.shape,
+                                                     square);
                 }
         }
         return arr;

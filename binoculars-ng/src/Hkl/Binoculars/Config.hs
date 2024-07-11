@@ -505,6 +505,7 @@ instance HasFieldValue InputTypeDeprecated where
   fieldvalue = parsable
 
 data InputType = CristalK6C
+               | DiffabsCirpad
                | MarsFlyscan
                | MarsSbs
                | SixsFlyMedH
@@ -526,6 +527,7 @@ instance Arbitrary InputType where
 
 instance FieldEmitter InputType where
   fieldEmitter CristalK6C        = "cristal:k6c"
+  fieldEmitter DiffabsCirpad     = "diffabs:cirpad"
   fieldEmitter MarsFlyscan       = "mars:flyscan"
   fieldEmitter MarsSbs           = "mars:sbs"
   fieldEmitter SixsFlyMedH       = "sixs:flymedh"

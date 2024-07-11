@@ -373,6 +373,7 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _)
       HklBinocularsDetectorEnum'Merlin -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
+      HklBinocularsDetectorEnum'Cirpad -> undefined
 
 mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourcePath Image
 mkDetector'Sixs'Sbs det@(Detector2D d _ _)
@@ -396,6 +397,7 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _)
       HklBinocularsDetectorEnum'Merlin -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
+      HklBinocularsDetectorEnum'Cirpad -> undefined
 
 overloadAttenuationPath :: Maybe Double -> Maybe Float -> DataSourcePath Attenuation -> DataSourcePath Attenuation
 overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)

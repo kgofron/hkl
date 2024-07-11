@@ -131,6 +131,10 @@ MERGE_DBG = gdb --args ./binoculars-ng merge
 cristal: binoculars-ng
 	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
 
+diffabs: binoculars-ng
+	$(PROCESS) data/test/config_diffabs_ruche_cirpad.ini 26-30
+	$(PROCESS) data/test/config_diffabs_ruche_cirpad.ini 31-37
+
 mars: binoculars-ng
 #	$(PROCESS) data/test/config_mars_ruche_rel_flyscan.ini
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 173
@@ -159,9 +163,9 @@ mars: binoculars-ng
 #	$(PROCESS) data/test/config_mars_ruche_20232102.ini 329-338
 #	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
 
+merge: binoculars-ng
+	$(MERGE_DBG) -o merge.h5 *.hdf5
+
 sixs: binoculars-ng
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546
 	$(PROCESS) data/test/config_sixs_ruche_20231857.ini 356-390
-
-merge: binoculars-ng
-	$(MERGE_DBG) -o merge.h5 *.hdf5

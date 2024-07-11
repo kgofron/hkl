@@ -167,6 +167,7 @@ guess'DataSourcePath'Sample common sample =
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_y"))
            (DataSourcePath'Degree(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "u_z"))
      let cristalSamplePath = samplePath' "NOBEAMLINE" "NOBEAMLINE"
+     let diffabsSamplePath = samplePath' "DIFFABS" undefined
      let marsSamplePath = sampleMarsPath "MARS" "d03-1-cx2__ex__dif-cm_#1"
      let medHSamplePath = samplePath' "SIXS" "i14-c-cx1-ex-cm-med.h"
      let medVSamplePath = samplePath' "SIXS" "i14-c-cx1-ex-cm-med.v"
@@ -176,6 +177,7 @@ guess'DataSourcePath'Sample common sample =
 
      let samplePath = case inputType of
                         CristalK6C        -> cristalSamplePath
+                        DiffabsCirpad     -> diffabsSamplePath
                         MarsFlyscan       -> marsSamplePath
                         MarsSbs           -> marsSamplePath
                         SixsFlyMedH       -> medHSamplePath
