@@ -265,6 +265,7 @@ AC_CONFIG_FILES([Makefile
 		 hkl/Makefile
 		 hkl/api2/Makefile
 		 hkl/ccan/Makefile
+                 hkl.h
 		 hkl.pc
 		 hkl3d/Makefile
 		 hkl3d.pc

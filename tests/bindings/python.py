@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
 
-Copyright (C) 2012-2013, 2023 Synchrotron SOLEIL
+Copyright (C) 2012-2013, 2023, 2024 Synchrotron SOLEIL
                         L'Orme des Merisiers Saint-Aubin
                         BP 48 91192 GIF-sur-YVETTE CEDEX
 Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
@@ -34,6 +34,9 @@ class TestAPI(unittest.TestCase):
     """Test all the Hkl API, if something brakes here it means that API
     has changed !!!
     """
+
+    def test_defines(self):
+        self.assertTrue((type(Hkl.VERSION)) == str)
 
     def test_vector_api(self):
         """
