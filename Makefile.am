@@ -3,7 +3,7 @@
 ACLOCAL_AMFLAGS = -I m4
 AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection --enable-hkl3d --enable-binoculars
 
-SUBDIRS = hkl third-party
+SUBDIRS = . hkl third-party
 if BINOCULARS
 SUBDIRS += binoculars-ng
 endif
