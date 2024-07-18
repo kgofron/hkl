@@ -1,6 +1,6 @@
 ;;; hkl-default.el --- Hkl specific emacsen startup code.
 
-;; Copyright (C) 2003-2019 Synchrotron SOLEIL
+;; Copyright (C) 2003-2019, 2024 Synchrotron SOLEIL
 ;;                         L'Orme des Merisiers Saint-Aubin
 ;;                         BP 48 91192 GIF-sur-YVETTE CEDEX
 
@@ -45,6 +45,7 @@
      (python . t)
      (emacs-lisp . t)
      (gnuplot . t))))
+ '(org-babel-python-command "python3")
  '(org-confirm-babel-evaluate nil)
  '(org-latex-listings (quote minted))
  '(org-latex-minted-langs

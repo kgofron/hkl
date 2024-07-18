@@ -490,7 +490,7 @@
   def level(indent=1, s=None):
       return "  "*indent + s
 
-  diffractometers = Hkl.factories().iterkeys()
+  diffractometers = Hkl.factories().keys()
 
   output = ''
   for diffractometer in sorted(diffractometers):
@@ -551,6 +551,7 @@
 
   return output
 #+END_SRC
+
 * Developpement
 ** Getting hkl
 
