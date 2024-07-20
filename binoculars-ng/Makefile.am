@@ -123,10 +123,11 @@ EXTRA_DIST = $(binoculars_ng_SOURCES) $(test_sources)
 
 RTS = +RTS -N4 -RTS
 RUN = /usr/bin/time -v ./binoculars-ng $(RTS)
+RUN_DBG=gdb --args
 PROCESS = $(RUN) --debug process
-PROCESS_DBG=gdb --args .libs/binoculars-ng process
+PROCESS_DBG=$(RUN_DBG) .libs/binoculars-ng process
 MERGE = $(RUN) --debug merge
-MERGE_DBG = gdb --args ./binoculars-ng merge
+MERGE_DBG = $(RUN_DBG) ./binoculars-ng merge
 
 cristal: binoculars-ng
 	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
@@ -164,7 +165,7 @@ mars: binoculars-ng
 #	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
 
 merge: binoculars-ng
-	$(MERGE_DBG) -o merge.h5 *.hdf5
+	$(MERGE) -o merge.h5 *.hdf5
 
 sixs: binoculars-ng
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546

@@ -157,7 +157,7 @@ void hkl_binoculars_cube_save_hdf5(const char *fn,
 
 HklBinocularsCube *hkl_binoculars_cube_new_from_file(const char *fname)
 {
-	hsize_t i;
+        double *arr_axis;
         darray_axis axes;
         hid_t file_id;
         hid_t group_binoculars_id;
@@ -166,226 +166,143 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_file(const char *fname)
         hid_t dataspace_id_counts;
         hid_t dataset_id_contributions;
         hid_t dataspace_id_contributions;
+        hid_t dataset_id_arr;
+        hid_t dataspace_id_arr;
         herr_t status;
+	hsize_t i;
 	H5G_info_t info;
 	HklBinocularsCube *cube = NULL;
+        HklBinocularsAxis *axis;
+        ssize_t n;
+        ssize_t n_contributions;
+        ssize_t n_counts;
+        uint32_t *contributions;
+        uint32_t *counts;
 
         darray_init(axes);
 
         file_id = H5Fopen(fname, H5F_ACC_RDONLY, H5P_DEFAULT);
-        if (file_id == H5I_INVALID_HID)
-		goto failed_file_id;
-
         group_binoculars_id = H5Gopen(file_id, "binoculars", H5P_DEFAULT);
-        if (group_binoculars_id == H5I_INVALID_HID)
-		goto failed_group_binoculars_id;
-
-	/* open the binoculars.axes group */
         group_axes_id = H5Gopen(group_binoculars_id, "axes", H5P_DEFAULT);
-        if (group_axes_id == H5I_INVALID_HID)
-		goto failed_group_axes_id;
-
-	/* find the number of space in the binoculars file */
-	status = H5Gget_info(group_axes_id, &info);
-	if (status == H5I_INVALID_HID)
-		goto failed_get_info;
-
-	fprintf(stdout, "number of link in the axes group: %lld\n", info.nlinks);
+        status = H5Gget_info(group_axes_id, &info);
+        fprintf(stdout, "number of link in the axes group: %lld\n", info.nlinks);
 
         darray_resize(axes, info.nlinks);
 
-	/* cube = hkl_binoculars_cube_new_empty(); */
-        //HklBinocularsAxis axes[info.nlinks];
+        double arr_axes[info.nlinks][6];
+        int arr_valid[info.nlinks];
 
-        {
-                double arr_axes[info.nlinks][6];
-                double *arr_axis;
-                hid_t dataset_id_arr;
-                hid_t dataspace_id_arr;
-                int arr_valid[info.nlinks];
-                HklBinocularsAxis *axis;
-                ssize_t n;
-                ssize_t n_contributions;
-                ssize_t n_counts;
-                uint32_t *contributions;
-                uint32_t *counts;
-
-                for(i=0; i<info.nlinks; ++i){
-                        arr_valid[i] = 0;
-                }
-
-                for(i=0; i<info.nlinks; ++i){
-                        int idx;
-                        int j;
-                        ssize_t s;
-
-                        /* find the dataset name */
-                        /* get the size of the axis name  without the final \0 */
-                        s = H5Lget_name_by_idx(group_axes_id, ".",
-                                               H5_INDEX_NAME,
-                                               H5_ITER_INC,
-                                               i,
-                                               NULL,
-                                               0,
-                                               H5P_DEFAULT);
-                        char name[s+1]; /* need to add 1 for the \0 */
-
-                        H5Lget_name_by_idx(group_axes_id, ".",
-                                           H5_INDEX_NAME,
-                                           H5_ITER_INC,
-                                           i,
-                                           name,
-                                           s+1, /* when reading we need the
-                                                 * size with \0 which is added
-                                                 * by the method */
-                                           H5P_DEFAULT);
-
-                        /* read the arr store in the dataset */
-                        dataset_id_arr = H5Dopen(group_axes_id, name, H5P_DEFAULT);
-                        if(dataset_id_arr == H5I_INVALID_HID)
-                                goto failed_dataset_id_arr;
-                        dataspace_id_arr = H5Dget_space(dataset_id_arr);
-                        if(dataspace_id_arr == H5I_INVALID_HID)
-                                goto failed_dataspace_id_arr;
-                        n = H5Sget_simple_extent_npoints(dataspace_id_arr);
-
-                        if (n != 6)
-                                goto failed_n;
-
-                        arr_axis = &arr_axes[i][0];
-                        status = H5Dread(dataset_id_arr, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr_axis);
-                        if(status < 0)
-                                goto failed_read_arr;
-
-                        /* get the index of the axis */
-                        idx = arr_axis[0];
-                        if(idx >= info.nlinks){
-                                fprintf(stdout, "the index of the axis %d is out of range [0-%lld]\n", idx, info.nlinks = 1);
-                                continue;
-                        }
-
-                        /* ok set all the parameters */
-                        hkl_binoculars_axis_init_from_array(&darray_item(axes, idx),
-                                                            name, arr_axis, n);
-
-                        fprintf(stdout, "axis (%ld): %s", s, &name[0]);
-                        for(j=0; j<n; ++j){
-                                fprintf(stdout, " %f", arr_axis[j]);
-                        }
-                        fprintf(stdout, "\n");
-
-                        arr_valid[idx] = 1;
-
-                failed_read_arr:
-                failed_n:
-                        H5Sclose(dataspace_id_arr);
-                failed_dataspace_id_arr:
-                        H5Dclose(dataset_id_arr);
-                failed_dataset_id_arr:
-                }
-
-                /* check that all axes where initialized */
-                for(i=0; i<info.nlinks; ++i){
-                        if (arr_valid[i] != 1){
-                                fprintf(stdout,
-                                        "the axes group doesn not contain valid axes. Check that the data file:"
-                                        " %s is a binoculars output file.", fname);
-                                goto failed_all_initialized;
-                        }
-                }
-
-                /* compute the expectd size of the axes */
-                n = 1;
-                darray_foreach(axis, axes){
-                        n *= axis_size(axis);
-                }
-                fprintf(stdout, "npoints from the axes: %ld\n", n);
-
-                /* now read the data contributions */
-                dataset_id_contributions = H5Dopen(group_binoculars_id, "contributions", H5P_DEFAULT);
-                if(dataset_id_contributions == H5I_INVALID_HID)
-                        goto failed_dataset_id_contributions;
-                dataspace_id_contributions = H5Dget_space(dataset_id_contributions);
-                if(dataspace_id_contributions == H5I_INVALID_HID)
-                        goto failed_dataspace_id_contributions;
-                n_contributions = H5Sget_simple_extent_npoints(dataspace_id_contributions);
-
-                if (n != n_contributions){
-                        fprintf(stdout,
-                                "contribution contains, %ld points,"
-                                " but axes shape contains %ld points\n",
-                                n_contributions, n);
-                        goto failed_contribution_check;
-                }
-
-                /* now read the data counts */
-                dataset_id_counts = H5Dopen(group_binoculars_id, "counts", H5P_DEFAULT);
-                if(dataset_id_counts == H5I_INVALID_HID)
-                        goto failed_dataset_id_counts;
-                dataspace_id_counts = H5Dget_space(dataset_id_counts);
-                if(dataspace_id_counts == H5I_INVALID_HID)
-                        goto failed_dataspace_id_counts;
-                n_counts = H5Sget_simple_extent_npoints(dataspace_id_counts);
-
-                if (n != n_counts){
-                        fprintf(stdout,
-                                "contribution contains, %ld points,"
-                                " but axes shape contains %ld points\n",
-                                n_contributions, n);
-                        goto failed_counts_check;
-                }
-
-                contributions = malloc(n * sizeof(*contributions));
-                if(NULL == contributions){
-                        goto failed_contributions;
-                }
-                status = H5Dread(dataset_id_contributions, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, contributions);
-                if(status < 0)
-                        goto failed_read_contributions;
-
-                counts = malloc(n * sizeof(*counts));
-                if(NULL == counts){
-                        goto failed_counts;
-                }
-                status = H5Dread(dataset_id_counts, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, counts);
-                if(status < 0)
-                        goto failed_read_counts;
-
-                cube = empty_cube_from_axes(&axes);
-                cube->contributions = contributions;
-                cube->photons = counts;
-
-                hkl_binoculars_cube_fprintf(stdout, cube);
-
-                goto done_cube;
-
-        failed_read_counts:
-                free(counts);
-        failed_counts:
-        failed_read_contributions:
-                free(contributions);
-        failed_contributions:
-        done_cube:
-        failed_counts_check:
-                H5Sclose(dataspace_id_counts);
-        failed_dataspace_id_counts:
-                H5Dclose(dataset_id_counts);
-        failed_contribution_check:
-        failed_dataset_id_counts:
-                H5Sclose(dataspace_id_contributions);
-        failed_dataspace_id_contributions:
-                H5Dclose(dataset_id_contributions);
-        failed_dataset_id_contributions:
+        for(i=0; i<info.nlinks; ++i){
+                arr_valid[i] = 0;
         }
 
-failed_all_initialized:
-        darray_free(axes);
-failed_get_info:
-	H5Gclose(group_axes_id);
-failed_group_axes_id:
-	H5Gclose(group_binoculars_id);
-failed_group_binoculars_id:
-	H5Fclose(file_id);
-failed_file_id:
-	return cube;
+        for(i=0; i<info.nlinks; ++i){
+                int idx;
+                int j;
+                ssize_t s;
+
+                /* find the dataset name */
+                /* get the size of the axis name  without the final \0 */
+                s = H5Lget_name_by_idx(group_axes_id, ".",
+                                       H5_INDEX_NAME,
+                                       H5_ITER_INC,
+                                       i,
+                                       NULL,
+                                       0,
+                                       H5P_DEFAULT);
+                char name[s+1]; /* need to add 1 for the \0 */
+
+                H5Lget_name_by_idx(group_axes_id, ".",
+                                   H5_INDEX_NAME,
+                                   H5_ITER_INC,
+                                   i,
+                                   name,
+                                   s+1, /* when reading we need the
+                                         * size with \0 which is added
+                                         * by the method */
+                                   H5P_DEFAULT);
+
+                /* read the arr store in the dataset */
+                dataset_id_arr = H5Dopen(group_axes_id, name, H5P_DEFAULT);
+                dataspace_id_arr = H5Dget_space(dataset_id_arr);
+                n = H5Sget_simple_extent_npoints(dataspace_id_arr);
+                arr_axis = &arr_axes[i][0];
+                status = H5Dread(dataset_id_arr, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr_axis);
+                /* get the index of the axis */
+                idx = arr_axis[0];
+                if(idx >= info.nlinks){
+                        fprintf(stdout, "the index of the axis %d is out of range [0-%lld]\n", idx, info.nlinks = 1);
+                        continue;
+                }
+
+                /* ok set all the parameters */
+                hkl_binoculars_axis_init_from_array(&darray_item(axes, idx),
+                                                    name, arr_axis, n);
+
+                fprintf(stdout, "axis (%ld): %s", s, &name[0]);
+                for(j=0; j<n; ++j){
+                        fprintf(stdout, " %f", arr_axis[j]);
+                }
+                fprintf(stdout, "\n");
+
+                arr_valid[idx] = 1;
+        }
+
+        /* check that all axes where initialized */
+        for(i=0; i<info.nlinks; ++i){
+                if (arr_valid[i] != 1){
+                        fprintf(stdout,
+                                "the axes group doesn not contain valid axes. Check that the data file:"
+                                " %s is a binoculars output file.", fname);
+                }
+        }
+
+        /* compute the expectd size of the axes */
+        n = 1;
+        darray_foreach(axis, axes){
+                n *= axis_size(axis);
+        }
+        fprintf(stdout, "npoints from the axes: %ld\n", n);
+
+        /* now read the data contributions */
+        dataset_id_contributions = H5Dopen(group_binoculars_id, "contributions", H5P_DEFAULT);
+        dataspace_id_contributions = H5Dget_space(dataset_id_contributions);
+        n_contributions = H5Sget_simple_extent_npoints(dataspace_id_contributions);
+
+        if (n != n_contributions){
+                fprintf(stdout,
+                        "contribution contains, %ld points,"
+                        " but axes shape contains %ld points\n",
+                        n_contributions, n);
+        }
+
+        /* now read the data counts */
+        dataset_id_counts = H5Dopen(group_binoculars_id, "counts", H5P_DEFAULT);
+        dataspace_id_counts = H5Dget_space(dataset_id_counts);
+        n_counts = H5Sget_simple_extent_npoints(dataspace_id_counts);
+
+        if (n != n_counts){
+                fprintf(stdout,
+                        "counts contains, %ld points,"
+                        " but axes shape contains %ld points\n",
+                        n_counts, n);
+        }
+
+        contributions = malloc(n * sizeof(*contributions));
+        if(NULL == contributions)
+                fprintf(stdout, "can not allocate contributions");
+        status = H5Dread(dataset_id_contributions, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, contributions);
+        if(status < 0)
+                fprintf(stdout, "can not read contributions");
+
+        counts = malloc(n * sizeof(*counts));
+        status = H5Dread(dataset_id_counts, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL, H5P_DEFAULT, counts);
+
+        cube = empty_cube_from_axes(&axes);
+        cube->contributions = contributions;
+        cube->photons = counts;
+
+        hkl_binoculars_cube_fprintf(stdout, cube);
+
+        return cube;
 }
