@@ -125,7 +125,7 @@ void hkl_binoculars_axis_init_from_array(HklBinocularsAxis *self,
                                          double *arr,
                                          size_t n_arr)
 {
-        hkl_binoculars_axis_init(self, name, arr[0], arr[1], arr[2], arr[3]);
+        hkl_binoculars_axis_init(self, name, arr[0], arr[4], arr[5], arr[3]);
 }
 
 static inline int hkl_binoculars_axis_cmp(const HklBinocularsAxis *self,
