@@ -306,3 +306,32 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_file(const char *fname)
 
         return cube;
 }
+
+static HklBinocularsCube *hkl_binoculars_cube_new_from_files(const char *fnames[], size_t n_fnames)
+{
+        size_t i;
+        HklBinocularsCube *self = hkl_binoculars_cube_new_empty();
+
+        for (i=0; i<n_fnames; ++i){
+                HklBinocularsCube *cube;
+
+                cube = hkl_binoculars_cube_new_from_file(fnames[i]);
+                hkl_binoculars_cube_add_cube(self, cube);
+                hkl_binoculars_cube_free(cube);
+        }
+
+        return self;
+}
+
+
+void hkl_binoculars_cube_merge_and_save_hdf5(const char *fn,
+                                             const char *config,
+                                             const char *fnames[],
+                                             size_t n_fnames)
+{
+        HklBinocularsCube *self = hkl_binoculars_cube_new_from_files(fnames, n_fnames);
+
+        hkl_binoculars_cube_save_hdf5(fn, config, self);
+
+        hkl_binoculars_cube_free(self);
+}

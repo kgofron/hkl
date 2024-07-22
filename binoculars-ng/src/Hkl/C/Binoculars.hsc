@@ -30,6 +30,7 @@ import           Data.Word             (Word16, Word32)
 import           Foreign.C.Types       (CBool, CDouble(..), CInt(..), CSize(..), CUInt(..), CPtrdiff)
 import           Foreign.C.String      (CString, withCString)
 import           Foreign.ForeignPtr    (ForeignPtr, newForeignPtr, withForeignPtr)
+import           Foreign.Marshal.Array (withArrayLen)
 import           Foreign.Ptr           (FunPtr, Ptr)
 import           System.IO.Unsafe      (unsafePerformIO)
 
@@ -42,6 +43,8 @@ withForeignPtrs (fp:fps) f =
   withForeignPtr fp $ \p ->
   withForeignPtrs fps $ \ps -> f (p:ps)
 
+withCStrings :: [String] -> ([CString] -> IO a) -> IO a
+withCStrings = foldr (\v kk -> \k -> (withCString v) (\a -> kk (\as -> k (a:as)))) ($ [])
 
 ----------------
 -- AxisLimits --
@@ -84,13 +87,18 @@ instance Shape sh => Monoid (Cube sh) where
   {-# INLINE mempty #-}
   mempty = EmptyCube
 
-cube'FromFile :: String -> IO (Cube sh)
-cube'FromFile fn = withCString fn $ \cfn -> do
-  ptr <- c'hkl_binoculars_cube_new_from_file cfn
-  newCube ptr
+cube'MergeAndSave :: String -> String -> [String] -> IO ()
+cube'MergeAndSave output config fns =
+  withCString output $ \c'output ->
+  withCString config $ \ c'config ->
+  withCStrings fns $ \cfns ->
+  withArrayLen cfns $ \c'nfns c'cfns -> do
+  c'hkl_binoculars_cube_merge_and_save_hdf5 c'output c'config c'cfns (toEnum c'nfns)
+
 
 #ccall hkl_binoculars_cube_add_space, Ptr <HklBinocularsCube> -> Ptr <HklBinocularsSpace> -> IO ()
 #ccall hkl_binoculars_cube_free, Ptr <HklBinocularsCube> -> IO ()
+#ccall hkl_binoculars_cube_merge_and_save_hdf5, CString -> CString -> Ptr CString -> CSize -> IO ()
 #ccall hkl_binoculars_cube_new, CSize -> Ptr (Ptr <HklBinocularsSpace>) -> IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_empty, IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_empty_from_cube, Ptr <HklBinocularsCube> -> IO (Ptr <HklBinocularsCube>)

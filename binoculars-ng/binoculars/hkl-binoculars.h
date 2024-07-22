@@ -143,12 +143,20 @@ HKLAPI extern HklBinocularsCube *hkl_binoculars_cube_new_merge(const HklBinocula
 HKLAPI extern unsigned int hkl_binoculars_cube_cmp(const HklBinocularsCube *self,
                                                    const HklBinocularsCube *other);
 
+HKLAPI extern void hkl_binoculars_cube_add_cube(HklBinocularsCube *self,
+                                                const HklBinocularsCube *cube);
+
 HKLAPI extern void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
                                                  const HklBinocularsSpace *space);
 
 HKLAPI extern void hkl_binoculars_cube_save_hdf5(const char *fn,
                                                  const char *config,
                                                  const HklBinocularsCube *self);
+
+HKLAPI extern void hkl_binoculars_cube_merge_and_save_hdf5(const char *fn,
+                                                           const char *config,
+                                                           const char *fnames[],
+                                                           size_t n_fnames);
 
 HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube *self);
 

@@ -39,8 +39,7 @@ merge :: (MonadLogger m, MonadThrow m, MonadIO m)
 merge f fs = do
   logDebugNSH f
   logDebugNSH fs
-  liftIO $ cube'FromFile (fs !! 0)
-  return ()
+  liftIO $ cube'MergeAndSave f "merge" fs
 
 {-# SPECIALIZE process :: Maybe FilePath -> Maybe ConfigRange ->LoggingT IO () #-}
 process :: (MonadLogger m, MonadThrow m, MonadIO m)

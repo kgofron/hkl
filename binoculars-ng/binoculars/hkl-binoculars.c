@@ -1868,6 +1868,50 @@ static inline void switch_content(HklBinocularsCube *self,
         other->contributions = ptr;
 }
 
+void hkl_binoculars_cube_add_cube(HklBinocularsCube *self,
+                                  const HklBinocularsCube *other)
+{
+#ifdef DEBUG
+        fprintf(stdout, "\nENTERING hkl_binoculars_cube_add_cube:\n");
+        hkl_binoculars_cube_fprintf(stdout, self);
+        hkl_binoculars_cube_fprintf(stdout, other);
+#endif
+        /* check the compatibility of the cube and the space. */
+        if (1 != cube_is_empty(other)){
+                if (does_not_include(&self->axes, &other->axes)){
+#ifdef DEBUG
+                        fprintf(stdout, "\nthe first Cube does not contain the second one, so create a new cube.");
+#endif
+                        if(0 != darray_size(self->axes)){ /* self cube is not empty */
+                                HklBinocularsCube *cube = empty_cube_from_axes(&self->axes);
+                                if(NULL != cube){
+                                        merge_axes(&cube->axes, &other->axes); /* circonscript */
+                                        cube->offset0 = compute_offset0(&cube->axes);
+                                        calloc_cube(cube);
+                                        cube_add_cube(cube, self);
+                                        switch_content(self, cube);
+                                        hkl_binoculars_cube_free(cube);
+                                }
+                        } else { /* self cube is empty */
+                                HklBinocularsCube *cube =  empty_cube_from_axes(&other->axes);
+                                if(NULL != cube){
+                                        cube->offset0 = compute_offset0(&cube->axes);
+                                        calloc_cube(cube);
+                                        switch_content(self, cube);
+                                        hkl_binoculars_cube_free(cube);
+                                }
+                        }
+                }
+                cube_add_cube(self, other);
+        }
+
+#ifdef DEBUG
+        fprintf(stdout, "\n");
+        hkl_binoculars_cube_fprintf(stdout, self);
+        fprintf(stdout, "\nLEAVING hkl_binoculars_cube_add_cube:\n");
+#endif
+}
+
 void hkl_binoculars_cube_add_space(HklBinocularsCube *self,
                                    const HklBinocularsSpace *space)
 {
