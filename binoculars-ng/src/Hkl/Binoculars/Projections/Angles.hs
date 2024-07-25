@@ -128,14 +128,14 @@ instance HasIniConfig 'AnglesProjection where
 -------------------------
 
 {-# INLINE spaceAngles #-}
-spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> SampleAxis -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
-spaceAngles det pixels rs mmask' mlimits sAxis space@(Space fSpace) (DataFrameQCustom att g img _ _) =
+spaceAngles :: Detector a DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe (RLimits DIM3) -> SampleAxis -> Space DIM2 -> DataFrameQCustom -> IO (DataFrameSpace DIM2)
+spaceAngles det pixels rs mlimits sAxis space@(Space fSpace) (DataFrameQCustom att g img mmask _ _) =
   withNPixels det $ \nPixels ->
   withGeometry g $ \geometry ->
   withForeignPtr (toForeignPtr pixels) $ \pix ->
   withResolutions rs $ \nr r ->
   withPixelsDims pixels $ \ndim dims ->
-  withMaybeMask mmask' $ \ mask'' ->
+  withMaybeMask mmask $ \ mask'' ->
   withMaybeLimits mlimits rs $ \nlimits limits ->
   withSampleAxis sAxis $ \sampleAxis ->
   withForeignPtr fSpace $ \pSpace -> do
@@ -172,7 +172,6 @@ processAnglesP = do
   let inputRange = binocularsConfig'Common'InputRange common
   let nexusDir = binocularsConfig'Common'Nexusdir common
   let tmpl = binocularsConfig'Common'Tmpl common
-  let maskMatrix = binocularsConfig'Common'Maskmatrix common
   let mSkipFirstPoints = binocularsConfig'Common'SkipFirstPoints common
   let mSkipLastPoints = binocularsConfig'Common'SkipLastPoints common
 
@@ -186,7 +185,6 @@ processAnglesP = do
   -- built from the config
   output' <- liftIO $ destination' projectionType Nothing inputRange mlimits destination overwrite
   filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
-  mask' <- getMask maskMatrix det
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot Normalisation
   let fns = concatMap (replicate 1) (toList filenames)
   chunks <- liftIO $ runSafeT $ toListM $ each fns >-> chunkP mSkipFirstPoints mSkipLastPoints datapaths
@@ -207,7 +205,7 @@ processAnglesP = do
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
     >-> framesP datapaths
-    >-> project det 3 (spaceAngles det pixels res mask' mlimits sampleAxis)
+    >-> project det 3 (spaceAngles det pixels res mlimits sampleAxis)
     >-> accumulateP c
 
   logDebugN "stop gessing final cube size"
@@ -222,8 +220,8 @@ processAnglesP = do
                              each job
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              >-> framesP datapaths
-                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _ _) -> filterSumImage mImageSumMax img)
-                             >-> project det 3 (spaceAngles det pixels res mask' mlimits sampleAxis)
+                             >-> Pipes.Prelude.filter (\(DataFrameQCustom _ _ img _ _ _) -> filterSumImage mImageSumMax img)
+                             >-> project det 3 (spaceAngles det pixels res mlimits sampleAxis)
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs

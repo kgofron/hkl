@@ -54,7 +54,6 @@ import           Hkl.C.Binoculars
 import           Hkl.C.Hkl
 import           Hkl.Exception
 import           Hkl.Repa
-
 data PyFAI deriving (Eq, Show)
 data Hkl deriving (Eq, Show)
 data ZeroD deriving (Eq, Show)

@@ -177,6 +177,10 @@ instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Word16 ds det buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Word32 ds det buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
 
+instance Is1DStreamable (DataSourceAcq Mask) (Maybe Mask) where
+    extract1DStreamValue (DataSourceAcq'Mask'NoMask) _ = returnIO Nothing
+    extract1DStreamValue (DataSourceAcq'Mask m) _      = returnIO (Just m)
+
 instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
   extract1DStreamValue (DataSourceAcq'Timestamp ds) i = Timestamp <$> extract1DStreamValue ds i
   extract1DStreamValue DataSourceAcq'Timestamp'NoTimestamp _ = returnIO $ Timestamp 0
@@ -369,6 +373,31 @@ instance DataSource Int where
     = DataSourceAcq'Int Int
 
   withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)
+
+-- Mask
+
+instance DataSource Mask where
+    data DataSourcePath Mask
+        = DataSourcePath'Mask'NoMask
+        | DataSourcePath'Mask MaskLocation (Detector Hkl DIM2)
+          deriving (Generic, Show)
+          deriving anyclass (FromJSON, ToJSON)
+
+    data DataSourceAcq Mask
+        = DataSourceAcq'Mask Mask
+        | DataSourceAcq'Mask'NoMask
+
+    withDataSourceP _ DataSourcePath'Mask'NoMask g = g DataSourceAcq'Mask'NoMask
+    withDataSourceP _ (DataSourcePath'Mask l d) g
+        = do  mm <- getMask (Just l) d
+              case mm of
+                Nothing  -> g DataSourceAcq'Mask'NoMask
+                (Just m) -> g (DataSourceAcq'Mask m)
+
+
+              --       withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
+
+              -- g (DataSourceAcq'Mask mm)
 
 -- Timestamp
 

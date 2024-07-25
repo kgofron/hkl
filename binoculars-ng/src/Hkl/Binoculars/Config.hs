@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -98,6 +100,7 @@ import           Data.Typeable                     (Proxy (..), Typeable,
 import           GHC.Conc                          (getNumCapabilities,
                                                     getNumProcessors)
 import           GHC.Exts                          (IsList (..))
+import           GHC.Generics                      (Generic)
 import           Numeric.Interval                  (Interval, empty, hull, inf,
                                                     singleton, singular, sup,
                                                     (...))
@@ -308,7 +311,8 @@ getCapabilities = Capabilities
 -- ConfigRange
 
 newtype ConfigRange = ConfigRange (NonEmpty InputRange)
-  deriving (Eq, Show, IsList)
+  deriving (Eq, Show)
+  deriving newtype (IsList)
 
 instance Arbitrary ConfigRange where
   arbitrary = ConfigRange <$> ((:|) <$> arbitrary <*> arbitrary)
@@ -576,7 +580,9 @@ instance Arbitrary Limits where
 -- MaskLocation
 
 newtype MaskLocation = MaskLocation { unMaskLocation :: Text }
-    deriving (Eq, Show, IsString)
+    deriving (Eq, Generic, Show)
+    deriving anyclass (FromJSON, ToJSON)
+    deriving newtype (IsString)
 
 instance Arbitrary MaskLocation where
   arbitrary = pure $ MaskLocation "mask location"

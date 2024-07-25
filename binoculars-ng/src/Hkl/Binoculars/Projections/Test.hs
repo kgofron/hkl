@@ -179,14 +179,14 @@ instance HasIniConfig 'TestProjection where
 ----------------
 
 {-# INLINE spaceTest #-}
-spaceTest :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe Mask -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameTest' Identity -> IO (DataFrameSpace DIM3)
-spaceTest det pixels rs mmask' mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameTest (DataFrameQCustom att g img _ _) samplePath) = do
+spaceTest :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameTest' Identity -> IO (DataFrameSpace DIM3)
+spaceTest det pixels rs mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameTest (DataFrameQCustom att g img mmask _ _) samplePath) = do
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withSample samplePath $ \sample ->
     withForeignPtr (toForeignPtr pixels) $ \pix ->
     withResolutions rs $ \nr r ->
-    withMaybeMask mmask' $ \ mask'' ->
+    withMaybeMask mmask $ \ mask'' ->
     withPixelsDims pixels $ \ndim dims ->
     withMaybeLimits mlimits rs $ \nlimits limits ->
     withForeignPtr fSpace $ \pSpace -> do
@@ -222,7 +222,6 @@ processTestP = do
   let inputRange = binocularsConfig'Common'InputRange common
   let nexusDir = binocularsConfig'Common'Nexusdir common
   let tmpl = binocularsConfig'Common'Tmpl common
-  let maskMatrix = binocularsConfig'Common'Maskmatrix common
   let mSkipFirstPoints = binocularsConfig'Common'SkipFirstPoints common
   let mSkipLastPoints = binocularsConfig'Common'SkipLastPoints common
   let doPolarizationCorrection = binocularsConfig'Common'PolarizationCorrection common
@@ -237,7 +236,6 @@ processTestP = do
   -- built from the config
   output' <- liftIO $ destination' projectionType Nothing inputRange mlimits destination overwrite
   filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
-  mask' <- getMask maskMatrix det
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot NoNormalisation
 
   let fns = concatMap (replicate 1) (toList filenames)
@@ -259,7 +257,7 @@ processTestP = do
     each chunks
     >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f, quot (f + t) 4, quot (f + t) 4 * 2, quot (f + t) 4 * 3, t]))
     >-> framesP datapaths
-    >-> project det 3 (spaceTest det pixels res mask' mlimits doPolarizationCorrection)
+    >-> project det 3 (spaceTest det pixels res mlimits doPolarizationCorrection)
     >-> accumulateP c
 
   logDebugN "stop gessing final cube size"
@@ -273,8 +271,8 @@ processTestP = do
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              -- >-> tee Pipes.Prelude.print
                              >-> framesP datapaths
-                             >-> Pipes.Prelude.filter (\(DataFrameTest (DataFrameQCustom _ _ img _ _) _) -> filterSumImage mImageSumMax img)
-                             >-> project det 3 (spaceTest det pixels res mask' mlimits doPolarizationCorrection)
+                             >-> Pipes.Prelude.filter (\(DataFrameTest (DataFrameQCustom _ _ img _ _ _) _) -> filterSumImage mImageSumMax img)
+                             >-> project det 3 (spaceTest det pixels res mlimits doPolarizationCorrection)
                              >-> tee (accumulateP c)
                              >-> progress pb
                          ) jobs
