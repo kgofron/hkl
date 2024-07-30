@@ -47,28 +47,122 @@ static herr_t save_string(hid_t group_id, const char *name, const char* config)
 {
         hid_t dataset_id;
         hid_t dataspace_id;
-        herr_t status;
+        hid_t filetype;
+        hid_t memtype;
+        herr_t status = EXIT_SUCCESS;
         hsize_t dims[] = {1};
 
-        hid_t filetype = H5Tcopy (H5T_C_S1);
-        status = H5Tset_size (filetype, strlen(config));
-        hid_t memtype = H5Tcopy (H5T_C_S1);
-        status = H5Tset_size (memtype, strlen(config));
+        if ((filetype = H5Tcopy (H5T_C_S1)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_filetype;
+        }
 
+        if (H5Tset_size (filetype, strlen(config)) < 0){
+                status = EXIT_FAILURE;
+                goto fail_memtype;
+        }
 
-        dataspace_id = H5Screate_simple(1, dims, NULL);
-        dataset_id = H5Dcreate (group_id, "config",
-                                filetype, dataspace_id,
-                                H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite (dataset_id, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, config);
+        if ((memtype = H5Tcopy (H5T_C_S1)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_memtype;
+        }
 
-        status = H5Dclose(dataset_id);
-        status = H5Sclose(dataspace_id);
-        status = H5Tclose(memtype);
-        status = H5Tclose(filetype);
+        if (H5Tset_size (memtype, strlen(config)) < 0){
+                status = EXIT_FAILURE;
+                goto fail_dataspace_id;
+        }
 
+        if ((dataspace_id = H5Screate_simple(1, dims, NULL)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_dataspace_id;
+        }
+
+        if ((dataset_id = H5Dcreate (group_id, "config",
+                                     filetype, dataspace_id,
+                                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_dataset_id;
+        }
+
+        if (H5Dwrite (dataset_id, memtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, config) < 0){
+                status = EXIT_FAILURE;
+        }
+
+        H5Dclose(dataset_id);
+fail_dataset_id:
+        H5Sclose(dataspace_id);
+fail_dataspace_id:
+        H5Tclose(memtype);
+fail_memtype:
+        H5Tclose(filetype);
+fail_filetype:
         return status;
 }
+
+static herr_t add_dataset(hid_t id, const char *name, hid_t type,
+                          hid_t space_id, void *arr)
+{
+        herr_t status = EXIT_SUCCESS;
+        hid_t dataset_id;
+
+        if ((dataset_id = H5Dcreate(id, name,
+                                    type, space_id,
+                                    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_dataset_id;
+        }
+
+        if ((status = H5Dwrite(dataset_id, type,
+                               H5S_ALL, H5S_ALL,
+                               H5P_DEFAULT, arr)) < 0){
+                status = EXIT_FAILURE;
+        }
+
+        H5Dclose(dataset_id);
+fail_dataset_id:
+        return status;
+}
+
+static herr_t add_dataset_from_axes(hid_t id, const char *name, hid_t type,
+                                    const darray_axis *axes, void *arr)
+{
+        herr_t status = EXIT_SUCCESS;
+        hid_t space_id;
+
+        if ((space_id = create_dataspace_from_axes(axes)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_space_id;
+        }
+
+        if (add_dataset(id, name, type, space_id, arr) < 0){
+                status = EXIT_FAILURE;
+        }
+
+        H5Sclose(space_id);
+fail_space_id:
+        return status;
+}
+
+static herr_t add_dataset_from_dims(hid_t id, const char *name, hid_t type,
+	                            hsize_t ndims, hsize_t *dims, void *arr)
+{
+        herr_t status = EXIT_SUCCESS;
+        hid_t space_id;
+
+        if ((space_id = H5Screate_simple(ndims, dims, NULL)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_space_id;
+        }
+
+        if (add_dataset(id, name, type, space_id, arr) < 0){
+                status = EXIT_FAILURE;
+        }
+
+        H5Sclose(space_id);
+fail_space_id:
+        return status;
+}
+
 
 void hkl_binoculars_cube_save_hdf5(const char *fn,
                                    const char *config,
@@ -78,80 +172,86 @@ void hkl_binoculars_cube_save_hdf5(const char *fn,
         hid_t file_id;
         hid_t groupe_id;
         hid_t groupe_axes_id;
-        hid_t dataset_id;
-        hid_t dataspace_id;
-        herr_t status;
+        herr_t status = EXIT_SUCCESS;
         HklBinocularsAxis *axis;
 
-        file_id = H5Fcreate(fn, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        if ((file_id = H5Fcreate(fn, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_file_id;
+        }
 
-        groupe_id = H5Gcreate(file_id, "binoculars",
-                              H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if ((groupe_id = H5Gcreate(file_id, "binoculars",
+                                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) == H5I_INVALID_HID){
+                status = EXIT_FAILURE;
+                goto fail_group_id;
+        }
 
         // config
-        status = save_string(groupe_id, "config", config);
+        if ((status = save_string(groupe_id, "config", config)) < 0){
+                status = EXIT_FAILURE;
+                goto fail_groupe_axes_id;
+        }
 
         // axes
-        groupe_axes_id = H5Gcreate(groupe_id, "axes",
-                                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if ((groupe_axes_id = H5Gcreate(groupe_id, "axes",
+                                        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) == H5I_INVALID_HID)
+        {
+                status = EXIT_FAILURE;
+                goto fail_groupe_axes_id;
+        };
 
         darray_foreach(axis, self->axes){
                 double *arr;
-                hid_t dataspace_id;
-                hid_t dataset_id;
+                int do_break = 0;
                 hsize_t dims[] = {6};
 
                 if(axis_size(axis) > 1){
-                        arr = hkl_binoculars_axis_array(axis);
+                        if ((arr = hkl_binoculars_axis_array(axis)) == NULL){
+                                status = EXIT_FAILURE;
+                                do_break = 1;
+                                goto fail_arr;
+                        }
                         /* the arr[0] contains the axis index expected
                            by the binoculars gui. This value must
                            start from zero, so compute this index
                            using an external counter instead of using
                            the original index stored in the axis
-                           array. */
+                           array. We need this trick because we remove
+                           all axes with a dimension of 1*/
                         arr[0] = axis_idx++;
-                        dataspace_id = H5Screate_simple(ARRAY_SIZE(dims), dims, NULL);
-                        dataset_id = H5Dcreate(groupe_axes_id, g_quark_to_string(axis->name),
-                                               H5T_NATIVE_DOUBLE, dataspace_id,
-                                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-                        status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE,
-                                          H5S_ALL, H5S_ALL,
-                                          H5P_DEFAULT, arr);
-                        status = H5Dclose(dataset_id);
-                        status = H5Sclose(dataspace_id);
+
+                        if (add_dataset_from_dims(groupe_axes_id, g_quark_to_string(axis->name), H5T_NATIVE_DOUBLE, ARRAY_SIZE(dims), dims, arr) < 0){
+                                status = EXIT_FAILURE;
+                                do_break = 1;
+                        }
+
                         free(arr);
+                fail_arr:
                 }
+                if (do_break) break;
+        }
+        if(status == EXIT_FAILURE){
+                goto fail;
         }
 
-        status = H5Gclose(groupe_axes_id);
+        // count
+        if (add_dataset_from_axes(groupe_id, "count", H5T_NATIVE_UINT32, &self->axes, self->photons) < 0){
+                status = EXIT_FAILURE;
+                goto fail;
+        }
 
-        // create count dataset
-        dataspace_id = create_dataspace_from_axes(&self->axes);
-        dataset_id = H5Dcreate(groupe_id, "counts",
-                               H5T_NATIVE_UINT32, dataspace_id,
-                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT32,
-                          H5S_ALL, H5S_ALL,
-                          H5P_DEFAULT, self->photons);
-        status = H5Dclose(dataset_id);
-        status = H5Sclose(dataspace_id);
+        // contributions
+        if (add_dataset_from_axes(groupe_id, "contributions", H5T_NATIVE_UINT32, &self->axes, self->contributions) < 0){
+                status = EXIT_FAILURE;
+        }
 
-        // create contributions dataset
-        dataspace_id = create_dataspace_from_axes(&self->axes);
-        dataset_id = H5Dcreate(groupe_id, "contributions",
-                               H5T_NATIVE_UINT32, dataspace_id,
-                               H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_NATIVE_UINT32,
-                          H5S_ALL, H5S_ALL,
-                          H5P_DEFAULT, self->contributions);
-        status = H5Dclose(dataset_id);
-        status = H5Sclose(dataspace_id);
-
-        // terminate access and free identifiers
-        status = H5Gclose(groupe_id);
-        status = H5Fclose(file_id);
-
-        hkl_assert(status >= 0);
+fail:
+        H5Gclose(groupe_axes_id);
+fail_groupe_axes_id:
+        H5Gclose(groupe_id);
+fail_group_id:
+        H5Fclose(file_id);
+fail_file_id:
 }
 
 
