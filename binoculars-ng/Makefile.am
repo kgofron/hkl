@@ -136,6 +136,9 @@ diffabs: binoculars-ng
 	$(PROCESS) data/test/config_diffabs_ruche_cirpad.ini 26-30
 	$(PROCESS) data/test/config_diffabs_ruche_cirpad.ini 31-37
 
+grades: binoculars-ng
+	$(PROCESS) data/test/config_grades_local_20231857.ini 356-390
+
 mars: binoculars-ng
 #	$(PROCESS) data/test/config_mars_ruche_rel_flyscan.ini
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2021_Run5/20191020/binoculars/config_qxqyqz.ini 173
