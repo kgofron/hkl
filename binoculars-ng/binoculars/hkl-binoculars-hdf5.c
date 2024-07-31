@@ -25,7 +25,7 @@
 #include "hkl/hkl-macros-private.h"
 #include "hkl-binoculars-private.h"
 
-static hid_t create_dataspace_from_axes(const darray_axis *axes)
+static hid_t dataspace_new_from_axes(const darray_axis *axes)
 {
         HklBinocularsAxis *axis;
         hid_t hid;
@@ -38,6 +38,7 @@ static hid_t create_dataspace_from_axes(const darray_axis *axes)
         }
 
         hid = H5Screate_simple(darray_size(dims), &darray_item(dims, 0), NULL);
+
         darray_free(dims);
 
         return hid;
@@ -129,7 +130,7 @@ static herr_t add_dataset_from_axes(hid_t id, const char *name, hid_t type,
         herr_t status = EXIT_SUCCESS;
         hid_t space_id;
 
-        if ((space_id = create_dataspace_from_axes(axes)) == H5I_INVALID_HID){
+        if ((space_id = dataspace_new_from_axes(axes)) == H5I_INVALID_HID){
                 status = EXIT_FAILURE;
                 goto fail_space_id;
         }
