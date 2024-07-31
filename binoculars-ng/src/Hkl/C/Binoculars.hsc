@@ -103,7 +103,7 @@ cube'MergeAndSave output config fns =
 #ccall hkl_binoculars_cube_new_empty, IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_empty_from_cube, Ptr <HklBinocularsCube> -> IO (Ptr <HklBinocularsCube>)
 #ccall hkl_binoculars_cube_new_from_file, CString -> IO (Ptr <HklBinocularsCube>)
-#ccall hkl_binoculars_cube_save_hdf5, CString -> CString -> Ptr <HklBinocularsCube> -> IO ()
+#ccall hkl_binoculars_cube_save_hdf5, CString -> CString -> Ptr <HklBinocularsCube> -> IO CInt
 
 --------------
 -- Detector --

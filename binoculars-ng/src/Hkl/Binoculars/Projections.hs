@@ -28,7 +28,7 @@ module Hkl.Binoculars.Projections
    ) where
 
 import           Control.Monad              (zipWithM)
-import           Control.Monad.Catch        (MonadThrow)
+import           Control.Monad.Catch        (MonadThrow, throwM)
 import           Control.Monad.IO.Class     (MonadIO (liftIO))
 import           Control.Monad.Logger       (MonadLogger, logDebugN)
 import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
@@ -49,6 +49,7 @@ import           Prelude                    hiding (drop)
 import           Hkl.Binoculars.Config
 import           Hkl.C
 import           Hkl.Detector
+import           Hkl.Exception
 import           Hkl.Orphan                 ()
 import           Hkl.Repa
 import           Hkl.Utils                  hiding (withCString)
@@ -77,16 +78,20 @@ withNPixels d f = f (toEnum . size . shape $ d)
 withPixelsDims :: Array F DIM3 Double -> (Int -> Ptr CSize -> IO r) -> IO r
 withPixelsDims p = withArrayLen (map toEnum $ listOfShape . extent $ p)
 
-saveCube :: Shape sh => FilePath -> String -> [Cube sh] -> IO ()
+saveCube :: (MonadIO m, MonadThrow m, Shape sh)
+         => FilePath -> String -> [Cube sh] -> m ()
 saveCube o conf rs = do
   let c = mconcat rs
   case c of
-    (Cube fp) ->
+    (Cube fp) -> liftIO $
       withCString o $ \fn ->
       withCString conf $ \config ->
-      withForeignPtr fp $ \p ->
-            c'hkl_binoculars_cube_save_hdf5 fn config p
-    EmptyCube -> return ()
+      withForeignPtr fp $ \p -> do
+      status <- c'hkl_binoculars_cube_save_hdf5 fn config p
+      if status < 0
+        then throwM SaveCube'Failed
+        else pure ()
+    EmptyCube -> throwM SaveCube'IsEmpty
 
 newLimits :: Limits -> Double -> IO (ForeignPtr C'HklBinocularsAxisLimits)
 newLimits (Limits mmin mmax) res =

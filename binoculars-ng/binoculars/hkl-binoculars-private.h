@@ -29,6 +29,8 @@
 #include "hkl-binoculars.h"
 #include "hkl-geometry-private.h"
 
+#define SUCCEED 0
+
 /********/
 /* Axis */
 /********/

@@ -26,6 +26,13 @@ data HklBinocularsException
     deriving (Show, Typeable)
 instance Exception HklBinocularsException
 
+data HklBinocularsProjectionsException
+    = SaveCube'Failed
+    | SaveCube'IsEmpty
+    deriving (Show, Typeable)
+
+instance Exception HklBinocularsProjectionsException
+
 data HklBinocularsProjectionsQCustomException
     = MissingAttenuationCoefficient
     | MissingInputRange
