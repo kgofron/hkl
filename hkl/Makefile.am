@@ -34,6 +34,7 @@ hkl_c_sources = \
 	hkl-pseudoaxis-common-readonly.c \
 	hkl-pseudoaxis-common-tth.c \
 	hkl-engine-2c.c \
+	hkl-engine-aps-04id-polar.c \
 	hkl-engine-e4c.c \
 	hkl-engine-k4c.c \
 	hkl-engine-e6c.c \
