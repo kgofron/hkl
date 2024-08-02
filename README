@@ -5,6 +5,6 @@ To build you need
 	gtkmm >= 2.18  (gui -- optional)		http://www.gtkmm.org
 	libg3d	       (gui -- optional)		http://automagically.de/g3dviewer/
 	libyaml	       (gui -- optional)		http://pyyaml.org/wiki/LibYAML
-	gtk-doc >= 1.9 (doc -- optional)		http://www.gtk.org/gtk-doc/
+	gtk-doc >= 1.9 (doc -- required)		http://www.gtk.org/gtk-doc/
 	povray	       (doc -- optional)		http://www.povray.org/
 	asymptote      (doc -- optional)		http://asymptote.sourceforge.net/
