@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019, 2022 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2022, 2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -1649,11 +1649,13 @@ update_ux_uy_uz (HklGuiWindow* self)
 }
 
 #define set_UB(i, j) do{						\
-		gtk_label_set_markup(priv->label_UB ## i ## j,		\
-				     g_ascii_formatd(text,		\
-						     G_ASCII_DTOSTR_BUF_SIZE, \
-						     "<tt> %+.4f </tt>", \
-						     hkl_matrix_get(UB, i - 1, j - 1))); \
+		gdouble	value = hkl_matrix_get(UB, i - 1, j - 1);	\
+		const char *format = "<tt> %+.4f </tt>";		\
+		gchar *markup;						\
+		markup = g_markup_printf_escaped (format, value);	\
+		gtk_label_set_markup(GTK_LABEL (priv->label_UB ## i ## j), \
+				     markup);				\
+		g_free(markup);						\
 	}while(0)
 
 static void
