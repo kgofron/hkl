@@ -10,9 +10,10 @@
    - c-tap-hardness library was embeded to provide the unit test
      framework.
    - gobject-instrospection provide the binding support. Look at this
-     [[https://wiki.gnome.org/action/show/Projects/GObjectIntrospection][page]] for more informations.
+     [[https://gi.readthedocs.io/en/latest/][page]] for more informations.
    - Documentation was generated with org-mode and asymptote for the figures.
    - New diffractometers added
+     - APS POLAR thanks to Pete R. Jemian <jemian@anl.gov>.
      - E4CH (eulerian 4 circles horizontal) geometry.
      - MARS beamline (SOLEIL) eulerian 4 circles vertical geometry.
      - SOLEIL SIRIUS KAPPA
@@ -35,7 +36,7 @@
 ** Bindings
    - Provide the garantie via unit tests that the python API will be
      stable during all the 5.x lifetime.
-   - For other languages look at [[https://wiki.gnome.org/Projects/GObjectIntrospection/][here]].
+   - For other languages look at [[https://gi.readthedocs.io/en/latest/users.html][here]].
 
 * 4.0.4	UNRELEASED
 	* add the SOLEIL SIXS MED2+2 diffractometer
