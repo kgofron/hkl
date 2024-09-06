@@ -161,7 +161,7 @@ default'DataSourcePath'DataFrameQCustom
     (DataSourcePath'Image
       (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
       defaultDetector)
-    (DataSourcePath'Mask "" defaultDetector)
+    (DataSourcePath'Mask (MaskLocation "") defaultDetector)
     (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
     (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 

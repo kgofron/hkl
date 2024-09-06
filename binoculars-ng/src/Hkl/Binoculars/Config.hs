@@ -86,7 +86,6 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     text, (.=))
 import           Data.List                         (find, isInfixOf, length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
-import           Data.String                       (IsString (..))
 import           Data.Text                         (Text, breakOn, cons, drop,
                                                     empty, findIndex,
                                                     intercalate, length, lines,
@@ -583,9 +582,6 @@ data MaskLocation = MaskLocation { unMaskLocation :: Text }
     deriving (Eq, Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
 
-instance IsString MaskLocation where
-  fromString = MaskLocation . fromString
-
 instance FieldEmitter MaskLocation where
   fieldEmitter = unMaskLocation
 
@@ -985,8 +981,8 @@ files md mr mt
 getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> m (Maybe Mask)
 getMask ml d = case ml of
                 Nothing          -> return Nothing
-                (Just "default") -> Just <$> getDetectorDefaultMask d
-                (Just fname)     -> Just <$> getDetectorMask d (unMaskLocation fname)
+                (Just (MaskLocation "default")) -> Just <$> getDetectorDefaultMask d
+                (Just (MaskLocation fname))     -> Just <$> getDetectorMask d fname
 
 getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig
 getPreConfig' (ConfigContent cfg) = do
