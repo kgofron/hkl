@@ -152,8 +152,8 @@ mars: binoculars-ng
 #	$(PROCESS) /nfs/ruche/mars-soleil/com-mars/2024_Run1/HR_XRD_CX2/binoculars/config_qxqyqz.ini 473
 # TODO, de simages ont un drole de pattern, il faut donc pouvoir supprimer des images dans un scan donné.
 # TODO, une idée pourrait être d'associer un masque spécifique à un point de scan.
-	$(MERGE) -o merge.hdf5 scan*.hdf5
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 73-82
+#	$(MERGE) -o merge.hdf5 scan*.hdf5
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 73-82
 #	$(PROCESS) data/test/config_mars_ruche_20232102.ini 100-111
 #	$(PROCESS) data/test/config_mars_ruche_20232102.ini 129-138
 #	$(PROCESS) data/test/config_mars_ruche_20232102.ini 158-167

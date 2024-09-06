@@ -86,7 +86,7 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     text, (.=))
 import           Data.List                         (find, isInfixOf, length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
-import           Data.String                       (IsString)
+import           Data.String                       (IsString (..))
 import           Data.Text                         (Text, breakOn, cons, drop,
                                                     empty, findIndex,
                                                     intercalate, length, lines,
@@ -579,19 +579,21 @@ instance Arbitrary Limits where
 
 -- MaskLocation
 
-newtype MaskLocation = MaskLocation { unMaskLocation :: Text }
+data MaskLocation = MaskLocation { unMaskLocation :: Text }
     deriving (Eq, Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
-    deriving newtype (IsString)
 
-instance Arbitrary MaskLocation where
-  arbitrary = pure $ MaskLocation "mask location"
+instance IsString MaskLocation where
+  fromString = MaskLocation . fromString
+
+instance FieldEmitter MaskLocation where
+  fieldEmitter = unMaskLocation
+
+instance FieldParsable MaskLocation where
+  fieldParser = MaskLocation <$> takeText
 
 instance HasFieldValue MaskLocation where
-  fieldvalue = FieldValue
-    { fvParse = mapRight MaskLocation . fvParse text
-    , fvEmit = \(MaskLocation m) -> fvEmit text m
-    }
+  fieldvalue = parsable
 
 -- Meter
 
