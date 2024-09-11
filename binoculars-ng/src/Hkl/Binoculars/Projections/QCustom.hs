@@ -385,7 +385,10 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _)
         det
       HklBinocularsDetectorEnum'Merlin -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
-      HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
+      HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 ->
+        DataSourcePath'Image
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
+        det
       HklBinocularsDetectorEnum'Cirpad -> undefined
 
 mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourcePath Image
