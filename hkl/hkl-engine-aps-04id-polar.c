@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2019 Synchrotron SOLEIL
+ * Copyright (C) 2003-2019, 2024 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  * Copyright (C) 2023-2024  UChicago Argonne, LLC
@@ -226,7 +226,7 @@ static HklMode *lifting_detector_tau()
 	static const char *axes_w[] = {TAU, GAMMA, DELTA};
 	static const HklFunction *functions[] = {&RUBh_minus_Q_func};
 	static const HklModeAutoInfo info = {
-		HKL_MODE_AUTO_INFO("lifting detector mu", axes_r, axes_w, functions),
+		HKL_MODE_AUTO_INFO("lifting detector tau", axes_r, axes_w, functions),
 	};
 
 	return hkl_mode_auto_new(&info,
