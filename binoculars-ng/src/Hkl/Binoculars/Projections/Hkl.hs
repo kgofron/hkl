@@ -71,11 +71,9 @@ import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
-import           Hkl.H5
 import           Hkl.HKD
 import           Hkl.Image
 import           Hkl.Orphan                         ()
-import           Hkl.Pipes
 import           Hkl.Repa
 import           Hkl.Sample
 import           Hkl.Utils
@@ -184,7 +182,7 @@ instance HasIniConfig 'HklProjection where
 
 {-# INLINE spaceHkl #-}
 spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameHkl' Identity -> IO (DataFrameSpace DIM3)
-spaceHkl det pixels rs mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img mmask _ _) samplePath) = do
+spaceHkl det pixels rs mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img mmask _ _ _) samplePath) = do
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
     withSample samplePath $ \sample ->
@@ -239,7 +237,7 @@ processHklP = do
 
   -- built from the config
   output' <- liftIO $ destination' projectionType Nothing inputRange mlimits destination overwrite
-  filenames <- InputFn'List <$> files nexusDir (Just inputRange) tmpl
+  filenames <- InputFn'List <$> files nexusDir inputRange tmpl
   pixels <- liftIO $ getPixelsCoordinates det centralPixel' sampleDetectorDistance detrot NoNormalisation
 
   let fns = concatMap (replicate 1) (toList filenames)
@@ -275,7 +273,7 @@ processHklP = do
                              >-> Pipes.Prelude.map (\(Chunk fn f t) -> (fn, [f..t]))
                              -- >-> tee Pipes.Prelude.print
                              >-> framesP datapaths
-                             >-> Pipes.Prelude.filter (\(DataFrameHkl (DataFrameQCustom _ _ img _ _ _) _) -> filterSumImage mImageSumMax img)
+                             >-> Pipes.Prelude.filter (\(DataFrameHkl (DataFrameQCustom _ _ img _ _ _ _) _) -> filterSumImage mImageSumMax img)
                              >-> project det 3 (spaceHkl det pixels res mlimits doPolarizationCorrection)
                              >-> tee (accumulateP c)
                              >-> progress pb
@@ -290,7 +288,7 @@ instance ChunkP (DataFrameHkl' DataSourcePath) where
 instance FramesP (DataFrameHkl' DataSourcePath) (DataFrameHkl' Identity) where
   framesP (DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
-    withFileP (openFile' fp) $ \f ->
+    withScanFileP fp $ \f ->
       withDataSourceP f qcustom $ \qcustomAcq ->
       withDataSourceP f sample $ \sampleAcq ->
       forM_ js (\j -> tryYield ( DataFrameHkl

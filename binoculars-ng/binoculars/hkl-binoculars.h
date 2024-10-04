@@ -41,7 +41,7 @@ typedef enum _HklBinocularsDetectorEnum
         HKL_BINOCULARS_DETECTOR_MERLIN,
         HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD,
         HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512,
-        HKL_BINOCULARS_DETECTOR_CIRPAD,
+        /* HKL_BINOCULARS_DETECTOR_CIRPAD, */
         /* Add new your detectors here */
         HKL_BINOCULARS_DETECTOR_NUM_DETECTORS,
 } HklBinocularsDetectorEnum;
@@ -165,7 +165,7 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /***************/
 
 /* subprojection for QCustom */
-/* q_index / tth_index  ( index = numero du scan) (optional) */
+/* q_scannumber / tth_scannumber  ( scannumber = numero du scan) (optional) */
 /* q_timescan0 / tth_timescan0   (timescan0 = timestamp du 1er point du scan (constant pour 1 scan)) */
 
 /* Adding the polarization correction from fit2D */
@@ -220,6 +220,8 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH,
         HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESCAN0,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SCANNUMBER,
+        HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_SCANNUMBER,
         /* Add new your subprojection in the same order than the haskell order here */
         HKL_BINOCULARS_QCUSTOM_NUM_SUBPROJECTIONS,
 } HklBinocularsQCustomSubProjectionEnum;
@@ -241,6 +243,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
                                                        size_t n_limits, \
                                                        double timestamp, \
                                                        double timescan0, \
+                                                       int scannumber,  \
                                                        const HklBinocularsQCustomSubProjectionEnum subprojection, \
                                                        double uqx,      \
                                                        double uqy,      \

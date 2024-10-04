@@ -172,4 +172,6 @@ merge: binoculars-ng
 
 sixs: binoculars-ng
 #	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2020/Run4/20200116_Jeridi/binoculars/config.cfg 496,546
-	$(PROCESS) data/test/config_sixs_ruche_20231857.ini 356-390
+#	$(PROCESS) data/test/config_sixs_ruche_20231857.ini 356-390
+	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2024/Run4/Leroy_20240307/binoculars/config_qindex.cfg 228-230
+#	$(PROCESS) /nfs/ruche-sixs/sixs-soleil/com-sixs/2024/Run4/Leroy_20240307/binoculars/config_qindex.cfg 228-237

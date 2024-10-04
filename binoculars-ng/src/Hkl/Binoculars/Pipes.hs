@@ -27,12 +27,14 @@ module Hkl.Binoculars.Pipes
   , tryYield
   , withProgressBar
   , withSpace
+  , withScanFileP
   ) where
 
 import           Control.Monad              (forever)
 import           Control.Monad.Catch        (tryJust)
 import           Control.Monad.IO.Class     (MonadIO (liftIO))
 import           Data.IORef                 (IORef, readIORef)
+import           Path                       (toFilePath)
 import           Pipes                      (Consumer, Pipe, Proxy, await,
                                              yield)
 import           Pipes.Prelude              (mapM)
@@ -50,17 +52,20 @@ import           Hkl.Binoculars.Projections
 import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
+import           Hkl.H5
+import           Hkl.Pipes
 import           Hkl.Repa
+import           Hkl.Types
 
 -- class ChunkP
 
 class ChunkP a where
-  chunkP :: MonadSafe m => Maybe Int -> Maybe Int -> a -> Pipe FilePath (Chunk Int FilePath) m ()
+  chunkP :: MonadSafe m => Maybe Int -> Maybe Int -> a -> Pipe ScanFilePath (Chunk Int ScanFilePath) m ()
 
 -- class FramesP
 class ChunkP a => FramesP a b where
   framesP :: MonadSafe m
-          => a -> Pipe (FilePath, [Int]) b m ()
+          => a -> Pipe (ScanFilePath, [Int]) b m ()
 
 -- Project
 
@@ -116,3 +121,11 @@ tryYield io = do
   where
     selectHklBinocularsException :: HklBinocularsException -> Maybe HklBinocularsException
     selectHklBinocularsException = Just
+
+
+withScanFileP :: (MonadSafe m)
+              => ScanFilePath
+              -> (ScanFile File -> Proxy a' a b' b m r)
+              -> Proxy a' a b' b m r
+withScanFileP (ScanFilePath fp sn) g
+  = withFileP (openFile' (toFilePath fp)) $ \f -> g (ScanFile f sn)

@@ -212,6 +212,8 @@ instance Enum HklBinocularsSurfaceOrientationEnum where
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH
 #num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESCAN0
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SCANNUMBER
+#num HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_SCANNUMBER
 
 data HklBinocularsQCustomSubProjectionEnum
   = HklBinocularsQCustomSubProjectionEnum'QxQyQz
@@ -236,6 +238,8 @@ data HklBinocularsQCustomSubProjectionEnum
   | HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp
   | HklBinocularsQCustomSubProjectionEnum'TthAzimuth
   | HklBinocularsQCustomSubProjectionEnum'QTimescan0
+  | HklBinocularsQCustomSubProjectionEnum'QScannumber
+  | HklBinocularsQCustomSubProjectionEnum'TthScannumber
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsQCustomSubProjectionEnum where
@@ -262,6 +266,8 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP = HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH = HklBinocularsQCustomSubProjectionEnum'TthAzimuth
     | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESCAN0 = HklBinocularsQCustomSubProjectionEnum'QTimescan0
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SCANNUMBER = HklBinocularsQCustomSubProjectionEnum'QScannumber
+    | n == c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_SCANNUMBER = HklBinocularsQCustomSubProjectionEnum'TthScannumber
     | otherwise = error "Non supported HklBinocularsQCustomSubProjectionEnum value"
 
   fromEnum HklBinocularsQCustomSubProjectionEnum'QxQyQz = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ
@@ -286,6 +292,8 @@ instance Enum HklBinocularsQCustomSubProjectionEnum where
   fromEnum HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QY_QZ_TIMESTAMP
   fromEnum HklBinocularsQCustomSubProjectionEnum'TthAzimuth = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_AZIMUTH
   fromEnum HklBinocularsQCustomSubProjectionEnum'QTimescan0 = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_TIMESCAN0
+  fromEnum HklBinocularsQCustomSubProjectionEnum'QScannumber = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_SCANNUMBER
+  fromEnum HklBinocularsQCustomSubProjectionEnum'TthScannumber = c'HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_SCANNUMBER
 
 #opaque_t HklBinocularsSpace
 
@@ -337,6 +345,7 @@ type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace 
  -> CSize -- size_t n_limits
  -> CDouble -- double timestamp
  -> CDouble -- double timescan0
+ -> CInt -- int scannumber
  -> C'HklBinocularsQCustomSubProjectionEnum -- int subprojection
  -> CDouble -- uqx
  -> CDouble -- uqy

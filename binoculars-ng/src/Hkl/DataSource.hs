@@ -108,6 +108,9 @@ instance Is0DStreamable (DataSourceAcq Double) Double where
   extract0DStreamValue (DataSourceAcq'Double d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Double'Const a) = pure a
 
+instance Is0DStreamable (DataSourceAcq Scannumber) Scannumber where
+  extract0DStreamValue (DataSourceAcq'Scannumber'Const sn) = pure sn
+
 instance Is0DStreamable (DataSourceAcq Timescan0) Timescan0 where
   extract0DStreamValue (DataSourceAcq'Timescan0 ds) = Timescan0 <$> extract0DStreamValue ds
   extract0DStreamValue DataSourceAcq'Timescan0'NoTimescan0 = returnIO $ Timescan0 0
@@ -194,10 +197,10 @@ class DataSource a where
   data DataSourceAcq a :: Type
 
   withDataSourceP :: (Location l, MonadSafe m)
-                    => l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+                    => ScanFile l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
 
   withDataSourcePOr :: (Location l, MonadSafe m)
-                      => l -> DataSourcePath a -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+                    => ScanFile l -> DataSourcePath a -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
   withDataSourcePOr f l r g = withDataSourceP f l g
                               `catch`
                               \exl -> withDataSourceP f r g
@@ -244,7 +247,8 @@ instance DataSource Degree where
     = DataSourceAcq'Degree Dataset
     | DataSourceAcq'Degree'Const Degree
 
-  withDataSourceP f (DataSourcePath'Degree p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
+  withDataSourceP (ScanFile f _) (DataSourcePath'Degree p) g
+    = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
   withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
 
 -- Double
@@ -261,7 +265,7 @@ instance DataSource Double where
     = DataSourceAcq'Double Dataset
     | DataSourceAcq'Double'Const Double
 
-  withDataSourceP f (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> do
+  withDataSourceP (ScanFile f _) (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> do
     space <- liftIO $ getDatasetSpace ds
     l <- liftIO $ getSimpleDataspaceExtentNPoints space
     case l of
@@ -304,7 +308,7 @@ instance DataSource Float where
   newtype DataSourceAcq Float
     = DataSourceAcq'Float Dataset
 
-  withDataSourceP f (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
+  withDataSourceP (ScanFile f _) (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
 
 -- Geometry
 
@@ -346,7 +350,7 @@ instance DataSource Image where
                                     | DataSourceAcq'Image'Word16 Dataset (Detector Hkl DIM2) (IOVector Word16)
                                     | DataSourceAcq'Image'Word32 Dataset (Detector Hkl DIM2) (IOVector Word32)
 
-  withDataSourceP f (DataSourcePath'Image p det) g = withHdf5PathP f p $ \ds -> do
+  withDataSourceP (ScanFile f _) (DataSourcePath'Image p det) g = withHdf5PathP f p $ \ds -> do
     t <- liftIO $ getDatasetType ds
     s <- liftIO $ getTypeSize t
     let n = (size . shape $ det) * fromEnum s
@@ -399,6 +403,18 @@ instance DataSource Mask where
 
               -- g (DataSourceAcq'Mask mm)
 
+-- Scannumber
+
+instance DataSource Scannumber where
+  data DataSourcePath Scannumber
+    = DataSourcePath'Scannumber
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+  data DataSourceAcq Scannumber = DataSourceAcq'Scannumber'Const Scannumber
+
+  withDataSourceP (ScanFile _ s) DataSourcePath'Scannumber g = g (DataSourceAcq'Scannumber'Const s)
+
+
 -- Timestamp
 
 instance DataSource Timestamp where
@@ -410,7 +426,7 @@ instance DataSource Timestamp where
   data DataSourceAcq Timestamp = DataSourceAcq'Timestamp Dataset
                                | DataSourceAcq'Timestamp'NoTimestamp
 
-  withDataSourceP f (DataSourcePath'Timestamp p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timestamp ds)
+  withDataSourceP (ScanFile f _) (DataSourcePath'Timestamp p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timestamp ds)
   withDataSourceP _ DataSourcePath'Timestamp'NoTimestamp g = g DataSourceAcq'Timestamp'NoTimestamp
 
 -- Timescan0
@@ -424,5 +440,5 @@ instance DataSource Timescan0 where
   data DataSourceAcq Timescan0 = DataSourceAcq'Timescan0 Dataset
                                | DataSourceAcq'Timescan0'NoTimescan0
 
-  withDataSourceP f (DataSourcePath'Timescan0 p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timescan0 ds)
+  withDataSourceP (ScanFile f _) (DataSourcePath'Timescan0 p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timescan0 ds)
   withDataSourceP _ DataSourcePath'Timescan0'NoTimescan0 g = g DataSourceAcq'Timescan0'NoTimescan0

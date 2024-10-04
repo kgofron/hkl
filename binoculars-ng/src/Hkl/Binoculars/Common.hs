@@ -29,8 +29,6 @@ import           Control.Exception          (bracket)
 import           Data.IORef                 (IORef, newIORef, readIORef)
 import           Foreign.ForeignPtr         (withForeignPtr)
 import           Foreign.Marshal.Array      (withArrayLen)
-import           Path                       (Abs, File, Path, fromAbsFile)
-import           Text.Printf                (printf)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections
@@ -38,6 +36,7 @@ import           Hkl.C.Binoculars
 import           Hkl.Image
 import           Hkl.Orphan                 ()
 import           Hkl.Repa
+import           Hkl.Types
 
 data Chunk n a = Chunk !a !n !n
 deriving instance (Show n, Show a) => Show (Chunk n a)
@@ -79,10 +78,10 @@ chunk target = go target target
 
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
 
-toList :: InputFn -> [FilePath]
-toList (InputFn f)              = [f]
-toList (InputFn'Range tmpl f t) = [printf tmpl i | i <- [f..t]]
-toList (InputFn'List fs)        = map fromAbsFile fs
+toList :: InputFn -> [ScanFilePath]
+-- toList (InputFn f)              = [f]
+-- toList (InputFn'Range tmpl f t) = [printf tmpl i | i <- [f..t]]
+toList (InputFn'List fs)        = fs
 
 --  DataFrameSpace
 
@@ -108,11 +107,7 @@ addSpace (DataFrameSpace _ (Space fs) _) (Cube fp) =
   {-# SCC "hkl_binoculars_cube_add_space" #-} c'hkl_binoculars_cube_add_space cPtr spacePtr
   return $ Cube fp
 
-type Template = String
-
-data InputFn = InputFn FilePath
-             | InputFn'Range Template Int Int
-             | InputFn'List [Path Abs File]
+newtype InputFn =  InputFn'List [ScanFilePath]
   deriving Show
 
 withCubeAccumulator :: Shape sh => Cube sh -> (IORef (Cube sh)  -> IO ()) -> IO (Cube sh)

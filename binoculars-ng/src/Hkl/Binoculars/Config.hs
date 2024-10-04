@@ -86,6 +86,7 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     text, (.=))
 import           Data.List                         (find, isInfixOf, length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
+import           Data.Maybe                        (catMaybes)
 import           Data.Text                         (Text, breakOn, cons, drop,
                                                     empty, findIndex,
                                                     intercalate, length, lines,
@@ -106,10 +107,9 @@ import           Numeric.Interval                  (Interval, empty, hull, inf,
 import           Numeric.Units.Dimensional.NonSI   (angstrom)
 import           Numeric.Units.Dimensional.Prelude (Length, degree, meter, (*~),
                                                     (/~))
-import           Path                              (Abs, Dir, File, Path, Rel,
-                                                    fileExtension, filename,
-                                                    fromAbsDir, parseAbsDir,
-                                                    toFilePath)
+import           Path                              (Abs, Dir, File, Path,
+                                                    fileExtension, fromAbsDir,
+                                                    parseAbsDir, toFilePath)
 import           Path.IO                           (getCurrentDir, walkDirAccum)
 import           System.Directory                  (doesPathExist)
 import           System.FilePath                   (splitExtensions)
@@ -317,7 +317,7 @@ instance Arbitrary ConfigRange where
   arbitrary = ConfigRange <$> ((:|) <$> arbitrary <*> arbitrary)
 
 instance FieldEmitter ConfigRange where
-  fieldEmitter (ConfigRange is) = unwords . toList $ Data.List.NonEmpty.map fieldEmitter is
+  fieldEmitter (ConfigRange is) = unwords . GHC.Exts.toList $ Data.List.NonEmpty.map fieldEmitter is
 
 instance FieldParsable ConfigRange where
   fieldParser = ConfigRange <$> ((:|)
@@ -370,6 +370,8 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp        = "qy_qz_timestamp"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'TthAzimuth           = "tth_azimuth"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QTimescan0           = "q_timescan0"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'QScannumber          = "q_scannumber"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'TthScannumber        = "tth_scannumber"
 
 instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
   fieldParser = go . strip . uncomment . toLower =<< takeText
@@ -813,7 +815,7 @@ showLimits (Limits f t) = showLimit f <> Data.Text.singleton ':' <> showLimit t
 
 instance (FieldEmitter (RLimits sh)) where
   fieldEmitter ls = Data.Text.singleton '['
-                    <> intercalate "," (Prelude.map showLimits (toList ls))
+                    <> intercalate "," (Prelude.map showLimits (GHC.Exts.toList ls))
                     <> Data.Text.singleton ']'
 
 instance (FieldParsable (RLimits DIM2)) where
@@ -937,46 +939,64 @@ destination' proj msub (ConfigRange rs) ml dtmpl overwrite =
         intervals = Data.List.NonEmpty.map unInputRange rs
 
 isHdf5 :: Path Abs File -> Bool
-isHdf5 p = case (fileExtension p :: Maybe [Char]) of
-             Nothing    -> False
-             (Just ext) -> ext `elem` [".h5", ".nxs"]
+isHdf5 p =
+  case (fileExtension p :: Maybe [Char]) of
+    Nothing  -> False
+    Just ext -> ext `elem` [".h5", ".nxs"]
 
-isInConfigRange :: Maybe InputTmpl -> Maybe ConfigRange ->  Path Abs File -> Bool
-isInConfigRange mtmpl mr f
-  = case mr of
-      (Just (ConfigRange rs)) -> do
-        let tmpl = maybe "%05d" (unpack . unInputTmpl) mtmpl
-        any (isInInputRange (filename f) tmpl) rs
-      Nothing -> True
-  where
-    matchIndex :: Path Rel File -> String -> Int -> Bool
-    matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
+-- isInConfigRange :: Maybe InputTmpl -> Maybe ConfigRange -> FilePath -> Bool
+-- isInConfigRange mtmpl mr f
+--   = case mr of
+--       (Just (ConfigRange rs)) -> do
+--         let tmpl = maybe "%05d" (unpack . unInputTmpl) mtmpl
+--         any (isInInputRange (filename f) tmpl) rs
+--       Nothing -> True
+--   where
+--     matchIndex :: Path Rel File -> String -> Int -> Bool
+--     matchIndex p tmpl n = printf tmpl n `isInfixOf` toFilePath p
 
-    isInInputRange :: Path Rel File -> String -> InputRange -> Bool
-    isInInputRange p tmpl (InputRange i) = any (matchIndex p tmpl) [inf i .. sup i]
+--     isInInputRange :: Path Rel File -> String -> InputRange -> Bool
+--     isInInputRange p tmpl (InputRange i) = any (matchIndex p tmpl) [inf i .. sup i]
+
+--                  return $ filter (\f -> all ($ f) filters) sfs)
+
+matchInputRange' :: String -> Path Abs File -> [Int] -> [Maybe ScanFilePath]
+matchInputRange' tmpl f is =
+  case find (\i -> printf tmpl i `isInfixOf` (toFilePath f)) is of
+    Nothing -> []
+    Just i  -> [Just (ScanFilePath f (Scannumber i))]
+
+matchInputRange :: String -> Path Abs File ->  InputRange -> [Maybe ScanFilePath]
+matchInputRange tmpl f (InputRange ir)
+  = matchInputRange' tmpl f [inf ir .. sup ir]
+
+matchConfigRange' :: String -> ConfigRange -> Path Abs File -> [Maybe ScanFilePath]
+matchConfigRange' tmpl (ConfigRange is) f = concatMap (matchInputRange tmpl f) is
+
+matchConfigRange :: Maybe InputTmpl -> ConfigRange -> [Path Abs File] -> [Maybe ScanFilePath]
+matchConfigRange mt r fs =
+  let tmpl = maybe "%05d" (unpack . unInputTmpl) mt
+  in concatMap (matchConfigRange' tmpl r) fs
 
 files :: (MonadThrow m, MonadIO m)
        => Maybe (Path Abs Dir)
-       -> Maybe ConfigRange
+       -> ConfigRange
        -> Maybe InputTmpl
-       -> m [Path Abs File]
-files md mr mt
-  = do
-  let filters = [ isHdf5
-                , isInConfigRange mt mr
-                ]
+       -> m [ScanFilePath]
+files md mr mt =
+  do dir <- case md of
+             Nothing -> getCurrentDir
+             Just d  -> pure d
 
-  dir <- case md of
-        Nothing  -> getCurrentDir
-        (Just d) -> pure d
+     fs <- walkDirAccum Nothing
+          (\_root _dirs fs ->
+              do let fss = filter isHdf5 fs
+                 return $ matchConfigRange mt mr fss)
+          dir
 
-  fs <- walkDirAccum Nothing
-       (\_root _dirs fs -> return $ filter (\f -> all ($ f) filters) fs)
-       dir
-
-  if null fs
-    then throwM (NoDataFilesUnderTheGivenDirectory dir)
-    else return fs
+     if null fs
+       then throwM (NoDataFilesUnderTheGivenDirectory dir)
+       else return $ catMaybes fs
 
 getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> m (Maybe Mask)
 getMask ml d = case ml of

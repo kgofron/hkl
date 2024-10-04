@@ -42,17 +42,17 @@
 /* Geometry */
 /************/
 
-#define HKL_GEOMETRY_TYPE_APS_POLAR_DESCRIPTION                                      \
-	"+ Incoming X-rays source along the :math:`\\vec{x}` direction (1, 0, 0)\n"      \
-	"+ 4 axes for the sample\n"                                                      \
-	"\n"                                                                             \
+#define HKL_GEOMETRY_TYPE_APS_POLAR_DESCRIPTION				\
+	"+ Incoming X-rays source along the :math:`\\vec{x}` direction (1, 0, 0)\n" \
+	"+ 4 axes for the sample\n"					\
+	"\n"								\
 	"  + **" TAU "** : rotation around the :math:`-\\vec{y}` direction (0, -1, 0)\n" \
-	"  + **" MU "** : rotation around the :math:`\\vec{z}` direction (0, 0, 1)\n"    \
-	"  + **" CHI "** : rotating around the :math:`\\vec{x}` direction (1, 0, 0)\n"   \
-	"  + **" PHI "** : rotating around the :math:`\\vec{z}` direction (0, 0, 1)\n"   \
-	"\n"                                                                             \
-	"+ 3 axis for the detector\n"                                                    \
-	"\n"                                                                             \
+	"  + **" MU "** : rotation around the :math:`\\vec{z}` direction (0, 0, 1)\n" \
+	"  + **" CHI "** : rotating around the :math:`\\vec{x}` direction (1, 0, 0)\n" \
+	"  + **" PHI "** : rotating around the :math:`\\vec{z}` direction (0, 0, 1)\n" \
+	"\n"								\
+	"+ 3 axis for the detector\n"					\
+	"\n"								\
 	"  + **" TAU "** : rotation around the :math:`-\\vec{y}` direction (0, -1, 0)\n" \
 	"  + **" GAMMA "** : rotation around the :math:`\\vec{z}` direction (0, 0, 1)\n" \
 	"  + **" DELTA "** : rotation around the :math:`-\\vec{y}` direction (0, -1, 0)\n"
@@ -92,8 +92,8 @@ static HklMode *zaxis_alpha_fixed()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *zaxis_beta_fixed()
@@ -106,8 +106,8 @@ static HklMode *zaxis_beta_fixed()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 /* zaxis + alpha=beta */
@@ -140,8 +140,8 @@ static HklMode *zaxis_alpha_eq_beta()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 /* 4-circles bissecting horizontal */
@@ -174,8 +174,8 @@ static HklMode *fourc_bissector_horizontal()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *fourc_constant_mu_horizontal()
@@ -188,8 +188,8 @@ static HklMode *fourc_constant_mu_horizontal()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *fourc_constant_chi_horizontal()
@@ -202,8 +202,8 @@ static HklMode *fourc_constant_chi_horizontal()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *fourc_constant_phi_horizontal()
@@ -216,8 +216,8 @@ static HklMode *fourc_constant_phi_horizontal()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *lifting_detector_tau()
@@ -230,8 +230,8 @@ static HklMode *lifting_detector_tau()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *lifting_detector_mu()
@@ -244,8 +244,8 @@ static HklMode *lifting_detector_mu()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *lifting_detector_chi()
@@ -258,8 +258,8 @@ static HklMode *lifting_detector_chi()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *lifting_detector_phi()
@@ -272,8 +272,8 @@ static HklMode *lifting_detector_phi()
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &hkl_full_mode_operations,
-							 TRUE);
+				 &hkl_full_mode_operations,
+				 TRUE);
 }
 
 static HklMode *psi_constant_horizontal(void)
@@ -289,8 +289,8 @@ static HklMode *psi_constant_horizontal(void)
 	};
 
 	return hkl_mode_auto_new(&info,
-							 &psi_constant_vertical_mode_operations,
-							 TRUE);
+				 &psi_constant_vertical_mode_operations,
+				 TRUE);
 }
 
 static HklMode *psi_constant_vertical(void)

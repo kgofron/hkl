@@ -7,6 +7,9 @@ module Hkl.Types ( AbsDirPath
                  , ConfigContent(..)
                  , Key
                  , SampleName
+                 , ScanFile(..)
+                 , ScanFilePath(..)
+                 , Scannumber(..)
                  , Section
                  , Timestamp(..)
                  , Timescan0(..)
@@ -19,6 +22,7 @@ import           Data.Aeson  (FromJSON (..), ToJSON (..))
 import           Data.Char   (toUpper)
 import           Data.String (IsString)
 import           Data.Text   (Text)
+import           Path        (Abs, File, Path)
 
 import           Hkl.Lattice as X
 
@@ -50,6 +54,20 @@ newtype ConfigContent
 --   deriving (IsString, Show, FromJSON, ToJSON)
 
 type Key = Text
+
+-- ScanFile
+
+data ScanFile l = ScanFile l Scannumber
+
+-- ScanFilePath
+
+data ScanFilePath = ScanFilePath (Path Abs File) Scannumber
+  deriving Show
+
+-- Scannumber
+
+newtype Scannumber = Scannumber { unScannumber :: Int }
+  deriving Show
 
 -- Section
 

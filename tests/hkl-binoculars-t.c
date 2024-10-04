@@ -119,18 +119,20 @@ static void angles_projection(void)
                 mask = hkl_binoculars_detector_2d_mask_get(n);
 
                 for(i=0; i<3; ++i){
-                        size_t arr_size;
-                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
+                        size_t img_size;
+                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &img_size);
+			const double weight = 1;
                         size_t pixels_coordinates_dims[] = {3, height, width};
-                        double resolutions[] = {1, 1, 1};
+                        const double resolutions[] = {1, 1, 1};
+			const char *sampleaxis = "omega";
 
                         hkl_geometry_randomize(geometry);
 
                         hkl_binoculars_space_angles_uint32_t (space,
                                                               geometry,
                                                               img,
-                                                              arr_size,
-                                                              1.0,
+                                                              img_size,
+                                                              weight,
                                                               pixels_coordinates,
                                                               ARRAY_SIZE(pixels_coordinates_dims),
                                                               pixels_coordinates_dims,
@@ -139,7 +141,7 @@ static void angles_projection(void)
                                                               mask,
                                                               limits,
                                                               ARRAY_SIZE(limits),
-                                                              "omega");
+                                                              sampleaxis);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
@@ -194,18 +196,27 @@ static int qcustom_projection_sub(HklBinocularsQCustomSubProjectionEnum subproje
                 mask = hkl_binoculars_detector_2d_mask_get(n);
 
                 for(i=0; i<3; ++i){
-                        size_t arr_size;
-                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
-                        size_t pixels_coordinates_dims[] = {3, height, width};
-                        double resolutions[] = {0.05, 0.05, 0.05};
+                        size_t img_size;
+                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &img_size);
+			const double weight = 1;
+                        const size_t pixels_coordinates_dims[] = {3, height, width};
+                        const double resolutions[] = {0.05, 0.05, 0.05};
+			const double timestamp = 0;
+			const double timestamp0 = 0;
+			const int scannumber = 0;
+			const double uqx = 0;
+			const double uqy = 0;
+			const double uqz = 0;
+			const char *sampleaxis = "omega";
+			const int do_polarisation_correction = 1;
 
                         hkl_geometry_randomize(geometry);
 
                         hkl_binoculars_space_qcustom_uint32_t (space,
                                                                geometry,
                                                                img,
-                                                               arr_size,
-                                                               1.0,
+                                                               img_size,
+                                                               weight,
                                                                pixels_coordinates,
                                                                ARRAY_SIZE(pixels_coordinates_dims),
                                                                pixels_coordinates_dims,
@@ -215,12 +226,13 @@ static int qcustom_projection_sub(HklBinocularsQCustomSubProjectionEnum subproje
                                                                HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
                                                                limits,
                                                                ARRAY_SIZE(limits),
-                                                               0.0,
-                                                               0.0,
+                                                               timestamp,
+                                                               timestamp0,
+							       scannumber,
                                                                subprojection,
-                                                               0, 0, 0,
-                                                               "omega",
-                                                               0);
+                                                               uqx, uqy, uqz,
+                                                               sampleaxis,
+                                                               do_polarisation_correction);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
@@ -285,18 +297,27 @@ static void qparqper_projection(void)
                 mask = hkl_binoculars_detector_2d_mask_get(n);
 
                 for(i=0; i<3; ++i){
-                        size_t arr_size;
-                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
+                        size_t img_size;
+                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &img_size);
+			const double weight = 1;
                         size_t pixels_coordinates_dims[] = {2, height, width};
                         double resolutions[] = {0.05, 0.05};
+			const double timestamp = 0;
+			const double timestamp0 = 0;
+			const int scannumber = 0;
+			const double uqx = 0;
+			const double uqy = 0;
+			const double uqz = 0;
+			const char *sampleaxis = NULL;
+			const int do_polarisation_correction = 1;
 
                         hkl_geometry_randomize(geometry);
 
                         hkl_binoculars_space_qcustom_uint32_t (space,
                                                                geometry,
                                                                img,
-                                                               arr_size,
-                                                               1.0,
+                                                               img_size,
+                                                               weight,
                                                                pixels_coordinates,
                                                                ARRAY_SIZE(pixels_coordinates_dims),
                                                                pixels_coordinates_dims,
@@ -306,12 +327,13 @@ static void qparqper_projection(void)
                                                                HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
                                                                limits,
                                                                ARRAY_SIZE(limits),
-                                                               0.0,
-                                                               0.0,
+                                                               timestamp,
+                                                               timestamp0,
+							       scannumber,
                                                                HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QPAR_QPER,
-                                                               0, 0, 0,
-                                                               NULL,
-                                                               0);
+                                                               uqx, uqy, uqz,
+                                                               sampleaxis,
+                                                               do_polarisation_correction);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
@@ -365,17 +387,25 @@ static void qxqyqz_projection(void)
                 mask = hkl_binoculars_detector_2d_mask_get(n);
 
                 for(i=0; i<3; ++i){
-                        size_t arr_size;
-                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
+                        size_t img_size;
+                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &img_size);
                         size_t pixels_coordinates_dims[] = {3, height, width};
                         double resolutions[] = {0.05, 0.05, 0.05};
+			const double timestamp = 0;
+			const double timestamp0 = 0;
+			const int scannumber = 0;
+			const double uqx = 0;
+			const double uqy = 0;
+			const double uqz = 0;
+			const char *sampleaxis = NULL;
+			const int do_polarisation_correction = 1;
 
                         hkl_geometry_randomize(geometry);
 
                         hkl_binoculars_space_qcustom_uint32_t (space,
                                                                geometry,
                                                                img,
-                                                               arr_size,
+                                                               img_size,
                                                                1.0,
                                                                pixels_coordinates,
                                                                ARRAY_SIZE(pixels_coordinates_dims),
@@ -386,12 +416,13 @@ static void qxqyqz_projection(void)
                                                                HKL_BINOCULARS_SURFACE_ORIENTATION_VERTICAL,
                                                                limits,
                                                                ARRAY_SIZE(limits),
-                                                               0.0,
-                                                               0.0,
+							       timestamp,
+                                                               timestamp0,
+							       scannumber,
                                                                HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_QX_QY_QZ,
-                                                               0, 0, 0,
-                                                               NULL,
-                                                               0);
+                                                               uqx, uqy, uqz,
+                                                               sampleaxis,
+                                                               do_polarisation_correction);
 
                         hkl_binoculars_cube_add_space(cube, space);
 
@@ -486,10 +517,12 @@ static void hkl_projection(void)
                 mask = hkl_binoculars_detector_2d_mask_get(n);
 
                 for(i=0; i<3; ++i){
-                        size_t arr_size;
-                        uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
-                        size_t pixels_coordinates_dims[] = {3, height, width};
-                        double resolutions[] = {0.05, 0.05, 0.05};
+			size_t img_size;
+			uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &img_size);
+			const double weight = 1;
+			size_t pixels_coordinates_dims[] = {3, height, width};
+			double resolutions[] = {0.05, 0.05, 0.05};
+			const int do_polarisation_correction = 0;
 
                         IGNORE(hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL));
 
@@ -497,8 +530,8 @@ static void hkl_projection(void)
                                                            geometry,
                                                            sample,
                                                            img,
-                                                           arr_size,
-                                                           1.0,
+                                                           img_size,
+                                                           weight,
                                                            pixels_coordinates,
                                                            ARRAY_SIZE(pixels_coordinates_dims),
                                                            pixels_coordinates_dims,
@@ -507,7 +540,7 @@ static void hkl_projection(void)
                                                            mask,
                                                            limits,
                                                            ARRAY_SIZE(limits),
-                                                           0);
+                                                           do_polarisation_correction);
                         hkl_binoculars_cube_add_space(cube, space);
 
                         free(img);
@@ -617,6 +650,7 @@ static void test_projection(void)
                         uint32_t *img = hkl_binoculars_detector_2d_fake_image_uint32(n, &arr_size);
                         size_t pixels_coordinates_dims[] = {3, height, width};
                         double resolutions[] = {0.05, 0.05, 0.05};
+			const int do_polarisation_correction = 0;
 
                         IGNORE(hkl_geometry_axis_values_set(geometry, &axes[i][0], ARRAY_SIZE(axes[i]), HKL_UNIT_USER, NULL));
 
@@ -634,7 +668,7 @@ static void test_projection(void)
                                                            mask,
                                                            limits,
                                                            ARRAY_SIZE(limits),
-                                                           0);
+                                                           do_polarisation_correction);
                         hkl_binoculars_cube_add_space(cube, space);
 
                         hkl_binoculars_space_test_uint32_t (space,
@@ -651,7 +685,7 @@ static void test_projection(void)
                                                             mask,
                                                             limits,
                                                             ARRAY_SIZE(limits),
-                                                            0);
+                                                            do_polarisation_correction);
                         hkl_binoculars_cube_add_space(cube2, space);
 
                         free(img);
