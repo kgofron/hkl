@@ -137,7 +137,10 @@ diffabs: binoculars-ng
 	$(PROCESS) data/test/config_diffabs_ruche_cirpad.ini 31-37
 
 grades: binoculars-ng
-	$(PROCESS) data/test/config_grades_local_20231857.ini 356-390
+#sixs
+#	$(PROCESS) data/test/config_grades_local_20231857.ini 356-390
+# mars
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 73-82
 
 mars: binoculars-ng
 #	$(PROCESS) data/test/config_mars_ruche_rel_flyscan.ini
