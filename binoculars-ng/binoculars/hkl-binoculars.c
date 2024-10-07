@@ -1940,7 +1940,7 @@ void hkl_binoculars_cube_add_cube(HklBinocularsCube *self,
         hkl_binoculars_cube_fprintf(stdout, self);
         hkl_binoculars_cube_fprintf(stdout, other);
 #endif
-        /* check the compatibility of the cube and the space. */
+        /* check the compatibility of the cube(self) and the cube(other). */
         if (1 != cube_is_empty(other)){
                 if (does_not_include(&self->axes, &other->axes)){
 #ifdef DEBUG
