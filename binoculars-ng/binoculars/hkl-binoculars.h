@@ -41,9 +41,10 @@ typedef enum _HklBinocularsDetectorEnum
         HKL_BINOCULARS_DETECTOR_MERLIN,
         HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD,
         HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512,
-        /* HKL_BINOCULARS_DETECTOR_CIRPAD, */
         /* Add new your detectors here */
         HKL_BINOCULARS_DETECTOR_NUM_DETECTORS,
+        /* wip */
+        HKL_BINOCULARS_DETECTOR_CIRPAD,
 } HklBinocularsDetectorEnum;
 
 HKLAPI extern int hkl_binoculars_detector_2d_number_of_detectors(void);

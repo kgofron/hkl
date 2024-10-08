@@ -130,7 +130,7 @@ data HklBinocularsDetectorEnum
   | HklBinocularsDetectorEnum'Merlin
   | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
   | HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512
-  | HklBinocularsDetectorEnum'Cirpad
+--  | HklBinocularsDetectorEnum'Cirpad
   deriving (Bounded, Eq, Show)
 
 instance Enum HklBinocularsDetectorEnum where
@@ -143,8 +143,8 @@ instance Enum HklBinocularsDetectorEnum where
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN = HklBinocularsDetectorEnum'Merlin
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD = HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
     | n == c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512 = HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512
-    | n == c'HKL_BINOCULARS_DETECTOR_CIRPAD = HklBinocularsDetectorEnum'Cirpad
-    | otherwise = error "Non supported Detector type"
+--    | n == c'HKL_BINOCULARS_DETECTOR_CIRPAD = HklBinocularsDetectorEnum'Cirpad
+    | otherwise = error ("Non supported Detector type" ++ show n)
 
   fromEnum HklBinocularsDetectorEnum'ImxpadS140 = c'HKL_BINOCULARS_DETECTOR_IMXPAD_S140
   fromEnum HklBinocularsDetectorEnum'XpadFlatCorrected = c'HKL_BINOCULARS_DETECTOR_XPAD_FLAT_CORRECTED
@@ -154,7 +154,7 @@ instance Enum HklBinocularsDetectorEnum where
   fromEnum HklBinocularsDetectorEnum'Merlin =  c'HKL_BINOCULARS_DETECTOR_MERLIN
   fromEnum HklBinocularsDetectorEnum'MerlinMedipix3rxQuad = c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD
   fromEnum HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 = c'HKL_BINOCULARS_DETECTOR_MERLIN_MEDIPIX_3RX_QUAD_512
-  fromEnum HklBinocularsDetectorEnum'Cirpad = c'HKL_BINOCULARS_DETECTOR_CIRPAD
+--  fromEnum HklBinocularsDetectorEnum'Cirpad = c'HKL_BINOCULARS_DETECTOR_CIRPAD
 
 #ccall hkl_binoculars_detector_2d_coordinates_get, <HklBinocularsDetectorEnum> -> IO (Ptr CDouble)
 #ccall hkl_binoculars_detector_2d_mask_get, <HklBinocularsDetectorEnum> -> IO (Ptr CBool)
