@@ -78,11 +78,6 @@ chunk target = go target target
 
 {-# SPECIALIZE chunk :: Int -> [Chunk Int FilePath] -> [[Chunk Int FilePath]]  #-}
 
-toList :: InputFn -> [ScanFilePath]
--- toList (InputFn f)              = [f]
--- toList (InputFn'Range tmpl f t) = [printf tmpl i | i <- [f..t]]
-toList (InputFn'List fs)        = fs
-
 --  DataFrameSpace
 
 data DataFrameSpace sh = DataFrameSpace Image (Space sh) Attenuation
@@ -108,7 +103,12 @@ addSpace (DataFrameSpace _ (Space fs) _) (Cube fp) =
   return $ Cube fp
 
 newtype InputFn =  InputFn'List [ScanFilePath]
-  deriving Show
+
+toList :: InputFn -> [ScanFilePath]
+toList (InputFn'List fs)        = fs
+
+instance Show InputFn where
+  show (InputFn'List sn) = unlines $ map show sn
 
 withCubeAccumulator :: Shape sh => Cube sh -> (IORef (Cube sh)  -> IO ()) -> IO (Cube sh)
 withCubeAccumulator c f = bracket

@@ -271,7 +271,15 @@ instance HasIniConfig Common where
                                                       , "which required to be masked (pixels with non standard surface, "
                                                       , "area with holes)."
                                                       , ""
-                                                      , "Most of the time a mask file was generated during ther experiment."
+                                                      , "sometime you need to assign a specific mask to a scan number."
+                                                      , "In that case, just add `{scannumber:<format>}` in the filename where"
+                                                      , "<format> is equivalent to the Python f-string logic."
+                                                      , "This small templace will be used to compute the real mask filename."
+                                                      , "for exemple for the scannumber 8"
+                                                      , "   - mask_{scannumber:02d}.npy -> mask_08.npy"
+                                                      , "   - mask_{scannumber:03d}.npy -> mask_008.npy"
+                                                      , ""
+                                                      , "Most of the time a mask file was generated during the experiment."
                                                       ]
                                                       <> elemFMbDef "wavelength" binocularsConfig'Common'Wavelength c defaultConfig
                                                       [ "overwrite the wavelength from the data file with the one provided."

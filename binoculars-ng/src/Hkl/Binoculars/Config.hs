@@ -93,7 +93,7 @@ import           Data.Text                         (Text, breakOn, cons, drop,
                                                     pack, replace, singleton,
                                                     strip, take, takeWhile,
                                                     toLower, unlines, unpack,
-                                                    unwords)
+                                                    unwords, isInfixOf)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
@@ -580,15 +580,21 @@ instance Arbitrary Limits where
 
 -- MaskLocation
 
-data MaskLocation = MaskLocation { unMaskLocation :: Text }
+data MaskLocation = MaskLocation Text
+                  | MaskLocation'Tmpl Text
     deriving (Eq, Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
 
 instance FieldEmitter MaskLocation where
-  fieldEmitter = unMaskLocation
+  fieldEmitter (MaskLocation t) = t
+  fieldEmitter (MaskLocation'Tmpl t) = t
 
 instance FieldParsable MaskLocation where
-  fieldParser = MaskLocation <$> takeText
+  fieldParser = do
+    t <- takeText
+    pure $ if "{scannumber:" `Data.Text.isInfixOf` t
+           then MaskLocation'Tmpl t
+           else MaskLocation t
 
 instance HasFieldValue MaskLocation where
   fieldvalue = parsable
@@ -942,7 +948,7 @@ isHdf5 :: Path Abs File -> Bool
 isHdf5 p =
   case (fileExtension p :: Maybe [Char]) of
     Nothing  -> False
-    Just ext -> ext `elem` [".h5", ".nxs"]
+    Just ext -> ext `elem` [".nxs"]
 
 -- isInConfigRange :: Maybe InputTmpl -> Maybe ConfigRange -> FilePath -> Bool
 -- isInConfigRange mtmpl mr f
@@ -962,7 +968,7 @@ isHdf5 p =
 
 matchInputRange' :: String -> Path Abs File -> [Int] -> [Maybe ScanFilePath]
 matchInputRange' tmpl f is =
-  case find (\i -> printf tmpl i `isInfixOf` (toFilePath f)) is of
+  case find (\i -> printf tmpl i `Data.List.isInfixOf` (toFilePath f)) is of
     Nothing -> []
     Just i  -> [Just (ScanFilePath f (Scannumber i))]
 
@@ -998,11 +1004,17 @@ files md mr mt =
        then throwM (NoDataFilesUnderTheGivenDirectory dir)
        else return $ catMaybes fs
 
-getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> m (Maybe Mask)
-getMask ml d = case ml of
-                Nothing          -> return Nothing
-                (Just (MaskLocation "default")) -> Just <$> getDetectorDefaultMask d
-                (Just (MaskLocation fname))     -> Just <$> getDetectorMask d fname
+getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
+getMask ml d (Scannumber i)
+  = case ml of
+      Nothing          -> return Nothing
+      (Just (MaskLocation "default")) -> Just <$> getDetectorDefaultMask d
+      (Just (MaskLocation fname))     -> Just <$> getDetectorMask d fname
+      (Just (MaskLocation'Tmpl tmpl)) -> do
+        let tmpl1 = replace "{scannumber:" "%" tmpl
+        let tmpl2 = replace "}" "" tmpl1
+        let fname = pack $ printf (unpack tmpl2) i
+        Just <$> getDetectorMask d fname
 
 getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig
 getPreConfig' (ConfigContent cfg) = do
