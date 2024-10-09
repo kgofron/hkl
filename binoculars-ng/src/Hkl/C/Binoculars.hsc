@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE ForeignFunctionInterface  #-}
 {-# LANGUAGE KindSignatures            #-}
-{-# LANGUAGE TypeInType                #-}
 {-# LANGUAGE OverloadedStrings         #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans      #-}

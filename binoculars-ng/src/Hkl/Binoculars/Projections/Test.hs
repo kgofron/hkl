@@ -30,12 +30,12 @@ module Hkl.Binoculars.Projections.Test
     ) where
 
 import           Control.Concurrent.Async           (mapConcurrently)
+import           Control.Monad                      (forM_, forever)
 import           Control.Monad.Catch                (MonadThrow)
 import           Control.Monad.IO.Class             (MonadIO (liftIO))
 import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
-import           Control.Monad.Reader               (MonadReader, ask, forM_,
-                                                     forever)
+import           Control.Monad.Reader               (MonadReader, ask)
 import           Data.Aeson                         (FromJSON, ToJSON,
                                                      eitherDecode', encode)
 import           Data.ByteString.Lazy               (fromStrict, toStrict)
