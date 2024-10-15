@@ -63,9 +63,6 @@ binoculars-ng$(EXEEXT): $(binoculars_ng_SOURCES)
 		--config-file=empty-config-file \
 		build \
 		-fuseHklDev \
-		--disable-shared \
-		--enable-optimization \
-		--enable-static \
 		--extra-include-dirs=$(abs_top_srcdir) \
 		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng \
 		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
