@@ -37,11 +37,15 @@ endif
 release:
 #	cd scripts && ./clean-all
 #	-git commit -a -m "pre-release"
+	sed -i -e "s,dnl m4_undefine(\[v_rev\]),m4_undefine(\[v_rev\]),g" configure.ac
 	./autogen.sh
 	./configure $(AM_DISTCHECK_CONFIGURE_FLAGS)
 	$(MAKE) -j
 	$(MAKE) distcheck
+	git commit -a -m "released $(./configure -V | head -n 1 | awk '{print $$3}')"
 	git tag v`./configure -V | head -n 1 | awk '{print $$3}'`
+	sed -i -e "s,m4_undefine(\[v_rev\]),dnl m4_undefine(\[v_rev\]),g" configure.ac
+	git commit -a -m "post-release"
 
 tag:
 	git tag v`./configure -V | head -n 1 | awk '{print $$3}'`
