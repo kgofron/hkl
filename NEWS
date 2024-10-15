@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 5.0.0	UNRELEASED
+* 5.1.0 2024-10-15
 ** General
    - 5.x runtime can be co-installed with the 4.x series.
    - hkl.h contain all the Public API.
@@ -24,6 +24,13 @@
      compute (Bullet) and display (OpenGL) collision for model
      described using the COLLADA file format.
    - all private symbols are now hidden.
+** Binoculars-ng
+   - Added this new program in order to project 2D Detectors images in
+     the hkl reciprocal space, qxqyqz, etc... It support for now a
+     bunch of Soleil beamlines experiments (all SIXS geometries, MARS,
+     CRISTAL and DIFFABS).
+   - make it compile with ghc 9.6
+   - Added support for mask per scan.
 ** Buildsystem
    - add a --disable-hkl3d flag to avoid hkl3d library compilation.
    - replace the --enable-ghkl with a --disable-gui.
