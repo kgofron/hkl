@@ -99,6 +99,7 @@ hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
 	$(CABAL) \
 		--config-file=empty-config-file \
 		build \
+		--enable-tests \
 		-fuseHklDev \
 		--extra-include-dirs=$(abs_top_srcdir) \
 		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
