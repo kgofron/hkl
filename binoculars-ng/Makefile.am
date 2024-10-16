@@ -85,7 +85,8 @@ CLEANFILES=\
 TESTS=hkl-test
 
 AM_TESTS_ENVIRONMENT = \
-	hkl_datadir=$(srcdir); export hkl_datadir;
+	env GI_TYPELIB_PATH=$(top_builddir)/hkl DATADIR=$(srcdir) hkl_datadir=$(srcdir) \
+	$(LIBTOOL) --mode=execute -dlopen $(top_builddir)/hkl/libhkl.la
 
 test_sources=\
 	data/test/config_ech6eiger.txt \
@@ -94,7 +95,7 @@ test_sources=\
 	test/Spec.hs
 
 hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
-	@rm -f cabal.project.local
+	@rm -f cabal.project.local $@
 	touch empty-config-file
 	$(CABAL) \
 		--config-file=empty-config-file \
