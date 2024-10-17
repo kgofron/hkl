@@ -121,8 +121,9 @@ EXTRA_DIST = $(binoculars_ng_SOURCES) $(test_sources)
 ###############
 
 RTS = +RTS -N4 -RTS
-RUN = /usr/bin/time -v ./binoculars-ng $(RTS)
-RUN_DBG=gdb --args
+RUN_LIBTOOL = $(LIBTOOL) --mode=execute -dlopen $(top_builddir)/hkl/libhkl.la
+RUN = $(RUN_LIBTOOL) /usr/bin/time -v ./binoculars-ng $(RTS)
+RUN_DBG = $(RUN_LIBTOOL) gdb --args
 PROCESS = $(RUN) --debug process
 PROCESS_DBG=$(RUN_DBG) .libs/binoculars-ng process
 MERGE = $(RUN) --debug merge
@@ -156,18 +157,18 @@ mars: binoculars-ng
 # TODO, une idée pourrait être d'associer un masque spécifique à un point de scan.
 #	$(MERGE) -o merge.hdf5 scan*.hdf5
 	$(PROCESS) data/test/config_mars_ruche_20232102.ini 73-82
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 100-111
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 129-138
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 158-167
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 186-195
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 207-216
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 228-237
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 246-255
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 261-271
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 285-294
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 306-315
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 329-338
-#	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 100-111
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 129-138
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 158-167
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 186-195
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 207-216
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 228-237
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 246-255
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 261-271
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 285-294
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 306-315
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 329-338
+	$(PROCESS) data/test/config_mars_ruche_20232102.ini 272
 
 merge: binoculars-ng
 	$(MERGE) -o merge.hdf5 *.hdf5
