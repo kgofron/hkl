@@ -73,6 +73,7 @@ static struct descr_t parse_descr(const char *header, regmatch_t match)
 
         struct descr_t descr;
 
+        fprintf(stdout, "descr: %s\n", description);
         /* endianness */
         switch(description[0]){
         case '|':
@@ -85,6 +86,9 @@ static struct descr_t parse_descr(const char *header, regmatch_t match)
         switch(description[1]){
         case 'b':
                 descr.elem_type = HklBinocularsNpyBool();
+                break;
+        case 'f':
+                descr.elem_type = HklBinocularsNpyDouble();
                 break;
         };
 
@@ -157,8 +161,8 @@ static int shape_size(const darray_int *shape)
         return nb_elem;
 }
 
+
 static struct npy_t *parse_npy(FILE* fp,
-                               HklBinocularsNpyDataType type,
                                const darray_int *shape)
 {
         struct npy_t *npy = g_new0(struct npy_t, 1);
@@ -234,9 +238,6 @@ static struct npy_t *parse_npy(FILE* fp,
         npy->fortran_order = parse_fortran_order(npy->header, matches[2]);
         parse_shape(npy->header, matches[3], &npy->shape);
 
-        if(type.tag != npy->descr.elem_type.tag)
-                goto fail;
-
         if(0 != shape_cmp(shape, &npy->shape))
                 goto fail;
 
@@ -258,22 +259,71 @@ fail_no_header:
         return NULL;
 }
 
+
 void *npy_load(const char *fname,
-               HklBinocularsNpyDataType type,
+               HklBinocularsNpyDataType expected_type,
                const darray_int *shape)
 {
         uint8_t *arr = NULL;
         FILE* fp = fopen(fname, "rb");
 
         if (NULL != fp){
-                struct npy_t *npy = parse_npy(fp, type, shape);
+                struct npy_t *npy = parse_npy(fp, shape);
+
                 if (NULL != npy) {
-                        arr = npy->arr;
-                        npy_free_but_array(npy);
+                        HklBinocularsNpyDataType read_type = npy->descr.elem_type;
+                        size_t n = shape_size(&npy->shape);
+
+                        match(expected_type){
+                                of(HklBinocularsNpyBool) {
+                                        match(read_type){
+                                                of(HklBinocularsNpyBool) {
+                                                        arr = npy->arr;
+                                                        npy_free_but_array(npy);
+                                                }
+                                                of(HklBinocularsNpyDouble) {
+                                                        size_t i;
+
+                                                        arr = malloc(n * sizeof(uint8_t));
+                                                        if (NULL != arr){
+                                                                for(i=0; i<n; ++i){
+                                                                        arr[i] = ((double *)(npy->arr))[i];
+                                                                }
+                                                        }
+                                                        free(npy->arr);
+                                                        npy_free_but_array(npy);
+                                                }
+
+                                        }
+                                }
+
+                                of(HklBinocularsNpyDouble) {
+                                        match(read_type){
+                                                of(HklBinocularsNpyBool) {
+                                                        size_t i;
+
+                                                        arr = malloc(n * sizeof(double));
+                                                        if (NULL != arr){
+                                                                for(i=0; i<n; ++i){
+                                                                        arr[i] = ((uint8_t *)(npy->arr))[i];
+                                                                }
+                                                        }
+                                                        free(npy->arr);
+                                                        npy_free_but_array(npy);
+                                                }
+                                                of(HklBinocularsNpyDouble) {
+                                                        arr = npy->arr;
+                                                        npy_free_but_array(npy);
+                                                }
+
+                                        }
+                                }
+                        }
                 }
 
                 fclose(fp);
         }
+        fprintf(stdout, "arr: %p\n", arr);
         return arr;
 }
 

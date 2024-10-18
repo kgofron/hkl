@@ -1,5 +1,9 @@
 # -*- org -*-
 
+* 5.1.X XXXX-XX-XX
+** Binoculars-ng
+   - Added float64 support for maks
+
 * 5.1.0 2024-10-15
 ** General
    - 5.x runtime can be co-installed with the 4.x series.
