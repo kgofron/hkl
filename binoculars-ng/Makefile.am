@@ -140,7 +140,19 @@ grades: binoculars-ng
 #sixs
 #	$(PROCESS) data/test/config_grades_local_20231857.ini 356-390
 # mars
-	$(PROCESS) data/test/config_grades_ruche_20232102.ini 73-82
+#	$(PROCESS) data/test/config_grades_ruche_20232102.ini 73-82
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 100-111
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 129-138
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 158-167
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 186-195
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 207-216
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 228-237
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 246-255
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 261-271
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 285-294
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 306-315
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 329-338
+	$(PROCESS) data/test/config_grades_ruche_20232102.ini 272
 
 mars: binoculars-ng
 #	$(PROCESS) data/test/config_mars_ruche_rel_flyscan.ini
