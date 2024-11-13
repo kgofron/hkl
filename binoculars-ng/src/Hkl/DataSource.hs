@@ -74,6 +74,8 @@ import           Hkl.Types
 class Is0DStreamable a e where
   extract0DStreamValue :: a -> IO e
 
+-- Is0DStreamable (instances)
+
 instance Is0DStreamable Dataset CDouble where
   extract0DStreamValue d = getPosition d 0
 

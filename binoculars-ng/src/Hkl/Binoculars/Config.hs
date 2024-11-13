@@ -72,7 +72,8 @@ import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, satisfy,
-                                                    sepBy, signed, takeText)
+                                                    sepBy, signed, takeText,
+                                                    takeTill)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
@@ -89,11 +90,11 @@ import           Data.List.NonEmpty                (NonEmpty (..), map)
 import           Data.Maybe                        (catMaybes)
 import           Data.Text                         (Text, breakOn, cons, drop,
                                                     empty, findIndex,
-                                                    intercalate, length, lines,
-                                                    pack, replace, singleton,
-                                                    strip, take, takeWhile,
-                                                    toLower, unlines, unpack,
-                                                    unwords, isInfixOf)
+                                                    intercalate, isInfixOf,
+                                                    length, lines, pack,
+                                                    replace, singleton, strip,
+                                                    take, takeWhile, toLower,
+                                                    unlines, unpack, unwords)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
@@ -582,16 +583,21 @@ instance Arbitrary Limits where
 
 data MaskLocation = MaskLocation Text
                   | MaskLocation'Tmpl Text
+                  | MaskLocation'Or MaskLocation MaskLocation
     deriving (Eq, Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
 
 instance FieldEmitter MaskLocation where
-  fieldEmitter (MaskLocation t) = t
+  fieldEmitter (MaskLocation t)      = t
   fieldEmitter (MaskLocation'Tmpl t) = t
+  fieldEmitter (MaskLocation'Or l r) = fieldEmitter l <> " | " <> fieldEmitter r
+
+fixParser :: (a -> Parser a) -> a -> Parser a
+fixParser parser a = (parser a >>= fixParser parser) <|> pure a
 
 instance FieldParsable MaskLocation where
   fieldParser = do
-    t <- takeText
+    t <- takeTill (== '|')
     pure $ if "{scannumber:" `Data.Text.isInfixOf` t
            then MaskLocation'Tmpl t
            else MaskLocation t
@@ -1005,16 +1011,21 @@ files md mr mt =
        else return $ catMaybes fs
 
 getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
-getMask ml d (Scannumber i)
+getMask ml d sn@(Scannumber i)
   = case ml of
       Nothing          -> return Nothing
-      (Just (MaskLocation "default")) -> Just <$> getDetectorDefaultMask d
-      (Just (MaskLocation fname))     -> Just <$> getDetectorMask d fname
-      (Just (MaskLocation'Tmpl tmpl)) -> do
+      Just (MaskLocation "default") -> Just <$> getDetectorDefaultMask d
+      Just (MaskLocation fname)     -> Just <$> getDetectorMask d fname
+      Just (MaskLocation'Tmpl tmpl) -> do
         let tmpl1 = replace "{scannumber:" "%" tmpl
         let tmpl2 = replace "}" "" tmpl1
         let fname = pack $ printf (unpack tmpl2) i
         Just <$> getDetectorMask d fname
+      Just (MaskLocation'Or l r) -> do
+              mm <- getMask (Just l) d sn
+              case mm of
+                Nothing -> getMask (Just r) d sn
+                Just m  ->  pure $ Just m
 
 getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig
 getPreConfig' (ConfigContent cfg) = do

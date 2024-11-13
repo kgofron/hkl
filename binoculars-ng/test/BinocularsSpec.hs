@@ -68,6 +68,20 @@ spec = do
     prop "quickcheck" $
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
 
+    it "parse a MaskLocation" $ do
+      let p = parseOnly fieldParser "mask.npy"
+      p `shouldBe` (Right (MaskLocation "mask.npy"))
+
+    it "parse a MaskLocation" $ do
+      let p = parseOnly fieldParser "mask_{scannumber:03d}.npy"
+      p `shouldBe` (Right (MaskLocation'Tmpl "mask_{scannumber:03d}.npy"))
+
+
+    it "parse a MaskLocation" $ do
+      let p = parseOnly fieldParser "mask_{scannumber:03d}.npy | mask.npy"
+      p `shouldBe` (Right (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation "mask.npy")))
+
+
   describe "read and parse binoculars configuration" $ do
     it "deprecated inputype" $ do
       forM_ [ "data/test/config_ech6eiger.txt"
