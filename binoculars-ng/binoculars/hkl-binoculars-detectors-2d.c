@@ -107,17 +107,21 @@ struct tilling_t {
         int module_height;
         int gap_width;
         int gap_height;
-        bool fill_gap;
+        bool gap_in_data;
+        bool gap_masked;
+        int border_masked;
 };
 
-#define TILLING(module_width_, module_height_, gap_width_, gap_height_, pixel_size_, fill_gap_) \
+#define TILLING(module_width_, module_height_, gap_width_, gap_height_, pixel_size_, gap_in_data_, gap_masked_, border_masked_) \
         (struct tilling_t){                                             \
                 .square=SQUARE(pixel_size_),                            \
                         .module_width=module_width_,                    \
                         .module_height=module_height_,                  \
                         .gap_width=gap_width_,                          \
                         .gap_height=gap_height_,                        \
-                        .fill_gap=fill_gap_,                            \
+                        .gap_in_data=gap_in_data_,                      \
+                        .gap_masked=gap_masked_,                        \
+                        .border_masked=border_masked_,                  \
                         }
 
 datatype(
@@ -152,15 +156,15 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                 DETECTOR(ImXpadS70,
                          SHAPE(560, 120), IMXPAD(130e-6, 80, 120)),
                 DETECTOR(Eiger1M,
-                         SHAPE(1030, 1065), TILLING(1030, 514, 10, 37, 75e-6, true)),
+                         SHAPE(1030, 1065), TILLING(1030, 514, 10, 37, 75e-6, true, true, 0)),
                 DETECTOR(Ufxc,
                          SHAPE(257, 256), SQUARE(75e-6)),
                 DETECTOR(Merlin,
                          SHAPE(256, 256), SQUARE(55e-6)),
                 DETECTOR(MerlinMedipix3RXQuad,
-                         SHAPE(515, 515), TILLING(256, 256, 3, 3, 55e-6, true)),
+                         SHAPE(515, 515), TILLING(256, 256, 3, 3, 55e-6, true, true, 0)),
                 DETECTOR(MerlinMedipix3RXQuad512,
-                         SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false)),
+                         SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false, false, 2)),
                 DETECTOR(Cirpad,
                          SHAPE(560, 2400), SQUARE(130e-6)),
         };
@@ -244,7 +248,7 @@ static inline double* coordinates_get_tilling(const struct shape_t *shape,
         int i;
         double *arr;
 
-        if (tilling->fill_gap){
+        if (tilling->gap_in_data){
                 arr = coordinates_rectangle(shape,
                                             tilling->square.pixel_size,
                                             tilling->square.pixel_size);
@@ -393,7 +397,8 @@ static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
         uint8_t *arr = no_mask(shape);
 
 
-        if(tilling->fill_gap){
+        /* take care of the gap */
+        if(tilling->gap_in_data && tilling->gap_masked){
                 /* columns */
                 for(i=tilling->module_width;
                     i<shape->width;
@@ -410,6 +415,35 @@ static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
                         uint8_t *row = get_row(arr, *shape, i);
                         fill_row(row, *shape, 1);
                         replicate_row(row, *shape, tilling->gap_height);
+                }
+        }
+
+        /* border */
+        if (tilling->border_masked > 0){
+                /* columns */
+                for(i=0;
+                    i<shape->width;
+                    i = i + tilling->module_width){
+                        uint8_t *col = get_col(arr, i);
+                        fill_column(col, *shape, 1);
+                        replicate_column(col, *shape, tilling->border_masked);
+
+                        col = get_col(arr, i + tilling->module_width - tilling->border_masked);
+                        fill_column(col, *shape, 1);
+                        replicate_column(col, *shape, tilling->border_masked);
+                }
+
+                /* rows */
+                for(i=0;
+                    i<shape->height;
+                    i = i + tilling->module_height){
+                        uint8_t *row = get_row(arr, *shape, i);
+                        fill_row(row, *shape, 1);
+                        replicate_row(row, *shape, tilling->border_masked);
+
+                        row = get_row(arr, *shape, i + tilling->module_height - tilling->border_masked);
+                        fill_row(row, *shape, 1);
+                        replicate_row(row, *shape, tilling->border_masked);
                 }
         }
 
