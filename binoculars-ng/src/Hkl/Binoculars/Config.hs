@@ -9,6 +9,7 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeApplications           #-}
@@ -66,7 +67,8 @@ module Hkl.Binoculars.Config
 
 import           Control.Applicative               (many, optional, (<|>))
 import           Control.Lens                      (makeLenses)
-import           Control.Monad.Catch               (MonadThrow, throwM)
+import           Control.Monad.Catch               (MonadCatch, MonadThrow,
+                                                    catch, throwM)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
@@ -599,7 +601,7 @@ instance FieldParsable MaskLocation where
   fieldParser = do
     t <- takeTill (== '|')
     pure $ if "{scannumber:" `Data.Text.isInfixOf` t
-           then MaskLocation'Tmpl t
+           then MaskLocation'Or (MaskLocation'Tmpl t) (MaskLocation "default")
            else MaskLocation t
 
 instance HasFieldValue MaskLocation where
@@ -1010,7 +1012,7 @@ files md mr mt =
        then throwM (NoDataFilesUnderTheGivenDirectory dir)
        else return $ catMaybes fs
 
-getMask :: (MonadThrow m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
+getMask :: (MonadCatch m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
 getMask ml d sn@(Scannumber i)
   = case ml of
       Nothing          -> return Nothing
@@ -1022,10 +1024,9 @@ getMask ml d sn@(Scannumber i)
         let fname = pack $ printf (unpack tmpl2) i
         Just <$> getDetectorMask d fname
       Just (MaskLocation'Or l r) -> do
-              mm <- getMask (Just l) d sn
-              case mm of
-                Nothing -> getMask (Just r) d sn
-                Just m  ->  pure $ Just m
+        getMask (Just l) d sn
+        `catch`
+        \(ex :: HklDetectorException) -> getMask (Just r) d sn
 
 getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig
 getPreConfig' (ConfigContent cfg) = do
