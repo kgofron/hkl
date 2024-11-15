@@ -15,10 +15,13 @@ import           Data.Attoparsec.Text               (parseOnly)
 import           Data.Either                        (isRight)
 import           Data.HashMap.Lazy                  (fromList)
 import           Data.List.NonEmpty                 (NonEmpty (..))
+import           Data.Text                          (Text, unpack)
 import           Numeric.Interval                   (singleton, (...))
 import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
 import           Path                               (mkAbsDir)
 import           Test.Hspec
+import           Test.Hspec.Attoparsec              (shouldParse, (~>))
+import           Test.Hspec.Attoparsec.Source
 import           Test.Hspec.QuickCheck              (prop)
 
 import           Hkl.Binoculars
@@ -43,43 +46,34 @@ spec = do
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM3))
 
   describe "ConfigRange" $ do
-    it "parse a range" $ do
-      let p = parseOnly fieldParser "120 123-453"
-      p `shouldBe` (Right (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)])))
-    it "parse a range" $ do
-      let p = parseOnly fieldParser "120,123-453"
-      p `shouldBe` (Right (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)])))
-    it "parse a range" $ do
-      let p = parseOnly fieldParser "120,,,123-453"
-      p `shouldBe` (Right (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)])))
-    it "parse a range" $ do
-      let p = parseOnly fieldParser "120-135 137-453"
-      p `shouldBe` (Right (ConfigRange (InputRange (120...135) :| [InputRange (137...453)])))
-    it "parse a range" $ do
-      let p = parseOnly fieldParser "120-135, 137-453"
-      p `shouldBe` (Right (ConfigRange (InputRange (120...135) :| [InputRange (137...453)])))
-    it "parse a range" $ do
-      let p = parseOnly fieldParser "0 1--1 0-0"
-      p  `shouldBe` (Right (ConfigRange (InputRange (singleton 0) :| [InputRange (1...(-1)), InputRange (singleton 0)])))
-    it "parse a range" $ do
-      let p = parseOnly fieldParser "210-286"
-      p  `shouldBe` (Right (ConfigRange (InputRange (210...286) :| [])))
+
+    let it'range t e = it ("parse a range: " <> unpack t) $ do
+          t ~> fieldParser
+          `shouldParse` e
+
+    it'range "120 123-453" (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)]))
+    it'range "120,123-453" (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)]))
+    it'range "120,,,123-453" (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)]))
+    it'range "120-135 137-453" (ConfigRange (InputRange (120...135) :| [InputRange (137...453)]))
+    it'range "120-135, 137-453" (ConfigRange (InputRange (120...135) :| [InputRange (137...453)]))
+    it'range "0 1--1 0-0" (ConfigRange (InputRange (singleton 0) :| [InputRange (1...(-1)), InputRange (singleton 0)]))
+    it'range "210-286" (ConfigRange (InputRange (210...286) :| []))
 
     prop "quickcheck" $
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
 
     it "parse a MaskLocation" $ do
       let p = parseOnly fieldParser "mask.npy"
-      p `shouldBe` (Right (MaskLocation "mask.npy"))
+      p `shouldBe` (Right (MaskLocation'Or MaskLocation'NoMask (MaskLocation "mask.npy")))
 
     it "parse a MaskLocation" $ do
       let p = parseOnly fieldParser "mask_{scannumber:03d}.npy"
-      p `shouldBe` (Right (MaskLocation'Tmpl "mask_{scannumber:03d}.npy"))
+      p `shouldBe` (Right (MaskLocation'Or MaskLocation'NoMask (MaskLocation'Tmpl "mask_{scannumber:03d}.npy")))
 
 
     it "parse a MaskLocation" $ do
       let p = parseOnly fieldParser "mask_{scannumber:03d}.npy | mask.npy"
-      p `shouldBe` (Right (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation "mask.npy")))
+      p `shouldBe` (Right (MaskLocation'Or MaskLocation'NoMask (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation "mask.npy"))))
 
 
   describe "read and parse binoculars configuration" $ do
