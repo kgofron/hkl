@@ -419,6 +419,7 @@ static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
         }
 
         /* border */
+        /* TODO deal with the gap */
         if (tilling->border_masked > 0){
                 /* columns */
                 for(i=0;
