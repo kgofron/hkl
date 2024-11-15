@@ -73,7 +73,6 @@ static struct descr_t parse_descr(const char *header, regmatch_t match)
 
         struct descr_t descr;
 
-        fprintf(stdout, "descr: %s\n", description);
         /* endianness */
         switch(description[0]){
         case '|':
@@ -323,7 +322,6 @@ void *npy_load(const char *fname,
 
                 fclose(fp);
         }
-        fprintf(stdout, "arr: %p\n", arr);
         return arr;
 }
 
