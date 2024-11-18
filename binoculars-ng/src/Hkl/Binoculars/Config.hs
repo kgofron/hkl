@@ -68,7 +68,7 @@ module Hkl.Binoculars.Config
 import           Control.Applicative               (many, optional, (<|>))
 import           Control.Lens                      (makeLenses)
 import           Control.Monad.Catch               (MonadCatch, MonadThrow,
-                                                    catch, throwM)
+                                                    throwM, try)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
@@ -1020,6 +1020,9 @@ files md mr mt =
        then throwM (NoDataFilesUnderTheGivenDirectory dir)
        else return $ catMaybes fs
 
+maskOr :: Maybe Mask -> Maybe Mask -> Maybe Mask
+maskOr ml mr = ml <|> mr
+
 getMask :: (MonadCatch m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
 getMask mloc d sn@(Scannumber i)
   = case mloc of
@@ -1032,9 +1035,15 @@ getMask mloc d sn@(Scannumber i)
         let fname = pack $ printf (unpack tmpl2) i
         Just <$> getDetectorMask d fname
       Just (MaskLocation'Or l r) -> do
-        getMask (Just l) d sn
-        `catch`
-        \(ex :: HklDetectorException) -> getMask (Just r) d sn
+        el :: Either HklDetectorException (Maybe Mask) <- try $ getMask (Just l) d sn
+        case el of
+          Left _ -> getMask (Just r) d sn
+          Right ml -> do
+            er :: Either HklDetectorException (Maybe Mask) <- try $ getMask (Just r) d sn
+            pure $ case er of
+                     Left _   -> ml
+                     Right mr -> ml `maskOr` mr
+
 
 getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig
 getPreConfig' (ConfigContent cfg) = do
