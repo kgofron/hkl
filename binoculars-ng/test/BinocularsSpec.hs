@@ -62,18 +62,14 @@ spec = do
     prop "quickcheck" $
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
 
-    it "parse a MaskLocation" $ do
-      let p = parseOnly fieldParser "mask.npy"
-      p `shouldBe` (Right (MaskLocation'Or MaskLocation'NoMask (MaskLocation "mask.npy")))
+    let it'maskLocation t e = it ("parse a MaskLocation: " <> unpack t) $ do
+          t ~> fieldParser
+          `shouldParse` e
 
-    it "parse a MaskLocation" $ do
-      let p = parseOnly fieldParser "mask_{scannumber:03d}.npy"
-      p `shouldBe` (Right (MaskLocation'Or MaskLocation'NoMask (MaskLocation'Tmpl "mask_{scannumber:03d}.npy")))
-
-
-    it "parse a MaskLocation" $ do
-      let p = parseOnly fieldParser "mask_{scannumber:03d}.npy | mask.npy"
-      p `shouldBe` (Right (MaskLocation'Or MaskLocation'NoMask (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation "mask.npy"))))
+    it'maskLocation "mask.npy" (MaskLocation "mask.npy")
+    it'maskLocation "mask_{scannumber:03d}.npy" (MaskLocation'Tmpl "mask_{scannumber:03d}.npy")
+    it'maskLocation "mask_{scannumber:03d}.npy | mask.npy" (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation "mask.npy"))
+    it'maskLocation "mask_{scannumber:03d}.npy | mask.npy|default  " (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation'Or (MaskLocation "mask.npy") (MaskLocation "default")))
 
 
   describe "read and parse binoculars configuration" $ do

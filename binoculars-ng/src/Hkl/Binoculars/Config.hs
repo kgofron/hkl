@@ -73,9 +73,9 @@ import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Attoparsec.Text              (Parser, char, decimal,
-                                                    double, parseOnly, satisfy,
-                                                    sepBy, signed, takeText,
-                                                    takeTill)
+                                                    double, parseOnly, peekChar,
+                                                    satisfy, sepBy, signed,
+                                                    takeText, takeTill)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
@@ -594,15 +594,23 @@ instance FieldEmitter MaskLocation where
   fieldEmitter (MaskLocation'Tmpl t) = t
   fieldEmitter (MaskLocation'Or l r) = fieldEmitter l <> " | " <> fieldEmitter r
 
-fixParser :: (a -> Parser a) -> a -> Parser a
-fixParser parser a = (parser a >>= fixParser parser) <|> pure a
-
 instance FieldParsable MaskLocation where
   fieldParser = do
+    let loc :: Text -> MaskLocation
+        loc t = if "{scannumber:" `Data.Text.isInfixOf` t
+                then MaskLocation'Tmpl (strip t)
+                else MaskLocation (strip t)
+
     t <- takeTill (== '|')
-    pure $ if "{scannumber:" `Data.Text.isInfixOf` t
-           then MaskLocation'Or (MaskLocation'Tmpl t) (MaskLocation "default")
-           else MaskLocation t
+    if t == ""
+      then fail "MaskLocation is Empty"
+      else do mc <- peekChar
+              case mc of
+                Nothing -> pure $ loc t
+                Just '|'  -> do
+                  _ <- char '|'  -- extract the '|' char
+                  MaskLocation'Or (loc t) <$> fieldParser
+                Just c -> fail ("MaskLocation " <> [c])
 
 instance HasFieldValue MaskLocation where
   fieldvalue = parsable
