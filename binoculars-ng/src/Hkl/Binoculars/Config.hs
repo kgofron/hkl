@@ -1021,8 +1021,8 @@ files md mr mt =
        else return $ catMaybes fs
 
 getMask :: (MonadCatch m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
-getMask ml d sn@(Scannumber i)
-  = case ml of
+getMask mloc d sn@(Scannumber i)
+  = case mloc of
       Nothing          -> return Nothing
       Just (MaskLocation "default") -> Just <$> getDetectorDefaultMask d
       Just (MaskLocation fname)     -> Just <$> getDetectorMask d fname
