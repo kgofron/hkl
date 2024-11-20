@@ -683,6 +683,20 @@ uint8_t *hkl_binoculars_detector_2d_mask_load(HklBinocularsDetectorEnum n,
         return arr;
 };
 
+uint8_t *hkl_binoculars_detector_2d_mask_or(HklBinocularsDetectorEnum n,
+                                            uint8_t *arr_l, uint8_t *arr_r)
+{
+        size_t i;
+        const struct detector_t detector = get_detector(n);
+        uint8_t *arr = no_mask(&detector.shape);
+
+        if (arr != NULL)
+                for(i=0; i<shape_size(detector.shape); ++i)
+                        arr[i] = arr_l[i] | arr_r[i];
+
+        return arr;
+}
+
 void hkl_binoculars_detector_2d_mask_save(HklBinocularsDetectorEnum n,
                                           const char *fname)
 {

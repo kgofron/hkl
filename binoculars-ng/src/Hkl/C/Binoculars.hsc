@@ -158,6 +158,7 @@ instance Enum HklBinocularsDetectorEnum where
 #ccall hkl_binoculars_detector_2d_coordinates_get, <HklBinocularsDetectorEnum> -> IO (Ptr CDouble)
 #ccall hkl_binoculars_detector_2d_mask_get, <HklBinocularsDetectorEnum> -> IO (Ptr CBool)
 #ccall hkl_binoculars_detector_2d_mask_load, <HklBinocularsDetectorEnum> -> CString -> IO (Ptr CBool)
+#ccall hkl_binoculars_detector_2d_mask_or, <HklBinocularsDetectorEnum> -> Ptr CBool -> Ptr CBool -> IO (Ptr CBool)
 #ccall hkl_binoculars_detector_2d_name_get, <HklBinocularsDetectorEnum> -> IO CString
 #ccall hkl_binoculars_detector_2d_number_of_detectors, IO CInt
 #ccall hkl_binoculars_detector_2d_shape_get, <HklBinocularsDetectorEnum> -> Ptr CInt -> Ptr CInt -> IO ()

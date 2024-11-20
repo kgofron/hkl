@@ -1020,8 +1020,11 @@ files md mr mt =
        then throwM (NoDataFilesUnderTheGivenDirectory dir)
        else return $ catMaybes fs
 
-maskOr :: Maybe Mask -> Maybe Mask -> Maybe Mask
-maskOr ml mr = ml <|> mr
+maskOr :: (MonadThrow m, MonadIO m) =>
+         Detector Hkl DIM2 -> Maybe Mask -> Maybe Mask -> m (Maybe Mask)
+maskOr _ Nothing r = pure r
+maskOr _ l Nothing = pure l
+maskOr d (Just l) (Just r) = Just <$> maskOr' d l r
 
 getMask :: (MonadCatch m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
 getMask mloc d sn@(Scannumber i)
@@ -1040,9 +1043,9 @@ getMask mloc d sn@(Scannumber i)
           Left _ -> getMask (Just r) d sn
           Right ml -> do
             er :: Either HklDetectorException (Maybe Mask) <- try $ getMask (Just r) d sn
-            pure $ case er of
-                     Left _   -> ml
-                     Right mr -> ml `maskOr` mr
+            case er of
+              Left _   -> pure ml
+              Right mr -> maskOr d ml mr
 
 
 getPreConfig' :: ConfigContent -> Either String BinocularsPreConfig

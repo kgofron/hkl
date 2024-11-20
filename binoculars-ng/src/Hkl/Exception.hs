@@ -16,9 +16,11 @@ import           Path                  (Abs, Dir, Path)
 
 import           Hkl.Types
 
-data HklDetectorException = MaskShapeNotcompatible Text
-                          | NoDefaultMask
-    deriving (Show, Typeable)
+data HklDetectorException
+  = MaskShapeNotcompatible Text
+  | NoDefaultMask
+  | MaskInternalError
+  deriving (Show, Typeable)
 instance Exception HklDetectorException
 
 data HklBinocularsException
