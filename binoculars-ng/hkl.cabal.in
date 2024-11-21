@@ -93,6 +93,7 @@ library
   exposed-modules: Hkl.Binoculars.Pipes
   exposed-modules: Hkl.Binoculars.Projections
   exposed-modules: Hkl.Binoculars.Projections.Angles
+  exposed-modules: Hkl.Binoculars.Projections.Config
   exposed-modules: Hkl.Binoculars.Projections.Hkl
   exposed-modules: Hkl.Binoculars.Projections.QCustom
   exposed-modules: Hkl.Binoculars.Projections.Test

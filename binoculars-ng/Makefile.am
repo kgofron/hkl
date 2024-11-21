@@ -13,6 +13,7 @@ binoculars_ng_SOURCES=\
 	src/Hkl/Binoculars/Config/Sample.hs \
 	src/Hkl/Binoculars/Pipes.hs \
 	src/Hkl/Binoculars/Projections.hs \
+	src/Hkl/Binoculars/Projections/Config.hs \
 	src/Hkl/Binoculars/Projections/Angles.hs \
 	src/Hkl/Binoculars/Projections/Hkl.hs \
 	src/Hkl/Binoculars/Projections/QCustom.hs \

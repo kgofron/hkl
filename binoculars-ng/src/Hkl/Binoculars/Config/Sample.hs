@@ -31,13 +31,14 @@ module Hkl.Binoculars.Config.Sample
     , overload'DataSourcePath'Sample
     ) where
 
-import           Data.Aeson                   (FromJSON, ToJSON)
-import           Data.HashMap.Lazy            (fromList)
-import           Data.Ini                     (Ini (..))
-import           GHC.Generics                 (Generic)
+import           Data.Aeson                        (FromJSON, ToJSON)
+import           Data.HashMap.Lazy                 (fromList)
+import           Data.Ini                          (Ini (..))
+import           GHC.Generics                      (Generic)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Config.Common
+import           Hkl.Binoculars.Projections.Config
 import           Hkl.DataSource
 import           Hkl.H5
 import           Hkl.Lattice
