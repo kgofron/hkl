@@ -67,7 +67,6 @@ import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.Binoculars.Projections.Config
 import           Hkl.Binoculars.Projections.QCustom
-import           Hkl.Binoculars.Projections.Sample
 import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector

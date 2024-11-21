@@ -8,32 +8,33 @@ module BinocularsSpec
   where
 
 
-import           Control.Monad                      (forM_)
-import           Data.Aeson                         (Result (..), fromJSON,
-                                                     toJSON)
-import           Data.Attoparsec.Text               (parseOnly)
-import           Data.Either                        (isRight)
-import           Data.HashMap.Lazy                  (fromList)
-import           Data.List.NonEmpty                 (NonEmpty (..))
-import           Data.Text                          (Text, unpack)
-import           Numeric.Interval                   (singleton, (...))
-import           Numeric.Units.Dimensional.Prelude  (meter, radian, (*~))
-import           Path                               (mkAbsDir)
+import           Control.Monad                            (forM_)
+import           Data.Aeson                               (Result (..),
+                                                           fromJSON, toJSON)
+import           Data.Attoparsec.Text                     (parseOnly)
+import           Data.Either                              (isRight)
+import           Data.HashMap.Lazy                        (fromList)
+import           Data.List.NonEmpty                       (NonEmpty (..))
+import           Data.Text                                (Text, unpack)
+import           Numeric.Interval                         (singleton, (...))
+import           Numeric.Units.Dimensional.Prelude        (meter, radian, (*~))
+import           Path                                     (mkAbsDir)
 import           Test.Hspec
-import           Test.Hspec.Attoparsec              (shouldParse, (~>))
+import           Test.Hspec.Attoparsec                    (shouldParse, (~>))
 import           Test.Hspec.Attoparsec.Source
-import           Test.Hspec.QuickCheck              (prop)
+import           Test.Hspec.QuickCheck                    (prop)
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Config.Common
-import           Hkl.Binoculars.Config.Sample
+import           Hkl.Binoculars.Projections.Config.Sample
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
 import           Hkl.Repa
 import           Paths_hkl
 
-import           Prelude                            hiding (putStrLn, readFile)
+import           Prelude                                  hiding (putStrLn,
+                                                           readFile)
 
 
 spec :: Spec

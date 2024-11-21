@@ -23,7 +23,7 @@
     Portability: GHC only (not tested)
 -}
 
-module Hkl.Binoculars.Projections.Sample
+module Hkl.Binoculars.Projections.Config.Sample
     ( Args(..)
     , Config(..)
     , default'DataSourcePath'Sample
@@ -31,14 +31,14 @@ module Hkl.Binoculars.Projections.Sample
     , overload'DataSourcePath'Sample
     ) where
 
-import           Data.Aeson                        (FromJSON, ToJSON)
-import           Data.HashMap.Lazy                 (fromList)
-import           Data.Ini                          (Ini (..))
-import           GHC.Generics                      (Generic)
+import           Data.Aeson                               (FromJSON, ToJSON)
+import           Data.HashMap.Lazy                        (fromList)
+import           Data.Ini                                 (Ini (..))
+import           GHC.Generics                             (Generic)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Config.Common
-import           Hkl.Binoculars.Projections.Config
+import           Hkl.Binoculars.Projections.Config.Common
 import           Hkl.DataSource
 import           Hkl.H5
 import           Hkl.Lattice
