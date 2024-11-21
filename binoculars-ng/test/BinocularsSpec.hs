@@ -25,7 +25,7 @@ import           Test.Hspec.Attoparsec.Source
 import           Test.Hspec.QuickCheck                    (prop)
 
 import           Hkl.Binoculars
-import           Hkl.Binoculars.Config.Common
+import           Hkl.Binoculars.Config
 import           Hkl.Binoculars.Projections.Config.Sample
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom

@@ -57,7 +57,6 @@ import           Pipes.Safe                        (MonadSafe, catch, throwM)
 import           Prelude                           hiding (filter)
 
 import           Hkl.Binoculars.Config
-import           Hkl.Binoculars.Config.Common
 import           Hkl.Detector
 import           Hkl.Exception
 import           Hkl.Geometry

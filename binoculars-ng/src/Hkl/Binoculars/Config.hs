@@ -56,11 +56,20 @@ module Hkl.Binoculars.Config
     , auto
     , auto'
     , destination'
+    , elemFDef
+    , elemFDef'
+    , elemFMbDef
+    , elemFMbDef'
+    , eitherF
     , files
     , getCapabilities
     , getMask
     , getPreConfig
     , mergeIni
+    , parse'
+    , parseFDef
+    , parseMb
+    , parseMbDef
     , readConfig
     ) where
 
@@ -82,6 +91,8 @@ import           Data.Foldable                     (foldl')
 import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Hashable                     (Hashable)
 import           Data.Ini                          (Ini (..), printIni)
+import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
+                                                    section)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
                                                     ini, listWithSeparator,
@@ -89,7 +100,7 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     text, (.=))
 import           Data.List                         (find, isInfixOf, length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
-import           Data.Maybe                        (catMaybes)
+import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Text                         (Text, breakOn, cons, drop,
                                                     empty, findIndex,
                                                     intercalate, isInfixOf,
@@ -928,7 +939,7 @@ binocularsPreConfigDefault = BinocularsPreConfig
 
 binocularsPreConfigSpec :: IniSpec BinocularsPreConfig ()
 binocularsPreConfigSpec = do
-  section "projection" $ do
+  Data.Ini.Config.Bidir.section "projection" $ do
     binocularsPreConfigProjectionType .= field "type" parsable
 
 
@@ -1022,8 +1033,8 @@ files md mr mt =
 
 maskOr :: (MonadThrow m, MonadIO m) =>
          Detector Hkl DIM2 -> Maybe Mask -> Maybe Mask -> m (Maybe Mask)
-maskOr _ Nothing r = pure r
-maskOr _ l Nothing = pure l
+maskOr _ Nothing r         = pure r
+maskOr _ l Nothing         = pure l
 maskOr d (Just l) (Just r) = Just <$> maskOr' d l r
 
 getMask :: (MonadCatch m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
@@ -1071,3 +1082,73 @@ replace' proj msub i l dtmpl midx = unpack
                                                       Just sub -> fieldEmitter sub
                                                       Nothing -> fieldEmitter proj)
                           . unDestinationTmpl . addOverwrite midx $ dtmpl
+
+
+------------------
+-- Parser utils --
+------------------
+
+parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
+parse' c s f = parseIniFile c $ Data.Ini.Config.section s (fieldMbOf f auto')
+
+eitherF :: (t1 -> p) -> Either t1 t2 -> (t2 -> p) -> p
+eitherF fa (Left a)  _ = fa a
+eitherF _ (Right b) fb = fb b
+
+parseF :: HasFieldValue b
+       => Text -> Text -> Text -> (Maybe b -> Either String r) -> Either String r
+parseF c s f = eitherF error (parse' c s f)
+
+parseFDef :: HasFieldValue p
+          => Text -> Text -> Text -> p -> Either String p
+parseFDef c s f def = parseF c s f $ \case
+  Nothing -> Right def
+  Just b  -> Right b
+
+parseMb ::  HasFieldValue r
+        => Text -> Text -> Text -> Either String (Maybe r)
+parseMb c s f = eitherF error (parse' c s f) pure
+
+parseMbDef :: HasFieldValue r
+           => Text -> Text -> Text -> Maybe r -> Maybe r
+parseMbDef c s f def = eitherF error (parse' c s f) (<|> def)
+
+elemFDef' :: HasFieldComment w => Text -> (v -> w) -> v -> v -> [(Text, Text)]
+elemFDef' k f v d = elemFDef k f v d (fieldComment (f v))
+
+
+elemContent :: Text -> Text -> [Text] -> [Text]
+elemContent k def cs =
+  [ ""
+  , k <> ":"
+  , ""
+  ]
+  <> cs
+  <> [ ""
+     , "default value: `" <> def <> "`"
+     , ""
+     , "uncomment and edit the next line if you want to modify the value"
+     ]
+
+elemFDef ::  HasFieldValue w => Text -> (v -> w) -> v -> v -> [Text] -> [(Text, Text)]
+elemFDef k f v d cs = [ ("#", l) | l <- ls ] <> [(k,  fvEmit fieldvalue (f v))]
+  where
+    ls :: [Text]
+    ls = elemContent k defv cs
+
+    defv :: Text
+    defv = fvEmit fieldvalue (f d)
+
+elemFMbDef' ::  HasFieldComment w => Text -> (v -> Maybe w) -> v -> v -> [(Text, Text)]
+elemFMbDef' k f v d = elemFMbDef k f v d (fieldComment (fromMaybe undefined (f v)))
+
+elemFMbDef ::  HasFieldValue w => Text -> (v -> Maybe w) -> v -> v -> [Text] -> [(Text, Text)]
+elemFMbDef k f v d cs = [ ("#", l) | l <- ls ] <> maybe [("# " <> k, "")] (\w -> [(k, fvEmit fieldvalue w)]) (f v)
+  where
+    ls :: [Text]
+    ls = elemContent k defv cs
+
+    defv :: Text
+    defv = case f d of
+             Nothing -> "<not set>"
+             Just w  -> fvEmit fieldvalue w

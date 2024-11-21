@@ -41,7 +41,6 @@ import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
 import           Path                              (Abs, Dir, Path)
 
 import           Hkl.Binoculars.Config
-import           Hkl.Binoculars.Config.Common
 import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Orphan                        ()

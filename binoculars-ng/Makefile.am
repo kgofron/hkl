@@ -9,7 +9,6 @@ binoculars_ng_SOURCES=\
 	src/Hkl/Binoculars/Command.hs \
 	src/Hkl/Binoculars/Common.hs \
 	src/Hkl/Binoculars/Config.hs \
-	src/Hkl/Binoculars/Config/Common.hs \
 	src/Hkl/Binoculars/Pipes.hs \
 	src/Hkl/Binoculars/Projections.hs \
 	src/Hkl/Binoculars/Projections/Config.hs \

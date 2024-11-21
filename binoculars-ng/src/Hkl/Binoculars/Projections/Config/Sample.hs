@@ -37,7 +37,6 @@ import           Data.Ini                                 (Ini (..))
 import           GHC.Generics                             (Generic)
 
 import           Hkl.Binoculars.Config
-import           Hkl.Binoculars.Config.Common
 import           Hkl.Binoculars.Projections.Config.Common
 import           Hkl.DataSource
 import           Hkl.H5

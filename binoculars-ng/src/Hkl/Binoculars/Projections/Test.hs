@@ -59,7 +59,6 @@ import           Text.Printf                        (printf)
 
 import           Hkl.Binoculars.Common
 import           Hkl.Binoculars.Config
-import           Hkl.Binoculars.Config.Common
 import           Hkl.Binoculars.Pipes
 import           Hkl.Binoculars.Projections
 import           Hkl.Binoculars.Projections.Config
