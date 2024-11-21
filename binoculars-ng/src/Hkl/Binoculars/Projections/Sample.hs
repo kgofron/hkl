@@ -23,7 +23,7 @@
     Portability: GHC only (not tested)
 -}
 
-module Hkl.Binoculars.Config.Sample
+module Hkl.Binoculars.Projections.Sample
     ( Args(..)
     , Config(..)
     , default'DataSourcePath'Sample
