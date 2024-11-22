@@ -394,15 +394,10 @@ instance DataSource Mask where
 
     withDataSourceP _ DataSourcePath'Mask'NoMask g = g DataSourceAcq'Mask'NoMask
     withDataSourceP (ScanFile _ sn)  (DataSourcePath'Mask l d) g
-        = do  mm <- getMask (Just l) d sn
+        = do  mm <- getMask l d sn
               case mm of
                 Nothing  -> g DataSourceAcq'Mask'NoMask
                 (Just m) -> g (DataSourceAcq'Mask m)
-
-
-              --       withForeignPtr (toForeignPtr m) $ \ptr -> f ptr
-
-              -- g (DataSourceAcq'Mask mm)
 
 -- Scannumber
 

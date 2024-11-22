@@ -1037,23 +1037,22 @@ maskOr _ Nothing r         = pure r
 maskOr _ l Nothing         = pure l
 maskOr d (Just l) (Just r) = Just <$> maskOr' d l r
 
-getMask :: (MonadCatch m, MonadIO m) => Maybe MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
-getMask mloc d sn@(Scannumber i)
-  = case mloc of
-      Nothing          -> return Nothing
-      Just (MaskLocation "default") -> Just <$> getDetectorDefaultMask d
-      Just (MaskLocation fname)     -> Just <$> getDetectorMask d fname
-      Just (MaskLocation'Tmpl tmpl) -> do
+getMask :: (MonadCatch m, MonadIO m) => MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
+getMask loc d sn@(Scannumber i)
+  = case loc of
+      MaskLocation "default" -> Just <$> getDetectorDefaultMask d
+      MaskLocation fname     -> Just <$> getDetectorMask d fname
+      MaskLocation'Tmpl tmpl -> do
         let tmpl1 = replace "{scannumber:" "%" tmpl
         let tmpl2 = replace "}" "" tmpl1
         let fname = pack $ printf (unpack tmpl2) i
         Just <$> getDetectorMask d fname
-      Just (MaskLocation'Or l r) -> do
-        el :: Either HklDetectorException (Maybe Mask) <- try $ getMask (Just l) d sn
+      MaskLocation'Or l r -> do
+        el :: Either HklDetectorException (Maybe Mask) <- try $ getMask l d sn
         case el of
-          Left _ -> getMask (Just r) d sn
+          Left _ -> getMask r d sn
           Right ml -> do
-            er :: Either HklDetectorException (Maybe Mask) <- try $ getMask (Just r) d sn
+            er :: Either HklDetectorException (Maybe Mask) <- try $ getMask r d sn
             case er of
               Left _   -> pure ml
               Right mr -> maskOr d ml mr
