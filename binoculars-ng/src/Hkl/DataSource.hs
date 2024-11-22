@@ -394,10 +394,8 @@ instance DataSource Mask where
 
     withDataSourceP _ DataSourcePath'Mask'NoMask g = g DataSourceAcq'Mask'NoMask
     withDataSourceP (ScanFile _ sn)  (DataSourcePath'Mask l d) g
-        = do  mm <- getMask l d sn
-              case mm of
-                Nothing  -> g DataSourceAcq'Mask'NoMask
-                (Just m) -> g (DataSourceAcq'Mask m)
+        = do  m <- getMask l d sn
+              g (DataSourceAcq'Mask m)
 
 -- Scannumber
 

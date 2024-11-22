@@ -1031,28 +1031,22 @@ files md mr mt =
        then throwM (NoDataFilesUnderTheGivenDirectory dir)
        else return $ catMaybes fs
 
-maskOr :: (MonadThrow m, MonadIO m) =>
-         Detector Hkl DIM2 -> Maybe Mask -> Maybe Mask -> m (Maybe Mask)
-maskOr _ Nothing r         = pure r
-maskOr _ l Nothing         = pure l
-maskOr d (Just l) (Just r) = Just <$> maskOr' d l r
-
-getMask :: (MonadCatch m, MonadIO m) => MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m (Maybe Mask)
+getMask :: (MonadCatch m, MonadIO m) => MaskLocation -> Detector Hkl DIM2 -> Scannumber -> m Mask
 getMask loc d sn@(Scannumber i)
   = case loc of
-      MaskLocation "default" -> Just <$> getDetectorDefaultMask d
-      MaskLocation fname     -> Just <$> getDetectorMask d fname
+      MaskLocation "default" -> getDetectorDefaultMask d
+      MaskLocation fname     -> getDetectorMask d fname
       MaskLocation'Tmpl tmpl -> do
         let tmpl1 = replace "{scannumber:" "%" tmpl
         let tmpl2 = replace "}" "" tmpl1
         let fname = pack $ printf (unpack tmpl2) i
-        Just <$> getDetectorMask d fname
+        getDetectorMask d fname
       MaskLocation'Or l r -> do
-        el :: Either HklDetectorException (Maybe Mask) <- try $ getMask l d sn
+        el :: Either HklDetectorException Mask <- try $ getMask l d sn
         case el of
           Left _ -> getMask r d sn
           Right ml -> do
-            er :: Either HklDetectorException (Maybe Mask) <- try $ getMask r d sn
+            er :: Either HklDetectorException Mask <- try $ getMask r d sn
             case er of
               Left _   -> pure ml
               Right mr -> maskOr d ml mr

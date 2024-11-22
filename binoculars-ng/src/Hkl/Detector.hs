@@ -20,7 +20,7 @@ module Hkl.Detector
        , getDetectorDefaultMask
        , getPixelsCoordinates
        , inDetector
-       , maskOr'
+       , maskOr
        , mkDetector
        , newDetector
        , parseDetector2D
@@ -179,9 +179,9 @@ getDetectorMask (Detector2D d name sh)  mask = do
   liftIO $ withCString (unpack mask) $
          fromPtr sh err <=< c'hkl_binoculars_detector_2d_mask_load n
 
-maskOr' :: (MonadThrow m, MonadIO m) =>
-          Detector Hkl DIM2 -> Mask -> Mask -> m Mask
-maskOr' (Detector2D d _ sh) l r = do
+maskOr :: (MonadThrow m, MonadIO m) =>
+         Detector Hkl DIM2 -> Mask -> Mask -> m Mask
+maskOr (Detector2D d _ sh) l r = do
   let n =  toEnum . fromEnum $ d
   liftIO $ withForeignPtr (toForeignPtr l) $ \c'l ->
     withForeignPtr (toForeignPtr r) $ \c'r ->
