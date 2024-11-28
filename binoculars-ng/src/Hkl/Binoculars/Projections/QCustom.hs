@@ -397,7 +397,7 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _)
         DataSourcePath'Image
         (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
         det
---      HklBinocularsDetectorEnum'Cirpad -> undefined
+      HklBinocularsDetectorEnum'Cirpad -> undefined
 
 mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourcePath Image
 mkDetector'Sixs'Sbs det@(Detector2D d _ _)
@@ -421,7 +421,7 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _)
       HklBinocularsDetectorEnum'Merlin -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
---      HklBinocularsDetectorEnum'Cirpad -> undefined
+      HklBinocularsDetectorEnum'Cirpad -> undefined
 
 overloadAttenuationPath :: Maybe Double -> Maybe Float -> DataSourcePath Attenuation -> DataSourcePath Attenuation
 overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)
@@ -585,6 +585,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
             = overloadTimescan0Path msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
       -- wavelength
+      let dataSourcePath'WaveLength'Diffabs :: DataSourcePath Double
+          dataSourcePath'WaveLength'Diffabs
+            = DataSourcePath'Double ( hdf5p $ grouppat 0 $ datasetp "DIFFABS/d13-1-c03__op__mono/wavelength" )
+
       let dataSourcePath'WaveLength'Mars :: DataSourcePath Double
           dataSourcePath'WaveLength'Mars
             = DataSourcePath'Double ( hdf5p $ grouppat 0 $ datasetp "MARS/d03-1-c03__op__mono1-config_#2/lambda" )
@@ -808,7 +812,25 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                       (mkTimeStamp'Sbs msub)
                       (mkTimescan0'Sbs msub)
                       DataSourcePath'Scannumber
-         DiffabsCirpad -> undefined
+         DiffabsCirpad -> DataSourcePath'DataFrameQCustom
+                         (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
+                         (DataSourcePath'Geometry
+                          cirpad
+                          (overloadWaveLength mWavelength dataSourcePath'WaveLength'Diffabs)
+                          (DataSourcePath'List
+                           [ DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/cirpad_delta/position"))
+                           , DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/dif.1-cirpad-gam/position"))
+                           ]
+                          )
+                         )
+                         (DataSourcePath'Image
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image"))
+                          detector)
+                         (mk'DataSourcePath'Mask common)
+                         (mkTimeStamp'Sbs msub)
+                         (mkTimescan0'Sbs msub)
+                         DataSourcePath'Scannumber
+
          MarsFlyscan -> DataSourcePath'DataFrameQCustom
                        (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
                        -- (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor

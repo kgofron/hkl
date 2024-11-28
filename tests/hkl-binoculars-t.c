@@ -479,7 +479,8 @@ static void hkl_projection(void)
                                                                            {-13, 0, 0},
                                                                            {-13, 0, 0},
                                                                            {-13, -1, 0},
-                                                                           {-13, -1, 0}};
+                                                                           {-13, -1, 0},
+                                                                           {-14, -2, 0}};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
                                                                            {1, 34, 19},
@@ -488,7 +489,8 @@ static void hkl_projection(void)
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
-                                                                           {0, 33, 15}};
+                                                                           {0, 33, 15},
+                                                                           {1, 34, 24}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
@@ -551,6 +553,11 @@ static void hkl_projection(void)
                         res &= imax[n][i] == darray_item(cube->axes, i).imax;
                 }
 
+                if (res == FALSE){
+                        fprintf(stdout, "\n");
+                        hkl_binoculars_cube_fprintf(stdout, cube);
+                }
+
                 free(mask);
                 free(pixels_coordinates);
                 hkl_binoculars_cube_free(cube);
@@ -601,7 +608,8 @@ static void test_projection(void)
                                                                            {-13, 0, 0},
                                                                            {-13, 0, 0},
                                                                            {-13, -1, 0},
-                                                                           {-13, -1, 0}};
+                                                                           {-13, -1, 0},
+                                                                           {-14, -2, 0}};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
                                                                            {1, 34, 19},
@@ -610,7 +618,8 @@ static void test_projection(void)
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
-                                                                           {0, 33, 15}};
+                                                                           {0, 33, 15},
+                                                                           {1, 34, 24}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
@@ -698,6 +707,12 @@ static void test_projection(void)
                         res &= DIAG(imin[n][i] == darray_item(cube2->axes, i).imin);
                         res &= DIAG(imax[n][i] == darray_item(cube2->axes, i).imax);
                 }
+
+                if (res == FALSE){
+                        fprintf(stdout, "\n");
+                        hkl_binoculars_cube_fprintf(stdout, cube);
+                }
+
 
                 free(mask);
                 free(pixels_coordinates_2);

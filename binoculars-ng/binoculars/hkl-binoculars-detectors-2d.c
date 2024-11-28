@@ -134,7 +134,7 @@ datatype(
         (Merlin, struct square_t),
         (MerlinMedipix3RXQuad, struct tilling_t),
         (MerlinMedipix3RXQuad512, struct tilling_t),
-        (Cirpad, struct square_t)
+        (Cirpad, struct imxpad_t)
         );
 
 struct detector_t {
@@ -166,7 +166,7 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                 DETECTOR(MerlinMedipix3RXQuad512,
                          SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false, false, 2)),
                 DETECTOR(Cirpad,
-                         SHAPE(560, 2400), SQUARE(130e-6)),
+                         SHAPE(560, 2400), IMXPAD(130e-6, 80, 120)),
         };
 
         if (n > ARRAY_SIZE(detectors))
@@ -595,9 +595,9 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_tilling(&detector.shape,
                                                       tilling);
                 }
-                of(Cirpad, square){
-                        arr = coordinates_get_square(&detector.shape,
-                                                     square);
+                of(Cirpad, imxpad){
+                        arr = coordinates_get_imxpad(&detector.shape,
+                                                     imxpad);
                 }
         }
         return arr;
