@@ -101,6 +101,37 @@ struct imxpad_t {
 #define IMXPAD(pixel_size_, chip_w_, chip_h_) (struct imxpad_t)		\
         {.square=SQUARE(pixel_size_), .chip_w=chip_w_, .chip_h=chip_h_}
 
+struct cirpad_t {
+        struct imxpad_t imxpad;
+        double parameters[20][6]; /* 6 (x, y, z, rx, ry, rz) parameters per module */
+};
+
+#define CIRPAD_PARAMETERS {                     \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                {0, 0, 0, 0, 0, 0},             \
+                        }
+
+#define CIRPAD(pixel_size_, chip_w_, chip_h_) (struct cirpad_t) \
+        {.imxpad=IMXPAD(pixel_size_, chip_w_, chip_h_), .parameters=CIRPAD_PARAMETERS}
+
 struct tilling_t {
         struct square_t square;
         int module_width;
@@ -134,7 +165,7 @@ datatype(
         (Merlin, struct square_t),
         (MerlinMedipix3RXQuad, struct tilling_t),
         (MerlinMedipix3RXQuad512, struct tilling_t),
-        (Cirpad, struct imxpad_t)
+        (Cirpad, struct cirpad_t)
         );
 
 struct detector_t {
@@ -166,7 +197,7 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                 DETECTOR(MerlinMedipix3RXQuad512,
                          SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false, false, 2)),
                 DETECTOR(Cirpad,
-                         SHAPE(560, 2400), IMXPAD(130e-6, 80, 120)),
+                         SHAPE(560, 2400), CIRPAD(130e-6, 80, 120)),
         };
 
         if (n > ARRAY_SIZE(detectors))
@@ -304,6 +335,35 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
                          imxpad_coordinates_pattern(i,
                                                     imxpad->chip_h,
                                                     imxpad->square.pixel_size));
+        }
+
+        return arr;
+}
+
+static inline double *coordinates_get_cirpad(const struct shape_t *shape,
+                                             const struct cirpad_t *cirpad)
+{
+        int i;
+        double *arr = coordinates_new(shape);
+        double *z, *row;
+
+        /* y */
+        row = y_coordinates(arr, *shape);
+        for(i=0; i<shape->width; ++i){
+                row[i] = - imxpad_coordinates_pattern(i,
+                                                      cirpad->imxpad.chip_w,
+                                                      cirpad->imxpad.square.pixel_size);
+        }
+        replicate_row(row, *shape, shape->height);
+
+        /* z */
+        z = z_coordinates(arr, *shape);
+        for(i=0; i<shape->height; ++i){
+                row = get_row(z, *shape, i);
+                fill_row(row, *shape,
+                         imxpad_coordinates_pattern(i,
+                                                    cirpad->imxpad.chip_h,
+                                                    cirpad->imxpad.square.pixel_size));
         }
 
         return arr;
@@ -595,9 +655,9 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_tilling(&detector.shape,
                                                       tilling);
                 }
-                of(Cirpad, imxpad){
-                        arr = coordinates_get_imxpad(&detector.shape,
-                                                     imxpad);
+                of(Cirpad, cirpad){
+                        arr = coordinates_get_cirpad(&detector.shape,
+                                                     cirpad);
                 }
         }
         return arr;
