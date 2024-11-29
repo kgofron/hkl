@@ -22,6 +22,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <cglm/struct.h>
+#include <cglm/version.h>
+
 #include "datatype99.h"
 
 #include "ccan/array_size/array_size.h"
@@ -101,36 +104,50 @@ struct imxpad_t {
 #define IMXPAD(pixel_size_, chip_w_, chip_h_) (struct imxpad_t)		\
         {.square=SQUARE(pixel_size_), .chip_w=chip_w_, .chip_h=chip_h_}
 
-struct cirpad_t {
-        struct imxpad_t imxpad;
-        double parameters[20][6]; /* 6 (x, y, z, rx, ry, rz) parameters per module */
+#define CIRPAD_N_IMXPAD_S70 20
+
+#define CIRPAD_PARAMETERS {                                             \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
+                }
+
+struct cirpad_transformation_t {
+         CGLM_ALIGN_MAT vec3s translation;
+         CGLM_ALIGN_MAT vec3s eulers;
 };
 
-#define CIRPAD_PARAMETERS {                     \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                {0, 0, 0, 0, 0, 0},             \
-                        }
+struct cirpad_t {
+        struct imxpad_t imxpad_s70;
+        struct shape_t imxpad_s70_shape;
+        size_t n_imxpad_s70;
+        struct cirpad_transformation_t parameters[CIRPAD_N_IMXPAD_S70];
+};
 
-#define CIRPAD(pixel_size_, chip_w_, chip_h_) (struct cirpad_t) \
-        {.imxpad=IMXPAD(pixel_size_, chip_w_, chip_h_), .parameters=CIRPAD_PARAMETERS}
+
+#define CIRPAD(pixel_size_, chip_w_, chip_h_) (struct cirpad_t)         \
+        { .imxpad_s70=IMXPAD(pixel_size_, chip_w_, chip_h_)             \
+                        , .imxpad_s70_shape=SHAPE(560, 120)             \
+                        , .n_imxpad_s70=CIRPAD_N_IMXPAD_S70             \
+                        , .parameters=CIRPAD_PARAMETERS                 \
+                        }
 
 struct tilling_t {
         struct square_t square;
@@ -311,15 +328,17 @@ static inline double* coordinates_get_tilling(const struct shape_t *shape,
         return arr;
 }
 
-static inline double *coordinates_get_imxpad(const struct shape_t *shape,
-                                             const struct imxpad_t *imxpad)
+static inline void coordinates_set_imxpad_xyz(double *y, double *z,
+                                              const struct shape_t *shape,
+                                              const struct imxpad_t *imxpad)
 {
         int i;
-        double *arr = coordinates_new(shape);
-        double *z, *row;
+        double *row;
+
+        /* x = 0 (nothing to do) */
 
         /* y */
-        row = y_coordinates(arr, *shape);
+        row = y;
         for(i=0; i<shape->width; ++i){
                 row[i] = - imxpad_coordinates_pattern(i,
                                                       imxpad->chip_w,
@@ -328,7 +347,6 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
         replicate_row(row, *shape, shape->height);
 
         /* z */
-        z = z_coordinates(arr, *shape);
         for(i=0; i<shape->height; ++i){
                 row = get_row(z, *shape, i);
                 fill_row(row, *shape,
@@ -336,6 +354,39 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
                                                     imxpad->chip_h,
                                                     imxpad->square.pixel_size));
         }
+}
+
+static inline void coordinates_apply_imxpad_transformation_xyz(double *x, double *y, double *z,
+                                                               const struct shape_t *shape,
+                                                               const struct cirpad_transformation_t transformation)
+{
+        size_t i;
+
+        CGLM_ALIGN_MAT mat4s t_m = GLMS_MAT4_IDENTITY_INIT;
+        CGLM_ALIGN_MAT mat4s r_m = GLMS_MAT4_IDENTITY_INIT;
+
+        t_m = glms_translate_make(transformation.translation);
+        /* glms_mat4_mul(t_m, glms_translate_make(v_t)); */
+        r_m = glms_euler_xyz(transformation.eulers);
+
+        for(i=0; i<shape_size(*shape); ++i){
+                CGLM_ALIGN_MAT vec3s v = {{x[i], y[i], z[i]}};
+                v = glms_mat4_mulv3(t_m, v, 1);
+                v = glms_mat4_mulv3(r_m, v, 0);
+
+                x[i] = v.raw[0], y[i] = v.raw[1], z[i] = v.raw[2];
+        }
+}
+
+static inline double *coordinates_get_imxpad(const struct shape_t *shape,
+                                             const struct imxpad_t *imxpad)
+{
+        double *arr = coordinates_new(shape);
+
+        double *y = y_coordinates(arr, *shape);
+        double *z = z_coordinates(arr, *shape);
+
+        coordinates_set_imxpad_xyz(y, z, shape, imxpad);
 
         return arr;
 }
@@ -345,25 +396,23 @@ static inline double *coordinates_get_cirpad(const struct shape_t *shape,
 {
         int i;
         double *arr = coordinates_new(shape);
-        double *z, *row;
+        double *x = x_coordinates(arr, *shape);
+        double *y = y_coordinates(arr, *shape);
+        double *z = z_coordinates(arr, *shape);
 
-        /* y */
-        row = y_coordinates(arr, *shape);
-        for(i=0; i<shape->width; ++i){
-                row[i] = - imxpad_coordinates_pattern(i,
-                                                      cirpad->imxpad.chip_w,
-                                                      cirpad->imxpad.square.pixel_size);
-        }
-        replicate_row(row, *shape, shape->height);
+        for(i=0; i<cirpad->n_imxpad_s70; ++i){
+                double *x_imxpad = x + i * shape_size(cirpad->imxpad_s70_shape);
+                double *y_imxpad = y + i * shape_size(cirpad->imxpad_s70_shape);
+                double *z_imxpad = z + i * shape_size(cirpad->imxpad_s70_shape);
+                /* set the default module coordinates */
+                coordinates_set_imxpad_xyz(y_imxpad, z_imxpad,
+                                           &cirpad->imxpad_s70_shape, &cirpad->imxpad_s70);
 
-        /* z */
-        z = z_coordinates(arr, *shape);
-        for(i=0; i<shape->height; ++i){
-                row = get_row(z, *shape, i);
-                fill_row(row, *shape,
-                         imxpad_coordinates_pattern(i,
-                                                    cirpad->imxpad.chip_h,
-                                                    cirpad->imxpad.square.pixel_size));
+                /* apply the transformations */
+                coordinates_apply_imxpad_transformation_xyz(
+                        x_imxpad, y_imxpad, z_imxpad,
+                        &cirpad->imxpad_s70_shape,
+                        cirpad->parameters[i]);
         }
 
         return arr;
@@ -515,36 +564,30 @@ static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
 /* Calibration */
 /***************/
 
-static inline void translate_coordinates(double *arr,
-                                         const struct shape_t shape,
-                                         double dx, double dy, double dz)
+static inline void translate_coordinates_xyz(double *x, double *y, double *z,
+                                             const struct shape_t *shape,
+                                             double dx, double dy, double dz)
 {
-        double *x = x_coordinates(arr, shape);
-        double *y = y_coordinates(arr, shape);
-        double *z = z_coordinates(arr, shape);
+        size_t i;
 
-        for(int i=0; i<shape_size(shape); ++i){
+        for(i=0; i<shape_size(*shape); ++i){
                 x[i] += dx;
                 y[i] += dy;
                 z[i] += dz;
         }
 }
 
-static inline void rotate_coordinates(double *arr,
-                                      const struct shape_t shape,
-                                      double angle,
-                                      double axis_x, double axis_y, double axis_z)
+static inline void rotate_coordinates_xyz(double *x, double *y, double *z,
+                                          const struct shape_t *shape,
+                                          double angle,
+                                          double axis_x, double axis_y, double axis_z)
 {
-        double *x = x_coordinates(arr, shape);
-        double *y = y_coordinates(arr, shape);
-        double *z = z_coordinates(arr, shape);
-
         HklVector axis = {{axis_x, axis_y, axis_z}};
         HklQuaternion q;
 
         hkl_quaternion_init_from_angle_and_axe(&q, angle, &axis);
 
-        for(int i=0; i<shape_size(shape); ++i){
+        for(int i=0; i<shape_size(*shape); ++i){
                 HklVector v= {{x[i], y[i], z[i]}};
 
                 hkl_vector_rotated_quaternion(&v, &q);
@@ -554,12 +597,9 @@ static inline void rotate_coordinates(double *arr,
         }
 }
 
-static inline void normalize_coordinates(double *arr, const struct shape_t shape)
+static inline void normalize_coordinates_xyz(double *x, double *y, double *z,
+                                             const struct shape_t shape)
 {
-        double *x = x_coordinates(arr, shape);
-        double *y = y_coordinates(arr, shape);
-        double *z = z_coordinates(arr, shape);
-
         for(int i=0; i<shape_size(shape); ++i)
         {
                 double n = sqrt(x[i] * x[i] + y[i] * y[i] + z[i] * z[i]);
@@ -577,7 +617,8 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
                                                  int ix0, int iy0, double sdd,
                                                  double detrot, int normalize_flag)
 {
-        struct shape_t shape = SHAPE(width, height);
+        const struct shape_t shape = SHAPE(width, height);
+        double *x = x_coordinates(arr, shape);
         double *y = y_coordinates(arr, shape);
         double *z = z_coordinates(arr, shape);
 
@@ -585,10 +626,10 @@ void hkl_binoculars_detector_2d_sixs_calibration(HklBinocularsDetectorEnum n,
         double dy = -y[flat_index(shape, ix0, iy0)];
         double dz = -z[flat_index(shape, ix0, iy0)];
 
-        translate_coordinates(arr, shape, dx, dy, dz);
-        rotate_coordinates(arr, shape, detrot, 1, 0, 0);
+        translate_coordinates_xyz(x, y, z, &shape, dx, dy, dz);
+        rotate_coordinates_xyz(x, y, z, &shape, detrot, 1, 0, 0);
         if(normalize_flag)
-                normalize_coordinates(arr, shape);
+                normalize_coordinates_xyz(x, y, z, shape);
 }
 
 /*****************************/

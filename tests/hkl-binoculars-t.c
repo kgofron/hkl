@@ -490,7 +490,7 @@ static void hkl_projection(void)
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
-                                                                           {1, 34, 24}};
+                                                                           {1, 34, 14}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
@@ -619,7 +619,7 @@ static void test_projection(void)
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
-                                                                           {1, 34, 24}};
+                                                                           {1, 34, 14}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
