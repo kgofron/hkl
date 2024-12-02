@@ -134,6 +134,7 @@ cristal: binoculars-ng
 	$(PROCESS) /nfs/ruche/cristal-soleil/com-cristal/2019/Run5/99190273_Bouyanfif/PourFred/conf_mask.ini  64
 
 diffabs: binoculars-ng
+# /nfs/ruche-diffabs/diffabs-soleil/com-diffabs/2024/Run5/2024-11-19 13, 14, 16, 17, 18, 19, 20
 	$(PROCESS) data/test/config_diffabs_ruche_cirpad.ini 26-30
 	$(PROCESS) data/test/config_diffabs_ruche_cirpad.ini 31-37
 
