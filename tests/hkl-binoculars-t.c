@@ -472,15 +472,15 @@ static void hkl_projection(void)
                                     {30, 30, 30, 30}};
 
         /* the expected result for the three axes of the 1st detector */
-        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14, -2, 0},
-                                                                           {-14, -2, 0},
-                                                                           {-14, -2, 0},
-                                                                           {-14, -2, -2},
+        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14,-2, 0},
+                                                                           {-14,-2, 0},
+                                                                           {-14,-2, 0},
+                                                                           {-14,-2,-2},
                                                                            {-13, 0, 0},
                                                                            {-13, 0, 0},
-                                                                           {-13, -1, 0},
-                                                                           {-13, -1, 0},
-                                                                           {-14, -2, 0}};
+                                                                           {-13,-1, 0},
+                                                                           {-13,-1, 0},
+                                                                           {-18, 0,-1}};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
                                                                            {1, 34, 19},
@@ -490,7 +490,7 @@ static void hkl_projection(void)
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
-                                                                           {1, 34, 14}};
+                                                                           {0, 33, 36}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
@@ -601,15 +601,15 @@ static void test_projection(void)
                                     {30, 30, 30, 30}};
 
         /* the expected result for the three axes of the 1st detector */
-        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14, -2, 0},
-                                                                           {-14, -2, 0},
-                                                                           {-14, -2, 0},
-                                                                           {-14, -2, -2},
+        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14,-2, 0},
+                                                                           {-14,-2, 0},
+                                                                           {-14,-2, 0},
+                                                                           {-14,-2,-2},
                                                                            {-13, 0, 0},
                                                                            {-13, 0, 0},
-                                                                           {-13, -1, 0},
-                                                                           {-13, -1, 0},
-                                                                           {-14, -2, 0}};
+                                                                           {-13,-1, 0},
+                                                                           {-13,-1, 0},
+									   {-18, 0,-1}};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
                                                                            {1, 34, 19},
@@ -619,7 +619,7 @@ static void test_projection(void)
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
                                                                            {0, 33, 15},
-                                                                           {1, 34, 14}};
+                                                                           {0, 33, 36}};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;

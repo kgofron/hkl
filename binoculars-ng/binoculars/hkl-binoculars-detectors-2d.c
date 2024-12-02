@@ -106,74 +106,28 @@ struct imxpad_t {
 
 #define CIRPAD_N_IMXPAD_S70 20
 
-/* ### do NOT modify this file */
-/* #moduleIdx cirpad_delta cirpad_gam distance */
-/* 0 0.000000 0 649.07 */
-/* 1 6.740000 0 649.07 */
-/* 2 13.480000 0 649.07 */
-/* 3 20.220000 0 649.07 */
-/* 4 26.960000 0 649.07 */
-/* 5 33.700000 0 649.07 */
-/* 6 40.440000 0 649.07 */
-/* 7 47.180000 0 649.07 */
-/* 8 53.920000 0 649.07 */
-/* 9 60.660000 0 649.07 */
-/* 10 67.400000 0 649.07 */
-/* 11 74.140000 0 649.07 */
-/* 12 80.880000 0 649.07 */
-/* 13 87.620000 0 649.07 */
-/* 14 94.360000 0 649.07 */
-/* 15 101.100000 0 649.07 */
-/* 16 107.840000 0 649.07 */
-/* 17 114.580000 0 649.07 */
-/* 18 121.320000 0 649.07 */
-/* 19 128.060000 0 649.07 */
-
-/* #cirpad_delta = xxx; cirpad_gam = xxx */
-/* #moduleIdx cirpad_delta_shift cirpad_gam_shift distance_shift */
-/* 0 -0.004000 -0.012000 -5.0 */
-/* 1 0.012465 -0.010000 -4.0 */
-/* 2 0.006597 0.000000 -5.0 */
-/* 3 0.013270 0.000000 -5.1 */
-/* 4 0.010681 0.000000 -5.6 */
-/* 5 0.045005 0.050000 -5.3 */
-/* 6 0.069792 0.0800000 -5.5 */
-/* 7 0.054386 0.000000 -5.8 */
-/* 8 0.0987469 0.070000 -5.6 */
-/* 9 0.1240820 0.000000 -5.8 */
-/* 10 0.1184208 0.000000 -6.2 */
-/* 11 0.147275 0.000000 -5.5 */
-/* 12 0.172897 0.000000 -5.5 */
-/* 13 0.209571 0.060000 -5.7 */
-/* 14 0.256837 0.000000 -5.0 */
-/* 15 0.265456 -0.0500000 -5.0 */
-/* 16 0.291911 0.000000 -5.0 */
-/* 17 0.323424 0.000000 -4.0 */
-/* 18 0.323641 -0.010000 -4.0 */
-/* 19 0.372198 -0.010000 -4.0 */
-
 #define CIRPAD_PARAMETERS {                                             \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-        {{{0, 0, 0}}, {{0, 0, 0}}},                                     \
-                }
+		{{{0.64907 - 5.0e-3, 0, 0}}, {{glm_rad(90), glm_rad( 0.0000 + 0.012000), 0}}}, \
+		{{{0.64907 - 4.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-6.7400 + 0.010000), 0}}}, \
+		{{{0.64907 - 5.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-13.480 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.1e-3, 0, 0}}, {{glm_rad(90), glm_rad(-20.220 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.6e-3, 0, 0}}, {{glm_rad(90), glm_rad(-26.960 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.3e-3, 0, 0}}, {{glm_rad(90), glm_rad(-33.700 - 0.050000), 0}}}, \
+		{{{0.64907 - 5.5e-3, 0, 0}}, {{glm_rad(90), glm_rad(-40.440 - 0.080000), 0}}}, \
+		{{{0.64907 - 5.8e-3, 0, 0}}, {{glm_rad(90), glm_rad(-47.180 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.6e-3, 0, 0}}, {{glm_rad(90), glm_rad(-53.920 - 0.070000), 0}}}, \
+		{{{0.64907 - 5.8e-3, 0, 0}}, {{glm_rad(90), glm_rad(-60.660 - 0.000000), 0}}}, \
+		{{{0.64907 - 6.2e-3, 0, 0}}, {{glm_rad(90), glm_rad(-67.400 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.5e-3, 0, 0}}, {{glm_rad(90), glm_rad(-74.140 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.5e-3, 0, 0}}, {{glm_rad(90), glm_rad(-80.880 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.7e-3, 0, 0}}, {{glm_rad(90), glm_rad(-87.620 - 0.060000), 0}}}, \
+		{{{0.64907 - 5.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-94.360 - 0.000000), 0}}}, \
+		{{{0.64907 - 5.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-101.10 + 0.050000), 0}}}, \
+		{{{0.64907 - 5.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-107.84 - 0.000000), 0}}}, \
+		{{{0.64907 - 4.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-114.58 - 0.000000), 0}}}, \
+		{{{0.64907 - 4.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-121.32 + 0.010000), 0}}}, \
+		{{{0.64907 - 4.0e-3, 0, 0}}, {{glm_rad(90), glm_rad(-128.06 + 0.010000), 0}}}, \
+			}
 
 struct cirpad_transformation_t {
          CGLM_ALIGN_MAT vec3s translation;
@@ -184,7 +138,7 @@ struct cirpad_t {
         struct imxpad_t imxpad_s70;
         struct shape_t imxpad_s70_shape;
         size_t n_imxpad_s70;
-        struct cirpad_transformation_t parameters[CIRPAD_N_IMXPAD_S70];
+        struct cirpad_transformation_t transformations[CIRPAD_N_IMXPAD_S70];
 };
 
 
@@ -192,7 +146,7 @@ struct cirpad_t {
         { .imxpad_s70=IMXPAD(pixel_size_, chip_w_, chip_h_)             \
                         , .imxpad_s70_shape=SHAPE(560, 120)             \
                         , .n_imxpad_s70=CIRPAD_N_IMXPAD_S70             \
-                        , .parameters=CIRPAD_PARAMETERS                 \
+                        , .transformations=CIRPAD_PARAMETERS		\
                         }
 
 struct tilling_t {
@@ -402,28 +356,6 @@ static inline void coordinates_set_imxpad_xyz(double *y, double *z,
         }
 }
 
-static inline void coordinates_apply_imxpad_transformation_xyz(double *x, double *y, double *z,
-                                                               const struct shape_t *shape,
-                                                               const struct cirpad_transformation_t transformation)
-{
-        size_t i;
-
-        CGLM_ALIGN_MAT mat4s t_m = GLMS_MAT4_IDENTITY_INIT;
-        CGLM_ALIGN_MAT mat4s r_m = GLMS_MAT4_IDENTITY_INIT;
-
-        t_m = glms_translate_make(transformation.translation);
-        /* glms_mat4_mul(t_m, glms_translate_make(v_t)); */
-        r_m = glms_euler_xyz(transformation.eulers);
-
-        for(i=0; i<shape_size(*shape); ++i){
-                CGLM_ALIGN_MAT vec3s v = {{x[i], y[i], z[i]}};
-                v = glms_mat4_mulv3(t_m, v, 1);
-                v = glms_mat4_mulv3(r_m, v, 0);
-
-                x[i] = v.raw[0], y[i] = v.raw[1], z[i] = v.raw[2];
-        }
-}
-
 static inline double *coordinates_get_imxpad(const struct shape_t *shape,
                                              const struct imxpad_t *imxpad)
 {
@@ -447,18 +379,31 @@ static inline double *coordinates_get_cirpad(const struct shape_t *shape,
         double *z = z_coordinates(arr, *shape);
 
         for(i=0; i<cirpad->n_imxpad_s70; ++i){
+		size_t j;
+		CGLM_ALIGN_MAT mat4s t_m = GLMS_MAT4_IDENTITY_INIT;
+		CGLM_ALIGN_MAT mat4s r_m = GLMS_MAT4_IDENTITY_INIT;
                 double *x_imxpad = x + i * shape_size(cirpad->imxpad_s70_shape);
                 double *y_imxpad = y + i * shape_size(cirpad->imxpad_s70_shape);
                 double *z_imxpad = z + i * shape_size(cirpad->imxpad_s70_shape);
+
                 /* set the default module coordinates */
+
                 coordinates_set_imxpad_xyz(y_imxpad, z_imxpad,
                                            &cirpad->imxpad_s70_shape, &cirpad->imxpad_s70);
 
-                /* apply the transformations */
-                coordinates_apply_imxpad_transformation_xyz(
-                        x_imxpad, y_imxpad, z_imxpad,
-                        &cirpad->imxpad_s70_shape,
-                        cirpad->parameters[i]);
+                /* apply the transformations for each module */
+
+		t_m = glms_translate_make(cirpad->transformations[i].translation);
+		/* glms_mat4_mul(t_m, glms_translate_make(v_t)); */
+		r_m = glms_euler_zyx(cirpad->transformations[i].eulers);
+
+		for(j=0; j<shape_size(cirpad->imxpad_s70_shape); ++j){
+			CGLM_ALIGN_MAT vec3s v = {{x_imxpad[j], y_imxpad[j], z_imxpad[j]}};
+			v = glms_mat4_mulv3(t_m, v, 1);
+			v = glms_mat4_mulv3(r_m, v, 0);
+
+			x_imxpad[j] = v.raw[0], y_imxpad[j] = v.raw[1], z_imxpad[j] = v.raw[2];
+		}
         }
 
         return arr;
@@ -804,6 +749,9 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(MerlinMedipix3RXQuad512, tilling){
                         arr = mask_get_tilling(&detector.shape,
                                                tilling);
+                }
+                of(Cirpad, _){
+                        arr = no_mask(&detector.shape);
                 }
                 otherwise {
                         arr = no_mask(&detector.shape);
