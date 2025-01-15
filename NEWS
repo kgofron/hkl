@@ -1,8 +1,11 @@
 # -*- org -*-
 
-* 5.1.X XXXX-XX-XX
+* 5.1.3 2025-01-15
+** Lib binoculars
+   - it is now possible to mask a ring of n pixels around each module.
+     Most of the times these pixel's statistics are bad.
 ** Binoculars-ng
-   - Added float64 support for maks
+   - Added float64 support for masks
    - It is possible to define a fall back for mask location with this
      syntax. `my_first_mask.npy | my_second_mask.npy`
 
