@@ -23,6 +23,10 @@ Flag useHklDev
   Description: Use the current devel hkl library in the source tree
   Default: True
 
+Flag useThreaded
+  Description: Use threading (some arch does not support this)
+  Default: True
+
 library
   build-depends: aeson
   build-depends: async
@@ -163,8 +167,9 @@ executable binoculars-ng
 
   ghc-options: -g
   ghc-options: -rtsopts
-  ghc-options: -threaded
-  ghc-options: "-with-rtsopts=-N4"
+  if flag(useThreaded)
+    ghc-options: -threaded
+    ghc-options: "-with-rtsopts=-N"
   ghc-options: -Wall
 
   if flag(useHklDev)
@@ -200,8 +205,9 @@ test-suite hkl-test
   ghc-options: -g
   ghc-options: -Wall
   ghc-options: -rtsopts
-  ghc-options: -threaded
-  ghc-options: "-with-rtsopts=-N4"
+  if flag(useThreaded)
+    ghc-options: -threaded
+    ghc-options: "-with-rtsopts=-N"
 
   hs-source-dirs: @srcdir@/test
 

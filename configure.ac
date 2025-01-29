@@ -172,7 +172,7 @@ dnl **********************************************
 dnl *** add an option for the binoculars build ***
 dnl **********************************************
 
-OPTION_DEFAULT_ON([binoculars], [do not compile the binoculars API])
+OPTION_DEFAULT_ON([binoculars], [do not compile binoculars-ng])
 
 AM_CONDITIONAL([BINOCULARS], [test x$enable_binoculars = xyes])
 AM_COND_IF([BINOCULARS],
@@ -184,6 +184,8 @@ AM_COND_IF([BINOCULARS],
                AC_MSG_ERROR([cabal was not found])
             fi
 ])
+
+AC_SUBST(CABALFLAGS)
 
 dnl *******************************
 dnl *** add an option for hkl3d ***
