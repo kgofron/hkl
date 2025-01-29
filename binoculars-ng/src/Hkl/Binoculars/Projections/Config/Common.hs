@@ -13,7 +13,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2025 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -104,7 +104,9 @@ instance HasIniConfig Common where
     toIni c = Ini { iniSections = fromList [ ("dispatcher", elemFDef "ncores" binocularsConfig'Common'NCores c defaultConfig
                                                           [ "the number of cores use for computation."
                                                           , "the effective number of core used depends on the real number of core available on your computer."
-                                                          , "at maximum this value could be one less that the pysical number of core."
+                                                          , "at maximum this value could be one less that the physical number of core."
+                                                          , ""
+                                                          , "if `zero` use the maximum of capabilities."
                                                           ]
                                                           <> elemFDef "destination" binocularsConfig'Common'Destination c defaultConfig
                                                           [ "the template used to produce the destination file"
@@ -314,9 +316,12 @@ instance HasIniConfig Common where
 
          binocularsConfig'Common'NCores <- eitherF error (parse' cfg "dispatcher" "ncores")
                                           (\mb -> do
-                                             let ns = case mb of
-                                                        Nothing -> [ncapmax, ncoresmax - 1]
-                                                        Just b  -> [b, ncapmax, ncoresmax -1]
+                                             let ns = [ncapmax, ncoresmax - 1] <> case mb of
+                                                                                    Nothing -> let (NCores b) = binocularsConfig'Common'NCores defaultConfig
+                                                                                              in [b]
+                                                                                    Just b  -> case b of
+                                                                                                0 -> []
+                                                                                                _ -> [b]
                                              pure $ NCores (minimum ns))
          binocularsConfig'Common'Destination <- parseFDef cfg "dispatcher" "destination" (binocularsConfig'Common'Destination defaultConfig)
          binocularsConfig'Common'Overwrite <- parseFDef cfg "dispatcher" "overwrite" (binocularsConfig'Common'Overwrite defaultConfig)
