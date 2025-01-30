@@ -13,7 +13,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2025 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -177,6 +177,7 @@ guess'DataSourcePath'Sample common sample =
 
      let samplePath = case inputType of
                         CristalK6C        -> cristalSamplePath
+                        Custom            -> undefined
                         DiffabsCirpad     -> diffabsSamplePath
                         MarsFlyscan       -> marsSamplePath
                         MarsSbs           -> marsSamplePath

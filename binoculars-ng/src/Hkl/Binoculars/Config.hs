@@ -17,7 +17,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 {-
-    Copyright  : Copyright (C) 2014-, 20242024 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2025 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -88,8 +88,8 @@ import           Data.Attoparsec.Text              (Parser, char, decimal,
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
-import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Hashable                     (Hashable)
+import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Ini                          (Ini (..), printIni)
 import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
                                                     section)
@@ -524,6 +524,7 @@ instance HasFieldValue InputTypeDeprecated where
   fieldvalue = parsable
 
 data InputType = CristalK6C
+               | Custom
                | DiffabsCirpad
                | MarsFlyscan
                | MarsSbs
@@ -546,6 +547,7 @@ instance Arbitrary InputType where
 
 instance FieldEmitter InputType where
   fieldEmitter CristalK6C        = "cristal:k6c"
+  fieldEmitter Custom            = "custom"
   fieldEmitter DiffabsCirpad     = "diffabs:cirpad"
   fieldEmitter MarsFlyscan       = "mars:flyscan"
   fieldEmitter MarsSbs           = "mars:sbs"

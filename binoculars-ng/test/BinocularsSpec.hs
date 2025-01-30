@@ -77,6 +77,7 @@ spec = do
     it "deprecated inputype" $ do
       forM_ [ "data/test/config_ech6eiger.txt"
             , "data/test/config_sixs_ruche_parsing.ini"
+            , "data/test/config_geometry_custom.ini"
             ] $ \f -> do
         content <- readConfig =<< Just <$> getDataFileName f
         capabilities <- getCapabilities

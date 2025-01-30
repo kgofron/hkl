@@ -343,6 +343,7 @@ instance HasIniConfig Common where
                                             (case minputtypedeprecated of
                                                Nothing -> case binocularsConfig'Common'InputType  of
                                                            CristalK6C -> mkDetector HklBinocularsDetectorEnum'XpadFlatCorrected
+                                                           Custom -> binocularsConfig'Common'Detector defaultConfig
                                                            DiffabsCirpad -> undefined -- mkDetector HklBinocularsDetectorEnum'Cirpad
                                                            MarsFlyscan -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad
                                                            MarsSbs -> mkDetector HklBinocularsDetectorEnum'MerlinMedipix3rxQuad

@@ -15,7 +15,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -ddump-simpl -ddump-to-file -ddump-splices #-}
 {-
-    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2025 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -812,6 +812,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                       (mkTimeStamp'Sbs msub)
                       (mkTimescan0'Sbs msub)
                       DataSourcePath'Scannumber
+         Custom -> undefined
          DiffabsCirpad -> DataSourcePath'DataFrameQCustom
                          (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
                          (DataSourcePath'Geometry
