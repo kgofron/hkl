@@ -34,7 +34,7 @@ import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.List.NonEmpty                (NonEmpty (..))
-import           Data.Text                         (pack)
+import           Data.Text                         (Text, pack)
 import           GHC.Generics                      (Generic)
 import           Numeric.Interval                  (singleton)
 import           Numeric.Units.Dimensional.Prelude (degree, meter, (*~))
@@ -43,8 +43,10 @@ import           Path                              (Abs, Dir, Path)
 import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
 import           Hkl.Detector
+import           Hkl.Geometry
 import           Hkl.Orphan                        ()
 import           Hkl.Repa
+import           Hkl.Types
 
 data Common
 
@@ -72,6 +74,7 @@ instance HasIniConfig Common where
           , binocularsConfig'Common'SkipFirstPoints        :: Maybe Int
           , binocularsConfig'Common'SkipLastPoints         :: Maybe Int
           , binocularsConfig'Common'PolarizationCorrection :: Bool
+          , binocularsConfig'Common'Geometry               :: Maybe Geometry
           } deriving (Eq, Show, Generic)
 
     data Args Common
@@ -99,6 +102,7 @@ instance HasIniConfig Common where
           , binocularsConfig'Common'SkipFirstPoints = Nothing
           , binocularsConfig'Common'SkipLastPoints = Nothing
           , binocularsConfig'Common'PolarizationCorrection = False
+          , binocularsConfig'Common'Geometry = Nothing
           }
 
     toIni c = Ini { iniSections = fromList [ ("dispatcher", elemFDef "ncores" binocularsConfig'Common'NCores c defaultConfig
@@ -383,4 +387,5 @@ instance HasIniConfig Common where
          binocularsConfig'Common'SkipFirstPoints <- parseMb cfg "input" "skip_first_points"
          binocularsConfig'Common'SkipLastPoints <- parseMb cfg "input" "skip_last_points"
          binocularsConfig'Common'PolarizationCorrection <- parseFDef cfg "input" "polarization_correction" (binocularsConfig'Common'PolarizationCorrection defaultConfig)
+         binocularsConfig'Common'Geometry <- pure (binocularsConfig'Common'Geometry defaultConfig)
          pure BinocularsConfig'Common{..}

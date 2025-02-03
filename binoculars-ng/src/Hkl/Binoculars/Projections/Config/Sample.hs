@@ -43,6 +43,7 @@ import           Hkl.H5
 import           Hkl.Lattice
 import           Hkl.Parameter
 import           Hkl.Sample
+import           Hkl.Types
 
 ----------------
 -- DataSource --

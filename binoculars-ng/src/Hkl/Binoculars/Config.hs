@@ -32,7 +32,6 @@ module Hkl.Binoculars.Config
     , Attenuation(..)
     , BinocularsPreConfig(..)
     , Capabilities(..)
-    , ConfigContent(..)
     , ConfigRange(..)
     , Degree(..)
     , DestinationTmpl(..)
@@ -84,14 +83,15 @@ import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, peekChar,
                                                     satisfy, sepBy, signed,
-                                                    takeText, takeTill)
+                                                    string, takeText, takeTill)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
-import           Data.Hashable                     (Hashable)
 import           Data.HashMap.Strict               (HashMap, unionWith)
+import           Data.Hashable                     (Hashable)
 import           Data.Ini                          (Ini (..), printIni)
-import           Data.Ini.Config                   (fieldMbOf, parseIniFile,
+import           Data.Ini.Config                   (IniParser, fieldMbOf,
+                                                    fieldOf, parseIniFile,
                                                     section)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     bool, field, getIniValue,
@@ -138,6 +138,7 @@ import           Prelude                           hiding (drop, length, lines,
 import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Exception
+import           Hkl.Geometry
 import           Hkl.Lattice
 import           Hkl.Repa
 import           Hkl.Types
@@ -311,6 +312,20 @@ instance HasFieldValue Angstrom where
 newtype Attenuation = Attenuation { unAttenuation :: Double }
   deriving (Eq, Show)
 
+-- Axis
+
+instance FieldEmitter Axis where
+  fieldEmitter (Axis n t u) = fieldEmitter n <> fieldEmitter t <> fieldEmitter u
+
+instance FieldParsable Axis where
+  fieldParser = Axis
+                <$> fieldParser
+                <*> fieldParser
+                <*> fieldParser
+
+instance HasFieldValue Axis where
+  fieldvalue = parsable
+
 -- Capabilities
 
 data Capabilities = Capabilities Int Int
@@ -358,6 +373,9 @@ instance HasFieldValue DestinationTmpl where
     { fvParse = Right . DestinationTmpl . uncomment
     , fvEmit = \(DestinationTmpl t) -> t
     }
+
+instance FieldEmitter Double where
+  fieldEmitter d = pack $ printf "%f" d
 
 -- HklBinocularsQCustomSubProjectionEnum
 
@@ -585,6 +603,17 @@ instance FieldParsable InputType where
 
 instance HasFieldValue InputType where
   fieldvalue = parsable
+
+-- Geometry
+
+-- instance FieldParsable Geometry where
+--   fieldParser = geometry'custom'P <|> geometry'factory'P
+--     where
+--       geometry1 = Geometry'Custom (Tree Axis) (Maybe GeometryState)
+--   | Geometry'Factory Factory (Maybe GeometryState)
+
+-- instance HasFieldValue Geometry where
+--   fieldvalue = parsable
 
 -- Limits
 
@@ -927,6 +956,53 @@ instance HasFieldValue SampleAxis where
 instance Arbitrary SampleAxis where
   arbitrary = pure $ SampleAxis "omega"
 
+-- String
+
+instance FieldEmitter String where
+  fieldEmitter s = pack s
+
+instance FieldParsable String where
+  fieldParser = unpack <$> takeText
+
+-- Transformation
+
+instance FieldEmitter Transformation where
+  fieldEmitter NoTransformation = "no-transformation"
+  fieldEmitter (Rotation x y z) = "rotation" <> fieldEmitter x <> fieldEmitter y <> fieldEmitter z
+  fieldEmitter (Translation x y z) = "translation" <> fieldEmitter x <> fieldEmitter y <> fieldEmitter z
+
+instance FieldParsable Transformation where
+  fieldParser = noP <|> rotationP <|> translationP
+    where
+      noP = do
+        string "no-transformation"
+        pure $ NoTransformation
+
+      rotationP = do
+        string "rotation"
+        Rotation <$> double <*> double <*> double
+
+      translationP = do
+        string "translation"
+        Translation <$> double <*> double <*> double
+
+-- Unit
+
+instance FieldEmitter Unit where
+  fieldEmitter Unit'NoUnit            = "ua"
+  fieldEmitter Unit'Angle'Degree      = "degree"
+  fieldEmitter Unit'Length'MilliMeter = "millimeter"
+
+instance FieldParsable Unit where
+  fieldParser = unitP Unit'NoUnit
+                <|> unitP Unit'Angle'Degree
+                <|> unitP Unit'Length'MilliMeter
+    where
+      unitP :: Unit -> Parser Unit
+      unitP u = do
+        string (fieldEmitter u)
+        pure u
+
 -- BinocularsPreConfig
 
 newtype BinocularsPreConfig =
@@ -1078,6 +1154,30 @@ replace' proj msub i l dtmpl midx = unpack
                                                       Nothing -> fieldEmitter proj)
                           . unDestinationTmpl . addOverwrite midx $ dtmpl
 
+
+-- geometry_sample = pitch, mu
+-- geometry_detector = pitch, gamma, delta
+
+-- axis_pitch = rotation 0 -1 0 deg
+-- axis_mu = rotation 0 0 1 deg
+-- axis_gamma = rotation 0 0 1 deg
+-- axis_delta = rotation 0 -1 0 deg
+
+
+-- parse'Axis :: Text -> IniParser Axis
+-- parse'Axis n
+--   = Data.Ini.Config.section "geometry" $ do
+--   fieldOf ("axis_" <> n) auto'
+
+-- parse'Geometry :: IniParser (Maybe Geometry)
+-- parse'Geometry
+--   = do
+--   msamples <-  Data.Ini.Config.section "geometry" $ fieldOf "geometry_sample" auto'
+--   mdetectors <-  Data.Ini.Config.section "geometry" $ fieldOf "geometry_detector" auto'
+--   axes_samples <- mapM (\a -> parse'Axis a) msamples
+--   axes_detectors <- mapM (\a -> parse'Axis a) mdetectors
+--   let mg = mk'Geometry axes_samples axes_detectors
+--   pure $ mk'Geometry axes_samples axes_detectors
 
 ------------------
 -- Parser utils --

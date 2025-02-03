@@ -5,11 +5,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hkl.Geometry
-       ( Factory(..)
+       ( Axis(..)
+       , Factory(..)
        , Geometry(..)
        , GeometryState(..)
+       , Transformation(..)
        , cirpad
        , fixed
+       , mk'Geometry
        , sixsMedHGisaxs
        , sixsMedVGisaxs
        , sixsUhvGisaxs
@@ -37,7 +40,7 @@ import           Hkl.Orphan            ()
 -------------
 
 data Factory = K6c | Fixe | Uhv | Mars | MedH | MedV | SoleilSiriusKappa
-  deriving (Generic, FromJSON, ToJSON)
+  deriving (Eq, Generic, FromJSON, ToJSON)
 
 instance Show Factory where
   show K6c               = "K6C"
@@ -70,20 +73,23 @@ data Transformation
   = NoTransformation
   | Rotation Double Double Double
   | Translation Double Double Double
-  deriving (Generic, FromJSON, Show, ToJSON)
+  deriving (Eq, Generic, FromJSON, Show, ToJSON)
 
 data Axis
   = Axis String Transformation Unit
-  deriving (Generic, FromJSON, Show, ToJSON)
+  deriving (Eq, Generic, FromJSON, Show, ToJSON)
 
 data GeometryState
     = GeometryState Double (Vector CDouble)
-      deriving (Generic, FromJSON, Show, ToJSON)
+      deriving (Eq, Generic, FromJSON, Show, ToJSON)
 
 data Geometry
   = Geometry'Custom (Tree Axis) (Maybe GeometryState)
   | Geometry'Factory Factory (Maybe GeometryState)
-    deriving (Generic, FromJSON, Show, ToJSON)
+    deriving (Eq, Generic, FromJSON, Show, ToJSON)
+
+mk'Geometry :: [Axis] -> [Axis] -> Maybe Geometry
+mk'Geometry sa ds = undefined
 
 cirpad :: Geometry
 cirpad = Geometry'Custom

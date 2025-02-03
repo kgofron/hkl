@@ -30,7 +30,9 @@ import           Hkl.Binoculars.Projections.Config.Sample
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
+import           Hkl.Lattice
 import           Hkl.Repa
+
 import           Paths_hkl
 
 import           Prelude                                  hiding (putStrLn,
@@ -45,6 +47,15 @@ spec = do
 
     prop "quickcheck Limits3" $
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM3))
+
+  describe "Unit" $ do
+    let it'unit t e = it ("parse an unit: " <> unpack t) $ do
+          t ~> fieldParser
+          `shouldParse` e
+
+    it'unit "ua" Unit'NoUnit
+    it'unit "degree" Unit'Angle'Degree
+    it'unit "millimeter" Unit'Length'MilliMeter
 
   describe "ConfigRange" $ do
 
