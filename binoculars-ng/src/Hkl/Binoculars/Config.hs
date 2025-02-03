@@ -83,7 +83,8 @@ import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, peekChar,
                                                     satisfy, sepBy, signed,
-                                                    string, takeText, takeTill)
+                                                    skipSpace, string, takeText,
+                                                    takeTill)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
@@ -968,23 +969,29 @@ instance FieldParsable String where
 
 instance FieldEmitter Transformation where
   fieldEmitter NoTransformation = "no-transformation"
-  fieldEmitter (Rotation x y z) = "rotation" <> fieldEmitter x <> fieldEmitter y <> fieldEmitter z
-  fieldEmitter (Translation x y z) = "translation" <> fieldEmitter x <> fieldEmitter y <> fieldEmitter z
+  fieldEmitter (Rotation x y z) = "rotation " <> fieldEmitter x <> " " <> fieldEmitter y <> " " <> fieldEmitter z
+  fieldEmitter (Translation x y z) = "translation " <> fieldEmitter x <> " " <> fieldEmitter y <> " " <> fieldEmitter z
 
 instance FieldParsable Transformation where
   fieldParser = noP <|> rotationP <|> translationP
     where
       noP = do
-        string "no-transformation"
+        _ <- string "no-transformation"
         pure $ NoTransformation
 
       rotationP = do
-        string "rotation"
-        Rotation <$> double <*> double <*> double
+        _ <- string "rotation" <* skipSpace
+        Rotation
+          <$> double <* skipSpace
+          <*> double <* skipSpace
+          <*> double
 
       translationP = do
-        string "translation"
-        Translation <$> double <*> double <*> double
+        _ <- string "translation " <* skipSpace
+        Translation
+          <$> double <* skipSpace
+          <*> double <* skipSpace
+          <*> double
 
 -- Unit
 

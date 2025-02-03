@@ -30,6 +30,7 @@ import           Hkl.Binoculars.Projections.Config.Sample
 import           Hkl.Binoculars.Projections.Hkl
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
+import           Hkl.Geometry
 import           Hkl.Lattice
 import           Hkl.Repa
 
@@ -47,15 +48,6 @@ spec = do
 
     prop "quickcheck Limits3" $
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM3))
-
-  describe "Unit" $ do
-    let it'unit t e = it ("parse an unit: " <> unpack t) $ do
-          t ~> fieldParser
-          `shouldParse` e
-
-    it'unit "ua" Unit'NoUnit
-    it'unit "degree" Unit'Angle'Degree
-    it'unit "millimeter" Unit'Length'MilliMeter
 
   describe "ConfigRange" $ do
 
@@ -83,6 +75,23 @@ spec = do
     it'maskLocation "mask_{scannumber:03d}.npy | mask.npy" (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation "mask.npy"))
     it'maskLocation "mask_{scannumber:03d}.npy | mask.npy|default  " (MaskLocation'Or (MaskLocation'Tmpl "mask_{scannumber:03d}.npy") (MaskLocation'Or (MaskLocation "mask.npy") (MaskLocation "default")))
 
+  describe "Transformation" $ do
+    let it'transformation t e = it ("parse a transformation: " <> unpack t) $ do
+          t ~> fieldParser `shouldParse` e
+
+    it'transformation "no-transformation" NoTransformation
+    it'transformation "rotation 1 0 0" (Rotation 1 0 0)
+    it'transformation "rotation 1.0 0.0 0.0" (Rotation 1 0 0)
+    it'transformation "translation -1.0 1.0 1.0" (Translation (-1) 1 1)
+
+  describe "Unit" $ do
+    let it'unit t e = it ("parse an unit: " <> unpack t) $ do
+          t ~> fieldParser
+          `shouldParse` e
+
+    it'unit "ua" Unit'NoUnit
+    it'unit "degree" Unit'Angle'Degree
+    it'unit "millimeter" Unit'Length'MilliMeter
 
   describe "read and parse binoculars configuration" $ do
     it "deprecated inputype" $ do
