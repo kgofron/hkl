@@ -976,22 +976,22 @@ instance FieldParsable Transformation where
   fieldParser = noP <|> rotationP <|> translationP
     where
       noP = do
-        _ <- string "no-transformation"
+        _ <- (skipSpace *> string "no-transformation")
         pure $ NoTransformation
 
       rotationP = do
-        _ <- string "rotation" <* skipSpace
+        _ <- (skipSpace *> string "rotation")
         Rotation
-          <$> double <* skipSpace
-          <*> double <* skipSpace
-          <*> double
+          <$> (skipSpace *> double)
+          <*> (skipSpace *> double)
+          <*> (skipSpace *> double)
 
       translationP = do
-        _ <- string "translation " <* skipSpace
+        _ <- skipSpace *> string "translation "
         Translation
-          <$> double <* skipSpace
-          <*> double <* skipSpace
-          <*> double
+          <$> (skipSpace *> double)
+          <*> (skipSpace *> double)
+          <*> (skipSpace *> double)
 
 -- Unit
 
@@ -1007,7 +1007,7 @@ instance FieldParsable Unit where
     where
       unitP :: Unit -> Parser Unit
       unitP u = do
-        string (fieldEmitter u)
+        _ <- skipSpace *> string (fieldEmitter u)
         pure u
 
 -- BinocularsPreConfig
