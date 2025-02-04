@@ -64,6 +64,7 @@ module Hkl.Binoculars.Config
     , getCapabilities
     , getMask
     , getPreConfig
+    , iniParser'Geometry
     , mergeIni
     , parse'
     , parseFDef
@@ -93,9 +94,9 @@ import           Data.Hashable                     (Hashable)
 import           Data.Ini                          (Ini (..), printIni)
 import           Data.Ini.Config                   (IniParser, fieldMbOf,
                                                     fieldOf, parseIniFile,
-                                                    section)
+                                                    section, sectionMb)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
-                                                    bool, field, getIniValue,
+                                                    bool, getIniValue, field,
                                                     ini, listWithSeparator,
                                                     number, parseIni, section,
                                                     text, (.=))
@@ -108,7 +109,7 @@ import           Data.Text                         (Text, breakOn, cons, drop,
                                                     length, lines, pack,
                                                     replace, singleton, strip,
                                                     take, takeWhile, toLower,
-                                                    unlines, unpack, unwords)
+                                                    unlines, unpack, unwords, words)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
@@ -378,6 +379,31 @@ instance HasFieldValue DestinationTmpl where
 instance FieldEmitter Double where
   fieldEmitter d = pack $ printf "%f" d
 
+-- Geometry
+
+iniParser'Axis :: Text -> IniParser Axis
+iniParser'Axis n
+  = do (t, u) <- Data.Ini.Config.section "geometry" $ fieldOf ("axis_" <> n) (parseOnly ((,) <$> fieldParser <*> fieldParser))
+       pure $ Axis (unpack n) t u
+
+iniParser'Geometry :: IniParser (Maybe Geometry)
+iniParser'Geometry
+  = do res <- sectionMb "geometry" $
+             (,)
+             <$> fieldOf "geometry_sample" (parseOnly words')
+             <*> fieldOf "geometry_detector" (parseOnly words')
+       case res of
+         Nothing -> pure Nothing
+         Just (sample, detector) -> do
+           sample_axes <- mapM (\a -> iniParser'Axis a) sample
+           detector_axes <- mapM (\a -> iniParser'Axis a) detector
+           pure $ mk'Geometry sample_axes detector_axes
+         where
+           words' :: Parser [Text]
+           words' = do
+             t <- takeText
+             pure $ Data.Text.words t
+
 -- HklBinocularsQCustomSubProjectionEnum
 
 instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
@@ -604,17 +630,6 @@ instance FieldParsable InputType where
 
 instance HasFieldValue InputType where
   fieldvalue = parsable
-
--- Geometry
-
--- instance FieldParsable Geometry where
---   fieldParser = geometry'custom'P <|> geometry'factory'P
---     where
---       geometry1 = Geometry'Custom (Tree Axis) (Maybe GeometryState)
---   | Geometry'Factory Factory (Maybe GeometryState)
-
--- instance HasFieldValue Geometry where
---   fieldvalue = parsable
 
 -- Limits
 

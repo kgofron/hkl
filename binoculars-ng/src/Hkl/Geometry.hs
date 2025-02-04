@@ -88,8 +88,33 @@ data Geometry
   | Geometry'Factory Factory (Maybe GeometryState)
     deriving (Eq, Generic, FromJSON, Show, ToJSON)
 
+noAxis :: Axis
+noAxis = Axis "" NoTransformation Unit'NoUnit
+
 mk'Geometry :: [Axis] -> [Axis] -> Maybe Geometry
-mk'Geometry sa ds = undefined
+mk'Geometry sa ds = Just geometry
+  where
+    geometry = Geometry'Custom (buildTree sa ds) Nothing
+
+    buildTree' :: [Axis] -> Tree Axis
+    buildTree' [x] = Node x []
+    buildTree' (x : xs) = Node x [buildTree' xs]
+    buildTree' _ = undefined  -- should never happend
+
+    buildTree :: [Axis] -> [Axis] -> Tree Axis
+    buildTree [] [] = undefined
+    buildTree [x] [] = Node x []
+    buildTree (x : xs) [] = Node x [buildTree' xs]
+    buildTree [] [y] = Node y []
+    buildTree [] (y : ys) = Node y [buildTree' ys]
+    buildTree (x : xs) (y : ys) =
+      if x == y then
+        Node x [buildTree xs ys]
+      else
+        let left = Node x (if null xs then [] else [buildTree' xs])
+            right = Node y (if null ys then [] else [buildTree' ys])
+        in Node noAxis [left, right]
+
 
 cirpad :: Geometry
 cirpad = Geometry'Custom

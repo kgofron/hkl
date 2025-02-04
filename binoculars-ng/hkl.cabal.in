@@ -189,6 +189,7 @@ test-suite hkl-test
   build-depends: attoparsec
   build-depends: base >= 4.6
   build-depends: config-ini
+  build-depends: containers
   build-depends: unordered-containers
   build-depends: dimensional
   build-depends: hkl
