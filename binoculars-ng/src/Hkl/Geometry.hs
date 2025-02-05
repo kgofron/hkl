@@ -97,9 +97,9 @@ mk'Geometry sa ds = Just geometry
     geometry = Geometry'Custom (buildTree sa ds) Nothing
 
     buildTree' :: [Axis] -> Tree Axis
-    buildTree' [x] = Node x []
+    buildTree' [x]      = Node x []
     buildTree' (x : xs) = Node x [buildTree' xs]
-    buildTree' _ = undefined  -- should never happend
+    buildTree' _        = undefined  -- should never happend
 
     buildTree :: [Axis] -> [Axis] -> Tree Axis
     buildTree [] [] = undefined
@@ -111,8 +111,8 @@ mk'Geometry sa ds = Just geometry
       if x == y then
         Node x [buildTree xs ys]
       else
-        let left = Node x (if null xs then [] else [buildTree' xs])
-            right = Node y (if null ys then [] else [buildTree' ys])
+        let left = Node x [buildTree' xs | not (null xs)]
+            right = Node y [buildTree' ys| not (null ys)]
         in Node noAxis [left, right]
 
 
@@ -211,7 +211,7 @@ newGeometry (Geometry'Custom g ms)
           c'hkl_holder_add_translation h c'n (CDouble x) (CDouble y) (CDouble z) (unitToHklUnit u)
 
       axes :: Tree Axis -> [[Axis]]
-      axes g' = foldTree (\x xsss -> if null xsss then [[x]] else concatMap (map (x:)) xsss) g'
+      axes = foldTree (\x xsss -> if null xsss then [[x]] else concatMap (map (x:)) xsss)
 newGeometry (Geometry'Factory f ms)
     = do fptr <- newForeignPtr p'hkl_geometry_free =<< c'hkl_factory_create_new_geometry =<< newFactory f
          case ms of

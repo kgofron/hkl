@@ -280,7 +280,7 @@ instance HasIniConfig 'QCustomProjection where
                                     HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> Nothing
                                     HklBinocularsQCustomSubProjectionEnum'QScannumber -> Nothing
                                     HklBinocularsQCustomSubProjectionEnum'TthScannumber -> Nothing
-           binocularsConfig'QCustom'SampleAxis <- pure (eitherF (const $ errorMissingSampleAxis) (parse' cfg "projection" "sampleaxis")
+           binocularsConfig'QCustom'SampleAxis <- pure (eitherF (const errorMissingSampleAxis) (parse' cfg "projection" "sampleaxis")
                                                                    (\case
                                                                      Nothing -> errorMissingSampleAxis
                                                                      Just d  -> Just d
@@ -363,7 +363,7 @@ mkAttenuation ma att =
                       (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
 
 mk'DataSourcePath'Mask :: Config Common -> DataSourcePath Mask
-mk'DataSourcePath'Mask c = case (binocularsConfig'Common'Maskmatrix c) of
+mk'DataSourcePath'Mask c = case binocularsConfig'Common'Maskmatrix c of
                              Nothing -> DataSourcePath'Mask'NoMask
                              (Just m) -> DataSourcePath'Mask
                                         m

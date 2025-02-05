@@ -402,10 +402,10 @@ iniParser'Geometry
        case res of
          Nothing -> pure Nothing
          Just (sample, mdetector) -> do
-           sample_axes <- mapM (\a -> iniParser'Axis a) sample
+           sample_axes <- mapM iniParser'Axis sample
            detector_axes <- case mdetector of
-                             Nothing -> pure []
-                             Just detector -> mapM (\a -> iniParser'Axis a) detector
+                             Nothing       -> pure []
+                             Just detector -> mapM iniParser'Axis detector
            pure $ mk'Geometry sample_axes detector_axes
          where
            words' :: Parser [Text]
@@ -984,7 +984,7 @@ instance Arbitrary SampleAxis where
 -- String
 
 instance FieldEmitter String where
-  fieldEmitter s = pack s
+  fieldEmitter = pack
 
 instance FieldParsable String where
   fieldParser = unpack <$> takeText
@@ -1000,7 +1000,7 @@ instance FieldParsable Transformation where
     fieldParser = do
       t <- skipSpace *> word
       case t of
-        "no-transformation" -> pure $ NoTransformation
+        "no-transformation" -> pure NoTransformation
         "rotation" -> Rotation
                      <$> (skipSpace *> double)
                      <*> (skipSpace *> double)
@@ -1101,7 +1101,7 @@ isHdf5 p =
 
 matchInputRange' :: String -> Path Abs File -> [Int] -> [Maybe ScanFilePath]
 matchInputRange' tmpl f is =
-  case find (\i -> printf tmpl i `Data.List.isInfixOf` (toFilePath f)) is of
+  case find (\i -> printf tmpl i `Data.List.isInfixOf` toFilePath f) is of
     Nothing -> []
     Just i  -> [Just (ScanFilePath f (Scannumber i))]
 
@@ -1123,9 +1123,7 @@ files :: (MonadThrow m, MonadIO m)
        -> Maybe InputTmpl
        -> m [ScanFilePath]
 files md mr mt =
-  do dir <- case md of
-             Nothing -> getCurrentDir
-             Just d  -> pure d
+  do dir <- maybe getCurrentDir pure md
 
      fs <- walkDirAccum Nothing
           (\_root _dirs fs ->

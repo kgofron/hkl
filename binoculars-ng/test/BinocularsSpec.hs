@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 
 module BinocularsSpec
   (spec)
@@ -43,10 +42,10 @@ spec = do
 
   describe "Limits" $ do
     prop "quickcheck Limits2" $
-      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM2))
+      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` Right (x :: RLimits DIM2)
 
     prop "quickcheck Limits3" $
-      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: RLimits DIM3))
+      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` Right (x :: RLimits DIM3)
 
   -----------------
   -- ConfigRange --
@@ -67,7 +66,7 @@ spec = do
     it'range "210-286" (ConfigRange (InputRange (210...286) :| []))
 
     prop "quickcheck" $
-      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` (Right (x :: ConfigRange))
+      \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` Right (x :: ConfigRange)
 
     ------------------
     -- MaskLocation --
@@ -180,7 +179,7 @@ spec = do
             , "data/test/config_sixs_ruche_parsing.ini"
             , "data/test/config_geometry_custom.ini"
             ] $ \f -> do
-        content <- readConfig =<< Just <$> getDataFileName f
+        content <- readConfig . Just =<< getDataFileName f
         capabilities <- getCapabilities
         let args = Args'QCustomProjection (Just $ ConfigRange (InputRange (120...135) :| [InputRange (137...453)]))
         let cfg = getConfig content args capabilities
