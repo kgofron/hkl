@@ -398,12 +398,14 @@ iniParser'Geometry
   = do res <- sectionMb "geometry" $
              (,)
              <$> fieldOf "geometry_sample" (parseOnly words')
-             <*> fieldOf "geometry_detector" (parseOnly words')
+             <*> fieldMbOf "geometry_detector" (parseOnly words')
        case res of
          Nothing -> pure Nothing
-         Just (sample, detector) -> do
+         Just (sample, mdetector) -> do
            sample_axes <- mapM (\a -> iniParser'Axis a) sample
-           detector_axes <- mapM (\a -> iniParser'Axis a) detector
+           detector_axes <- case mdetector of
+                             Nothing -> pure []
+                             Just detector -> mapM (\a -> iniParser'Axis a) detector
            pure $ mk'Geometry sample_axes detector_axes
          where
            words' :: Parser [Text]

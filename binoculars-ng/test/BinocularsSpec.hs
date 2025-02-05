@@ -106,6 +106,15 @@ spec = do
         )
        )
 
+    it'geometry'right "[geometry]\ngeometry_sample=omega chi phi\naxis_omega=rotation 0 -1 0 degree\naxis_chi=rotation 1 0 0 degree\naxis_phi=rotation 0 -1 0 degree\n"
+       (Just
+        (Geometry'Custom
+         ( Node (Axis "omega" (Rotation 0 (-1) 0) Unit'Angle'Degree) [Node (Axis "chi" (Rotation 1  0 0) Unit'Angle'Degree) [Node (Axis "phi" (Rotation 0 (-1) 0) Unit'Angle'Degree) [] ] ]
+         )
+         Nothing
+        )
+       )
+
     -- error handling
 
     it'geometry'left "[geometry]\ngeometry_sample=omega chi phi\ngeometry_detector=tth\n\naxis_chi=rotation 1 0 0 degree\naxis_phi=rotation 0 -1 0 degree\naxis_tth=rotation 0 -1 0 degree\n"
@@ -117,7 +126,7 @@ spec = do
     it'geometry'left "[geometry]\ngeometry_sample=omega chi phi\ngeometry_detector=tth\naxis_omega=rotation 0 -1 0 degree\naxis_chi=rotation 1 0 0 toto\naxis_phi=rotation 0 -1 0 degree\naxis_tth=rotation 0 -1 0 degree\n"
        "Line 5, in section \"geometry\": Failed reading: unknown unit 'toto' only supported are 'ua' 'degree' 'millimeter'"
 
-  --------------------
+   --------------------
   -- Transformation --
   --------------------
 
