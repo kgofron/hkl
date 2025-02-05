@@ -84,23 +84,25 @@ import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, peekChar,
                                                     satisfy, sepBy, signed,
-                                                    skipSpace, string, takeText,
-                                                    takeTill)
+                                                    skipSpace, takeText,
+                                                    takeTill, (<?>))
+import           Data.Char                         (isSpace)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
-import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Hashable                     (Hashable)
+import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Ini                          (Ini (..), printIni)
 import           Data.Ini.Config                   (IniParser, fieldMbOf,
                                                     fieldOf, parseIniFile,
                                                     section, sectionMb)
 import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
-                                                    bool, getIniValue, field,
+                                                    bool, field, getIniValue,
                                                     ini, listWithSeparator,
                                                     number, parseIni, section,
                                                     text, (.=))
-import           Data.List                         (find, isInfixOf, length)
+import           Data.List                         (elemIndex, find, isInfixOf,
+                                                    length)
 import           Data.List.NonEmpty                (NonEmpty (..), map)
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Text                         (Text, breakOn, cons, drop,
@@ -109,7 +111,8 @@ import           Data.Text                         (Text, breakOn, cons, drop,
                                                     length, lines, pack,
                                                     replace, singleton, strip,
                                                     take, takeWhile, toLower,
-                                                    unlines, unpack, unwords, words)
+                                                    unlines, unpack, unwords,
+                                                    words)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
@@ -164,6 +167,10 @@ import           Paths_hkl
 -- adapter angles -> cglm 0 -> subprojection
 --  - delta_lab, gamma_lab, <sample-axis>
 --  - gamma_lab, delta_lab, <sample_axis>
+
+
+word :: Parser Text
+word = takeTill isSpace <?> "word"
 
 -- Class FieldEmitter
 
@@ -988,25 +995,21 @@ instance FieldEmitter Transformation where
   fieldEmitter (Translation x y z) = "translation " <> fieldEmitter x <> " " <> fieldEmitter y <> " " <> fieldEmitter z
 
 instance FieldParsable Transformation where
-  fieldParser = noP <|> rotationP <|> translationP
-    where
-      noP = do
-        _ <- (skipSpace *> string "no-transformation")
-        pure $ NoTransformation
-
-      rotationP = do
-        _ <- (skipSpace *> string "rotation")
-        Rotation
-          <$> (skipSpace *> double)
-          <*> (skipSpace *> double)
-          <*> (skipSpace *> double)
-
-      translationP = do
-        _ <- skipSpace *> string "translation "
-        Translation
-          <$> (skipSpace *> double)
-          <*> (skipSpace *> double)
-          <*> (skipSpace *> double)
+    fieldParser = do
+      t <- skipSpace *> word
+      case t of
+        "no-transformation" -> pure $ NoTransformation
+        "rotation" -> Rotation
+                     <$> (skipSpace *> double)
+                     <*> (skipSpace *> double)
+                     <*> (skipSpace *> double)
+                     <?> "rotation maformed expect: 'rotation <x> <y> <z>'"
+        "translation" -> Translation
+                     <$> (skipSpace *> double)
+                     <*> (skipSpace *> double)
+                     <*> (skipSpace *> double)
+                     <?> "translation maformed expect: 'translation <x> <y> <z>'"
+        _ -> fail ("unknown transformation: " <> unpack t <> " only 'no-transformation', 'rotation', 'translation'")
 
 -- Unit
 
@@ -1016,14 +1019,15 @@ instance FieldEmitter Unit where
   fieldEmitter Unit'Length'MilliMeter = "millimeter"
 
 instance FieldParsable Unit where
-  fieldParser = unitP Unit'NoUnit
-                <|> unitP Unit'Angle'Degree
-                <|> unitP Unit'Length'MilliMeter
-    where
-      unitP :: Unit -> Parser Unit
-      unitP u = do
-        _ <- skipSpace *> string (fieldEmitter u)
-        pure u
+    fieldParser = do
+      t <- skipSpace *> word
+      let units = [minBound..maxBound] :: [Unit]
+      let supported = [ fieldEmitter u | u <- units ]
+      let mi = elemIndex t supported
+      case mi of
+        Just i -> pure $ units !! i
+        Nothing -> fail $ unpack ("unknown unit '" <> t <> "' only supported are "
+                                 <> unwords [ "\'" <> t' <> "\'" | t' <- supported ])
 
 -- BinocularsPreConfig
 
