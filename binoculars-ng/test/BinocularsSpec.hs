@@ -9,6 +9,7 @@ module BinocularsSpec
 
 
 import           Control.Monad                      (forM_)
+import           Control.Monad.IO.Class             (liftIO)
 import           Data.Attoparsec.Text               (Parser, parseOnly)
 import           Data.Either                        (isRight)
 import           Data.Ini.Config                    (parseIniFile)
@@ -86,11 +87,19 @@ spec = do
   --------------
 
   describe "Geometry" $ do
-    let it'geometry t e = it ("Parse a geometry from ini string: " <> unpack t) $ do
-          parseIniFile t iniParser'Geometry `shouldBe` e
+    let title t = "Parse a geometry from ini string: " <> unpack t
+    let checkParse t r = parseIniFile t iniParser'Geometry `shouldBe` r
 
-    let it'geometry'right t e = it'geometry t (Right e)
-    let it'geometry'left t e = it'geometry t (Left e)
+    let it'geometry'right t me
+            = it (title t)
+              (case me of
+                Nothing -> checkParse t (Right me)
+                Just e  -> liftIO $ withGeometry e (const $ checkParse t (Right me))
+              )
+
+    let it'geometry'left t err
+            = it (title t)
+              (const $ checkParse t (Left err))
 
     it'geometry'right "" Nothing
 
