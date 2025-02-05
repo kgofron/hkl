@@ -11,7 +11,7 @@ import           Control.Monad                      (forM_)
 import           Control.Monad.IO.Class             (liftIO)
 import           Data.Attoparsec.Text               (Parser, parseOnly)
 import           Data.Either                        (isRight)
-import           Data.Ini.Config                    (parseIniFile)
+import           Data.Ini.Config                    (IniParser, parseIniFile)
 import           Data.List.NonEmpty                 (NonEmpty (..))
 import           Data.Text                          (unpack)
 import           Data.Tree                          (Tree (..))
@@ -87,7 +87,7 @@ spec = do
 
   describe "Geometry" $ do
     let title t = "Parse a geometry from ini string: " <> unpack t
-    let checkParse t r = parseIniFile t iniParser'Geometry `shouldBe` r
+    let checkParse t r = parseIniFile t (iniParser :: IniParser (Maybe Geometry)) `shouldBe` r
 
     let it'geometry'right t me
             = it (title t)

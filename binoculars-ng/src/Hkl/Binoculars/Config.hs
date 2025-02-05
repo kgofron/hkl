@@ -40,6 +40,7 @@ module Hkl.Binoculars.Config
     , HasFieldComment(..)
     , HasFieldValue(..)
     , HasIniConfig(..)
+    , HasIniParser(..)
     , InputRange(..)
     , InputTmpl(..)
     , InputType(..)
@@ -64,7 +65,6 @@ module Hkl.Binoculars.Config
     , getCapabilities
     , getMask
     , getPreConfig
-    , iniParser'Geometry
     , mergeIni
     , parse'
     , parseFDef
@@ -257,6 +257,11 @@ pairWithSeparator' left sep right = FieldValue
 instance HasFieldValue (Int, Int) where
   fieldvalue = pairWithSeparator' number' "," number'
 
+-- Class HasIniParser
+
+class HasIniParser a where
+    iniParser :: IniParser a
+
 -- Class HasIniConfig
 
 readConfig :: Maybe FilePath -> IO ConfigContent
@@ -388,30 +393,31 @@ instance FieldEmitter Double where
 
 -- Geometry
 
-iniParser'Axis :: Text -> IniParser Axis
-iniParser'Axis n
-  = do (t, u) <- Data.Ini.Config.section "geometry" $ fieldOf ("axis_" <> n) (parseOnly ((,) <$> fieldParser <*> fieldParser))
-       pure $ Axis (unpack n) t u
+instance HasIniParser (Maybe Geometry) where
+    iniParser
+        = do res <- sectionMb "geometry" $
+                   (,)
+                   <$> fieldOf "geometry_sample" (parseOnly words')
+                   <*> fieldMbOf "geometry_detector" (parseOnly words')
+             case res of
+               Nothing -> pure Nothing
+               Just (sample, mdetector) -> do
+                                         sample_axes <- mapM iniParser'Axis sample
+                                         detector_axes <- case mdetector of
+                                                           Nothing       -> pure []
+                                                           Just detector -> mapM iniParser'Axis detector
+                                         pure $ mk'Geometry sample_axes detector_axes
+        where
+          words' :: Parser [Text]
+          words' = do
+            t <- takeText
+            pure $ Data.Text.words t
 
-iniParser'Geometry :: IniParser (Maybe Geometry)
-iniParser'Geometry
-  = do res <- sectionMb "geometry" $
-             (,)
-             <$> fieldOf "geometry_sample" (parseOnly words')
-             <*> fieldMbOf "geometry_detector" (parseOnly words')
-       case res of
-         Nothing -> pure Nothing
-         Just (sample, mdetector) -> do
-           sample_axes <- mapM iniParser'Axis sample
-           detector_axes <- case mdetector of
-                             Nothing       -> pure []
-                             Just detector -> mapM iniParser'Axis detector
-           pure $ mk'Geometry sample_axes detector_axes
-         where
-           words' :: Parser [Text]
-           words' = do
-             t <- takeText
-             pure $ Data.Text.words t
+          iniParser'Axis :: Text -> IniParser Axis
+          iniParser'Axis n
+              = do (t, u) <- Data.Ini.Config.section "geometry" $ fieldOf ("axis_" <> n) (parseOnly ((,) <$> fieldParser <*> fieldParser))
+                   pure $ Axis (unpack n) t u
+
 
 -- HklBinocularsQCustomSubProjectionEnum
 
