@@ -31,6 +31,7 @@ module Hkl.Binoculars.Projections.Config.Common
 import           Control.Applicative               ((<|>))
 import           Data.HashMap.Lazy                 (fromList)
 import           Data.Ini                          (Ini (..))
+import           Data.Ini.Config                   (parseIniFile)
 import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.List.NonEmpty                (NonEmpty (..))
 import           Data.Text                         (pack)
@@ -386,5 +387,9 @@ instance HasIniConfig Common where
          binocularsConfig'Common'SkipFirstPoints <- parseMb cfg "input" "skip_first_points"
          binocularsConfig'Common'SkipLastPoints <- parseMb cfg "input" "skip_last_points"
          binocularsConfig'Common'PolarizationCorrection <- parseFDef cfg "input" "polarization_correction" (binocularsConfig'Common'PolarizationCorrection defaultConfig)
-         binocularsConfig'Common'Geometry <- pure (binocularsConfig'Common'Geometry defaultConfig)
+         binocularsConfig'Common'Geometry <- eitherF error (parseIniFile cfg iniParser)
+                                            (\mg -> pure $ case mg of
+                                                            Nothing -> binocularsConfig'Common'Geometry defaultConfig
+                                                            Just g -> Just g
+                                            )
          pure BinocularsConfig'Common{..}
