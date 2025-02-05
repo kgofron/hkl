@@ -115,6 +115,20 @@ hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
 			--config-file=empty-config-file \
 			list-bin $@) $@
 
+configure-cabal:
+	@rm -f cabal.project.local $@
+	touch empty-config-file
+	$(CABAL) \
+		--config-file=empty-config-file \
+		configure \
+		--enable-tests \
+		-fuseHklDev \
+		$(CABALFLAGS) \
+		--extra-include-dirs=$(abs_top_srcdir) \
+		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
+		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
+		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs
+
 clean-local:
 	-cabal clean
 
