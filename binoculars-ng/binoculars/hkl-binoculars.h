@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2024 Synchrotron SOLEIL
+ * Copyright (C) 2003-2025 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -168,6 +168,7 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
 /* subprojection for QCustom */
 /* q_scannumber / tth_scannumber  ( scannumber = numero du scan) (optional) */
 /* q_timescan0 / tth_timescan0   (timescan0 = timestamp du 1er point du scan (constant pour 1 scan)) */
+/* q_chi_phi (q, chi = arccos(qz/q), phi = arctan2(qy,qx)) */
 
 /* Adding the polarization correction from fit2D */
 /* dans un premier temps faire (1 - (epsilon (0, 1, 0) . kf) ^ 2) */
