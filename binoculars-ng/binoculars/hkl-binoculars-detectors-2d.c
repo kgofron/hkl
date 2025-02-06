@@ -27,7 +27,7 @@
 
 #include "datatype99.h"
 
-#include "ccan/array_size/array_size.h"
+#include "hkl/ccan/array_size/array_size.h"
 
 #include "hkl-binoculars.h"
 #include "hkl-binoculars-cnpy-private.h"
@@ -436,125 +436,6 @@ static inline uint8_t *no_mask(const struct shape_t *shape)
         return g_new0(uint8_t, shape_size(*shape));
 }
 
-static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
-                                       const struct imxpad_t *imxpad)
-{
-        uint8_t *arr = no_mask(shape);
-
-        /* now mask all the strange row */
-
-        div_t q = div(shape->width, imxpad->chip_w);
-        int n_chips = q.quot;
-
-        for(int chip=0; chip<n_chips; ++chip){
-                if (chip != 0){
-                        uint8_t *first = get_col(arr, chip * imxpad->chip_w);
-                        fill_column(first, *shape, 1);
-                }
-
-                if (chip != (n_chips - 1)){
-                        uint8_t *last = get_col(arr, (chip + 1) * imxpad->chip_w - 1);
-                        fill_column(last, *shape, 1);
-                }
-        }
-
-        q = div(shape->height, imxpad->chip_h);
-        int n_modules = q.quot;
-
-        for(int module=0; module<n_modules; ++module){
-                if (module != 0){
-                        uint8_t *first = get_row(arr, *shape,
-						 module * imxpad->chip_h);
-                        fill_row(first, *shape, 1);
-                }
-
-                if (module != (n_modules - 1)){
-                        uint8_t *last = get_row(arr, *shape,
-						(module + 1) * imxpad->chip_h - 1);
-                        fill_row(last, *shape, 1);
-                }
-        }
-
-        return arr;
-}
-
-static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
-{
-        uint8_t *arr = no_mask(shape);
-
-        /* now mask all the strange row */
-        for(int i=118; i<=1006; i=i+148){
-                uint8_t *row = get_row(arr, *shape, i);
-
-                fill_row(row, *shape, 1);
-                replicate_row(row, *shape, 30);
-        }
-
-        return arr;
-}
-
-static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
-                                        const struct tilling_t *tilling)
-{
-        int i;
-        uint8_t *arr = no_mask(shape);
-
-
-        /* take care of the gap */
-        if(tilling->gap_in_data && tilling->gap_masked){
-                /* columns */
-                for(i=tilling->module_width;
-                    i<shape->width;
-                    i=i+tilling->module_width + tilling->gap_width){
-                        uint8_t *col = get_col(arr, i);
-                        fill_column(col, *shape, 1);
-                        replicate_column(col, *shape, tilling->gap_width);
-                }
-
-                /* rows */
-                for(i=tilling->module_height;
-                    i<shape->height;
-                    i=i+tilling->module_height + tilling->gap_height){
-                        uint8_t *row = get_row(arr, *shape, i);
-                        fill_row(row, *shape, 1);
-                        replicate_row(row, *shape, tilling->gap_height);
-                }
-        }
-
-        /* border */
-        /* TODO deal with the gap */
-        if (tilling->border_masked > 0){
-                /* columns */
-                for(i=0;
-                    i<shape->width;
-                    i = i + tilling->module_width){
-                        uint8_t *col = get_col(arr, i);
-                        fill_column(col, *shape, 1);
-                        replicate_column(col, *shape, tilling->border_masked);
-
-                        col = get_col(arr, i + tilling->module_width - tilling->border_masked);
-                        fill_column(col, *shape, 1);
-                        replicate_column(col, *shape, tilling->border_masked);
-                }
-
-                /* rows */
-                for(i=0;
-                    i<shape->height;
-                    i = i + tilling->module_height){
-                        uint8_t *row = get_row(arr, *shape, i);
-                        fill_row(row, *shape, 1);
-                        replicate_row(row, *shape, tilling->border_masked);
-
-                        row = get_row(arr, *shape, i + tilling->module_height - tilling->border_masked);
-                        fill_row(row, *shape, 1);
-                        replicate_row(row, *shape, tilling->border_masked);
-                }
-        }
-
-        return arr;
-}
-
-
 static inline void mask_add_vertical_strip(uint8_t *arr, const struct shape_t *shape, size_t origin, size_t thickness)
 {
 	if(origin < shape->width && origin + thickness <= shape->width){
@@ -581,6 +462,99 @@ static inline void mask_add_ring(uint8_t *arr, const struct shape_t *shape, size
 	mask_add_horizontal_strip(arr, shape, 0, thickness);
 	mask_add_horizontal_strip(arr, shape, shape->height - thickness, thickness);
 }
+
+static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
+                                       const struct imxpad_t *imxpad)
+{
+        uint8_t *arr = no_mask(shape);
+
+        div_t q = div(shape->width, imxpad->chip_w);
+        int n_chips = q.quot;
+
+        for(int chip=0; chip<n_chips; ++chip){
+                if (chip != 0)
+			mask_add_vertical_strip(arr, shape, chip * imxpad->chip_w, 1);
+
+                if (chip != (n_chips - 1))
+			mask_add_vertical_strip(arr, shape, (chip + 1) * imxpad->chip_w - 1, 1);
+        }
+
+        q = div(shape->height, imxpad->chip_h);
+        int n_modules = q.quot;
+
+        for(int module=0; module<n_modules; ++module){
+                if (module != 0)
+			mask_add_horizontal_strip(arr, shape, module * imxpad->chip_h, 1);
+
+                if (module != (n_modules - 1))
+			mask_add_horizontal_strip(arr, shape, (module + 1) * imxpad->chip_h - 1, 1);
+        }
+
+        return arr;
+}
+
+static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
+{
+        uint8_t *arr = no_mask(shape);
+
+        /* now mask all the strange row */
+        for(int i=118; i<=1006; i=i+148)
+		mask_add_horizontal_strip(arr, shape, i, 30);
+
+        return arr;
+}
+
+static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
+                                        const struct tilling_t *tilling)
+{
+        int i;
+        uint8_t *arr = no_mask(shape);
+
+
+        /* take care of the gap */
+        if(tilling->gap_in_data && tilling->gap_masked){
+                /* columns */
+                for(i=tilling->module_width;
+                    i<shape->width;
+                    i=i+tilling->module_width + tilling->gap_width){
+			mask_add_vertical_strip(arr, shape, i, tilling->gap_width);
+                }
+
+                /* rows */
+                for(i=tilling->module_height;
+                    i<shape->height;
+                    i=i+tilling->module_height + tilling->gap_height){
+			mask_add_horizontal_strip(arr, shape, i, tilling->gap_height);
+                }
+        }
+
+        /* border */
+        /* TODO deal with the gap */
+        if (tilling->border_masked > 0){
+                /* columns */
+                for(i=0;
+                    i<shape->width;
+                    i = i + tilling->module_width){
+			mask_add_vertical_strip(arr, shape, i,
+						tilling->border_masked);
+			mask_add_vertical_strip(arr, shape, i + tilling->module_width - tilling->border_masked,
+						tilling->border_masked);
+                }
+
+                /* rows */
+                for(i=0;
+                    i<shape->height;
+                    i = i + tilling->module_height){
+			mask_add_horizontal_strip(arr, shape, i,
+                                                  tilling->border_masked);
+			mask_add_horizontal_strip(arr, shape, i + tilling->module_height - tilling->border_masked,
+						  tilling->border_masked);
+                }
+        }
+
+        return arr;
+}
+
 
 static inline uint8_t *mask_get_rigaku_xspa(const struct shape_t *shape)
 {
