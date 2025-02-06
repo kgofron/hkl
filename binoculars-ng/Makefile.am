@@ -98,7 +98,7 @@ test_sources=\
 	test/Spec.hs
 
 hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
-	@rm -f cabal.project.local $@
+	@rm -f cabal.project.local
 	touch empty-config-file
 	$(CABAL) \
 		--config-file=empty-config-file \
@@ -116,7 +116,7 @@ hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
 			list-bin $@) $@
 
 configure-cabal:
-	@rm -f cabal.project.local $@
+	@rm -f cabal.project.local
 	touch empty-config-file
 	$(CABAL) \
 		--config-file=empty-config-file \

@@ -119,6 +119,7 @@ AC_DEFUN([OPTION_DEFAULT_ON], [dnl
     m4_bpatsubst([enable_$1], [[^0-9a-z]], [_])=yes])dnl
 ])dnl
 
+
 dnl ****************
 dnl *** analyzer ***
 dnl ****************
@@ -259,6 +260,12 @@ AM_COND_IF([DATATYPE99],
         )
 AC_SUBST(DATATYPE99_CFLAGS)
 
+
+dnl ***************
+dnl *** openssl ***
+dnl ***************
+
+PKG_CHECK_MODULES([OPENSSL], [openssl >= 3])
 
 AC_CONFIG_FILES([Makefile
                  binoculars-ng/binoculars/Makefile

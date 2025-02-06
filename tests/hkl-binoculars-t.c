@@ -13,12 +13,17 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2024 Synchrotron SOLEIL
+ * Copyright (C) 2003-2025 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
+
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
+
 #include "hkl-binoculars.h"
 #include <tap/basic.h>
 #include <tap/float.h>
@@ -28,14 +33,64 @@
 #include <hkl-axis-private.h>
 #include <hkl-binoculars-private.h>
 
+
+static int check_sha256(const uint8_t *buffer, size_t length, const char* fingerprint, int n)
+{
+	int res = TRUE;
+
+	OSSL_LIB_CTX *context = OSSL_LIB_CTX_new();
+	uint8_t sha256[SHA256_DIGEST_LENGTH];
+	size_t sha256_length;
+	char buffer_fingerprint[SHA256_DIGEST_LENGTH*2+1];
+
+	EVP_Q_digest(context, "SHA256", NULL, buffer, length, sha256, &sha256_length);
+	for(int i=0; i<SHA256_DIGEST_LENGTH; ++i)
+		snprintf(&buffer_fingerprint[2*i], 3, "%02x", sha256[i]);
+	res &= strcmp(fingerprint, buffer_fingerprint) == 0;
+
+	if (res != TRUE)
+		fprintf(stdout, "detector %d fingerpring: %s , expected: %s\n", n, buffer_fingerprint, fingerprint);
+
+	OSSL_LIB_CTX_free(context);
+
+	return res;
+}
+
+static int check_sha256_detector_array(int n, const uint8_t *buffer, size_t elem_size, const char *fingerprint)
+{
+	int res = TRUE;
+	int width;
+	int height;
+
+	hkl_binoculars_detector_2d_shape_get(n, &width, &height);
+	res &= check_sha256(buffer, width * height * elem_size, fingerprint, n);
+
+	return res;
+}
+
+
 static void coordinates_get(void)
 {
         int res = TRUE;
+	char *fingerprint[] = {
+		"76a1c568b15e359b6c16c8c88bd738763554d80256dc44c41a81658636720d26",
+		"5e3c73be48046c7e234cbd4bdffe54041c6bf04f18fdb37347577c68bb824fbf",
+		"b58814cca765b3bbc7b1b526539b3e1fbe1d66aaff5fe8bb354163898971c26c",
+		"f728c04d108698a9615c02b415b5e9b6e1de40ee1f55b61a3cfa79dd24a72f28",
+		"a6a43c95847321fa29dbf6ac979845f987bcfa0982ca8513d415a871db3acf69",
+		"07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+		"feced70203b04a1a25c0931b1f76f70af248991c31358b1b70fce2d80647966e",
+		"5647f05ec18958947d32874eeb788fa396a05d0bab7c1b71f112ceb7e9b31eee",
+		"0f3d88d8d4f3f6829d068b616b6d92b3fb91e6b039c78fa09bc0e447d5343dcd",
+		"c5a68aa2d84bf11c4a1fb38a2830f6da1e6bcc75bccc87035e26519ee57ce35d",
+	};
 
         for(int i=0; i<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++i){
                 double *arr = hkl_binoculars_detector_2d_coordinates_get(i);
-                res &= DIAG(NULL != arr);
-                free(arr);
+		if (NULL != arr){
+			res &= check_sha256_detector_array(i, (uint8_t *)(&arr[0]), sizeof(*arr), fingerprint[i]);
+			free(arr);
+		}
         }
 	ok(res == TRUE, __func__);
 }
@@ -56,11 +111,25 @@ static void coordinates_save(void)
 static void mask_get(void)
 {
         int res = TRUE;
+	char *fingerprint[] = {
+		"ae79534d175e8ebad19651a4dab71247d884466d6399c8641c22623a69f29b50",
+		"911166d48b7a7a3fb8dfe07dc39b70f6478098bdc5a097616bd7ae99cbfee489",
+		"3ae731393076cad3400b4ce9b17deadb3befa271040926ef1f6349fea068d596",
+		"95190f41b0a9b1b45890a486a45bdbc3404284e149b5e72ce7dc89de85b2a735",
+		"8d79f3966ca57c37fb086844e2536919235336676418fd08bbc2a99d19743f2a",
+		"de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+		"4c5d798882747c389cb83bf94dadfdd369d0955e658b246184feb4bdbc5557eb",
+		"0f451b99cf4316ad57d46d4e399d11a1928790d3ec11a8790069b65a3d3d177c",
+		"d37a5d7abcc9d895f232ec4be6ef49af7c77f133808e392576f0e6a96a2f8fcd",
+		"fad1fd1073a50dd69fd93888376f857c2b03a410a005de4df3457f0eb968a91a",
+	};
 
         for(int i=0; i<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++i){
                 uint8_t *arr = hkl_binoculars_detector_2d_mask_get(i);
-                res &= DIAG(NULL != arr);
-                free(arr);
+		if (NULL != arr){
+			res &= check_sha256_detector_array(i, arr, sizeof(*arr), fingerprint[i]);
+			free(arr);
+		}
         }
 	ok(res == TRUE, __func__);
 }
@@ -472,25 +541,31 @@ static void hkl_projection(void)
                                     {30, 30, 30, 30}};
 
         /* the expected result for the three axes of the 1st detector */
-        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14,-2, 0},
-                                                                           {-14,-2, 0},
-                                                                           {-14,-2, 0},
-                                                                           {-14,-2,-2},
-                                                                           {-13, 0, 0},
-                                                                           {-13, 0, 0},
-                                                                           {-13,-1, 0},
-                                                                           {-13,-1, 0},
-                                                                           {-18, 0,-1}};
+        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {
+		{-14,-2, 0},
+		{-14,-2, 0},
+		{-14,-2, 0},
+		{-14,-2,-2},
+		{-13, 0, 0},
+		{-13, 0, 0},
+		{-13,-1, 0},
+		{-13,-1, 0},
+		{-18, 0,-1},
+		{-14,-2, 0},
+	};
 
-        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
-                                                                           {1, 34, 19},
-                                                                           {1, 34, 14},
-                                                                           {1, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 36}};
+        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {
+		{1, 34, 15},
+		{1, 34, 19},
+		{1, 34, 14},
+		{1, 33, 15},
+		{0, 33, 15},
+		{0, 33, 15},
+		{0, 33, 15},
+		{0, 33, 15},
+		{0, 33, 36},
+		{1, 33, 17},
+	};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;
@@ -601,25 +676,31 @@ static void test_projection(void)
                                     {30, 30, 30, 30}};
 
         /* the expected result for the three axes of the 1st detector */
-        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{-14,-2, 0},
-                                                                           {-14,-2, 0},
-                                                                           {-14,-2, 0},
-                                                                           {-14,-2,-2},
-                                                                           {-13, 0, 0},
-                                                                           {-13, 0, 0},
-                                                                           {-13,-1, 0},
-                                                                           {-13,-1, 0},
-									   {-18, 0,-1}};
+        static ptrdiff_t imin[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {
+		{-14,-2, 0},
+		{-14,-2, 0},
+		{-14,-2, 0},
+		{-14,-2,-2},
+		{-13, 0, 0},
+		{-13, 0, 0},
+		{-13,-1, 0},
+		{-13,-1, 0},
+		{-18, 0,-1},
+		{-14,-2, 0},
+	};
 
-        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {{1, 34, 15},
-                                                                           {1, 34, 19},
-                                                                           {1, 34, 14},
-                                                                           {1, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 15},
-                                                                           {0, 33, 36}};
+        static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {
+		{1, 34, 15},
+		{1, 34, 19},
+		{1, 34, 14},
+		{1, 33, 15},
+		{0, 33, 15},
+		{0, 33, 15},
+		{0, 33, 15},
+		{0, 33, 15},
+		{0, 33, 36},
+		{1, 33, 17},
+	};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
                 size_t i;

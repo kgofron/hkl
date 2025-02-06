@@ -14,6 +14,16 @@
 ** Binoculars-ng
    - dispatcher.ncores = 0 mean: use all capabilities of the CPU hardware.
      The default remains equal to `4` if this property is not defined.
+** Tests
+   - binoculars-ng detectors tests are using sha256 in order to check
+     mask and coordinates integrity. If you change a detector
+     definition you need to update the sha256 fingerprint in the
+     hkl-binoculars_t.c file.
+
+     example of a failure:
+
+     detector 9 fingerpring: 5c747478f67ad54485bc3502c825bff41c0934c94a0160179909c483d75f541a , expected: 49885be2c9cfea697b8f6a6e0c00f9dec687760a8b4cfdb4eda94af1014322ce
+     not ok 3 - mask_get
 
 * 5.1.3 2025-01-15
 ** Lib binoculars

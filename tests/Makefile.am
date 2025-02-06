@@ -50,9 +50,11 @@ if BINOCULARS
 
 all_tests += hkl-binoculars-t
 
-AM_CPPFLAGS += -I$(top_srcdir)/binoculars-ng/binoculars
+AM_CPPFLAGS += -I$(top_srcdir)/binoculars-ng/binoculars \
+		$(OPENSSL_CFLAGS)
 
-LDADD += $(top_builddir)/binoculars-ng/binoculars/libhkl-binoculars.la
+LDADD += $(top_builddir)/binoculars-ng/binoculars/libhkl-binoculars.la \
+	$(OPENSSL_LIBS)
 
 endif
 

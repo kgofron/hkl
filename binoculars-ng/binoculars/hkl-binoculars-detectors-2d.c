@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2024 Synchrotron SOLEIL
+ * Copyright (C) 2003-2025 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -47,16 +47,16 @@
 #define get_col(arr, i) &arr[i]
 
 #define replicate_row(row, shape, n) do{                                \
-                for(int i_=1; i_<(n); ++i_){                            \
-                        memcpy(&(row)[i_ * (shape).width], (row), (shape).width * sizeof(*(row))); \
-                }                                                       \
-        } while(0)
+		for(int i_=1; i_<(n); ++i_){				\
+			memcpy(&(row)[i_ * (shape).width], (row), (shape).width * sizeof(*(row))); \
+		}							\
+	} while(0)
 
-#define fill_row(row, shape, val) do{			\
-                for(int i_=0; i_<(shape).width; ++i_){	\
-                        (row)[i_] = (val);		\
-                }					\
-        } while(0)
+#define fill_row(row, shape, val) do{				\
+		for(int i_=0; i_<(shape).width; ++i_){		\
+			(row)[i_] = (val);			\
+		}						\
+	} while(0)
 
 #define replicate_column(col, shape, n) do{                             \
                 for(int i_=0; i_<shape_size(shape); i_=i_+(shape).width){ \
@@ -182,7 +182,8 @@ datatype(
         (Merlin, struct square_t),
         (MerlinMedipix3RXQuad, struct tilling_t),
         (MerlinMedipix3RXQuad512, struct tilling_t),
-        (Cirpad, struct cirpad_t)
+        (Cirpad, struct cirpad_t),
+	(RigakuXSPA, struct square_t)
         );
 
 struct detector_t {
@@ -215,6 +216,8 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                          SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false, false, 2)),
                 DETECTOR(Cirpad,
                          SHAPE(560, 2400), CIRPAD(130e-6, 80, 120)),
+		DETECTOR(RigakuXSPA,
+			 SHAPE(1034, 1104), SQUARE(76e-6))
         };
 
         if (n > ARRAY_SIZE(detectors))
@@ -551,6 +554,47 @@ static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
         return arr;
 }
 
+
+static inline void mask_add_vertical_strip(uint8_t *arr, const struct shape_t *shape, size_t origin, size_t thickness)
+{
+	if(origin < shape->width && origin + thickness <= shape->width){
+		uint8_t *col = get_col(arr, origin);
+		fill_column(col, *shape, 1);
+		replicate_column(col, *shape, thickness);
+	}
+}
+
+static inline void mask_add_horizontal_strip(uint8_t *arr, const struct shape_t *shape, size_t origin, size_t thickness)
+{
+	if(origin < shape->height && origin + thickness <= shape->height){
+		uint8_t *row = get_row(arr, *shape, origin);
+		fill_row(row, *shape, 1);
+		replicate_row(row, *shape, thickness);
+	}
+}
+
+static inline void mask_add_ring(uint8_t *arr, const struct shape_t *shape, size_t thickness)
+{
+	mask_add_vertical_strip(arr, shape, 0, thickness);
+	mask_add_vertical_strip(arr, shape, shape->width - thickness, thickness);
+
+	mask_add_horizontal_strip(arr, shape, 0, thickness);
+	mask_add_horizontal_strip(arr, shape, shape->height - thickness, thickness);
+}
+
+static inline uint8_t *mask_get_rigaku_xspa(const struct shape_t *shape)
+{
+        uint8_t *arr = no_mask(shape);
+
+	/* mask a ring around the detector */
+	mask_add_ring(arr, shape, 5);
+
+        /* now mask all the fake pixels between modules */
+	mask_add_horizontal_strip(arr, shape, 512 + 5, 70);
+
+        return arr;
+}
+
 /***************/
 /* Calibration */
 /***************/
@@ -691,6 +735,10 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_cirpad(&detector.shape,
                                                      cirpad);
                 }
+		of(RigakuXSPA, square){
+			arr = coordinates_get_square(&detector.shape,
+						     square);
+		}
         }
         return arr;
 }
@@ -753,6 +801,9 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(Cirpad, _){
                         arr = no_mask(&detector.shape);
                 }
+		of(RigakuXSPA, _){
+			arr = mask_get_rigaku_xspa(&detector.shape);
+		}
                 otherwise {
                         arr = no_mask(&detector.shape);
                 }
