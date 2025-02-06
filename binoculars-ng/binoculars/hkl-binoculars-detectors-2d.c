@@ -46,19 +46,22 @@
 #define get_row(arr, shape, i) &arr[(i) * (shape).width]
 #define get_col(arr, i) &arr[i]
 
-#define replicate_row(row, shape, n) do{                                \
+#define replicate_row(row, shape, n)					\
+	do{								\
 		for(int i_=1; i_<(n); ++i_){				\
 			memcpy(&(row)[i_ * (shape).width], (row), (shape).width * sizeof(*(row))); \
 		}							\
 	} while(0)
 
-#define fill_row(row, shape, val) do{				\
+#define fill_row(row, shape, val)				\
+	do{							\
 		for(int i_=0; i_<(shape).width; ++i_){		\
 			(row)[i_] = (val);			\
 		}						\
 	} while(0)
 
-#define replicate_column(col, shape, n) do{                             \
+#define replicate_column(col, shape, n)					\
+	do{								\
                 for(int i_=0; i_<shape_size(shape); i_=i_+(shape).width){ \
                         for(int j_=1; j_<(n); ++j_){                    \
                                 (col[i_+j_]) = col[i_];                 \
@@ -66,7 +69,8 @@
                 }                                                       \
         } while(0)
 
-#define fill_column(col, shape, val) do {                               \
+#define fill_column(col, shape, val)					\
+	do {								\
                 for(int i_=0; i_<shape_size(shape); i_=i_+(shape).width){ \
                         (col)[i_] = (val);                              \
                 }                                                       \
@@ -195,7 +199,7 @@ struct detector_t {
 #define DETECTOR(name_, shape_, type_) (struct detector_t)      \
         {.name=#name_, .shape=shape_, .type=name_(type_)}
 
-static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
+static struct detector_t get_detector(HklBinocularsDetectorEnum n)
 {
         struct detector_t detectors[] = {
                 DETECTOR(ImXpadS140,
@@ -232,14 +236,14 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
 
 /* coordinates */
 
-static inline double *coordinates_new(const struct shape_t *shape)
+static double *coordinates_new(const struct shape_t *shape)
 {
         return g_new0(double, 3 * shape_size(*shape));
 }
 
-static inline double tilling_coordinates_pattern(int i,
-                                                 double pixel_size,
-                                                 int module_size, int gap_size)
+static double tilling_coordinates_pattern(int i,
+					  double pixel_size,
+					  int module_size, int gap_size)
 {
         div_t q = div(i, module_size);
 
@@ -247,7 +251,7 @@ static inline double tilling_coordinates_pattern(int i,
 }
 
 
-static inline double imxpad_coordinates_pattern(int i, int chip, double s)
+static double imxpad_coordinates_pattern(int i, int chip, double s)
 {
         div_t q = div(i, chip);
 
@@ -269,8 +273,8 @@ static inline double imxpad_coordinates_pattern(int i, int chip, double s)
         return NAN;
 }
 
-static inline double *coordinates_rectangle(const struct shape_t *shape,
-                                            double p_w, double p_h)
+static double *coordinates_rectangle(const struct shape_t *shape,
+				     double p_w, double p_h)
 {
         int i;
         double *arr = coordinates_new(shape);
@@ -293,8 +297,8 @@ static inline double *coordinates_rectangle(const struct shape_t *shape,
 
 }
 
-static inline double* coordinates_get_tilling(const struct shape_t *shape,
-                                              const struct tilling_t *tilling)
+static double* coordinates_get_tilling(const struct shape_t *shape,
+				       const struct tilling_t *tilling)
 {
         int i;
         double *arr;
@@ -331,9 +335,9 @@ static inline double* coordinates_get_tilling(const struct shape_t *shape,
         return arr;
 }
 
-static inline void coordinates_set_imxpad_xyz(double *y, double *z,
-                                              const struct shape_t *shape,
-                                              const struct imxpad_t *imxpad)
+static void coordinates_set_imxpad_xyz(double *y, double *z,
+				       const struct shape_t *shape,
+				       const struct imxpad_t *imxpad)
 {
         int i;
         double *row;
@@ -359,8 +363,8 @@ static inline void coordinates_set_imxpad_xyz(double *y, double *z,
         }
 }
 
-static inline double *coordinates_get_imxpad(const struct shape_t *shape,
-                                             const struct imxpad_t *imxpad)
+static double *coordinates_get_imxpad(const struct shape_t *shape,
+				      const struct imxpad_t *imxpad)
 {
         double *arr = coordinates_new(shape);
 
@@ -372,8 +376,8 @@ static inline double *coordinates_get_imxpad(const struct shape_t *shape,
         return arr;
 }
 
-static inline double *coordinates_get_cirpad(const struct shape_t *shape,
-                                             const struct cirpad_t *cirpad)
+static double *coordinates_get_cirpad(const struct shape_t *shape,
+				      const struct cirpad_t *cirpad)
 {
         int i;
         double *arr = coordinates_new(shape);
@@ -412,7 +416,7 @@ static inline double *coordinates_get_cirpad(const struct shape_t *shape,
         return arr;
 }
 
-static inline void flip_z(const struct shape_t *shape, double *arr)
+static void flip_z(const struct shape_t *shape, double *arr)
 {
         int i;
         double *z = z_coordinates(arr, *shape);
@@ -421,8 +425,8 @@ static inline void flip_z(const struct shape_t *shape, double *arr)
                 z[i] *= -1;
 }
 
-static inline double *coordinates_get_square(const struct shape_t *shape,
-                                             const struct square_t *square)
+static double *coordinates_get_square(const struct shape_t *shape,
+				      const struct square_t *square)
 {
         return coordinates_rectangle(shape,
                                      square->pixel_size,
@@ -431,12 +435,12 @@ static inline double *coordinates_get_square(const struct shape_t *shape,
 
 /* masks */
 
-static inline uint8_t *no_mask(const struct shape_t *shape)
+static uint8_t *no_mask(const struct shape_t *shape)
 {
         return g_new0(uint8_t, shape_size(*shape));
 }
 
-static inline void mask_add_vertical_strip(uint8_t *arr, const struct shape_t *shape, size_t origin, size_t thickness)
+static void mask_add_vertical_strip(uint8_t *arr, const struct shape_t *shape, size_t origin, size_t thickness)
 {
 	if(origin < shape->width && origin + thickness <= shape->width){
 		uint8_t *col = get_col(arr, origin);
@@ -445,7 +449,7 @@ static inline void mask_add_vertical_strip(uint8_t *arr, const struct shape_t *s
 	}
 }
 
-static inline void mask_add_horizontal_strip(uint8_t *arr, const struct shape_t *shape, size_t origin, size_t thickness)
+static void mask_add_horizontal_strip(uint8_t *arr, const struct shape_t *shape, size_t origin, size_t thickness)
 {
 	if(origin < shape->height && origin + thickness <= shape->height){
 		uint8_t *row = get_row(arr, *shape, origin);
@@ -454,7 +458,7 @@ static inline void mask_add_horizontal_strip(uint8_t *arr, const struct shape_t 
 	}
 }
 
-static inline void mask_add_ring(uint8_t *arr, const struct shape_t *shape, size_t thickness)
+static void mask_add_ring(uint8_t *arr, const struct shape_t *shape, size_t thickness)
 {
 	mask_add_vertical_strip(arr, shape, 0, thickness);
 	mask_add_vertical_strip(arr, shape, shape->width - thickness, thickness);
@@ -463,8 +467,8 @@ static inline void mask_add_ring(uint8_t *arr, const struct shape_t *shape, size
 	mask_add_horizontal_strip(arr, shape, shape->height - thickness, thickness);
 }
 
-static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
-                                       const struct imxpad_t *imxpad)
+static uint8_t *mask_get_imxpad(const struct shape_t *shape,
+				const struct imxpad_t *imxpad)
 {
         uint8_t *arr = no_mask(shape);
 
@@ -493,7 +497,7 @@ static inline uint8_t *mask_get_imxpad(const struct shape_t *shape,
         return arr;
 }
 
-static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
+static uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
 {
         uint8_t *arr = no_mask(shape);
 
@@ -504,8 +508,8 @@ static inline uint8_t *mask_get_xpad_flat_corrected(const struct shape_t *shape)
         return arr;
 }
 
-static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
-                                        const struct tilling_t *tilling)
+static uint8_t *mask_get_tilling(const struct shape_t *shape,
+				 const struct tilling_t *tilling)
 {
         int i;
         uint8_t *arr = no_mask(shape);
@@ -556,14 +560,12 @@ static inline uint8_t *mask_get_tilling(const struct shape_t *shape,
 }
 
 
-static inline uint8_t *mask_get_rigaku_xspa(const struct shape_t *shape)
+static uint8_t *mask_get_rigaku_xspa(const struct shape_t *shape)
 {
         uint8_t *arr = no_mask(shape);
 
-	/* mask a ring around the detector */
 	mask_add_ring(arr, shape, 5);
 
-        /* now mask all the fake pixels between modules */
 	mask_add_horizontal_strip(arr, shape, 512 + 5, 70);
 
         return arr;
@@ -573,9 +575,9 @@ static inline uint8_t *mask_get_rigaku_xspa(const struct shape_t *shape)
 /* Calibration */
 /***************/
 
-static inline void translate_coordinates_xyz(double *x, double *y, double *z,
-                                             const struct shape_t *shape,
-                                             double dx, double dy, double dz)
+static void translate_coordinates_xyz(double *x, double *y, double *z,
+				      const struct shape_t *shape,
+				      double dx, double dy, double dz)
 {
         size_t i;
 
@@ -586,10 +588,10 @@ static inline void translate_coordinates_xyz(double *x, double *y, double *z,
         }
 }
 
-static inline void rotate_coordinates_xyz(double *x, double *y, double *z,
-                                          const struct shape_t *shape,
-                                          double angle,
-                                          double axis_x, double axis_y, double axis_z)
+static void rotate_coordinates_xyz(double *x, double *y, double *z,
+				   const struct shape_t *shape,
+				   double angle,
+				   double axis_x, double axis_y, double axis_z)
 {
         HklVector axis = {{axis_x, axis_y, axis_z}};
         HklQuaternion q;
@@ -606,8 +608,8 @@ static inline void rotate_coordinates_xyz(double *x, double *y, double *z,
         }
 }
 
-static inline void normalize_coordinates_xyz(double *x, double *y, double *z,
-                                             const struct shape_t shape)
+static void normalize_coordinates_xyz(double *x, double *y, double *z,
+				      const struct shape_t shape)
 {
         for(int i=0; i<shape_size(shape); ++i)
         {
