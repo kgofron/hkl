@@ -280,6 +280,9 @@ instance HasIniConfig 'QCustomProjection where
                                     HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> Nothing
                                     HklBinocularsQCustomSubProjectionEnum'QScannumber -> Nothing
                                     HklBinocularsQCustomSubProjectionEnum'TthScannumber -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'PhixQThetax -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> Nothing
+                                    HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> Nothing
            binocularsConfig'QCustom'SampleAxis <- pure (eitherF (const errorMissingSampleAxis) (parse' cfg "projection" "sampleaxis")
                                                                    (\case
                                                                      Nothing -> errorMissingSampleAxis
@@ -458,6 +461,9 @@ overloadTimestampPath msub idx =
                    HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'QScannumber -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'TthScannumber -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'PhixQThetax -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timestamp'NoTimestamp
+                   HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timestamp'NoTimestamp
 
 overloadTimescan0Path :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0 -> DataSourcePath Timescan0
 overloadTimescan0Path msub idx =
@@ -488,6 +494,9 @@ overloadTimescan0Path msub idx =
                    HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> idx
                    HklBinocularsQCustomSubProjectionEnum'QScannumber -> DataSourcePath'Timescan0'NoTimescan0
                    HklBinocularsQCustomSubProjectionEnum'TthScannumber -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'PhixQThetax -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timescan0'NoTimescan0
+                   HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timescan0'NoTimescan0
 
 overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma

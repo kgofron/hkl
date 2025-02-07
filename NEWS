@@ -14,6 +14,10 @@
 ** Binoculars-ng
    - dispatcher.ncores = 0 mean: use all capabilities of the CPU hardware.
      The default remains equal to `4` if this property is not defined.
+   - Projections
+     - 'q_thetax_phix' -> latitude and longitude of q with qx as reference.
+     - 'q_thetay_phiy' -> latitude and longitude of q with qy as reference.
+     - 'q_thetaz_phiz' -> latitude and longitude of q with qz as reference.
 ** Tests
    - binoculars-ng detectors tests are using sha256 in order to check
      mask and coordinates integrity. If you change a detector

@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2024 Synchrotron SOLEIL
+ * Copyright (C) 2003-2025 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -38,6 +38,9 @@
 #include "hkl-quaternion-private.h"
 #include "hkl-sample-private.h"
 #include "hkl-vector-private.h"
+
+
+/* TODO rename phi -> phix phiy phiz */
 
 /* mark the masked pixels with this value */
 #define MASKED PTRDIFF_MAX
@@ -402,6 +405,21 @@ static const HklBinocularsProjectionAxis azimuth =
         .name = "azimuth",
         .description = "The azimuthal angle in the yz plan of the kf vector",
 };
+static const HklBinocularsProjectionAxis thetax =
+{
+        .name = "thetax",
+        .description = "The angle beetween q and the qx axis",
+};
+static const HklBinocularsProjectionAxis thetay =
+{
+        .name = "thetay",
+        .description = "The angle beetween q and the qy axis",
+};
+static const HklBinocularsProjectionAxis thetaz =
+{
+        .name = "thetaz",
+        .description = "The angle beetween q and the qz axis",
+};
 static const HklBinocularsProjectionAxis deltalab =
 {
         .name = "deltalab",
@@ -447,10 +465,20 @@ static const HklBinocularsProjectionAxis qz =
         .name = "qz",
         .description = "The z coordinate of the Q vector in the sample basis."
 };
-static const HklBinocularsProjectionAxis phi =
+static const HklBinocularsProjectionAxis phix =
 {
-        .name = "phi",
+        .name = "phix",
         .description = "The azimuthal angle in the yz plan of the q vector",
+};
+static const HklBinocularsProjectionAxis phiy =
+{
+        .name = "phiy",
+        .description = "The azimuthal angle in the xz plan of the q vector",
+};
+static const HklBinocularsProjectionAxis phiz =
+{
+        .name = "phiz",
+        .description = "The azimuthal angle in the xy plan of the q vector",
 };
 static const HklBinocularsProjectionAxis sampleaxis =
 {
@@ -552,19 +580,19 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
                 PROJECTION(qpar, qper);
                 break;
         }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHIX_QX:
         {
-                PROJECTION(q, phi, qx);
+                PROJECTION(q, phix, qx);
                 break;
         }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHIY_QY:
         {
-                PROJECTION(q, phi, qy);
+                PROJECTION(q, phiy, qy);
                 break;
         }
-        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ:
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHIZ_QZ:
         {
-                PROJECTION(q, phi, qz);
+                PROJECTION(q, phiz, qz);
                 break;
         }
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_STEREO:
@@ -645,6 +673,21 @@ static const char **axis_name_from_subprojection(HklBinocularsQCustomSubProjecti
         case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_TTH_SCANNUMBER:
         {
                 PROJECTION(q, scannumber);
+                break;
+        }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_PHIX_Q_THETAX:
+        {
+                PROJECTION(phix, q, thetax);
+                break;
+        }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_PHIY_Q_THETAY:
+        {
+                PROJECTION(phiy, q, thetay);
+                break;
+        }
+        case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_PHIZ_Q_THETAZ:
+        {
+                PROJECTION(phiz, q, thetaz);
                 break;
         }
         }
@@ -897,7 +940,7 @@ static inline double compute_azimuth(vec3s kf)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QX:    \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHIX_QX:    \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
@@ -921,7 +964,7 @@ static inline double compute_azimuth(vec3s kf)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QY:    \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHIY_QY:    \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
@@ -945,7 +988,7 @@ static inline double compute_azimuth(vec3s kf)
                         }                                               \
                         break;                                          \
                 }                                                       \
-                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHI_QZ:    \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_Q_PHIZ_QZ:    \
                 {                                                       \
                         for(i=0;i<n_pixels;++i){                        \
                                 if(not_masked(masked, i)){              \
@@ -959,7 +1002,7 @@ static inline double compute_azimuth(vec3s kf)
                                                                         \
                                         float q = compute_q(v);         \
 					item.indexes_0[0] = rint(q / resolutions[0]); \
-					item.indexes_0[1] = rint((atan2(v.raw[0], v.raw[1])) / M_PI * 180 / resolutions[1]); \
+					item.indexes_0[1] = rint((atan2(v.raw[1], v.raw[0])) / M_PI * 180 / resolutions[1]); \
 					item.indexes_0[2] = rint(v.raw[2] / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
@@ -1362,6 +1405,78 @@ static inline double compute_azimuth(vec3s kf)
 					item.indexes_0[0] = rint(tth / resolutions[0]); \
 					item.indexes_0[1] = rint(scannumber / resolutions[1]); \
 					item.indexes_0[2] = REMOVED;	\
+                                        item.intensity = rint((double)image[i] * correction); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_PHIX_Q_THETAX: \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint((atan2(v.raw[2], -v.raw[1])) / M_PI * 180 / resolutions[0]); \
+					item.indexes_0[1] = rint(q / resolutions[1]); \
+					item.indexes_0[2] = rint((acos(v.raw[0] / q) / M_PI * 180) / resolutions[2]); \
+                                        item.intensity = rint((double)image[i] * correction); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_PHIY_Q_THETAY: \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint((atan2(v.raw[2], v.raw[0])) / M_PI * 180 / resolutions[0]); \
+					item.indexes_0[1] = rint(q / resolutions[1]); \
+					item.indexes_0[2] = rint((acos(v.raw[1] / q) / M_PI * 180) / resolutions[2]); \
+                                        item.intensity = rint((double)image[i] * correction); \
+                                                                        \
+                                        if(TRUE == item_in_the_limits(&item, limits, n_limits)) \
+                                                darray_append(space->items, item); \
+                                }                                       \
+                        }                                               \
+                        break;                                          \
+                }                                                       \
+                case HKL_BINOCULARS_QCUSTOM_SUB_PROJECTION_PHIZ_Q_THETAZ: \
+                {                                                       \
+                        for(i=0;i<n_pixels;++i){                        \
+                                if(not_masked(masked, i)){              \
+                                        CGLM_ALIGN_MAT vec3s v = {{q_x[i], q_y[i], q_z[i]}}; \
+                                                                        \
+                                        v = glms_mat4_mulv3(m_holder_d, v, 1); \
+                                        v = glms_vec3_scale_as(v, k);   \
+                                        correction = polarisation(v, weight, do_polarisation_correction); \
+                                        v = glms_vec3_sub(v , ki);      \
+                                        v = glms_mat4_mulv3(m_holder_s, v, 0); \
+                                                                        \
+                                        float q = compute_q(v);         \
+					item.indexes_0[0] = rint((atan2(v.raw[1], v.raw[0])) / M_PI * 180 / resolutions[0]); \
+					item.indexes_0[1] = rint(q / resolutions[1]); \
+					item.indexes_0[2] = rint((acos(v.raw[2] / q) / M_PI * 180) / resolutions[2]); \
                                         item.intensity = rint((double)image[i] * correction); \
                                                                         \
                                         if(TRUE == item_in_the_limits(&item, limits, n_limits)) \

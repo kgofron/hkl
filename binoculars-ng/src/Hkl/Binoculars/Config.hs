@@ -90,8 +90,8 @@ import           Data.Char                         (isSpace)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
-import           Data.Hashable                     (Hashable)
 import           Data.HashMap.Strict               (HashMap, unionWith)
+import           Data.Hashable                     (Hashable)
 import           Data.Ini                          (Ini (..), printIni)
 import           Data.Ini.Config                   (IniParser, fieldMbOf,
                                                     fieldOf, parseIniFile,
@@ -446,6 +446,9 @@ instance FieldEmitter HklBinocularsQCustomSubProjectionEnum where
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QTimescan0           = "q_timescan0"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'QScannumber          = "q_scannumber"
   fieldEmitter HklBinocularsQCustomSubProjectionEnum'TthScannumber        = "tth_scannumber"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'PhixQThetax          = "phix_q_thetax"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'PhiyQThetay          = "phiy_q_thetay"
+  fieldEmitter HklBinocularsQCustomSubProjectionEnum'PhizQThetaz          = "phiz_q_thetaz"
 
 instance FieldParsable HklBinocularsQCustomSubProjectionEnum where
   fieldParser = go . strip . uncomment . toLower =<< takeText
