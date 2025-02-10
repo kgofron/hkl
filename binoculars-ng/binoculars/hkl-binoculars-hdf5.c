@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2024 Synchrotron SOLEIL
+ * Copyright (C) 2003-2025 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -185,7 +185,7 @@ static void *read_dataset(hid_t loc_id, const char *name, hid_t type, size_t n)
 
         if (n != n_arr){
                 fprintf(stdout,
-                        "the dataset \"%s\" contains, %lld points,"
+                        "the dataset \"%s\" contains, %ld points,"
                         " but the expectation was %ld points\n",
                         name, n_arr, n);
                 goto fail_arr;
@@ -349,7 +349,7 @@ static herr_t axis_from_hdf5(darray_axis *axes, hid_t group_id, const char *fnam
         darray_init(new_axes);
 
         if((status = H5Gget_info(group_id, &info)) < 0){
-                fprintf(stdout, "number of link in the axes group: %lld\n", info.nlinks);
+                fprintf(stdout, "number of link in the axes group: %ld\n", info.nlinks);
                 goto failed;
         }
 
@@ -404,7 +404,7 @@ static herr_t axis_from_hdf5(darray_axis *axes, hid_t group_id, const char *fnam
                         /* get the index of the axis */
                         idx = arr_axis[0];
                         if(idx >= info.nlinks){
-                                fprintf(stdout, "the index of the axis %d is out of range [0-%lld]\n", idx, info.nlinks = 1);
+                                fprintf(stdout, "the index of the axis %d is out of range [0-%ld]\n", idx, info.nlinks = 1);
                                 do_break = 1;
                                 status = H5E_BADRANGE;
                                 goto fail_read;

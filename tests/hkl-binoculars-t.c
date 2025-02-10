@@ -108,6 +108,22 @@ static void coordinates_save(void)
 	ok(res == TRUE, __func__);
 }
 
+static void io_img(void)
+{
+        int res = TRUE;
+        uint16_t *arr = NULL;
+
+        arr = hkl_binoculars_detector_2d_img_load(HKL_BINOCULARS_DETECTOR_RIGAKU_XSPA_1M,
+                                                  "../binoculars-ng/fluo_Ge_60sec_14b_single_000000.img");
+
+        res &= NULL != arr;
+
+        if (NULL != arr)
+                free(arr);
+
+	ok(res == TRUE, __func__);
+}
+
 static void mask_get(void)
 {
         int res = TRUE;
@@ -818,6 +834,7 @@ int main(void)
 
 	coordinates_get();
         coordinates_save();
+//        io_img();
 	mask_get();
         mask_save();
         angles_projection();

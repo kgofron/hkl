@@ -50,6 +50,7 @@ extern void hkl_binoculars_axis_init_from_array(HklBinocularsAxis *self,
                                                 const char *name,
                                                 double *arr,
                                                 size_t n_arr);
+
 /*********/
 /* Space */
 /*********/

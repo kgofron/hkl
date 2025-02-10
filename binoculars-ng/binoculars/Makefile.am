@@ -28,8 +28,11 @@ libhkl_binoculars_la_SOURCES = \
 	hkl-binoculars-config.c \
 	hkl-binoculars-config-private.h \
 	hkl-binoculars-detectors-2d.c \
+	hkl-binoculars-detectors-2d-private.h \
 	hkl-binoculars-geometry.c \
 	hkl-binoculars-hdf5.c \
+	hkl-binoculars-io-img.c \
+	hkl-binoculars-io-private.h \
 	hkl-binoculars-private.h \
 	$(top_builddir)/hkl/hkl-axis.c \
 	$(top_builddir)/hkl/hkl-geometry.c \

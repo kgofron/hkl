@@ -18,6 +18,9 @@
      - 'q_thetax_phix' -> latitude and longitude of q with qx as reference.
      - 'q_thetay_phiy' -> latitude and longitude of q with qy as reference.
      - 'q_thetaz_phiz' -> latitude and longitude of q with qz as reference.
+   - Added the Rigaku XSPA 1M detector to the detector library.
+   - Added the `hkl_binoculars_detectors_2d_img_load` in order to load
+     rigaku img files. For now only uint16_t images.
 ** Tests
    - binoculars-ng detectors tests are using sha256 in order to check
      mask and coordinates integrity. If you change a detector

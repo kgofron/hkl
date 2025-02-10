@@ -292,6 +292,52 @@ void *npy_load(const char *fname,
                                                         free(npy->arr);
                                                         npy_free_but_array(npy);
                                                 }
+                                                of(HklBinocularsNpyUInt16) {
+                                                        size_t i;
+
+                                                        arr = malloc(n * sizeof(uint8_t));
+                                                        if (NULL != arr){
+                                                                for(i=0; i<n; ++i){
+                                                                        arr[i] = ((uint16_t *)(npy->arr))[i];
+                                                                }
+                                                        }
+                                                        free(npy->arr);
+                                                        npy_free_but_array(npy);
+                                                }
+
+                                        }
+                                }
+
+                                of(HklBinocularsNpyUInt16) {
+                                        match(read_type){
+                                                of(HklBinocularsNpyBool) {
+                                                        size_t i;
+
+                                                        arr = malloc(n * sizeof(uint16_t));
+                                                        if (NULL != arr){
+                                                                for(i=0; i<n; ++i){
+                                                                        arr[i] = ((uint8_t *)(npy->arr))[i];
+                                                                }
+                                                        }
+                                                        free(npy->arr);
+                                                        npy_free_but_array(npy);
+                                                }
+                                                of(HklBinocularsNpyUInt16) {
+                                                        arr = npy->arr;
+                                                        npy_free_but_array(npy);
+                                                }
+                                                of(HklBinocularsNpyDouble) {
+                                                        size_t i;
+
+                                                        arr = malloc(n * sizeof(uint16_t));
+                                                        if (NULL != arr){
+                                                                for(i=0; i<n; ++i){
+                                                                        arr[i] = ((double *)(npy->arr))[i];
+                                                                }
+                                                        }
+                                                        free(npy->arr);
+                                                        npy_free_but_array(npy);
+                                                }
 
                                         }
                                 }
@@ -310,11 +356,22 @@ void *npy_load(const char *fname,
                                                         free(npy->arr);
                                                         npy_free_but_array(npy);
                                                 }
+                                                of(HklBinocularsNpyUInt16) {
+                                                        size_t i;
+
+                                                        arr = malloc(n * sizeof(double));
+                                                        if (NULL != arr){
+                                                                for(i=0; i<n; ++i){
+                                                                        arr[i] = ((uint16_t *)(npy->arr))[i];
+                                                                }
+                                                        }
+                                                        free(npy->arr);
+                                                        npy_free_but_array(npy);
+                                                }
                                                 of(HklBinocularsNpyDouble) {
                                                         arr = npy->arr;
                                                         npy_free_but_array(npy);
                                                 }
-
                                         }
                                 }
                         }
@@ -337,6 +394,7 @@ static inline char map_type(HklBinocularsNpyDataType type)
 
         match(type){
                 of(HklBinocularsNpyBool)   res = 'b';
+                of(HklBinocularsNpyUInt16) res = 'u';
                 of(HklBinocularsNpyDouble) res = 'f';
         }
 
@@ -366,16 +424,23 @@ static inline char map_type(HklBinocularsNpyDataType type)
         return res;
 }
 
-static inline int map_size(HklBinocularsNpyDataType type)
+int npy_data_type_element_size(HklBinocularsNpyDataType type)
 {
         int res = 8;
 
         match(type){
                 of(HklBinocularsNpyBool)   res = 1;
+                of(HklBinocularsNpyUInt16) res = 2;
                 of(HklBinocularsNpyDouble) res = 8;
         }
 
         return res;
+}
+
+int npy_data_type_cmp(HklBinocularsNpyDataType t1, const HklBinocularsNpyDataType t2)
+{
+        /* fprintf(stdout, "type: %d %d\n", t1.tag, t2.tag); */
+        return t1.tag - t2.tag;
 }
 
 static inline char *create_npy_header(HklBinocularsNpyDataType type,
@@ -395,7 +460,7 @@ static inline char *create_npy_header(HklBinocularsNpyDataType type,
 
         fprintf(stream,"{");
         fprintf(stream, "'descr': '%c%c%d'",
-                bigendian(), map_type(type), map_size(type));
+                bigendian(), map_type(type), npy_data_type_element_size(type));
         fprintf(stream, ", ");
         fprintf(stream, "'fortran_order' : False");
         fprintf(stream, ", ");
@@ -460,7 +525,7 @@ void npy_save(const char *fname,
         fwrite(&header[0], 1, header_size, f);
         /* fprintf(stdout, "%s\n", header); */
         fseek(f,0,SEEK_END);
-        fwrite(arr, map_size(type), shape_size(shape), f);
+        fwrite(arr, npy_data_type_element_size(type), shape_size(shape), f);
         fclose(f);
 
         free(header);

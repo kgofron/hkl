@@ -39,12 +39,13 @@ binoculars_ng_SOURCES=\
 	src/Hkl/Sample.hs \
 	src/Hkl/Types.hs \
 	src/Hkl/Utils.hs \
-        binoculars/hkl-binoculars-detectors-2d.c \
         binoculars/hkl-binoculars.c \
         binoculars/hkl-binoculars-config.c \
         binoculars/hkl-binoculars-cnpy.c \
+        binoculars/hkl-binoculars-detectors-2d.c \
         binoculars/hkl-binoculars-geometry.c \
         binoculars/hkl-binoculars-hdf5.c \
+        binoculars/hkl-binoculars-io-img.c \
         $(top_srcdir)/hkl/hkl-axis.c \
         $(top_srcdir)/hkl/hkl-geometry.c \
         $(top_srcdir)/hkl/hkl-interval.c \
