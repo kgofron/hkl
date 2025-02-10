@@ -187,7 +187,7 @@ datatype(
         (MerlinMedipix3RXQuad, struct tilling_t),
         (MerlinMedipix3RXQuad512, struct tilling_t),
         (Cirpad, struct cirpad_t),
-	(RigakuXSPA, struct square_t)
+	(RigakuXSPA1M, struct square_t)
         );
 
 struct detector_t {
@@ -220,7 +220,7 @@ static struct detector_t get_detector(HklBinocularsDetectorEnum n)
                          SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false, false, 2)),
                 DETECTOR(Cirpad,
                          SHAPE(560, 2400), CIRPAD(130e-6, 80, 120)),
-		DETECTOR(RigakuXSPA,
+		DETECTOR(RigakuXSPA1M,
 			 SHAPE(1034, 1104), SQUARE(76e-6))
         };
 
@@ -560,7 +560,7 @@ static uint8_t *mask_get_tilling(const struct shape_t *shape,
 }
 
 
-static uint8_t *mask_get_rigaku_xspa(const struct shape_t *shape)
+static uint8_t *mask_get_rigaku_xspa_1m(const struct shape_t *shape)
 {
         uint8_t *arr = no_mask(shape);
 
@@ -711,7 +711,7 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_cirpad(&detector.shape,
                                                      cirpad);
                 }
-		of(RigakuXSPA, square){
+		of(RigakuXSPA1M, square){
 			arr = coordinates_get_square(&detector.shape,
 						     square);
 		}
@@ -777,8 +777,8 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(Cirpad, _){
                         arr = no_mask(&detector.shape);
                 }
-		of(RigakuXSPA, _){
-			arr = mask_get_rigaku_xspa(&detector.shape);
+		of(RigakuXSPA1M, _){
+			arr = mask_get_rigaku_xspa_1m(&detector.shape);
 		}
                 otherwise {
                         arr = no_mask(&detector.shape);
