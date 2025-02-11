@@ -260,11 +260,24 @@ fail_no_header:
 }
 
 
+#define convert(npy_, from_, dest_, to_)				\
+	do {								\
+		size_t i;						\
+		(dest_) = malloc(n * sizeof(to_ *));			\
+		if (NULL != (dest_)){					\
+			for(i=0; i<n; ++i){				\
+				((to_ *)(dest_))[i] = ((from_ *)(npy_->arr))[i]; \
+			}						\
+		}							\
+		free((npy_)->arr);					\
+		npy_free_but_array((npy_));				\
+	} while (0)
+
 void *npy_load(const char *fname,
                HklBinocularsNpyDataType expected_type,
                const darray_int *shape)
 {
-        uint8_t *arr = NULL;
+        void *arr = NULL;
         FILE* fp = fopen(fname, "rb");
 
         if (NULL != fp){
@@ -282,92 +295,36 @@ void *npy_load(const char *fname,
                                                         npy_free_but_array(npy);
                                                 }
                                                 of(HklBinocularsNpyDouble) {
-                                                        size_t i;
-
-                                                        arr = malloc(n * sizeof(uint8_t));
-                                                        if (NULL != arr){
-                                                                for(i=0; i<n; ++i){
-                                                                        arr[i] = ((double *)(npy->arr))[i];
-                                                                }
-                                                        }
-                                                        free(npy->arr);
-                                                        npy_free_but_array(npy);
+							convert(npy, double, arr, uint8_t);
                                                 }
                                                 of(HklBinocularsNpyUInt16) {
-                                                        size_t i;
-
-                                                        arr = malloc(n * sizeof(uint8_t));
-                                                        if (NULL != arr){
-                                                                for(i=0; i<n; ++i){
-                                                                        arr[i] = ((uint16_t *)(npy->arr))[i];
-                                                                }
-                                                        }
-                                                        free(npy->arr);
-                                                        npy_free_but_array(npy);
+							convert(npy, uint16_t, arr, uint8_t);
                                                 }
-
                                         }
                                 }
 
                                 of(HklBinocularsNpyUInt16) {
                                         match(read_type){
                                                 of(HklBinocularsNpyBool) {
-                                                        size_t i;
-
-                                                        arr = malloc(n * sizeof(uint16_t));
-                                                        if (NULL != arr){
-                                                                for(i=0; i<n; ++i){
-                                                                        arr[i] = ((uint8_t *)(npy->arr))[i];
-                                                                }
-                                                        }
-                                                        free(npy->arr);
-                                                        npy_free_but_array(npy);
+							convert(npy, uint8_t, arr, uint16_t);
                                                 }
                                                 of(HklBinocularsNpyUInt16) {
                                                         arr = npy->arr;
                                                         npy_free_but_array(npy);
                                                 }
                                                 of(HklBinocularsNpyDouble) {
-                                                        size_t i;
-
-                                                        arr = malloc(n * sizeof(uint16_t));
-                                                        if (NULL != arr){
-                                                                for(i=0; i<n; ++i){
-                                                                        arr[i] = ((double *)(npy->arr))[i];
-                                                                }
-                                                        }
-                                                        free(npy->arr);
-                                                        npy_free_but_array(npy);
+							convert(npy, double, arr, uint16_t);
                                                 }
-
                                         }
                                 }
 
                                 of(HklBinocularsNpyDouble) {
                                         match(read_type){
                                                 of(HklBinocularsNpyBool) {
-                                                        size_t i;
-
-                                                        arr = malloc(n * sizeof(double));
-                                                        if (NULL != arr){
-                                                                for(i=0; i<n; ++i){
-                                                                        arr[i] = ((uint8_t *)(npy->arr))[i];
-                                                                }
-                                                        }
-                                                        free(npy->arr);
-                                                        npy_free_but_array(npy);
+							convert(npy, uint8_t, arr, double);
                                                 }
                                                 of(HklBinocularsNpyUInt16) {
-                                                        size_t i;
-
-                                                        arr = malloc(n * sizeof(double));
-                                                        if (NULL != arr){
-                                                                for(i=0; i<n; ++i){
-                                                                        arr[i] = ((uint16_t *)(npy->arr))[i];
-                                                                }
-                                                        }
-                                                        free(npy->arr);
-                                                        npy_free_but_array(npy);
+							convert(npy, uint16_t, arr, double);
                                                 }
                                                 of(HklBinocularsNpyDouble) {
                                                         arr = npy->arr;
