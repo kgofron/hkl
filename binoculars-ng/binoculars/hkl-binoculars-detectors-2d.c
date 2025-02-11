@@ -30,7 +30,6 @@
 #include "hkl/ccan/array_size/array_size.h"
 
 #include "hkl-binoculars.h"
-#include "hkl-binoculars-cnpy-private.h"
 #include "hkl-binoculars-detectors-2d-private.h"
 #include "hkl-binoculars-io-private.h"
 #include "hkl-quaternion-private.h"

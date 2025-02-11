@@ -6,8 +6,8 @@
 #include <regex.h>
 #include <string.h>
 
-#include "hkl-binoculars-cnpy-private.h"
 #include "hkl-binoculars-detectors-2d-private.h"
+#include "hkl-binoculars-io-private.h"
 #include "hkl/ccan/array_size/array_size.h"
 #include "hkl/ccan/build_assert/build_assert.h"
 #include "hkl/ccan/darray/darray.h"

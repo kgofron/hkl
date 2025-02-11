@@ -6,7 +6,8 @@
 #include <regex.h>
 #include <string.h>
 
-#include "hkl-binoculars-cnpy-private.h"
+#include "hkl-binoculars-detectors-2d-private.h"
+#include "hkl-binoculars-io-private.h"
 #include "hkl/ccan/array_size/array_size.h"
 #include "hkl/ccan/build_assert/build_assert.h"
 #include "hkl/ccan/darray/darray.h"
@@ -148,7 +149,7 @@ static int shape_cmp(const darray_int *sh1, const darray_int *sh2)
         return 0; /* idential */
 }
 
-static int shape_size(const darray_int *shape)
+static int shape_size_(const darray_int *shape)
 {
         int nb_elem = 1;
         int *val;
@@ -241,7 +242,7 @@ static struct npy_t *parse_npy(FILE* fp,
                 goto fail;
 
         /* read the array */
-        int nbytes = shape_size(&npy->shape) * npy->descr.elem_size;
+        int nbytes = shape_size_(&npy->shape) * npy->descr.elem_size;
         npy->arr = malloc( nbytes );
         if(NULL == npy->arr)
                 goto fail;
@@ -271,7 +272,7 @@ void *npy_load(const char *fname,
 
                 if (NULL != npy) {
                         HklBinocularsNpyDataType read_type = npy->descr.elem_type;
-                        size_t n = shape_size(&npy->shape);
+                        size_t n = shape_size_(&npy->shape);
 
                         match(expected_type){
                                 of(HklBinocularsNpyBool) {
@@ -525,7 +526,7 @@ void npy_save(const char *fname,
         fwrite(&header[0], 1, header_size, f);
         /* fprintf(stdout, "%s\n", header); */
         fseek(f,0,SEEK_END);
-        fwrite(arr, npy_data_type_element_size(type), shape_size(shape), f);
+        fwrite(arr, npy_data_type_element_size(type), shape_size_(shape), f);
         fclose(f);
 
         free(header);

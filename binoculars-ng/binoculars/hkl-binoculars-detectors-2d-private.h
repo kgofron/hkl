@@ -199,7 +199,7 @@ struct detector_t {
 #define DETECTOR(name_, shape_, type_) (struct detector_t)      \
         {.name=#name_, .shape=shape_, .type=name_(type_)}
 
-static struct detector_t get_detector(HklBinocularsDetectorEnum n)
+static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
 {
         struct detector_t detectors[] = {
                 DETECTOR(ImXpadS140,

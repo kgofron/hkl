@@ -1,3 +1,5 @@
+#ifndef __HKL_BINOCULARS_IO_PRIVATE_H__
+#define __HKL_BINOCULARS_IO_PRIVATE_H__
 /* This file is part of the hkl library.
  *
  * The hkl library is free software: you can redistribute it and/or modify
@@ -19,12 +21,35 @@
  *
  * Authors: Picca Frédéric-Emmanuel <picca@synchrotron-soleil.fr>
  */
-#ifndef __HKL_BINOCULARS_IO_PRIVATE_H__
-#define __HKL_BINOCULARS_IO_PRIVATE_H__
 
+#include <stdint.h>
+
+#include "hkl.h"
 #include "hkl-binoculars-detectors-2d-private.h"
 
-extern uint16_t *hkl_binoculars_io_img_load(const char *fname,
-                                            const struct shape_t *expected_shape);
+G_BEGIN_DECLS
+
+datatype(
+        HklBinocularsNpyDataType,
+        (HklBinocularsNpyBool),
+        (HklBinocularsNpyDouble),
+        (HklBinocularsNpyUInt16)
+        );
+
+extern int npy_data_type_cmp(const HklBinocularsNpyDataType t1,
+                             const HklBinocularsNpyDataType t2);
+
+extern int npy_data_type_element_size(const HklBinocularsNpyDataType t);
+
+extern void *npy_load(const char *filename,
+                      HklBinocularsNpyDataType type,
+                      const darray_int *shape);
+
+extern void npy_save(const char *fname,
+                     const void *arr,
+                     HklBinocularsNpyDataType type,
+                     const darray_int *shape);
+
+G_END_DECLS
 
 #endif

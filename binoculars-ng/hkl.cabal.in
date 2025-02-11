@@ -66,12 +66,13 @@ library
   build-depends: unordered-containers
   build-depends: vector >= 0.10.0.1
 
-  c-sources: @srcdir@/binoculars/hkl-binoculars-detectors-2d.c
   c-sources: @srcdir@/binoculars/hkl-binoculars.c
   c-sources: @srcdir@/binoculars/hkl-binoculars-config.c
-  c-sources: @srcdir@/binoculars/hkl-binoculars-cnpy.c
+  c-sources: @srcdir@/binoculars/hkl-binoculars-detectors-2d.c
   c-sources: @srcdir@/binoculars/hkl-binoculars-geometry.c
-  c-sources: @srcdir@/binoculars/hkl-binoculars-hdf5.c
+  c-sources: @srcdir@/binoculars/hkl-binoculars-io-cnpy.c
+  c-sources: @srcdir@/binoculars/hkl-binoculars-io-hdf5.c
+  c-sources: @srcdir@/binoculars/hkl-binoculars-io-img.c
   c-sources: @srcdir@/../hkl/hkl-axis.c
   c-sources: @srcdir@/../hkl/hkl-geometry.c
   c-sources: @srcdir@/../hkl/hkl-interval.c

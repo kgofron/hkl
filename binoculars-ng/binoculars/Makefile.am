@@ -23,14 +23,14 @@ noinst_LTLIBRARIES = libhkl-binoculars.la
 libhkl_binoculars_la_SOURCES = \
 	hkl-binoculars.c \
 	hkl-binoculars.h \
-	hkl-binoculars-cnpy.c \
 	hkl-binoculars-cnpy-private.h \
 	hkl-binoculars-config.c \
 	hkl-binoculars-config-private.h \
 	hkl-binoculars-detectors-2d.c \
 	hkl-binoculars-detectors-2d-private.h \
 	hkl-binoculars-geometry.c \
-	hkl-binoculars-hdf5.c \
+	hkl-binoculars-io-cnpy.c \
+	hkl-binoculars-io-hdf5.c \
 	hkl-binoculars-io-img.c \
 	hkl-binoculars-io-private.h \
 	hkl-binoculars-private.h \
