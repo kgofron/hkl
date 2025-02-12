@@ -517,9 +517,10 @@ double *hkl_binoculars_detector_2d_coordinates_get(HklBinocularsDetectorEnum n)
                         arr = coordinates_get_cirpad(&detector.shape,
                                                      cirpad);
                 }
-		of(RigakuXSPA1M, square){
+		of(RigakuXspa1M, square){
 			arr = coordinates_get_square(&detector.shape,
 						     square);
+                        flip_z(&detector.shape, arr);
 		}
         }
         return arr;
@@ -601,7 +602,7 @@ uint8_t *hkl_binoculars_detector_2d_mask_get(HklBinocularsDetectorEnum n)
                 of(Cirpad, _){
                         arr = no_mask(&detector.shape);
                 }
-		of(RigakuXSPA1M, _){
+		of(RigakuXspa1M, _){
 			arr = mask_get_rigaku_xspa_1m(&detector.shape);
 		}
                 otherwise {

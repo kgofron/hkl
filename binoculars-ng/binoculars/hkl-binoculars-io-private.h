@@ -33,6 +33,7 @@ datatype(
         HklBinocularsNpyDataType,
         (HklBinocularsNpyBool),
         (HklBinocularsNpyDouble),
+        (HklBinocularsNpyInt32),
         (HklBinocularsNpyUInt16)
         );
 

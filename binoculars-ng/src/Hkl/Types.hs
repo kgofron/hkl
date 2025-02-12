@@ -67,7 +67,7 @@ data ScanFilePath = ScanFilePath (Path Abs File) Scannumber
 -- Scannumber
 
 newtype Scannumber = Scannumber { unScannumber :: Int }
-  deriving Show
+  deriving (Show, FromJSON, ToJSON)
 
 -- Section
 

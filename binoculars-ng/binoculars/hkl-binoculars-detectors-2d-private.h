@@ -187,7 +187,7 @@ datatype(
         (MerlinMedipix3RXQuad, struct tilling_t),
         (MerlinMedipix3RXQuad512, struct tilling_t),
         (Cirpad, struct cirpad_t),
-	(RigakuXSPA1M, struct square_t)
+	(RigakuXspa1M, struct square_t)
         );
 
 struct detector_t {
@@ -220,7 +220,7 @@ static inline struct detector_t get_detector(HklBinocularsDetectorEnum n)
                          SHAPE(512, 512), TILLING(256, 256, 3, 3, 55e-6, false, false, 2)),
                 DETECTOR(Cirpad,
                          SHAPE(560, 2400), CIRPAD(130e-6, 80, 120)),
-		DETECTOR(RigakuXSPA1M,
+		DETECTOR(RigakuXspa1M,
 			 SHAPE(1034, 1104), SQUARE(76e-6))
         };
 

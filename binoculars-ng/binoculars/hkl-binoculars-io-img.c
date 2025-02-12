@@ -42,6 +42,8 @@ static HklBinocularsNpyDataType parse_data_type(const char *header, regmatch_t m
         /* fprintf(stdout, "string = '%s'\n", string); */
         if (0 == strcmp(string, "unsigned short int"))
                 data_type = HklBinocularsNpyUInt16();
+        if (0 == strcmp(string, "long int"))
+                data_type = HklBinocularsNpyInt32();
 
         free(string);
 
@@ -63,25 +65,28 @@ static size_t parse_size_t(const char *header, regmatch_t match)
         return size;
 }
 
-static uint16_t *parse_rigaku_img_header(FILE* fp,
-                                         const HklBinocularsNpyDataType expected_data_type,
-                                         const struct shape_t *shape)
+static int parse_rigaku_img_header_into(FILE* fp,
+                                        const HklBinocularsNpyDataType expected_data_type,
+                                        const struct shape_t *shape,
+                                        void *buffer, int n_buffer)
 {
         char header[HEADER_SIZE+1];
-        size_t res;
+        int res = FALSE;
+        size_t n_read;
         regex_t preg;
         regmatch_t matches[5];
         int errcode;
         char errbuf[256];
 
-        uint16_t *arr;
         HklBinocularsNpyDataType data_type;
         size_t size1;
         size_t size2;
 
         /* read the header which is at least 1024 long */
-        res = fread(header, 1, HEADER_SIZE, fp);
-        assert(res == HEADER_SIZE);
+        n_read = fread(header, 1, HEADER_SIZE, fp);
+        if(n_read != HEADER_SIZE)
+                goto fail;
+        /* assert(n_read == HEADER_SIZE); */
         header[HEADER_SIZE] = 0x0;
 
         /* fprintf(stdout, "%s\n", header); */
@@ -142,41 +147,43 @@ static uint16_t *parse_rigaku_img_header(FILE* fp,
 
         /* read the array */
         int nbytes = size1 * size2 * npy_data_type_element_size(data_type);
-        arr = malloc( nbytes );
-        if(NULL == arr)
-                goto fail;
+        assert(nbytes == n_buffer);
 
-        res = fread(arr, 1, nbytes, fp);
-        assert(res == nbytes);
+        if(NULL != buffer) {
+                n_read = fread(buffer, 1, n_buffer, fp);
+                assert(n_read == n_buffer);
+                res = TRUE;
+        }
 
-        return arr;
 fail:
-        return NULL;
+        return res;
 }
 
 
-static uint16_t *hkl_binoculars_io_img_load(const char *fname,
-                                     const struct shape_t *expected_shape)
+static int hkl_binoculars_io_img_load_into(const char *fname,
+                                           const struct shape_t *expected_shape,
+                                           void *buffer, int n_buffer)
 {
-        uint16_t *arr = NULL;
+        int res = FALSE;
+
         FILE* fp = fopen(fname, "rb");
-        HklBinocularsNpyDataType expected_type = HklBinocularsNpyUInt16();
+        HklBinocularsNpyDataType expected_type = HklBinocularsNpyInt32();
 
         if (NULL != fp){
-                arr = parse_rigaku_img_header(fp, expected_type, expected_shape);
+                res = parse_rigaku_img_header_into(fp, expected_type, expected_shape,
+                                                   buffer, n_buffer);
                 fclose(fp);
         }
 
-        return arr;
+        return res;
 }
 
-uint16_t *hkl_binoculars_detector_2d_img_load(HklBinocularsDetectorEnum n,
-                                              const char *filename)
+int hkl_binoculars_detector_2d_img_load_into(HklBinocularsDetectorEnum n,
+                                             const char *filename,
+                                             void *buffer, int n_buffer)
 {
         const struct detector_t detector = get_detector(n);
-        uint16_t *arr = NULL;
 
-        arr = hkl_binoculars_io_img_load(filename, &detector.shape);
-
-        return arr;
+        /* fprintf(stdout, "try to read: %s\n", filename); */
+        return hkl_binoculars_io_img_load_into(filename, &detector.shape, buffer, n_buffer);
 }

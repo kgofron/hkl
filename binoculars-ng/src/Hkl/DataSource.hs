@@ -12,7 +12,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2025 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -31,7 +31,7 @@ module Hkl.DataSource
   , Is1DStreamable(..)
   ) where
 
-import           Bindings.HDF5.Core                (Location)
+import           Bindings.HDF5.Core                (HSize, Location)
 import           Bindings.HDF5.Dataset             (getDatasetSpace,
                                                     getDatasetType)
 import           Bindings.HDF5.Dataspace           (getSimpleDataspaceExtentNPoints)
@@ -53,6 +53,7 @@ import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe, catch, throwM)
+import           Text.Printf                       (printf)
 
 import           Prelude                           hiding (filter)
 
@@ -180,6 +181,7 @@ instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Int32 ds det buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Word16 ds det buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Word32 ds det buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
+  extract1DStreamValue (DataSourceAcq'Image'Img'Int32 det buf _ sn fn) i = ImageInt32 <$> readImgInBuffer buf det (fn sn i)
 
 instance Is1DStreamable (DataSourceAcq Mask) (Maybe Mask) where
     extract1DStreamValue (DataSourceAcq'Mask'NoMask) _ = returnIO Nothing
@@ -196,6 +198,9 @@ instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
 class DataSource a where
   data DataSourcePath a :: Type
   data DataSourceAcq a :: Type
+
+  ds'Shape :: MonadSafe m => DataSourceAcq a -> m ([HSize], [Maybe HSize])
+  ds'Shape = undefined
 
   withDataSourceP :: (Location l, MonadSafe m)
                     => ScanFile l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
@@ -231,6 +236,10 @@ instance DataSource Attenuation where
                               }
     | DataSourceAcq'ApplyedAttenuationFactor { attenuationAcqPath :: DataSourceAcq Float }
     | DataSourceAcq'NoAttenuation
+
+  ds'Shape (DataSourceAcq'Attenuation fp _ _ _)        = ds'Shape fp
+  ds'Shape (DataSourceAcq'ApplyedAttenuationFactor fp) = ds'Shape fp
+  ds'Shape DataSourceAcq'NoAttenuation                 = undefined
 
   withDataSourceP f (DataSourcePath'Attenuation p o c m) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'Attenuation ds o c m)
   withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
@@ -309,6 +318,8 @@ instance DataSource Float where
   newtype DataSourceAcq Float
     = DataSourceAcq'Float Dataset
 
+  ds'Shape (DataSourceAcq'Float ds) = liftIO $ datasetShape ds
+
   withDataSourceP (ScanFile f _) (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
 
 -- Geometry
@@ -345,11 +356,18 @@ condM ((p, v):ls) = ifM p v (condM ls)
 instance DataSource Image where
   data DataSourcePath Image
     = DataSourcePath'Image (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
+    | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Scannumber
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data instance DataSourceAcq Image = DataSourceAcq'Image'Int32 Dataset (Detector Hkl DIM2) (IOVector Int32)
                                     | DataSourceAcq'Image'Word16 Dataset (Detector Hkl DIM2) (IOVector Word16)
                                     | DataSourceAcq'Image'Word32 Dataset (Detector Hkl DIM2) (IOVector Word32)
+                                    | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Scannumber (Scannumber -> Int -> FilePath)
+
+  ds'Shape (DataSourceAcq'Image'Int32 ds _ _)        = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Image'Word16 ds _ _)       = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Image'Word32 ds _ _)       = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Image'Img'Int32 _ _ a _ _) = ds'Shape a
 
   withDataSourceP (ScanFile f _) (DataSourcePath'Image p det) g = withHdf5PathP f p $ \ds -> do
     t <- liftIO $ getDatasetType ds
@@ -366,6 +384,14 @@ instance DataSource Image where
                 g (DataSourceAcq'Image'Word32 ds det arr))
           ]
 
+  withDataSourceP f@(ScanFile _ sn) (DataSourcePath'Image'Img det a (Scannumber sn0)) g
+    = withDataSourceP f a $ \a' -> do
+    let n = (size . shape $ det)
+    arr <- liftIO $ unsafeNew n
+    g (DataSourceAcq'Image'Img'Int32 det arr a' sn f')
+      where
+        f' :: Scannumber -> Int -> FilePath
+        f' (Scannumber sn') i = printf "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn0 sn0 ((sn' - sn0) * 1029 + i)
 -- Int
 
 instance DataSource Int where

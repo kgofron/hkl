@@ -63,7 +63,7 @@ import           Foreign.ForeignPtr                (withForeignPtr)
 import           GHC.Generics                      (Generic)
 import           Numeric.Units.Dimensional.Prelude (Angle, degree, radian, (*~),
                                                     (/~))
-import           Path                              (Abs, Dir, Path, toFilePath)
+import           Path                              (Abs, Dir, Path)
 import           Pipes                             (await, each, runEffect,
                                                     yield, (>->))
 import           Pipes.Prelude                     (filter, map, tee, toListM)
@@ -82,7 +82,6 @@ import           Hkl.Geometry
 import           Hkl.H5
 import           Hkl.Image
 import           Hkl.Orphan                        ()
-import           Hkl.Pipes
 import           Hkl.Repa
 import           Hkl.Types
 import           Hkl.Utils
@@ -372,8 +371,8 @@ mk'DataSourcePath'Mask c = case binocularsConfig'Common'Maskmatrix c of
                                         m
                                         (binocularsConfig'Common'Detector c)
 
-mkDetector'Sixs'Fly :: Detector Hkl DIM2 -> DataSourcePath Image
-mkDetector'Sixs'Fly det@(Detector2D d _ _)
+mkDetector'Sixs'Fly :: Detector Hkl DIM2 -> (DataSourcePath Attenuation) -> Scannumber -> DataSourcePath Image
+mkDetector'Sixs'Fly det@(Detector2D d _ _) att sn
   = case d of
       HklBinocularsDetectorEnum'ImxpadS140 ->
         DataSourcePath'Image
@@ -401,9 +400,11 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _)
         (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
         det
       HklBinocularsDetectorEnum'Cirpad -> undefined
+      HklBinocularsDetectorEnum'RigakuXspa1M ->
+        DataSourcePath'Image'Img det att sn
 
-mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourcePath Image
-mkDetector'Sixs'Sbs det@(Detector2D d _ _)
+mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourcePath Attenuation -> Scannumber -> DataSourcePath Image
+mkDetector'Sixs'Sbs det@(Detector2D d _ _) att sn
   = case d of
       HklBinocularsDetectorEnum'ImxpadS140 ->
         DataSourcePath'Image
@@ -425,6 +426,8 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _)
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
       HklBinocularsDetectorEnum'Cirpad -> undefined
+      HklBinocularsDetectorEnum'RigakuXspa1M ->
+        DataSourcePath'Image'Img det att sn
 
 overloadAttenuationPath :: Maybe Double -> Maybe Float -> DataSourcePath Attenuation -> DataSourcePath Attenuation
 overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)
@@ -508,6 +511,7 @@ overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geomet
 
 overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
 overloadImagePath det (DataSourcePath'Image p _) = DataSourcePath'Image p det
+overloadImagePath det (DataSourcePath'Image'Img _ att sn) = DataSourcePath'Image'Img det att sn
 
 overloadMaskPath :: Config Common -> DataSourcePath Mask -> DataSourcePath Mask
 overloadMaskPath c DataSourcePath'Mask'NoMask  = mk'DataSourcePath'Mask c
@@ -551,6 +555,9 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let mAttenuationMax = binocularsConfig'Common'AttenuationMax common
       let mAttenuationShift = binocularsConfig'Common'AttenuationShift common
       let mWavelength = binocularsConfig'Common'Wavelength common
+
+      -- scan number 0
+      let sn0 = getInitialScannumber $ binocularsConfig'Common'InputRange common
 
       -- attenuation
       let dataSourcePath'Attenuation'Sixs :: DataSourcePath Attenuation
@@ -776,27 +783,29 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
 
-      let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DataSourcePath Geometry -> DataSourcePath DataFrameQCustom
-          dataSourcePath'DataFrameQCustom'Sixs'Fly g
-            = DataSourcePath'DataFrameQCustom
-              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs)
-              g
-              (mkDetector'Sixs'Fly detector)
-              (mk'DataSourcePath'Mask common)
-              (mkTimeStamp'Fly msub)
-              (mkTimescan0'Fly msub)
-              DataSourcePath'Scannumber
+      let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DataSourcePath Geometry -> Scannumber -> DataSourcePath DataFrameQCustom
+          dataSourcePath'DataFrameQCustom'Sixs'Fly g sn
+            = let att = mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
+              in DataSourcePath'DataFrameQCustom
+                 att
+                 g
+                 (mkDetector'Sixs'Fly detector att sn)
+                 (mk'DataSourcePath'Mask common)
+                 (mkTimeStamp'Fly msub)
+                 (mkTimescan0'Fly msub)
+                 DataSourcePath'Scannumber
 
-      let dataSourcePath'DataFrameQCustom'Sixs'Sbs :: DataSourcePath Geometry -> DataSourcePath DataFrameQCustom
-          dataSourcePath'DataFrameQCustom'Sixs'Sbs g
-            = DataSourcePath'DataFrameQCustom
-              (mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS)
-              g
-              (mkDetector'Sixs'Sbs detector)
-              (mk'DataSourcePath'Mask common)
-              (mkTimeStamp'Sbs msub)
-              (mkTimescan0'Sbs msub)
-              DataSourcePath'Scannumber
+      let dataSourcePath'DataFrameQCustom'Sixs'Sbs :: DataSourcePath Geometry -> Scannumber -> DataSourcePath DataFrameQCustom
+          dataSourcePath'DataFrameQCustom'Sixs'Sbs g sn
+            = let att = mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
+              in DataSourcePath'DataFrameQCustom
+                 att
+                 g
+                 (mkDetector'Sixs'Sbs detector att sn)
+                 (mk'DataSourcePath'Mask common)
+                 (mkTimeStamp'Sbs msub)
+                 (mkTimescan0'Sbs msub)
+                 DataSourcePath'Scannumber
 
       case inputtype of
          CristalK6C -> DataSourcePath'DataFrameQCustom
@@ -906,18 +915,18 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                    (mkTimeStamp'Sbs msub)
                    (mkTimescan0'Sbs msub)
                    DataSourcePath'Scannumber
-         SixsFlyMedH -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedH
-         SixsFlyMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedHGisaxs
-         SixsFlyMedV -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedV
-         SixsFlyMedVGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedVGisaxs
-         SixsFlyUhv -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'Uhv
-         SixsFlyUhvGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'UhvGisaxs
-         SixsSbsMedH -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedH
-         SixsSbsMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedHGisaxs
-         SixsSbsMedV -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedV
-         SixsSbsMedVGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedVGisaxs
-         SixsSbsUhv -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'Uhv
-         SixsSbsUhvGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'UhvGisaxs
+         SixsFlyMedH -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedH sn0
+         SixsFlyMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedHGisaxs sn0
+         SixsFlyMedV -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedV sn0
+         SixsFlyMedVGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedVGisaxs sn0
+         SixsFlyUhv -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'Uhv sn0
+         SixsFlyUhvGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'UhvGisaxs sn0
+         SixsSbsMedH -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedH sn0
+         SixsSbsMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedHGisaxs sn0
+         SixsSbsMedV -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedV sn0
+         SixsSbsMedVGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'MedVGisaxs sn0
+         SixsSbsUhv -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'Uhv sn0
+         SixsSbsUhvGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Sbs dataSourcePath'Geometry'Sixs'UhvGisaxs sn0
 
 
 {-# INLINE spaceQCustom #-}
@@ -1044,12 +1053,12 @@ processQCustomP = do
 
 
 instance ChunkP (DataSourcePath DataFrameQCustom) where
-    chunkP mSkipFirst mSkipLast (DataSourcePath'DataFrameQCustom ma _ (DataSourcePath'Image i _) _ _ _ _) =
+    chunkP mSkipFirst mSkipLast (DataSourcePath'DataFrameQCustom ma _ i _ _ _ _) =
       skipMalformed $ forever $ do
       sfp@(ScanFilePath fp _) <- await
-      withFileP (openFile' $ toFilePath fp) $ \f ->
-        withHdf5PathP f i $ \i' -> do
-        (_, ss) <- liftIO $ datasetShape i'
+      withScanFileP sfp $ \f ->
+        withDataSourceP f i $ \i' -> do
+        (_, ss) <- ds'Shape i'
         case head ss of
           (Just n) -> yield $ let (Chunk _ from to) = cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk fp 0 (fromIntegral n - 1))
                              in case ma of

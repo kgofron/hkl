@@ -1,16 +1,23 @@
 {-# LANGUAGE BangPatterns  #-}
+{-# LANGUAGE GADTs         #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Hkl.Image
     ( Image(..)
-    , filterSumImage )
-    where
+    , filterSumImage
+    , readImgInBuffer
+    ) where
 
 import           Data.Int                     (Int32)
 import           Data.Vector.Storable.Mutable (IOVector, Storable, length,
-                                               unsafeRead)
+                                               unsafeRead, unsafeWith)
 import           Data.Word                    (Word16, Word32)
+import           Foreign.C.String             (withCString)
 import           System.IO.Unsafe             (unsafePerformIO)
+
+import           Hkl.C.Binoculars
+import           Hkl.Detector
+import           Hkl.Repa
 
 data Image = ImageInt32 (IOVector Int32)
            | ImageWord16 (IOVector Word16)
@@ -83,3 +90,10 @@ filterSumImage :: Maybe Double -> Image -> Bool
 filterSumImage mMax img = case mMax of
                             Nothing  -> True
                             (Just m) -> sumImage img < m
+
+readImgInBuffer :: IOVector Int32 -> (Detector Hkl DIM2) -> FilePath -> IO (IOVector Int32)
+readImgInBuffer vec (Detector2D n _ _) fp
+  = unsafeWith vec $ \buf ->
+  withCString fp $ \c'fp -> do
+  c'hkl_binoculars_detector_2d_img_load_into (toEnum . fromEnum $ n) c'fp buf ((toEnum $ Data.Vector.Storable.Mutable.length vec) * 4) -- TODO avoid this hardcode
+  return vec

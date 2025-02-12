@@ -108,21 +108,21 @@ static void coordinates_save(void)
 	ok(res == TRUE, __func__);
 }
 
-static void io_img(void)
-{
-        int res = TRUE;
-        uint16_t *arr = NULL;
+/* static void io_img(void) */
+/* { */
+/*         int res = TRUE; */
+/*         uint16_t *arr = NULL; */
 
-        arr = hkl_binoculars_detector_2d_img_load(HKL_BINOCULARS_DETECTOR_RIGAKU_XSPA_1M,
-                                                  "../binoculars-ng/fluo_Ge_60sec_14b_single_000000.img");
+/*         arr = hkl_binoculars_detector_2d_img_load(HKL_BINOCULARS_DETECTOR_RIGAKU_XSPA_1M, */
+/*                                                   "../binoculars-ng/fluo_Ge_60sec_14b_single_000000.img"); */
 
-        res &= NULL != arr;
+/*         res &= NULL != arr; */
 
-        if (NULL != arr)
-                free(arr);
+/*         if (NULL != arr) */
+/*                 free(arr); */
 
-	ok(res == TRUE, __func__);
-}
+/* 	ok(res == TRUE, __func__); */
+/* } */
 
 static void mask_get(void)
 {
@@ -567,7 +567,7 @@ static void hkl_projection(void)
 		{-13,-1, 0},
 		{-13,-1, 0},
 		{-18, 0,-1},
-		{-14,-2, 0},
+		{-14,-2, -3},
 	};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {
@@ -580,7 +580,7 @@ static void hkl_projection(void)
 		{0, 33, 15},
 		{0, 33, 15},
 		{0, 33, 36},
-		{1, 33, 17},
+		{1, 33, 15},
 	};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){
@@ -702,7 +702,7 @@ static void test_projection(void)
 		{-13,-1, 0},
 		{-13,-1, 0},
 		{-18, 0,-1},
-		{-14,-2, 0},
+		{-14,-2, -3},
 	};
 
         static ptrdiff_t imax[HKL_BINOCULARS_DETECTOR_NUM_DETECTORS][3] = {
@@ -715,7 +715,7 @@ static void test_projection(void)
 		{0, 33, 15},
 		{0, 33, 15},
 		{0, 33, 36},
-		{1, 33, 17},
+		{1, 33, 15},
 	};
 
         for(n=0; n<HKL_BINOCULARS_DETECTOR_NUM_DETECTORS; ++n){

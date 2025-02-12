@@ -63,6 +63,7 @@ module Hkl.Binoculars.Config
     , eitherF
     , files
     , getCapabilities
+    , getInitialScannumber
     , getMask
     , getPreConfig
     , mergeIni
@@ -103,7 +104,7 @@ import           Data.Ini.Config.Bidir             (FieldValue (..), IniSpec,
                                                     text, (.=))
 import           Data.List                         (elemIndex, find, isInfixOf,
                                                     length)
-import           Data.List.NonEmpty                (NonEmpty (..), map)
+import           Data.List.NonEmpty                (NonEmpty (..), head, map)
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Text                         (Text, breakOn, cons, drop,
                                                     empty, findIndex,
@@ -372,6 +373,11 @@ instance FieldParsable ConfigRange where
 
 instance HasFieldValue ConfigRange where
   fieldvalue = parsable
+
+getInitialScannumber :: ConfigRange -> Scannumber
+getInitialScannumber (ConfigRange ne) = let (InputRange int) = Data.List.NonEmpty.head ne
+                                            sn0 = inf int
+                                        in (Scannumber sn0)
 
 -- DestinationTmpl
 
@@ -838,8 +844,8 @@ instance HasFieldValue (Resolutions DIM2) where
       parse t = do
         rs <- (fvParse $ listWithSeparator "," auto) t
         case Data.List.length rs of
-          1 -> Right (Resolutions2 (head rs) (head rs))
-          2 -> Right (Resolutions2 (head rs) (rs !! 1))
+          1 -> Right (Resolutions2 (Prelude.head rs) (Prelude.head rs))
+          2 -> Right (Resolutions2 (Prelude.head rs) (rs !! 1))
           _ -> Left "Need one or two resolutions values for this projection"
 
       emit :: Resolutions DIM2 -> Text
@@ -862,8 +868,8 @@ instance HasFieldValue (Resolutions DIM3) where
       parse t = do
         rs <- (fvParse $ listWithSeparator "," auto) t
         case Data.List.length rs of
-          1 -> Right (Resolutions3 (head rs) (head rs) (head rs))
-          3 -> Right (Resolutions3 (head rs) (rs !! 1) (rs !! 2))
+          1 -> Right (Resolutions3 (Prelude.head rs) (Prelude.head rs) (Prelude.head rs))
+          3 -> Right (Resolutions3 (Prelude.head rs) (rs !! 1) (rs !! 2))
           _ -> Left "Need one or three resolutions values for this projection"
 
       emit :: Resolutions DIM3 -> Text
