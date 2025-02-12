@@ -1,5 +1,16 @@
 SUBDIRS = binoculars
 
+AM_CABALFLAGS=\
+	-fuseHklDev \
+	--extra-include-dirs=$(abs_top_srcdir) \
+	--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng \
+	--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
+	--extra-include-dirs=$(abs_top_srcdir)/hkl \
+	--extra-include-dirs=$(abs_top_srcdir)/third-party \
+	--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
+	--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
+	--offline
+
 bin_PROGRAMS = binoculars-ng
 binoculars_ng_SOURCES=\
 	app/Main.hs \
@@ -61,21 +72,7 @@ binoculars_ng_SOURCES=\
 binoculars-ng$(EXEEXT): $(binoculars_ng_SOURCES)
 	@rm -f cabal.project.local
 	touch empty-config-file
-	$(CABAL) \
-		--config-file=empty-config-file \
-		build \
-		-j4 \
-		-fuseHklDev \
-		$(CABALFLAGS) \
-		--extra-include-dirs=$(abs_top_srcdir) \
-		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng \
-		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
-		--extra-include-dirs=$(abs_top_srcdir)/hkl \
-		--extra-include-dirs=$(abs_top_srcdir)/third-party \
-		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
-		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
-		--offline \
-		$@
+	$(CABAL) --config-file=empty-config-file build $(AM_CABALFLAGS) $(CABALFLAGS) $@
 	$(LN_S) -f $$($(CABAL) \
 			--config-file=empty-config-file \
 			list-bin $@) $@
@@ -101,17 +98,7 @@ test_sources=\
 hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
 	@rm -f cabal.project.local
 	touch empty-config-file
-	$(CABAL) \
-		--config-file=empty-config-file \
-		build \
-		--enable-tests \
-		-fuseHklDev \
-		$(CABALFLAGS) \
-		--extra-include-dirs=$(abs_top_srcdir) \
-		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
-		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
-		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs \
-		$@
+	$(CABAL) --config-file=empty-config-file build --enable-tests $(AM_CABALFLAGS) $(CABALFLAGS) $@
 	$(LN_S) -f $$($(CABAL) \
 			--config-file=empty-config-file \
 			list-bin $@) $@
@@ -119,16 +106,7 @@ hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
 configure-cabal:
 	@rm -f cabal.project.local
 	touch empty-config-file
-	$(CABAL) \
-		--config-file=empty-config-file \
-		configure \
-		--enable-tests \
-		-fuseHklDev \
-		$(CABALFLAGS) \
-		--extra-include-dirs=$(abs_top_srcdir) \
-		--extra-include-dirs=$(abs_top_srcdir)/binoculars-ng/binoculars \
-		--extra-lib-dirs=$(abs_top_builddir)/hkl/.libs \
-		--extra-lib-dirs=$(abs_top_builddir)/binoculars-ng/binoculars/.libs
+	$(CABAL) --config-file=empty-config-file configure $(AM_CABALFLAGS) $(CABALFALGS)
 
 clean-local:
 	-cabal clean
