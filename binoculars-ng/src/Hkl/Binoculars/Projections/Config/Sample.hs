@@ -172,6 +172,8 @@ guess'DataSourcePath'Sample common sample =
      let marsSamplePath = sampleMarsPath "MARS" "d03-1-cx2__ex__dif-cm_#1"
      let medHSamplePath = samplePath' "SIXS" "i14-c-cx1-ex-cm-med.h"
      let medVSamplePath = samplePath' "SIXS" "i14-c-cx1-ex-cm-med.v"
+                          `DataSourcePath'Sample'Or`
+                          samplePath' "SIXS" "i14-c-cx1-ex-cm-med.v_no_etaa"
      let uhvSamplePath  = samplePath' "SIXS" "I14-C-CX2__EX__DIFF-UHV__#1"
                           `DataSourcePath'Sample'Or`
                           samplePath' "SIXS" "i14-c-cx2-ex-cm-uhv"

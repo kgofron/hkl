@@ -195,4 +195,7 @@ sixs: binoculars-ng
 #	$(PROCESS) data/test/config_sixs_ruche_rigaku.ini 97-112
 #	$(PROCESS) data/test/config_sixs_ruche_rigaku.ini 113-128
 #	$(PROCESS) data/test/config_sixs_ruche_rigaku.ini 161-172
-	$(PROCESS) data/test/config_sixs_ruche_rigaku.ini 161-172
+#	$(PROCESS) data/test/config_sixs_ruche_rigaku.ini 161-172
+#	$(PROCESS) data/test/config_sixs_ruche_medv_noetaa.ini 457
+#	$(PROCESS) data/test/config_sixs_ruche_medv_noetaa.ini 458
+	$(PROCESS) data/test/config_sixs_ruche_medv_noetaa.ini 459

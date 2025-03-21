@@ -714,13 +714,19 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               `DataSourcePath'Double'Or`
               DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
                                                                              `H5Or`
-                                                                              datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")))
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/mu")
+                                                                            ))
       let sixs'MedV'Omega
             = DataSourcePath'Double'Ini cfg "geometry.values" "omega"
               `DataSourcePath'Double'Or`
               DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
                                                                              `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")))
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/omega")
+                                                                            ))
       let sixs'MedH'Gamma
             = DataSourcePath'Double'Ini cfg "geometry.values" "gamma"
               `DataSourcePath'Double'Or`
@@ -732,7 +738,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               `DataSourcePath'Double'Or`
               DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
                                                                              `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")))
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/gamma")
+                                                                            ))
       let sixs'MedH'Delta
             = DataSourcePath'Double'Ini cfg "geometry.values" "delta"
               `DataSourcePath'Double'Or`
@@ -745,14 +754,20 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               `DataSourcePath'Double'Or`
               DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
                                                                              `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")))
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/delta")
+                                                                            ))
 
       let sixs'MedV'Etaa
             = DataSourcePath'Double'Ini cfg "geometry.values" "etaa"
               `DataSourcePath'Double'Or`
               DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "etaa"
                                                                              `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")))
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")
+                                                                             `H5Or`
+                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/eta-a-med-grp/etaa")
+                                                                            ))
 
 
       let dataSourcePath'Geometry'Sixs'MedH ::  DataSourcePath Geometry
