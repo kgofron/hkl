@@ -1,6 +1,8 @@
 #+TITLE: Welcome to hkl's @VERSION@ documentation!
 #+AUTHOR: Picca Frédéric-Emmanuel
 #+EMAIL: picca at synchrotron dash soleil dot fr
+#+AUTHOR: Wermeille Didier
+#+EMAIL: wermeille at esrf dot fr
 #+LANGUAGE: en
 #+STYLE: <style>table.center {margin-left:auto; margin- right:auto;}</style>
 #+HTML_HEAD: <link href="css/style.css" rel="stylesheet" type="text/css" />
@@ -10,29 +12,30 @@
   The purpose of the library is to factorize single crystal
   diffraction angles computation for different kind of diffractometer
   geometries. It is used at the SOLEIL, Desy and Alba synchrotron with
-  the Tango control system to pilot diffractometers.
+  the Tango control system and at the ESRF with the BLISS control system
+  to pilot diffractometers.
 ** Features
-   - mode computation (aka PseudoAxis)
+   - mode computation (aka PseudoAxis).
    - item for different diffractometer geometries.
-   - UB matrix computation.
-     - busing & Levy with 2 reflections
+   - UB matrix computation:
+     - Busing & Levy with 2 reflections.
      - simplex computation with more than 2 reflections using the GSL
        library.
-     - Eulerians angles to pre-orientate your sample.
-   - Crystal lattice refinement
-     - with more than 2 reflections you can select which parameter must
+     - Eulerian angles to pre-orientate your sample.
+   - Crystal lattice refinement:
+     - with more than 2 reflections, you can select which parameter must
        be fitted.
-   - Pseudoaxes
+   - Pseudoaxes:
      - psi, eulerians, q, ...
 ** Conventions
-   In all this document the next convention will be used to describe
-   the diffractometers geometries.
+   In this whole document, the next convention will be used to describe
+   the diffractometers geometries:
    - right handed convention for all the angles.
    - direct space orthogonal base.
    - description of the diffractometer geometries is done with all
      axes values set to zero.
 ** Diffraction
-*** the crystal
+*** The crystal
 
     A periodic crystal is the association of a pattern and a lattice. The
     pattern is located at each points of the lattice node. Positions of
@@ -42,20 +45,20 @@
     R_{uvw}=u\cdot\vec{a}+v\cdot\vec{b}+w\cdot\vec{c}
     \]
 
-    $\vec{a}$, $\vec{b}$, $\vec{c}$ are the former vector of a base of the
-    space. =u=, =v=, =w= are integers. The pattern contain atoms
-    associated to each lattice node. the purpose of diffraction is to study
-    the interaction of this crystal (pattern+lattice) with X-rays.
+    $\vec{a}$, $\vec{b}$, $\vec{c}$ are the former vectors of a base of the
+    space. =u=, =v=, =w= are integers. The pattern contains atoms
+    associated to each lattice node. The purpose of diffraction is to study
+    the interaction of this crystal (pattern + lattice) with X-rays.
 
     #+CAPTION: Crystal direct lattice.
     [[./figures/crystal.png]]
 
-    this lattice is defined by $\vec{a}$, $\vec{b}$, $\vec{c}$ vectors, and
-    the angles $\alpha$, $\beta$, $\gamma$. In general cases this lattice is
+    This lattice is defined by $\vec{a}$, $\vec{b}$, $\vec{c}$ vectors, and
+    the angles $\alpha$, $\beta$, $\gamma$. In general cases, this lattice is
     not orthonormal.
 
-    Nevertheless to compute the interaction of this real space lattice and
-    the X-Rays, it is convenient to define another lattice called reciprocal
+    Nevertheless, to compute the interaction of this real space lattice and
+    the X-rays, it is convenient to define another lattice called the reciprocal space
     lattice defined like this:
 
     \begin{eqnarray*}
@@ -74,10 +77,10 @@
     \vec{a}^{\star}\cdot\vec{c}=0    & \vec{b}^{\star}\cdot\vec{c}=0    & \vec{c}^{\star}\cdot\vec{c}=\tau
     \end{eqnarray*}
 
-    This reciprocal space lattice allow to write in a simpler form the
-    interaction between the crystal and the X-Rays. We often only know about
+    This reciprocal space lattice allows to write in a simpler form the
+    interaction between the crystal and the X-rays. We often only know about
     $\vec{a}$, $\vec{b}$, $\vec{c}$ vectors and the angles $\alpha$,
-    $\beta$, $\gamma$. Using the previous equations reciprocal, we can
+    $\beta$, $\gamma$. Using the previous reciprocal equations, we can
     compute the reciprocal lattice this way:
 
 
@@ -94,7 +97,7 @@
     \]
 
     To compute the angles between the reciprocal space vectors, it is once
-    again possible to use the previous equations reciprocal to obtain the
+    again possible to use the previous reciprocal equations to obtain the
     sines and cosines of the angles $\alpha^\star$, $\beta^\star$ and
     $\gamma^\star$:
 
@@ -102,9 +105,9 @@
     \cos\alpha^{\star}=\frac{\cos\beta\cos\gamma-\cos\alpha}{\sin\beta\sin\gamma} & \, & \sin\alpha^{\star}=\frac{D}{\sin\beta\sin\gamma} \\
     \cos\beta^{\star}=\frac{\cos\gamma\cos\alpha-\cos\beta}{\sin\gamma\sin\alpha} & \, & \sin\beta^{\star}=\frac{D}{\sin\gamma\sin\alpha}\\
     \cos\gamma^{\star}=\frac{\cos\alpha\cos\beta-\cos\gamma}{\sin\alpha\sin\beta} & \, & \sin\gamma^{\star}=\frac{D}{\sin\alpha\sin\beta}
-    \end{eqnarray*}
+    \end{eqnarray*}.
 
-    the volume of the lattice can be compute this way:
+    The volume of the lattice can be computed this way:
 
     \[
     V = abcD
@@ -118,10 +121,10 @@
 
 *** Diffraction
 
-    Let the incoming X-rays beam whose wave vector is $\vec{k_{i}}$,
+    Let the incoming X-ray beam whose wave vector is $\vec{k_{i}}$,
     $|k_{i}|=\tau/\lambda$ where $\lambda$ is the wavelength of the signal.
-    The $\vec{k_{d}}$ vector wavelength of the diffracted beam. There is
-    diffusion if the diffusion vector $\vec{q}$ can be expressed as follows:
+    And $\vec{k_{d}}$ vector wavelength of the diffracted beam. There is
+    diffraction if the diffraction vector $\vec{q}$ can be expressed as follows:
 
     \[
     \vec{q}=\vec{k_{d}}-\vec{k_{i}}=h.\vec{a}^{*}+k.\vec{b}^{*}+l.\vec{c}^{*}
@@ -139,18 +142,18 @@
 
     where $d$ is the inter-plan distance and $n \in \mathbb{N}$.
 
-    The diffusion occurs for an unique $\theta$ angle. Then we got
-    $\vec{q}$ perpendicular to the diffraction plan.
+    The diffraction occurs for a unique $\theta$ angle. Then we got
+    $\vec{q}$ perpendicular to the diffraction plans.
 
-    The Ewald construction allow to represent this diffraction in the
+    The Ewald construction allows to represent this diffraction condition in the
     reciprocal space.
 
 *** Quaternions
 **** Properties
 
-     The quaternions will be used to describe the diffractometers geometries.
-     Theses quaternions can represent 3D rotations. There is different way to
-     describe then like complex numbers.
+     The quaternions will be used to describe the diffractometer geometries.
+     Theses quaternions can represent 3D rotations. There are different ways to
+     describe such as complex numbers:
 
      \[
      q=a+bi+cj+dk
@@ -163,13 +166,13 @@
      \]
 
      To compute the quaternion's norm, we can proceed like for complex
-     numbers
+     numbers:
 
      \[
      \|q\|=\sqrt{a²+b²+c²+d²}
      \]
 
-     Its conjugate is :
+     Its conjugate is:
 
      \[
      q^{*}=[a,-\vec{u}]=a-bi-cj-dk
@@ -177,14 +180,13 @@
 
 **** Operations
 
-     The difference with the complex number algebra is about
+     The difference with complex number algebra is about
      non-commutativity.
 
      \[
      qp \neq pq
      \]
 
-     \[
      \begin{bmatrix}
      ~ & 1 & i  & j  & k \cr
      1 & 1 & i  & j  & k \cr
@@ -192,23 +194,22 @@
      j & j & -k & -1 & i \cr
      k & k & j  & -i & -1
      \end{bmatrix}
-     \]
 
-     The product of two quaternions can be express by the Grassman product
-     Grassman product. So for two quaternions $p$ and $q$:
+     The product of two quaternions can be express by the Grassman product.
+     So for two quaternions $p$ and $q$:
 
      \begin{align*}
      q &= a+\vec{u} = a+bi+cj+dk\\
      p &= t+\vec{v} = t+xi+yj+zk
      \end{align*}
 
-     we got
+     we got:
 
      \[
      pq = at - \vec{u} \cdot \vec{v} + a \vec{v} + t \vec{u} + \vec{v} \times \vec{u}
      \]
 
-     or equivalent
+     or equivalent:
 
      \[
      pq = (at - bx - cy - dz) + (bt + ax + cz - dy) i + (ct + ay + dx - bz) j + (dt + az + by - cx) k
@@ -248,21 +249,21 @@
      Le passage aux matrices de rotation se fait par la formule suivante
      $q\rightarrow M$.
 
-     \[
      \begin{bmatrix}
      a{{}^2}+b{{}^2}-c{{}^2}-d{{}^2} & 2bc-2ad & 2ac+2bd\\
      2ad+2bc & a{{}^2}-b{{}^2}+c{{}^2}-d{{}^2} & 2cd-2ab\\
      2bd-2ac & 2ab+2cd & a{{}^2}-b{{}^2}-c{{}^2}+d{{}^2}
      \end{bmatrix}
-     \]
 
      La composition de rotation se fait simplement en multipliant les
-     quaternions entre eux. Si l'on à $q$
+     quaternions entre eux. Si l'on a $q$.
 
 ** Modes de fonctionnement
+   To come.
+
 ** Equations fondamentales
 
-   Le problème que nous devons résoudre est de calculer pour une famille de
+   Le problème que nous devons résoudre est de calculer, pour une famille de
    plan $(h,k,l)$ donné, les angles de rotation du diffractomètre qui
    permettent de le mettre en condition de diffraction. Il faut donc
    exprimer les relations mathématiques qui lient les différents angles
@@ -274,13 +275,13 @@
    R\cdot U\cdot B\cdot\vec{h} & =\vec{Q}
    \end{align*}
 
-   ou $\vec{h}$ est le vecteur $(h,k,l)$, $\vec{k_{i}}$ est le vecteur
+   où $\vec{h}$ est le vecteur $(h,k,l)$, $\vec{k_{i}}$ est le vecteur
    incident, $S_{i}$ les matrices de rotations des mouvements liés à
    l'échantillon, $D_{j}$ les matrices de rotation des mouvements liés au
    détecteur, $I$ la matrice identité, $U$ la matrice d'orientation du
    cristal par rapport au repère de l'axe sur lequel ce dernier est monté
-   et $B$ la matrice de passage d'un repère non orthonormé ( celui du
-   crystal réciproque) à un repère orthonormé.
+   et $B$ la matrice de passage d'un repère non orthonormé (celui du
+   cristal réciproque) à un repère orthonormé.
 
 *** Calcule de B
 
@@ -288,36 +289,36 @@
     très simple de calculer $B$:
 
     \[
-    B=
+    B =
+    \]
     \begin{bmatrix}
     a^{\star} & b^{\star}\cos\gamma^{\star} & c^{\star}\cos\beta^{\star}\\
     0 & b^{\star}\sin\gamma^{\star} & -c^{\star}\sin\beta^{\star}\cos\alpha\\
     0 & 0 & 1/c
     \end{bmatrix}
-    \]
 
 *** Calcule de U
 
-    Il existe plusieurs façons de calculer $U$. Busing et Levy en a proposé
+    Il existe plusieurs façons de calculer $U$. Busing et Levy en ont proposé
     plusieurs. Nous allons présenter celle qui nécessite la mesure de
     seulement deux réflections ainsi que la connaissance des paramètres
-    cristallins. Cette façon de calculer la matrice d'orientation $U$, peut
+    cristallins. Cette façon de calculer la matrice d'orientation $U$ peut
     être généralisée à n'importe quel diffractomètre pour peu que la
     description des axes de rotation permette d'obtenir la matrice de
     rotation de la machine $R$ et le vecteur de diffusion $\vec{Q}$.
 
     Il est également possible de calculer $U$ sans la connaîssance des
-    paramètres cristallins. il faut alors faire un affinement des
+    paramètres cristallins. Il faut alors faire un affinement des
     paramètres. Cela revient à minimiser une fonction. Nous allons utiliser
     la méthode du simplex pour trouver ce minimum et donc ajuster l'ensemble
     des paramètres cristallins ainsi que la matrice d'orientation.
 
-*** Algorithme de Busing Levy
+*** Algorithme de Busing et Levy
 
     L'idée est de se placer dans le repère de l'axe sur lequel est monté
     l'échantillon. On mesure deux réflections $(\vec{h}_{1},\vec{h}_{2})$
     ainsi que leurs angles associés. Cela nous permet de calculer $R$ et
-    $\vec{Q}$ pour chacune de ces reflections. nous avons alors ce système:
+    $\vec{Q}$ pour chacune de ces reflections. Nous avons alors ce système:
 
     \begin{eqnarray*}
     U\cdot B\cdot\vec{h}_{1} & = & \tilde{R}_{1}\cdot\vec{Q}_{1}\\
@@ -325,7 +326,7 @@
     \end{eqnarray*}
 
     De façon à calculer facilement $U$, il est intéressant de définir deux
-    trièdres orthonormé $T_{\vec{h}}$ et $T_{\vec{Q}}$ à partir des vecteurs
+    trièdres orthonormés $T_{\vec{h}}$ et $T_{\vec{Q}}$ à partir des vecteurs
     $(B\vec{h}_{1},B\vec{h}_{2})$ et
     $(\tilde{R}_{1}\vec{Q}_{1},\tilde{R}_{2}\vec{Q}_{2})$. On a alors très
     simplement:
@@ -334,7 +335,7 @@
     U \cdot T_{\vec{h}} = T_{\vec{Q}}
     \]
 
-    Et donc
+    Et donc:
 
     \[
     U = T_{\vec{Q}} \cdot \tilde{T}_{\vec{h}}
@@ -342,18 +343,18 @@
 
 *** Affinement par la méthode du simplex
 
-    Dans ce cas nous ne connaissons pas la matrice $B$, il faut donc mesurer
-    plus que deux réflections pour ajuster les 9 paramètres. Six paramètres
+    Dans ce cas, nous ne connaissons pas la matrice $B$, il faut donc mesurer
+    plus que deux réflections pour ajuster les neuf paramètres. Six paramètres
     pour le crystal et trois pour la matrice d'orientation $U$. Les trois
-    paramètres qui permennt de representer $U$ sont en fait les angles
-    d'euler. il faut donc être en mesure de passer d'une représentation
-    eulérien à cette matrice :math::U et réciproquement.
+    paramètres qui permettent de représenter $U$ sont en fait les angles
+    d'Euler. Il faut donc être en mesure de passer d'une représentation
+    eulérienne à cette matrice $U$ et réciproquement.
 
     \[
     U = X \cdot Y \cdot Z
     \]
 
-    où $X$ est la matrice rotation suivant l'axe Ox et le premier angle
+    où $X$ est la matrice de rotation suivant l'axe Ox et le premier angle
     d'Euler, $Y$ la matrice de rotation suivant l'axe Oy et le deuxième
     angle d'Euler et $Z$ la matrice du troisième angle d'Euler pour l'axe
     Oz.
@@ -367,40 +368,40 @@
 
     \[
     U=
+    \]
     \begin{bmatrix}
     CE & -CF & D\\
     BDE+AF & -BDF+AE & -BC\\
     -ADE+BF & ADF+BE & AC
     \end{bmatrix}
-    \]
 
     Il est donc facile de passer des angles d'Euler à la matrice
     d'orientation.
 
     Il faut maintenant faire la transformation inverse de la matrice $U$
-    vers les angles d'euler.
+    vers les angles d'Euler.
 
 * PseudoAxes
-  This section describe the calculations done by the library for the
-  different kind of pseudo axes.
+  This section describes the calculations done by the library for the
+  different kind of pseudo-axes.
 ** General process
 *** First Solution
-    The hkl library use the gsl library in order to find the first
+    The hkl library uses the gsl library in order to find the first
     valid solution.
-*** Multiplication of the solutions.
-    Once we have got the first solution different strategies are
-    applyed in order to generate more solutions.
+*** Multiplication of the solutions
+    Once we have got the first solution, different strategies are
+    applied in order to generate more solutions.
 **** Geometry Multiplication
-     For kappa diffractometers, once you have one solution it is
-     possible to générate another one using a property of this
+     For kappa diffractometers, once you have one solution, it is
+     possible to generate another one using a property of this
      geometry. (Left arm and right arm).
 *** Restrains of the Solutions
     We apply then some constrains to reduce these solutions to only a
-    bunch of acceptable ones. Usualy we take the axis range into
+    bunch of acceptable ones. Usually we take the axis range into
     account.
 ** Eulerians to Kappa angles
 
-   1st solution
+   1st solution:
 
    \begin{eqnarray*}
    \kappa_\omega & = & \omega - p + \frac{\pi}{2} \\
@@ -408,7 +409,7 @@
    \kappa_\phi & = &  \phi - p - \frac{\pi}{2}
    \end{eqnarray*}
 
-   or 2nd one
+   or 2nd one:
 
    \begin{eqnarray*}
    \kappa_\omega & = & \omega - p - \frac{\pi}{2} \\
@@ -424,9 +425,9 @@
 
    and $\alpha$ is the angle of the kappa axis with the $\vec{y}$ axis.
 
-** Kappa to Eulerians angles
+** Kappa to Eulerian angles
 
-   1st solution
+   1st solution:
 
    \begin{eqnarray*}
    \omega & = & \kappa_\omega + p - \frac{\pi}{2} \\
@@ -434,7 +435,7 @@
    \phi   & = & \kappa_\phi + p + \frac{\pi}{2}
    \end{eqnarray*}
 
-   or 2nd one
+   or 2nd one:
 
    \begin{eqnarray*}
    \omega & = & \kappa_\omega + p + \frac{\pi}{2} \\
@@ -463,7 +464,7 @@
 ** Qper and Qpar
    [[./figures/qper_qpar.png]]
 
-   this pseudo axis engine compute the perpendicular
+   This pseudo axis engine computes the perpendicular
    ($\left|\left|\vec{Q_\text{per}}\right|\right|$) and parallel
    ($\left|\left|\vec{Q_\text{par}}\right|\right|$) contribution of
    $\vec{Q}$ relatively to the surface of the sample defined by the
@@ -474,9 +475,10 @@
    \vec{q} & = & \vec{q_\text{per}} + \vec{q_\text{par}} \\
    \vec{q_\text{per}} & = & \frac{\vec{q} \cdot \vec{n}}{\left|\left|\vec{n}\right|\right|} \frac{\vec{n}}{\left|\left|\vec{n}\right|\right|}
    \end{eqnarray*}
+
 * Diffractometers
   #+BEGIN_QUOTE
-  *warning*
+  *Warning*
 
   This section is automatically generating by introspecting the hkl library.
   #+END_QUOTE
@@ -556,9 +558,9 @@
 ** Getting hkl
 
    To get hkl, you can download the last stable version from sourceforge or
-   if you want the latest development version use
+   if you want the latest development version using
    [[http://git.or.cz/][git]] or
-   [[http://code.google.com/p/msysgit/downloads/list][msysgit]] on windows
+   [[http://code.google.com/p/msysgit/downloads/list][msysgit]] on Windows
    system and do:
 
    #+BEGIN_SRC sh
@@ -571,7 +573,7 @@ git clone git://repo.or.cz/hkl.git
     git clone http://repo.or.cz/r/hkl.git (slower)
    #+END_SRC
 
-   then checkout the next branch like this:
+   Then checkout the next branch like this:
 
    #+BEGIN_SRC sh
     cd hkl
@@ -590,7 +592,7 @@ git clone git://repo.or.cz/hkl.git
     sudo make install
    #+END_SRC
 
-   you can also build a GUI interfaces which use
+   you can also build a GUI interface which uses
    [[http://www.gtk.org][gtk]]:
 
    #+BEGIN_SRC sh
@@ -599,10 +601,10 @@ git clone git://repo.or.cz/hkl.git
     sudo make install
    #+END_SRC
 
-   optionnaly you can build an experimental /libhkl3d/ library (no public
+   Optionally you can build an experimental /libhkl3d/ library (no public
    API for now) which is used by the GUI to display and compute
-   diffractometer collisions (only the /K6C/ model). To build it you need
-   also [[https://projects.gnome.org/gtkglext/][gtkglext]] and
+   diffractometer collisions (only the /K6C/ model). To build it, you also
+   need [[https://projects.gnome.org/gtkglext/][gtkglext]] and
    [[http://bulletphysics.org/wordpress/][bullet 2.82]]:
 
    #+BEGIN_SRC sh
@@ -611,7 +613,7 @@ git clone git://repo.or.cz/hkl.git
     sudo make install
    #+END_SRC
 
-   if you want to work on the documentation you need the extra
+   If you want to work on the documentation, you need the extra:
 
    - [[http://www.gtk.org/gtk-doc/][gtk-doc]] for the api
    - [[http://sphinx.pocoo.org/][sphinx]] for the html and latex doc.
@@ -620,7 +622,7 @@ git clone git://repo.or.cz/hkl.git
    - [[https://github.com/emacsmirror/htmlize][htmlize]] used to highlight the source code
    - [[http://orgmode.org][org-mode]] litteral programming
 
-   On Debian/Ubuntu you just need to install
+   On Debian/Ubuntu, you just need to install:
 
    #+BEGIN_SRC sh
     sudo apt-get install emacs dvipng emacs-goodies-el org-mode
@@ -632,7 +634,7 @@ git clone git://repo.or.cz/hkl.git
     make html
 #+END_SRC
 
-   nevertheless if you do not want to build the documentation you can do:
+   Nevertheless, if you do not want to build the documentation, you can do:
 
    #+BEGIN_SRC sh
    ./configure --disable-hkl-doc
@@ -650,17 +652,17 @@ git clone git://repo.or.cz/hkl.git
        reportbug hkl
    #+END_SRC
 
--  Other OS
+-  Other OS:
 
    You just need to send an [[mailto:submit@bugs.debian.org?subject=%20My%20problem%20with%20hkl...&body=Package:%20hkl%0AVersion:%20@VERSION@%0A%0AI%20found%20this%20problem%20in%20hkl][email]]
 
 *** Providing patches
 
-    you can send your patch to [[mailto:picca@synchrotron-soleil.fr][Picca Frédéric-Emmanuel]] using =git= and
+    You can send your patch to [[mailto:picca@synchrotron-soleil.fr][Picca Frédéric-Emmanuel]] using =git= and
     =git-email=.
 
-    Here a minimalist example of the workflow to prepare and send
-    patches for integration into the hkl library. Suppose you wan to
+    Here is a minimalist example of the workflow to prepare and send
+    patches for integration into the hkl library. Suppose you want to
     add a new feature, you need first to create a new branch from the
     =next= one:
 
@@ -680,7 +682,7 @@ git clone git://repo.or.cz/hkl.git
     git commit -a
     #+END_SRC
 
-    now that your new feature is ready, you can send by email your
+    Now that your new feature is ready, you can send by email your
     work using =git format-patch= for review:
 
     #+BEGIN_SRC sh
@@ -703,7 +705,7 @@ git clone git://repo.or.cz/hkl.git
     git send-email 0001-xxx.patch, 0002-xxx.patch, ...
     #+END_SRC
 
-    If it does not work you can use your usually email software and
+    If it does not work, you can use your usual email software and
     send these generated patches to the [[mailto:picca@synchrotron-soleil.fr][author]].
 
 ** Howto's
@@ -720,16 +722,16 @@ git clone git://repo.or.cz/hkl.git
     template. If you need some precision about the process, do not
     hesitate to contact the main author.
 
-    do not forgot also to add this new file into ~hkl/Makefile.am~
+    Do not forget also to add this new file into ~hkl/Makefile.am~
     with other diffractometers in the hkl_c_sources variable (please
     keep the alphabetic order).
 *** Work on the documentation
     The documentation system is written with [[http://orgmode.org/][org-mode]], and the [[http://orgmode.org/worg/org-contrib/babel/][babel]]
     extension which allow to introspect the library and generate part
-    of the doc using the hkl library. Python code is executed during
+    of the documentation using the hkl library. Python code is executed during
     the build process to generate the Diffractometer section of the
     documentation. To work on the doc and test the embedded python
-    code it is necessary to setup a few environment variables and
+    code, it is necessary to setup a few environment variables and
     start emacs with the right LD_LIBRARY_PATH. In order to simplify
     the process a make target was written. You just need to type:
     #+BEGIN_SRC sh
@@ -742,11 +744,11 @@ git clone git://repo.or.cz/hkl.git
     editing the ~Documentation/hkl.org.in~ file which is text only.
 
     The most expected contributions are for now:
-    * english correctness
+    * English correctness
     * a nicer css
 * Bindings
 
-  The hkl library use the gobject-introspection to provide automatic
+  The hkl library uses the gobject-introspection to provide automatic
   binding for a few languages.
 
 ** Python
@@ -759,20 +761,20 @@ git clone git://repo.or.cz/hkl.git
       make ipython
     #+END_SRC
 
-   then you have the Hkl module preloaded into the ipython environment.
+   Then you have the Hkl module preloaded into the ipython environment.
 
    hkl computation:
 
-   has you can see there is 4 available solutions.
+   As you can see there are four available solutions.
 
-   let's compute an hkl trajectory and select the first solution.
+   Let's compute an hkl trajectory and select the first solution.
 
-   if we look at the 3 other solutions we can see that there is a problem
+   If we look at the three other solutions, we can see that there is a problem
    of continuity at the begining of the trajectory.
 
-   hey what's happend with theses solutions ! let's look closely to real
-   numbers. the last column is the distance to the diffractometer current
-   position. This distance is for now express like this:
+   Hey, what is happening with theses solutions! Let's look closely to real
+   numbers. The last column is the distance to the diffractometer current
+   position. This distance is for now expressed like this:
 
    $\sum_{axes} \left|\text{current position} - \text{target position}\right|$
 
@@ -833,9 +835,9 @@ git clone git://repo.or.cz/hkl.git
     [0.0, 65.3385391962557, -59.941489465646214, 110.3385360479293, 0.0, -89.99999918675044] 9.7307712883
    #+END_EXAMPLE
 
-   as you can see for the first point of the trajectory, the 2nd, 3rd and
-   4th solutions have identical distances to the current position of the
-   diffractometer so they are un-ordered:
+   As you can see for the first point of the trajectory, the 2nd, 3rd and
+   4th solution have identical distances to the current position of the
+   diffractometer, so they are un-ordered:
 
    #+BEGIN_EXAMPLE
     [0.0, 119.99999999999999, 0.0, -90.0, 0.0, 59.99999999999999] 0.0
@@ -844,11 +846,11 @@ git clone git://repo.or.cz/hkl.git
     [0.0, 60.00000000000001, 0.0, 90.0, 0.0, -59.99999999999999] 6.28318530718
    #+END_EXAMPLE
 
-   then the problem arise with the second and third solution. you can see a
-   sort of reorganisation of the solution. 2 -> 3, 3 -> 4 and 4 -> 2 then
-   the order will stick unchanged until the end of the trajectory. this is
+   Then the problem arises with the second and third solution. You can see some
+   sort of reorganisation of the solutions. 2 -> 3, 3 -> 4 and 4 -> 2 then
+   the order will stick unchanged until the end of the trajectory. This is
    because the distance is computed relatively to the current position of
-   the diffractometer.:
+   the diffractometer:
 
    #+BEGIN_EXAMPLE
     [0.0, 117.7665607657826, 7.456826294401656, -92.39856410531434, 0.0, 60.33024982425957] 0.216753826612
@@ -863,9 +865,9 @@ git clone git://repo.or.cz/hkl.git
    #+END_EXAMPLE
 
    #+BEGIN_QUOTE
-   *warning*
+   *Warning*
 
-   when you compute a trajectory, start from a valid position (the
+   When you compute a trajectory, start from a valid position (the
    starting point must be the real first point of your trajectory) then
    use only the closest solution for the next points of the trajectory.
    (first solution of the geometries list)
@@ -880,9 +882,9 @@ git clone git://repo.or.cz/hkl.git
 ** 5.0.0.2661 <2020-10-02 Fri>
 *** DONE Only finite float values are allow when setting an HklParameter value or range.
     When using =hkl_parameter_value_set= or
-    =hkl_parameter_min_max_set= functions it is not allow to use the
+    =hkl_parameter_min_max_set= functions it is not allowed to use the
     float =NaN=, =-Inf=, =+Inf= value.
-*** DONE use python3 instead of python3 for unit tests
+*** DONE use python3 instead of python2 for unit tests
     In order to prepare the removal of python2 for Debian 11, we
     switched the unit test. The remaining part is during the build of
     the documentation. The best would be to report a bug against emacs
@@ -890,7 +892,7 @@ git clone git://repo.or.cz/hkl.git
 *** DONE Added the Soleil Nanoscopium robot setup.
 ** 5.0.0.2456 <2018-02-22 Thu>
 *** DONE add emergence on all e4c diffractometers <2017-03-16 Thu>
-    The emergence pseudo axis is was added to =SOLEIL MARS= and =E4CV=
+    The emergence pseudo axis was added to =SOLEIL MARS= and =E4CV=
 *** DONE Fix for multiarch (headers) <2016-05-04 mer.>
     The =ccan_config.h= generated file is arch specific. It is then
     necessary to install this file under /usr/include/<triplet> on
@@ -900,12 +902,12 @@ git clone git://repo.or.cz/hkl.git
 *** DONE Fix the FTBFS with the new bullet 2.86.1 version <2017-08-13 dim.>
     In order to update the internal structures of =Hkl3DObject= (the
     =is-colliding= member), we were using a callback which became
-    un-effectiv with this new version of bullet. The logic was
-    rewritten in order to be much more efficent using the manifold
+    un-effective with this new version of bullet. The logic was
+    rewritten in order to be much more efficient using the manifold
     informations. Now we iterate on =Hkl3DObject= object only once
     (n) complexity instead of (n²) with the previous one.
 *** DONE Added "SOLEIL SIXS MED2+3 v2" geometry <2019-03-29 Fri>
-    This diffractometer contain a global HklEngineList parameter in
+    This diffractometer contains a global HklEngineList parameter in
     order to activate or not the rotation of the Detector. A new
     public API was added in order to deal with these parameters.
 #+BEGIN_SRC c
@@ -948,7 +950,7 @@ And also available via the Python binding.
 *** DONE =HklVector= <2016-02-09 mar.>
     The hkl_vector_init method is now public.
 *** DONE =HklParameter= <2016-02-25 Thu>
-    at the end of the computation all solutions are filtered in order
+    At the end of the computation all solutions are filtered in order
     to check that they are valid (min < value < range). BUT for a
     rotation axis this check was instead (min < value % 2pi < max).
 *** DONE =HklGeometry= <2016-04-20 mer.>
@@ -992,7 +994,7 @@ And also available via the Python binding.
 ** 4.99.99.1946 <2015-06-30 mar.>
 *** DONE =HklEngine=
 **** "emergence" <2015-06-22 lun.>
-     Add a new emergence engine which contain only one pseudo axis.
+     Add a new emergence engine which contains only one pseudo axis.
      + =emergence= the outgoing beam emergence from the sample's surface.
      + =azimuth= the sample's surface azimuth.
 ** 4.99.99.1940 <2015-05-04 lun.>
@@ -1017,7 +1019,7 @@ And also available via the Python binding.
   ...
 #+END_SRC
 **** "tth2" <2015-04-03 ven>
-     Add a new hkl engine which contain two pseudo axes.
+     Add a new hkl engine which contains two pseudo axes.
      + =tth=  two times the diffraction angle $\theta$
      + =alpha= the azimuth of q in the zOy plan.
 **** "incidence" <2015-04-21 mar.>
@@ -1102,8 +1104,8 @@ And also available via the Python binding.
      Using the prruptest.txt ubmatrix I see that the value of psi is
      offset by 45 degrees. I expect it to be 0 degrees when azimuth
      reference vector is 0 0 1 that is along the beam. See below
-     thereturned numbers. This might have to do with the definition of
-     the beam axis in the controller.  Otherwise now when I change
+     the returned numbers. This might have to do with the definition of
+     the beam axis in the controller. Otherwise now when I change
      reference vector by 90 degrees the computed value is changed by
      90 degrees. That is a progress. Can you contact Frederic and ask
      him about this ?
@@ -1277,19 +1279,19 @@ And also available via the Python binding.
 
 ** documentation
 *** TODO [1/6] rewrite documentation in org-mode
-    - [-] embedding code into the org file
-      - [-] [1/4] python
-	- [X] auto generation of the diffractometer descriptions
-	- [ ] trajectories explanations
+    - [-] embedding code into the org file.
+      - [-] [1/4] python.
+	- [X] auto generation of the diffractometer descriptions.
+	- [ ] trajectories explanations.
 	- [ ] trajectories tests.
-	- [ ] unit tests output ?
-      - [ ] asymptote
+	- [ ] unit tests output?
+      - [ ] asymptote.
     - [X] need to check if templates could be generated using the hkl
       python binding for all diffractometer geometries.
     - [ ] need to add a description for the diffractometer, the mode, the parameters.
     - [ ] need a nice css for the generated doc.
-    - [ ] check if org-info.js could be usefull
-    - [ ] add documentation explaining the sector-cuts a la hkl
+    - [ ] check if org-info.js could be usefull.
+    - [ ] add documentation explaining the sector-cuts a la hkl.
 *** TODO bug with asymptote on macbook
 picca@cush:~/src/repo.or.cz/hkl$ export MESA_GL_VERSION_OVERRIDE=4.5
 picca@cush:~/src/repo.or.cz/hkl$ make
@@ -1432,7 +1434,7 @@ GL Compile error
 
 ** [0/3] gui
    - [ ] change the color of fitparameter cells if they differ from
-     the current sample values
+     the current sample values.
    - [ ] check if a [[https://github.com/jonathanslenders/python-prompt-toolkit/tree/master/examples/tutorial][REPL]] could be integrated to provide an autocad
       like interface.
    - [ ] add tooltips using hkl_parameter_description_get for the
@@ -1444,8 +1446,8 @@ GL Compile error
 *** TODO add a .spec file for rpm generation.
 ** TODO binoculars-ng
 *** TODO remove usage of repa.
-This package is no more provided by Debian. Try to find a replacement
+This package is no longer provided by Debian. Try to find a replacement
 for the Shape.
 *** TODO [mars] Exclude data based on the actuator position.
-For exemple remove all data's where phi > 268 and phi < 272 and phi > 88 phi < 92
+For exemple remove all data where phi > 268 and phi < 272 and phi > 88 phi < 92
 =/nfs/ruche/mars-soleil/com-mars/2024_Run1/20232102/binoculars/config_qxqyqz.ini= for scan 127-135.
