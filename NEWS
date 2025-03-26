@@ -11,6 +11,7 @@
      configure like this.
 
      ./configure CABALFLAGS="-f -useThreaded"
+   - remove old ICA files, used by the old maven build system.
 ** Binoculars-ng
    - dispatcher.ncores = 0 mean: use all capabilities of the CPU hardware.
      The default remains equal to `4` if this property is not defined.
