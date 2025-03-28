@@ -44,6 +44,7 @@ import           Control.Monad.Trans.Cont          (cont, runCont)
 import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Int                          (Int32)
 import           Data.Kind                         (Type)
+import           Data.Text                         (Text, unpack)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, replicate,
                                                     unsafeNew)
@@ -184,7 +185,7 @@ instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 det ds buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word16 det ds buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word32 det ds buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
-  extract1DStreamValue (DataSourceAcq'Image'Img'Int32 det buf _ sn fn) i = ImageInt32 <$> readImgInBuffer buf det (fn sn i)
+  extract1DStreamValue (DataSourceAcq'Image'Img'Int32 det buf _ tmpl sn fn) i = ImageInt32 <$> readImgInBuffer buf det (fn tmpl sn i)
 
 instance Is1DStreamable (DataSourceAcq Mask) (Maybe Mask) where
     extract1DStreamValue (DataSourceAcq'Mask'NoMask) _ = returnIO Nothing
@@ -360,7 +361,7 @@ instance DataSource Image where
   data instance DataSourcePath Image
     = DataSourcePath'Image'Dummy (Detector Hkl DIM2) (DataSourcePath Attenuation) Double
     | DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
-    | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Scannumber
+    | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Text Scannumber
     deriving (Generic, Show, FromJSON, ToJSON)
 
   data instance DataSourceAcq Image
@@ -369,14 +370,14 @@ instance DataSource Image where
       | DataSourceAcq'Image'Hdf5'Int32 (Detector Hkl DIM2) Dataset (IOVector Int32)
       | DataSourceAcq'Image'Hdf5'Word16 (Detector Hkl DIM2) Dataset (IOVector Word16)
       | DataSourceAcq'Image'Hdf5'Word32 (Detector Hkl DIM2) Dataset (IOVector Word32)
-      | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Scannumber (Scannumber -> Int -> FilePath)
+      | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Text Scannumber (Text -> Scannumber -> Int -> FilePath)
 
   ds'Shape (DataSourceAcq'Image'Dummy a _)           = ds'Shape a
   ds'Shape (DataSourceAcq'Image'Hdf5'Double _ ds _)  = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Hdf5'Int32 _ ds _)   = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Hdf5'Word16 _ ds _)  = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Hdf5'Word32 _ ds _)  = liftIO $ datasetShape ds
-  ds'Shape (DataSourceAcq'Image'Img'Int32 _ _ a _ _) = ds'Shape a
+  ds'Shape (DataSourceAcq'Image'Img'Int32 _ _ a _ _ _) = ds'Shape a
 
   withDataSourceP f (DataSourcePath'Image'Dummy det a v) g
       =  withDataSourceP f a $ \a' ->
@@ -403,14 +404,15 @@ instance DataSource Image where
                 g (DataSourceAcq'Image'Hdf5'Word32 det ds arr))
           ]
 
-  withDataSourceP f@(ScanFile _ sn) (DataSourcePath'Image'Img det a (Scannumber sn0)) g
+  withDataSourceP f@(ScanFile _ sn) (DataSourcePath'Image'Img det a tmpl (Scannumber sn0)) g
     = withDataSourceP f a $ \a' -> do
     let n = (size . shape $ det)
     arr <- liftIO $ unsafeNew n
-    g (DataSourceAcq'Image'Img'Int32 det arr a' sn f')
+    g (DataSourceAcq'Image'Img'Int32 det arr a' tmpl sn f')
       where
-        f' :: Scannumber -> Int -> FilePath
-        f' (Scannumber sn') i = printf "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn0 sn0 ((sn' - sn0) * 1029 + i)
+        f' :: Text -> Scannumber -> Int -> FilePath
+        f' tmpl' (Scannumber sn') i = printf (unpack tmpl') sn0 sn0 ((sn' - sn0) * 1029 + i)
+
 -- Int
 
 instance DataSource Int where

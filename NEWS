@@ -11,25 +11,29 @@
 
      ./configure CABALFLAGS="-f -useThreaded"
    - remove old ICA files, used by the old maven build system.
-** Binoculars-ng
+** Binoculars (C-library)
+   - Added support for double images.
+   - Added the `hkl_binoculars_detectors_2d_img_load` in order to
+     load rigaku img files. For now only uint16_t images.
+   - Added the Rigaku XSPA 1M detector (RigakuXspa1M).
+** Binoculars-ng (Haskell program)
    - dispatcher.ncores = 0 mean: use all capabilities of the CPU hardware.
      The default remains equal to `4` if this property is not defined.
    - Projections
      - 'q_thetax_phix' -> latitude and longitude of q with qx as reference.
      - 'q_thetay_phiy' -> latitude and longitude of q with qy as reference.
      - 'q_thetaz_phiz' -> latitude and longitude of q with qz as reference.
-   - detector
-     - Added the Rigaku XSPA 1M detector to the detector library.
-   - io
-     - Added the `hkl_binoculars_detectors_2d_img_load` in order to
-       load rigaku img files. For now only uint16_t images.
-   - Added a new constructor of DataSource Image for dummy images.
-     DataSourcePath'Image'Dummy.
+   - DataSource Image
+     - support for double image from hdf5 files.
+     - Added a constructor in order to read the Rigaku images.
+       `DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Text Scannumber`
+     - Added a new constructor for dummy images.
+       DataSourcePath'Image'Dummy.
 
-     this is usefull if you want to obtain a cube with the intensity
-     corrections (polarisation) . Just set all the image pixels values
-     to 1.0 and voilà.
-   - Added support for images as double (hdf5 and dummy)
+       this is usefull if you want to obtain a cube with the intensity
+       corrections (polarisation) . Just set all the image pixels
+       values to 1.0 and voilà.
+
 ** Documentation
    - Updated thanks to Didier Weirmeille from the ESRF
 ** Tests

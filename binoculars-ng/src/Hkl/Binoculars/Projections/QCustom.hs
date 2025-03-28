@@ -401,7 +401,7 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _) att sn
         (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
       HklBinocularsDetectorEnum'Cirpad -> undefined
       HklBinocularsDetectorEnum'RigakuXspa1M ->
-        DataSourcePath'Image'Img det att sn
+        DataSourcePath'Image'Img det att "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
 
 mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourcePath Attenuation -> Scannumber -> DataSourcePath Image
 mkDetector'Sixs'Sbs det@(Detector2D d _ _) att sn
@@ -427,7 +427,7 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _) att sn
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
       HklBinocularsDetectorEnum'Cirpad -> undefined
       HklBinocularsDetectorEnum'RigakuXspa1M ->
-        DataSourcePath'Image'Img det att sn
+        DataSourcePath'Image'Img det att "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
 
 overloadAttenuationPath :: Maybe Double -> Maybe Float -> DataSourcePath Attenuation -> DataSourcePath Attenuation
 overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)
@@ -512,7 +512,7 @@ overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geomet
 overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
 overloadImagePath det (DataSourcePath'Image'Dummy _ att v) = DataSourcePath'Image'Dummy det att v
 overloadImagePath det (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
-overloadImagePath det (DataSourcePath'Image'Img _ att sn) = DataSourcePath'Image'Img det att sn
+overloadImagePath det (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
 
 overloadMaskPath :: Config Common -> DataSourcePath Mask -> DataSourcePath Mask
 overloadMaskPath c DataSourcePath'Mask'NoMask  = mk'DataSourcePath'Mask c
