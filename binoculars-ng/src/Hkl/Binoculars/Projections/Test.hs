@@ -189,6 +189,8 @@ spaceTest det pixels rs mlimits doPolarizationCorrection space@(Space fSpace) (D
     withMaybeLimits mlimits rs $ \nlimits limits ->
     withForeignPtr fSpace $ \pSpace -> do
     case img of
+      (ImageDouble arr) -> unsafeWith arr $ \i -> do
+        {-# SCC "test_binoculars_space_test_double" #-} c'hkl_binoculars_space_test_double pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
       (ImageInt32 arr) -> unsafeWith arr $ \i -> do
         {-# SCC "test_binoculars_space_test_int32_t" #-} c'hkl_binoculars_space_test_int32_t pSpace geometry sample i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) (toEnum . fromEnum $ doPolarizationCorrection)
       (ImageWord16 arr) -> unsafeWith arr $ \i -> do

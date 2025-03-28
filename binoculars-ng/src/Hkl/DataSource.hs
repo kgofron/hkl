@@ -45,7 +45,8 @@ import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Int                          (Int32)
 import           Data.Kind                         (Type)
 import           Data.Vector.Storable              (Vector, fromList)
-import           Data.Vector.Storable.Mutable      (IOVector, unsafeNew)
+import           Data.Vector.Storable.Mutable      (IOVector, replicate,
+                                                    unsafeNew)
 import           Data.Word                         (Word16, Word32)
 import           Foreign.C.Types                   (CDouble (..))
 import           GHC.Base                          (returnIO)
@@ -55,7 +56,7 @@ import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe, catch, throwM)
 import           Text.Printf                       (printf)
 
-import           Prelude                           hiding (filter)
+import           Prelude                           hiding (filter, replicate)
 
 import           Hkl.Binoculars.Config
 import           Hkl.Detector
@@ -178,6 +179,8 @@ instance  Is1DStreamable (DataSourceAcq Geometry) Geometry where
                      (Geometry'Factory factory _) -> Geometry'Factory factory (Just state)
 
 instance Is1DStreamable (DataSourceAcq Image) Image where
+  extract1DStreamValue (DataSourceAcq'Image'Dummy _ buf) _ = pure $ ImageDouble buf
+  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Double det ds buf) i = ImageDouble <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 det ds buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word16 det ds buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word32 det ds buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
@@ -354,26 +357,42 @@ condM []          = undefined
 condM ((p, v):ls) = ifM p v (condM ls)
 
 instance DataSource Image where
-  data DataSourcePath Image
-    = DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
+  data instance DataSourcePath Image
+    = DataSourcePath'Image'Dummy (Detector Hkl DIM2) (DataSourcePath Attenuation) Double
+    | DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
     | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Scannumber
     deriving (Generic, Show, FromJSON, ToJSON)
 
-  data instance DataSourceAcq Image = DataSourceAcq'Image'Hdf5'Int32 (Detector Hkl DIM2) Dataset (IOVector Int32)
-                                    | DataSourceAcq'Image'Hdf5'Word16 (Detector Hkl DIM2) Dataset (IOVector Word16)
-                                    | DataSourceAcq'Image'Hdf5'Word32 (Detector Hkl DIM2) Dataset (IOVector Word32)
-                                    | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Scannumber (Scannumber -> Int -> FilePath)
+  data instance DataSourceAcq Image
+      = DataSourceAcq'Image'Dummy (DataSourceAcq Attenuation) (IOVector Double)
+      | DataSourceAcq'Image'Hdf5'Double (Detector Hkl DIM2) Dataset (IOVector Double)
+      | DataSourceAcq'Image'Hdf5'Int32 (Detector Hkl DIM2) Dataset (IOVector Int32)
+      | DataSourceAcq'Image'Hdf5'Word16 (Detector Hkl DIM2) Dataset (IOVector Word16)
+      | DataSourceAcq'Image'Hdf5'Word32 (Detector Hkl DIM2) Dataset (IOVector Word32)
+      | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Scannumber (Scannumber -> Int -> FilePath)
 
+  ds'Shape (DataSourceAcq'Image'Dummy a _)           = ds'Shape a
+  ds'Shape (DataSourceAcq'Image'Hdf5'Double _ ds _)  = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Hdf5'Int32 _ ds _)   = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Hdf5'Word16 _ ds _)  = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Hdf5'Word32 _ ds _)  = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Img'Int32 _ _ a _ _) = ds'Shape a
 
+  withDataSourceP f (DataSourcePath'Image'Dummy det a v) g
+      =  withDataSourceP f a $ \a' ->
+         do
+           let n = (size . shape $ det)
+           arr <- liftIO $ replicate n v
+           g (DataSourceAcq'Image'Dummy a' arr)
+
   withDataSourceP (ScanFile f _) (DataSourcePath'Image'Hdf5 det p) g = withHdf5PathP f p $ \ds -> do
     t <- liftIO $ getDatasetType ds
     s <- liftIO $ getTypeSize t
     let n = (size . shape $ det) * fromEnum s
-    condM [ (liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32)), do
+    condM [ (liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Double)), do
+                arr <- liftIO $ unsafeNew n
+                g (DataSourceAcq'Image'Hdf5'Double det ds arr))
+          , (liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32)), do
                 arr <- liftIO $ unsafeNew n
                 g (DataSourceAcq'Image'Hdf5'Int32 det ds arr))
           , (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16)), do

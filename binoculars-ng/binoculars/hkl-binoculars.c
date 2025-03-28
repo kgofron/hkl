@@ -386,6 +386,7 @@ void hkl_binoculars_space_fprintf(FILE *f, const HklBinocularsSpace *self)
                 hkl_detector_free(detector);                            \
         }
 
+HKL_BINOCULARS_SPACE_ANGLES_IMPL(double);
 HKL_BINOCULARS_SPACE_ANGLES_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_ANGLES_IMPL(uint32_t);
@@ -1491,6 +1492,7 @@ static inline double compute_azimuth(vec3s kf)
 		hkl_sample_free(sample);				\
         }
 
+HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(double);
 HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
@@ -1562,6 +1564,7 @@ HKL_BINOCULARS_SPACE_QCUSTOM_IMPL(uint32_t);
                 hkl_detector_free(detector);                            \
         }
 
+HKL_BINOCULARS_SPACE_HKL_IMPL(double);
 HKL_BINOCULARS_SPACE_HKL_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_HKL_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
@@ -1633,6 +1636,7 @@ HKL_BINOCULARS_SPACE_HKL_IMPL(uint32_t);
                 hkl_detector_free(detector);                            \
         }
 
+HKL_BINOCULARS_SPACE_TEST_IMPL(double);
 HKL_BINOCULARS_SPACE_TEST_IMPL(int32_t);
 HKL_BINOCULARS_SPACE_TEST_IMPL(uint16_t);
 HKL_BINOCULARS_SPACE_TEST_IMPL(uint32_t);

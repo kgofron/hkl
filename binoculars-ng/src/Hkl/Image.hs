@@ -19,11 +19,14 @@ import           Hkl.C.Binoculars
 import           Hkl.Detector
 import           Hkl.Repa
 
-data Image = ImageInt32 (IOVector Int32)
-           | ImageWord16 (IOVector Word16)
-           | ImageWord32 (IOVector Word32)
+data Image
+    = ImageDouble (IOVector Double)
+    | ImageInt32 (IOVector Int32)
+    | ImageWord16 (IOVector Word16)
+    | ImageWord32 (IOVector Word32)
 
 instance Show Image where
+  show (ImageDouble _) = "ImageDouble"
   show (ImageInt32 _)  = "ImageInt32"
   show (ImageWord16 _) = "ImageWord16"
   show (ImageWord32 _) = "ImageWord32"
@@ -81,9 +84,10 @@ sum' :: (Integral a, Storable a) => IOVector a -> Double
 sum' v = unsafePerformIO $ foldl' (\b a -> b + fromIntegral a) 0.0 v
 
 sumImage :: Image -> Double
-sumImage (ImageInt32 i)  = sum' i
-sumImage (ImageWord16 i) = sum' i
-sumImage (ImageWord32 i) = sum' i
+sumImage (ImageDouble v) = unsafePerformIO $ foldl' (\b a -> b + a) 0.0 v
+sumImage (ImageInt32 v)  = sum' v
+sumImage (ImageWord16 v) = sum' v
+sumImage (ImageWord32 v) = sum' v
 
 
 filterSumImage :: Maybe Double -> Image -> Bool

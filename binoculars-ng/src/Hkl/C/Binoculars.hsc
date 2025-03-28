@@ -336,6 +336,9 @@ type C'ProjectionTypeAngles t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *
  -> CString -- const char *sample_axis
  -> IO ()
 
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_double" \
+c'hkl_binoculars_space_angles_double :: C'ProjectionTypeAngles Double
+
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_angles_int32_t" \
 c'hkl_binoculars_space_angles_int32_t :: C'ProjectionTypeAngles Int32
 
@@ -371,6 +374,9 @@ type C'ProjectionTypeQCustom t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace 
  -> CInt -- int do_polarization_correction
  -> IO ()
 
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_double" \
+c'hkl_binoculars_space_qcustom_double :: C'ProjectionTypeQCustom Double
+
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_qcustom_int32_t" \
 c'hkl_binoculars_space_qcustom_int32_t :: C'ProjectionTypeQCustom Int32
 
@@ -397,6 +403,9 @@ type C'ProjectionTypeHkl t = Ptr C'HklBinocularsSpace -- HklBinocularsSpace *sel
   -> CInt -- int do_polarization_correction
   -> IO ()
 
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_double" \
+c'hkl_binoculars_space_hkl_double :: C'ProjectionTypeHkl Double
+
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_int32_t" \
 c'hkl_binoculars_space_hkl_int32_t :: C'ProjectionTypeHkl Int32
 
@@ -408,6 +417,9 @@ foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_hkl_uint32_t"
 c'hkl_binoculars_space_hkl_uint32_t :: C'ProjectionTypeHkl Word32
 
 
+
+foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_test_double" \
+c'hkl_binoculars_space_test_double :: C'ProjectionTypeHkl Double
 
 foreign import ccall unsafe "hkl-binoculars.h hkl_binoculars_space_test_int32_t" \
 c'hkl_binoculars_space_test_int32_t :: C'ProjectionTypeHkl Int32

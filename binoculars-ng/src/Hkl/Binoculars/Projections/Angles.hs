@@ -141,6 +141,8 @@ spaceAngles det pixels rs mlimits sAxis space@(Space fSpace) (DataFrameQCustom a
   withSampleAxis sAxis $ \sampleAxis ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
+    (ImageDouble arr) -> unsafeWith arr $ \i -> do
+      {-# SCC "hkl_binoculars_space_angles_double" #-} c'hkl_binoculars_space_angles_double pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_angles_int32_t" #-} c'hkl_binoculars_space_angles_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) mask'' limits (toEnum nlimits) sampleAxis
     (ImageWord16 arr) -> unsafeWith arr $ \i -> do

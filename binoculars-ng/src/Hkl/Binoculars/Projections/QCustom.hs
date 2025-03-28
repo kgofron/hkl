@@ -510,6 +510,7 @@ overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geomet
 
 
 overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
+overloadImagePath det (DataSourcePath'Image'Dummy _ att v) = DataSourcePath'Image'Dummy det att v
 overloadImagePath det (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
 overloadImagePath det (DataSourcePath'Image'Img _ att sn) = DataSourcePath'Image'Img det att sn
 
@@ -968,6 +969,8 @@ spaceQCustom det pixels rs surf mlimits subprojection uqx uqy uqz mSampleAxis do
   withMaybeSampleAxis mSampleAxis $ \sampleAxis ->
   withForeignPtr fSpace $ \pSpace -> do
   case img of
+    (ImageDouble arr) -> unsafeWith arr $ \i -> do
+      {-# SCC "hkl_binoculars_space_qcustom_double" #-} c'hkl_binoculars_space_qcustom_double pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) c'mask (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (CDouble . unTimescan0 $ timescan0) (toEnum . fromEnum . unScannumber $ scannumber) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
     (ImageInt32 arr) -> unsafeWith arr $ \i -> do
       {-# SCC "hkl_binoculars_space_qcustom_int32_t" #-} c'hkl_binoculars_space_qcustom_int32_t pSpace geometry i nPixels (CDouble . unAttenuation $ att) pix (toEnum ndim) dims r (toEnum nr) c'mask (toEnum $ fromEnum surf) limits (toEnum nlimits) (CDouble . unTimestamp $ index) (CDouble . unTimescan0 $ timescan0) (toEnum . fromEnum . unScannumber $ scannumber) (toEnum . fromEnum $ subprojection) (CDouble (uqx /~ radian)) (CDouble (uqy /~ radian)) (CDouble (uqz /~ radian)) sampleAxis (toEnum . fromEnum $ doPolarizationCorrection)
     (ImageWord16 arr) -> unsafeWith arr $ \i -> do

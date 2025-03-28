@@ -198,6 +198,7 @@ HKLAPI extern void hkl_binoculars_cube_fprintf(FILE *f, const HklBinocularsCube 
                                                       size_t n_limits,	\
                                                       const char *sample_axis)
 
+HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(double);
 HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_ANGLES_DECL(uint32_t);
@@ -264,6 +265,7 @@ typedef enum _HklBinocularsQCustomSubProjectionEnum
                 )
 
 
+HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(double);
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint32_t);
@@ -288,6 +290,7 @@ HKLAPI extern HKL_BINOCULARS_SPACE_QCUSTOM_DECL(uint32_t);
                                                    int do_polarisation_correction \
                 )
 
+HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(double);
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint32_t);
@@ -313,6 +316,7 @@ HKLAPI extern HKL_BINOCULARS_SPACE_HKL_DECL(uint32_t);
                 )
 
 
+HKLAPI extern HKL_BINOCULARS_SPACE_TEST_DECL(double);
 HKLAPI extern HKL_BINOCULARS_SPACE_TEST_DECL(int32_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_TEST_DECL(uint16_t);
 HKLAPI extern HKL_BINOCULARS_SPACE_TEST_DECL(uint32_t);
