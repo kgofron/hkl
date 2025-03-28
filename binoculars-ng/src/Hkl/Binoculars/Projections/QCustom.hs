@@ -163,8 +163,8 @@ default'DataSourcePath'DataFrameQCustom
       )
     )
     (DataSourcePath'Image'Hdf5
-      (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
-      defaultDetector)
+      defaultDetector
+      (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image"))
     (DataSourcePath'Mask (MaskLocation "") defaultDetector)
     (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
     (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
@@ -376,29 +376,29 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _) att sn
   = case d of
       HklBinocularsDetectorEnum'ImxpadS140 ->
         DataSourcePath'Image'Hdf5
+        det
         (hdf5p $ grouppat 0 (datasetp "scan_data/xpad_image"
                               `H5Or`
                               datasetp "scan_data/xpad_s140_image"))
-        det
       HklBinocularsDetectorEnum'XpadFlatCorrected -> undefined
       HklBinocularsDetectorEnum'ImxpadS70 ->
         DataSourcePath'Image'Hdf5
-        (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_s70_image")
         det
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_s70_image")
       HklBinocularsDetectorEnum'DectrisEiger1M ->
         DataSourcePath'Image'Hdf5
-        (hdf5p $ grouppat 0 $ datasetp "scan_data/eiger_image")
         det
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/eiger_image")
       HklBinocularsDetectorEnum'Ufxc ->
         DataSourcePath'Image'Hdf5
-        (hdf5p $ grouppat 0 $ datasetp "scan_data/ufxc_sixs_image")
         det
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/ufxc_sixs_image")
       HklBinocularsDetectorEnum'Merlin -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 ->
         DataSourcePath'Image'Hdf5
-        (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
         det
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
       HklBinocularsDetectorEnum'Cirpad -> undefined
       HklBinocularsDetectorEnum'RigakuXspa1M ->
         DataSourcePath'Image'Img det att sn
@@ -408,19 +408,19 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _) att sn
   = case d of
       HklBinocularsDetectorEnum'ImxpadS140 ->
         DataSourcePath'Image'Hdf5
+        det
         (hdf5p (datasetpattr ("long_name", "i14-c-c00/dt/xpad.s140/image")
                 `H5Or`
                 datasetpattr ("long_name", "i14-c-c00/dt/xpad.1/image")))
-        det
       HklBinocularsDetectorEnum'XpadFlatCorrected -> undefined
       HklBinocularsDetectorEnum'ImxpadS70 ->
         DataSourcePath'Image'Hdf5
-        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s70/image"))
         det
+        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/xpad.s70/image"))
       HklBinocularsDetectorEnum'DectrisEiger1M ->
         DataSourcePath'Image'Hdf5
-        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
         det
+        (hdf5p $ datasetpattr ("long_name", "i14-c-c00/dt/eiger.1/image"))
       HklBinocularsDetectorEnum'Ufxc -> undefined
       HklBinocularsDetectorEnum'Merlin -> undefined
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad -> undefined
@@ -510,7 +510,7 @@ overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geomet
 
 
 overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
-overloadImagePath det (DataSourcePath'Image'Hdf5 p _) = DataSourcePath'Image'Hdf5 p det
+overloadImagePath det (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
 overloadImagePath det (DataSourcePath'Image'Img _ att sn) = DataSourcePath'Image'Img det att sn
 
 overloadMaskPath :: Config Common -> DataSourcePath Mask -> DataSourcePath Mask
@@ -839,8 +839,8 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                         )
                       )
                       (DataSourcePath'Image'Hdf5
-                        (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05")
-                        detector)
+                       detector
+                       (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05"))
                       (mk'DataSourcePath'Mask common)
                       (mkTimeStamp'Sbs msub)
                       (mkTimescan0'Sbs msub)
@@ -858,8 +858,8 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                           )
                          )
                          (DataSourcePath'Image'Hdf5
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image"))
-                          detector)
+                          detector
+                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image")))
                          (mk'DataSourcePath'Mask common)
                          (mkTimeStamp'Sbs msub)
                          (mkTimescan0'Sbs msub)
@@ -881,10 +881,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                          )
                         )
                        (DataSourcePath'Image'Hdf5
+                         detector
                          (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
                                               `H5Or`
-                                              datasetp "scan_data/merlin_quad_image"))
-                         detector)
+                                              datasetp "scan_data/merlin_quad_image")))
                        (mk'DataSourcePath'Mask common)
                        (mkTimeStamp'Fly msub)
                        (mkTimescan0'Sbs msub)
@@ -922,10 +922,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                      )
                     )
                    (DataSourcePath'Image'Hdf5
+                    detector
                     (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
                              `H5Or`
-                             datasetpattr ("interpretation", "image")))
-                    detector)
+                             datasetpattr ("interpretation", "image"))))
                    (mk'DataSourcePath'Mask common)
                    (mkTimeStamp'Sbs msub)
                    (mkTimescan0'Sbs msub)

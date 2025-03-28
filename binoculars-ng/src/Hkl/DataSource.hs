@@ -178,9 +178,9 @@ instance  Is1DStreamable (DataSourceAcq Geometry) Geometry where
                      (Geometry'Factory factory _) -> Geometry'Factory factory (Just state)
 
 instance Is1DStreamable (DataSourceAcq Image) Image where
-  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 ds det buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
-  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word16 ds det buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
-  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word32 ds det buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
+  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 det ds buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
+  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word16 det ds buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
+  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word32 det ds buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Img'Int32 det buf _ sn fn) i = ImageInt32 <$> readImgInBuffer buf det (fn sn i)
 
 instance Is1DStreamable (DataSourceAcq Mask) (Maybe Mask) where
@@ -355,33 +355,33 @@ condM ((p, v):ls) = ifM p v (condM ls)
 
 instance DataSource Image where
   data DataSourcePath Image
-    = DataSourcePath'Image'Hdf5 (Hdf5Path DIM3 Int32) (Detector Hkl DIM2) -- TODO Int32 is wrong
+    = DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
     | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Scannumber
     deriving (Generic, Show, FromJSON, ToJSON)
 
-  data instance DataSourceAcq Image = DataSourceAcq'Image'Hdf5'Int32 Dataset (Detector Hkl DIM2) (IOVector Int32)
-                                    | DataSourceAcq'Image'Hdf5'Word16 Dataset (Detector Hkl DIM2) (IOVector Word16)
-                                    | DataSourceAcq'Image'Hdf5'Word32 Dataset (Detector Hkl DIM2) (IOVector Word32)
+  data instance DataSourceAcq Image = DataSourceAcq'Image'Hdf5'Int32 (Detector Hkl DIM2) Dataset (IOVector Int32)
+                                    | DataSourceAcq'Image'Hdf5'Word16 (Detector Hkl DIM2) Dataset (IOVector Word16)
+                                    | DataSourceAcq'Image'Hdf5'Word32 (Detector Hkl DIM2) Dataset (IOVector Word32)
                                     | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Scannumber (Scannumber -> Int -> FilePath)
 
-  ds'Shape (DataSourceAcq'Image'Hdf5'Int32 ds _ _)   = liftIO $ datasetShape ds
-  ds'Shape (DataSourceAcq'Image'Hdf5'Word16 ds _ _)  = liftIO $ datasetShape ds
-  ds'Shape (DataSourceAcq'Image'Hdf5'Word32 ds _ _)  = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Image'Hdf5'Int32 _ ds _)   = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Image'Hdf5'Word16 _ ds _)  = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Image'Hdf5'Word32 _ ds _)  = liftIO $ datasetShape ds
   ds'Shape (DataSourceAcq'Image'Img'Int32 _ _ a _ _) = ds'Shape a
 
-  withDataSourceP (ScanFile f _) (DataSourcePath'Image'Hdf5 p det) g = withHdf5PathP f p $ \ds -> do
+  withDataSourceP (ScanFile f _) (DataSourcePath'Image'Hdf5 det p) g = withHdf5PathP f p $ \ds -> do
     t <- liftIO $ getDatasetType ds
     s <- liftIO $ getTypeSize t
     let n = (size . shape $ det) * fromEnum s
     condM [ (liftIO $ typeIDsEqual t (nativeTypeOf (undefined ::  Int32)), do
                 arr <- liftIO $ unsafeNew n
-                g (DataSourceAcq'Image'Hdf5'Int32 ds det arr))
+                g (DataSourceAcq'Image'Hdf5'Int32 det ds arr))
           , (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word16)), do
                 arr <- liftIO $ unsafeNew n
-                g (DataSourceAcq'Image'Hdf5'Word16 ds det arr))
+                g (DataSourceAcq'Image'Hdf5'Word16 det ds arr))
           , (liftIO $ typeIDsEqual t (nativeTypeOf (undefined :: Word32)), do
                 arr <- liftIO $ unsafeNew n
-                g (DataSourceAcq'Image'Hdf5'Word32 ds det arr))
+                g (DataSourceAcq'Image'Hdf5'Word32 det ds arr))
           ]
 
   withDataSourceP f@(ScanFile _ sn) (DataSourcePath'Image'Img det a (Scannumber sn0)) g
