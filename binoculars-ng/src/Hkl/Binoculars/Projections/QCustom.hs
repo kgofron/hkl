@@ -502,10 +502,11 @@ overloadGeometryPath mw (DataSourcePath'Geometry g wp as) = DataSourcePath'Geome
 overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overloadWaveLength mw wp)
 
 
-overloadImagePath :: Detector Hkl DIM2 -> DataSourcePath Image -> DataSourcePath Image
-overloadImagePath det (DataSourcePath'Image'Dummy _ att v) = DataSourcePath'Image'Dummy det att v
-overloadImagePath det (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
-overloadImagePath det (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
+overload'ImagePath :: Detector Hkl DIM2 -> Maybe (DataSourcePath Image) -> DataSourcePath Image -> DataSourcePath Image
+overload'ImagePath _ (Just i) _ = i
+overload'ImagePath det Nothing (DataSourcePath'Image'Dummy _ att v) = DataSourcePath'Image'Dummy det att v
+overload'ImagePath det Nothing (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
+overload'ImagePath det Nothing (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
 
 overloadMaskPath :: Config Common -> DataSourcePath Mask -> DataSourcePath Mask
 overloadMaskPath c DataSourcePath'Mask'NoMask  = mk'DataSourcePath'Mask c
@@ -525,10 +526,11 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
         mMaxAtt = binocularsConfig'Common'AttenuationMax common
         mWavelength = binocularsConfig'Common'Wavelength common
         detector =  binocularsConfig'Common'Detector common
+        mImage = binocularsConfig'Common'Image common
 
         newAttenuationPath = overloadAttenuationPath mAttCoef mMaxAtt attenuationPath'
         newGeometryPath = overloadGeometryPath mWavelength geometryPath
-        newImagePath = overloadImagePath detector imagePath
+        newImagePath = overload'ImagePath detector mImage imagePath
         newMaskPath = overloadMaskPath common maskPath
         newTimestampPath = overloadTimestampPath msub indexP
         newTimescan0Path = overloadTimescan0Path msub timescan0P
@@ -546,6 +548,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let inputtype = binocularsConfig'Common'InputType common
       let mAttenuationCoefficient = binocularsConfig'Common'AttenuationCoefficient common
       let detector =  binocularsConfig'Common'Detector common
+      let mImage = binocularsConfig'Common'Image common
       let mAttenuationMax = binocularsConfig'Common'AttenuationMax common
       let mAttenuationShift = binocularsConfig'Common'AttenuationShift common
       let mWavelength = binocularsConfig'Common'Wavelength common
@@ -798,7 +801,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               in DataSourcePath'DataFrameQCustom
                  att
                  g
-                 (mkDetector'Sixs'Fly detector att sn)
+                 (overload'ImagePath detector mImage (mkDetector'Sixs'Fly detector att sn))
                  (mk'DataSourcePath'Mask common)
                  (mkTimeStamp'Fly msub)
                  (mkTimescan0'Fly msub)
@@ -810,7 +813,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               in DataSourcePath'DataFrameQCustom
                  att
                  g
-                 (mkDetector'Sixs'Sbs detector att sn)
+                 (overload'ImagePath detector mImage (mkDetector'Sixs'Sbs detector att sn))
                  (mk'DataSourcePath'Mask common)
                  (mkTimeStamp'Sbs msub)
                  (mkTimescan0'Sbs msub)
@@ -851,9 +854,10 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                            ]
                           )
                          )
-                         (DataSourcePath'Image'Hdf5
-                          detector
-                          (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image")))
+                         (overload'ImagePath detector mImage
+                          (DataSourcePath'Image'Hdf5
+                           detector
+                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image"))))
                          (mk'DataSourcePath'Mask common)
                          (mkTimeStamp'Sbs msub)
                          (mkTimescan0'Sbs msub)
@@ -874,11 +878,13 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                           ]
                          )
                         )
-                       (DataSourcePath'Image'Hdf5
+                       (overload'ImagePath detector mImage
+                        (DataSourcePath'Image'Hdf5
                          detector
                          (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
                                               `H5Or`
                                               datasetp "scan_data/merlin_quad_image")))
+                       )
                        (mk'DataSourcePath'Mask common)
                        (mkTimeStamp'Fly msub)
                        (mkTimescan0'Sbs msub)
@@ -915,11 +921,13 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                       ]
                      )
                     )
-                   (DataSourcePath'Image'Hdf5
-                    detector
-                    (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
-                             `H5Or`
-                             datasetpattr ("interpretation", "image"))))
+                   (overload'ImagePath detector mImage
+                    (DataSourcePath'Image'Hdf5
+                     detector
+                     (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
+                               `H5Or`
+                               datasetpattr ("interpretation", "image"))))
+                   )
                    (mk'DataSourcePath'Mask common)
                    (mkTimeStamp'Sbs msub)
                    (mkTimescan0'Sbs msub)

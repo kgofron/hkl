@@ -192,6 +192,8 @@ instance HasIniConfig Common where
                                                        , "the list of known detectors is:"]
                                                        <> [" - " <> pack n | (Detector2D _ n _) <- detectors]
                                                       )
+                                                      <> elemFMbDef "image" binocularsConfig'Common'Image c defaultConfig
+                                                      [ "where to find the image in the files JSON encoded" ]
                                                       <> elemFDef "centralpixel" binocularsConfig'Common'Centralpixel c defaultConfig
                                                       [ "x,y coordinates in pixels of the direct beam on the detector."
                                                       , ""
