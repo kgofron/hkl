@@ -41,14 +41,10 @@ import           Control.Exception                 (throwIO)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
-import           Data.Aeson                        (FromJSON (..), ToJSON (..),
-                                                    eitherDecodeStrict, encode)
-import           Data.ByteString.Lazy              (toStrict)
-import           Data.Ini.Config.Bidir             (FieldValue (..))
+import           Data.Aeson                        (FromJSON (..), ToJSON (..))
 import           Data.Int                          (Int32)
 import           Data.Kind                         (Type)
 import           Data.Text                         (Text, unpack)
-import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, replicate,
                                                     unsafeNew)
@@ -418,10 +414,7 @@ instance DataSource Image where
         f' tmpl' (Scannumber sn') i = printf (unpack tmpl') sn0 sn0 ((sn' - sn0) * 1029 + i)
 
 instance HasFieldValue (DataSourcePath Image) where
-    fieldvalue = FieldValue
-                 { fvParse = \t -> eitherDecodeStrict (encodeUtf8 t)
-                 , fvEmit = decodeUtf8 . toStrict . encode
-                 }
+    fieldvalue = autoJSON
 
 -- Int
 

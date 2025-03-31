@@ -55,6 +55,7 @@ module Hkl.Binoculars.Config
     , SampleAxis(..)
     , auto
     , auto'
+    , autoJSON
     , destination'
     , elemFDef
     , elemFDef'
@@ -81,12 +82,14 @@ import           Control.Monad.Catch               (MonadCatch, MonadThrow,
                                                     throwM, try)
 import           Control.Monad.Catch.Pure          (runCatch)
 import           Control.Monad.IO.Class            (MonadIO)
-import           Data.Aeson                        (FromJSON (..), ToJSON (..))
+import           Data.Aeson                        (FromJSON (..), ToJSON (..),
+                                                    eitherDecodeStrict, encode)
 import           Data.Attoparsec.Text              (Parser, char, decimal,
                                                     double, parseOnly, peekChar,
                                                     satisfy, sepBy, signed,
                                                     skipSpace, takeText,
                                                     takeTill, (<?>))
+import           Data.ByteString.Lazy              (toStrict)
 import           Data.Char                         (isSpace)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
@@ -114,6 +117,7 @@ import           Data.Text                         (Text, breakOn, cons, drop,
                                                     take, takeWhile, toLower,
                                                     unlines, unpack, unwords,
                                                     words)
+import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                      (readFile)
 import           Data.Typeable                     (Proxy (..), Typeable,
                                                     typeRep)
@@ -198,6 +202,13 @@ auto = fieldvalue
 
 auto' :: HasFieldValue a => Text -> Either String a
 auto' = fvParse fieldvalue
+
+autoJSON :: (FromJSON a, ToJSON a) => FieldValue a
+autoJSON =
+    FieldValue { fvParse = eitherDecodeStrict . encodeUtf8
+               , fvEmit = decodeUtf8 . toStrict . encode
+               }
+
 
 instance HasFieldValue Bool where
   fieldvalue = bool

@@ -36,15 +36,11 @@ import           Control.Monad.IO.Class             (MonadIO (liftIO))
 import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
 import           Control.Monad.Reader               (MonadReader, ask)
-import           Data.Aeson                         (FromJSON, ToJSON,
-                                                     eitherDecode', encode)
-import           Data.ByteString.Lazy               (fromStrict, toStrict)
+import           Data.Aeson                         (FromJSON, ToJSON)
 import           Data.Functor.Identity              (Identity)
 import           Data.HashMap.Strict                (fromList)
 import           Data.Ini                           (Ini (..))
-import           Data.Ini.Config.Bidir              (FieldValue (..))
 import           Data.Text                          (pack, unpack)
-import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
 import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
 import           Foreign.C.Types                    (CDouble (..))
@@ -104,10 +100,7 @@ instance HasFieldComment (DataFrameTest' DataSourcePath) where
                    ]
 
 instance HasFieldValue (DataFrameTest' DataSourcePath) where
-  fieldvalue = FieldValue
-               { fvParse = eitherDecode' . fromStrict . encodeUtf8
-               , fvEmit = decodeUtf8 . toStrict . encode
-               }
+  fieldvalue = autoJSON
 
 ------------
 -- Config --
