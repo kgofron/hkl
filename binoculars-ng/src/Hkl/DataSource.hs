@@ -41,10 +41,14 @@ import           Control.Exception                 (throwIO)
 import           Control.Monad.Extra               (ifM)
 import           Control.Monad.IO.Class            (MonadIO (liftIO))
 import           Control.Monad.Trans.Cont          (cont, runCont)
-import           Data.Aeson                        (FromJSON (..), ToJSON (..))
+import           Data.Aeson                        (FromJSON (..), ToJSON (..),
+                                                    eitherDecodeStrict, encode)
+import           Data.ByteString.Lazy              (toStrict)
+import           Data.Ini.Config.Bidir             (FieldValue (..))
 import           Data.Int                          (Int32)
 import           Data.Kind                         (Type)
 import           Data.Text                         (Text, unpack)
+import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 import           Data.Vector.Storable              (Vector, fromList)
 import           Data.Vector.Storable.Mutable      (IOVector, replicate,
                                                     unsafeNew)
@@ -230,7 +234,7 @@ instance DataSource Attenuation where
                                }
     | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourcePath Float }
     | DataSourcePath'NoAttenuation
-    deriving (Generic, Show, FromJSON, ToJSON)
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Attenuation =
     DataSourceAcq'Attenuation { attenuationAcqPath        :: DataSourceAcq Float
@@ -316,7 +320,7 @@ instance DataSource [Double] where
 instance DataSource Float where
   newtype DataSourcePath Float
     = DataSourcePath'Float (Hdf5Path DIM1 Float)
-    deriving (Generic, Show)
+    deriving (Eq, Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
 
   newtype DataSourceAcq Float
@@ -362,7 +366,7 @@ instance DataSource Image where
     = DataSourcePath'Image'Dummy (Detector Hkl DIM2) (DataSourcePath Attenuation) Double
     | DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
     | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Text Scannumber
-    deriving (Generic, Show, FromJSON, ToJSON)
+    deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
   data instance DataSourceAcq Image
       = DataSourceAcq'Image'Dummy (DataSourceAcq Attenuation) (IOVector Double)
@@ -412,6 +416,12 @@ instance DataSource Image where
       where
         f' :: Text -> Scannumber -> Int -> FilePath
         f' tmpl' (Scannumber sn') i = printf (unpack tmpl') sn0 sn0 ((sn' - sn0) * 1029 + i)
+
+instance HasFieldValue (DataSourcePath Image) where
+    fieldvalue = FieldValue
+                 { fvParse = \t -> eitherDecodeStrict (encodeUtf8 t)
+                 , fvEmit = decodeUtf8 . toStrict . encode
+                 }
 
 -- Int
 

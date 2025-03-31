@@ -91,8 +91,8 @@ import           Data.Char                         (isSpace)
 import           Data.Either.Combinators           (maybeToRight)
 import           Data.Either.Extra                 (mapLeft, mapRight)
 import           Data.Foldable                     (foldl')
-import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Hashable                     (Hashable)
+import           Data.HashMap.Strict               (HashMap, unionWith)
 import           Data.Ini                          (Ini (..), printIni)
 import           Data.Ini.Config                   (IniParser, fieldMbOf,
                                                     fieldOf, parseIniFile,

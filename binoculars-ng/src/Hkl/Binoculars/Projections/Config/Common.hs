@@ -42,8 +42,10 @@ import           Path                              (Abs, Dir, Path)
 
 import           Hkl.Binoculars.Config
 import           Hkl.C.Binoculars
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
+import           Hkl.Image
 import           Hkl.Orphan                        ()
 import           Hkl.Repa
 import           Hkl.Types
@@ -62,6 +64,7 @@ instance HasIniConfig Common where
           , binocularsConfig'Common'Tmpl                   :: Maybe InputTmpl
           , binocularsConfig'Common'InputRange             :: ConfigRange
           , binocularsConfig'Common'Detector               :: Detector Hkl DIM2
+          , binocularsConfig'Common'Image                  :: Maybe (DataSourcePath Image)
           , binocularsConfig'Common'Centralpixel           :: (Int, Int)
           , binocularsConfig'Common'Sdd                    :: Meter
           , binocularsConfig'Common'Detrot                 :: Degree
@@ -90,6 +93,7 @@ instance HasIniConfig Common where
           , binocularsConfig'Common'Tmpl = Nothing
           , binocularsConfig'Common'InputRange  = ConfigRange (InputRange (Numeric.Interval.singleton 1) :| [])
           , binocularsConfig'Common'Detector = defaultDetector
+          , binocularsConfig'Common'Image = Nothing
           , binocularsConfig'Common'Centralpixel = (0, 0)
           , binocularsConfig'Common'Sdd = Meter (1 *~ meter)
           , binocularsConfig'Common'Detrot = Degree (0 *~ degree)
@@ -369,6 +373,7 @@ instance HasIniConfig Common where
                                                                    SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
                                                                    SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
                                             )
+         binocularsConfig'Common'Image <- parseMb cfg "input" "image"
          binocularsConfig'Common'Centralpixel <- eitherF error (parse' cfg "input" "centralpixel")
                                                 (\mc -> do
                                                    case mc of
