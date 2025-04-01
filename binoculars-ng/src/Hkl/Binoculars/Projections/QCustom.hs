@@ -497,9 +497,9 @@ overload'DataSourcePath'Timescan0 msub idx =
 overload'DataSourcePath'Double :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
 overload'DataSourcePath'Double ma wp = maybe wp DataSourcePath'Double'Const ma
 
-overloadGeometryPath ::  Maybe Double -> DataSourcePath Geometry -> DataSourcePath Geometry
-overloadGeometryPath mw (DataSourcePath'Geometry g wp as) = DataSourcePath'Geometry g (overload'DataSourcePath'Double mw wp) as
-overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overload'DataSourcePath'Double mw wp)
+overload'DataSourcePath'Geometry ::  Maybe Double -> DataSourcePath Geometry -> DataSourcePath Geometry
+overload'DataSourcePath'Geometry mw (DataSourcePath'Geometry g wp as) = DataSourcePath'Geometry g (overload'DataSourcePath'Double mw wp) as
+overload'DataSourcePath'Geometry mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overload'DataSourcePath'Double mw wp)
 
 
 overload'ImagePath :: Detector Hkl DIM2 -> Maybe (DataSourcePath Image) -> DataSourcePath Image -> DataSourcePath Image
@@ -529,7 +529,7 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
         mImage = binocularsConfig'Common'Image common
 
         newAttenuationPath = overload'DataSourcePath'Attenuation mAttCoef mMaxAtt attenuationPath'
-        newGeometryPath = overloadGeometryPath mWavelength geometryPath
+        newGeometryPath = overload'DataSourcePath'Geometry mWavelength geometryPath
         newImagePath = overload'ImagePath detector mImage imagePath
         newMaskPath = overloadMaskPath common maskPath
         newTimestampPath = overload'DataSourcePath'Timestamp msub indexP
