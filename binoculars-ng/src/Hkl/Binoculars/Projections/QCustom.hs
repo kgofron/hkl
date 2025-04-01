@@ -494,12 +494,12 @@ overload'DataSourcePath'Timescan0 msub idx =
                    HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timescan0'NoTimescan0
                    HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timescan0'NoTimescan0
 
-overloadWaveLength :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
-overloadWaveLength ma wp = maybe wp DataSourcePath'Double'Const ma
+overload'DataSourcePath'Double :: Maybe Double -> DataSourcePath Double -> DataSourcePath Double
+overload'DataSourcePath'Double ma wp = maybe wp DataSourcePath'Double'Const ma
 
 overloadGeometryPath ::  Maybe Double -> DataSourcePath Geometry -> DataSourcePath Geometry
-overloadGeometryPath mw (DataSourcePath'Geometry g wp as) = DataSourcePath'Geometry g (overloadWaveLength mw wp) as
-overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overloadWaveLength mw wp)
+overloadGeometryPath mw (DataSourcePath'Geometry g wp as) = DataSourcePath'Geometry g (overload'DataSourcePath'Double mw wp) as
+overloadGeometryPath mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overload'DataSourcePath'Double mw wp)
 
 
 overload'ImagePath :: Detector Hkl DIM2 -> Maybe (DataSourcePath Image) -> DataSourcePath Image -> DataSourcePath Image
@@ -682,14 +682,14 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
           dataSourcePath'Geometry'Sixs'Uhv
             = DataSourcePath'Geometry
               (Geometry'Factory Uhv Nothing)
-              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma])
 
       let dataSourcePath'Geometry'Sixs'UhvGisaxs :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'UhvGisaxs
             = DataSourcePath'Geometry
               sixsUhvGisaxs
-              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
 
       let sixs'Med'Beta
@@ -771,28 +771,28 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
           dataSourcePath'Geometry'Sixs'MedH
             = DataSourcePath'Geometry
               (Geometry'Factory MedH Nothing)
-              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'MedH'Gamma, sixs'MedH'Delta ])
 
       let dataSourcePath'Geometry'Sixs'MedHGisaxs ::  DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedHGisaxs
             = DataSourcePath'Geometry
               sixsMedHGisaxs
-              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ])
 
       let dataSourcePath'Geometry'Sixs'MedV :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedV
             = DataSourcePath'Geometry
               (Geometry'Factory MedV Nothing)
-              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'MedV'Gamma, sixs'MedV'Delta, sixs'MedV'Etaa ])
 
       let dataSourcePath'Geometry'Sixs'MedVGisaxs :: DataSourcePath Geometry
           dataSourcePath'Geometry'Sixs'MedVGisaxs
             = DataSourcePath'Geometry
               sixsMedVGisaxs
-              (overloadWaveLength mWavelength dataSourcePath'WaveLength'Sixs)
+              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
               (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
 
       let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DataSourcePath Geometry -> Scannumber -> DataSourcePath DataFrameQCustom
@@ -824,7 +824,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                       (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
                       (DataSourcePath'Geometry
                         (Geometry'Factory K6c Nothing)
-                        (overloadWaveLength mWavelength (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
+                        (overload'DataSourcePath'Double mWavelength (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
                         (DataSourcePath'List
                          [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position")
                          , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position")
@@ -847,7 +847,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                          (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
                          (DataSourcePath'Geometry
                           cirpad
-                          (overloadWaveLength mWavelength dataSourcePath'WaveLength'Diffabs)
+                          (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Diffabs)
                           (DataSourcePath'List
                            [ DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/cirpad_delta/position"))
                            , DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/dif.1-cirpad-gam/position"))
@@ -869,7 +869,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                        --                                         (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
                        (DataSourcePath'Geometry
                          (Geometry'Factory Mars Nothing)
-                         (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
+                         (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Mars)
                          (DataSourcePath'List
                           [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
                           , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
@@ -893,7 +893,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                    (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
                    (DataSourcePath'Geometry
                      (Geometry'Factory Mars Nothing)
-                     (overloadWaveLength mWavelength dataSourcePath'WaveLength'Mars)
+                     (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Mars)
                      (DataSourcePath'List
                       [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/omega"
                                                                     `H5Or`
