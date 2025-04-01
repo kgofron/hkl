@@ -422,11 +422,11 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _) att sn
       HklBinocularsDetectorEnum'RigakuXspa1M ->
         DataSourcePath'Image'Img det att "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
 
-overloadAttenuationPath :: Maybe Double -> Maybe Float -> DataSourcePath Attenuation -> DataSourcePath Attenuation
-overloadAttenuationPath ma m' (DataSourcePath'Attenuation p o a m)
+overload'DataSourcePath'Attenuation :: Maybe Double -> Maybe Float -> DataSourcePath Attenuation -> DataSourcePath Attenuation
+overload'DataSourcePath'Attenuation ma m' (DataSourcePath'Attenuation p o a m)
   = DataSourcePath'Attenuation p o (fromMaybe a ma) (m' <|> m)
-overloadAttenuationPath _ _ ap@DataSourcePath'ApplyedAttenuationFactor{} = ap
-overloadAttenuationPath _ _ ap@DataSourcePath'NoAttenuation = ap
+overload'DataSourcePath'Attenuation _ _ ap@DataSourcePath'ApplyedAttenuationFactor{} = ap
+overload'DataSourcePath'Attenuation _ _ ap@DataSourcePath'NoAttenuation = ap
 
 overloadTimestampPath :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timestamp -> DataSourcePath Timestamp
 overloadTimestampPath msub idx =
@@ -528,7 +528,7 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
         detector =  binocularsConfig'Common'Detector common
         mImage = binocularsConfig'Common'Image common
 
-        newAttenuationPath = overloadAttenuationPath mAttCoef mMaxAtt attenuationPath'
+        newAttenuationPath = overload'DataSourcePath'Attenuation mAttCoef mMaxAtt attenuationPath'
         newGeometryPath = overloadGeometryPath mWavelength geometryPath
         newImagePath = overload'ImagePath detector mImage imagePath
         newMaskPath = overloadMaskPath common maskPath
