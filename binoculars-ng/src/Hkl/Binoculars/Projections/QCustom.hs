@@ -502,11 +502,11 @@ overload'DataSourcePath'Geometry mw (DataSourcePath'Geometry g wp as) = DataSour
 overload'DataSourcePath'Geometry mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overload'DataSourcePath'Double mw wp)
 
 
-overload'ImagePath :: Detector Hkl DIM2 -> Maybe (DataSourcePath Image) -> DataSourcePath Image -> DataSourcePath Image
-overload'ImagePath _ (Just i) _ = i
-overload'ImagePath det Nothing (DataSourcePath'Image'Dummy _ att v) = DataSourcePath'Image'Dummy det att v
-overload'ImagePath det Nothing (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
-overload'ImagePath det Nothing (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
+overload'DataSourcePath'Image :: Detector Hkl DIM2 -> Maybe (DataSourcePath Image) -> DataSourcePath Image -> DataSourcePath Image
+overload'DataSourcePath'Image _ (Just i) _ = i
+overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Dummy _ att v) = DataSourcePath'Image'Dummy det att v
+overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
+overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
 
 overloadMaskPath :: Config Common -> DataSourcePath Mask -> DataSourcePath Mask
 overloadMaskPath c DataSourcePath'Mask'NoMask  = mk'DataSourcePath'Mask c
@@ -530,7 +530,7 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
 
         newAttenuationPath = overload'DataSourcePath'Attenuation mAttCoef mMaxAtt attenuationPath'
         newGeometryPath = overload'DataSourcePath'Geometry mWavelength geometryPath
-        newImagePath = overload'ImagePath detector mImage imagePath
+        newImagePath = overload'DataSourcePath'Image detector mImage imagePath
         newMaskPath = overloadMaskPath common maskPath
         newTimestampPath = overload'DataSourcePath'Timestamp msub indexP
         newTimescan0Path = overload'DataSourcePath'Timescan0 msub timescan0P
@@ -801,7 +801,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               in DataSourcePath'DataFrameQCustom
                  att
                  g
-                 (overload'ImagePath detector mImage (mkDetector'Sixs'Fly detector att sn))
+                 (overload'DataSourcePath'Image detector mImage (mkDetector'Sixs'Fly detector att sn))
                  (mk'DataSourcePath'Mask common)
                  (mkTimeStamp'Fly msub)
                  (mkTimescan0'Fly msub)
@@ -813,7 +813,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
               in DataSourcePath'DataFrameQCustom
                  att
                  g
-                 (overload'ImagePath detector mImage (mkDetector'Sixs'Sbs detector att sn))
+                 (overload'DataSourcePath'Image detector mImage (mkDetector'Sixs'Sbs detector att sn))
                  (mk'DataSourcePath'Mask common)
                  (mkTimeStamp'Sbs msub)
                  (mkTimescan0'Sbs msub)
@@ -854,7 +854,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                            ]
                           )
                          )
-                         (overload'ImagePath detector mImage
+                         (overload'DataSourcePath'Image detector mImage
                           (DataSourcePath'Image'Hdf5
                            detector
                            (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image"))))
@@ -878,7 +878,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                           ]
                          )
                         )
-                       (overload'ImagePath detector mImage
+                       (overload'DataSourcePath'Image detector mImage
                         (DataSourcePath'Image'Hdf5
                          detector
                          (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
@@ -921,7 +921,7 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
                       ]
                      )
                     )
-                   (overload'ImagePath detector mImage
+                   (overload'DataSourcePath'Image detector mImage
                     (DataSourcePath'Image'Hdf5
                      detector
                      (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
