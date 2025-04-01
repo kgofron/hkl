@@ -461,8 +461,8 @@ overload'DataSourcePath'Timestamp msub idx =
                    HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timestamp'NoTimestamp
                    HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timestamp'NoTimestamp
 
-overloadTimescan0Path :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0 -> DataSourcePath Timescan0
-overloadTimescan0Path msub idx =
+overload'DataSourcePath'Timescan0 :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0 -> DataSourcePath Timescan0
+overload'DataSourcePath'Timescan0 msub idx =
   case msub of
     Nothing -> DataSourcePath'Timescan0'NoTimescan0
     (Just sub) -> case sub of
@@ -533,7 +533,7 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
         newImagePath = overload'ImagePath detector mImage imagePath
         newMaskPath = overloadMaskPath common maskPath
         newTimestampPath = overload'DataSourcePath'Timestamp msub indexP
-        newTimescan0Path = overloadTimescan0Path msub timescan0P
+        newTimescan0Path = overload'DataSourcePath'Timescan0 msub timescan0P
         newScannumberPath = scannumberPath -- this is not overloadable
     in
       DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newMaskPath newTimestampPath newTimescan0Path newScannumberPath
@@ -591,11 +591,11 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       -- timescan0
       let mkTimescan0'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0
           mkTimescan0'Sbs msub'
-            = overloadTimescan0Path msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
+            = overload'DataSourcePath'Timescan0 msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
 
       let mkTimescan0'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourcePath Timescan0
           mkTimescan0'Fly msub'
-            = overloadTimescan0Path msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+            = overload'DataSourcePath'Timescan0 msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
 
       -- wavelength
       let dataSourcePath'WaveLength'Diffabs :: DataSourcePath Double
