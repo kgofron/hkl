@@ -508,9 +508,9 @@ overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Dummy _ att v) =
 overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
 overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
 
-overloadMaskPath :: Config Common -> DataSourcePath Mask -> DataSourcePath Mask
-overloadMaskPath c DataSourcePath'Mask'NoMask  = mk'DataSourcePath'Mask c
-overloadMaskPath c (DataSourcePath'Mask path _) =
+overload'DataSourcePath'Mask :: Config Common -> DataSourcePath Mask -> DataSourcePath Mask
+overload'DataSourcePath'Mask c DataSourcePath'Mask'NoMask  = mk'DataSourcePath'Mask c
+overload'DataSourcePath'Mask c (DataSourcePath'Mask path _) =
     let new_path = case binocularsConfig'Common'Maskmatrix c of
                      Nothing -> path
                      Just p  -> p
@@ -531,7 +531,7 @@ overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQC
         newAttenuationPath = overload'DataSourcePath'Attenuation mAttCoef mMaxAtt attenuationPath'
         newGeometryPath = overload'DataSourcePath'Geometry mWavelength geometryPath
         newImagePath = overload'DataSourcePath'Image detector mImage imagePath
-        newMaskPath = overloadMaskPath common maskPath
+        newMaskPath = overload'DataSourcePath'Mask common maskPath
         newTimestampPath = overload'DataSourcePath'Timestamp msub indexP
         newTimescan0Path = overload'DataSourcePath'Timescan0 msub timescan0P
         newScannumberPath = scannumberPath -- this is not overloadable
