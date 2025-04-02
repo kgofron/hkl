@@ -1235,6 +1235,9 @@ replace' proj msub i l dtmpl midx = unpack
 -- Parser utils --
 ------------------
 
+parseError :: Text -> Text -> String -> Either String r
+parseError s f err = Left ("Can not parse " <> unpack s <> "." <> unpack f <> ": " <> err)
+
 parse' :: HasFieldValue b => Text -> Text -> Text -> Either String (Maybe b)
 parse' c s f = parseIniFile c $ Data.Ini.Config.section s (fieldMbOf f auto')
 
@@ -1244,7 +1247,7 @@ eitherF _ (Right b) fb = fb b
 
 parseF :: HasFieldValue b
        => Text -> Text -> Text -> (Maybe b -> Either String r) -> Either String r
-parseF c s f = eitherF error (parse' c s f)
+parseF c s f = eitherF (parseError s f) (parse' c s f)
 
 parseFDef :: HasFieldValue p
           => Text -> Text -> Text -> p -> Either String p
@@ -1254,11 +1257,15 @@ parseFDef c s f def = parseF c s f $ \case
 
 parseMb ::  HasFieldValue r
         => Text -> Text -> Text -> Either String (Maybe r)
-parseMb c s f = eitherF error (parse' c s f) pure
+parseMb c s f = eitherF (parseError s f) (parse' c s f) pure
 
 parseMbDef :: HasFieldValue r
            => Text -> Text -> Text -> Maybe r -> Maybe r
 parseMbDef c s f def = eitherF error (parse' c s f) (<|> def)
+
+-----------------
+-- Ini Emitter --
+-----------------
 
 elemFDef' :: HasFieldComment w => Text -> (v -> w) -> v -> v -> [(Text, Text)]
 elemFDef' k f v d = elemFDef k f v d (fieldComment (f v))

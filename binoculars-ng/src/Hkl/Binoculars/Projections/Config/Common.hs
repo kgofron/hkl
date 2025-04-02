@@ -192,7 +192,7 @@ instance HasIniConfig Common where
                                                        , "the list of known detectors is:"]
                                                        <> [" - " <> pack n | (Detector2D _ n _) <- detectors]
                                                       )
-                                                      <> elemFMbDef "image" binocularsConfig'Common'Image c defaultConfig
+                                                      <> elemFMbDef "images" binocularsConfig'Common'Image c defaultConfig
                                                       [ "where to find the image in the files JSON encoded" ]
                                                       <> elemFDef "centralpixel" binocularsConfig'Common'Centralpixel c defaultConfig
                                                       [ "x,y coordinates in pixels of the direct beam on the detector."
@@ -375,7 +375,7 @@ instance HasIniConfig Common where
                                                                    SixsFlyScanUhvGisaxsEiger -> mkDetector HklBinocularsDetectorEnum'DectrisEiger1M
                                                                    SixsFlyScanUhvUfxc -> mkDetector HklBinocularsDetectorEnum'Ufxc
                                             )
-         binocularsConfig'Common'Image <- parseMb cfg "input" "image"
+         binocularsConfig'Common'Image <- parseMb cfg "input" "images"
          binocularsConfig'Common'Centralpixel <- eitherF error (parse' cfg "input" "centralpixel")
                                                 (\mc -> do
                                                    case mc of
