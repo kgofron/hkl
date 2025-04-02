@@ -12,6 +12,7 @@ import           Control.Monad.IO.Class             (liftIO)
 import           Data.Attoparsec.Text               (Parser, parseOnly)
 import           Data.Either                        (isRight)
 import           Data.Ini.Config                    (IniParser, parseIniFile)
+import           Data.Ini.Config.Bidir              (FieldValue (..))
 import           Data.List.NonEmpty                 (NonEmpty (..))
 import           Data.Text                          (unpack)
 import           Data.Tree                          (Tree (..))
@@ -23,7 +24,11 @@ import           Test.Hspec.QuickCheck              (prop)
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Projections.QCustom
+import           Hkl.DataSource                     ()
+import           Hkl.Detector
 import           Hkl.Geometry
+import           Hkl.H5
+import           Hkl.Image
 import           Hkl.Lattice
 import           Hkl.Repa
 
@@ -68,13 +73,48 @@ spec = do
     prop "quickcheck" $
       \x -> (parseOnly fieldParser . fieldEmitter $ x) `shouldBe` Right (x :: ConfigRange)
 
-    ------------------
-    -- MaskLocation --
-    ------------------
+  --------------------
+  -- DataSourcePath --
+  --------------------
 
-    let it'maskLocation t e = it ("parse a MaskLocation: " <> unpack t) $ do
-          t ~> fieldParser
-          `shouldParse` e
+  describe "DataSourcePath Image" $ do
+         let it'datasource'path'image (t, v)
+                 = do it ("emit a DataSourcePath Image: " <> unpack t) $ do
+                                      (fvEmit fieldvalue $ v) `shouldBe` t
+                      it ("parse a DataSourcePath Image: " <> show v) $ do
+                                      (fvParse fieldvalue $ t) `shouldBe` Right (v :: DataSourcePath Image)
+
+         let tests = [ ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},{\"tag\":\"DataSourcePath'NoAttenuation\"},1],\"tag\":\"DataSourcePath'Image'Dummy\"}"
+                       , (DataSourcePath'Image'Dummy defaultDetector DataSourcePath'NoAttenuation 1.0))
+                     , ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},{\"attenuationPath\":{\"contents\":{\"contents\":[0,{\"contents\":[\"scan_data\",{\"contents\":[{\"contents\":\"attenuation\",\"tag\":\"H5DatasetPath\"},{\"contents\":\"attenuation_old\",\"tag\":\"H5DatasetPath\"}],\"tag\":\"H5Or\"}],\"tag\":\"H5GroupPath\"}],\"tag\":\"H5GroupAtPath\"},\"tag\":\"H5RootPath\"},\"attenuationPathCoefficient\":0,\"attenuationPathMax\":5,\"attenuationPathOffset\":2,\"tag\":\"DataSourcePath'Attenuation\"},10],\"tag\":\"DataSourcePath'Image'Dummy\"}"
+                       , (DataSourcePath'Image'Dummy defaultDetector
+                          (DataSourcePath'Attenuation
+                           (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "attenuation"
+                                                                                           `H5Or`
+                                                                                           datasetp "attenuation_old")))
+                           2 0 (Just 5))
+                          10.0)
+                         )
+                     ]
+
+         mapM_ it'datasource'path'image tests
+
+-- data instance DataSourcePath Image
+--     = DataSourcePath'Image'Dummy (Detector Hkl DIM2) (DataSourcePath Attenuation) Double
+--     | DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
+--     | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Text Scannumber
+--     deriving (Eq, Generic, Show, FromJSON, ToJSON)
+
+
+  ------------------
+  -- MaskLocation --
+  ------------------
+
+  describe "MaskLocation" $ do
+
+    let it'maskLocation t e =
+            it ("parse a MaskLocation: " <> unpack t) $ do
+              t ~> fieldParser `shouldParse` e
 
     it'maskLocation "mask.npy" (MaskLocation "mask.npy")
     it'maskLocation "mask_{scannumber:03d}.npy" (MaskLocation'Tmpl "mask_{scannumber:03d}.npy")
@@ -134,7 +174,7 @@ spec = do
     it'geometry'left "[geometry]\ngeometry_sample=omega chi phi\ngeometry_detector=tth\naxis_omega=rotation 0 -1 0 degree\naxis_chi=rotation 1 0 0 toto\naxis_phi=rotation 0 -1 0 degree\naxis_tth=rotation 0 -1 0 degree\n"
        "Line 5, in section \"geometry\": Failed reading: unknown unit 'toto' only supported are 'ua' 'degree' 'millimeter'"
 
-   --------------------
+  --------------------
   -- Transformation --
   --------------------
 
