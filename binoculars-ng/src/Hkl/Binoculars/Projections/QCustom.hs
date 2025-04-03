@@ -1077,7 +1077,7 @@ instance ChunkP (DataSourcePath DataFrameQCustom) where
       sfp@(ScanFilePath fp _) <- await
       withScanFileP sfp $ \f ->
         withDataSourceP f i $ \i' -> do
-        (_, ss) <- ds'Shape i'
+        DataSourceShape (_, ss) <- ds'Shape i'
         case head ss of
           (Just n) -> yield $ let (Chunk _ from to) = cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk fp 0 (fromIntegral n - 1))
                              in case ma of

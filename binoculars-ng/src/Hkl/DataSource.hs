@@ -24,8 +24,9 @@
 
 module Hkl.DataSource
   ( DataSource(..)
-  , DataSourcePath(..)
   , DataSourceAcq(..)
+  , DataSourcePath(..)
+  , DataSourceShape(..)
   , HklBinocularsException(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
@@ -199,7 +200,8 @@ instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
 -- DataSource --
 ----------------
 
-type DataSourceShape = ([HSize], [Maybe HSize])
+data DataSourceShape
+    = DataSourceShape ([HSize], [Maybe HSize])
 
 class DataSource a where
   data DataSourcePath a :: Type
@@ -324,7 +326,7 @@ instance DataSource Float where
   newtype DataSourceAcq Float
     = DataSourceAcq'Float Dataset
 
-  ds'Shape (DataSourceAcq'Float ds) = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Float ds) = DataSourceShape <$> (liftIO $ datasetShape ds)
 
   withDataSourceP (ScanFile f _) (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
 
@@ -375,10 +377,10 @@ instance DataSource Image where
       | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Text Scannumber (Text -> Scannumber -> Int -> FilePath)
 
   ds'Shape (DataSourceAcq'Image'Dummy a _)           = ds'Shape a
-  ds'Shape (DataSourceAcq'Image'Hdf5'Double _ ds _)  = liftIO $ datasetShape ds
-  ds'Shape (DataSourceAcq'Image'Hdf5'Int32 _ ds _)   = liftIO $ datasetShape ds
-  ds'Shape (DataSourceAcq'Image'Hdf5'Word16 _ ds _)  = liftIO $ datasetShape ds
-  ds'Shape (DataSourceAcq'Image'Hdf5'Word32 _ ds _)  = liftIO $ datasetShape ds
+  ds'Shape (DataSourceAcq'Image'Hdf5'Double _ ds _)  = DataSourceShape <$> (liftIO $ datasetShape ds)
+  ds'Shape (DataSourceAcq'Image'Hdf5'Int32 _ ds _)   = DataSourceShape <$> (liftIO $ datasetShape ds)
+  ds'Shape (DataSourceAcq'Image'Hdf5'Word16 _ ds _)  = DataSourceShape <$> (liftIO $ datasetShape ds)
+  ds'Shape (DataSourceAcq'Image'Hdf5'Word32 _ ds _)  = DataSourceShape <$> (liftIO $ datasetShape ds)
   ds'Shape (DataSourceAcq'Image'Img'Int32 _ _ a _ _ _) = ds'Shape a
 
   withDataSourceP f (DataSourcePath'Image'Dummy det a v) g
