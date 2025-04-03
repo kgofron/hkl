@@ -199,11 +199,13 @@ instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
 -- DataSource --
 ----------------
 
+type DataSourceShape = ([HSize], [Maybe HSize])
+
 class DataSource a where
   data DataSourcePath a :: Type
   data DataSourceAcq a :: Type
 
-  ds'Shape :: MonadSafe m => DataSourceAcq a -> m ([HSize], [Maybe HSize])
+  ds'Shape :: MonadSafe m => DataSourceAcq a -> m DataSourceShape
   ds'Shape = undefined
 
   withDataSourceP :: (Location l, MonadSafe m)
