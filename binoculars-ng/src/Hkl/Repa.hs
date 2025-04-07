@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeOperators         #-}
 
 {-
-    Copyright  : Copyright (C) 2014-2024 Synchrotron SOLEIL
+    Copyright  : Copyright (C) 2014-2025 Synchrotron SOLEIL
                                          L'Orme des Merisiers Saint-Aubin
                                          BP 48 91192 GIF-sur-YVETTE CEDEX
     License    : GPL3+
@@ -28,6 +28,7 @@ module Hkl.Repa
     , extent
     , fromForeignPtr
     , inShape
+    , ix1
     , ix2
     , ix3
     , linearIndex
@@ -204,6 +205,9 @@ inShape sh ix
 showShape :: Shape sh => sh -> String
 showShape = foldr (\sh str -> str ++ " :. " ++ show sh) "Z" . listOfShape
 
+
+ix1 :: Int -> DIM1
+ix1 x = Z :. x
 
 ix2 :: Int -> Int -> DIM2
 ix2 y x = Z :. y :. x

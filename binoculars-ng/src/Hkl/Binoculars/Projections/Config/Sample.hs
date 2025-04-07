@@ -76,6 +76,18 @@ instance DataSource Sample where
       (DataSourceAcq Degree)
       (DataSourceAcq Degree)
 
+  ds'Shape (DataSourceAcq'Sample a b c alpha beta gamma ux uy uz)
+      = do sa <- ds'Shape a
+           sb <- ds'Shape b
+           sc <- ds'Shape c
+           salpha <- ds'Shape alpha
+           sbeta <- ds'Shape beta
+           sgamma <- ds'Shape gamma
+           sux <- ds'Shape ux
+           suy <- ds'Shape uy
+           suz <- ds'Shape uz
+           pure $ foldl1 combine'Shape [sa, sb, sc, salpha, sbeta, sgamma, sux, suy, suz]
+
   withDataSourceP f (DataSourcePath'Sample a b c alpha beta gamma ux uy uz) g =
     withDataSourceP f a $ \a' ->
     withDataSourceP f b $ \b' ->

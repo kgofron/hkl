@@ -30,9 +30,11 @@ module Hkl.DataSource
   , HklBinocularsException(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
+  , combine'Shape
+  , length'DataSourceShape
   ) where
 
-import           Bindings.HDF5.Core                (HSize, Location)
+import           Bindings.HDF5.Core                (Location)
 import           Bindings.HDF5.Dataset             (getDatasetSpace,
                                                     getDatasetType)
 import           Bindings.HDF5.Dataspace           (getSimpleDataspaceExtentNPoints)
@@ -181,7 +183,7 @@ instance  Is1DStreamable (DataSourceAcq Geometry) Geometry where
                      (Geometry'Factory factory _) -> Geometry'Factory factory (Just state)
 
 instance Is1DStreamable (DataSourceAcq Image) Image where
-  extract1DStreamValue (DataSourceAcq'Image'Dummy _ buf) _ = pure $ ImageDouble buf
+  extract1DStreamValue (DataSourceAcq'Image'Dummy buf) _ = pure $ ImageDouble buf
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Double det ds buf) i = ImageDouble <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 det ds buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word16 det ds buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
@@ -201,14 +203,33 @@ instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
 ----------------
 
 data DataSourceShape
-    = DataSourceShape ([HSize], [Maybe HSize])
+    = DataSourceShape'Range !DIM1 !DIM1
+
+combine'Shape :: DataSourceShape -> DataSourceShape -> DataSourceShape
+combine'Shape (DataSourceShape'Range _ (Z :. 1)) s = s
+combine'Shape s (DataSourceShape'Range _ (Z :. 1)) = s
+combine'Shape (DataSourceShape'Range (Z :. f1) (Z :. t1)) (DataSourceShape'Range (Z :. f2) (Z :. t2))
+    = DataSourceShape'Range (ix1 (max f1 f2)) (ix1 (min t1 t2))
+
+
+shape1 :: DataSourceShape
+shape1 = DataSourceShape'Range (Z :. 0) (Z :. 1)
+
+ds'Shape'Dataset :: Dataset -> IO DataSourceShape
+ds'Shape'Dataset ds = do
+  (t:_, mt:_) <- datasetShape ds
+  case mt of
+    Just t' -> pure $ DataSourceShape'Range (ix1 0) (ix1 (fromIntegral t'))
+    Nothing -> pure $ DataSourceShape'Range (ix1 0) (ix1 (fromIntegral t))
+
+length'DataSourceShape :: DataSourceShape -> Int
+length'DataSourceShape (DataSourceShape'Range (Z :. f) (Z :. t)) = t - f
 
 class DataSource a where
   data DataSourcePath a :: Type
   data DataSourceAcq a :: Type
 
   ds'Shape :: MonadSafe m => DataSourceAcq a -> m DataSourceShape
-  ds'Shape = undefined
 
   withDataSourceP :: (Location l, MonadSafe m)
                     => ScanFile l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
@@ -265,6 +286,9 @@ instance DataSource Degree where
     = DataSourceAcq'Degree Dataset
     | DataSourceAcq'Degree'Const Degree
 
+  ds'Shape (DataSourceAcq'Degree ds)      = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Degree'Const _) = pure $ shape1
+
   withDataSourceP (ScanFile f _) (DataSourcePath'Degree p) g
     = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
   withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
@@ -282,6 +306,9 @@ instance DataSource Double where
   data DataSourceAcq Double
     = DataSourceAcq'Double Dataset
     | DataSourceAcq'Double'Const Double
+
+  ds'Shape (DataSourceAcq'Double ds)      = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Double'Const _) = pure $ shape1
 
   withDataSourceP (ScanFile f _) (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> do
     space <- liftIO $ getDatasetSpace ds
@@ -312,6 +339,10 @@ instance DataSource [Double] where
     data DataSourceAcq [Double]
         = DataSourceAcq'List [DataSourceAcq Double]
 
+    ds'Shape  (DataSourceAcq'List ds)
+        = do ss <- mapM ds'Shape ds
+             pure $ foldl1 combine'Shape ss
+
     withDataSourceP f (DataSourcePath'List ps) g
         = nest (Prelude.map (withDataSourceP f) ps) (\as -> g $ (DataSourceAcq'List as))
 
@@ -326,7 +357,7 @@ instance DataSource Float where
   newtype DataSourceAcq Float
     = DataSourceAcq'Float Dataset
 
-  ds'Shape (DataSourceAcq'Float ds) = DataSourceShape <$> (liftIO $ datasetShape ds)
+  ds'Shape (DataSourceAcq'Float ds) = liftIO $ ds'Shape'Dataset ds
 
   withDataSourceP (ScanFile f _) (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
 
@@ -347,6 +378,11 @@ instance DataSource Geometry where
       (DataSourceAcq Double)
       (DataSourceAcq [Double])
 
+  ds'Shape (DataSourceAcq'Geometry _ w as)
+      = do sw <- ds'Shape w
+           sas <- ds'Shape as
+           pure $ sw `combine'Shape` sas
+
   withDataSourceP f (DataSourcePath'Geometry g w as) gg =
     withDataSourceP f w $ \w' ->
     withDataSourceP f as $ \as' -> do
@@ -363,32 +399,30 @@ condM ((p, v):ls) = ifM p v (condM ls)
 
 instance DataSource Image where
   data instance DataSourcePath Image
-    = DataSourcePath'Image'Dummy (Detector Hkl DIM2) (DataSourcePath Attenuation) Double
+    = DataSourcePath'Image'Dummy (Detector Hkl DIM2) Double
     | DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
     | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Text Scannumber
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
   data instance DataSourceAcq Image
-      = DataSourceAcq'Image'Dummy (DataSourceAcq Attenuation) (IOVector Double)
+      = DataSourceAcq'Image'Dummy (IOVector Double)
       | DataSourceAcq'Image'Hdf5'Double (Detector Hkl DIM2) Dataset (IOVector Double)
       | DataSourceAcq'Image'Hdf5'Int32 (Detector Hkl DIM2) Dataset (IOVector Int32)
       | DataSourceAcq'Image'Hdf5'Word16 (Detector Hkl DIM2) Dataset (IOVector Word16)
       | DataSourceAcq'Image'Hdf5'Word32 (Detector Hkl DIM2) Dataset (IOVector Word32)
       | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Text Scannumber (Text -> Scannumber -> Int -> FilePath)
 
-  ds'Shape (DataSourceAcq'Image'Dummy a _)           = ds'Shape a
-  ds'Shape (DataSourceAcq'Image'Hdf5'Double _ ds _)  = DataSourceShape <$> (liftIO $ datasetShape ds)
-  ds'Shape (DataSourceAcq'Image'Hdf5'Int32 _ ds _)   = DataSourceShape <$> (liftIO $ datasetShape ds)
-  ds'Shape (DataSourceAcq'Image'Hdf5'Word16 _ ds _)  = DataSourceShape <$> (liftIO $ datasetShape ds)
-  ds'Shape (DataSourceAcq'Image'Hdf5'Word32 _ ds _)  = DataSourceShape <$> (liftIO $ datasetShape ds)
+  ds'Shape (DataSourceAcq'Image'Dummy _)             = pure $ DataSourceShape'Range (ix1 0) (ix1 1)
+  ds'Shape (DataSourceAcq'Image'Hdf5'Double _ ds _)  = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Image'Hdf5'Int32 _ ds _)   = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Image'Hdf5'Word16 _ ds _)  = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Image'Hdf5'Word32 _ ds _)  = liftIO $ ds'Shape'Dataset ds
   ds'Shape (DataSourceAcq'Image'Img'Int32 _ _ a _ _ _) = ds'Shape a
 
-  withDataSourceP f (DataSourcePath'Image'Dummy det a v) g
-      =  withDataSourceP f a $ \a' ->
-         do
-           let n = (size . shape $ det)
-           arr <- liftIO $ replicate n v
-           g (DataSourceAcq'Image'Dummy a' arr)
+  withDataSourceP _ (DataSourcePath'Image'Dummy det v) g
+      =  do let n = (size . shape $ det)
+            arr <- liftIO $ replicate n v
+            g (DataSourceAcq'Image'Dummy arr)
 
   withDataSourceP (ScanFile f _) (DataSourcePath'Image'Hdf5 det p) g = withHdf5PathP f p $ \ds -> do
     t <- liftIO $ getDatasetType ds
@@ -428,6 +462,8 @@ instance DataSource Int where
     deriving (Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
 
+  ds'Shape _ = pure $ shape1
+
   newtype DataSourceAcq Int
     = DataSourceAcq'Int Int
 
@@ -446,6 +482,8 @@ instance DataSource Mask where
         = DataSourceAcq'Mask Mask
         | DataSourceAcq'Mask'NoMask
 
+    ds'Shape _ = pure $ shape1
+
     withDataSourceP _ DataSourcePath'Mask'NoMask g = g DataSourceAcq'Mask'NoMask
     withDataSourceP (ScanFile _ sn)  (DataSourcePath'Mask l d) g
         = do  m <- getMask l d sn
@@ -459,6 +497,8 @@ instance DataSource Scannumber where
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
   data DataSourceAcq Scannumber = DataSourceAcq'Scannumber'Const Scannumber
+
+  ds'Shape _ = pure $ shape1
 
   withDataSourceP (ScanFile _ s) DataSourcePath'Scannumber g = g (DataSourceAcq'Scannumber'Const s)
 
@@ -474,6 +514,9 @@ instance DataSource Timestamp where
   data DataSourceAcq Timestamp = DataSourceAcq'Timestamp Dataset
                                | DataSourceAcq'Timestamp'NoTimestamp
 
+  ds'Shape (DataSourceAcq'Timestamp ds)        = liftIO $ ds'Shape'Dataset ds
+  ds'Shape DataSourceAcq'Timestamp'NoTimestamp = pure $ shape1
+
   withDataSourceP (ScanFile f _) (DataSourcePath'Timestamp p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timestamp ds)
   withDataSourceP _ DataSourcePath'Timestamp'NoTimestamp g = g DataSourceAcq'Timestamp'NoTimestamp
 
@@ -487,6 +530,9 @@ instance DataSource Timescan0 where
 
   data DataSourceAcq Timescan0 = DataSourceAcq'Timescan0 Dataset
                                | DataSourceAcq'Timescan0'NoTimescan0
+
+  ds'Shape (DataSourceAcq'Timescan0 ds)        = liftIO $ ds'Shape'Dataset ds
+  ds'Shape DataSourceAcq'Timescan0'NoTimescan0 = pure $ shape1
 
   withDataSourceP (ScanFile f _) (DataSourcePath'Timescan0 p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timescan0 ds)
   withDataSourceP _ DataSourcePath'Timescan0'NoTimescan0 g = g DataSourceAcq'Timescan0'NoTimescan0

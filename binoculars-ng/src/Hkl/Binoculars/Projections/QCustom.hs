@@ -121,6 +121,16 @@ instance DataSource DataFrameQCustom where
       (DataSourceAcq Timescan0)
       (DataSourceAcq Scannumber)
 
+  ds'Shape(DataSourceAcq'DataFrameQCustom a g i m idx t0 s)
+      = do sa <- ds'Shape a
+           sg <- ds'Shape g
+           si <- ds'Shape i
+           sm <- ds'Shape m
+           sidx <- ds'Shape idx
+           st0 <- ds'Shape t0
+           ss <- ds'Shape s
+           pure $ foldl1 combine'Shape [sa, sg, si, sm, sidx, st0, ss]
+
   withDataSourceP f (DataSourcePath'DataFrameQCustom a g i m idx t0 s) gg =
     withDataSourceP f a $ \a' ->
     withDataSourceP f g $ \g' ->
@@ -504,7 +514,7 @@ overload'DataSourcePath'Geometry mw (DataSourcePath'Geometry'Fix wp) = DataSourc
 
 overload'DataSourcePath'Image :: Detector Hkl DIM2 -> Maybe (DataSourcePath Image) -> DataSourcePath Image -> DataSourcePath Image
 overload'DataSourcePath'Image _ (Just i) _ = i
-overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Dummy _ att v) = DataSourcePath'Image'Dummy det att v
+overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Dummy _ v) = DataSourcePath'Image'Dummy det v
 overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
 overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
 
@@ -1072,19 +1082,18 @@ processQCustomP = do
 
 
 instance ChunkP (DataSourcePath DataFrameQCustom) where
-    chunkP mSkipFirst mSkipLast (DataSourcePath'DataFrameQCustom ma _ i _ _ _ _) =
+    chunkP mSkipFirst mSkipLast p@(DataSourcePath'DataFrameQCustom ma _ _ _ _ _ _) =
       skipMalformed $ forever $ do
       sfp@(ScanFilePath fp _) <- await
       withScanFileP sfp $ \f ->
-        withDataSourceP f i $ \i' -> do
-        DataSourceShape (_, ss) <- ds'Shape i'
-        case head ss of
-          (Just n) -> yield $ let (Chunk _ from to) = cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk fp 0 (fromIntegral n - 1))
-                             in case ma of
-                                  DataSourcePath'NoAttenuation -> Chunk sfp from to
-                                  (DataSourcePath'Attenuation _ off _ _) -> Chunk sfp from (to - off)
-                                  (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk sfp from to
-          Nothing  -> error "can not extract length"
+        withDataSourceP f p $ \p' -> do
+          sh <- ds'Shape p'
+          let n = length'DataSourceShape sh
+          yield $ let (Chunk _ from to) = cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk fp 0 (fromIntegral n - 1))
+                  in case ma of
+                       DataSourcePath'NoAttenuation -> Chunk sfp from to
+                       (DataSourcePath'Attenuation _ off _ _) -> Chunk sfp from (to - off)
+                       (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk sfp from to
 
 instance FramesP (DataSourcePath DataFrameQCustom) DataFrameQCustom where
     framesP p =

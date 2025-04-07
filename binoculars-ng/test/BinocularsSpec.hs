@@ -84,17 +84,10 @@ spec = do
                       it ("parse a DataSourcePath Image: " <> show v) $ do
                                       (fvParse fieldvalue $ t) `shouldBe` Right (v :: DataSourcePath Image)
 
-         let tests = [ ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},{\"tag\":\"DataSourcePath'NoAttenuation\"},1],\"tag\":\"DataSourcePath'Image'Dummy\"}"
-                       , (DataSourcePath'Image'Dummy defaultDetector DataSourcePath'NoAttenuation 1.0))
-                     , ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},{\"attenuationPath\":{\"contents\":{\"contents\":[0,{\"contents\":[\"scan_data\",{\"contents\":[{\"contents\":\"attenuation\",\"tag\":\"H5DatasetPath\"},{\"contents\":\"attenuation_old\",\"tag\":\"H5DatasetPath\"}],\"tag\":\"H5Or\"}],\"tag\":\"H5GroupPath\"}],\"tag\":\"H5GroupAtPath\"},\"tag\":\"H5RootPath\"},\"attenuationPathCoefficient\":0,\"attenuationPathMax\":5,\"attenuationPathOffset\":2,\"tag\":\"DataSourcePath'Attenuation\"},10],\"tag\":\"DataSourcePath'Image'Dummy\"}"
-                       , (DataSourcePath'Image'Dummy defaultDetector
-                          (DataSourcePath'Attenuation
-                           (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "attenuation"
-                                                                                           `H5Or`
-                                                                                           datasetp "attenuation_old")))
-                           2 0 (Just 5))
-                          10.0)
-                         )
+         let tests = [ ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},1],\"tag\":\"DataSourcePath'Image'Dummy\"}"
+                       , (DataSourcePath'Image'Dummy defaultDetector 1.0))
+                     , ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},100],\"tag\":\"DataSourcePath'Image'Dummy\"}"
+                       , (DataSourcePath'Image'Dummy defaultDetector 100))
                      ]
 
          mapM_ it'datasource'path'image tests
