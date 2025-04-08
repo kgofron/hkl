@@ -266,9 +266,12 @@ instance DataSource Attenuation where
     | DataSourceAcq'ApplyedAttenuationFactor { attenuationAcqPath :: DataSourceAcq Float }
     | DataSourceAcq'NoAttenuation
 
-  ds'Shape (DataSourceAcq'Attenuation fp _ _ _)        = ds'Shape fp
+  ds'Shape (DataSourceAcq'Attenuation fp off _ _)
+      = do (DataSourceShape'Range f (Z :. t)) <- ds'Shape fp
+           pure $ DataSourceShape'Range f (Z :. (t - off))
   ds'Shape (DataSourceAcq'ApplyedAttenuationFactor fp) = ds'Shape fp
-  ds'Shape DataSourceAcq'NoAttenuation                 = undefined
+  ds'Shape DataSourceAcq'NoAttenuation                 = pure shape1
+
 
   withDataSourceP f (DataSourcePath'Attenuation p o c m) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'Attenuation ds o c m)
   withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourceP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)

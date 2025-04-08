@@ -1082,18 +1082,13 @@ processQCustomP = do
 
 
 instance ChunkP (DataSourcePath DataFrameQCustom) where
-    chunkP mSkipFirst mSkipLast p@(DataSourcePath'DataFrameQCustom ma _ _ _ _ _ _) =
+    chunkP mSkipFirst mSkipLast p =
       skipMalformed $ forever $ do
-      sfp@(ScanFilePath fp _) <- await
-      withScanFileP sfp $ \f ->
-        withDataSourceP f p $ \p' -> do
-          sh <- ds'Shape p'
-          let n = length'DataSourceShape sh
-          yield $ let (Chunk _ from to) = cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk fp 0 (fromIntegral n - 1))
-                  in case ma of
-                       DataSourcePath'NoAttenuation -> Chunk sfp from to
-                       (DataSourcePath'Attenuation _ off _ _) -> Chunk sfp from (to - off)
-                       (DataSourcePath'ApplyedAttenuationFactor _) -> Chunk sfp from to
+      sfp <- await
+      withScanFileP sfp $ \f' ->
+        withDataSourceP f' p $ \p' -> do
+          (DataSourceShape'Range (Z :. f) (Z :. t)) <- ds'Shape p'
+          yield $ cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk sfp f (t - 1))
 
 instance FramesP (DataSourcePath DataFrameQCustom) DataFrameQCustom where
     framesP p =
