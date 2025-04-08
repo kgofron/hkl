@@ -82,16 +82,16 @@ data DataFrameTest' f
     }
   deriving (Generic)
 
-deriving instance Show (DataFrameTest' DataSourcePath)
-instance FromJSON (DataFrameTest' DataSourcePath)
-instance ToJSON (DataFrameTest' DataSourcePath)
+deriving instance Show (DataFrameTest' (DataSourceT DSPath))
+instance FromJSON (DataFrameTest' (DataSourceT DSPath))
+instance ToJSON (DataFrameTest' (DataSourceT DSPath))
 
-defaultDataSourcePath'DataFrameTest :: DataFrameTest' DataSourcePath
+defaultDataSourcePath'DataFrameTest :: DataFrameTest' (DataSourceT DSPath)
 defaultDataSourcePath'DataFrameTest = DataFrameTest
                                      default'DataSourcePath'DataFrameQCustom
                                      default'DataSourcePath'Sample
 
-instance HasFieldComment (DataFrameTest' DataSourcePath) where
+instance HasFieldComment (DataFrameTest' (DataSourceT DSPath)) where
   fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
                    , ""
                    , "This value is for expert only."
@@ -99,7 +99,7 @@ instance HasFieldComment (DataFrameTest' DataSourcePath) where
                    , "default value: <not set>"
                    ]
 
-instance HasFieldValue (DataFrameTest' DataSourcePath) where
+instance HasFieldValue (DataFrameTest' (DataSourceT DSPath)) where
   fieldvalue = autoJSON
 
 ------------
@@ -108,8 +108,8 @@ instance HasFieldValue (DataFrameTest' DataSourcePath) where
 
 overload'DataSourcePath'DataFrameTest :: Config Common
                                       -> Config Sample
-                                      -> DataFrameTest' DataSourcePath
-                                      -> DataFrameTest' DataSourcePath
+                                      -> DataFrameTest' (DataSourceT DSPath)
+                                      -> DataFrameTest' (DataSourceT DSPath)
 overload'DataSourcePath'DataFrameTest common sample (DataFrameTest qCustomPath samplePath)
   = DataFrameTest newQCustomPath newSamplePath
   where
@@ -124,7 +124,7 @@ instance HasIniConfig 'TestProjection where
       , binocularsConfig'Test'ProjectionType         :: ProjectionType
       , binocularsConfig'Test'ProjectionResolution   :: Resolutions DIM3
       , binocularsConfig'Test'ProjectionLimits       :: Maybe (RLimits DIM3)
-      , binocularsConfig'Test'DataPath               :: DataFrameTest' DataSourcePath
+      , binocularsConfig'Test'DataPath               :: DataFrameTest' (DataSourceT DSPath)
       } deriving (Generic)
 
   newtype Args 'TestProjection = Args'TestProjection (Maybe ConfigRange)
@@ -273,10 +273,10 @@ processTestP = do
 
 -- FramesTestP
 
-instance ChunkP (DataFrameTest' DataSourcePath) where
+instance ChunkP (DataFrameTest' (DataSourceT DSPath)) where
   chunkP sf sl (DataFrameTest p _) = chunkP sf sl p
 
-instance FramesP (DataFrameTest' DataSourcePath) (DataFrameTest' Identity) where
+instance FramesP (DataFrameTest' (DataSourceT DSPath)) (DataFrameTest' Identity) where
   framesP (DataFrameTest qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
     withScanFileP fp $ \f ->
@@ -294,7 +294,7 @@ instance FramesP (DataFrameTest' DataSourcePath) (DataFrameTest' Identity) where
 guess'DataSourcePath'DataFrameTest :: Config Common
                                    -> Config Sample
                                    -> ConfigContent
-                                   -> DataFrameTest' DataSourcePath
+                                   -> DataFrameTest' (DataSourceT DSPath)
 guess'DataSourcePath'DataFrameTest common sample content
   = DataFrameTest
     (guess'DataSourcePath'DataFrameQCustom common Nothing content)

@@ -85,16 +85,16 @@ data DataFrameHkl' f
     }
   deriving (Generic)
 
-deriving instance Show (DataFrameHkl' DataSourcePath)
-instance FromJSON (DataFrameHkl' DataSourcePath)
-instance ToJSON (DataFrameHkl' DataSourcePath)
+deriving instance Show (DataFrameHkl' (DataSourceT DSPath))
+instance FromJSON (DataFrameHkl' (DataSourceT DSPath))
+instance ToJSON (DataFrameHkl' (DataSourceT DSPath))
 
-defaultDataSourcePath'DataFrameHkl :: DataFrameHkl' DataSourcePath
+defaultDataSourcePath'DataFrameHkl :: DataFrameHkl' (DataSourceT DSPath)
 defaultDataSourcePath'DataFrameHkl = DataFrameHkl
                                      default'DataSourcePath'DataFrameQCustom
                                      default'DataSourcePath'Sample
 
-instance HasFieldComment (DataFrameHkl' DataSourcePath) where
+instance HasFieldComment (DataFrameHkl' (DataSourceT DSPath)) where
   fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
                    , ""
                    , "This value is for expert only."
@@ -102,7 +102,7 @@ instance HasFieldComment (DataFrameHkl' DataSourcePath) where
                    , "default value: <not set>"
                    ]
 
-instance HasFieldValue (DataFrameHkl' DataSourcePath) where
+instance HasFieldValue (DataFrameHkl' (DataSourceT DSPath)) where
   fieldvalue = autoJSON
 
 ------------
@@ -111,8 +111,8 @@ instance HasFieldValue (DataFrameHkl' DataSourcePath) where
 
 overload'DataSourcePath'DataFrameHkl :: Config Common
                                      -> Config Sample
-                                     -> DataFrameHkl' DataSourcePath
-                                     -> DataFrameHkl' DataSourcePath
+                                     -> DataFrameHkl' (DataSourceT DSPath)
+                                     -> DataFrameHkl' (DataSourceT DSPath)
 overload'DataSourcePath'DataFrameHkl common sample (DataFrameHkl qCustomPath samplePath)
   = DataFrameHkl newQCustomPath newSamplePath
   where
@@ -127,7 +127,7 @@ instance HasIniConfig 'HklProjection where
       , binocularsConfig'Hkl'ProjectionType         :: ProjectionType
       , binocularsConfig'Hkl'ProjectionResolution   :: Resolutions DIM3
       , binocularsConfig'Hkl'ProjectionLimits       :: Maybe (RLimits DIM3)
-      , binocularsConfig'Hkl'DataPath               :: DataFrameHkl' DataSourcePath
+      , binocularsConfig'Hkl'DataPath               :: DataFrameHkl' (DataSourceT DSPath)
       } deriving (Generic)
 
   newtype Args 'HklProjection
@@ -277,10 +277,10 @@ processHklP = do
 
 -- FramesHklP
 
-instance ChunkP (DataFrameHkl' DataSourcePath) where
+instance ChunkP (DataFrameHkl' (DataSourceT DSPath)) where
   chunkP sf sl (DataFrameHkl p _) = chunkP sf sl p
 
-instance FramesP (DataFrameHkl' DataSourcePath) (DataFrameHkl' Identity) where
+instance FramesP (DataFrameHkl' (DataSourceT DSPath)) (DataFrameHkl' Identity) where
   framesP (DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
     (fp, js) <- await
     withScanFileP fp $ \f ->
@@ -298,7 +298,7 @@ instance FramesP (DataFrameHkl' DataSourcePath) (DataFrameHkl' Identity) where
 guess'DataSourcePath'DataFrameHkl :: Config Common
                                   -> Config Sample
                                   -> ConfigContent
-                                  -> DataFrameHkl' DataSourcePath
+                                  -> DataFrameHkl' (DataSourceT DSPath)
 guess'DataSourcePath'DataFrameHkl common sample content
   = DataFrameHkl
     (guess'DataSourcePath'DataFrameQCustom common Nothing content)

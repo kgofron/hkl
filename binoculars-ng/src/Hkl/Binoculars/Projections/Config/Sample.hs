@@ -50,31 +50,31 @@ import           Hkl.Types
 ----------------
 
 instance DataSource Sample where
-  data DataSourcePath Sample
+  data DataSourceT DSPath Sample
     = DataSourcePath'Sample
-      (DataSourcePath Double) -- a
-      (DataSourcePath Double) -- b
-      (DataSourcePath Double) -- c
-      (DataSourcePath Degree) -- alpha
-      (DataSourcePath Degree) -- beta
-      (DataSourcePath Degree) -- gamma
-      (DataSourcePath Degree) -- ux
-      (DataSourcePath Degree) -- uy
-      (DataSourcePath Degree) -- uz
-    | DataSourcePath'Sample'Or (DataSourcePath Sample) (DataSourcePath Sample)
+      (DataSourceT DSPath Double) -- a
+      (DataSourceT DSPath Double) -- b
+      (DataSourceT DSPath Double) -- c
+      (DataSourceT DSPath Degree) -- alpha
+      (DataSourceT DSPath Degree) -- beta
+      (DataSourceT DSPath Degree) -- gamma
+      (DataSourceT DSPath Degree) -- ux
+      (DataSourceT DSPath Degree) -- uy
+      (DataSourceT DSPath Degree) -- uz
+    | DataSourcePath'Sample'Or (DataSourceT DSPath Sample) (DataSourceT DSPath Sample)
     deriving (FromJSON, Generic, Show, ToJSON)
 
-  data DataSourceAcq Sample
+  data DataSourceT DSAcq Sample
     = DataSourceAcq'Sample
-      (DataSourceAcq Double)
-      (DataSourceAcq Double)
-      (DataSourceAcq Double)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
-      (DataSourceAcq Degree)
+      (DataSourceT DSAcq Double)
+      (DataSourceT DSAcq Double)
+      (DataSourceT DSAcq Double)
+      (DataSourceT DSAcq Degree)
+      (DataSourceT DSAcq Degree)
+      (DataSourceT DSAcq Degree)
+      (DataSourceT DSAcq Degree)
+      (DataSourceT DSAcq Degree)
+      (DataSourceT DSAcq Degree)
 
   ds'Shape (DataSourceAcq'Sample a b c alpha beta gamma ux uy uz)
       = do sa <- ds'Shape a
@@ -100,7 +100,7 @@ instance DataSource Sample where
     withDataSourceP f uz $ \uz' -> g (DataSourceAcq'Sample a' b' c' alpha' beta' gamma' ux' uy' uz')
   withDataSourceP f (DataSourcePath'Sample'Or l r) g = withDataSourcePOr f l r g
 
-instance Is0DStreamable (DataSourceAcq Sample) Sample where
+instance Is0DStreamable (DataSourceT DSAcq Sample) Sample where
   extract0DStreamValue (DataSourceAcq'Sample a b c alpha beta gamma ux uy uz) =
     Sample "test"
     <$> (Triclinic
@@ -120,7 +120,7 @@ instance Is0DStreamable (DataSourceAcq Sample) Sample where
          <$> extract0DStreamValue uz
          <*> pure (Range 0 0))
 
-default'DataSourcePath'Sample :: DataSourcePath Sample
+default'DataSourcePath'Sample :: DataSourceT DSPath Sample
 default'DataSourcePath'Sample = DataSourcePath'Sample
   (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A"))
   (DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B"))
@@ -134,8 +134,8 @@ default'DataSourcePath'Sample = DataSourcePath'Sample
 
 
 overload'DataSourcePath'Sample :: Config Sample
-                               -> DataSourcePath Sample
-                               -> DataSourcePath Sample
+                               -> DataSourceT DSPath Sample
+                               -> DataSourceT DSPath Sample
 overload'DataSourcePath'Sample (BinocularsConfig'Sample ma mb mc malpha mbeta mgamma mux muy muz) (DataSourcePath'Sample pa pb pc palpha pbeta pgamma pux puy puz)
   = DataSourcePath'Sample
     (maybe pa DataSourcePath'Double'Const ma)
@@ -154,7 +154,7 @@ overload'DataSourcePath'Sample c (DataSourcePath'Sample'Or l r)
 
 guess'DataSourcePath'Sample :: Config Common
                            -> Config Sample
-                           -> DataSourcePath Sample
+                           -> DataSourceT DSPath Sample
 guess'DataSourcePath'Sample common sample =
   do let inputType = binocularsConfig'Common'InputType common
      let samplePath' beamline device =

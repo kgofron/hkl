@@ -24,10 +24,9 @@ import           Test.Hspec.QuickCheck              (prop)
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Projections.QCustom
-import           Hkl.DataSource                     ()
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
-import           Hkl.H5
 import           Hkl.Image
 import           Hkl.Lattice
 import           Hkl.Repa
@@ -82,7 +81,7 @@ spec = do
                  = do it ("emit a DataSourcePath Image: " <> unpack t) $ do
                                       (fvEmit fieldvalue $ v) `shouldBe` t
                       it ("parse a DataSourcePath Image: " <> show v) $ do
-                                      (fvParse fieldvalue $ t) `shouldBe` Right (v :: DataSourcePath Image)
+                                      (fvParse fieldvalue $ t) `shouldBe` Right (v :: DataSourceT DSPath Image)
 
          let tests = [ ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},1],\"tag\":\"DataSourcePath'Image'Dummy\"}"
                        , (DataSourcePath'Image'Dummy defaultDetector 1.0))

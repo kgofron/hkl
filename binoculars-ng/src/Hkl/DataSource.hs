@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies    #-}
@@ -10,6 +11,7 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 {-
     Copyright  : Copyright (C) 2014-2025 Synchrotron SOLEIL
@@ -24,9 +26,9 @@
 
 module Hkl.DataSource
   ( DataSource(..)
-  , DataSourceAcq(..)
-  , DataSourcePath(..)
+  , DataSourceT(..)
   , DataSourceShape(..)
+  , DSKind(..)
   , HklBinocularsException(..)
   , Is0DStreamable(..)
   , Is1DStreamable(..)
@@ -96,29 +98,29 @@ instance Is0DStreamable Degree CDouble where
 instance Is0DStreamable Double CDouble where
   extract0DStreamValue d = pure $ CDouble d
 
-instance Is0DStreamable (DataSourceAcq Degree) Degree where
+instance Is0DStreamable (DataSourceT DSAcq Degree) Degree where
     extract0DStreamValue (DataSourceAcq'Degree d) =
         Degree <$> do
           v <- extract0DStreamValue d
           return $ v *~ degree
     extract0DStreamValue (DataSourceAcq'Degree'Const d) = pure d
 
-instance Is0DStreamable (DataSourceAcq Degree) Double where
+instance Is0DStreamable (DataSourceT DSAcq Degree) Double where
   extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
-instance Is0DStreamable (DataSourceAcq Degree) CDouble where
+instance Is0DStreamable (DataSourceT DSAcq Degree) CDouble where
   extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
-instance Is0DStreamable (DataSourceAcq Double) Double where
+instance Is0DStreamable (DataSourceT DSAcq Double) Double where
   extract0DStreamValue (DataSourceAcq'Double d)       = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Double'Const a) = pure a
 
-instance Is0DStreamable (DataSourceAcq Scannumber) Scannumber where
+instance Is0DStreamable (DataSourceT DSAcq Scannumber) Scannumber where
   extract0DStreamValue (DataSourceAcq'Scannumber'Const sn) = pure sn
 
-instance Is0DStreamable (DataSourceAcq Timescan0) Timescan0 where
+instance Is0DStreamable (DataSourceT DSAcq Timescan0) Timescan0 where
   extract0DStreamValue (DataSourceAcq'Timescan0 ds) = Timescan0 <$> extract0DStreamValue ds
   extract0DStreamValue DataSourceAcq'Timescan0'NoTimescan0 = returnIO $ Timescan0 0
 
@@ -134,7 +136,7 @@ class Is1DStreamable a e where
 badAttenuation :: Float
 badAttenuation = -100
 
-instance Is1DStreamable (DataSourceAcq Attenuation) Attenuation where
+instance Is1DStreamable (DataSourceT DSAcq Attenuation) Attenuation where
     extract1DStreamValue (DataSourceAcq'Attenuation ds offset coef mmax) i =
         Attenuation <$> do
           v <-  extract1DStreamValue ds (i + offset)
@@ -151,7 +153,7 @@ instance Is1DStreamable (DataSourceAcq Attenuation) Attenuation where
     extract1DStreamValue DataSourceAcq'NoAttenuation _ = returnIO $ Attenuation 1
 
 
-instance Is1DStreamable (DataSourceAcq Double) CDouble where
+instance Is1DStreamable (DataSourceT DSAcq Double) CDouble where
   extract1DStreamValue (DataSourceAcq'Double d)       = extract1DStreamValue d
   extract1DStreamValue (DataSourceAcq'Double'Const d) = const $ extract0DStreamValue d
 
@@ -164,16 +166,16 @@ instance Is1DStreamable Dataset Double where
 instance Is1DStreamable Dataset Float where
   extract1DStreamValue = getPosition
 
-instance Is1DStreamable (DataSourceAcq [Double]) (Data.Vector.Storable.Vector CDouble) where
+instance Is1DStreamable (DataSourceT DSAcq [Double]) (Data.Vector.Storable.Vector CDouble) where
   extract1DStreamValue (DataSourceAcq'List ds) i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
-instance Is1DStreamable (DataSourceAcq Float) Float where
+instance Is1DStreamable (DataSourceT DSAcq Float) Float where
   extract1DStreamValue (DataSourceAcq'Float ds) = extract1DStreamValue ds
 
-instance Is1DStreamable (DataSourceAcq Float) Attenuation where
+instance Is1DStreamable (DataSourceT DSAcq Float) Attenuation where
   extract1DStreamValue (DataSourceAcq'Float ds) i = Attenuation <$> extract1DStreamValue ds i
 
-instance  Is1DStreamable (DataSourceAcq Geometry) Geometry where
+instance  Is1DStreamable (DataSourceT DSAcq Geometry) Geometry where
      extract1DStreamValue (DataSourceAcq'Geometry g w' as') i =
          do w <- extract0DStreamValue w'
             as <- extract1DStreamValue as' i
@@ -182,7 +184,7 @@ instance  Is1DStreamable (DataSourceAcq Geometry) Geometry where
                      (Geometry'Custom axes _) -> Geometry'Custom axes (Just state)
                      (Geometry'Factory factory _) -> Geometry'Factory factory (Just state)
 
-instance Is1DStreamable (DataSourceAcq Image) Image where
+instance Is1DStreamable (DataSourceT DSAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Dummy buf) _ = pure $ ImageDouble buf
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Double det ds buf) i = ImageDouble <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 det ds buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
@@ -190,17 +192,19 @@ instance Is1DStreamable (DataSourceAcq Image) Image where
   extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word32 det ds buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
   extract1DStreamValue (DataSourceAcq'Image'Img'Int32 det buf _ tmpl sn fn) i = ImageInt32 <$> readImgInBuffer buf det (fn tmpl sn i)
 
-instance Is1DStreamable (DataSourceAcq Mask) (Maybe Mask) where
+instance Is1DStreamable (DataSourceT DSAcq Mask) (Maybe Mask) where
     extract1DStreamValue (DataSourceAcq'Mask'NoMask) _ = returnIO Nothing
     extract1DStreamValue (DataSourceAcq'Mask m) _      = returnIO (Just m)
 
-instance Is1DStreamable (DataSourceAcq Timestamp) Timestamp where
+instance Is1DStreamable (DataSourceT DSAcq Timestamp) Timestamp where
   extract1DStreamValue (DataSourceAcq'Timestamp ds) i = Timestamp <$> extract1DStreamValue ds i
   extract1DStreamValue DataSourceAcq'Timestamp'NoTimestamp _ = returnIO $ Timestamp 0
 
 ----------------
 -- DataSource --
 ----------------
+
+data DSKind = DSPath | DSAcq
 
 data DataSourceShape
     = DataSourceShape'Range !DIM1 !DIM1
@@ -225,17 +229,17 @@ ds'Shape'Dataset ds = do
 length'DataSourceShape :: DataSourceShape -> Int
 length'DataSourceShape (DataSourceShape'Range (Z :. f) (Z :. t)) = t - f
 
-class DataSource a where
-  data DataSourcePath a :: Type
-  data DataSourceAcq a :: Type
 
-  ds'Shape :: MonadSafe m => DataSourceAcq a -> m DataSourceShape
+class DataSource a where
+  data DataSourceT (k :: DSKind) a :: Type
+
+  ds'Shape :: MonadSafe m => DataSourceT DSAcq a -> m DataSourceShape
 
   withDataSourceP :: (Location l, MonadSafe m)
-                    => ScanFile l -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+                   => ScanFile l -> DataSourceT DSPath a -> (DataSourceT DSAcq a -> m r) -> m r
 
   withDataSourcePOr :: (Location l, MonadSafe m)
-                    => ScanFile l -> DataSourcePath a -> DataSourcePath a -> (DataSourceAcq a -> m r) -> m r
+                    => ScanFile l -> DataSourceT DSPath a -> DataSourceT DSPath a -> (DataSourceT DSAcq a -> m r) -> m r
   withDataSourcePOr f l r g = withDataSourceP f l g
                               `catch`
                               \exl -> withDataSourceP f r g
@@ -247,23 +251,23 @@ class DataSource a where
 -- Attenuation
 
 instance DataSource Attenuation where
-  data DataSourcePath Attenuation =
-    DataSourcePath'Attenuation { attenuationPath            :: DataSourcePath Float
+  data DataSourceT DSPath Attenuation =
+    DataSourcePath'Attenuation { attenuationPath            :: DataSourceT DSPath Float
                                , attenuationPathOffset      :: Int
                                , attenuationPathCoefficient :: Double
                                , attenuationPathMax         :: Maybe Float
                                }
-    | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourcePath Float }
+    | DataSourcePath'ApplyedAttenuationFactor { attenuationPath :: DataSourceT DSPath Float }
     | DataSourcePath'NoAttenuation
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-  data DataSourceAcq Attenuation =
-    DataSourceAcq'Attenuation { attenuationAcqPath        :: DataSourceAcq Float
+  data DataSourceT DSAcq Attenuation =
+    DataSourceAcq'Attenuation { attenuationAcqPath        :: DataSourceT DSAcq Float
                               , attenuationAcqOffset      :: Int
                               , attenuationAcqCoefficient :: Double
                               , attenuationAcqMax         :: Maybe Float
                               }
-    | DataSourceAcq'ApplyedAttenuationFactor { attenuationAcqPath :: DataSourceAcq Float }
+    | DataSourceAcq'ApplyedAttenuationFactor { attenuationAcqPath :: DataSourceT DSAcq Float }
     | DataSourceAcq'NoAttenuation
 
   ds'Shape (DataSourceAcq'Attenuation fp off _ _)
@@ -280,12 +284,12 @@ instance DataSource Attenuation where
 -- Degree
 
 instance DataSource Degree where
-  data DataSourcePath Degree
+  data DataSourceT DSPath Degree
     = DataSourcePath'Degree (Hdf5Path DIM1 Double)
     | DataSourcePath'Degree'Const Degree
     deriving (Generic, Show, FromJSON, ToJSON)
 
-  data DataSourceAcq Degree
+  data DataSourceT DSAcq Degree
     = DataSourceAcq'Degree Dataset
     | DataSourceAcq'Degree'Const Degree
 
@@ -299,14 +303,14 @@ instance DataSource Degree where
 -- Double
 
 instance DataSource Double where
-  data DataSourcePath Double
+  data DataSourceT DSPath Double
     = DataSourcePath'Double (Hdf5Path Z Double)
     | DataSourcePath'Double'Ini ConfigContent Section Key
     | DataSourcePath'Double'Const Double
-    | DataSourcePath'Double'Or (DataSourcePath Double) (DataSourcePath Double)
+    | DataSourcePath'Double'Or (DataSourceT DSPath Double) (DataSourceT DSPath Double)
     deriving (Generic, Show, FromJSON, ToJSON)
 
-  data DataSourceAcq Double
+  data DataSourceT DSAcq Double
     = DataSourceAcq'Double Dataset
     | DataSourceAcq'Double'Const Double
 
@@ -335,12 +339,12 @@ nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
 
 instance DataSource [Double] where
-    data DataSourcePath [Double]
-        = DataSourcePath'List [DataSourcePath Double]
+    data DataSourceT DSPath [Double]
+        = DataSourcePath'List [DataSourceT DSPath Double]
           deriving (Generic, FromJSON, Show, ToJSON)
 
-    data DataSourceAcq [Double]
-        = DataSourceAcq'List [DataSourceAcq Double]
+    data DataSourceT DSAcq [Double]
+        = DataSourceAcq'List [DataSourceT DSAcq Double]
 
     ds'Shape  (DataSourceAcq'List ds)
         = do ss <- mapM ds'Shape ds
@@ -352,12 +356,12 @@ instance DataSource [Double] where
 -- Float
 
 instance DataSource Float where
-  newtype DataSourcePath Float
+  newtype DataSourceT DSPath Float
     = DataSourcePath'Float (Hdf5Path DIM1 Float)
     deriving (Eq, Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
 
-  newtype DataSourceAcq Float
+  newtype DataSourceT DSAcq Float
     = DataSourceAcq'Float Dataset
 
   ds'Shape (DataSourceAcq'Float ds) = liftIO $ ds'Shape'Dataset ds
@@ -367,19 +371,19 @@ instance DataSource Float where
 -- Geometry
 
 instance DataSource Geometry where
-  data DataSourcePath Geometry =
+  data DataSourceT DSPath Geometry =
     DataSourcePath'Geometry { geometryGeometry       :: Geometry
-                            , geometryPathWavelength :: DataSourcePath Double
-                            , geometryPathAxes       :: DataSourcePath [Double]
+                            , geometryPathWavelength :: DataSourceT DSPath Double
+                            , geometryPathAxes       :: DataSourceT DSPath [Double]
                             }
-    | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourcePath Double }
+    | DataSourcePath'Geometry'Fix { geometryPathWavelength :: DataSourceT DSPath Double }
     deriving (Generic, Show, FromJSON, ToJSON)
 
-  data DataSourceAcq Geometry
+  data DataSourceT DSAcq Geometry
     = DataSourceAcq'Geometry
       Geometry
-      (DataSourceAcq Double)
-      (DataSourceAcq [Double])
+      (DataSourceT DSAcq Double)
+      (DataSourceT DSAcq [Double])
 
   ds'Shape (DataSourceAcq'Geometry _ w as)
       = do sw <- ds'Shape w
@@ -401,19 +405,19 @@ condM []          = undefined
 condM ((p, v):ls) = ifM p v (condM ls)
 
 instance DataSource Image where
-  data instance DataSourcePath Image
+  data instance DataSourceT DSPath Image
     = DataSourcePath'Image'Dummy (Detector Hkl DIM2) Double
     | DataSourcePath'Image'Hdf5 (Detector Hkl DIM2) (Hdf5Path DIM3 Int32) -- TODO Int32 is wrong
-    | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourcePath Attenuation) Text Scannumber
+    | DataSourcePath'Image'Img (Detector Hkl DIM2) (DataSourceT DSPath Attenuation) Text Scannumber
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-  data instance DataSourceAcq Image
+  data instance DataSourceT DSAcq Image
       = DataSourceAcq'Image'Dummy (IOVector Double)
       | DataSourceAcq'Image'Hdf5'Double (Detector Hkl DIM2) Dataset (IOVector Double)
       | DataSourceAcq'Image'Hdf5'Int32 (Detector Hkl DIM2) Dataset (IOVector Int32)
       | DataSourceAcq'Image'Hdf5'Word16 (Detector Hkl DIM2) Dataset (IOVector Word16)
       | DataSourceAcq'Image'Hdf5'Word32 (Detector Hkl DIM2) Dataset (IOVector Word32)
-      | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceAcq Attenuation) Text Scannumber (Text -> Scannumber -> Int -> FilePath)
+      | DataSourceAcq'Image'Img'Int32 (Detector Hkl DIM2) (IOVector Int32) (DataSourceT DSAcq Attenuation) Text Scannumber (Text -> Scannumber -> Int -> FilePath)
 
   ds'Shape (DataSourceAcq'Image'Dummy _)             = pure $ DataSourceShape'Range (ix1 0) (ix1 1)
   ds'Shape (DataSourceAcq'Image'Hdf5'Double _ ds _)  = liftIO $ ds'Shape'Dataset ds
@@ -454,20 +458,20 @@ instance DataSource Image where
         f' :: Text -> Scannumber -> Int -> FilePath
         f' tmpl' (Scannumber sn') i = printf (unpack tmpl') sn0 sn0 ((sn' - sn0) * 1029 + i)
 
-instance HasFieldValue (DataSourcePath Image) where
+instance HasFieldValue (DataSourceT DSPath Image) where
     fieldvalue = autoJSON
 
 -- Int
 
 instance DataSource Int where
-  newtype DataSourcePath Int
+  newtype DataSourceT DSPath Int
     = DataSourcePath'Int Int
     deriving (Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
 
   ds'Shape _ = pure $ shape1
 
-  newtype DataSourceAcq Int
+  newtype DataSourceT DSAcq Int
     = DataSourceAcq'Int Int
 
   withDataSourceP _ (DataSourcePath'Int p) g = g (DataSourceAcq'Int p)
@@ -475,13 +479,13 @@ instance DataSource Int where
 -- Mask
 
 instance DataSource Mask where
-    data DataSourcePath Mask
+    data DataSourceT DSPath Mask
         = DataSourcePath'Mask'NoMask
         | DataSourcePath'Mask MaskLocation (Detector Hkl DIM2)
           deriving (Generic, Show)
           deriving anyclass (FromJSON, ToJSON)
 
-    data DataSourceAcq Mask
+    data DataSourceT DSAcq Mask
         = DataSourceAcq'Mask Mask
         | DataSourceAcq'Mask'NoMask
 
@@ -495,11 +499,11 @@ instance DataSource Mask where
 -- Scannumber
 
 instance DataSource Scannumber where
-  data DataSourcePath Scannumber
+  data DataSourceT DSPath Scannumber
     = DataSourcePath'Scannumber
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-  data DataSourceAcq Scannumber = DataSourceAcq'Scannumber'Const Scannumber
+  data DataSourceT DSAcq Scannumber = DataSourceAcq'Scannumber'Const Scannumber
 
   ds'Shape _ = pure $ shape1
 
@@ -509,13 +513,14 @@ instance DataSource Scannumber where
 -- Timestamp
 
 instance DataSource Timestamp where
-  data DataSourcePath Timestamp
+  data DataSourceT DSPath Timestamp
     = DataSourcePath'Timestamp (Hdf5Path DIM1 Double)
     | DataSourcePath'Timestamp'NoTimestamp
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-  data DataSourceAcq Timestamp = DataSourceAcq'Timestamp Dataset
-                               | DataSourceAcq'Timestamp'NoTimestamp
+  data DataSourceT DSAcq Timestamp
+      = DataSourceAcq'Timestamp Dataset
+      | DataSourceAcq'Timestamp'NoTimestamp
 
   ds'Shape (DataSourceAcq'Timestamp ds)        = liftIO $ ds'Shape'Dataset ds
   ds'Shape DataSourceAcq'Timestamp'NoTimestamp = pure $ shape1
@@ -526,13 +531,14 @@ instance DataSource Timestamp where
 -- Timescan0
 
 instance DataSource Timescan0 where
-  data DataSourcePath Timescan0
+  data DataSourceT DSPath Timescan0
     = DataSourcePath'Timescan0 (Hdf5Path DIM1 Double)
     | DataSourcePath'Timescan0'NoTimescan0
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
-  data DataSourceAcq Timescan0 = DataSourceAcq'Timescan0 Dataset
-                               | DataSourceAcq'Timescan0'NoTimescan0
+  data DataSourceT DSAcq Timescan0
+      = DataSourceAcq'Timescan0 Dataset
+      | DataSourceAcq'Timescan0'NoTimescan0
 
   ds'Shape (DataSourceAcq'Timescan0 ds)        = liftIO $ ds'Shape'Dataset ds
   ds'Shape DataSourceAcq'Timescan0'NoTimescan0 = pure $ shape1

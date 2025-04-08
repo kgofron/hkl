@@ -51,6 +51,7 @@ import           Hkl.Binoculars.Projections
 import           Hkl.Binoculars.Projections.Config
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.C.Binoculars
+import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
 import           Hkl.Image
@@ -70,7 +71,7 @@ instance HasIniConfig 'AnglesProjection where
         , binocularsConfig'Angles'ProjectionResolution   :: Resolutions DIM3
         , binocularsConfig'Angles'ProjectionLimits       :: Maybe (RLimits DIM3)
         , binocularsConfig'Angles'SampleAxis             :: SampleAxis
-        , binocularsConfig'Angles'DataPath               :: DataSourcePath DataFrameQCustom
+        , binocularsConfig'Angles'DataPath               :: DataSourceT DSPath DataFrameQCustom
         } deriving (Show)
 
   newtype Args 'AnglesProjection

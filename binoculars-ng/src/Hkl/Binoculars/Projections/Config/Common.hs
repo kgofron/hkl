@@ -64,7 +64,7 @@ instance HasIniConfig Common where
           , binocularsConfig'Common'Tmpl                   :: Maybe InputTmpl
           , binocularsConfig'Common'InputRange             :: ConfigRange
           , binocularsConfig'Common'Detector               :: Detector Hkl DIM2
-          , binocularsConfig'Common'Image                  :: Maybe (DataSourcePath Image)
+          , binocularsConfig'Common'Image                  :: Maybe (DataSourceT DSPath Image)
           , binocularsConfig'Common'Centralpixel           :: (Int, Int)
           , binocularsConfig'Common'Sdd                    :: Meter
           , binocularsConfig'Common'Detrot                 :: Degree
