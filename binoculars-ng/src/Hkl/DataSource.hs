@@ -33,6 +33,7 @@ module Hkl.DataSource
   , Is0DStreamable(..)
   , Is1DStreamable(..)
   , combine'Shape
+  , generic'ds'Shape
   , length'DataSourceShape
   ) where
 
@@ -55,9 +56,11 @@ import           Data.Vector.Storable.Mutable      (IOVector, replicate,
                                                     unsafeNew)
 import           Data.Word                         (Word16, Word32)
 import           Foreign.C.Types                   (CDouble (..))
-import           GHC.Base                          (returnIO)
+import           GHC.Base                          (liftA2, returnIO)
 import           GHC.Float                         (float2Double)
-import           GHC.Generics                      (Generic)
+import           GHC.Generics                      (Generic, K1 (..), M1 (..),
+                                                    Rep (..), (:*:) (..),
+                                                    (:+:) (..))
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe, catch, throwM)
 import           Text.Printf                       (printf)
@@ -229,6 +232,31 @@ ds'Shape'Dataset ds = do
 length'DataSourceShape :: DataSourceShape -> Int
 length'DataSourceShape (DataSourceShape'Range (Z :. f) (Z :. t)) = t - f
 
+-- | Generic 'ds'Shape'
+
+generic'ds'Shape :: ( MonadSafe m
+                   , Generic (DataSourceT DSAcq a)
+                   , GDataSourceAcq (Rep (DataSourceT DSAcq a)))
+                   => DataSourceT DSAcq a -> m DataSourceShape
+generic'ds'Shape = g'ds'Shape . from
+
+class GDataSourceAcq dataAcq where
+   g'ds'Shape :: MonadSafe m => dataAcq x -> m DataSourceShape
+
+instance GDataSourceAcq f => GDataSourceAcq (M1 i c f) where
+   g'ds'Shape (M1 f) = g'ds'Shape f
+
+instance (GDataSourceAcq f, GDataSourceAcq f') => GDataSourceAcq (f :*: f') where
+   g'ds'Shape (f :*: f') = liftA2 combine'Shape (g'ds'Shape f) (g'ds'Shape f')
+
+instance (GDataSourceAcq f, GDataSourceAcq f') => GDataSourceAcq (f :+: f') where
+   g'ds'Shape (L1 f)  = g'ds'Shape f
+   g'ds'Shape (R1 f') = g'ds'Shape f'
+
+instance DataSource a => GDataSourceAcq (K1 i (DataSourceT DSAcq a)) where
+   g'ds'Shape (K1 acq) = ds'Shape acq
+
+-- DataSource
 
 class DataSource a where
   data DataSourceT (k :: DSKind) a :: Type

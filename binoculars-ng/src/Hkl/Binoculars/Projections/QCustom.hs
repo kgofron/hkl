@@ -120,16 +120,9 @@ instance DataSource DataFrameQCustom where
       (DataSourceT DSAcq Timestamp)
       (DataSourceT DSAcq Timescan0)
       (DataSourceT DSAcq Scannumber)
+    deriving Generic
 
-  ds'Shape(DataSourceAcq'DataFrameQCustom a g i m idx t0 s)
-      = do sa <- ds'Shape a
-           sg <- ds'Shape g
-           si <- ds'Shape i
-           sm <- ds'Shape m
-           sidx <- ds'Shape idx
-           st0 <- ds'Shape t0
-           ss <- ds'Shape s
-           pure $ foldl1 combine'Shape [sa, sg, si, sm, sidx, st0, ss]
+  ds'Shape = generic'ds'Shape
 
   withDataSourceP f (DataSourcePath'DataFrameQCustom a g i m idx t0 s) gg =
     withDataSourceP f a $ \a' ->

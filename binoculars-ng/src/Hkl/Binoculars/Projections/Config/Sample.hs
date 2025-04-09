@@ -75,18 +75,9 @@ instance DataSource Sample where
       (DataSourceT DSAcq Degree)
       (DataSourceT DSAcq Degree)
       (DataSourceT DSAcq Degree)
+    deriving Generic
 
-  ds'Shape (DataSourceAcq'Sample a b c alpha beta gamma ux uy uz)
-      = do sa <- ds'Shape a
-           sb <- ds'Shape b
-           sc <- ds'Shape c
-           salpha <- ds'Shape alpha
-           sbeta <- ds'Shape beta
-           sgamma <- ds'Shape gamma
-           sux <- ds'Shape ux
-           suy <- ds'Shape uy
-           suz <- ds'Shape uz
-           pure $ foldl1 combine'Shape [sa, sb, sc, salpha, sbeta, sgamma, sux, suy, suz]
+  ds'Shape = generic'ds'Shape
 
   withDataSourceP f (DataSourcePath'Sample a b c alpha beta gamma ux uy uz) g =
     withDataSourceP f a $ \a' ->
