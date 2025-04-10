@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies    #-}
@@ -33,7 +34,6 @@ module Hkl.DataSource
   , Is0DStreamable(..)
   , Is1DStreamable(..)
   , combine'Shape
-  , generic'ds'Shape
   , length'DataSourceShape
   ) where
 
@@ -236,8 +236,9 @@ length'DataSourceShape (DataSourceShape'Range (Z :. f) (Z :. t)) = t - f
 
 generic'ds'Shape :: ( MonadSafe m
                    , Generic (DataSourceT DSAcq a)
-                   , GDataSourceAcq (Rep (DataSourceT DSAcq a)))
-                   => DataSourceT DSAcq a -> m DataSourceShape
+                   , GDataSourceAcq (Rep (DataSourceT DSAcq a))
+                   )
+                 => DataSourceT DSAcq a -> m DataSourceShape
 generic'ds'Shape = g'ds'Shape . from
 
 class GDataSourceAcq dataAcq where
@@ -256,6 +257,37 @@ instance (GDataSourceAcq f, GDataSourceAcq f') => GDataSourceAcq (f :+: f') wher
 instance DataSource a => GDataSourceAcq (K1 i (DataSourceT DSAcq a)) where
    g'ds'Shape (K1 acq) = ds'Shape acq
 
+
+-- | Generic 'withDataSourceP
+
+generic'withDataSourceP :: ( Generic (DataSourceT DSPath a)
+                          , Generic (DataSourceT DSAcq a)
+                          , GDataSourcePath (Rep (DataSourceT DSPath a)) (Rep (DataSourceT DSAcq a))
+                          , Location l
+                          , MonadSafe m
+                          )
+                        => ScanFile l -> DataSourceT DSPath a -> (DataSourceT DSAcq a -> m r) -> m r
+generic'withDataSourceP file src gg = g'withDataSourceP file (from src) (gg . to)
+
+
+class GDataSourcePath dataPath dataAcq where
+    g'withDataSourceP :: (Location l, MonadSafe m)
+                      => ScanFile l -> dataPath x -> (dataAcq x -> m r) -> m r
+
+instance GDataSourcePath f g => GDataSourcePath (M1 i c f) (M1 i c' g) where
+    g'withDataSourceP f (M1 d) gg = g'withDataSourceP f d (gg . M1)
+
+instance (GDataSourcePath f g, GDataSourcePath f' g') => GDataSourcePath (f :*: f') (g :*: g') where
+    g'withDataSourceP file (f :*: f') gg =
+        g'withDataSourceP file f $ \g ->
+        g'withDataSourceP file f' $ \g' ->
+            gg (g :*: g')
+
+instance DataSource a => GDataSourcePath (K1 i (DataSourceT DSPath a)) (K1 i (DataSourceT DSAcq a)) where
+    g'withDataSourceP file (K1 acq) gg =
+        withDataSourceP file acq $ \dat ->
+            gg (K1 dat)
+
 -- DataSource
 
 class DataSource a where
@@ -263,8 +295,25 @@ class DataSource a where
 
   ds'Shape :: MonadSafe m => DataSourceT DSAcq a -> m DataSourceShape
 
+  default ds'Shape :: ( MonadSafe m
+                     , Generic (DataSourceT DSAcq a)
+                     , GDataSourceAcq (Rep (DataSourceT DSAcq a)))
+                     => DataSourceT DSAcq a -> m DataSourceShape
+  ds'Shape = generic'ds'Shape
+
+
   withDataSourceP :: (Location l, MonadSafe m)
                    => ScanFile l -> DataSourceT DSPath a -> (DataSourceT DSAcq a -> m r) -> m r
+
+  default withDataSourceP :: ( Generic (DataSourceT DSPath a)
+                            , Generic (DataSourceT DSAcq a)
+                            , GDataSourcePath (Rep (DataSourceT DSPath a)) (Rep (DataSourceT DSAcq a))
+                            ,Location l
+                            , MonadSafe m
+                            )
+                          => ScanFile l -> DataSourceT DSPath a -> (DataSourceT DSAcq a -> m r) -> m r
+  withDataSourceP = generic'withDataSourceP
+
 
   withDataSourcePOr :: (Location l, MonadSafe m)
                     => ScanFile l -> DataSourceT DSPath a -> DataSourceT DSPath a -> (DataSourceT DSAcq a -> m r) -> m r

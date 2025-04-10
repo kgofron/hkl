@@ -122,17 +122,6 @@ instance DataSource DataFrameQCustom where
       (DataSourceT DSAcq Scannumber)
     deriving Generic
 
-  ds'Shape = generic'ds'Shape
-
-  withDataSourceP f (DataSourcePath'DataFrameQCustom a g i m idx t0 s) gg =
-    withDataSourceP f a $ \a' ->
-    withDataSourceP f g $ \g' ->
-    withDataSourceP f i $ \i' ->
-    withDataSourceP f m $ \m' ->
-    withDataSourceP f idx $ \idx' ->
-    withDataSourceP f s $ \s' ->
-    withDataSourceP f t0 $ \t0' -> gg (DataSourceAcq'DataFrameQCustom a' g' i' m' idx' t0' s')
-
 instance Is1DStreamable (DataSourceT DSAcq DataFrameQCustom) DataFrameQCustom where
     extract1DStreamValue (DataSourceAcq'DataFrameQCustom att geom img msk idx t0 s) i =
       DataFrameQCustom

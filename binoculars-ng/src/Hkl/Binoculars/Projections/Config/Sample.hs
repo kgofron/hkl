@@ -77,8 +77,6 @@ instance DataSource Sample where
       (DataSourceT DSAcq Degree)
     deriving Generic
 
-  ds'Shape = generic'ds'Shape
-
   withDataSourceP f (DataSourcePath'Sample a b c alpha beta gamma ux uy uz) g =
     withDataSourceP f a $ \a' ->
     withDataSourceP f b $ \b' ->
