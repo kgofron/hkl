@@ -25,7 +25,7 @@
 
 module Hkl.Binoculars.Projections.Hkl
     ( Config(..)
-    , DataFrameHkl'(..)
+    , DataFrameHkl(..)
     , newHkl
     , processHkl
     , updateHkl
@@ -40,9 +40,9 @@ import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
 import           Control.Monad.Reader               (MonadReader, ask)
 import           Data.Aeson                         (FromJSON, ToJSON)
-import           Data.Functor.Identity              (Identity)
 import           Data.HashMap.Strict                (fromList)
 import           Data.Ini                           (Ini (..))
+import           Data.Maybe                         (fromMaybe)
 import           Data.Text                          (pack, unpack)
 import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
@@ -51,7 +51,7 @@ import           Foreign.ForeignPtr                 (withForeignPtr)
 import           GHC.Generics                       (Generic)
 import           Path                               (Abs, Dir, Path)
 import           Pipes                              (await, each, runEffect,
-                                                     (>->))
+                                                     yield, (>->))
 import           Pipes.Prelude                      (filter, map, tee, toListM)
 import           Pipes.Safe                         (runSafeP, runSafeT)
 import           Text.Printf                        (printf)
@@ -66,7 +66,6 @@ import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
-import           Hkl.HKD
 import           Hkl.Image
 import           Hkl.Orphan                         ()
 import           Hkl.Repa
@@ -78,23 +77,38 @@ import           Hkl.Utils
 -- DataPath's --
 ----------------
 
-data DataFrameHkl' f
-  = DataFrameHkl
-    { dataFrameHkl'DataFrameQCustom :: HKD f DataFrameQCustom
-    , dataFrameHkl'Sample           :: HKD f Sample
-    }
+data DataFrameHkl
+    = DataFrameHkl
+      DataFrameQCustom
+      Sample
+
+data DSDataFrameHkl (k :: DSKind)
+  = DSDataFrameHkl
+    (DSWrap_ DSDataFrameQCustom k)
+    (DSWrap_ DSSample k)
   deriving (Generic)
 
-deriving instance Show (DataFrameHkl' (DataSourceT DSPath))
-instance FromJSON (DataFrameHkl' (DataSourceT DSPath))
-instance ToJSON (DataFrameHkl' (DataSourceT DSPath))
 
-defaultDataSourcePath'DataFrameHkl :: DataFrameHkl' (DataSourceT DSPath)
-defaultDataSourcePath'DataFrameHkl = DataFrameHkl
-                                     default'DataSourcePath'DataFrameQCustom
-                                     default'DataSourcePath'Sample
+deriving instance Show (DSDataFrameHkl DSPath)
+instance FromJSON (DSDataFrameHkl DSPath)
+instance ToJSON (DSDataFrameHkl DSPath)
+instance DataSource DSDataFrameHkl
 
-instance HasFieldComment (DataFrameHkl' (DataSourceT DSPath)) where
+instance Is1DStreamable (DSDataFrameHkl DSAcq) DataFrameHkl where
+    extract1DStreamValue (DSDataFrameHkl q s) i
+        = DataFrameHkl
+          <$> extract1DStreamValue q i
+          <*> extract0DStreamValue s
+
+defaultDataSource'DataFrameHkl :: DSWrap_ DSDataFrameHkl DSPath
+defaultDataSource'DataFrameHkl
+    = [ DSDataFrameHkl
+        default'DataSource'DataFrameQCustom
+        default'DataSource'Sample
+      ]
+
+
+instance HasFieldComment [DSDataFrameHkl DSPath] where
   fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
                    , ""
                    , "This value is for expert only."
@@ -102,7 +116,7 @@ instance HasFieldComment (DataFrameHkl' (DataSourceT DSPath)) where
                    , "default value: <not set>"
                    ]
 
-instance HasFieldValue (DataFrameHkl' (DataSourceT DSPath)) where
+instance HasFieldValue [DSDataFrameHkl DSPath] where
   fieldvalue = autoJSON
 
 ------------
@@ -111,13 +125,15 @@ instance HasFieldValue (DataFrameHkl' (DataSourceT DSPath)) where
 
 overload'DataSourcePath'DataFrameHkl :: Config Common
                                      -> Config Sample
-                                     -> DataFrameHkl' (DataSourceT DSPath)
-                                     -> DataFrameHkl' (DataSourceT DSPath)
-overload'DataSourcePath'DataFrameHkl common sample (DataFrameHkl qCustomPath samplePath)
-  = DataFrameHkl newQCustomPath newSamplePath
-  where
-    newQCustomPath = overload'DataSourcePath'DataFrameQCustom common Nothing qCustomPath
-    newSamplePath = overload'DataSourcePath'Sample sample samplePath
+                                     -> DSWrap_ DSDataFrameHkl DSPath
+                                     -> DSWrap_ DSDataFrameHkl DSPath
+overload'DataSourcePath'DataFrameHkl common sample dfs
+    = Prelude.map
+      (\(DSDataFrameHkl qCustomPath samplePath) ->
+           let newQCustomPath = overload'DataSource'DataFrameQCustom common Nothing qCustomPath
+               newSamplePath = overload'DataSource'Sample sample samplePath
+           in DSDataFrameHkl newQCustomPath newSamplePath
+      ) dfs
 
 instance HasIniConfig 'HklProjection where
   data Config 'HklProjection
@@ -127,7 +143,7 @@ instance HasIniConfig 'HklProjection where
       , binocularsConfig'Hkl'ProjectionType         :: ProjectionType
       , binocularsConfig'Hkl'ProjectionResolution   :: Resolutions DIM3
       , binocularsConfig'Hkl'ProjectionLimits       :: Maybe (RLimits DIM3)
-      , binocularsConfig'Hkl'DataPath               :: DataFrameHkl' (DataSourceT DSPath)
+      , binocularsConfig'Hkl'DataPath               :: DSWrap_ DSDataFrameHkl DSPath
       } deriving (Generic)
 
   newtype Args 'HklProjection
@@ -140,7 +156,7 @@ instance HasIniConfig 'HklProjection where
         , binocularsConfig'Hkl'ProjectionType = HklProjection
         , binocularsConfig'Hkl'ProjectionResolution = Resolutions3 0.01 0.01 0.01
         , binocularsConfig'Hkl'ProjectionLimits  = Nothing
-        , binocularsConfig'Hkl'DataPath = defaultDataSourcePath'DataFrameHkl
+        , binocularsConfig'Hkl'DataPath = defaultDataSource'DataFrameHkl
         }
 
   getConfig content@(ConfigContent cfg) (Args'HklProjection mr) capabilities
@@ -174,7 +190,7 @@ instance HasIniConfig 'HklProjection where
 ----------------
 
 {-# INLINE spaceHkl #-}
-spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameHkl' Identity -> IO (DataFrameSpace DIM3)
+spaceHkl :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameHkl -> IO (DataFrameSpace DIM3)
 spaceHkl det pixels rs mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameHkl (DataFrameQCustom att g img mmask _ _ _) samplePath) = do
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
@@ -277,19 +293,21 @@ processHklP = do
 
 -- FramesHklP
 
-instance ChunkP (DataFrameHkl' (DataSourceT DSPath)) where
-  chunkP sf sl (DataFrameHkl p _) = chunkP sf sl p
+instance ChunkP [DSDataFrameHkl DSPath] where
+    chunkP mSkipFirst mSkipLast p =
+      skipMalformed $ forever $ do
+      sfp <- await
+      withScanFileP sfp $ \f' ->
+        withDataSourcesP f' p $ \p' -> do
+          (DataSourceShape'Range (Z :. f) (Z :. t)) <- ds'Shape p'
+          yield $ cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk sfp f (t - 1))
 
-instance FramesP (DataFrameHkl' (DataSourceT DSPath)) (DataFrameHkl' Identity) where
-  framesP (DataFrameHkl qcustom sample) = skipMalformed $ forever $ do
+instance FramesP [DSDataFrameHkl DSPath] DataFrameHkl where
+  framesP p = skipMalformed $ forever $ do
     (fp, js) <- await
     withScanFileP fp $ \f ->
-      withDataSourceP f qcustom $ \qcustomAcq ->
-      withDataSourceP f sample $ \sampleAcq ->
-      forM_ js (\j -> tryYield ( DataFrameHkl
-                                <$> extract1DStreamValue qcustomAcq j
-                                <*> extract0DStreamValue sampleAcq
-                              ))
+      withDataSourcesP f p $ \p' ->
+      forM_ js (tryYield .  extract1DStreamValue p')
 
 ------------
 -- Inputs --
@@ -298,11 +316,12 @@ instance FramesP (DataFrameHkl' (DataSourceT DSPath)) (DataFrameHkl' Identity) w
 guess'DataSourcePath'DataFrameHkl :: Config Common
                                   -> Config Sample
                                   -> ConfigContent
-                                  -> DataFrameHkl' (DataSourceT DSPath)
+                                  -> DSWrap_ DSDataFrameHkl DSPath
 guess'DataSourcePath'DataFrameHkl common sample content
-  = DataFrameHkl
-    (guess'DataSourcePath'DataFrameQCustom common Nothing content)
-    (guess'DataSourcePath'Sample common sample)
+  = [ DSDataFrameHkl
+      (guess'DataSource'DataFrameQCustom common Nothing content)
+      (guess'DataSource'Sample common sample)
+    ]
 
 ---------
 -- Cmd --

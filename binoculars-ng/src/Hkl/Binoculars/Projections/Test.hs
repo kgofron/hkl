@@ -37,9 +37,9 @@ import           Control.Monad.Logger               (MonadLogger, logDebugN,
                                                      logInfoN)
 import           Control.Monad.Reader               (MonadReader, ask)
 import           Data.Aeson                         (FromJSON, ToJSON)
-import           Data.Functor.Identity              (Identity)
 import           Data.HashMap.Strict                (fromList)
 import           Data.Ini                           (Ini (..))
+import           Data.Maybe                         (fromMaybe)
 import           Data.Text                          (pack, unpack)
 import           Data.Text.IO                       (putStr)
 import           Data.Vector.Storable.Mutable       (unsafeWith)
@@ -48,7 +48,7 @@ import           Foreign.ForeignPtr                 (withForeignPtr)
 import           GHC.Generics                       (Generic)
 import           Path                               (Abs, Dir, Path)
 import           Pipes                              (await, each, runEffect,
-                                                     (>->))
+                                                     yield, (>->))
 import           Pipes.Prelude                      (filter, map, tee, toListM)
 import           Pipes.Safe                         (runSafeP, runSafeT)
 import           Text.Printf                        (printf)
@@ -63,7 +63,6 @@ import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
-import           Hkl.HKD
 import           Hkl.Image
 import           Hkl.Orphan                         ()
 import           Hkl.Repa
@@ -75,23 +74,37 @@ import           Hkl.Utils
 -- DataPath's --
 ----------------
 
-data DataFrameTest' f
-  = DataFrameTest
-    { dataFrameTest'DataFrameQCustom :: HKD f DataFrameQCustom
-    , dataFrameTest'Sample           :: HKD f Sample
+data DataFrameTest
+    = DataFrameTest
+      DataFrameQCustom
+      Sample
+
+data DSDataFrameTest (k :: DSKind)
+  = DSDataFrameTest
+    { dataFrameTest'DataFrameQCustom :: DSWrap_ DSDataFrameQCustom k
+    , dataFrameTest'Sample           :: DSWrap_ DSSample k
     }
   deriving (Generic)
 
-deriving instance Show (DataFrameTest' (DataSourceT DSPath))
-instance FromJSON (DataFrameTest' (DataSourceT DSPath))
-instance ToJSON (DataFrameTest' (DataSourceT DSPath))
+deriving instance Show (DSDataFrameTest DSPath)
+instance FromJSON (DSDataFrameTest DSPath)
+instance ToJSON (DSDataFrameTest DSPath)
+instance DataSource DSDataFrameTest
 
-defaultDataSourcePath'DataFrameTest :: DataFrameTest' (DataSourceT DSPath)
-defaultDataSourcePath'DataFrameTest = DataFrameTest
-                                     default'DataSourcePath'DataFrameQCustom
-                                     default'DataSourcePath'Sample
+instance Is1DStreamable (DSDataFrameTest DSAcq) DataFrameTest where
+    extract1DStreamValue (DSDataFrameTest q s) i =
+      DataFrameTest
+      <$> extract1DStreamValue q i
+      <*> extract0DStreamValue s
 
-instance HasFieldComment (DataFrameTest' (DataSourceT DSPath)) where
+defaultDataSource'DataFrameTest :: DSWrap_ DSDataFrameTest DSPath
+defaultDataSource'DataFrameTest
+    = [ DSDataFrameTest
+        default'DataSource'DataFrameQCustom
+        default'DataSource'Sample
+      ]
+
+instance HasFieldComment [DSDataFrameTest DSPath] where
   fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
                    , ""
                    , "This value is for expert only."
@@ -99,7 +112,7 @@ instance HasFieldComment (DataFrameTest' (DataSourceT DSPath)) where
                    , "default value: <not set>"
                    ]
 
-instance HasFieldValue (DataFrameTest' (DataSourceT DSPath)) where
+instance HasFieldValue [DSDataFrameTest DSPath] where
   fieldvalue = autoJSON
 
 ------------
@@ -108,13 +121,15 @@ instance HasFieldValue (DataFrameTest' (DataSourceT DSPath)) where
 
 overload'DataSourcePath'DataFrameTest :: Config Common
                                       -> Config Sample
-                                      -> DataFrameTest' (DataSourceT DSPath)
-                                      -> DataFrameTest' (DataSourceT DSPath)
-overload'DataSourcePath'DataFrameTest common sample (DataFrameTest qCustomPath samplePath)
-  = DataFrameTest newQCustomPath newSamplePath
-  where
-    newQCustomPath = overload'DataSourcePath'DataFrameQCustom common Nothing qCustomPath
-    newSamplePath = overload'DataSourcePath'Sample sample samplePath
+                                      -> DSWrap_ DSDataFrameTest DSPath
+                                      -> DSWrap_ DSDataFrameTest DSPath
+overload'DataSourcePath'DataFrameTest common sample dfs
+    = Prelude.map
+      ( \(DSDataFrameTest qCustomPath samplePath) ->
+            let newQCustomPath = overload'DataSource'DataFrameQCustom common Nothing qCustomPath
+                newSamplePath = overload'DataSource'Sample sample samplePath
+            in DSDataFrameTest newQCustomPath newSamplePath
+      ) dfs
 
 instance HasIniConfig 'TestProjection where
   data Config 'TestProjection
@@ -124,7 +139,7 @@ instance HasIniConfig 'TestProjection where
       , binocularsConfig'Test'ProjectionType         :: ProjectionType
       , binocularsConfig'Test'ProjectionResolution   :: Resolutions DIM3
       , binocularsConfig'Test'ProjectionLimits       :: Maybe (RLimits DIM3)
-      , binocularsConfig'Test'DataPath               :: DataFrameTest' (DataSourceT DSPath)
+      , binocularsConfig'Test'DataPath               :: DSWrap_ DSDataFrameTest DSPath
       } deriving (Generic)
 
   newtype Args 'TestProjection = Args'TestProjection (Maybe ConfigRange)
@@ -136,7 +151,7 @@ instance HasIniConfig 'TestProjection where
         , binocularsConfig'Test'ProjectionType = TestProjection
         , binocularsConfig'Test'ProjectionResolution = Resolutions3 0.01 0.01 0.01
         , binocularsConfig'Test'ProjectionLimits  = Nothing
-        , binocularsConfig'Test'DataPath = defaultDataSourcePath'DataFrameTest
+        , binocularsConfig'Test'DataPath = defaultDataSource'DataFrameTest
         }
 
   getConfig content@(ConfigContent cfg) (Args'TestProjection mr) capabilities
@@ -170,7 +185,7 @@ instance HasIniConfig 'TestProjection where
 ----------------
 
 {-# INLINE spaceTest #-}
-spaceTest :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameTest' Identity -> IO (DataFrameSpace DIM3)
+spaceTest :: Detector b DIM2 -> Array F DIM3 Double -> Resolutions DIM3 -> Maybe (RLimits DIM3) -> Bool -> Space DIM3 -> DataFrameTest -> IO (DataFrameSpace DIM3)
 spaceTest det pixels rs mlimits doPolarizationCorrection space@(Space fSpace) (DataFrameTest (DataFrameQCustom att g img mmask _ _ _) samplePath) = do
   withNPixels det $ \nPixels ->
     withGeometry g $ \geometry ->
@@ -273,19 +288,21 @@ processTestP = do
 
 -- FramesTestP
 
-instance ChunkP (DataFrameTest' (DataSourceT DSPath)) where
-  chunkP sf sl (DataFrameTest p _) = chunkP sf sl p
+instance ChunkP [DSDataFrameTest DSPath] where
+    chunkP mSkipFirst mSkipLast p =
+      skipMalformed $ forever $ do
+      sfp <- await
+      withScanFileP sfp $ \f' ->
+        withDataSourcesP f' p $ \p' -> do
+          (DataSourceShape'Range (Z :. f) (Z :. t)) <- ds'Shape p'
+          yield $ cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk sfp f (t - 1))
 
-instance FramesP (DataFrameTest' (DataSourceT DSPath)) (DataFrameTest' Identity) where
-  framesP (DataFrameTest qcustom sample) = skipMalformed $ forever $ do
+instance FramesP [DSDataFrameTest DSPath] DataFrameTest where
+  framesP p = skipMalformed $ forever $ do
     (fp, js) <- await
     withScanFileP fp $ \f ->
-      withDataSourceP f qcustom $ \qcustomAcq ->
-      withDataSourceP f sample $ \sampleAcq ->
-      forM_ js (\j -> tryYield ( DataFrameTest
-                                <$> extract1DStreamValue qcustomAcq j
-                                <*> extract0DStreamValue sampleAcq
-                              ))
+      withDataSourcesP f p $ \p' ->
+      forM_ js (tryYield . extract1DStreamValue p')
 
 ------------
 -- Inputs --
@@ -294,11 +311,12 @@ instance FramesP (DataFrameTest' (DataSourceT DSPath)) (DataFrameTest' Identity)
 guess'DataSourcePath'DataFrameTest :: Config Common
                                    -> Config Sample
                                    -> ConfigContent
-                                   -> DataFrameTest' (DataSourceT DSPath)
+                                   -> DSWrap_ DSDataFrameTest DSPath
 guess'DataSourcePath'DataFrameTest common sample content
-  = DataFrameTest
-    (guess'DataSourcePath'DataFrameQCustom common Nothing content)
-    (guess'DataSourcePath'Sample common sample)
+  = [ DSDataFrameTest
+      (guess'DataSource'DataFrameQCustom common Nothing content)
+      (guess'DataSource'Sample common sample)
+    ]
 
 ---------
 -- Cmd --

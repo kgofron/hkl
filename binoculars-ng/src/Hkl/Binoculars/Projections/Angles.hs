@@ -71,7 +71,7 @@ instance HasIniConfig 'AnglesProjection where
         , binocularsConfig'Angles'ProjectionResolution   :: Resolutions DIM3
         , binocularsConfig'Angles'ProjectionLimits       :: Maybe (RLimits DIM3)
         , binocularsConfig'Angles'SampleAxis             :: SampleAxis
-        , binocularsConfig'Angles'DataPath               :: DataSourceT DSPath DataFrameQCustom
+        , binocularsConfig'Angles'DataPath               :: DSWrap_ DSDataFrameQCustom DSPath
         } deriving (Show)
 
   newtype Args 'AnglesProjection
@@ -83,7 +83,7 @@ instance HasIniConfig 'AnglesProjection where
         , binocularsConfig'Angles'ProjectionType = AnglesProjection
         , binocularsConfig'Angles'ProjectionResolution = Resolutions3 1 1 1
         , binocularsConfig'Angles'ProjectionLimits = Nothing
-        , binocularsConfig'Angles'DataPath = default'DataSourcePath'DataFrameQCustom
+        , binocularsConfig'Angles'DataPath = default'DataSource'DataFrameQCustom
         , binocularsConfig'Angles'SampleAxis = SampleAxis "omega"
         }
 
@@ -103,10 +103,10 @@ instance HasIniConfig 'AnglesProjection where
                                                                                         RealSpaceProjection -> undefined
                                                                                         PixelsProjection -> undefined
                                                                                         TestProjection  -> undefined
-           binocularsConfig'Angles'DataPath <- pure $ eitherF (const $ guess'DataSourcePath'DataFrameQCustom binocularsConfig'Angles'Common Nothing content) (parse' cfg "input" "datapath")
+           binocularsConfig'Angles'DataPath <- pure $ eitherF (const $ guess'DataSource'DataFrameQCustom binocularsConfig'Angles'Common Nothing content) (parse' cfg "input" "datapath")
                                               (\md -> case md of
-                                                       Nothing -> guess'DataSourcePath'DataFrameQCustom binocularsConfig'Angles'Common Nothing content
-                                                       Just d  ->  overload'DataSourcePath'DataFrameQCustom binocularsConfig'Angles'Common Nothing d)
+                                                       Nothing -> guess'DataSource'DataFrameQCustom binocularsConfig'Angles'Common Nothing content
+                                                       Just d  ->  overload'DataSource'DataFrameQCustom binocularsConfig'Angles'Common Nothing d)
            pure BinocularsConfig'Angles{..}
 
   toIni c = toIni (binocularsConfig'Angles'Common c)

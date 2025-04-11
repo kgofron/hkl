@@ -81,12 +81,12 @@ spec = do
                  = do it ("emit a DataSourcePath Image: " <> unpack t) $ do
                                       (fvEmit fieldvalue $ v) `shouldBe` t
                       it ("parse a DataSourcePath Image: " <> show v) $ do
-                                      (fvParse fieldvalue $ t) `shouldBe` Right (v :: DataSourceT DSPath Image)
+                                      (fvParse fieldvalue $ t) `shouldBe` Right (v :: DSWrap_ DSImage DSPath)
 
-         let tests = [ ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},1],\"tag\":\"DataSourcePath'Image'Dummy\"}"
-                       , (DataSourcePath'Image'Dummy defaultDetector 1.0))
-                     , ( "{\"contents\":[{\"detector\":\"ImXpadS140\"},100],\"tag\":\"DataSourcePath'Image'Dummy\"}"
-                       , (DataSourcePath'Image'Dummy defaultDetector 100))
+         let tests = [ ( "[{\"contents\":[{\"detector\":\"ImXpadS140\"},1],\"tag\":\"DataSourcePath'Image'Dummy\"}]"
+                       , [DataSourcePath'Image'Dummy defaultDetector 1.0])
+                     , ( "[{\"contents\":[{\"detector\":\"ImXpadS140\"},100],\"tag\":\"DataSourcePath'Image'Dummy\"}]"
+                       , [DataSourcePath'Image'Dummy defaultDetector 100])
                      ]
 
          mapM_ it'datasource'path'image tests

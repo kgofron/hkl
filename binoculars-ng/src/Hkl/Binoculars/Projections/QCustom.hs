@@ -10,6 +10,7 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -29,12 +30,13 @@ module Hkl.Binoculars.Projections.QCustom
     ( Args(..)
     , Config(..)
     , DataFrameQCustom(..)
-    , DataSourceT(..)
+    , DataSource(..)
+    , DSDataFrameQCustom(..)
     , FramesP(..)
-    , default'DataSourcePath'DataFrameQCustom
-    , guess'DataSourcePath'DataFrameQCustom
+    , default'DataSource'DataFrameQCustom
+    , guess'DataSource'DataFrameQCustom
     , newQCustom
-    , overload'DataSourcePath'DataFrameQCustom
+    , overload'DataSource'DataFrameQCustom
     , processQCustom
     , updateQCustom
     ) where
@@ -99,31 +101,24 @@ data DataFrameQCustom
       Scannumber -- scannumber in int
     deriving Show
 
-instance DataSource DataFrameQCustom where
-  data DataSourceT DSPath DataFrameQCustom
-    = DataSourcePath'DataFrameQCustom
-      (DataSourceT DSPath Attenuation)
-      (DataSourceT DSPath Geometry)
-      (DataSourceT DSPath Image)
-      (DataSourceT DSPath Mask)
-      (DataSourceT DSPath Timestamp)
-      (DataSourceT DSPath Timescan0)
-      (DataSourceT DSPath Scannumber)
-    deriving (Generic, Show, FromJSON, ToJSON)
-
-  data DataSourceT DSAcq DataFrameQCustom
-    = DataSourceAcq'DataFrameQCustom
-      (DataSourceT DSAcq Attenuation)
-      (DataSourceT DSAcq Geometry)
-      (DataSourceT DSAcq Image)
-      (DataSourceT DSAcq Mask)
-      (DataSourceT DSAcq Timestamp)
-      (DataSourceT DSAcq Timescan0)
-      (DataSourceT DSAcq Scannumber)
+data DSDataFrameQCustom (k :: DSKind)
+    = DataSource'DataFrameQCustom
+      (DSWrap_ DSAttenuation k)
+      (DSWrap_ DSGeometry k)
+      (DSWrap_ DSImage k)
+      (DSWrap_ DSMask k)
+      (DSWrap_ DSTimestamp k)
+      (DSWrap_ DSTimescan0 k)
+      (DSWrap_ DSScannumber k)
     deriving Generic
 
-instance Is1DStreamable (DataSourceT DSAcq DataFrameQCustom) DataFrameQCustom where
-    extract1DStreamValue (DataSourceAcq'DataFrameQCustom att geom img msk idx t0 s) i =
+instance DataSource DSDataFrameQCustom
+deriving instance Show (DSDataFrameQCustom DSPath)
+instance FromJSON (DSDataFrameQCustom DSPath)
+instance ToJSON (DSDataFrameQCustom DSPath)
+
+instance Is1DStreamable (DSDataFrameQCustom DSAcq) DataFrameQCustom where
+    extract1DStreamValue (DataSource'DataFrameQCustom att geom img msk idx t0 s) i =
       DataFrameQCustom
       <$> extract1DStreamValue att i
       <*> extract1DStreamValue geom i
@@ -133,32 +128,35 @@ instance Is1DStreamable (DataSourceT DSAcq DataFrameQCustom) DataFrameQCustom wh
       <*> extract0DStreamValue t0
       <*> extract0DStreamValue s
 
-default'DataSourcePath'DataFrameQCustom :: DataSourceT DSPath DataFrameQCustom
-default'DataSourcePath'DataFrameQCustom
-  = DataSourcePath'DataFrameQCustom
-    (DataSourcePath'Attenuation
-      (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation"))
-      2 0 Nothing)
-    (DataSourcePath'Geometry
-      (Geometry'Factory Uhv Nothing)
-      (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength"))
-      (DataSourcePath'List
-       [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")
-       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")
-       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")
-       , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")
-       ]
-      )
-    )
-    (DataSourcePath'Image'Hdf5
-      defaultDetector
-      (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image"))
-    (DataSourcePath'Mask (MaskLocation "") defaultDetector)
-    (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-    (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
-    (DataSourcePath'Scannumber)
+default'DataSource'DataFrameQCustom :: DSWrap_ DSDataFrameQCustom DSPath
+default'DataSource'DataFrameQCustom
+  = [ DataSource'DataFrameQCustom
+      [ DataSourcePath'Attenuation
+        [DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/attenuation")]
+        2 0 Nothing
+      ]
+      [ DataSourcePath'Geometry
+        (Geometry'Factory Uhv Nothing)
+        [DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "SIXS/Monochromator/wavelength")]
+        [DataSourcePath'List
+         [ [DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_MU")]
+         , [DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_OMEGA")]
+         , [DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_DELTA")]
+         , [DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/UHV_GAMMA")]
+         ]
+        ]
+      ]
+      [ DataSourcePath'Image'Hdf5
+        defaultDetector
+        (hdf5p $ grouppat 0 $ datasetp "scan_data/xpad_image")
+      ]
+      [ DataSourcePath'Mask (MaskLocation "") defaultDetector ]
+      [ DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch") ]
+      [ DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch") ]
+      [ DataSourcePath'Scannumber ]
+    ]
 
-instance HasFieldComment (DataSourceT DSPath DataFrameQCustom) where
+instance HasFieldComment [DSDataFrameQCustom DSPath] where
   fieldComment _ = [ "`datapath` internal value used to find the data in the data file."
                    , ""
                    , "This value is for expert only."
@@ -166,7 +164,7 @@ instance HasFieldComment (DataSourceT DSPath DataFrameQCustom) where
                    , "default value: <not set>"
                    ]
 
-instance HasFieldValue (DataSourceT DSPath DataFrameQCustom) where
+instance HasFieldValue [DSDataFrameQCustom DSPath] where
   fieldvalue = autoJSON
 
 ------------
@@ -181,7 +179,7 @@ instance HasIniConfig 'QCustomProjection where
         , binocularsConfig'QCustom'ProjectionType         :: ProjectionType
         , binocularsConfig'QCustom'ProjectionResolution   :: Resolutions DIM3
         , binocularsConfig'QCustom'ProjectionLimits       :: Maybe (RLimits DIM3)
-        , binocularsConfig'QCustom'DataPath               :: DataSourceT DSPath DataFrameQCustom
+        , binocularsConfig'QCustom'DataPath               :: DSWrap_ DSDataFrameQCustom DSPath
         , binocularsConfig'QCustom'SubProjection          :: Maybe HklBinocularsQCustomSubProjectionEnum
         , binocularsConfig'QCustom'Uqx                    :: Degree
         , binocularsConfig'QCustom'Uqy                    :: Degree
@@ -199,7 +197,7 @@ instance HasIniConfig 'QCustomProjection where
         , binocularsConfig'QCustom'ProjectionType = QCustomProjection
         , binocularsConfig'QCustom'ProjectionResolution = Resolutions3 0.01 0.01 0.01
         , binocularsConfig'QCustom'ProjectionLimits  = Nothing
-        , binocularsConfig'QCustom'DataPath = default'DataSourcePath'DataFrameQCustom
+        , binocularsConfig'QCustom'DataPath = default'DataSource'DataFrameQCustom
         , binocularsConfig'QCustom'SubProjection = Just HklBinocularsQCustomSubProjectionEnum'QxQyQz
         , binocularsConfig'QCustom'Uqx = Degree (0.0 *~ degree)
         , binocularsConfig'QCustom'Uqy = Degree (0.0 *~ degree)
@@ -227,10 +225,10 @@ instance HasIniConfig 'QCustomProjection where
 
            binocularsConfig'QCustom'ProjectionResolution <- parseFDef cfg "projection" "resolution" (binocularsConfig'QCustom'ProjectionResolution defaultConfig)
            binocularsConfig'QCustom'ProjectionLimits <- parseMb cfg "projection" "limits"
-           binocularsConfig'QCustom'DataPath <- pure (eitherF (const $ guess'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content) (parse' cfg "input" "datapath")
+           binocularsConfig'QCustom'DataPath <- pure (eitherF (const $ guess'DataSource'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content) (parse' cfg "input" "datapath")
                                                                  (\case
-                                                                   Nothing -> guess'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content
-                                                                   Just d ->  overload'DataSourcePath'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection d))
+                                                                   Nothing -> guess'DataSource'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection content
+                                                                   Just d ->  overload'DataSource'DataFrameQCustom binocularsConfig'QCustom'Common binocularsConfig'QCustom'SubProjection d))
 
            binocularsConfig'QCustom'Uqx <- parseFDef cfg "projection" "uqx" (binocularsConfig'QCustom'Uqx defaultConfig)
            binocularsConfig'QCustom'Uqy <- parseFDef cfg "projection" "uqy" (binocularsConfig'QCustom'Uqy defaultConfig)
@@ -332,33 +330,36 @@ instance HasIniConfig 'QCustomProjection where
 -- Input Path's --
 ------------------
 
-mkAttenuation :: Maybe Double -> DataSourceT DSPath Attenuation -> DataSourceT DSPath Attenuation
-mkAttenuation ma att =
-    case ma of
-      Nothing -> case att of
-                  DataSourcePath'NoAttenuation     -> DataSourcePath'NoAttenuation
-                  DataSourcePath'Attenuation{} ->  DataSourcePath'NoAttenuation
-                           -- logWarnN "The current configuration extract the attenuation from the data files."
-                           -- logWarnN "You forgot to provide the attenuation coefficient in the config file."
-                           -- logWarnN "I continue without attenuation correction"
-                           -- logWarnN "Add attenuation_coefficient=<something> under the [input] section, to fix this"
-                           -- return DataSourcePath'NoAttenuation
-                  applyed@DataSourcePath'ApplyedAttenuationFactor{} -> applyed
-      (Just coef) -> case att of
-                      DataSourcePath'NoAttenuation           -> DataSourcePath'NoAttenuation
-                      (DataSourcePath'Attenuation p o _ m) -> DataSourcePath'Attenuation p o coef m
-                      (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
+mkAttenuation :: Maybe Double -> DSWrap_ DSAttenuation DSPath -> DSWrap_ DSAttenuation DSPath
+mkAttenuation ma atts
+    = Prelude.map
+      ( \att -> case ma of
+                 Nothing -> case att of
+                             DataSourcePath'NoAttenuation     -> DataSourcePath'NoAttenuation
+                             DataSourcePath'Attenuation{} ->  DataSourcePath'NoAttenuation
+                             -- logWarnN "The current configuration extract the attenuation from the data files."
+                             -- logWarnN "You forgot to provide the attenuation coefficient in the config file."
+                             -- logWarnN "I continue without attenuation correction"
+                             -- logWarnN "Add attenuation_coefficient=<something> under the [input] section, to fix this"
+                             -- return DataSourcePath'NoAttenuation
+                             applyed@DataSourcePath'ApplyedAttenuationFactor{} -> applyed
+                 (Just coef) -> case att of
+                                 DataSourcePath'NoAttenuation           -> DataSourcePath'NoAttenuation
+                                 (DataSourcePath'Attenuation p o _ m) -> DataSourcePath'Attenuation p o coef m
+                                 (DataSourcePath'ApplyedAttenuationFactor _) -> undefined
+      ) atts
 
-mk'DataSourcePath'Mask :: Config Common -> DataSourceT DSPath Mask
-mk'DataSourcePath'Mask c = case binocularsConfig'Common'Maskmatrix c of
-                             Nothing -> DataSourcePath'Mask'NoMask
-                             (Just m) -> DataSourcePath'Mask
-                                        m
-                                        (binocularsConfig'Common'Detector c)
+mk'DataSourcePath'Mask :: Config Common -> DSMask DSPath
+mk'DataSourcePath'Mask c
+    = case binocularsConfig'Common'Maskmatrix c of
+        Nothing -> DataSourcePath'Mask'NoMask
+        (Just m) -> DataSourcePath'Mask
+                   m
+                   (binocularsConfig'Common'Detector c)
 
-mkDetector'Sixs'Fly :: Detector Hkl DIM2 -> (DataSourceT DSPath Attenuation) -> Scannumber -> DataSourceT DSPath Image
-mkDetector'Sixs'Fly det@(Detector2D d _ _) att sn
-  = case d of
+mkDetector'Sixs'Fly :: Detector Hkl DIM2 -> Scannumber -> DSWrap_ DSImage DSPath
+mkDetector'Sixs'Fly det@(Detector2D d _ _) sn
+  = [case d of
       HklBinocularsDetectorEnum'ImxpadS140 ->
         DataSourcePath'Image'Hdf5
         det
@@ -386,11 +387,12 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _) att sn
         (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
       HklBinocularsDetectorEnum'Cirpad -> undefined
       HklBinocularsDetectorEnum'RigakuXspa1M ->
-        DataSourcePath'Image'Img det att "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
+        DataSourcePath'Image'Img det "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
+    ]
 
-mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> DataSourceT DSPath Attenuation -> Scannumber -> DataSourceT DSPath Image
-mkDetector'Sixs'Sbs det@(Detector2D d _ _) att sn
-  = case d of
+mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> Scannumber -> DSWrap_ DSImage DSPath
+mkDetector'Sixs'Sbs det@(Detector2D d _ _) sn
+  = [case d of
       HklBinocularsDetectorEnum'ImxpadS140 ->
         DataSourcePath'Image'Hdf5
         det
@@ -412,130 +414,156 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _) att sn
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
       HklBinocularsDetectorEnum'Cirpad -> undefined
       HklBinocularsDetectorEnum'RigakuXspa1M ->
-        DataSourcePath'Image'Img det att "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
+        DataSourcePath'Image'Img det "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
+    ]
 
-overload'DataSourcePath'Attenuation :: Maybe Double -> Maybe Float -> DataSourceT DSPath Attenuation -> DataSourceT DSPath Attenuation
-overload'DataSourcePath'Attenuation ma m' (DataSourcePath'Attenuation p o a m)
-  = DataSourcePath'Attenuation p o (fromMaybe a ma) (m' <|> m)
-overload'DataSourcePath'Attenuation _ _ ap@DataSourcePath'ApplyedAttenuationFactor{} = ap
-overload'DataSourcePath'Attenuation _ _ ap@DataSourcePath'NoAttenuation = ap
+overload'DataSourcePath'Attenuation :: Maybe Double -> Maybe Float -> DSWrap_ DSAttenuation DSPath -> DSWrap_ DSAttenuation DSPath
+overload'DataSourcePath'Attenuation ma m' atts
+    = Prelude.map
+      ( \att -> case att of
+                 DataSourcePath'Attenuation p o a m -> DataSourcePath'Attenuation p o (fromMaybe a ma) (m' <|> m)
+                 ap@DataSourcePath'ApplyedAttenuationFactor{} -> ap
+                 ap@DataSourcePath'NoAttenuation -> ap
+      )
+      atts
 
-overload'DataSourcePath'Timestamp :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourceT DSPath Timestamp -> DataSourceT DSPath Timestamp
-overload'DataSourcePath'Timestamp msub idx =
-  case msub of
-    Nothing -> DataSourcePath'Timestamp'NoTimestamp
-    (Just sub) -> case sub of
-                   HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> idx
-                   HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'QScannumber -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'TthScannumber -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'PhixQThetax -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timestamp'NoTimestamp
-                   HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timestamp'NoTimestamp
+overload'DataSourcePath'Timestamp :: Maybe HklBinocularsQCustomSubProjectionEnum -> DSWrap_ DSTimestamp DSPath -> DSWrap_ DSTimestamp DSPath
+overload'DataSourcePath'Timestamp msub idxs
+    = Prelude.map
+      ( \idx -> case msub of
+                 Nothing -> DataSourcePath'Timestamp'NoTimestamp
+                 (Just sub) -> case sub of
+                                HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> idx
+                                HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'QScannumber -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'TthScannumber -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'PhixQThetax -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timestamp'NoTimestamp
+                                HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timestamp'NoTimestamp
+      ) idxs
 
-overload'DataSourcePath'Timescan0 :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourceT DSPath Timescan0 -> DataSourceT DSPath Timescan0
-overload'DataSourcePath'Timescan0 msub idx =
-  case msub of
-    Nothing -> DataSourcePath'Timescan0'NoTimescan0
-    (Just sub) -> case sub of
-                   HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> idx
-                   HklBinocularsQCustomSubProjectionEnum'QScannumber -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'TthScannumber -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'PhixQThetax -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timescan0'NoTimescan0
-                   HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timescan0'NoTimescan0
+overload'DataSourcePath'Timescan0 :: Maybe HklBinocularsQCustomSubProjectionEnum -> DSWrap_ DSTimescan0 DSPath -> DSWrap_ DSTimescan0 DSPath
+overload'DataSourcePath'Timescan0 msub idxs
+    = Prelude.map
+      (\idx -> case msub of
+                Nothing -> DataSourcePath'Timescan0'NoTimescan0
+                (Just sub) -> case sub of
+                               HklBinocularsQCustomSubProjectionEnum'QxQyQz -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QTthTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QparQperTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QparQper -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QPhiQx -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QPhiQy -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QPhiQz -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QStereo -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'DeltalabGammalabSampleaxis -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'XYZ -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'YZTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QQparQper -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QparsQperTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QparQperSampleaxis -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QSampleaxisTth -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QSampleaxisTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QxQyTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QxQzTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QyQzTimestamp -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'TthAzimuth -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'QTimescan0 -> idx
+                               HklBinocularsQCustomSubProjectionEnum'QScannumber -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'TthScannumber -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'PhixQThetax -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'PhiyQThetay -> DataSourcePath'Timescan0'NoTimescan0
+                               HklBinocularsQCustomSubProjectionEnum'PhizQThetaz -> DataSourcePath'Timescan0'NoTimescan0
+      ) idxs
 
-overload'DataSourcePath'Double :: Maybe Double -> DataSourceT DSPath Double -> DataSourceT DSPath Double
-overload'DataSourcePath'Double ma wp = maybe wp DataSourcePath'Double'Const ma
+overload'DataSourcePath'Double :: Maybe Double -> DSWrap_ DSDouble DSPath -> DSWrap_ DSDouble DSPath
+overload'DataSourcePath'Double ma wps
+    = Prelude.map
+      (\wp -> maybe wp DataSourcePath'Double'Const ma)
+      wps
 
-overload'DataSourcePath'Geometry ::  Maybe Double -> DataSourceT DSPath Geometry -> DataSourceT DSPath Geometry
-overload'DataSourcePath'Geometry mw (DataSourcePath'Geometry g wp as) = DataSourcePath'Geometry g (overload'DataSourcePath'Double mw wp) as
-overload'DataSourcePath'Geometry mw (DataSourcePath'Geometry'Fix wp) = DataSourcePath'Geometry'Fix (overload'DataSourcePath'Double mw wp)
+overload'DataSourcePath'Geometry ::  Maybe Double -> DSWrap_ DSGeometry DSPath -> DSWrap_ DSGeometry DSPath
+overload'DataSourcePath'Geometry mw gs
+    = Prelude.map
+      (\g -> case g of
+              DataSourcePath'Geometry g' wp as -> DataSourcePath'Geometry g' (overload'DataSourcePath'Double mw wp) as
+              (DataSourcePath'Geometry'Fix wp) -> DataSourcePath'Geometry'Fix (overload'DataSourcePath'Double mw wp)
+      ) gs
 
 
-overload'DataSourcePath'Image :: Detector Hkl DIM2 -> Maybe (DataSourceT DSPath Image) -> DataSourceT DSPath Image -> DataSourceT DSPath Image
+overload'DataSourcePath'Image :: Detector Hkl DIM2 -> Maybe (DSWrap_ DSImage DSPath) -> DSWrap_ DSImage DSPath -> DSWrap_ DSImage DSPath
 overload'DataSourcePath'Image _ (Just i) _ = i
-overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Dummy _ v) = DataSourcePath'Image'Dummy det v
-overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Hdf5 _ p) = DataSourcePath'Image'Hdf5 det p
-overload'DataSourcePath'Image det Nothing (DataSourcePath'Image'Img _ att tmpl sn) = DataSourcePath'Image'Img det att tmpl sn
+overload'DataSourcePath'Image det Nothing imgs
+    = Prelude.map
+      (\img -> case img of
+                DataSourcePath'Image'Dummy _ v -> DataSourcePath'Image'Dummy det v
+                DataSourcePath'Image'Hdf5 _ p -> DataSourcePath'Image'Hdf5 det p
+                DataSourcePath'Image'Img _ tmpl sn ->DataSourcePath'Image'Img det tmpl sn
+      ) imgs
 
-overload'DataSourcePath'Mask :: Config Common -> DataSourceT DSPath Mask -> DataSourceT DSPath Mask
-overload'DataSourcePath'Mask c DataSourcePath'Mask'NoMask  = mk'DataSourcePath'Mask c
-overload'DataSourcePath'Mask c (DataSourcePath'Mask path _) =
-    let new_path = case binocularsConfig'Common'Maskmatrix c of
-                     Nothing -> path
-                     Just p  -> p
-    in
-      DataSourcePath'Mask new_path (binocularsConfig'Common'Detector c)
+overload'DataSourcePath'Mask :: Config Common -> DSWrap_ DSMask DSPath -> DSWrap_ DSMask DSPath
+overload'DataSourcePath'Mask c masks
+    = Prelude.map
+      (\mask -> case mask of
+                 DataSourcePath'Mask'NoMask -> mk'DataSourcePath'Mask c
+                 DataSourcePath'Mask path _ -> let new_path = case binocularsConfig'Common'Maskmatrix c of
+                                                               Nothing -> path
+                                                               Just p  -> p
+                                              in
+                                                DataSourcePath'Mask new_path (binocularsConfig'Common'Detector c)
+      ) masks
 
-overload'DataSourcePath'DataFrameQCustom :: Config Common
+overload'DataSource'DataFrameQCustom :: Config Common
                                          -> Maybe HklBinocularsQCustomSubProjectionEnum
-                                         -> DataSourceT DSPath DataFrameQCustom
-                                         -> DataSourceT DSPath DataFrameQCustom
-overload'DataSourcePath'DataFrameQCustom common msub (DataSourcePath'DataFrameQCustom attenuationPath' geometryPath imagePath maskPath indexP timescan0P scannumberPath)
-  = let mAttCoef = binocularsConfig'Common'AttenuationCoefficient common
-        mMaxAtt = binocularsConfig'Common'AttenuationMax common
-        mWavelength = binocularsConfig'Common'Wavelength common
-        detector =  binocularsConfig'Common'Detector common
-        mImage = binocularsConfig'Common'Image common
+                                         -> DSWrap_ DSDataFrameQCustom DSPath
+                                         -> DSWrap_ DSDataFrameQCustom DSPath
+overload'DataSource'DataFrameQCustom common msub dfs
+    = Prelude.map
+      (\(DataSource'DataFrameQCustom attenuationPath' geometryPath imagePath maskPath indexP timescan0P scannumberPath) ->
+       let mAttCoef = binocularsConfig'Common'AttenuationCoefficient common
+           mMaxAtt = binocularsConfig'Common'AttenuationMax common
+           mWavelength = binocularsConfig'Common'Wavelength common
+           detector =  binocularsConfig'Common'Detector common
+           mImage = binocularsConfig'Common'Image common
 
-        newAttenuationPath = overload'DataSourcePath'Attenuation mAttCoef mMaxAtt attenuationPath'
-        newGeometryPath = overload'DataSourcePath'Geometry mWavelength geometryPath
-        newImagePath = overload'DataSourcePath'Image detector mImage imagePath
-        newMaskPath = overload'DataSourcePath'Mask common maskPath
-        newTimestampPath = overload'DataSourcePath'Timestamp msub indexP
-        newTimescan0Path = overload'DataSourcePath'Timescan0 msub timescan0P
-        newScannumberPath = scannumberPath -- this is not overloadable
-    in
-      DataSourcePath'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newMaskPath newTimestampPath newTimescan0Path newScannumberPath
+           newAttenuationPath = overload'DataSourcePath'Attenuation mAttCoef mMaxAtt attenuationPath'
+           newGeometryPath = overload'DataSourcePath'Geometry mWavelength geometryPath
+           newImagePath = overload'DataSourcePath'Image detector mImage imagePath
+           newMaskPath = overload'DataSourcePath'Mask common maskPath
+           newTimestampPath = overload'DataSourcePath'Timestamp msub indexP
+           newTimescan0Path = overload'DataSourcePath'Timescan0 msub timescan0P
+           newScannumberPath = scannumberPath -- this is not overloadable
+      in
+        DataSource'DataFrameQCustom newAttenuationPath newGeometryPath newImagePath newMaskPath newTimestampPath newTimescan0Path newScannumberPath
+      ) dfs
 
 
-guess'DataSourcePath'DataFrameQCustom :: Config Common
+guess'DataSource'DataFrameQCustom :: Config Common
                                       -> Maybe HklBinocularsQCustomSubProjectionEnum
                                       -> ConfigContent
-                                      -> DataSourceT DSPath DataFrameQCustom
-guess'DataSourcePath'DataFrameQCustom common msub cfg =
+                                      -> DSWrap_ DSDataFrameQCustom DSPath
+guess'DataSource'DataFrameQCustom common msub cfg =
     do
       let inputtype = binocularsConfig'Common'InputType common
       let mAttenuationCoefficient = binocularsConfig'Common'AttenuationCoefficient common
@@ -549,381 +577,398 @@ guess'DataSourcePath'DataFrameQCustom common msub cfg =
       let sn0 = getInitialScannumber $ binocularsConfig'Common'InputRange common
 
       -- attenuation
-      let dataSourcePath'Attenuation'Sixs :: DataSourceT DSPath Attenuation
-          dataSourcePath'Attenuation'Sixs =
-            DataSourcePath'Attenuation
-            (DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "attenuation"
-                                                                            `H5Or`
-                                                                            datasetp "attenuation_old")))
-            (fromMaybe 2 mAttenuationShift) 0 mAttenuationMax
+      let dataSourcePath'Attenuation'Sixs :: DSWrap_ DSAttenuation DSPath
+          dataSourcePath'Attenuation'Sixs
+              = [ DataSourcePath'Attenuation
+                  [ DataSourcePath'Float (hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "attenuation"
+                                                                                   `H5Or`
+                                                                                    datasetp "attenuation_old"))
+                  ]
+                  (fromMaybe 2 mAttenuationShift) 0 mAttenuationMax
+                ]
 
-      let dataSourcePath'Attenuation'SixsSBS :: DataSourceT DSPath Attenuation
-          dataSourcePath'Attenuation'SixsSBS =
-            DataSourcePath'Attenuation
-            (DataSourcePath'Float (hdf5p (datasetpattr ("long_name", "i14-c-c00/ex/roic/att")
-                                          `H5Or`
-                                          datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att")
-                                          `H5Or`
-                                          datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att_old")
-                                          `H5Or`
-                                          datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att")
-                                          `H5Or`
-                                          datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att_old"))))
-            (fromMaybe 0 mAttenuationShift) 0 mAttenuationMax
+      let dataSourcePath'Attenuation'SixsSBS :: DSWrap_ DSAttenuation DSPath
+          dataSourcePath'Attenuation'SixsSBS
+              = [ DataSourcePath'Attenuation
+                  [ DataSourcePath'Float (hdf5p (datasetpattr ("long_name", "i14-c-c00/ex/roic/att")
+                                                 `H5Or`
+                                                 datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att")
+                                                 `H5Or`
+                                                 datasetpattr ("long_name", "i14-c-c00/ex/roic-s140/att_old")
+                                                 `H5Or`
+                                                 datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att")
+                                                 `H5Or`
+                                                 datasetpattr ("long_name", "i14-c-c00/ex/roic-s70/att_old")))
+                  ]
+                  (fromMaybe 0 mAttenuationShift) 0 mAttenuationMax
+                ]
 
       -- timestamp
-      let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourceT DSPath Timestamp
+      let mkTimeStamp'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DSWrap_ DSTimestamp DSPath
           mkTimeStamp'Sbs msub'
-            = overload'DataSourcePath'Timestamp msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
+            = overload'DataSourcePath'Timestamp msub' [DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps")]
 
-      let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourceT DSPath Timestamp
+      let mkTimeStamp'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DSWrap_ DSTimestamp DSPath
           mkTimeStamp'Fly msub'
-            = overload'DataSourcePath'Timestamp msub' (DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+            = overload'DataSourcePath'Timestamp msub' [DataSourcePath'Timestamp(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch")]
 
       -- timescan0
-      let mkTimescan0'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourceT DSPath Timescan0
+      let mkTimescan0'Sbs :: Maybe HklBinocularsQCustomSubProjectionEnum -> DSWrap_ DSTimescan0 DSPath
           mkTimescan0'Sbs msub'
-            = overload'DataSourcePath'Timescan0 msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps"))
+            = overload'DataSourcePath'Timescan0 msub' [DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/sensors_timestamps")]
 
-      let mkTimescan0'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DataSourceT DSPath Timescan0
+      let mkTimescan0'Fly :: Maybe HklBinocularsQCustomSubProjectionEnum -> DSWrap_ DSTimescan0 DSPath
           mkTimescan0'Fly msub'
-            = overload'DataSourcePath'Timescan0 msub' (DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch"))
+            = overload'DataSourcePath'Timescan0 msub' [DataSourcePath'Timescan0(hdf5p $ grouppat 0 $ datasetp "scan_data/epoch")]
 
       -- wavelength
-      let dataSourcePath'WaveLength'Diffabs :: DataSourceT DSPath Double
+      let dataSourcePath'WaveLength'Diffabs :: DSWrap_ DSDouble DSPath
           dataSourcePath'WaveLength'Diffabs
-            = DataSourcePath'Double ( hdf5p $ grouppat 0 $ datasetp "DIFFABS/d13-1-c03__op__mono/wavelength" )
+            = [ DataSourcePath'Double ( hdf5p $ grouppat 0 $ datasetp "DIFFABS/d13-1-c03__op__mono/wavelength" ) ]
 
-      let dataSourcePath'WaveLength'Mars :: DataSourceT DSPath Double
+      let dataSourcePath'WaveLength'Mars :: DSWrap_ DSDouble DSPath
           dataSourcePath'WaveLength'Mars
-            = DataSourcePath'Double ( hdf5p $ grouppat 0 $ datasetp "MARS/d03-1-c03__op__mono1-config_#2/lambda" )
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double'Const 1.537591
+            = [ DataSourcePath'Double ( hdf5p $ grouppat 0 $ datasetp "MARS/d03-1-c03__op__mono1-config_#2/lambda" )
+              , DataSourcePath'Double'Const 1.537591
+              ]
 
-      let dataSourcePath'WaveLength'Sixs ::  DataSourceT DSPath Double
+      let dataSourcePath'WaveLength'Sixs ::  DSWrap_ DSDouble DSPath
           dataSourcePath'WaveLength'Sixs
-            = DataSourcePath'Double (hdf5p $ grouppat 0 (datasetp "SIXS/Monochromator/wavelength"
-                                                         `H5Or`
-                                                         datasetp "SIXS/i14-c-c02-op-mono/lambda"))
+            = [ DataSourcePath'Double (hdf5p $ grouppat 0 (datasetp "SIXS/Monochromator/wavelength"
+                                                           `H5Or`
+                                                           datasetp "SIXS/i14-c-c02-op-mono/lambda"))
+              ]
 
       -- geometry
       let sixs'eix
-            = DataSourcePath'Double'Ini cfg "geometry.values" "eix"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eix")
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/dt/tab-mt_tx.1/position"))
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx2/dt/tab-mt_tx.1/position"))
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tx.1/position_pre"))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "eix"
+              , DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eix")
+                                      `H5Or`
+                                      hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/dt/tab-mt_tx.1/position"))
+                                      `H5Or`
+                                      hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx2/dt/tab-mt_tx.1/position"))
+                                      `H5Or`
+                                      hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tx.1/position_pre"))
+              ]
       let sixs'eiz
-            = DataSourcePath'Double'Ini cfg "geometry.values" "eiz"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eiz")
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/dt/tab-mt_tz.1/position"))
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx2/dt/tab-mt_tz.1/position"))
-                                    `H5Or`
-                                    hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tz.1/position_pre"))
-
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "eiz"
+              , DataSourcePath'Double(hdf5p (grouppat 0 $ datasetp "scan_data/eiz")
+                                      `H5Or`
+                                      hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx1/dt/tab-mt_tz.1/position"))
+                                      `H5Or`
+                                      hdf5p (grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "i14-c-cx2/dt/tab-mt_tz.1/position"))
+                                      `H5Or`
+                                      hdf5p (grouppat 0 $ datasetp "SIXS/i14-c-cx1-dt-det_tz.1/position_pre"))
+              ]
       let sixs'Uhv'Mu
-            = DataSourcePath'Double'Ini cfg "geometry.values" "mu"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")
-                                                                             `H5Or`
-                                                                             datasetp "UHV_MU"
-                                                                             `H5Or`
-                                                                             datasetp "mu_xps"))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "mu"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/mu")
+                                                                               `H5Or`
+                                                                               datasetp "UHV_MU"
+                                                                               `H5Or`
+                                                                               datasetp "mu_xps"))
+              ]
       let sixs'Uhv'Omega
-            = DataSourcePath'Double'Ini cfg "geometry.values" "omega"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
-                                                                             `H5Or`
-                                                                             datasetp "UHV_OMEGA"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega")
-                                                                             `H5Or`
-                                                                             datasetp "omega_xps"))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "omega"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
+                                                                               `H5Or`
+                                                                               datasetp "UHV_OMEGA"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/omega")
+                                                                               `H5Or`
+                                                                               datasetp "omega_xps"))
+              ]
       let sixs'Uhv'Delta
-            = DataSourcePath'Double'Ini cfg "geometry.values" "delta"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
-                                                                             `H5Or`
-                                                                             datasetp "UHV_DELTA"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")
-                                                                             `H5Or`
-                                                                             datasetp "delta_xps"))
-
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "delta"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
+                                                                               `H5Or`
+                                                                               datasetp "UHV_DELTA"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/delta")
+                                                                               `H5Or`
+                                                                               datasetp "delta_xps"))
+              ]
       let sixs'Uhv'Gamma
-            = DataSourcePath'Double'Ini cfg "geometry.values" "gamma"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
-                                                                             `H5Or`
-                                                                             datasetp "UHV_GAMMA"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma")
-                                                                             `H5Or`
-                                                                             datasetp "gamma_xps"))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "gamma"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
+                                                                               `H5Or`
+                                                                               datasetp "UHV_GAMMA"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx2/ex/uhv-dif-group/gamma")
+                                                                               `H5Or`
+                                                                               datasetp "gamma_xps"))
+              ]
 
-      let dataSourcePath'Geometry'Sixs'Uhv :: DataSourceT DSPath Geometry
+      let dataSourcePath'Geometry'Sixs'Uhv :: DSWrap_ DSGeometry DSPath
           dataSourcePath'Geometry'Sixs'Uhv
-            = DataSourcePath'Geometry
-              (Geometry'Factory Uhv Nothing)
-              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
-              (DataSourcePath'List [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma])
+            = [ DataSourcePath'Geometry
+                (Geometry'Factory Uhv Nothing)
+                (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
+                [ DataSourcePath'List [sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'Uhv'Delta, sixs'Uhv'Gamma] ]
+              ]
 
-      let dataSourcePath'Geometry'Sixs'UhvGisaxs :: DataSourceT DSPath Geometry
+      let dataSourcePath'Geometry'Sixs'UhvGisaxs :: DSWrap_ DSGeometry DSPath
           dataSourcePath'Geometry'Sixs'UhvGisaxs
-            = DataSourcePath'Geometry
-              sixsUhvGisaxs
-              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
-              (DataSourcePath'List [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ])
+            = [ DataSourcePath'Geometry
+                sixsUhvGisaxs
+                (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
+                [ DataSourcePath'List [ sixs'Uhv'Mu, sixs'Uhv'Omega, sixs'eix, sixs'eiz ] ]
+              ]
 
       let sixs'Med'Beta
-            = DataSourcePath'Double'Ini cfg "geometry.values" "beta"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 (groupp "scan_data" (datasetp "beta"
-                                                                            `H5Or`
-                                                                            datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch"))
-                                                        `H5Or`
-                                                        datasetp "SIXS/i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch"))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "beta"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 (groupp "scan_data" (datasetp "beta"
+                                                                              `H5Or`
+                                                                              datasetpattr ("long_name", "i14-c-cx1/ex/diff-med-tpp/pitch"))
+                                                          `H5Or`
+                                                          datasetp "SIXS/i14-c-cx1-ex-diff-med-tpp/TPP/Orientation/pitch"))
+              ]
       let sixs'MedH'Mu
-            = DataSourcePath'Double'Ini cfg "geometry.values" "mu"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
-                                                                             `H5Or`
-                                                                              datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/mu")))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "mu"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/mu")))
+              ]
       let sixs'MedV'Mu
-            = DataSourcePath'Double'Ini cfg "geometry.values" "mu"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/mu")
-                                                                            ))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "mu"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "mu"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/mu")
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/mu")
+                                                                              ))
+              ]
       let sixs'MedV'Omega
-            = DataSourcePath'Double'Ini cfg "geometry.values" "omega"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/omega")
-                                                                            ))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "omega"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "omega"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/omega")
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/omega")
+                                                                              ))
+              ]
       let sixs'MedH'Gamma
-            = DataSourcePath'Double'Ini cfg "geometry.values" "gamma"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/gamma")))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "gamma"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/gamma")))
+              ]
       let sixs'MedV'Gamma
-            = DataSourcePath'Double'Ini cfg "geometry.values" "gamma"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/gamma")
-                                                                            ))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "gamma"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "gamma"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/gamma")
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/gamma")
+                                                                              ))
+              ]
       let sixs'MedH'Delta
-            = DataSourcePath'Double'Ini cfg "geometry.values" "delta"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/delta")))
-
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "delta"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-h-dif-group.1/delta")))
+              ]
       let sixs'MedV'Delta
-            = DataSourcePath'Double'Ini cfg "geometry.values" "delta"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/delta")
-                                                                            ))
-
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "delta"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "delta"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/delta")
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-grp_no_etaa/delta")
+                                                                              ))
+              ]
       let sixs'MedV'Etaa
-            = DataSourcePath'Double'Ini cfg "geometry.values" "etaa"
-              `DataSourcePath'Double'Or`
-              DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "etaa"
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")
-                                                                             `H5Or`
-                                                                             datasetpattr ("long_name", "i14-c-cx1/ex/eta-a-med-grp/etaa")
-                                                                            ))
+            = [ DataSourcePath'Double'Ini cfg "geometry.values" "etaa"
+              , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp "scan_data" (datasetp "etaa"
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/med-v-dif-group.1/etaa")
+                                                                               `H5Or`
+                                                                               datasetpattr ("long_name", "i14-c-cx1/ex/eta-a-med-grp/etaa")
+                                                                              ))
+              ]
 
 
-      let dataSourcePath'Geometry'Sixs'MedH ::  DataSourceT DSPath Geometry
+      let dataSourcePath'Geometry'Sixs'MedH ::  DSWrap_ DSGeometry DSPath
           dataSourcePath'Geometry'Sixs'MedH
-            = DataSourcePath'Geometry
-              (Geometry'Factory MedH Nothing)
-              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
-              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'MedH'Gamma, sixs'MedH'Delta ])
+            = [ DataSourcePath'Geometry
+                (Geometry'Factory MedH Nothing)
+                (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
+                [ DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'MedH'Gamma, sixs'MedH'Delta ] ]
+              ]
 
-      let dataSourcePath'Geometry'Sixs'MedHGisaxs ::  DataSourceT DSPath Geometry
+      let dataSourcePath'Geometry'Sixs'MedHGisaxs ::  DSWrap_ DSGeometry DSPath
           dataSourcePath'Geometry'Sixs'MedHGisaxs
-            = DataSourcePath'Geometry
-              sixsMedHGisaxs
-              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
-              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ])
+            = [ DataSourcePath'Geometry
+                sixsMedHGisaxs
+                (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
+                [ DataSourcePath'List [ sixs'Med'Beta, sixs'MedH'Mu, sixs'eix, sixs'eiz ] ]
+              ]
 
-      let dataSourcePath'Geometry'Sixs'MedV :: DataSourceT DSPath Geometry
+      let dataSourcePath'Geometry'Sixs'MedV :: DSWrap_ DSGeometry DSPath
           dataSourcePath'Geometry'Sixs'MedV
-            = DataSourcePath'Geometry
-              (Geometry'Factory MedV Nothing)
-              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
-              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'MedV'Gamma, sixs'MedV'Delta, sixs'MedV'Etaa ])
+            = [ DataSourcePath'Geometry
+                (Geometry'Factory MedV Nothing)
+                (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
+                [ DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'MedV'Gamma, sixs'MedV'Delta, sixs'MedV'Etaa ] ]
+              ]
 
-      let dataSourcePath'Geometry'Sixs'MedVGisaxs :: DataSourceT DSPath Geometry
+      let dataSourcePath'Geometry'Sixs'MedVGisaxs :: DSWrap_ DSGeometry DSPath
           dataSourcePath'Geometry'Sixs'MedVGisaxs
-            = DataSourcePath'Geometry
-              sixsMedVGisaxs
-              (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
-              (DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ])
+            = [ DataSourcePath'Geometry
+                sixsMedVGisaxs
+                (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Sixs)
+                [ DataSourcePath'List [ sixs'Med'Beta, sixs'MedV'Mu, sixs'MedV'Omega, sixs'eix, sixs'eiz ] ]
+              ]
 
-      let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DataSourceT DSPath Geometry -> Scannumber -> DataSourceT DSPath DataFrameQCustom
+      let dataSourcePath'DataFrameQCustom'Sixs'Fly :: DSWrap_ DSGeometry DSPath -> Scannumber -> DSWrap_ DSDataFrameQCustom DSPath
           dataSourcePath'DataFrameQCustom'Sixs'Fly g sn
-            = let att = mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
-              in DataSourcePath'DataFrameQCustom
-                 att
-                 g
-                 (overload'DataSourcePath'Image detector mImage (mkDetector'Sixs'Fly detector att sn))
-                 (mk'DataSourcePath'Mask common)
-                 (mkTimeStamp'Fly msub)
-                 (mkTimescan0'Fly msub)
-                 DataSourcePath'Scannumber
+            = [ let att = mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'Sixs
+                in DataSource'DataFrameQCustom
+                   att
+                   g
+                   (overload'DataSourcePath'Image detector mImage (mkDetector'Sixs'Fly detector sn))
+                   [ mk'DataSourcePath'Mask common ]
+                   (mkTimeStamp'Fly msub)
+                   (mkTimescan0'Fly msub)
+                   [DataSourcePath'Scannumber]
+              ]
 
-      let dataSourcePath'DataFrameQCustom'Sixs'Sbs :: DataSourceT DSPath Geometry -> Scannumber -> DataSourceT DSPath DataFrameQCustom
+      let dataSourcePath'DataFrameQCustom'Sixs'Sbs :: DSWrap_ DSGeometry DSPath -> Scannumber -> DSWrap_ DSDataFrameQCustom DSPath
           dataSourcePath'DataFrameQCustom'Sixs'Sbs g sn
-            = let att = mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
-              in DataSourcePath'DataFrameQCustom
-                 att
-                 g
-                 (overload'DataSourcePath'Image detector mImage (mkDetector'Sixs'Sbs detector att sn))
-                 (mk'DataSourcePath'Mask common)
-                 (mkTimeStamp'Sbs msub)
-                 (mkTimescan0'Sbs msub)
-                 DataSourcePath'Scannumber
+            = [ let att = mkAttenuation mAttenuationCoefficient dataSourcePath'Attenuation'SixsSBS
+                in DataSource'DataFrameQCustom
+                   att
+                   g
+                   ( overload'DataSourcePath'Image detector mImage (mkDetector'Sixs'Sbs detector sn) )
+                   [ mk'DataSourcePath'Mask common ]
+                   ( mkTimeStamp'Sbs msub )
+                   ( mkTimescan0'Sbs msub )
+                   [ DataSourcePath'Scannumber ]
+              ]
 
       case inputtype of
-         CristalK6C -> DataSourcePath'DataFrameQCustom
-                      (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
-                      (DataSourcePath'Geometry
-                        (Geometry'Factory K6c Nothing)
-                        (overload'DataSourcePath'Double mWavelength (DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")))
-                        (DataSourcePath'List
-                         [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position")
-                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position")
-                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position")
-                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1")
-                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position")
-                         , DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position")
-                         ]
-                        )
-                      )
-                      (DataSourcePath'Image'Hdf5
-                       detector
-                       (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05"))
-                      (mk'DataSourcePath'Mask common)
-                      (mkTimeStamp'Sbs msub)
-                      (mkTimescan0'Sbs msub)
-                      DataSourcePath'Scannumber
+         CristalK6C -> [ DataSource'DataFrameQCustom
+                        (mkAttenuation mAttenuationCoefficient [DataSourcePath'NoAttenuation])
+                        [ DataSourcePath'Geometry
+                          (Geometry'Factory K6c Nothing)
+                          (overload'DataSourcePath'Double mWavelength [DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Monochromator/lambda")])
+                          [ DataSourcePath'List
+                            [ [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-mu/position") ]
+                            , [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-komega/position") ]
+                            , [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-kappa/position") ]
+                            , [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "scan_data/actuator_1_1") ]
+                            , [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-gamma/position") ]
+                            , [ DataSourcePath'Double (hdf5p $ grouppat 0 $ datasetp "CRISTAL/Diffractometer/i06-c-c07-ex-dif-delta/position") ]
+                            ]
+                          ]
+                        ]
+                        [ DataSourcePath'Image'Hdf5
+                          detector
+                          (hdf5p $ grouppat 0 $ datasetp "scan_data/data_05")
+                        ]
+                        [ mk'DataSourcePath'Mask common ]
+                        (mkTimeStamp'Sbs msub)
+                        (mkTimescan0'Sbs msub)
+                        [ DataSourcePath'Scannumber ]
+                      ]
          Custom -> undefined
-         DiffabsCirpad -> DataSourcePath'DataFrameQCustom
-                         (mkAttenuation mAttenuationCoefficient  DataSourcePath'NoAttenuation)
-                         (DataSourcePath'Geometry
-                          cirpad
-                          (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Diffabs)
-                          (DataSourcePath'List
-                           [ DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/cirpad_delta/position"))
-                           , DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/dif.1-cirpad-gam/position"))
+         DiffabsCirpad -> [ DataSource'DataFrameQCustom
+                           (mkAttenuation mAttenuationCoefficient  [DataSourcePath'NoAttenuation])
+                           [ DataSourcePath'Geometry
+                             cirpad
+                             (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Diffabs)
+                             [ DataSourcePath'List
+                               [ [ DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/cirpad_delta/position")) ]
+                               , [ DataSourcePath'Double (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/ex/dif.1-cirpad-gam/position")) ]
+                               ]
+                             ]
                            ]
-                          )
-                         )
+                           (overload'DataSourcePath'Image detector mImage
+                            [ DataSourcePath'Image'Hdf5
+                              detector
+                              (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image"))
+                            ]
+                           )
+                           [ mk'DataSourcePath'Mask common ]
+                           (mkTimeStamp'Sbs msub)
+                           (mkTimescan0'Sbs msub)
+                           [ DataSourcePath'Scannumber ]
+                         ]
+         MarsFlyscan -> [ DataSource'DataFrameQCustom
+                         (mkAttenuation mAttenuationCoefficient [DataSourcePath'NoAttenuation ])
+                         -- (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
+                         --                                         (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
+                         [ DataSourcePath'Geometry
+                           (Geometry'Factory Mars Nothing)
+                           (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Mars)
+                           [ DataSourcePath'List
+                             [ [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega") ]
+                             , [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi") ]
+                             , [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi") ]
+                             , [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/tth") ]
+                             ]
+                           ]
+                         ]
                          (overload'DataSourcePath'Image detector mImage
-                          (DataSourcePath'Image'Hdf5
-                           detector
-                           (hdf5p $ grouppat 0 $ groupp "scan_data" $ datasetpattr ("long_name", "d13-1-cx1/dt/cirpad.1/image"))))
-                         (mk'DataSourcePath'Mask common)
-                         (mkTimeStamp'Sbs msub)
-                         (mkTimescan0'Sbs msub)
-                         DataSourcePath'Scannumber
-
-         MarsFlyscan -> DataSourcePath'DataFrameQCustom
-                       (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
-                       -- (mkAttenuation mAttenuationCoefficient (DataSourcePath'ApplyedAttenuationFactor
-                       --                                         (DataSourcePath'Float (hdf5p $ grouppat 0 $ datasetp "scan_data/applied_att"))))
-                       (DataSourcePath'Geometry
-                         (Geometry'Factory Mars Nothing)
-                         (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Mars)
-                         (DataSourcePath'List
-                          [ DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/omega")
-                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/chi")
-                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/phi")
-                          , DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "scan_data/tth")
+                          [ DataSourcePath'Image'Hdf5
+                            detector
+                            (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
+                                                 `H5Or`
+                                                 datasetp "scan_data/merlin_quad_image"))
                           ]
                          )
-                        )
-                       (overload'DataSourcePath'Image detector mImage
-                        (DataSourcePath'Image'Hdf5
-                         detector
-                         (hdf5p $ grouppat 0 (datasetp "scan_data/merlin_image"
-                                              `H5Or`
-                                              datasetp "scan_data/merlin_quad_image")))
-                       )
-                       (mk'DataSourcePath'Mask common)
-                       (mkTimeStamp'Fly msub)
-                       (mkTimescan0'Sbs msub)
-                       DataSourcePath'Scannumber
-         MarsSbs -> DataSourcePath'DataFrameQCustom
-                   (mkAttenuation mAttenuationCoefficient DataSourcePath'NoAttenuation)
-                   (DataSourcePath'Geometry
-                     (Geometry'Factory Mars Nothing)
-                     (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Mars)
-                     (DataSourcePath'List
-                      [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/omega"
-                                                                    `H5Or`
-                                                                     datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.1_#2/raw_value"))
+                         [ mk'DataSourcePath'Mask common ]
+                         (mkTimeStamp'Fly msub)
+                         (mkTimescan0'Sbs msub)
+                         [ DataSourcePath'Scannumber ]
+                       ]
+         MarsSbs -> [ DataSource'DataFrameQCustom
+                     (mkAttenuation mAttenuationCoefficient [ DataSourcePath'NoAttenuation ])
+                     [ DataSourcePath'Geometry
+                       (Geometry'Factory Mars Nothing)
+                       (overload'DataSourcePath'Double mWavelength dataSourcePath'WaveLength'Mars)
+                       [ DataSourcePath'List
+                         [ [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/omega"
+                                                                         `H5Or`
+                                                                         datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.1_#2/raw_value"))
 
-                        `DataSourcePath'Double'Or`
-                         DataSourcePath'Double'Const 0
-                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/chi"
-                                                                    `H5Or`
-                                                                    datasetp "MARS/d03-1-cx2__ex__gonio-mt_rs_#2/raw_value"))
-                        `DataSourcePath'Double'Or`
-                        DataSourcePath'Double'Const 0
-                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/phi"
-                                                                    `H5Or`
-                                                                    datasetpattr ("long_name", "d03-1-cx2/ex/gonio-mt_rz/position")
-                                                                    `H5Or`
-                                                                    datasetp "MARS/d03-1-cx2__ex__gonio-mt_rz_#2/raw_value"))
-                        `DataSourcePath'Double'Or`
-                        DataSourcePath'Double'Const 0
-                      , DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/tth"
-                                                                    `H5Or`
-                                                                    datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.2_#2/raw_value"))
-                        `DataSourcePath'Double'Or`
-                        DataSourcePath'Double'Const 0
+                           , DataSourcePath'Double'Const 0
+                           ]
+                         , [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/chi"
+                                                                         `H5Or`
+                                                                         datasetp "MARS/d03-1-cx2__ex__gonio-mt_rs_#2/raw_value"))
+                           , DataSourcePath'Double'Const 0
+                           ]
+                         , [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/phi"
+                                                                         `H5Or`
+                                                                         datasetpattr ("long_name", "d03-1-cx2/ex/gonio-mt_rz/position")
+                                                                         `H5Or`
+                                                                         datasetp "MARS/d03-1-cx2__ex__gonio-mt_rz_#2/raw_value"))
+                           , DataSourcePath'Double'Const 0
+                           ]
+                         , [ DataSourcePath'Double(hdf5p $ grouppat 0 $ (datasetp "scan_data/tth"
+                                                                         `H5Or`
+                                                                         datasetp "MARS/d03-1-cx2__ex__dif-mt_rx.2_#2/raw_value"))
+                           , DataSourcePath'Double'Const 0
+                           ]
+                         ]
+                       ]
+                     ]
+                     (overload'DataSourcePath'Image detector mImage
+                      [ DataSourcePath'Image'Hdf5
+                        detector
+                        (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
+                                  `H5Or`
+                                  datasetpattr ("interpretation", "image")))
                       ]
                      )
-                    )
-                   (overload'DataSourcePath'Image detector mImage
-                    (DataSourcePath'Image'Hdf5
-                     detector
-                     (hdf5p $ (datasetpattr ("long_name", "d03-1-c00/dt/merlin-quad/image")
-                               `H5Or`
-                               datasetpattr ("interpretation", "image"))))
-                   )
-                   (mk'DataSourcePath'Mask common)
-                   (mkTimeStamp'Sbs msub)
-                   (mkTimescan0'Sbs msub)
-                   DataSourcePath'Scannumber
+                     [ mk'DataSourcePath'Mask common ]
+                     (mkTimeStamp'Sbs msub)
+                     (mkTimescan0'Sbs msub)
+                     [ DataSourcePath'Scannumber ]
+                   ]
          SixsFlyMedH -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedH sn0
          SixsFlyMedHGisaxs -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedHGisaxs sn0
          SixsFlyMedV -> dataSourcePath'DataFrameQCustom'Sixs'Fly dataSourcePath'Geometry'Sixs'MedV sn0
@@ -1063,21 +1108,21 @@ processQCustomP = do
     saveCube output' (unpack . serializeConfig $ conf) r'
 
 
-instance ChunkP (DataSourceT DSPath DataFrameQCustom) where
+instance ChunkP [DSDataFrameQCustom DSPath] where
     chunkP mSkipFirst mSkipLast p =
       skipMalformed $ forever $ do
       sfp <- await
       withScanFileP sfp $ \f' ->
-        withDataSourceP f' p $ \p' -> do
+        withDataSourcesP f' p $ \p' -> do
           (DataSourceShape'Range (Z :. f) (Z :. t)) <- ds'Shape p'
           yield $ cclip (fromMaybe 0 mSkipFirst) (fromMaybe 0 mSkipLast) (Chunk sfp f (t - 1))
 
-instance FramesP (DataSourceT DSPath DataFrameQCustom) DataFrameQCustom where
+instance FramesP [DSDataFrameQCustom DSPath] DataFrameQCustom where
     framesP p =
         skipMalformed $ forever $ do
           (fp, js) <- await
           withScanFileP fp $ \f ->
-            withDataSourceP f p $ \ g ->
+            withDataSourcesP f p $ \ g ->
             forM_ js (tryYield . extract1DStreamValue g)
 
 ---------
