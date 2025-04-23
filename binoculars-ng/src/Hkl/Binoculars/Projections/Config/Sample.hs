@@ -92,9 +92,9 @@ instance Is0DStreamable (DSSample DSAcq) Sample where
 default'DataSource'Sample :: DSWrap_ DSSample DSPath
 default'DataSource'Sample
     = [ DataSource'Sample
-        ([DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A")])
-        ([DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B")])
-        ([DataSourcePath'Double(hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C")])
+        ([DataSourcePath'Double'Hdf5([DataSourcePath'Dataset (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/A")])])
+        ([DataSourcePath'Double'Hdf5([DataSourcePath'Dataset (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/B")])])
+        ([DataSourcePath'Double'Hdf5([DataSourcePath'Dataset (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/C")])])
         ([DataSourcePath'Degree'Hdf5([DataSourcePath'Dataset (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Alpha")])])
         ([DataSourcePath'Degree'Hdf5([DataSourcePath'Dataset (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Beta")])])
         ([DataSourcePath'Degree'Hdf5([DataSourcePath'Dataset (hdf5p $ grouppat 0 $ datasetp "SIXS/I14-C-CX2__EX__DIFF-UHV__#1/Gamma")])])
@@ -128,12 +128,12 @@ guess'DataSource'Sample common sample =
   do let inputType = binocularsConfig'Common'InputType common
      let samplePath' beamline device =
            DataSource'Sample
-           [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A")
-           , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a")]
-           [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B")
-           , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b")]
-           [ DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C")
-           , DataSourcePath'Double(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c")]
+           [ DataSourcePath'Double'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "A")])
+           , DataSourcePath'Double'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "a")])]
+           [ DataSourcePath'Double'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "B")])
+           , DataSourcePath'Double'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "b")])]
+           [ DataSourcePath'Double'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "C")])
+           , DataSourcePath'Double'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "c")])]
            [ DataSourcePath'Degree'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "alpha")])]
            [ DataSourcePath'Degree'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "beta")])]
            [ DataSourcePath'Degree'Hdf5([DataSourcePath'Dataset(hdf5p $ grouppat 0 $ groupp beamline $ groupp device $ datasetp "gamma")])]

@@ -53,9 +53,7 @@ module Hkl.DataSource
   ) where
 
 import           Bindings.HDF5.Core                (Location)
-import           Bindings.HDF5.Dataset             (getDatasetSpace,
-                                                    getDatasetType)
-import           Bindings.HDF5.Dataspace           (getSimpleDataspaceExtentNPoints)
+import           Bindings.HDF5.Dataset             (getDatasetType)
 import           Bindings.HDF5.Datatype            (getTypeSize, nativeTypeOf,
                                                     typeIDsEqual)
 import           Control.Exception                 (throwIO)
@@ -144,14 +142,14 @@ instance Is0DStreamable (DSDegree DSAcq) CDouble where
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
 instance Is0DStreamable (DSDouble DSAcq) Double where
-  extract0DStreamValue (DataSourceAcq'Double d)       = extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Double'Hdf5 d)  = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Double'Const a) = pure a
 
 instance Is0DStreamable (DSScannumber DSAcq) Scannumber where
   extract0DStreamValue (DataSourceAcq'Scannumber'Const sn) = pure sn
 
 instance Is0DStreamable (DSTimescan0 DSAcq) Timescan0 where
-  extract0DStreamValue (DataSourceAcq'Timescan0 ds) = Timescan0 <$> extract0DStreamValue ds
+  extract0DStreamValue (DataSourceAcq'Timescan0'Hdf5 ds) = Timescan0 <$> extract0DStreamValue ds
   extract0DStreamValue DataSourceAcq'Timescan0'NoTimescan0 = returnIO $ Timescan0 0
 
 --------------------
@@ -165,6 +163,15 @@ class Is1DStreamable a e where
 
 badAttenuation :: Float
 badAttenuation = -100
+
+instance Is1DStreamable (DSDataset Double DSAcq) CDouble where
+    extract1DStreamValue (DataSourceAcq'Dataset ds) i = getPosition ds i
+
+instance Is1DStreamable (DSDataset Double DSAcq) Double where
+    extract1DStreamValue (DataSourceAcq'Dataset ds) i = getPosition ds i
+
+instance Is1DStreamable (DSDataset Float DSAcq) Float where
+    extract1DStreamValue (DataSourceAcq'Dataset ds) i = getPosition ds i
 
 instance Is1DStreamable (DSAttenuation DSAcq) Attenuation where
     extract1DStreamValue (DataSourceAcq'Attenuation ds offset coef mmax) i =
@@ -184,7 +191,7 @@ instance Is1DStreamable (DSAttenuation DSAcq) Attenuation where
 
 
 instance Is1DStreamable (DSDouble DSAcq) CDouble where
-  extract1DStreamValue (DataSourceAcq'Double d)       = extract1DStreamValue d
+  extract1DStreamValue (DataSourceAcq'Double'Hdf5 d)  = extract1DStreamValue d
   extract1DStreamValue (DataSourceAcq'Double'Const d) = const $ extract0DStreamValue d
 
 instance Is1DStreamable Dataset CDouble where
@@ -200,7 +207,7 @@ instance Is1DStreamable (DSDoubles DSAcq) (Data.Vector.Storable.Vector CDouble) 
   extract1DStreamValue (DataSourceAcq'List ds) i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 instance Is1DStreamable (DSFloat DSAcq) Float where
-  extract1DStreamValue (DataSourceAcq'Float ds) = extract1DStreamValue ds
+  extract1DStreamValue (DataSourceAcq'Float'Hdf5 ds) = extract1DStreamValue ds
 
 instance  Is1DStreamable (DSGeometry DSAcq) Geometry where
      extract1DStreamValue (DataSourceAcq'Geometry g w' as') i =
@@ -224,7 +231,7 @@ instance Is1DStreamable (DSMask DSAcq) (Maybe Mask) where
     extract1DStreamValue (DataSourceAcq'Mask m) _      = returnIO (Just m)
 
 instance Is1DStreamable (DSTimestamp DSAcq) Timestamp where
-  extract1DStreamValue (DataSourceAcq'Timestamp ds) i = Timestamp <$> extract1DStreamValue ds i
+  extract1DStreamValue (DataSourceAcq'Timestamp'Hdf5 ds) i = Timestamp <$> extract1DStreamValue ds i
   extract1DStreamValue DataSourceAcq'Timestamp'NoTimestamp _ = returnIO $ Timestamp 0
 
 ----------------
@@ -241,6 +248,7 @@ type DSWrap_ f k = DSWrap k (f k)
 
 data DataSourceShape
     = DataSourceShape'Range !DIM1 !DIM1
+      deriving Eq
 
 combine'Shape :: DataSourceShape -> DataSourceShape -> DataSourceShape
 combine'Shape (DataSourceShape'Range _ (Z :. 1)) s = s
@@ -389,7 +397,8 @@ instance DataSource DSAttenuation where
 data family DSDataset (a :: Type) (k :: DSKind)
 newtype instance DSDataset a DSPath
     = DataSourcePath'Dataset (Hdf5Path DIM1 a)
-    deriving (Generic, Show, FromJSON, ToJSON)
+    deriving (Eq, Generic, Show)
+    deriving anyclass (FromJSON, ToJSON)
 
 newtype instance DSDataset a DSAcq
     = DataSourceAcq'Dataset Dataset
@@ -424,27 +433,27 @@ instance DataSource DSDegree where
 
 data family DSDouble (k :: DSKind)
 data instance DSDouble DSPath
-    = DataSourcePath'Double (Hdf5Path Z Double)
+    = DataSourcePath'Double'Hdf5 (DSWrap_ (DSDataset Double) DSPath)
     | DataSourcePath'Double'Ini ConfigContent Section Key
     | DataSourcePath'Double'Const Double
     deriving (Generic, Show, FromJSON, ToJSON)
 
 data instance DSDouble DSAcq
-    = DataSourceAcq'Double Dataset
+    = DataSourceAcq'Double'Hdf5 (DSWrap_ (DSDataset Double) DSAcq)
     | DataSourceAcq'Double'Const Double
 
 instance DataSource DSDouble where
-  ds'Shape (DataSourceAcq'Double ds)      = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Double'Hdf5 ds) = ds'Shape ds
   ds'Shape (DataSourceAcq'Double'Const _) = pure $ shape1
 
-  withDataSourceP (ScanFile f _) (DataSourcePath'Double p) g = withHdf5PathP f p $ \ds -> do
-    space <- liftIO $ getDatasetSpace ds
-    l <- liftIO $ getSimpleDataspaceExtentNPoints space
-    case l of
-      1 -> do
-        v <- liftIO $ extract0DStreamValue ds
-        g (DataSourceAcq'Double'Const v)
-      _ -> g (DataSourceAcq'Double ds)
+  withDataSourceP f (DataSourcePath'Double'Hdf5 p) g
+      = withDataSourcesP f p $ \ds -> do
+                               sh <- ds'Shape ds
+                               if sh == shape1
+                               then do
+                                 v <- liftIO $ extract0DStreamValue ds
+                                 g (DataSourceAcq'Double'Const v)
+                               else g (DataSourceAcq'Double'Hdf5 ds)
   withDataSourceP _ (DataSourcePath'Double'Const a) g = g (DataSourceAcq'Double'Const a)
   withDataSourceP _ (DataSourcePath'Double'Ini (ConfigContent cfg) s k) g =
       eitherF (const $ throwM $ CanNotOpenDataSource'Double'Ini s k) (parse' cfg s k)
@@ -458,11 +467,11 @@ nest :: [(r -> a) -> a] -> ([r] -> a) -> a
 nest xs = runCont (Prelude.mapM cont xs)
 
 data family DSDoubles (k :: DSKind)
-data instance DSDoubles DSPath
+newtype instance DSDoubles DSPath
     = DataSourcePath'List [DSWrap_ DSDouble DSPath]
       deriving (Generic, FromJSON, Show, ToJSON)
 
-data instance DSDoubles DSAcq
+newtype instance DSDoubles DSAcq
     = DataSourceAcq'List [DSWrap_ DSDouble DSAcq]
 
 instance DataSource DSDoubles where
@@ -476,17 +485,17 @@ instance DataSource DSDoubles where
 -- Float
 
 data family DSFloat (k :: DSKind)
-data instance DSFloat DSPath
-    = DataSourcePath'Float (Hdf5Path DIM1 Float)
+newtype instance DSFloat DSPath
+    = DataSourcePath'Float'Hdf5 (DSWrap_ (DSDataset Float) DSPath)
     deriving (Eq, Generic, Show)
     deriving anyclass (FromJSON, ToJSON)
-data instance DSFloat DSAcq
-    = DataSourceAcq'Float Dataset
+newtype instance DSFloat DSAcq
+    = DataSourceAcq'Float'Hdf5 (DSWrap_ (DSDataset Float) DSAcq)
 
 instance DataSource DSFloat where
-    ds'Shape (DataSourceAcq'Float ds) = liftIO $ ds'Shape'Dataset ds
+    ds'Shape (DataSourceAcq'Float'Hdf5 ds) = ds'Shape ds
 
-    withDataSourceP (ScanFile f _) (DataSourcePath'Float p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Float ds)
+    withDataSourceP f (DataSourcePath'Float'Hdf5 p) g = withDataSourcesP f p $ \ds -> g (DataSourceAcq'Float'Hdf5 ds)
 
 -- Geometry
 
@@ -638,37 +647,37 @@ instance DataSource DSScannumber where
 
 data family DSTimestamp (k :: DSKind)
 data instance DSTimestamp DSPath
-  = DataSourcePath'Timestamp (Hdf5Path DIM1 Double)
+  = DataSourcePath'Timestamp'Hdf5 (DSWrap_ (DSDataset Double) DSPath)
   | DataSourcePath'Timestamp'NoTimestamp
   deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DSTimestamp DSAcq
-    = DataSourceAcq'Timestamp Dataset
+    = DataSourceAcq'Timestamp'Hdf5 (DSWrap_ (DSDataset Double) DSAcq)
     | DataSourceAcq'Timestamp'NoTimestamp
 
 
 instance DataSource DSTimestamp where
-  ds'Shape (DataSourceAcq'Timestamp ds)        = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Timestamp'Hdf5 ds)   = ds'Shape ds
   ds'Shape DataSourceAcq'Timestamp'NoTimestamp = pure $ shape1
 
-  withDataSourceP (ScanFile f _) (DataSourcePath'Timestamp p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timestamp ds)
+  withDataSourceP f (DataSourcePath'Timestamp'Hdf5 p) g = withDataSourcesP f p $ \ds -> g (DataSourceAcq'Timestamp'Hdf5 ds)
   withDataSourceP _ DataSourcePath'Timestamp'NoTimestamp g = g DataSourceAcq'Timestamp'NoTimestamp
 
 -- Timescan0
 
 data family DSTimescan0 (k :: DSKind)
 data instance DSTimescan0 DSPath
-    = DataSourcePath'Timescan0 (Hdf5Path DIM1 Double)
+    = DataSourcePath'Timescan0'Hdf5 (DSWrap_ (DSDataset Double) DSPath)
     | DataSourcePath'Timescan0'NoTimescan0
     deriving (Eq, Generic, Show, FromJSON, ToJSON)
 
 data instance DSTimescan0 DSAcq
-    = DataSourceAcq'Timescan0 Dataset
+    = DataSourceAcq'Timescan0'Hdf5 (DSWrap_ (DSDataset Double) DSAcq)
     | DataSourceAcq'Timescan0'NoTimescan0
 
 instance DataSource DSTimescan0 where
-  ds'Shape (DataSourceAcq'Timescan0 ds)        = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Timescan0'Hdf5 ds)   = ds'Shape ds
   ds'Shape DataSourceAcq'Timescan0'NoTimescan0 = pure $ shape1
 
-  withDataSourceP (ScanFile f _) (DataSourcePath'Timescan0 p) g = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Timescan0 ds)
+  withDataSourceP f (DataSourcePath'Timescan0'Hdf5 p) g = withDataSourcesP f p $ \ds -> g (DataSourceAcq'Timescan0'Hdf5 ds)
   withDataSourceP _ DataSourcePath'Timescan0'NoTimescan0 g = g DataSourceAcq'Timescan0'NoTimescan0
