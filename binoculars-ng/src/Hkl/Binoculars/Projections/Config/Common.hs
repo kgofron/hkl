@@ -45,7 +45,6 @@ import           Hkl.C.Binoculars
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
-import           Hkl.Image
 import           Hkl.Orphan                        ()
 import           Hkl.Repa
 import           Hkl.Types
