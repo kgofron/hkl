@@ -118,19 +118,34 @@ instance Is0DStreamable Degree CDouble where
 instance Is0DStreamable Double CDouble where
   extract0DStreamValue d = pure $ CDouble d
 
+instance Is0DStreamable (DSDataset Double DSAcq) Degree where
+    extract0DStreamValue (DataSourceAcq'Dataset d)
+        = Degree <$> do
+            v <- extract0DStreamValue d
+            return $ v *~ degree
+
+instance Is0DStreamable (DSDataset Double DSAcq) Double where
+    extract0DStreamValue (DataSourceAcq'Dataset d) = getPosition d 0
+
+instance Is0DStreamable (DSDataset Double DSAcq) CDouble where
+    extract0DStreamValue (DataSourceAcq'Dataset d) = getPosition d 0
+
 instance Is0DStreamable (DSDegree DSAcq) Degree where
     extract0DStreamValue (DataSourceAcq'Degree d) =
         Degree <$> do
           v <- extract0DStreamValue d
           return $ v *~ degree
+    extract0DStreamValue (DataSourceAcq'Degree'Hdf5 d) = extract0DStreamValue d
     extract0DStreamValue (DataSourceAcq'Degree'Const d) = pure d
 
 instance Is0DStreamable (DSDegree DSAcq) Double where
   extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Degree'Hdf5 d)  = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
 instance Is0DStreamable (DSDegree DSAcq) CDouble where
   extract0DStreamValue (DataSourceAcq'Degree d)       = extract0DStreamValue d
+  extract0DStreamValue (DataSourceAcq'Degree'Hdf5 d)  = extract0DStreamValue d
   extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
 instance Is0DStreamable (DSDouble DSAcq) Double where
@@ -395,19 +410,24 @@ instance DataSource (DSDataset a) where
 data family DSDegree (k :: DSKind)
 data instance DSDegree DSPath
     = DataSourcePath'Degree (Hdf5Path DIM1 Double)
+    | DataSourcePath'Degree'Hdf5 (DSWrap_ (DSDataset Double) DSPath)
     | DataSourcePath'Degree'Const Degree
     deriving (Generic, Show, FromJSON, ToJSON)
 
 data instance DSDegree DSAcq
     = DataSourceAcq'Degree Dataset
+    | DataSourceAcq'Degree'Hdf5 (DSWrap_ (DSDataset Double) DSAcq)
     | DataSourceAcq'Degree'Const Degree
 
 instance DataSource DSDegree where
   ds'Shape (DataSourceAcq'Degree ds)      = liftIO $ ds'Shape'Dataset ds
+  ds'Shape (DataSourceAcq'Degree'Hdf5 ds) = ds'Shape ds
   ds'Shape (DataSourceAcq'Degree'Const _) = pure $ shape1
 
   withDataSourceP (ScanFile f _) (DataSourcePath'Degree p) g
     = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Degree ds)
+  withDataSourceP f (DataSourcePath'Degree'Hdf5 p) g
+    = withDataSourcesP f p $ \p' -> g (DataSourceAcq'Degree'Hdf5 p')
   withDataSourceP _ (DataSourcePath'Degree'Const d) g = g (DataSourceAcq'Degree'Const d)
 
 -- Double
