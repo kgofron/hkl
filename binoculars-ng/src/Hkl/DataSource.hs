@@ -374,6 +374,22 @@ instance DataSource DSAttenuation where
   withDataSourceP f (DataSourcePath'ApplyedAttenuationFactor p) g = withDataSourcesP f p $ \ds -> g (DataSourceAcq'ApplyedAttenuationFactor ds)
   withDataSourceP _ DataSourcePath'NoAttenuation g = g DataSourceAcq'NoAttenuation
 
+-- Dataset
+
+data family DSDataset (a :: Type) (k :: DSKind)
+newtype instance DSDataset a DSPath
+    = DataSourcePath'Dataset (Hdf5Path DIM1 a)
+    deriving (Generic, Show, FromJSON, ToJSON)
+
+newtype instance DSDataset a DSAcq
+    = DataSourceAcq'Dataset Dataset
+
+instance DataSource (DSDataset a) where
+    ds'Shape (DataSourceAcq'Dataset ds) = liftIO $ ds'Shape'Dataset ds
+
+    withDataSourceP (ScanFile f _) (DataSourcePath'Dataset p) g
+        = withHdf5PathP f p $ \ds -> g (DataSourceAcq'Dataset ds)
+
 -- Degree
 
 data family DSDegree (k :: DSKind)
