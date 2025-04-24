@@ -102,25 +102,19 @@ class Is0DStreamable a e where
 
 -- Is0DStreamable (instances)
 
-instance Is0DStreamable Dataset CDouble where
-  extract0DStreamValue d = getPosition d 0
-
-instance Is0DStreamable Dataset Double where
-  extract0DStreamValue d = getPosition d 0
-
 instance Is0DStreamable Degree Double where
-  extract0DStreamValue (Degree d) = pure (d /~ degree)
+    extract0DStreamValue (Degree d) = pure (d /~ degree)
 
 instance Is0DStreamable Degree CDouble where
-  extract0DStreamValue (Degree d) = pure $ CDouble (d /~ degree)
+    extract0DStreamValue (Degree d) = pure $ CDouble (d /~ degree)
 
 instance Is0DStreamable Double CDouble where
-  extract0DStreamValue d = pure $ CDouble d
+    extract0DStreamValue d = pure $ CDouble d
 
 instance Is0DStreamable (DSDataset sh Double DSAcq) Degree where
     extract0DStreamValue (DataSourceAcq'Dataset d)
         = Degree <$> do
-            v <- extract0DStreamValue d
+            v <- getPosition d 0
             return $ v *~ degree
 
 instance Is0DStreamable (DSDataset sh Double DSAcq) Double where
@@ -134,23 +128,23 @@ instance Is0DStreamable (DSDegree DSAcq) Degree where
     extract0DStreamValue (DataSourceAcq'Degree'Const d) = pure d
 
 instance Is0DStreamable (DSDegree DSAcq) Double where
-  extract0DStreamValue (DataSourceAcq'Degree'Hdf5 d)  = extract0DStreamValue d
-  extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
+    extract0DStreamValue (DataSourceAcq'Degree'Hdf5 d)  = extract0DStreamValue d
+    extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
 instance Is0DStreamable (DSDegree DSAcq) CDouble where
-  extract0DStreamValue (DataSourceAcq'Degree'Hdf5 d)  = extract0DStreamValue d
-  extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
+    extract0DStreamValue (DataSourceAcq'Degree'Hdf5 d)  = extract0DStreamValue d
+    extract0DStreamValue (DataSourceAcq'Degree'Const d) = extract0DStreamValue d
 
 instance Is0DStreamable (DSDouble DSAcq) Double where
-  extract0DStreamValue (DataSourceAcq'Double'Hdf5 d)  = extract0DStreamValue d
-  extract0DStreamValue (DataSourceAcq'Double'Const a) = pure a
+    extract0DStreamValue (DataSourceAcq'Double'Hdf5 d)  = extract0DStreamValue d
+    extract0DStreamValue (DataSourceAcq'Double'Const a) = pure a
 
 instance Is0DStreamable (DSScannumber DSAcq) Scannumber where
-  extract0DStreamValue (DataSourceAcq'Scannumber'Const sn) = pure sn
+    extract0DStreamValue (DataSourceAcq'Scannumber'Const sn) = pure sn
 
 instance Is0DStreamable (DSTimescan0 DSAcq) Timescan0 where
-  extract0DStreamValue (DataSourceAcq'Timescan0'Hdf5 ds) = Timescan0 <$> extract0DStreamValue ds
-  extract0DStreamValue DataSourceAcq'Timescan0'NoTimescan0 = returnIO $ Timescan0 0
+    extract0DStreamValue (DataSourceAcq'Timescan0'Hdf5 ds) = Timescan0 <$> extract0DStreamValue ds
+    extract0DStreamValue DataSourceAcq'Timescan0'NoTimescan0 = returnIO $ Timescan0 0
 
 --------------------
 -- Is1DStreamable --
@@ -191,23 +185,23 @@ instance Is1DStreamable (DSAttenuation DSAcq) Attenuation where
 
 
 instance Is1DStreamable (DSDouble DSAcq) CDouble where
-  extract1DStreamValue (DataSourceAcq'Double'Hdf5 d)  = extract1DStreamValue d
-  extract1DStreamValue (DataSourceAcq'Double'Const d) = const $ extract0DStreamValue d
+    extract1DStreamValue (DataSourceAcq'Double'Hdf5 d)  = extract1DStreamValue d
+    extract1DStreamValue (DataSourceAcq'Double'Const d) = const $ extract0DStreamValue d
 
 instance Is1DStreamable Dataset CDouble where
-  extract1DStreamValue = getPosition
+    extract1DStreamValue = getPosition
 
 instance Is1DStreamable Dataset Double where
-  extract1DStreamValue = getPosition
+    extract1DStreamValue = getPosition
 
 instance Is1DStreamable Dataset Float where
-  extract1DStreamValue = getPosition
+    extract1DStreamValue = getPosition
 
 instance Is1DStreamable (DSDoubles DSAcq) (Data.Vector.Storable.Vector CDouble) where
-  extract1DStreamValue (DataSourceAcq'List ds) i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
+    extract1DStreamValue (DataSourceAcq'List ds) i = fromList <$> Prelude.mapM (`extract1DStreamValue` i) ds
 
 instance Is1DStreamable (DSFloat DSAcq) Float where
-  extract1DStreamValue (DataSourceAcq'Float'Hdf5 ds) = extract1DStreamValue ds
+    extract1DStreamValue (DataSourceAcq'Float'Hdf5 ds) = extract1DStreamValue ds
 
 instance  Is1DStreamable (DSGeometry DSAcq) Geometry where
      extract1DStreamValue (DataSourceAcq'Geometry g w' as') i =
@@ -219,20 +213,20 @@ instance  Is1DStreamable (DSGeometry DSAcq) Geometry where
                      (Geometry'Factory factory _) -> Geometry'Factory factory (Just state)
 
 instance Is1DStreamable (DSImage DSAcq) Image where
-  extract1DStreamValue (DataSourceAcq'Image'Dummy buf) _ = pure $ ImageDouble buf
-  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Double det ds buf) i = ImageDouble <$> getArrayInBuffer buf det ds i
-  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 det ds buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
-  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word16 det ds buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
-  extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word32 det ds buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
-  extract1DStreamValue (DataSourceAcq'Image'Img'Int32 det buf tmpl sn fn) i = ImageInt32 <$> readImgInBuffer buf det (fn tmpl sn i)
+    extract1DStreamValue (DataSourceAcq'Image'Dummy buf) _ = pure $ ImageDouble buf
+    extract1DStreamValue (DataSourceAcq'Image'Hdf5'Double det ds buf) i = ImageDouble <$> getArrayInBuffer buf det ds i
+    extract1DStreamValue (DataSourceAcq'Image'Hdf5'Int32 det ds buf) i = ImageInt32 <$> getArrayInBuffer buf det ds i
+    extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word16 det ds buf) i = ImageWord16 <$> getArrayInBuffer buf det ds i
+    extract1DStreamValue (DataSourceAcq'Image'Hdf5'Word32 det ds buf) i = ImageWord32 <$> getArrayInBuffer buf det ds i
+    extract1DStreamValue (DataSourceAcq'Image'Img'Int32 det buf tmpl sn fn) i = ImageInt32 <$> readImgInBuffer buf det (fn tmpl sn i)
 
 instance Is1DStreamable (DSMask DSAcq) (Maybe Mask) where
     extract1DStreamValue (DataSourceAcq'Mask'NoMask) _ = returnIO Nothing
     extract1DStreamValue (DataSourceAcq'Mask m) _      = returnIO (Just m)
 
 instance Is1DStreamable (DSTimestamp DSAcq) Timestamp where
-  extract1DStreamValue (DataSourceAcq'Timestamp'Hdf5 ds) i = Timestamp <$> extract1DStreamValue ds i
-  extract1DStreamValue DataSourceAcq'Timestamp'NoTimestamp _ = returnIO $ Timestamp 0
+    extract1DStreamValue (DataSourceAcq'Timestamp'Hdf5 ds) i = Timestamp <$> extract1DStreamValue ds i
+    extract1DStreamValue DataSourceAcq'Timestamp'NoTimestamp _ = returnIO $ Timestamp 0
 
 ----------------
 -- DataSource --
