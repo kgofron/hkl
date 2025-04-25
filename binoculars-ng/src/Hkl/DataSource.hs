@@ -74,7 +74,7 @@ import           GHC.Base                          (liftA2)
 #endif
 import           GHC.Float                         (float2Double)
 import           GHC.Generics                      (Generic, K1 (..), M1 (..),
-                                                    R, Rep (..), U1 (..),
+                                                    Rep (..), U1 (..),
                                                     (:*:) (..), (:+:) (..))
 import           Numeric.Units.Dimensional.Prelude (degree, (*~), (/~))
 import           Pipes.Safe                        (MonadSafe, catch, throwM)
@@ -259,6 +259,27 @@ generic'ds'Shape :: ( MonadSafe m
                  => d DSAcq -> m DataSourceShape
 generic'ds'Shape = g'ds'Shape . from
 
+class GDSAK1 a where
+   g'ds'Shape'K1 :: MonadSafe m => a -> m DataSourceShape
+   g'ds'Shape'K1 _ = pure shape1
+
+instance DataSource a => GDSAK1 (a DSAcq) where
+   g'ds'Shape'K1 acq = ds'Shape acq
+
+instance GDSAK1 Dataset where
+    g'ds'Shape'K1 = liftIO . ds'Shape'Dataset
+
+instance GDSAK1 Degree
+instance GDSAK1 (Detector a sh)
+instance GDSAK1 Double
+instance GDSAK1 Geometry
+instance GDSAK1 Int
+instance GDSAK1 (IOVector a)
+instance GDSAK1 Mask
+instance GDSAK1 Scannumber
+instance GDSAK1 Text
+instance GDSAK1 (Text -> Scannumber -> Int -> FilePath)
+
 class GDataSourceAcq dataAcq where
    g'ds'Shape :: MonadSafe m => dataAcq x -> m DataSourceShape
 
@@ -272,41 +293,8 @@ instance (GDataSourceAcq f, GDataSourceAcq f') => GDataSourceAcq (f :+: f') wher
    g'ds'Shape (L1 f)  = g'ds'Shape f
    g'ds'Shape (R1 f') = g'ds'Shape f'
 
-instance DataSource a => GDataSourceAcq (K1 i (a DSAcq)) where
-   g'ds'Shape (K1 acq) = ds'Shape acq
-
-instance GDataSourceAcq (K1 i Dataset) where
-    g'ds'Shape (K1 ds) = liftIO $ ds'Shape'Dataset ds
-
-instance GDataSourceAcq (K1 R Degree) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R Double) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R Geometry) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R Int) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R Mask) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R (Text -> Scannumber -> Int -> FilePath)) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R (Detector Hkl DIM2)) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R (IOVector a)) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R Text) where
-    g'ds'Shape _ = pure shape1
-
-instance GDataSourceAcq (K1 R Scannumber) where
-    g'ds'Shape _ = pure shape1
+instance GDSAK1 a => GDataSourceAcq (K1 i a) where
+    g'ds'Shape (K1 a) = g'ds'Shape'K1 a
 
 instance GDataSourceAcq U1 where
     g'ds'Shape _ = pure shape1
