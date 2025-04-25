@@ -106,7 +106,7 @@ hkl-test$(EXEEXT): $(test_sources) $(binoculars_ng_SOURCES)
 configure-cabal:
 	@rm -f cabal.project.local
 	touch empty-config-file
-	$(CABAL) --config-file=empty-config-file configure $(AM_CABALFLAGS) $(CABALFALGS)
+	$(CABAL) --config-file=empty-config-file configure --enable-test $(AM_CABALFLAGS) $(CABALFALGS)
 
 clean-local:
 	-cabal clean

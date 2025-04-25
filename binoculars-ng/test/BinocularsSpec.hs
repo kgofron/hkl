@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module BinocularsSpec
   (spec)
@@ -9,6 +10,7 @@ module BinocularsSpec
 
 import           Control.Monad                      (forM_)
 import           Control.Monad.IO.Class             (liftIO)
+import           Control.Monad.Logger               (LoggingT)
 import           Data.Attoparsec.Text               (Parser, parseOnly)
 import           Data.Either                        (isRight)
 import           Data.Ini.Config                    (IniParser, parseIniFile)
@@ -21,21 +23,22 @@ import           Test.Hspec
 import           Test.Hspec.Attoparsec              (shouldFailOn, shouldParse)
 import           Test.Hspec.Attoparsec.Source
 import           Test.Hspec.QuickCheck              (prop)
+import           Test.Inspection
 
 import           Hkl.Binoculars
 import           Hkl.Binoculars.Projections.QCustom
 import           Hkl.DataSource
 import           Hkl.Detector
 import           Hkl.Geometry
-import           Hkl.Image
 import           Hkl.Lattice
 import           Hkl.Repa
 
 import           Paths_hkl
 
-import           Prelude                            hiding (putStrLn, readFile)
+import           Prelude                            hiding (readFile)
 
-
+pro :: LoggingT IO ()
+pro = process (Just "toto") (Just (ConfigRange (InputRange (singleton 120) :| [InputRange (123...453)])))
 
 spec :: Spec
 spec = do
@@ -216,3 +219,18 @@ spec = do
         let args = Args'QCustomProjection (Just $ ConfigRange (InputRange (120...135) :| [InputRange (137...453)]))
         let cfg = getConfig content args capabilities
         isRight cfg `shouldBe` True
+
+  describe "inspection tests" $ do
+    it "display inspection information of binoculars-ng" $ do
+       let results = [ $(inspectTest $ hasNoTypeClasses 'pro)
+                     , $(inspectTest $ hasNoGenerics 'pro)
+                     ]
+       if map (\r -> case r of
+                      Success _ -> True
+                      Failure _ -> False) results == [True, True]
+       then True `shouldBe` True
+       else do
+         mapM_ (\r -> case r of
+                       Success m -> putStrLn m
+                       Failure m -> putStrLn m) results
+         False `shouldBe` True

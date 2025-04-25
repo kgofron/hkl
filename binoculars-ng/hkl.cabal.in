@@ -197,6 +197,7 @@ test-suite hkl-test
   build-depends: hspec
   build-depends: hspec-attoparsec
   build-depends: ini
+  build-depends: inspection-testing
   build-depends: intervals
   build-depends: path
   build-depends: temporary
