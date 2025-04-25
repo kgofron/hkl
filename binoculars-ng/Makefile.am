@@ -91,6 +91,7 @@ AM_TESTS_ENVIRONMENT = \
 
 test_sources=\
 	data/test/config_ech6eiger.txt \
+	data/test/config_geometry_custom.ini \
 	data/test/config_sixs_ruche_parsing.ini \
 	test/BinocularsSpec.hs \
 	test/Spec.hs

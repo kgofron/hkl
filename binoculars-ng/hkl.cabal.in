@@ -199,6 +199,7 @@ test-suite hkl-test
   build-depends: ini
   build-depends: inspection-testing
   build-depends: intervals
+  build-depends: monad-logger
   build-depends: path
   build-depends: temporary
   build-depends: text
