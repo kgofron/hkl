@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with the hkl library.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2003-2024 Synchrotron SOLEIL
+ * Copyright (C) 2003-2025 Synchrotron SOLEIL
  *                         L'Orme des Merisiers Saint-Aubin
  *                         BP 48 91192 GIF-sur-YVETTE CEDEX
  *
@@ -56,23 +56,22 @@ extern void hkl_binoculars_axis_init_from_array(HklBinocularsAxis *self,
 /*********/
 
 /* TODO how to avoid hardcoding the size of indexes_0 */
-				  typedef struct _HklBinocularsSpaceItem HklBinocularsSpaceItem;
-				  struct _HklBinocularsSpaceItem
-				  {
-					  ptrdiff_t indexes_0[3]; /* for now hardcode the max number of axes */
-					  uint32_t intensity;
-				  };
-
+typedef struct _HklBinocularsSpaceItem HklBinocularsSpaceItem;
+struct _HklBinocularsSpaceItem
+{
+        ptrdiff_t indexes_0[3]; /* for now hardcode the max number of axes */
+        float intensity;
+};
 
 typedef darray(HklBinocularsSpaceItem) darray_HklBinocularsSpaceItem;
 
 
-				       struct _HklBinocularsSpace
-				       {
-					       darray_axis axes;
-					       size_t max_items;
-					       darray_HklBinocularsSpaceItem items;
-				       };
+struct _HklBinocularsSpace
+{
+        darray_axis axes;
+        size_t max_items;
+        darray_HklBinocularsSpaceItem items;
+};
 
 /********/
 /* Cube */
@@ -82,7 +81,7 @@ struct _HklBinocularsCube
 {
         darray_axis axes;
         ptrdiff_t offset0;
-	unsigned int *photons;
+	float *photons;
 	unsigned int *contributions;
 };
 

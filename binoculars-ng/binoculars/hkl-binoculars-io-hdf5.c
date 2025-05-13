@@ -280,8 +280,8 @@ int hkl_binoculars_cube_save_hdf5(const char *fn,
                 goto fail;
         }
 
-        // count
-        if ((status = add_dataset_from_axes(groupe_id, COUNTS, H5T_NATIVE_UINT32, &self->axes, self->photons)) < 0){
+        // photons
+        if ((status = add_dataset_from_axes(groupe_id, COUNTS, H5T_NATIVE_FLOAT, &self->axes, self->photons)) < 0){
                 goto fail;
         }
 
@@ -464,7 +464,7 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_file(const char *fname)
         HklBinocularsAxis *axis;
         ssize_t n;
         uint32_t *contributions;
-        uint32_t *counts;
+        float *counts;
 
         darray_init(axes);
 
@@ -498,7 +498,7 @@ HklBinocularsCube *hkl_binoculars_cube_new_from_file(const char *fname)
                 goto fail;
         }
 
-        if((counts = read_dataset(group_binoculars_id, COUNTS, H5T_NATIVE_UINT32, n)) == NULL){
+        if((counts = read_dataset(group_binoculars_id, COUNTS, H5T_NATIVE_FLOAT, n)) == NULL){
                 free(contributions);
                 goto fail;
         }

@@ -200,4 +200,5 @@ sixs: binoculars-ng
 #	$(PROCESS) data/test/config_sixs_ruche_medv_noetaa.ini 457
 #	$(PROCESS) data/test/config_sixs_ruche_medv_noetaa.ini 458
 #	$(PROCESS) data/test/config_sixs_ruche_medv_noetaa.ini 459
-	$(PROCESS) data/test/config_sixs_polarisation.ini 600-631
+#	$(PROCESS) data/test/config_sixs_polarisation.ini 600-631
+	$(PROCESS) data/test/config_sixs_polarisation.ini 631
