@@ -1030,6 +1030,7 @@ static inline double compute_azimuth(vec3s kf)
                                         v = glms_mat4_mulv3(m_holder_s, v, 0); \
                                                                         \
                                         float q = compute_q(v);         \
+                                        if (v.raw[2] < 0.0) continue;   \
 					double ratio = v.raw[2] + q;	\
 					item.indexes_0[0] = rint(q / resolutions[0]); \
 					item.indexes_0[1] = rint(v.raw[0] / ratio / resolutions[1]); \

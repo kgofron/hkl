@@ -386,7 +386,7 @@ mkDetector'Sixs'Fly det@(Detector2D d _ _) sn
         (hdf5p $ grouppat 0 $ datasetp "scan_data/merlin_image")
       HklBinocularsDetectorEnum'Cirpad -> undefined
       HklBinocularsDetectorEnum'RigakuXspa1M ->
-        DataSourcePath'Image'Img det "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
+        DataSourcePath'Image'Img det "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam18keV4_scan%d_%06d.img" sn
     ]
 
 mkDetector'Sixs'Sbs :: Detector Hkl DIM2 -> Scannumber -> DSWrap_ DSImage DSPath
@@ -413,7 +413,7 @@ mkDetector'Sixs'Sbs det@(Detector2D d _ _) sn
       HklBinocularsDetectorEnum'MerlinMedipix3rxQuad512 -> undefined
       HklBinocularsDetectorEnum'Cirpad -> undefined
       HklBinocularsDetectorEnum'RigakuXspa1M ->
-        DataSourcePath'Image'Img det "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam11keV8_scan%d_%06d.img" sn
+        DataSourcePath'Image'Img det "/nfs/ruche/sixs-soleil/com-sixs/2025/Run1/Rigaku_99240224/Scan%d/Beam18keV4_scan%d_%06d.img" sn
     ]
 
 overload'DataSourcePath'Attenuation :: Maybe Double -> Maybe Float -> DSWrap_ DSAttenuation DSPath -> DSWrap_ DSAttenuation DSPath
