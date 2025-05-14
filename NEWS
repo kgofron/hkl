@@ -18,6 +18,7 @@
    - Added the Rigaku XSPA 1M detector (RigakuXspa1M).
    - fixed the polarisation correction.
    - switch the photons array to float in order to deal with small corrections. (polarisation)
+   - limit the stereo projection to the north pole.
 ** Binoculars-ng (Haskell program)
    - dispatcher.ncores = 0 mean: use all capabilities of the CPU hardware.
      The default remains equal to `4` if this property is not defined.
