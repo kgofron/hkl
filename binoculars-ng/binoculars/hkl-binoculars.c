@@ -710,10 +710,10 @@ static inline double polarisation(vec3s kf, double weight, int do_polarisation)
 {
         if (do_polarisation){
                 CGLM_ALIGN_MAT vec3s epsilon = {{0, 1, 0}};
-                float p = glms_vec3_dot(epsilon, kf) / glms_vec3_norm(kf);
-                /* glms_vec3_print(kf, stdout); */
-                /* fprintf(stdout, " p: %f", p); */
-                weight = weight / (1 - p*p);
+		/* 1 - cos2 theta */
+                float d = glms_vec3_dot(epsilon, kf);
+		float cos2 = d * d / glms_vec3_norm2(kf);
+                weight = weight / (1 - cos2);
         }
         return weight;
 }
