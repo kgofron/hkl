@@ -1051,6 +1051,38 @@ And also available via the Python binding.
 #+END_SRC
 * Todo
 ** hkl
+*** TODO ESRF BM28 PSIC
+We need the XMaS/BM28 diffractometer to be fully integrated within the
+hkl library used within BLISS. There are modes missing, such as fixed
+incidence (or fixed exit) calculations not supported in the 20
+"Diffractometers" already implemented. We need all of the modes
+already implemented within E6C with a redefinition of the angles
+(delta, eta, chi, phi, nu, mu)(in this order of appearance), plus the
+additional modes in order to calculate (H,K,L) positions with fixed
+(grazing) incident angles in both horizontal and vertical (sample
+surface) geometries.
+
+The XMaS/BM28 diffractometer follows (exactly) the convention and
+geometry of Hoydoo You's paper attached. Fig. 1 in the paper is the
+XMaS/BM28 geometry. The geometry is also called 4S + 2D (4 sample
+rotations plus 2 detector rotations). The vertical 2theta is delta,
+supported by the horizontal 2theta nu. The sample sits on phi, sitting
+on chi, sitting on eta, sitting on mu. In Frédéric-Emmanuel Picca's
+laboratory frame where x is along the beam (y in the paper), y is
+horizontal perpendicular to the beam (z in the paper) and z is
+vertical (x in the paper), with all the angles at 0, we have the
+following:
+
+   * delta-axis along -y, i.e. (0 -1 0)
+   * eta-axis along -y, i.e. (0 -1 0)
+   * chi-axis along +x, i.e. (1 0 0)
+   * phi-axis along -y, i.e. (0 -1 0)
+   * nu-axis along +z, i.e. (0 0 1)
+   * mu-axis along +z, i.e. (0 0 1)
+
+I will come back with the grazing incidence geometries implemented
+within SPEC that need to be implemented here.
+
 *** TODO [#A] =HklEngine= *q/q2*
     Fix all these engines... This engine takes into account only the
     *gamma* and *delta* axes.  so diffractometers with 3 axes for the
@@ -1276,7 +1308,7 @@ And also available via the Python binding.
     + Investigate [[http://liboil.freedesktop.org/wiki/][liboil]] to speed calculation (in HklVector, HklMatrix
       and HklQuaternion)
     + Avoid to call =hkl_engine_prepare_internal= at each computation.
-
+      
 ** documentation
 *** TODO [1/6] rewrite documentation in org-mode
     - [-] embedding code into the org file.
@@ -1430,7 +1462,6 @@ GL Compile error
 61: }
 /usr/bin/asy -config "" -d -render=4 -f png -o B_a.png B_a.asy
 0:1(10): error: GLSL 3.00 is not supported. Supported versions are: 1.10, 1.20, 1.30, 1.40, 1.50, 3.30, 1.00 ES, and 3.00 ES
-
 
 ** [0/3] gui
    - [ ] change the color of fitparameter cells if they differ from
